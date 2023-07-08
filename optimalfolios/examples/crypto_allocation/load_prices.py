@@ -10,7 +10,7 @@ from cryptocmd import CmcScraper
 import qis
 
 # add the local path to data files
-LOCAL_PATH = qis.local_path.get_resource_path()
+LOCAL_PATH = ''
 
 # data sources
 BTC_PRICES_FROM_2010 = 'BTC_from_2010'  # csv data with static BTC from2010 upto 31Jul2022

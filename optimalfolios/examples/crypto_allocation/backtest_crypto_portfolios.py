@@ -15,10 +15,10 @@ from optimalfolios.examples.crypto_allocation.load_prices import Assets, load_pr
 from optimalfolios.reports.marginal_backtest import OptimisationParams, OptimisationType, backtest_marginal_optimal_portfolios
 from optimalfolios.reports.config import KWARGS_SUPTITLE, KWARGS_TITLE, KWARGS_FIG, KWARGS_TEXT
 
-LOCAL_PATH = qis.local_path.get_output_path()
 PERF_PARAMS = PerfParams(freq_vol='M', freq_reg='M', freq_drawdown='M', rates_data=load_risk_free_rate())
 REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='Q')
 
+LOCAL_PATH = "C://Users//artur//OneDrive//analytics//outputs//"
 FIGURE_SAVE_PATH = "C://Users//artur//OneDrive//My Papers//Working Papers//CryptoAllocation. Zurich. Jan 2022//figs1//"
 SAVE_FIGS = True
 
