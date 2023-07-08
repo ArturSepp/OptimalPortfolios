@@ -1,6 +1,10 @@
 # created by virtualenv automatically
+.idea/
 Lib/
 Scripts/
+dist/
+
+__pycache__/
 
 # YAML
 *.yaml
@@ -8,7 +12,6 @@ Scripts/
 # Byte-compiled / optimized / DLL files
 docs/figures/
 
-__pycache__/
 *.py[cod]
 *$py.class
 
@@ -17,10 +20,8 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-.idea/
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -141,3 +142,7 @@ dmypy.json
 .pyre/
 
 /dist/
+dist/optimalfolios-1.0.2.tar.gz
+*.xml
+*.pyc
+optimalfolios/__pycache__/__init__.cpython-310.pyc
