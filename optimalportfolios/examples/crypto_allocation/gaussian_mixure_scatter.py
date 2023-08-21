@@ -6,7 +6,7 @@ from enum import Enum
 
 # qis
 import qis
-import optimalfolios.utils.gaussian_mixture as gm
+import optimalportfolios.utils.gaussian_mixture as gm
 
 
 class UnitTests(Enum):

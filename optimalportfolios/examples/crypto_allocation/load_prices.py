@@ -10,12 +10,12 @@ from cryptocmd import CmcScraper
 import qis
 
 # add the local path to data files
-LOCAL_PATH = ''
+LOCAL_PATH = 'C://Users//artur//OneDrive//analytics//resources//crypto_allocation_data//'
 
 # data sources
 BTC_PRICES_FROM_2010 = 'BTC_from_2010'  # csv data with static BTC from2010 upto 31Jul2022
-HFRXGL_PRICE = 'HFRX_historical_HFRXGL'  # global HF from https://www.hfr.com/indices/hfrx-global-hedge-fund-index
-CTA_PRICE = 'CTA_Historical'  # CTAs from https://wholesale.banking.societegenerale.com/fileadmin/indices_feeds/CTA_Historical.xls
+HFRXGL_PRICE = 'HFRX_historical_HFRXGL'  # global HF from https://www.hfr.com/indices/hfrx-global-hedge-fund-index - download daily data, remove top and bottom rows with descriptive data
+CTA_PRICE = 'CTA_Historical'  # SG CTA Index from https://wholesale.banking.societegenerale.com/en/prime-services-indices/
 MACRO_PRICE = 'Macro_Trading_Index_Historical'  # Macro SCTas from https://wholesale.banking.societegenerale.com/fileadmin/indices_feeds/Macro_Trading_Index_Historical.xls
 
 PRICE_DATA_FILE = 'crypto_allocation_prices'
@@ -35,6 +35,9 @@ class Assets(str, Enum):
 
 
 def update_prices() -> pd.DataFrame:
+    """
+    generate rice data
+    """
     btc = create_btc_price()
     eth = create_eth_price()
     bal = create_balanced_price()
@@ -50,7 +53,7 @@ def update_prices() -> pd.DataFrame:
     coms = qis.bfill_timeseries(df_newer=coms1, df_older=coms0, is_prices=True)
 
     # use local copies
-    hf = qis.load_df_from_csv(file_name=HFRXGL_PRICE, local_path=LOCAL_PATH).iloc[:, 0].rename(Assets.HF.value).sort_index()
+    hf = qis.load_df_from_csv(file_name=HFRXGL_PRICE, local_path=LOCAL_PATH)['Index Value'].rename(Assets.HF.value).sort_index()
     cta = qis.load_df_from_excel(file_name=CTA_PRICE, local_path=LOCAL_PATH).iloc[:, 0].rename(Assets.CTA.value)
     macro = qis.load_df_from_excel(file_name=MACRO_PRICE, local_path=LOCAL_PATH).iloc[:, 0].rename(Assets.MACRO.value)
 
@@ -67,8 +70,10 @@ def update_prices() -> pd.DataFrame:
 
 
 def create_btc_price() -> pd.Series:
+    """
+    backfill BTC_PRICES_FROM_2010
+    """
     btc_bbg = qis.load_df_from_csv(file_name=BTC_PRICES_FROM_2010, local_path=LOCAL_PATH).iloc[:, 0].rename(Assets.BTC.value)
-    # new_bbg = yf.download('BTC-USD', start=None, end=None, ignore_tz=True)['Adj Close'].rename(Assets.BTC.value)
     new_bbg = fetch_cmc_price(ticker='BTC').rename(Assets.BTC.value)
     btc_price = qis.bfill_timeseries(df_newer=new_bbg, df_older=btc_bbg, freq='D', is_prices=True)
     return btc_price
@@ -77,7 +82,6 @@ def create_btc_price() -> pd.Series:
 def create_eth_price() -> pd.Series:
     btc_bbg = qis.load_df_from_csv(file_name=BTC_PRICES_FROM_2010, local_path=LOCAL_PATH).iloc[:, 0].rename(Assets.ETH.value)
     mc_price = fetch_cmc_price(ticker='ETH').rename(Assets.ETH.value)
-    print(mc_price)
     eth_price = qis.bfill_timeseries(df_newer=mc_price, df_older=btc_bbg, freq='D', is_prices=True)
     return eth_price
 
@@ -165,7 +169,7 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.CREATE_ETH
+    unit_test = UnitTests.UPDATE_PRICES
 
     is_run_all_tests = False
     if is_run_all_tests:

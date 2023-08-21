@@ -11,9 +11,9 @@ import pybloqs as p
 import qis
 from qis import TimePeriod, PerfParams, BenchmarkReturnsQuantileRegimeSpecs, PerfStat, PortfolioData
 
-from optimalfolios.examples.crypto_allocation.load_prices import Assets, load_prices, load_risk_free_rate
-from optimalfolios.reports.marginal_backtest import OptimisationParams, OptimisationType, backtest_marginal_optimal_portfolios
-from optimalfolios.reports.config import KWARGS_SUPTITLE, KWARGS_TITLE, KWARGS_FIG, KWARGS_TEXT
+from optimalportfolios.examples.crypto_allocation.load_prices import Assets, load_prices, load_risk_free_rate
+from optimalportfolios.reports.marginal_backtest import OptimisationParams, OptimisationType, backtest_marginal_optimal_portfolios
+from optimalportfolios.reports.config import KWARGS_SUPTITLE, KWARGS_TITLE, KWARGS_FIG, KWARGS_TEXT
 
 PERF_PARAMS = PerfParams(freq_vol='M', freq_reg='M', freq_drawdown='M', rates_data=load_risk_free_rate())
 REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='Q')
@@ -24,13 +24,14 @@ SAVE_FIGS = True
 
 OPTIMISATION_PARAMS = OptimisationParams(first_asset_target_weight=0.75,  # first asset is the benchmark
                                          recalib_freq='Q',  # when portfolio weigths are aupdate
-                                         roll_window=23,  # how many quarters are used for rolling estimation of mv returns and mixure = 5.5 years
+                                         roll_window=23,  # number of quarters are used for rolling estimation of mv returns and mixure = 6 years
                                          returns_freq='M',  # frequency of returns
-                                         span=34,  # for ewma window for monthly return = 3 years
+                                         span=30,  # for window of ewma covariance for monthly return = 2.5 years
                                          is_log_returns=True,
                                          carra=0.5,  # carra parameter
                                          n_mixures=3,
-                                         rebalancing_costs=0.0050)
+                                         rebalancing_costs=0.0050  # rebalancing costs for portfolios
+                                         )
 
 PERF_COLUMNS = (PerfStat.TOTAL_RETURN,
                 PerfStat.PA_RETURN,
@@ -372,7 +373,7 @@ def run_backtest_pdf_report(prices_unconstrained: pd.DataFrame,
 
 
 def produce_article_figures(time_period: TimePeriod,
-                            time_period_dict: Dict[str, Dict[str, TimePeriod]],
+                            perf_attrib_time_period_dict: Dict[str, Dict[str, TimePeriod]],
                             optimisation_types: List[OptimisationType] = (OptimisationType.ERC,
                                                                           OptimisationType.MAX_DIV),
                             benchmark_name: str = '100% Balanced'
@@ -423,7 +424,7 @@ def produce_article_figures(time_period: TimePeriod,
 
             # perf attribution for crypto_asset
             perf_alts_crypto_, perf_bal_crypto_ = {}, {}
-            for label, time_period_ in time_period_dict[crypto_asset].items():
+            for label, time_period_ in perf_attrib_time_period_dict[crypto_asset].items():
                 perf_alts_crypto_[label] = pd.Series(alts_crypto.get_performance_attribution(time_period=time_period_)[crypto_asset],
                                                      index=[optimisation_type.value])
                 perf_bal_crypto_[label] = pd.Series(bal_crypto.get_performance_attribution(time_period=time_period_)[crypto_asset],
@@ -447,7 +448,7 @@ def produce_article_figures(time_period: TimePeriod,
     # add delta-1 to perf
     for crypto_asset in crypto_assets:
         delta1_total_perf = {}
-        for label, time_period_ in time_period_dict[crypto_asset].items():
+        for label, time_period_ in perf_attrib_time_period_dict[crypto_asset].items():
             crypto_price = prices_alls[crypto_asset][crypto_asset]
             delta1_total_perf[label] = qis.compute_total_return(prices=time_period_.locate(crypto_price))
         delta1_total_perf = pd.Series(delta1_total_perf).rename(crypto_asset).to_frame().T
@@ -458,6 +459,7 @@ def produce_article_figures(time_period: TimePeriod,
     vblocks = []
 
     # add ra tables with descriptive weights
+    dfs_out = {}
     for optimisation_type in optimisation_types:
         blocks = []
         ra_tables, axs = plt.subplots(1, 2, figsize=(10, 3.6), tight_layout=True)
@@ -492,7 +494,7 @@ def produce_article_figures(time_period: TimePeriod,
                                                               benchmark=benchmark_name,
                                                               is_log_returns=True,
                                                               **FIG_KWARGS)
-
+            dfs_out[f"ratable_{optimisation_type} {pretitles[idx]} {key}".replace("/", "")] = ra_perf_table.T
             special_rows_colors = [(1, 'aliceblue')]
             qis.plot_df_table(df=ra_perf_table.T,
                               title=f"{pretitles[idx]} {key}",
@@ -601,6 +603,7 @@ def produce_article_figures(time_period: TimePeriod,
                                                                    #heatmap_rows=[3],
                                                                    cmap='Greys'))
                               )
+            dfs_out[f"weight_{key}".replace("/", "")] = weights_df
 
     weights_dict = {f"(A) 100% Alts with BTC": pd.concat(alt_weight_btc, axis=1),
                     f"(C) 75%/25% Bal/Alts with BTC": pd.concat(bal_weight_btc, axis=1),
@@ -685,7 +688,13 @@ def produce_article_figures(time_period: TimePeriod,
                           title=f"{key}",
                           ax=axs[idx%2][idx//2],
                           **kwargs1)
-    vblocks.append(b_fig_weights)
+        dfs_out[f"attrib_{key}".replace("/", "")] = df
+
+    b_fig_periods = p.Block([p.Paragraph(
+        f"Performance attribution", **KWARGS_TITLE),
+        p.Block(fig_periods, **KWARGS_FIG)],
+        **KWARGS_TEXT)
+    vblocks.append(b_fig_periods)
     if SAVE_FIGS:
         qis.save_fig(fig_periods, file_name=f"perf_atrib_all", local_path=FIGURE_SAVE_PATH)
 
@@ -693,6 +702,8 @@ def produce_article_figures(time_period: TimePeriod,
     filename = f"{LOCAL_PATH}Crypto_portfolios_backtests_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.pdf"
     b_report.save(filename)
     print(f"saved article report to {filename}")
+    qis.save_df_to_excel(dfs_out, file_name=filename)
+    print(f"saved article tables to {filename}.xls")
     plt.close('all')
 
 
@@ -810,8 +821,9 @@ def run_unit_test(unit_test: UnitTests):
     # optimisation_types = [OptimisationType.ERC, OptimisationType.MAX_DIV]
     # optimisation_types = [OptimisationType.MAX_DIV]
 
-    # time_period = TimePeriod('31Dec2015', '31Mar2023')
-    time_period = TimePeriod('31Mar2016', '31Mar2023')
+    end_date = '30Jun2023'
+    # time_period = TimePeriod('31Dec2015', end_date)
+    time_period = TimePeriod('31Mar2016', end_date)
 
     if unit_test == UnitTests.ALL_OPTIMISATION_TYPES:
 
@@ -827,8 +839,8 @@ def run_unit_test(unit_test: UnitTests):
                                                time_period_dict=time_period_dict)
 
     elif unit_test == UnitTests.PERFORMANCE_ATTRIB_TABLE:
-        time_period_dict = {'2016Q1-now': TimePeriod(start='31Dec2015', end='31Mar2023'),
-                            '2021Q1-now': TimePeriod(start='31Dec2020', end='31Mar2023')}
+        time_period_dict = {'2016Q1-now': TimePeriod(start='31Dec2015', end=end_date),
+                            '2021Q1-now': TimePeriod(start='31Dec2020', end=end_date)}
         create_performance_attrib_table(optimisation_types=optimisation_types,
                                         time_period_dict=time_period_dict)
 
@@ -837,9 +849,9 @@ def run_unit_test(unit_test: UnitTests):
                                 optimisation_types=optimisation_types)
 
     elif unit_test == UnitTests.CONSTANT_WEIGHT_PORTFOLIOS:
-        time_period_dict = {'2016Q1-now': TimePeriod(start='31Dec2015', end='31Mar2023'),
-                            '2021Q1-now': TimePeriod(start='31Dec2020', end='31Mar2023')}
-        time_period = TimePeriod('31Dec2015', '30May2023')
+        time_period_dict = {'2016Q1-now': TimePeriod(start='31Dec2015', end=end_date),
+                            '2021Q1-now': TimePeriod(start='31Dec2020', end=end_date)}
+        time_period = TimePeriod('31Dec2015', end_date)
         backtest_constant_weight_portfolios(
                                         crypto_asset='ETH',
                                         rebalance_freq='Q',
@@ -848,14 +860,14 @@ def run_unit_test(unit_test: UnitTests):
                                         time_period_dict=time_period_dict)
 
     elif unit_test == UnitTests.ARTICLE_FIGURES:
-        time_period_dict_btc = {'16Q2-23Q1': TimePeriod(start='31Mar2016', end='31Mar2023'),
+        time_period_dict_btc = {'16Q2-23Q2': TimePeriod(start='31Mar2016', end=end_date),
                                 '21Q1-23Q1': TimePeriod(start='31Dec2020', end='31Mar2023')}
-        time_period_dict_eth = {'16Q2-23Q1': TimePeriod(start='31Mar2016', end='31Mar2023'),
+        time_period_dict_eth = {'16Q2-23Q2': TimePeriod(start='31Mar2016', end=end_date),
                                 '21Q2-23Q1': TimePeriod(start='31Mar2021', end='31Mar2023')}
-        time_period_dict = {'BTC': time_period_dict_btc, 'ETH': time_period_dict_eth}
+        perf_attrib_time_period_dict = {'BTC': time_period_dict_btc, 'ETH': time_period_dict_eth}
         produce_article_figures(time_period=time_period,
                                 optimisation_types=optimisation_types,
-                                time_period_dict=time_period_dict)
+                                perf_attrib_time_period_dict=perf_attrib_time_period_dict)
 
     plt.show()
 

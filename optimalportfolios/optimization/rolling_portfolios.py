@@ -21,10 +21,11 @@ import qis.models.linear.ewm as ewm
 from qis.models.linear.corr_cov_matrix import compute_masked_covar_corr, matrix_regularization
 
 # portfolio
-import optimalfolios.utils.gaussian_mixture as gm
-import optimalfolios.optimization.opt_solvers as ops
-import optimalfolios.optimization.qp_solvers as qup
-from optimalfolios.optimization.qp_solvers import PortfolioObjective, max_portfolio_sharpe_qp
+import optimalportfolios.utils.gaussian_mixture as gm
+import optimalportfolios.optimization.nonlinear_solvers as ops
+import optimalportfolios.optimization.quadratic_solvers as qup
+from optimalportfolios.optimization.quadratic_solvers import max_portfolio_sharpe_qp
+from optimalportfolios.optimization.config import PortfolioObjective
 import qis.portfolio.backtester as bp
 from qis.portfolio.portfolio_data import PortfolioData
 
@@ -34,6 +35,8 @@ def compute_rolling_optimal_weights_ewm_covar(prices: pd.DataFrame,
                                               fixed_weights: Dict[str, float] = None,
                                               weight_mins: np.ndarray = None,
                                               weight_maxs: np.ndarray = None,
+                                              is_gross_notional_one: bool = True,
+                                              is_long_only: bool = True,
                                               target_vol: float = None,
                                               rebalancing_freq: str = 'Q',
                                               span: int = 30,  # ewma span
@@ -83,15 +86,18 @@ def compute_rolling_optimal_weights_ewm_covar(prices: pd.DataFrame,
                     weights[date] = ops.solve_equal_risk_contribution(covar=covar,
                                                                       budget=budget,
                                                                       weight_mins=weight_mins,
-                                                                      weight_maxs=weight_maxs)
+                                                                      weight_maxs=weight_maxs,
+                                                                      is_gross_notional_one=is_gross_notional_one)
                 else:
                     weights[date] = ops.solve_risk_parity_constr_vol(covar=covar,
-                                                                    target_vol=target_vol)
+                                                                     target_vol=target_vol)
 
             elif portfolio_objective == PortfolioObjective.MAX_DIVERSIFICATION:
                 weights[date] = ops.solve_max_diversification(covar=covar,
                                                               weight_mins=weight_mins,
-                                                              weight_maxs=weight_maxs)
+                                                              weight_maxs=weight_maxs,
+                                                              is_long_only=is_long_only,
+                                                              is_gross_notional_one=is_gross_notional_one)
 
             elif portfolio_objective == PortfolioObjective.RISK_PARITY_ALT:
                 weights[date] = ops.solve_risk_parity_alt(covar=covar)
@@ -99,8 +105,8 @@ def compute_rolling_optimal_weights_ewm_covar(prices: pd.DataFrame,
             else:
                 weights[date] = qup.maximize_portfolio_objective_qp(portfolio_objective=portfolio_objective,
                                                                     covar=covar,
-                                                                    is_gross_notional_one=True,
-                                                                    is_long_only=True,
+                                                                    is_gross_notional_one=is_gross_notional_one,
+                                                                    is_long_only=is_long_only,
                                                                     weight_mins=weight_mins,
                                                                     weight_maxs=weight_maxs)
     weights = pd.DataFrame.from_dict(weights, orient='index', columns=returns.columns)
@@ -298,14 +304,14 @@ def run_rolling_mv_portfolios(prices: pd.DataFrame,
     return portfolio_out
 
 
-def estimate_rolling_mixture1(prices: Union[pd.Series, pd.DataFrame],
-                              returns_freq: str = 'M',
-                              recalib_freq: str = 'A',
-                              roll_window: int = 6,
-                              n_components: int = 2,
-                              is_log_returns: bool = True,
-                              annualize: bool = True
-                              ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def estimate_rolling_mixture(prices: Union[pd.Series, pd.DataFrame],
+                             returns_freq: str = 'M',
+                             recalib_freq: str = 'A',
+                             roll_window: int = 6,
+                             n_components: int = 2,
+                             is_log_returns: bool = True,
+                             annualize: bool = True
+                             ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
     if isinstance(prices, pd.Series):
         prices = prices.to_frame()
@@ -432,7 +438,7 @@ def run_unit_test(unit_test: UnitTests):
 
     elif unit_test == UnitTests.ROLLING_MIXTURES:
         prices = prices['SPY'].dropna()
-        means, sigmas, probs = estimate_rolling_mixture1(prices=prices)
+        means, sigmas, probs = estimate_rolling_mixture(prices=prices)
         print(means)
 
     elif unit_test == UnitTests.MIXTURE_PORTFOLIOS:

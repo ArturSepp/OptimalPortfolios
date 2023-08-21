@@ -1,81 +1,7 @@
-## **Optimal Portfolios Backtester** <a name="analytics"></a>
+"""
+minimal example of using the backtester
+"""
 
-optimalportfolios package implements analytics for backtesting of optimal portfolios including:
-1. computing of inputs (covariance matrices, returns) using roll forward computations (to avoid hindsight bias)
-2. implementation of core solvers:
-   1. Minimum variance
-   2. Maximum quadratic utility
-   3. Equal risk contribution
-   4. Maximum diversification
-   5. Maximum Sharpe ratio
-   6. Maximum Cara utility under Gaussian mixture model
-3. computing performances of simulated portfolios
-4. reporting
-
-
-
-OptimalPortfolios package is split into 5 main modules with the 
-dependecy path increasing sequentially as follows.
-
-1. ```optimisation``` is module containing implementation of quadratic and nonlinear solvers
-
-2. ```reports``` is module for computing performance statistics and performance attribution including returns, volatilities, etc.
-
-3. ```examples.crypto_allocation``` is module for computations and visualisations for 
-paper "Optimal Allocation to Cryptocurrencies in Diversified Portfolios" [https://ssrn.com/abstract=4217841](https://ssrn.com/abstract=4217841)
-   (see paper for description of the rolling-forward methodology and estimation of inputs)
-
-
-# Table of contents
-1. [Analytics](#analytics)
-2. [Installation](#installation)
-3. [Examples](#examples)
-   1. [Optimal Portfolio Backtest](#optimal)
-   2. [Customised reporting](#report)
-   3. [Optimal allocation to cryptocurrencies](#crypto)
-4. [Contributions](#contributions)
-5. [Updates](#updates)
-6. [ToDos](#todos)
-7. [Disclaimer](#disclaimer)
-
-## **Updates** <a name="updates"></a>
-
-## **Installation** <a name="installation"></a>
-install using
-```python 
-pip install optimalportfolios
-```
-upgrade using
-```python 
-pip install --upgrade optimalportfolios
-```
-
-Core dependencies:
-    python = ">=3.8,<3.11",
-    numba = ">=0.56.4",
-    numpy = ">=1.22.4",
-    scipy = ">=1.9.0",
-    pandas = ">=1.5.2",
-    matplotlib = ">=3.2.2",
-    seaborn = ">=0.12.2",
-    seaborn = ">=0.12.2",
-    scikit_learn = ">=1.3.0",
-    cvxpy = ">=1.3.2",
-    qis = ">=2.0.6",
-
-Optional dependencies:
-    yfinance ">=0.2.3" (for getting test price data),
-    pybloqs ">=1.2.13" (for producing html and pdf factsheets)
-
-
-
-## **Examples** <a name="examples"></a>
-
-### 1. Optimal Portfolio Backtest <a name="optimal"></a>
-
-See script in ```optimalportfolios.examples.optimal_portfolio_backtest.py```
-
-```python 
 # imports
 import pandas as pd
 import numpy as np
@@ -165,15 +91,8 @@ qis.save_figs_to_pdf(figs=[fig],
                      orientation='landscape',
                      local_path="C://Users//Artur//OneDrive//analytics//outputs")
 qis.save_fig(fig=fig, file_name=f"example_portfolio_factsheet", local_path=f"figures/")
-```
-![image info](optimalportfolios/examples/figures/example_portfolio_factsheet.PNG)
 
 
-### 2. Customised reporting <a name="report"></a>
-
-Portfolio data class ```PortfolioData``` is implemented in [QIS package](https://github.com/ArturSepp/QuantInvestStrats)
-
-```python
 # 6. can create customised reporting using portfolio_data custom reporting
 def run_customised_reporting(portfolio_data) -> plt.Figure:
     with sns.axes_style("darkgrid"):
@@ -196,30 +115,5 @@ def run_customised_reporting(portfolio_data) -> plt.Figure:
 fig = run_customised_reporting(portfolio_data)
 # save png
 qis.save_fig(fig=fig, file_name=f"example_customised_report", local_path=f"figures/")
-```
-![image info](optimalportfolios/examples/figures/example_customised_report.PNG)
 
-
-### 3. Optimal allocation to cryptocurrencies <a name="crypto"></a>
-
-Computations and visualisations for 
-paper "Optimal Allocation to Cryptocurrencies in Diversified Portfolios" [https://ssrn.com/abstract=4217841](https://ssrn.com/abstract=4217841)
-   are implemented in module ```optimalportfolios.crypto_allocation```, see README in this module
-
-
-## **Updates** <a name="updates"></a>
-
-#### 8 July 2023,  Version 1.0.1 released
-
-
-
-## **Disclaimer** <a name="disclaimer"></a>
-
-QIS package is distributed FREE & WITHOUT ANY WARRANTY under the GNU GENERAL PUBLIC LICENSE.
-
-See the [LICENSE.txt](https://github.com/ArturSepp/OptimalPortfolios/blob/master/LICENSE.txt) in the release for details.
-
-Please report any bugs or suggestions by opening an [issue](https://github.com/ArturSepp/OptimalPortfolios/issues).
-
-
-
+plt.show()

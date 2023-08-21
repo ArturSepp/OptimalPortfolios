@@ -11,13 +11,7 @@ from numba import jit
 from enum import Enum
 from typing import Tuple, Optional
 
-
-class PortfolioObjective(Enum):
-    MIN_VAR = 1  # min w^t @ covar @ w
-    MAX_LOG_UTIL = 2  # max means^t*w- 0.5*gamma*w^t*covar*w
-    EQUAL_RISK_CONTRIBUTION = 3  # implementation in risk_parity
-    RISK_PARITY_ALT = 4  # alternative implementation of risk_parity
-    MAX_DIVERSIFICATION = 5
+from optimalportfolios.optimization.config import PortfolioObjective
 
 
 def maximize_portfolio_objective_qp(portfolio_objective: PortfolioObjective,
@@ -45,7 +39,7 @@ def maximize_portfolio_objective_qp(portfolio_objective: PortfolioObjective,
     if portfolio_objective == PortfolioObjective.MIN_VAR:
         objective_fun = -portfolio_var
 
-    elif portfolio_objective == PortfolioObjective.MAX_LOG_UTIL:
+    elif portfolio_objective == PortfolioObjective.QUADRATIC_UTILITY:
         if means is None:
             raise ValueError(f"means must be given")
         objective_fun = means.T @ w - 0.5 * gamma * portfolio_var
@@ -88,6 +82,9 @@ def max_qp_portfolio_vol_target(portfolio_objective: PortfolioObjective,
                                 exposure_budget_eq: Tuple[np.ndarray, float] = None,
                                 vol_target: float = 0.12
                                 ) -> np.ndarray:
+    """
+    implement vol target
+    """
 
     max_iter = 20
     sol_tol = 10e-6
@@ -316,7 +313,7 @@ def run_unit_test(unit_test: UnitTests):
     elif unit_test == UnitTests.MAX_UTILITY:
 
         gamma = 50*np.trace(covar)
-        optimal_weights = maximize_portfolio_objective_qp(portfolio_objective=PortfolioObjective.MAX_LOG_UTIL,
+        optimal_weights = maximize_portfolio_objective_qp(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
                                                           covar=covar,
                                                           means=means,
                                                           weight_mins=None,
@@ -347,7 +344,7 @@ def run_unit_test(unit_test: UnitTests):
                                                   exposure_budget_eq=exposure_budget_eq,
                                                   gamma=lang_lambda)
             else:
-                w_lambda = maximize_portfolio_objective_qp(portfolio_objective=PortfolioObjective.MAX_LOG_UTIL,
+                w_lambda = maximize_portfolio_objective_qp(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
                                                            covar=covar,
                                                            means=means,
                                                            is_gross_notional_one=True,
@@ -372,7 +369,7 @@ def run_unit_test(unit_test: UnitTests):
 
     elif unit_test == UnitTests.MAX_UTILITY_VOL_TARGET:
 
-        optimal_weights = max_qp_portfolio_vol_target(portfolio_objective=PortfolioObjective.MAX_LOG_UTIL,
+        optimal_weights = max_qp_portfolio_vol_target(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
                                                       covar=covar,
                                                       means=means,
                                                       weight_min=None,
@@ -402,7 +399,7 @@ def run_unit_test(unit_test: UnitTests):
                                                   exposure_budget_eq=exposure_budget_eq,
                                                   gamma=lang_lambda)
             else:
-                w_lambda = maximize_portfolio_objective_qp(portfolio_objective=PortfolioObjective.MAX_LOG_UTIL,
+                w_lambda = maximize_portfolio_objective_qp(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
                                                            covar=covar,
                                                            means=means,
                                                            exposure_budget_eq=exposure_budget_eq,

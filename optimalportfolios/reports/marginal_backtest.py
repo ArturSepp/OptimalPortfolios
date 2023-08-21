@@ -1,5 +1,5 @@
 """
-implement marginal back
+implement marginal backtest to stress marginal contribution from adding one asset to the investable universe
 """
 
 # packages
@@ -13,8 +13,8 @@ from qis import PortfolioData, TimePeriod
 import qis.portfolio.backtester as bp
 
 # project
-import optimalfolios.optimization.rolling_portfolios as rp
-from optimalfolios.optimization.qp_solvers import PortfolioObjective
+import optimalportfolios.optimization.rolling_portfolios as rp
+from optimalportfolios.optimization.config import PortfolioObjective
 
 
 class OptimisationType(str, Enum):

@@ -145,4 +145,4 @@ dmypy.json
 dist/optimalfolios-1.0.2.tar.gz
 *.xml
 *.pyc
-optimalfolios/__pycache__/__init__.cpython-310.pyc
+optimalportfolios/__pycache__/__init__.cpython-310.pyc

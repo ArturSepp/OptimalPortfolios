@@ -10,8 +10,8 @@ from enum import Enum
 import qis
 from qis import TimePeriod, PerfParams, BenchmarkReturnsQuantileRegimeSpecs, PerfStat
 
-import optimalfolios.utils.gaussian_mixture as gm
-from optimalfolios.examples.crypto_allocation.load_prices import Assets, load_prices, load_risk_free_rate
+import optimalportfolios.utils.gaussian_mixture as gm
+from optimalportfolios.examples.crypto_allocation.load_prices import Assets, load_prices, load_risk_free_rate
 
 PERF_PARAMS = PerfParams(freq_vol='M', freq_reg='M', freq_drawdown='M', rates_data=load_risk_free_rate())
 REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='Q')
@@ -68,7 +68,7 @@ def plot_performance_table(prices: pd.DataFrame,
                            benchmark: str,
                            time_period_dict: Dict[str, TimePeriod],
                            **kwargs
-                           ) -> plt.Figure:
+                           ) -> Tuple[plt.Figure, Dict]:
     """
     plot performances over different periods
     """
@@ -83,15 +83,25 @@ def plot_performance_table(prices: pd.DataFrame,
                                             is_log_returns=True,
                                             cmap='Greys'))
     fig, axs = plt.subplots(len(time_period_dict.keys()), 1, figsize=(12, 3.0), constrained_layout=True)
+    dfs_out = {}
     for idx, (key, time_period) in enumerate(time_period_dict.items()):
         qis.plot_ra_perf_table_benchmark(prices=time_period.locate(prices),
                                          benchmark=benchmark,
                                          perf_params=PERF_PARAMS,
                                          perf_columns=PERF_COLUMNS0,
                                          title=f"{key}",
+                                         is_fig_out=True,
                                          ax=axs[idx],
                                          **kwargs)
-    return fig
+        dfs_out[key] = qis.plot_ra_perf_table_benchmark(prices=time_period.locate(prices),
+                                                        benchmark=benchmark,
+                                                        perf_params=PERF_PARAMS,
+                                                        perf_columns=PERF_COLUMNS0,
+                                                        title=f"{key}",
+                                                        is_fig_out=False,
+                                                        ax=axs[idx],
+                                                        **kwargs)
+    return fig, dfs_out
 
 
 def plot_performance_tables(benchmark: str,
@@ -130,9 +140,10 @@ def plot_performance_tables(benchmark: str,
 def plot_annual_tables(price: pd.Series,
                        perf_params: PerfParams,
                        date_format: str = '%b%Y'
-                       ) -> plt.Figure:
+                       ) -> Tuple[plt.Figure, Dict]:
 
     kwargs = dict(fontsize=9, date_format=date_format, cmap='YlGn')
+    dfs_out = {}
     with sns.axes_style("white"):
         fig, axs = plt.subplots(2, 1, figsize=FIGSIZE)
         qis.plot_ra_perf_annual_matrix(price=price,
@@ -140,38 +151,64 @@ def plot_annual_tables(price: pd.Series,
                                        perf_params=perf_params,
                                        ax=axs[0],
                                        title='(A) Sharpe Ratio',
+                                       is_fig_out=True,
                                        **kwargs)
-
+        dfs_out['(A) Sharpe Ratio'] = qis.plot_ra_perf_annual_matrix(price=price,
+                                                                     perf_column=PerfStat.SHARPE_LOG_AN,
+                                                                     perf_params=perf_params,
+                                                                     ax=axs[0],
+                                                                     title='(A) Sharpe Ratio',
+                                                                     is_fig_out=False,
+                                                                     **kwargs)
         qis.plot_ra_perf_annual_matrix(price=price,
                                        perf_column=PerfStat.SKEWNESS,
                                        perf_params=perf_params,
                                        title='(B) Skewness of monthly returns',
                                        ax=axs[1],
+                                       is_fig_out=True,
                                        **kwargs)
-    return fig
+
+        dfs_out['(B) Skewness of monthly returns'] = qis.plot_ra_perf_annual_matrix(price=price,
+                                                                                    perf_column=PerfStat.SKEWNESS,
+                                                                                    perf_params=perf_params,
+                                                                                    title='(B) Skewness of monthly returns',
+                                                                                    ax=axs[1],
+                                                                                    is_fig_out=False,
+                                                                                    **kwargs)
+
+    return fig, dfs_out
 
 
 def plot_corr_tables(prices: pd.DataFrame,
                      time_period: List[TimePeriod]
-                     ) -> plt.Figure:
+                     ) -> Tuple[plt.Figure, Dict]:
     kwargs = dict(square=True, x_rotation=90, fontsize=8, cmap='PiYG')
     titles = ['(A)', '(B)', '(C)']
+    dfs_out = {}
     with sns.axes_style('darkgrid'):
         fig, axs = plt.subplots(1, len(time_period), figsize=(16, 4.5), constrained_layout=True)
         for time_period, ax, title in zip(time_period, axs, titles):
             prices1 = time_period.locate(prices)
-            qis.plot_corr_table(prices=prices1,
-                                freq='M',
-                                ax=ax,
-                                title=f"{title} {time_period.to_str()}",
-                                **kwargs)
-    return fig
+            qis.plot_returns_corr_table(prices=prices1,
+                                        freq='M',
+                                        ax=ax,
+                                        is_fig_out=True,
+                                        title=f"{title} {time_period.to_str()}",
+                                        **kwargs)
+
+            dfs_out[f"{title} {time_period.to_str()}"] = qis.plot_returns_corr_table(prices=prices1,
+                                                                                     freq='M',
+                                                                                     ax=ax,
+                                                                                     is_fig_out=False,
+                                                                                     title=f"{title} {time_period.to_str()}",
+                                                                                     **kwargs)
+    return fig, dfs_out
 
 
 def plot_mixures(prices: pd.DataFrame,
                  start_end_date_full: TimePeriod,
                  time_period: TimePeriod
-                 ) -> Tuple[plt.Figure, plt.Figure]:
+                 ) -> Tuple[plt.Figure, plt.Figure, Dict]:
     rets = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq='M')
     n_components = 3
 
@@ -202,6 +239,7 @@ def plot_mixures(prices: pd.DataFrame,
         params = [params_btc_1, params_btc_2]
         titles = [f"(C) Cluster parameters of Bitcoin for {start_end_date_full.to_str()}",
                   f"(D) Cluster parameters of Bitcoin for {time_period.to_str()}"]
+        dfs_out = {}
         for idx, param in enumerate(params):
             df = qis.df_to_str(param, var_format='{:.0%}')
             qis.plot_df_table(df=df,
@@ -211,7 +249,8 @@ def plot_mixures(prices: pd.DataFrame,
                               # heatmap_columns=[2],
                               title=titles[idx],
                               **kwargs)
-        return fig1, fig2
+            dfs_out[titles[idx]] = df
+        return fig1, fig2, dfs_out
 
 
 class UnitTests(Enum):
@@ -227,7 +266,7 @@ class UnitTests(Enum):
 
 def run_unit_test(unit_test: UnitTests):
 
-    end_date = '31Mar2023'
+    end_date = '30Jun2023'
 
     if unit_test == UnitTests.PERF_TABLES_CRYPTO:
 
@@ -235,15 +274,16 @@ def run_unit_test(unit_test: UnitTests):
         prices = prices.loc['19Jul2010':]  # since bitcoin inception
         prices.loc[:'06Aug2015', 'ETH'] = np.nan  # set eth backfill to nan
 
-        time_period_dict = {'(A) Since Inception-31Mar2023': TimePeriod(start='19Jul2010', end='31Mar2023'),
+        time_period_dict = {f'(A) Since Inception-{end_date}': TimePeriod(start='19Jul2010', end=end_date),
                             '(B) 31Mar2016-31Dec2019': TimePeriod(start='31Mar2016', end='31Dec2019'),
-                            '(C) 31Dec2019-31Mar2023': TimePeriod(start='31Dec2019', end='31Mar2023')}
+                            f'(C) 31Dec2019-{end_date}': TimePeriod(start='31Dec2019', end=end_date)}
 
-        fig = plot_performance_table(prices=prices,
-                                     benchmark=Assets.BAL.value,
-                                     time_period_dict=time_period_dict)
+        fig, dfs_out = plot_performance_table(prices=prices,
+                                              benchmark=Assets.BAL.value,
+                                              time_period_dict=time_period_dict)
         if SAVE_FIGS:
             qis.save_fig(fig, file_name='performance_table_crypto', local_path=FIGURE_SAVE_PATH)
+            qis.save_df_to_excel(dfs_out, file_name='performance_table_crypto', local_path=FIGURE_SAVE_PATH)
 
     elif unit_test == UnitTests.PERF_TABLES_ALL:
 
@@ -265,24 +305,26 @@ def run_unit_test(unit_test: UnitTests):
             qis.save_fig(fig, file_name='performance_table', local_path=FIGURE_SAVE_PATH)
 
     elif unit_test == UnitTests.ANNUAL_ROLLING_TABLES:
-        price = load_prices(assets=[Assets.BTC]).dropna().iloc[:, 0]
-        fig = plot_annual_tables(price=price, perf_params=PERF_PARAMS)
+        price = load_prices(assets=[Assets.BTC]).dropna().iloc[:, 0].loc[:end_date]
+        fig, dfs_out = plot_annual_tables(price=price, perf_params=PERF_PARAMS)
         if SAVE_FIGS:
             qis.save_fig(fig, file_name='rolling_annual_table', local_path=FIGURE_SAVE_PATH)
+            qis.save_df_to_excel(dfs_out, file_name='rolling_annual_table', local_path=FIGURE_SAVE_PATH)
 
     elif unit_test == UnitTests.CORR_TABLE:
         time_period = [TimePeriod('19Jul2010', '31Dec2015'),
                        TimePeriod('31Dec2015', '31Dec2019'),
                        TimePeriod('31Dec2019', end_date)]
-        time_period = [TimePeriod('31Mar2016', '31Dec2019'),
-                       TimePeriod('31Dec2019', end_date)]
         time_period = [TimePeriod('19Jul2010', '31Dec2017'),
                        TimePeriod('31Dec2017', end_date),
                        TimePeriod('19Jul2010', end_date)]
+        time_period = [TimePeriod('19Jul2010', '31Dec2017'),
+                       TimePeriod('31Dec2017', end_date)]
         prices2 = load_prices(crypto_asset=None).dropna()
-        fig = plot_corr_tables(prices=prices2, time_period=time_period)
+        fig, dfs_out = plot_corr_tables(prices=prices2, time_period=time_period)
         if SAVE_FIGS:
             qis.save_fig(fig, file_name='corr_table', local_path=FIGURE_SAVE_PATH)
+            qis.save_df_to_excel(dfs_out, file_name='corr_table', local_path=FIGURE_SAVE_PATH)
 
     elif unit_test == UnitTests.CORR_TIME_SERIES:
 
@@ -297,17 +339,17 @@ def run_unit_test(unit_test: UnitTests):
         time_period = TimePeriod('30Jun2016', end_date)
         with sns.axes_style('darkgrid'):
             fig, ax = plt.subplots(1, 1, figsize=FIGSIZE1, constrained_layout=True)
-            qis.plot_corr_matrix_time_series(prices=prices,
-                                             time_period=time_period,
-                                             corr_matrix_output=qis.CorrMatrixOutput.TOP_ROW,
-                                             init_type=qis.InitType.ZERO,
-                                             legend_stats=qis.LegendStats.AVG_LAST,
-                                             trend_line=qis.TrendLine.NONE,
-                                             ewm_lambda=1.0-2.0/(24.0+1.0),
-                                             title='EWMA Correlations of monthly returns',
-                                             freq='M',
-                                             ax=ax,
-                                             **{'framealpha': 0.90})
+            qis.plot_returns_corr_matrix_time_series(prices=prices,
+                                                     time_period=time_period,
+                                                     corr_matrix_output=qis.CorrMatrixOutput.TOP_ROW,
+                                                     init_type=qis.InitType.ZERO,
+                                                     legend_stats=qis.LegendStats.AVG_LAST,
+                                                     trend_line=qis.TrendLine.NONE,
+                                                     ewm_lambda=1.0-2.0/(24.0+1.0),
+                                                     title='EWMA Correlations of monthly returns',
+                                                     freq='M',
+                                                     ax=ax,
+                                                     **{'framealpha': 0.90})
 
     elif unit_test == UnitTests.SCATTER:
         prices = load_prices().dropna()
@@ -357,17 +399,18 @@ def run_unit_test(unit_test: UnitTests):
         time_period = TimePeriod('18Dec2017', end_date)
         start_end_date_full = TimePeriod('19Jul2010', '18Dec2017')
         time_period = TimePeriod('18Dec2017', end_date)
-        fig1, fig2 = plot_mixures(prices=prices, start_end_date_full=start_end_date_full, time_period=time_period)
+        fig1, fig2, dfs_out = plot_mixures(prices=prices, start_end_date_full=start_end_date_full, time_period=time_period)
         if SAVE_FIGS:
             qis.save_fig(fig1, file_name='clusters', local_path=FIGURE_SAVE_PATH)
             qis.save_fig(fig2, file_name='params', local_path=FIGURE_SAVE_PATH)
+            qis.save_df_to_excel(dfs_out, file_name='clusters_params', local_path=FIGURE_SAVE_PATH)
 
     plt.show()
 
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.PLOT_MIXURE
+    unit_test = UnitTests.PERF_TABLES_CRYPTO
 
     is_run_all_tests = False
     if is_run_all_tests:

@@ -128,6 +128,7 @@ def solve_equal_risk_contribution(covar: np.ndarray,
 def solve_max_diversification(covar: np.ndarray,
                               weight_mins: np.ndarray = None,
                               weight_maxs: np.ndarray = None,
+                              is_long_only: bool = True,
                               is_gross_notional_one: bool = True,
                               disp: bool = False,
                               print_log: bool = False
@@ -135,7 +136,9 @@ def solve_max_diversification(covar: np.ndarray,
     n = covar.shape[0]
     x0 = np.ones(n) / n
 
-    cons = [{'type': 'ineq', 'fun': long_only_constraint}]
+    cons = []
+    if is_long_only:
+        cons.append({'type': 'ineq', 'fun': long_only_constraint})
     if is_gross_notional_one:
         cons.append({'type': 'eq', 'fun': total_weight_constraint})
     if weight_mins is not None:
@@ -143,7 +146,8 @@ def solve_max_diversification(covar: np.ndarray,
     if weight_maxs is not None:
         cons.append({'type': 'ineq', 'fun': lambda x: weight_maxs - x})
 
-    res = minimize(max_diversification_objective, x0, args=[covar], method='SLSQP', constraints=cons,
+    res = minimize(max_diversification_objective, x0, args=[covar], method='SLSQP',
+                   constraints=cons,
                    options={'disp': disp, 'ftol': 1e-18, 'maxiter': 200})
     w_rb = res.x
     if print_log:
