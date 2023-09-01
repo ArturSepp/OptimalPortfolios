@@ -10,8 +10,10 @@ import seaborn as sns
 import yfinance as yf
 from typing import Tuple
 import qis as qis
+
+# package
 from optimalportfolios.optimization.config import PortfolioObjective
-from optimalportfolios.optimization.rolling_portfolios import compute_rolling_optimal_weights_ewm_covar
+from optimalportfolios.optimization.engine import compute_rolling_optimal_weights
 
 
 # 1. we define the investment universe and allocation by asset classes
@@ -46,23 +48,24 @@ prices, benchmark_prices, group_data = fetch_universe_data()
 
 # 3.a. define optimisation setup
 portfolio_objective = PortfolioObjective.MAX_DIVERSIFICATION  # define portfolio objective
-weight_mins = np.zeros(len(prices.columns))  # all weights >= 0
-weight_maxs = np.ones(len(prices.columns))  # all weights <= 1
+min_weights = {x: 0.0 for x in prices.columns} # all weights >= 0
+max_weights = {x: 1.0 for x in prices.columns}  # all weights <= 1
 rebalancing_freq = 'Q'  # weights rebalancing frequency
 returns_freq = None  # use data implied frequency = B
 span = 72  # span of number of returns for covariance estimation = 3 months
-is_gross_notional_one = True # sum of weights = 1.0
 is_long_only = True  # all weights >= 0
 
 # 3.b. compute rolling portfolio weights rebalanced every quarter
-weights = compute_rolling_optimal_weights_ewm_covar(prices=prices,
-                                                    portfolio_objective=portfolio_objective,
-                                                    weight_mins=weight_mins,
-                                                    weight_maxs=weight_maxs,
-                                                    rebalancing_freq=rebalancing_freq,
-                                                    is_gross_notional_one=is_gross_notional_one,
-                                                    is_long_only=is_long_only,
-                                                    span=span)
+weights = compute_rolling_optimal_weights(prices=prices,
+                                          portfolio_objective=portfolio_objective,
+                                          min_weights=min_weights,
+                                          max_weights=max_weights,
+                                          rebalancing_freq=rebalancing_freq,
+                                          is_long_only=is_long_only,
+                                          span=span)
+
+
+
 
 # 4. given portfolio weights, construct the performance of the portfolio
 funding_rate = None  # on positive / negative cash balances
@@ -80,7 +83,7 @@ portfolio_data = qis.backtest_model_portfolio(prices=prices,
 # for group-based reporting set_group_data
 portfolio_data.set_group_data(group_data=group_data, group_order=list(group_data.unique()))
 # set time period for portfolio reporting
-time_period = qis.TimePeriod('31Dec2005', '17Aug2023')
+time_period = qis.TimePeriod('31Dec2005', '31Aug2023')
 fig = qis.generate_strategy_factsheet(portfolio_data=portfolio_data,
                                       benchmark_prices=benchmark_prices,
                                       time_period=time_period,

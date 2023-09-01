@@ -8,7 +8,7 @@ The analysis presented in the paper can be replicated or extended using this mod
 Implementation steps:
 1) Populate the time series of asset prices in the investable universe using
 ```python 
-optimalfolios/examples/crypto_allocation/load_prices.py
+optimaportfolios/examples/crypto_allocation/load_prices.py
 ```
 
 Price data for some assets can be fetched from local csv files, some can be generated on the fly 
@@ -20,11 +20,11 @@ update_prices()
 
 2) Generate article figures using unit tests in
  ```python 
-optimalfolios/examples/crypto_allocation/article_figures.py
+optimaportfolios/examples/crypto_allocation/article_figures.py
 ```
 
 3) Generate reports of simulated investment portfolios as reported in the article
  ```python 
-optimalfolios/examples/crypto_allocation/backtest_crypto_portfolios.py
+optimaportfolios/examples/crypto_allocation/backtest_crypto_portfolios.py
 ```
 

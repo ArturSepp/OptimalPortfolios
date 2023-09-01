@@ -29,16 +29,16 @@ paper "Optimal Allocation to Cryptocurrencies in Diversified Portfolios" [https:
 # Table of contents
 1. [Analytics](#analytics)
 2. [Installation](#installation)
-3. [Examples](#examples)
+3. [Portfolio Optimisers](#optimisers)
+   1. [Implemented optimisers](#implemented)
+   2. [Adding an optimiser](#adding)
+4. [Examples](#examples)
    1. [Optimal Portfolio Backtest](#optimal)
    2. [Customised reporting](#report)
    3. [Optimal allocation to cryptocurrencies](#crypto)
-4. [Contributions](#contributions)
-5. [Updates](#updates)
-6. [ToDos](#todos)
+5. [Contributions](#contributions)
+6. [Updates](#updates)
 7. [Disclaimer](#disclaimer)
-
-## **Updates** <a name="updates"></a>
 
 ## **Installation** <a name="installation"></a>
 install using
@@ -49,6 +49,12 @@ upgrade using
 ```python 
 pip install --upgrade optimalportfolios
 ```
+
+close using
+```python 
+git clone https://github.com/ArturSepp/OptimalPortfolios.git
+```
+
 
 Core dependencies:
     python = ">=3.8,<3.11",
@@ -68,6 +74,51 @@ Optional dependencies:
     pybloqs ">=1.2.13" (for producing html and pdf factsheets)
 
 
+## **Portfolio optimisers** <a name="optimisers"></a>
+
+
+### 1. Implemented optimisers <a name="implemented"></a>
+
+Subpackage ```optimisation.rolling```  implements specific optimisers 
+with lookback rolling windows rebalanced at given rebalancing_freq
+
+Each module implements method specific estimators.
+
+1. Module ```optimization.rolling.risk_based``` implements following optimisers
+```
+[PortfolioObjective.EQUAL_RISK_CONTRIBUTION,
+PortfolioObjective.MAX_DIVERSIFICATION,
+PortfolioObjective.RISK_PARITY_ALT,
+PortfolioObjective.MIN_VAR]
+```
+
+
+2. Module ```optimization.rolling.max_utility_sharpe``` implements following optimisers
+```
+[PortfolioObjective.QUADRATIC_UTILITY,
+PortfolioObjective.MAXIMUM_SHARPE_RATIO]
+```
+
+3. Module ```optimization.rolling.max_mixure_carra``` implements following optimisers
+```
+[PortfolioObjective.MAX_MIXTURE_CARA]
+```
+
+Module ```optimisation.engine.py``` wraps different optimisers into one function
+```compute_rolling_optimal_weights()``` for each implemented
+```PortfolioObjective``` listed in ```optimisation.config.py```
+
+
+### 2. Adding an optimiser <a name="adding"></a>
+
+1. Add analytics for computing rolling weights using a new estimator in
+subpackage ```optimization.rolling```. Any third-party packages can be used
+
+2. Add new optimiser type to ```optimisation.config.py``` and link implemented
+optimiser in wrapper function ```compute_rolling_optimal_weights()``` in 
+```optimisation.engine.py```
+
+
 
 ## **Examples** <a name="examples"></a>
 
@@ -85,8 +136,7 @@ import yfinance as yf
 from typing import Tuple
 import qis as qis
 from optimalportfolios.optimization.config import PortfolioObjective
-from optimalportfolios.optimization.rolling_portfolios import compute_rolling_optimal_weights_ewm_covar
-
+from optimalportfolios.optimization.engine import compute_rolling_optimal_weights
 
 # 1. we define the investment universe and allocation by asset classes
 def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
@@ -120,23 +170,22 @@ prices, benchmark_prices, group_data = fetch_universe_data()
 
 # 3.a. define optimisation setup
 portfolio_objective = PortfolioObjective.MAX_DIVERSIFICATION  # define portfolio objective
-weight_mins = np.zeros(len(prices.columns))  # all weights >= 0
-weight_maxs = np.ones(len(prices.columns))  # all weights <= 1
+min_weights = {x: 0.0 for x in prices.columns} # all weights >= 0
+max_weights = {x: 1.0 for x in prices.columns}  # all weights <= 1
 rebalancing_freq = 'Q'  # weights rebalancing frequency
 returns_freq = None  # use data implied frequency = B
 span = 72  # span of number of returns for covariance estimation = 3 months
-is_gross_notional_one = True # sum of weights = 1.0
+is_gross_notional_one = True  # sum of weights = 1.0
 is_long_only = True  # all weights >= 0
 
 # 3.b. compute rolling portfolio weights rebalanced every quarter
-weights = compute_rolling_optimal_weights_ewm_covar(prices=prices,
-                                                    portfolio_objective=portfolio_objective,
-                                                    weight_mins=weight_mins,
-                                                    weight_maxs=weight_maxs,
-                                                    rebalancing_freq=rebalancing_freq,
-                                                    is_gross_notional_one=is_gross_notional_one,
-                                                    is_long_only=is_long_only,
-                                                    span=span)
+weights = compute_rolling_optimal_weights(prices=prices,
+                                          portfolio_objective=portfolio_objective,
+                                          min_weights=min_weights,
+                                          max_weights=max_weights,
+                                          rebalancing_freq=rebalancing_freq,
+                                          is_long_only=is_long_only,
+                                          span=span)
 
 # 4. given portfolio weights, construct the performance of the portfolio
 funding_rate = None  # on positive / negative cash balances
@@ -148,7 +197,6 @@ portfolio_data = qis.backtest_model_portfolio(prices=prices,
                                               funding_rate=funding_rate,
                                               rebalancing_costs=rebalancing_costs,
                                               is_output_portfolio_data=True)
-
 
 # 5. using portfolio_data run the reporting with strategy factsheet
 # for group-based reporting set_group_data
@@ -211,11 +259,19 @@ paper "Optimal Allocation to Cryptocurrencies in Diversified Portfolios" [https:
 
 #### 8 July 2023,  Version 1.0.1 released
 
+Implementation of optimisation methods and data considered in 
+ Sepp A (2023), Optimal Allocation to Cryptocurrencies in Diversified Portfolios,
+forthcoming in Risk. Available at SSRN: https://ssrn.com/abstract=4217841
+
+
+#### 2 September 2023,  Version 1.0.6 released
+Added subpackage ```optimisation.rolling``` with optimisers grouped by the type of inputs and
+data thy require.
 
 
 ## **Disclaimer** <a name="disclaimer"></a>
 
-QIS package is distributed FREE & WITHOUT ANY WARRANTY under the GNU GENERAL PUBLIC LICENSE.
+OptimalPortfolios package is distributed FREE & WITHOUT ANY WARRANTY under the GNU GENERAL PUBLIC LICENSE.
 
 See the [LICENSE.txt](https://github.com/ArturSepp/OptimalPortfolios/blob/master/LICENSE.txt) in the release for details.
 

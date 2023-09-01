@@ -17,18 +17,18 @@ from optimalportfolios.optimization.config import PortfolioObjective
 def maximize_portfolio_objective_qp(portfolio_objective: PortfolioObjective,
                                     covar: np.ndarray,
                                     means: np.ndarray = None,
-                                    weight_mins: np.ndarray = None,
-                                    weight_maxs: np.ndarray = None,
-                                    is_gross_notional_one: bool = True,
+                                    min_weights: np.ndarray = None,
+                                    max_weights: np.ndarray = None,
                                     is_long_only: bool = True,
+                                    max_leverage: float = None,  # for long short portfolios
                                     exposure_budget_eq: Optional[Tuple[np.ndarray, float]] = None,
-                                    gamma: float = 1.0
+                                    carra: float = 1.0
                                     ) -> np.ndarray:
     """
     cvx solution for max objective
     subject to linear constraints
          1. weight_min <= w <= weight_max
-         2. sum(w) = 1: is_gross_notional_one true or false
+         2. sum(w) = 1
          3. exposure_budget_eq[0]^t*w = exposure_budget_eq[1]
     """
 
@@ -42,7 +42,7 @@ def maximize_portfolio_objective_qp(portfolio_objective: PortfolioObjective,
     elif portfolio_objective == PortfolioObjective.QUADRATIC_UTILITY:
         if means is None:
             raise ValueError(f"means must be given")
-        objective_fun = means.T @ w - 0.5 * gamma * portfolio_var
+        objective_fun = means.T @ w - 0.5 * carra * portfolio_var
 
     else:
         raise ValueError(f"unknown portfolio_objective")
@@ -51,16 +51,18 @@ def maximize_portfolio_objective_qp(portfolio_objective: PortfolioObjective,
 
     # add constraints
     constraints = []
-    if is_gross_notional_one:
-        constraints = constraints + [cvx.sum(w) == 1]
+    # _gross_notional = 1:
+    constraints = constraints + [cvx.sum(w) == 1]
     if is_long_only:
-        constraints = constraints + [w >= 0]
-    if weight_mins is not None:
-        constraints = constraints + [w >= weight_mins]
-    if weight_maxs is not None:
-        constraints = constraints + [w <= weight_maxs]
+        constraints = constraints + [w >= 0.0]
+    if min_weights is not None:
+        constraints = constraints + [w >= min_weights]
+    if max_weights is not None:
+        constraints = constraints + [w <= max_weights]
     if exposure_budget_eq is not None:
         constraints = constraints + [exposure_budget_eq[0] @ w == exposure_budget_eq[1]]
+    if max_leverage is not None:
+        constraints = constraints + [cvx.norm(w, 1) <= max_leverage]
 
     problem = cvx.Problem(objective, constraints)
     problem.solve()
@@ -77,7 +79,6 @@ def max_qp_portfolio_vol_target(portfolio_objective: PortfolioObjective,
                                 means: np.ndarray = None,
                                 weight_min: np.ndarray = None,
                                 weight_max: np.ndarray = None,
-                                is_gross_notional_one: bool = True,
                                 is_long_only: bool = True,
                                 exposure_budget_eq: Tuple[np.ndarray, float] = None,
                                 vol_target: float = 0.12
@@ -93,12 +94,11 @@ def max_qp_portfolio_vol_target(portfolio_objective: PortfolioObjective,
         w_n = maximize_portfolio_objective_qp(portfolio_objective=portfolio_objective,
                                               covar=covar,
                                               means=means,
-                                              weight_mins=weight_min,
-                                              weight_maxs=weight_max,
-                                              is_gross_notional_one=is_gross_notional_one,
+                                              min_weights=weight_min,
+                                              max_weights=weight_max,
                                               is_long_only=is_long_only,
                                               exposure_budget_eq=exposure_budget_eq,
-                                              gamma=lambda_n)
+                                              carra=lambda_n)
 
         print('lambda_n='+str(lambda_n))
         print_portfolio_outputs(optimal_weights=w_n,
@@ -141,12 +141,11 @@ def max_qp_portfolio_vol_target(portfolio_objective: PortfolioObjective,
     w_n = maximize_portfolio_objective_qp(portfolio_objective=portfolio_objective,
                                           covar=covar,
                                           means=means,
-                                          weight_mins=weight_min,
-                                          weight_maxs=weight_max,
-                                          is_gross_notional_one=is_gross_notional_one,
+                                          min_weights=weight_min,
+                                          max_weights=weight_max,
                                           is_long_only=is_long_only,
                                           exposure_budget_eq=exposure_budget_eq,
-                                          gamma=lambda_n)
+                                          carra=lambda_n)
     print_portfolio_outputs(optimal_weights=w_n,
                             covar=covar,
                             means=means)
@@ -155,12 +154,12 @@ def max_qp_portfolio_vol_target(portfolio_objective: PortfolioObjective,
 
 def max_portfolio_sharpe_qp(covar: np.ndarray,
                             means: np.ndarray,
-                            weight_mins: np.ndarray = None,
-                            weight_maxs: np.ndarray = None,
-                            is_gross_notional_one: bool = False,
+                            min_weights: np.ndarray = None,
+                            max_weights: np.ndarray = None,
                             is_long_only: bool = True,
                             exposure_budget_eq: Tuple[np.ndarray, float] = None,
                             exposure_budget_le: Tuple[np.ndarray, float] = None,
+                            max_leverage: float = None,   # for long-short portfolios
                             is_print_log: bool = False
                             ) -> np.ndarray:
     """
@@ -178,10 +177,10 @@ def max_portfolio_sharpe_qp(covar: np.ndarray,
     # add constraints
     constraints = [means.T @ y == 1.0]  # scaling
 
-    if is_gross_notional_one:
+    if max_leverage is None:
         constraints = constraints + [cvx.sum(y) == k]
-#    else:
-#        constraints = constraints + [cvx.sum(y) >= k]  #scaling
+    else:
+        constraints = constraints + [cvx.sum(y) >= k]  #scaling
 
     if is_long_only:
         constraints = constraints + [y >= 0]
@@ -192,10 +191,10 @@ def max_portfolio_sharpe_qp(covar: np.ndarray,
     if exposure_budget_le is not None:
         constraints = constraints + [exposure_budget_le[0] @ y <= exposure_budget_le[1]*k]
 
-    if weight_mins is not None:
-        constraints = constraints + [y >= k * weight_mins]
-    if weight_maxs is not None:
-        constraints = constraints + [y <= k * weight_maxs]
+    if min_weights is not None:
+        constraints = constraints + [y >= k * min_weights]
+    if max_weights is not None:
+        constraints = constraints + [y <= k * max_weights]
 
     problem = cvx.Problem(objective, constraints)
     problem.solve()
@@ -209,9 +208,9 @@ def max_portfolio_sharpe_qp(covar: np.ndarray,
         print(f"max_port_sharpe_qp optimal_weights not found = {optimal_weights}")
         print(f"covar={covar}")
         print(f"means={means}")
-        if weight_mins is not None:
-            print(f"setting optimal_weights to weight_min = {weight_mins}")
-            optimal_weights = weight_mins
+        if min_weights is not None:
+            print(f"setting optimal_weights to weight_min = {min_weights}")
+            optimal_weights = min_weights
         else:
             print(f"setting optimal_weights to 0")
             optimal_weights = np.zeros_like(n)
@@ -300,9 +299,8 @@ def run_unit_test(unit_test: UnitTests):
         optimal_weights = maximize_portfolio_objective_qp(portfolio_objective=PortfolioObjective.MIN_VAR,
                                                           covar=covar,
                                                           means=means,
-                                                          weight_mins=None,
-                                                          weight_maxs=None,
-                                                          is_gross_notional_one=True,
+                                                          min_weights=None,
+                                                          max_weights=None,
                                                           is_long_only=True,
                                                           exposure_budget_eq=None)
 
@@ -316,12 +314,11 @@ def run_unit_test(unit_test: UnitTests):
         optimal_weights = maximize_portfolio_objective_qp(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
                                                           covar=covar,
                                                           means=means,
-                                                          weight_mins=None,
-                                                          weight_maxs=None,
-                                                          is_gross_notional_one=False,
+                                                          min_weights=None,
+                                                          max_weights=None,
                                                           is_long_only=True,
                                                           exposure_budget_eq=None,
-                                                          gamma=gamma)
+                                                          carra=gamma)
 
         print_portfolio_outputs(optimal_weights=optimal_weights,
                                 covar=covar,
@@ -347,8 +344,7 @@ def run_unit_test(unit_test: UnitTests):
                 w_lambda = maximize_portfolio_objective_qp(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
                                                            covar=covar,
                                                            means=means,
-                                                           is_gross_notional_one=True,
-                                                           gamma=lang_lambda)
+                                                           carra=lang_lambda)
 
             portfolio_vol = np.sqrt(w_lambda.T@covar@w_lambda)
             portfolio_sharpe = means.T @ w_lambda / portfolio_vol
@@ -374,7 +370,6 @@ def run_unit_test(unit_test: UnitTests):
                                                       means=means,
                                                       weight_min=None,
                                                       weight_max=None,
-                                                      is_gross_notional_one=True,
                                                       is_long_only=True,
                                                       exposure_budget_eq=None,
                                                       vol_target=0.08)
@@ -403,7 +398,7 @@ def run_unit_test(unit_test: UnitTests):
                                                            covar=covar,
                                                            means=means,
                                                            exposure_budget_eq=exposure_budget_eq,
-                                                           gamma=lang_lambda)
+                                                           carra=lang_lambda)
 
             print(f"portfolio with lambda = {lang_lambda}")
             print_portfolio_outputs(optimal_weights=w_lambda,

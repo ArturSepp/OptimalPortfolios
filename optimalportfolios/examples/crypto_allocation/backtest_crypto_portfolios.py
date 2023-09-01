@@ -20,10 +20,10 @@ REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='Q')
 
 LOCAL_PATH = "C://Users//artur//OneDrive//analytics//outputs//"
 FIGURE_SAVE_PATH = "C://Users//artur//OneDrive//My Papers//Working Papers//CryptoAllocation. Zurich. Jan 2022//figs1//"
-SAVE_FIGS = True
+SAVE_FIGS = False
 
 OPTIMISATION_PARAMS = OptimisationParams(first_asset_target_weight=0.75,  # first asset is the benchmark
-                                         recalib_freq='Q',  # when portfolio weigths are aupdate
+                                         rebalancing_freq='Q',  # when portfolio weigths are aupdate
                                          roll_window=23,  # number of quarters are used for rolling estimation of mv returns and mixure = 6 years
                                          returns_freq='M',  # frequency of returns
                                          span=30,  # for window of ewma covariance for monthly return = 2.5 years

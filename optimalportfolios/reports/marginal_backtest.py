@@ -9,12 +9,14 @@ from typing import NamedTuple, Dict, Tuple, Any
 from enum import Enum
 
 # qis
+import qis
 from qis import PortfolioData, TimePeriod
-import qis.portfolio.backtester as bp
 
 # project
-import optimalportfolios.optimization.rolling_portfolios as rp
-from optimalportfolios.optimization.config import PortfolioObjective
+import optimalportfolios.optimization.rolling.max_utility_sharpe as ms
+import optimalportfolios.optimization.rolling.risk_based as rb
+import optimalportfolios.optimization.rolling.max_mixture_carra as rp
+from optimalportfolios.optimization.engine import PortfolioObjective
 
 
 class OptimisationType(str, Enum):
@@ -31,7 +33,7 @@ class OptimisationParams(NamedTuple):
     """
     marginal_asset_ew_weight: float = 0.02  # allocation for equal weight
     first_asset_target_weight: float = 0.75  # first asset is the benchmark
-    recalib_freq: str = 'Q'  # when portfolio weigths are aupdate  
+    rebalancing_freq: str = 'Q'  # when portfolio weigths are aupdate  
     roll_window: int = 20  # hw many periods are used for rolling estimation of mv returns and mixure
     returns_freq: str = 'M'  # frequency of returns
     span: int = 24   # for ewma window
@@ -51,7 +53,7 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
                                          optimisation_type: OptimisationType = OptimisationType.MIXTURE,
                                          marginal_asset_ew_weight: float = 0.02,  # allocation for equal weight
                                          first_asset_target_weight: float = 0.75,  # first asset is the benchmark
-                                         recalib_freq: str = 'Q',
+                                         rebalancing_freq: str = 'Q',
                                          roll_window: int = 20,  # hw many periods are used for roll_window
                                          returns_freq: str = 'M',
                                          span: int = 24,
@@ -79,9 +81,9 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
         weight_max_wo = None
 
         # ew
-        ew_weights_wo = np.ones(len(prices_without_asset.columns)) / len(prices_without_asset.columns)
+        ew_weights_wo = pd.Series(len(prices_without_asset.columns) / len(prices_without_asset.columns), index=prices_without_asset.columns)
         ew_weight = (1.0 - marginal_asset_ew_weight) / (len(prices_with_asset.columns) - 1)
-        ew_weights_with = ew_weight * np.ones(len(prices_with_asset.columns))
+        ew_weights_with = pd.Series(ew_weight, index=prices_with_asset.columns)
         ew_weights_with[0] = marginal_asset_ew_weight
 
         # erc
@@ -90,49 +92,49 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
 
     else:
         # for mvo
-        weight_min_with = np.zeros(len(prices_with_asset.columns))
+        weight_min_with = pd.Series(0.0, index=prices_with_asset.columns)
         weight_min_with[0] = first_asset_target_weight
-        weight_min_wo = np.zeros(len(prices_without_asset.columns))
+        weight_min_wo = pd.Series(0.0, index=prices_without_asset.columns)
         weight_min_wo[0] = first_asset_target_weight
 
-        weight_max_with = np.ones(len(prices_with_asset.columns))
+        weight_max_with = pd.Series(1.0, index=prices_with_asset.columns)
         weight_max_with[0] = first_asset_target_weight
-        weight_max_wo = np.ones(len(prices_without_asset.columns))
+        weight_max_wo = pd.Series(1.0, index=prices_without_asset.columns)
         weight_max_wo[0] = first_asset_target_weight
 
         # ew
         ew_weight = (1.0 - first_asset_target_weight) / (len(prices_without_asset.columns) - 1)
-        ew_weights_wo = ew_weight * np.ones(len(prices_without_asset.columns))
+        ew_weights_wo = pd.Series(ew_weight, index=prices_without_asset.columns)
         ew_weights_wo[0] = first_asset_target_weight
 
         ew_weight = (1.0 - marginal_asset_ew_weight * (1.0 - first_asset_target_weight)) / (len(prices_with_asset.columns) - 2)
-        ew_weights_with = ew_weight * np.ones(len(prices_with_asset.columns))
+        ew_weights_with = pd.Series(ew_weight, index=prices_with_asset.columns)
         ew_weights_with[0] = first_asset_target_weight
         ew_weights_with[1] = marginal_asset_ew_weight * (1.0 - first_asset_target_weight)
 
         # erc
-        budget_with = (1.0 - first_asset_target_weight) * np.ones(len(prices_with_asset.columns)) / (len(prices_with_asset.columns) - 1)
-        budget_wo = (1.0 - first_asset_target_weight) * np.ones(len(prices_without_asset.columns)) / (len(prices_without_asset.columns) - 1)
+        budget_with = (1.0 - first_asset_target_weight) * pd.Series(1.0, index=prices_with_asset.columns) / (len(prices_with_asset.columns) - 1)
+        budget_wo = (1.0 - first_asset_target_weight) * pd.Series(1.0, index=prices_without_asset.columns) / (len(prices_without_asset.columns) - 1)
         budget_with[0] = first_asset_target_weight
         budget_wo[0] = first_asset_target_weight
 
     if optimisation_type == OptimisationType.EW:
 
-        portfolio_wo = bp.backtest_model_portfolio(prices=prices_without_asset,
-                                                   weights=ew_weights_wo,
-                                                   rebalance_freq=recalib_freq,
-                                                   is_rebalanced_at_first_date=True,
-                                                   rebalancing_costs=rebalancing_costs,
-                                                   ticker=f"{optimisation_type.value} w/o {marginal_asset}",
-                                                   is_output_portfolio_data=True)
+        portfolio_wo = qis.backtest_model_portfolio(prices=prices_without_asset,
+                                                    weights=ew_weights_wo.to_dict(),
+                                                    rebalance_freq=rebalancing_freq,
+                                                    is_rebalanced_at_first_date=True,
+                                                    rebalancing_costs=rebalancing_costs,
+                                                    ticker=f"{optimisation_type.value} w/o {marginal_asset}",
+                                                    is_output_portfolio_data=True)
 
-        portfolio_with = bp.backtest_model_portfolio(prices=prices_with_asset,
-                                                     weights=ew_weights_with,
-                                                     rebalance_freq=recalib_freq,
-                                                     is_rebalanced_at_first_date=True,
-                                                     rebalancing_costs=rebalancing_costs,
-                                                     ticker=f"{optimisation_type.value} with {marginal_asset} {marginal_asset_ew_weight: 0.0%}",
-                                                     is_output_portfolio_data=True)
+        portfolio_with = qis.backtest_model_portfolio(prices=prices_with_asset,
+                                                      weights=ew_weights_with.to_dict(),
+                                                      rebalance_freq=rebalancing_freq,
+                                                      is_rebalanced_at_first_date=True,
+                                                      rebalancing_costs=rebalancing_costs,
+                                                      ticker=f"{optimisation_type.value} with {marginal_asset} {marginal_asset_ew_weight: 0.0%}",
+                                                      is_output_portfolio_data=True)
 
     elif optimisation_type in [OptimisationType.ERC, OptimisationType.MAX_DIV]:
         if optimisation_type == OptimisationType.ERC:
@@ -142,80 +144,80 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
         else:
             portfolio_objective = PortfolioObjective.MAX_DIVERSIFICATION
 
-        portfolio_wo = rp.run_rolling_erc_portfolios(prices=prices_without_asset,
-                                                     time_period=time_period,
-                                                     recalib_freq=recalib_freq,
-                                                     returns_freq=returns_freq,
-                                                     span=span,
-                                                     is_log_returns=is_log_returns,
-                                                     portfolio_objective=portfolio_objective,
-                                                     budget=budget_wo,
-                                                     weight_mins=weight_min_wo,
-                                                     weight_maxs=weight_max_wo,
-                                                     ticker=f"{optimisation_type.value} w/o {marginal_asset}",
-                                                     rebalancing_costs=rebalancing_costs)
-        portfolio_with = rp.run_rolling_erc_portfolios(prices=prices_with_asset,
-                                                       time_period=time_period,
-                                                       recalib_freq=recalib_freq,
-                                                       returns_freq=returns_freq,
-                                                       span=span,
-                                                       is_log_returns=is_log_returns,
-                                                       portfolio_objective=portfolio_objective,
-                                                       budget=budget_with,
-                                                       weight_mins=weight_min_with,
-                                                       weight_maxs=weight_max_with,
-                                                       ticker=f"{optimisation_type.value} with {marginal_asset}",
-                                                       rebalancing_costs=rebalancing_costs)
+        portfolio_wo = rb.backtest_rolling_ewma_risk_based_portfolio(prices=prices_without_asset,
+                                                                     time_period=time_period,
+                                                                     rebalancing_freq=rebalancing_freq,
+                                                                     returns_freq=returns_freq,
+                                                                     span=span,
+                                                                     is_log_returns=is_log_returns,
+                                                                     portfolio_objective=portfolio_objective,
+                                                                     budget=budget_wo,
+                                                                     min_weights=weight_min_wo,
+                                                                     max_weights=weight_max_wo,
+                                                                     ticker=f"{optimisation_type.value} w/o {marginal_asset}",
+                                                                     rebalancing_costs=rebalancing_costs)
+        portfolio_with = rb.backtest_rolling_ewma_risk_based_portfolio(prices=prices_with_asset,
+                                                                       time_period=time_period,
+                                                                       rebalancing_freq=rebalancing_freq,
+                                                                       returns_freq=returns_freq,
+                                                                       span=span,
+                                                                       is_log_returns=is_log_returns,
+                                                                       portfolio_objective=portfolio_objective,
+                                                                       budget=budget_with,
+                                                                       min_weights=weight_min_with,
+                                                                       max_weights=weight_max_with,
+                                                                       ticker=f"{optimisation_type.value} with {marginal_asset}",
+                                                                       rebalancing_costs=rebalancing_costs)
 
     elif optimisation_type == OptimisationType.MAX_SHARPE:
-        portfolio_wo = rp.run_rolling_mv_portfolios(prices=prices_without_asset,
-                                                    recalib_freq=recalib_freq,
-                                                    roll_window=roll_window,
-                                                    returns_freq=returns_freq,
-                                                    is_log_returns=is_log_returns,
-                                                    span=span,
-                                                    carra=0.0,
-                                                    weight_mins=weight_min_wo,
-                                                    weight_maxs=weight_max_wo,
-                                                    ticker=f"{optimisation_type.value} w/o {marginal_asset}",
-                                                    rebalancing_costs=rebalancing_costs)
-        portfolio_with = rp.run_rolling_mv_portfolios(prices=prices_with_asset,
-                                                      recalib_freq=recalib_freq,
-                                                      roll_window=roll_window,
-                                                      returns_freq=returns_freq,
-                                                      is_log_returns=is_log_returns,
-                                                      span=span,
-                                                      carra=0.0,
-                                                      weight_mins=weight_min_with,
-                                                      weight_maxs=weight_max_with,
-                                                      ticker=f"{optimisation_type.value} with {marginal_asset}",
-                                                      rebalancing_costs=rebalancing_costs)
+        portfolio_wo = ms.backtest_rolling_max_utility_sharpe_portfolios(prices=prices_without_asset,
+                                                                         rebalancing_freq=rebalancing_freq,
+                                                                         roll_window=roll_window,
+                                                                         returns_freq=returns_freq,
+                                                                         is_log_returns=is_log_returns,
+                                                                         span=span,
+                                                                         carra=0.0,
+                                                                         min_weights=weight_min_wo,
+                                                                         max_weights=weight_max_wo,
+                                                                         ticker=f"{optimisation_type.value} w/o {marginal_asset}",
+                                                                         rebalancing_costs=rebalancing_costs)
+        portfolio_with = ms.backtest_rolling_max_utility_sharpe_portfolios(prices=prices_with_asset,
+                                                                           rebalancing_freq=rebalancing_freq,
+                                                                           roll_window=roll_window,
+                                                                           returns_freq=returns_freq,
+                                                                           is_log_returns=is_log_returns,
+                                                                           span=span,
+                                                                           carra=0.0,
+                                                                           min_weights=weight_min_with,
+                                                                           max_weights=weight_max_with,
+                                                                           ticker=f"{optimisation_type.value} with {marginal_asset}",
+                                                                           rebalancing_costs=rebalancing_costs)
 
     elif optimisation_type == OptimisationType.MIXTURE:
-        portfolio_wo = rp.run_rolling_mixure_portfolios(prices=prices_without_asset,
-                                                        time_period=time_period,
-                                                        recalib_freq=recalib_freq,
-                                                        roll_window=roll_window,
-                                                        returns_freq=returns_freq,
-                                                        is_log_returns=is_log_returns,
-                                                        n_components=n_mixures,
-                                                        carra=carra,
-                                                        weight_mins=weight_min_wo,
-                                                        weight_maxs=weight_max_wo,
-                                                        ticker=f"{optimisation_type.value} w/o {marginal_asset}",
-                                                        rebalancing_costs=rebalancing_costs)
-        portfolio_with = rp.run_rolling_mixure_portfolios(prices=prices_with_asset,
-                                                          time_period=time_period,
-                                                          recalib_freq=recalib_freq,
-                                                          roll_window=roll_window,
-                                                          returns_freq=returns_freq,
-                                                          is_log_returns=is_log_returns,
-                                                          n_components=n_mixures,
-                                                          carra=carra,
-                                                          weight_mins=weight_min_with,
-                                                          weight_maxs=weight_max_with,
-                                                          ticker=f"{optimisation_type.value} with {marginal_asset}",
-                                                          rebalancing_costs=rebalancing_costs)
+        portfolio_wo = rp.backtest_rolling_mixure_portfolio(prices=prices_without_asset,
+                                                            time_period=time_period,
+                                                            rebalancing_freq=rebalancing_freq,
+                                                            roll_window=roll_window,
+                                                            returns_freq=returns_freq,
+                                                            is_log_returns=is_log_returns,
+                                                            n_components=n_mixures,
+                                                            carra=carra,
+                                                            min_weights=weight_min_wo,
+                                                            max_weights=weight_max_wo,
+                                                            ticker=f"{optimisation_type.value} w/o {marginal_asset}",
+                                                            rebalancing_costs=rebalancing_costs)
+        portfolio_with = rp.backtest_rolling_mixure_portfolio(prices=prices_with_asset,
+                                                              time_period=time_period,
+                                                              rebalancing_freq=rebalancing_freq,
+                                                              roll_window=roll_window,
+                                                              returns_freq=returns_freq,
+                                                              is_log_returns=is_log_returns,
+                                                              n_components=n_mixures,
+                                                              carra=carra,
+                                                              min_weights=weight_min_with,
+                                                              max_weights=weight_max_with,
+                                                              ticker=f"{optimisation_type.value} with {marginal_asset}",
+                                                              rebalancing_costs=rebalancing_costs)
 
     else:
         raise NotImplementedError

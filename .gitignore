@@ -142,7 +142,5 @@ dmypy.json
 .pyre/
 
 /dist/
-dist/optimalfolios-1.0.2.tar.gz
 *.xml
 *.pyc
-optimalportfolios/__pycache__/__init__.cpython-310.pyc

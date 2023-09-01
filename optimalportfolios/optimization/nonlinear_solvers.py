@@ -97,25 +97,26 @@ def portfolio_volatility_max(x, V, target_vol, freq_vol, af: float = 12.0):
 
 def solve_equal_risk_contribution(covar: np.ndarray,
                                   budget: np.ndarray = None,
-                                  weight_mins: np.ndarray = None,
-                                  weight_maxs: np.ndarray = None,
-                                  is_gross_notional_one: bool = True,
-                                  disp: bool = False,
+                                  min_weights: np.ndarray = None,
+                                  max_weights: np.ndarray = None,
                                   print_log: bool = False
                                   ) -> np.ndarray:
+    """
+    can solve only for long onlz portfolios
+    """
     n = covar.shape[0]
     x0 = np.ones(n) / n
 
-    cons = [{'type': 'ineq', 'fun': long_only_constraint}]
-    if is_gross_notional_one:
-        cons.append({'type': 'eq', 'fun': total_weight_constraint})
-    if weight_mins is not None:
-        cons.append({'type': 'ineq', 'fun': lambda x: x - weight_mins})
-    if weight_maxs is not None:
-        cons.append({'type': 'ineq', 'fun': lambda x: weight_maxs - x})
+    cons = [{'type': 'ineq', 'fun': long_only_constraint},
+            {'type': 'eq', 'fun': total_weight_constraint}]
+
+    if min_weights is not None:
+        cons.append({'type': 'ineq', 'fun': lambda x: x - min_weights})
+    if max_weights is not None:
+        cons.append({'type': 'ineq', 'fun': lambda x: max_weights - x})
 
     res = minimize(risk_budget_objective, x0, args=[covar, budget], method='SLSQP', constraints=cons,
-                   options={'disp': disp, 'ftol': 1e-18, 'maxiter': 200})
+                   options={'disp': print_log, 'ftol': 1e-18, 'maxiter': 200})
     w_rb = res.x
 
     if print_log:
@@ -126,29 +127,25 @@ def solve_equal_risk_contribution(covar: np.ndarray,
 
 
 def solve_max_diversification(covar: np.ndarray,
-                              weight_mins: np.ndarray = None,
-                              weight_maxs: np.ndarray = None,
+                              min_weights: np.ndarray = None,
+                              max_weights: np.ndarray = None,
                               is_long_only: bool = True,
-                              is_gross_notional_one: bool = True,
-                              disp: bool = False,
                               print_log: bool = False
                               ) -> np.ndarray:
     n = covar.shape[0]
     x0 = np.ones(n) / n
 
-    cons = []
+    cons = [{'type': 'eq', 'fun': total_weight_constraint}]
     if is_long_only:
         cons.append({'type': 'ineq', 'fun': long_only_constraint})
-    if is_gross_notional_one:
-        cons.append({'type': 'eq', 'fun': total_weight_constraint})
-    if weight_mins is not None:
-        cons.append({'type': 'ineq', 'fun': lambda x: x - weight_mins})
-    if weight_maxs is not None:
-        cons.append({'type': 'ineq', 'fun': lambda x: weight_maxs - x})
+    if min_weights is not None:
+        cons.append({'type': 'ineq', 'fun': lambda x: x - min_weights})
+    if max_weights is not None:
+        cons.append({'type': 'ineq', 'fun': lambda x: max_weights - x})
 
     res = minimize(max_diversification_objective, x0, args=[covar], method='SLSQP',
                    constraints=cons,
-                   options={'disp': disp, 'ftol': 1e-18, 'maxiter': 200})
+                   options={'disp': print_log, 'ftol': 1e-18, 'maxiter': 200})
     w_rb = res.x
     if print_log:
         print(f'sigma_p = {np.sqrt(calculate_portfolio_var(w_rb, covar))}, weights: {w_rb}, '
@@ -162,6 +159,9 @@ def solve_risk_parity_alt(covar: np.ndarray,
                           disp: bool = False,
                           print_log: bool = False
                           ) -> np.ndarray:
+    """
+    alternative risk parity
+    """
     n = covar.shape[0]
     if budget is None:
         budget = np.ones(n) / n
@@ -211,8 +211,8 @@ def solve_risk_parity_constr_vol(covar: np.ndarray,
 def solve_cara(means: np.ndarray,
                covar: np.ndarray,
                carra: float = 0.5,
-               weight_mins: np.ndarray = None,
-               weight_maxs: np.ndarray = None,
+               min_weights: np.ndarray = None,
+               max_weights: np.ndarray = None,
                disp: bool = False,
                is_exp: bool = False,
                is_print_log: bool = False
@@ -221,10 +221,10 @@ def solve_cara(means: np.ndarray,
     x0 = np.ones(n) / n
     cons = [{'type': 'ineq', 'fun': long_only_constraint},
             {'type': 'eq', 'fun': total_weight_constraint}]
-    if weight_mins is not None:
-        cons.append({'type': 'ineq', 'fun': lambda x: x - weight_mins})
-    if weight_maxs is not None:
-        cons.append({'type': 'ineq', 'fun': lambda x: weight_maxs - x})
+    if min_weights is not None:
+        cons.append({'type': 'ineq', 'fun': lambda x: x - min_weights})
+    if max_weights is not None:
+        cons.append({'type': 'ineq', 'fun': lambda x: max_weights - x})
 
     if is_exp:
         func = carra_objective_exp
@@ -246,8 +246,8 @@ def solve_cara_mixture(means: List[np.ndarray],
                        covars: List[np.ndarray],
                        probs: np.ndarray,
                        carra: float = 0.5,
-                       weight_mins: np.ndarray = None,
-                       weight_maxs: np.ndarray = None,
+                       min_weights: np.ndarray = None,
+                       max_weights: np.ndarray = None,
                        disp: bool = False,
                        print_log: bool = False
                        ) -> np.ndarray:
@@ -255,10 +255,10 @@ def solve_cara_mixture(means: List[np.ndarray],
     x0 = np.ones(n) / n
     cons = [{'type': 'ineq', 'fun': long_only_constraint},
             {'type': 'eq', 'fun': total_weight_constraint}]
-    if weight_mins is not None:
-        cons.append({'type': 'ineq', 'fun': lambda x: x - weight_mins})
-    if weight_maxs is not None:
-        cons.append({'type': 'ineq', 'fun': lambda x: weight_maxs - x})
+    if min_weights is not None:
+        cons.append({'type': 'ineq', 'fun': lambda x: x - min_weights})
+    if max_weights is not None:
+        cons.append({'type': 'ineq', 'fun': lambda x: max_weights - x})
 
     res = minimize(carra_objective_mixture, x0, args=[means, covars, probs, carra], method='SLSQP',
                    constraints=cons,
@@ -283,11 +283,11 @@ def run_unit_test(unit_test: UnitTests):
         covar = np.array([[0.2 ** 2, 0.015, 0.0],
                           [0.015, 0.15 ** 2, 0.0],
                           [0.0, 0.0, 0.1]])
-        w_rb = solve_equal_risk_contribution(covar=covar, disp=True)
-        w_md = solve_max_diversification(covar=covar, disp=True)
+        w_rb = solve_equal_risk_contribution(covar=covar, print_log=True)
+        w_md = solve_max_diversification(covar=covar, print_log=True)
 
-        w_rb = solve_equal_risk_contribution(covar=covar, is_gross_notional_one=False, disp=True)
-        w_md = solve_max_diversification(covar=covar, is_gross_notional_one=False, disp=True)
+        w_rb = solve_equal_risk_contribution(covar=covar, print_log=True)
+        w_md = solve_max_diversification(covar=covar, print_log=True)
 
     elif unit_test == UnitTests.CARA:
         means = np.array([0.3, 0.1])
