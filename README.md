@@ -366,7 +366,7 @@ Implementation of optimisation methods and data considered in
 forthcoming in Risk. Available at SSRN: https://ssrn.com/abstract=4217841
 
 
-#### 2 September 2023,  Version 1.0.7 released
+#### 2 September 2023,  Version 1.0.8 released
 Added subpackage ```optimisation.rolling``` with optimisers grouped by the type of inputs and
 data thy require.
 
