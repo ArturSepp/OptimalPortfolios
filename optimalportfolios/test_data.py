@@ -17,7 +17,6 @@ UNIVERSE_DATA = dict(SPY='Equities',
                      EEM='Equities',
                      TLT='Bonds',
                      IEF='Bonds',
-                     SHY='Bonds',
                      LQD='Credit',
                      HYG='HighYield',
                      GLD='Gold')
@@ -28,6 +27,7 @@ def update_test_prices() -> pd.DataFrame:
     prices = yf.download(tickers=tickers,
                          start=None, end=None,
                          ignore_tz=True)['Adj Close']
+    prices = prices.asfreq('B', method='ffill')  # rescale to business days
     prices = prices[tickers]  # align order
     qis.save_df_to_csv(df=prices, file_name=FILE_NAME, local_path=local_path.get_resource_path())
     return prices

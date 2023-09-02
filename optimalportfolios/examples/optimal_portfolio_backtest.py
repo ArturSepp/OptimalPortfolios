@@ -30,29 +30,29 @@ def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
                          EEM='Equities',
                          TLT='Bonds',
                          IEF='Bonds',
-                         SHY='Bonds',
                          LQD='Credit',
                          HYG='HighYield',
                          GLD='Gold')
     tickers = list(universe_data.keys())
     group_data = pd.Series(universe_data)
-    prices = yf.download(tickers, start=None, end=None, ignore_tz=True)['Adj Close'].dropna()
+    prices = yf.download(tickers, start=None, end=None, ignore_tz=True)['Adj Close']
     prices = prices[tickers]  # arrange as given
-    prices = prices.asfreq('B', method='ffill')
+    prices = prices.asfreq('B', method='ffill')  # refill at B frequency
     benchmark_prices = prices[['SPY', 'TLT']]
     return prices, benchmark_prices, group_data
 
 
 # 2. get universe data
 prices, benchmark_prices, group_data = fetch_universe_data()
+prices = prices.loc['2003':, :]  # use price data from 2003
 
 # 3.a. define optimisation setup
 portfolio_objective = PortfolioObjective.MAX_DIVERSIFICATION  # define portfolio objective
 min_weights = {x: 0.0 for x in prices.columns} # all weights >= 0
 max_weights = {x: 1.0 for x in prices.columns}  # all weights <= 1
 rebalancing_freq = 'Q'  # weights rebalancing frequency
-returns_freq = None  # use data implied frequency = B
-span = 72  # span of number of returns for covariance estimation = 3 months
+returns_freq = 'W-WED'  # use weekly returns
+span = 52  # span of number of returns_freq-returns for covariance estimation = 12y
 is_long_only = True  # all weights >= 0
 
 # 3.b. compute rolling portfolio weights rebalanced every quarter
@@ -63,9 +63,6 @@ weights = compute_rolling_optimal_weights(prices=prices,
                                           rebalancing_freq=rebalancing_freq,
                                           is_long_only=is_long_only,
                                           span=span)
-
-
-
 
 # 4. given portfolio weights, construct the performance of the portfolio
 funding_rate = None  # on positive / negative cash balances
@@ -78,12 +75,11 @@ portfolio_data = qis.backtest_model_portfolio(prices=prices,
                                               rebalancing_costs=rebalancing_costs,
                                               is_output_portfolio_data=True)
 
-
 # 5. using portfolio_data run the reporting with strategy factsheet
 # for group-based reporting set_group_data
 portfolio_data.set_group_data(group_data=group_data, group_order=list(group_data.unique()))
 # set time period for portfolio reporting
-time_period = qis.TimePeriod('31Dec2005', '31Aug2023')
+time_period = qis.TimePeriod('01Jan2006', '31Aug2023')
 fig = qis.generate_strategy_factsheet(portfolio_data=portfolio_data,
                                       benchmark_prices=benchmark_prices,
                                       time_period=time_period,

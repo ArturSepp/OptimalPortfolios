@@ -9,11 +9,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import qis
 from qis import PortfolioData, TimePeriod
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Optional
 from enum import Enum
 
 from optimalportfolios.optimization.config import PortfolioObjective, set_min_max_weights, set_to_zero_not_investable_weights
-from optimalportfolios.optimization.quadratic_solvers import max_portfolio_sharpe_qp, maximize_portfolio_objective_qp
+from optimalportfolios.optimization.solvers.quadratic import max_portfolio_sharpe_qp, maximize_portfolio_objective_qp
 
 
 def compute_rolling_max_utility_sharpe_weights(prices: pd.DataFrame,
@@ -22,10 +22,10 @@ def compute_rolling_max_utility_sharpe_weights(prices: pd.DataFrame,
                                                max_weights: Dict[str, float] = None,
                                                fixed_weights: Dict[str, float] = None,
                                                is_long_only: bool = True,
-                                               returns_freq: str = 'M',
-                                               rebalancing_freq: str = 'A',
-                                               roll_window: int = 5,  # defined on number of periods in rebalancing_freq
-                                               span: int = 36,
+                                               returns_freq: Optional[str] = 'W-WED',
+                                               rebalancing_freq: str = 'Q',
+                                               roll_window: int = 20,  # defined on number of periods in rebalancing_freq
+                                               span: int = 52,
                                                carra: float = 0.5,
                                                is_log_returns: bool = True,
                                                is_print_log: bool = False
@@ -51,7 +51,6 @@ def compute_rolling_max_utility_sharpe_weights(prices: pd.DataFrame,
 
     weights = {}
     for index, covar in zip(means.index, covars):
-
         min_weights1, max_weights1 = set_to_zero_not_investable_weights(min_weights=min_weights0,
                                                                         max_weights=max_weights0,
                                                                         covar=covar)
@@ -83,10 +82,10 @@ def backtest_rolling_max_utility_sharpe_portfolios(prices: pd.DataFrame,
                                                    min_weights: Dict[str, float] = None,
                                                    max_weights: Dict[str, float] = None,
                                                    fixed_weights: Dict[str, float] = None,
-                                                   returns_freq: str = 'M',
-                                                   rebalancing_freq: str = 'A',
-                                                   roll_window: int = 5,
-                                                   span: int = 36,
+                                                   returns_freq: Optional[str] = 'W-WED',
+                                                   rebalancing_freq: str = 'Q',
+                                                   roll_window: int = 20,
+                                                   span: int = 52,
                                                    carra: float = 0.5,
                                                    time_period: TimePeriod = None,
                                                    is_log_returns: bool = True,
@@ -105,7 +104,8 @@ def backtest_rolling_max_utility_sharpe_portfolios(prices: pd.DataFrame,
                                                          carra=carra,
                                                          is_log_returns=is_log_returns,
                                                          min_weights=min_weights,
-                                                         max_weights=max_weights)
+                                                         max_weights=max_weights,
+                                                         fixed_weights=fixed_weights)
     if time_period is not None:
         weights = time_period.locate(weights)
 
@@ -121,10 +121,10 @@ def backtest_rolling_max_utility_sharpe_portfolios(prices: pd.DataFrame,
 
 
 def estimate_rolling_means_covar(prices: pd.DataFrame,
-                                 returns_freq: str = 'M',
-                                 rebalancing_freq: str = 'A',
-                                 roll_window: int = 5,  # defined on number of periods in rebalancing_freq
-                                 span: int = 36,
+                                 returns_freq: str = 'W-WED',
+                                 rebalancing_freq: str = 'Q',
+                                 roll_window: int = 20,  # defined on number of periods in rebalancing_freq
+                                 span: int = 52,
                                  is_log_returns: bool = True,
                                  annualize: bool = True,
                                  is_regularize: bool = True,
@@ -178,12 +178,12 @@ def run_unit_test(unit_test: UnitTests):
 
     from optimalportfolios.test_data import load_test_data
     prices = load_test_data()
-    prices = prices.loc['2002':, :]  # have at least two assets
+    prices = prices.loc['2000':, :]  # need 5 years for max sharpe and max carra methods
 
     if unit_test == UnitTests.ROLLING_MEANS_COVAR:
         # prices = prices[['SPY', 'TLT']].dropna()
 
-        means, covars = estimate_rolling_means_covar(prices=prices, rebalancing_freq='A', roll_window=5)
+        means, covars = estimate_rolling_means_covar(prices=prices, rebalancing_freq='Q', roll_window=20)
         #  = estimate_rolling_data(prices=prices, rebalancing_freq='M', roll_window=60)
 
         vols = {}
@@ -225,11 +225,10 @@ def run_unit_test(unit_test: UnitTests):
 
         port_data = backtest_rolling_max_utility_sharpe_portfolios(prices=prices,
                                                                    portfolio_objective=PortfolioObjective.MAXIMUM_SHARPE_RATIO,
-                                                                   max_weights=dict(SHY=0.2),
                                                                    carra=0.0,
-                                                                   rebalancing_freq='A',
-                                                                   roll_window=5,
-                                                                   returns_freq='M')
+                                                                   rebalancing_freq='Q',
+                                                                   roll_window=20,
+                                                                   returns_freq='W-WED')
         with sns.axes_style("darkgrid"):
             fig, ax = plt.subplots(1, 1, figsize=(7, 12))
             port_data.plot_weights(ax=ax,

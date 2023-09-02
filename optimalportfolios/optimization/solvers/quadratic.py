@@ -36,7 +36,7 @@ def maximize_portfolio_objective_qp(portfolio_objective: PortfolioObjective,
     w = cvx.Variable(n)
     portfolio_var = cvx.quad_form(w, covar)
 
-    if portfolio_objective == PortfolioObjective.MIN_VAR:
+    if portfolio_objective == PortfolioObjective.MIN_VARIANCE:
         objective_fun = -portfolio_var
 
     elif portfolio_objective == PortfolioObjective.QUADRATIC_UTILITY:
@@ -296,7 +296,7 @@ def run_unit_test(unit_test: UnitTests):
         weight_min = np.array([0.0, 0.0])
         weight_max = np.array([10.0, 10.0])
 
-        optimal_weights = maximize_portfolio_objective_qp(portfolio_objective=PortfolioObjective.MIN_VAR,
+        optimal_weights = maximize_portfolio_objective_qp(portfolio_objective=PortfolioObjective.MIN_VARIANCE,
                                                           covar=covar,
                                                           means=means,
                                                           min_weights=None,

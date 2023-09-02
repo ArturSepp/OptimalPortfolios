@@ -3,7 +3,7 @@ linking engine to different optimisation routines
 """
 # packages
 import pandas as pd
-from typing import Dict
+from typing import Dict, Optional
 
 # qis portfolio
 import qis
@@ -21,8 +21,10 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
                                     max_weights: Dict[str, float] = None,
                                     fixed_weights: Dict[str, float] = None,
                                     is_long_only: bool = True,
+                                    returns_freq: Optional[str] = 'W-WED',  # returns freq
                                     rebalancing_freq: str = 'Q',  # portfolio rebalancing
-                                    span: int = 30,  # ewma span for covariance matrix estimation
+                                    span: int = 52,  # ewma span for covariance matrix estimation
+                                    roll_window: int = 20,  # linked to returns at rebalancing_freq
                                     carra: float = 0.5,  # carra parameters
                                     **kwargs
                                     ) -> pd.DataFrame:
@@ -34,7 +36,7 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
     if portfolio_objective in [PortfolioObjective.EQUAL_RISK_CONTRIBUTION,
                                PortfolioObjective.MAX_DIVERSIFICATION,
                                PortfolioObjective.RISK_PARITY_ALT,
-                               PortfolioObjective.MIN_VAR]:
+                               PortfolioObjective.MIN_VARIANCE]:
         # these portfolios are using rolling covariance matrix
         weights = compute_rolling_ewma_risk_based_weights(prices=prices,
                                                           portfolio_objective=portfolio_objective,
@@ -43,6 +45,8 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
                                                           fixed_weights=fixed_weights,
                                                           is_long_only=is_long_only,
                                                           rebalancing_freq=rebalancing_freq,
+                                                          returns_freq=returns_freq,
+                                                          roll_window=roll_window,
                                                           span=span,
                                                           **kwargs)
 
@@ -50,21 +54,25 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
                                  PortfolioObjective.QUADRATIC_UTILITY]:
         weights = compute_rolling_max_utility_sharpe_weights(prices=prices,
                                                              portfolio_objective=portfolio_objective,
-                                                             rebalancing_freq=rebalancing_freq,
                                                              min_weights=min_weights,
                                                              max_weights=max_weights,
                                                              fixed_weights=fixed_weights,
+                                                             rebalancing_freq=rebalancing_freq,
+                                                             returns_freq=returns_freq,
                                                              span=span,
+                                                             roll_window=roll_window,
                                                              carra=carra,
                                                              **kwargs)
 
     elif portfolio_objective in [PortfolioObjective.MAX_MIXTURE_CARA]:
         weights = compute_rolling_weights_mixture_carra(prices=prices,
-                                                        rebalancing_freq=rebalancing_freq,
                                                         carra=carra,  # carra parameters
                                                         min_weights=min_weights,
                                                         max_weights=max_weights,
-                                                        fixed_weights=fixed_weights
+                                                        fixed_weights=fixed_weights,
+                                                        rebalancing_freq=rebalancing_freq,
+                                                        returns_freq=returns_freq,
+                                                        roll_window=roll_window,
                                                         **kwargs)
 
     else:
@@ -79,8 +87,9 @@ def backtest_rolling_optimal_portfolio(prices: pd.DataFrame,
                                        max_weights: Dict[str, float] = None,
                                        fixed_weights: Dict[str, float] = None,
                                        is_long_only: bool = True,
+                                       returns_freq: Optional[str] = 'W-WED',  # returns freq
                                        rebalancing_freq: str = 'Q',  # portfolio rebalancing
-                                       span: int = 30,  # ewma span for covariance matrix estimation
+                                       span: int = 52,  # ewma span for covariance matrix estimation
                                        carra: float = 0.5,  # carra parameters
                                        time_period: qis.TimePeriod = None,  # portfolio
                                        ticker: str = None,
@@ -96,6 +105,7 @@ def backtest_rolling_optimal_portfolio(prices: pd.DataFrame,
                                               max_weights=max_weights,
                                               fixed_weights=fixed_weights,
                                               is_long_only=is_long_only,
+                                              returns_freq=returns_freq,
                                               rebalancing_freq=rebalancing_freq,
                                               span=span,
                                               carra=carra,

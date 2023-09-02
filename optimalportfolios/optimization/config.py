@@ -5,13 +5,16 @@ from enum import Enum
 
 
 class PortfolioObjective(Enum):
-    MIN_VAR = 1  # min w^t @ covar @ w
-    QUADRATIC_UTILITY = 2  # max means^t*w- 0.5*gamma*w^t*covar*w
-    EQUAL_RISK_CONTRIBUTION = 3  # implementation in risk_parity
+    # risk-based:
+    MAX_DIVERSIFICATION = 1  # maximum diversification measure
+    EQUAL_RISK_CONTRIBUTION = 2  # implementation in risk_parity
+    MIN_VARIANCE = 3  # min w^t @ covar @ w
     RISK_PARITY_ALT = 4  # alternative implementation of risk_parity
-    MAX_DIVERSIFICATION = 5
-    MAXIMUM_SHARPE_RATIO = 6
-    MAX_MIXTURE_CARA = 7
+    # return-risk based
+    QUADRATIC_UTILITY = 5  # max means^t*w- 0.5*gamma*w^t*covar*w
+    MAXIMUM_SHARPE_RATIO = 6  # max means^t*w / sqrt(*w^t*covar*w)
+    # return-skeweness based
+    MAX_MIXTURE_CARA = 7  # carra for mixture distributions
 
 
 def set_min_max_weights(assets: List[str],
@@ -65,4 +68,3 @@ def set_to_zero_not_investable_weights(min_weights: pd.Series,
         min_weights[is_not_investable] = 0.0
         max_weights[is_not_investable] = 0.0
     return min_weights, max_weights
-

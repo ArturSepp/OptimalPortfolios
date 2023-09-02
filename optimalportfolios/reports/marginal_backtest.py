@@ -54,7 +54,7 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
                                          marginal_asset_ew_weight: float = 0.02,  # allocation for equal weight
                                          first_asset_target_weight: float = 0.75,  # first asset is the benchmark
                                          rebalancing_freq: str = 'Q',
-                                         roll_window: int = 20,  # hw many periods are used for roll_window
+                                         roll_window: int = 20,  # hw many rebalancing_freq periods are used for roll_window
                                          returns_freq: str = 'M',
                                          span: int = 24,
                                          is_log_returns: bool = True,

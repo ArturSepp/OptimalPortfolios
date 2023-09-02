@@ -17,9 +17,9 @@ import qis
 from qis import TimePeriod, PortfolioData
 
 # portfolio
-from optimalportfolios.optimization.config import set_min_max_weights
+from optimalportfolios.optimization.config import set_min_max_weights, set_to_zero_not_investable_weights
 import optimalportfolios.utils.gaussian_mixture as gm
-import optimalportfolios.optimization.nonlinear_solvers as ops
+import optimalportfolios.optimization.solvers.nonlinear as ops
 
 
 def compute_rolling_weights_mixture_carra(prices: pd.DataFrame,
@@ -27,9 +27,9 @@ def compute_rolling_weights_mixture_carra(prices: pd.DataFrame,
                                           max_weights: Dict[str, float] = None,
                                           fixed_weights: Dict[str, float] = None,
                                           is_long_only: bool = True,
-                                          rebalancing_freq: str = 'A',
-                                          roll_window: int = 5,  # number of periods in mixure estimation
-                                          returns_freq: str = 'M',  # frequency for returns computing mixure distr
+                                          rebalancing_freq: str = 'Q',
+                                          roll_window: int = 20,  # number of periods in mixure estimation
+                                          returns_freq: str = 'W-WED',  # frequency for returns computing mixure distr
                                           is_log_returns: bool = True,
                                           carra: float = 0.5,  # carra parameters
                                           n_components: int = 3
@@ -39,7 +39,9 @@ def compute_rolling_weights_mixture_carra(prices: pd.DataFrame,
     estimation is applied for the whole period of prices
     """
     rets = qis.to_returns(prices=prices, is_log_returns=is_log_returns, drop_first=True, freq=returns_freq)
-
+    # nb mixture cannot handle nans
+    # simple solution is to use zero returns for nans and set max weights = 0 for assets with zero vol
+    rets = rets.fillna(value=0.0)
     dates_schedule = qis.generate_dates_schedule(time_period=qis.get_time_period(df=rets),
                                                  freq=rebalancing_freq,
                                                  include_start_date=True,
@@ -59,14 +61,21 @@ def compute_rolling_weights_mixture_carra(prices: pd.DataFrame,
             period = qis.TimePeriod(dates_schedule[idx - roll_window+1], end)
             # period.print()
             rets_ = period.locate(rets).to_numpy()
+
+            # nb mixture cannot handle nans
+            # simple solution is to use zero returns for nans and set max weights = 0 for assets with zero vol
+            min_weights1, max_weights1 = set_to_zero_not_investable_weights(min_weights=min_weights0,
+                                                                            max_weights=max_weights0,
+                                                                            covar=np.diag(np.var(rets_, axis=0)))
+
             params = gm.fit_gaussian_mixture(x=rets_, n_components=n_components, scaler=scaler)
             # print(params)
             weights[end] = ops.solve_cara_mixture(means=params.means,
                                                   covars=params.covars,
                                                   probs=params.probs,
                                                   carra=carra,
-                                                  min_weights=min_weights0.to_numpy(),
-                                                  max_weights=max_weights0.to_numpy())
+                                                  min_weights=min_weights1.to_numpy(),
+                                                  max_weights=max_weights1.to_numpy())
 
     weights = pd.DataFrame.from_dict(weights, orient='index', columns=prices.columns)
 
@@ -76,8 +85,8 @@ def compute_rolling_weights_mixture_carra(prices: pd.DataFrame,
 def backtest_rolling_mixure_portfolio(prices: pd.DataFrame,
                                       time_period: TimePeriod = None,
                                       rebalancing_freq: str = 'Q',
-                                      roll_window: int = 5,  # number of periods in mixure estimation
-                                      returns_freq: str = 'M',  # frequency for returns computing mixure distr
+                                      roll_window: int = 20,  # number of periods in mixure estimation
+                                      returns_freq: str = 'W-WED',  # frequency for returns computing mixure distr
                                       is_log_returns: bool = True,
                                       carra: float = 0.5,  # carra parameters
                                       n_components: int = 3,
@@ -112,10 +121,10 @@ def backtest_rolling_mixure_portfolio(prices: pd.DataFrame,
 
 
 def estimate_rolling_mixture(prices: Union[pd.Series, pd.DataFrame],
-                             returns_freq: str = 'M',
-                             rebalancing_freq: str = 'A',
-                             roll_window: int = 6,
-                             n_components: int = 2,
+                             returns_freq: str = 'W-WED',
+                             rebalancing_freq: str = 'Q',
+                             roll_window: int = 20,
+                             n_components: int = 3,
                              is_log_returns: bool = True,
                              annualize: bool = True
                              ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -168,7 +177,7 @@ def run_unit_test(unit_test: UnitTests):
     # data
     from optimalportfolios.test_data import load_test_data
     prices = load_test_data()
-    prices = prices.loc['2003':, :]  # have at least 3 assets
+    prices = prices.loc['2000':, :]  # have at least 3 assets
 
     if unit_test == UnitTests.ROLLING_MIXTURES:
         prices = prices['SPY'].dropna()
@@ -176,9 +185,12 @@ def run_unit_test(unit_test: UnitTests):
         print(means)
 
     elif unit_test == UnitTests.MIXTURE_PORTFOLIOS:
-        prices = prices.dropna()
-        weights = compute_rolling_weights_mixture_carra(prices=prices, rebalancing_freq='Q', n_components=3,
-                                                        roll_window=4 * 5, carra=0.5)
+        #prices = prices.dropna()
+        weights = compute_rolling_weights_mixture_carra(prices=prices,
+                                                        rebalancing_freq='Q',
+                                                        n_components=3,
+                                                        roll_window=20,
+                                                        carra=0.5)
         with sns.axes_style("darkgrid"):
             fig, ax = plt.subplots(1, 1, figsize=(7, 12))
             qis.plot_time_series(df=weights,

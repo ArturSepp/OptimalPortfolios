@@ -10,7 +10,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from typing import Dict
+from typing import Dict, Optional
 from enum import Enum
 
 # qis
@@ -19,22 +19,22 @@ from qis.portfolio import backtester as bp
 from qis import TimePeriod, PortfolioData
 
 # optimisers
-import optimalportfolios.optimization.nonlinear_solvers as ops
-import optimalportfolios.optimization.quadratic_solvers as qup
+import optimalportfolios.optimization.solvers.nonlinear as ops
+import optimalportfolios.optimization.solvers.quadratic as qup
 from optimalportfolios.optimization.config import PortfolioObjective, set_min_max_weights, set_to_zero_not_investable_weights
 
 
 def compute_rolling_ewma_risk_based_weights(prices: pd.DataFrame,
-                                            portfolio_objective: PortfolioObjective = PortfolioObjective.MIN_VAR,
+                                            portfolio_objective: PortfolioObjective = PortfolioObjective.MIN_VARIANCE,
                                             min_weights: Dict[str, float] = None,
                                             max_weights: Dict[str, float] = None,
                                             fixed_weights: Dict[str, float] = None,
                                             is_long_only: bool = True,
                                             target_vol: float = None,
+                                            returns_freq: Optional[str] = 'W-WED',
                                             rebalancing_freq: str = 'Q',
-                                            span: int = 30,  # ewma span in periods of returns_freq
+                                            span: int = 52,  # ewma span in periods of returns_freq
                                             is_regularize: bool = False,
-                                            returns_freq: str = None,
                                             is_log_returns: bool = True,
                                             budget: np.ndarray = None,
                                             **kwargs
@@ -103,7 +103,7 @@ def compute_rolling_ewma_risk_based_weights(prices: pd.DataFrame,
             elif portfolio_objective == PortfolioObjective.RISK_PARITY_ALT:
                 weights[date] = ops.solve_risk_parity_alt(covar=covar)
 
-            elif portfolio_objective == PortfolioObjective.MIN_VAR:
+            elif portfolio_objective == PortfolioObjective.MIN_VARIANCE:
                 weights[date] = qup.maximize_portfolio_objective_qp(portfolio_objective=portfolio_objective,
                                                                     covar=covar,
                                                                     is_long_only=is_long_only,
@@ -121,9 +121,9 @@ def backtest_rolling_ewma_risk_based_portfolio(prices: pd.DataFrame,
                                                max_weights: np.ndarray = None,
                                                time_period: TimePeriod = None,
                                                portfolio_objective: PortfolioObjective = PortfolioObjective.EQUAL_RISK_CONTRIBUTION,
-                                               rebalancing_freq: str = 'Q',
-                                               span: int = 24,
+                                               span: int = 52,
                                                returns_freq: str = 'W-WED',
+                                               rebalancing_freq: str = 'Q',
                                                is_log_returns: bool = True,
                                                budget: np.ndarray = None,
                                                ticker: str = None,
@@ -166,6 +166,7 @@ def run_unit_test(unit_test: UnitTests):
 
     from optimalportfolios.test_data import load_test_data
     prices = load_test_data()
+    prices = prices.loc['2000':, :]  # need 5 years for max sharpe and max carra methods
 
     kwargs = dict(add_mean_levels=True,
                   is_yaxis_limit_01=True,
@@ -177,7 +178,7 @@ def run_unit_test(unit_test: UnitTests):
 
     if unit_test == UnitTests.MIN_VAR:
         weights = compute_rolling_ewma_risk_based_weights(prices=prices,
-                                                          portfolio_objective=PortfolioObjective.MAX_DIVERSIFICATION)
+                                                          portfolio_objective=PortfolioObjective.MIN_VARIANCE)
         qis.plot_stack(df=weights, **kwargs)
 
     elif unit_test == UnitTests.MIN_VAR_OVERLAY:

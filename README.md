@@ -32,10 +32,14 @@ paper "Optimal Allocation to Cryptocurrencies in Diversified Portfolios" [https:
 3. [Portfolio Optimisers](#optimisers)
    1. [Implemented optimisers](#implemented)
    2. [Adding an optimiser](#adding)
+   3. [Default parameters](#params)
+   4. [Price time series data](#ts)
 4. [Examples](#examples)
    1. [Optimal Portfolio Backtest](#optimal)
    2. [Customised reporting](#report)
-   3. [Optimal allocation to cryptocurrencies](#crypto)
+   3. [Parameters sensitivity backtest](#sensitivity)
+   4. [Multi optimisers cross backtest](#cross)
+   5. [Optimal allocation to cryptocurrencies](#crypto)
 5. [Contributions](#contributions)
 6. [Updates](#updates)
 7. [Disclaimer](#disclaimer)
@@ -82,9 +86,25 @@ Optional dependencies:
 Subpackage ```optimisation.rolling```  implements specific optimisers 
 with lookback rolling windows rebalanced at given rebalancing_freq
 
-Each module implements method specific estimators.
+Implemented optimisers are enumerated in ```optimization.config.py```
+```python 
+class PortfolioObjective(Enum):
+    # risk-based:
+    MAX_DIVERSIFICATION = 1  # maximum diversification measure
+    EQUAL_RISK_CONTRIBUTION = 2  # implementation in risk_parity
+    MIN_VARIANCE = 3  # min w^t @ covar @ w
+    RISK_PARITY_ALT = 4  # alternative implementation of risk_parity
+    # return-risk based
+    QUADRATIC_UTILITY = 5  # max means^t*w- 0.5*gamma*w^t*covar*w
+    MAXIMUM_SHARPE_RATIO = 6  # max means^t*w / sqrt(*w^t*covar*w)
+    # return-skeweness based
+    MAX_MIXTURE_CARA = 7  # carra for mixture distributions
+```
 
-1. Module ```optimization.rolling.risk_based``` implements following optimisers
+
+Each module in ```optimization.rolling``` implements specific optimisers and estimators for their inputs.
+
+1. Module ```optimization.rolling.risk_based.py``` implements following optimisers
 ```
 [PortfolioObjective.EQUAL_RISK_CONTRIBUTION,
 PortfolioObjective.MAX_DIVERSIFICATION,
@@ -93,13 +113,13 @@ PortfolioObjective.MIN_VAR]
 ```
 
 
-2. Module ```optimization.rolling.max_utility_sharpe``` implements following optimisers
+2. Module ```optimization.rolling.max_utility_sharpe.py``` implements following optimisers
 ```
 [PortfolioObjective.QUADRATIC_UTILITY,
 PortfolioObjective.MAXIMUM_SHARPE_RATIO]
 ```
 
-3. Module ```optimization.rolling.max_mixure_carra``` implements following optimisers
+3. Module ```optimization.rolling.max_mixure_carra.py``` implements following optimisers
 ```
 [PortfolioObjective.MAX_MIXTURE_CARA]
 ```
@@ -117,6 +137,70 @@ subpackage ```optimization.rolling```. Any third-party packages can be used
 2. Add new optimiser type to ```optimisation.config.py``` and link implemented
 optimiser in wrapper function ```compute_rolling_optimal_weights()``` in 
 ```optimisation.engine.py```
+
+
+### 3. Default parameters <a name="params"></a>
+
+Key parameters include the specification of the estimation sample.
+
+1. ```returns_freq``` defines the frequency of returns for covariance matrix estimation. This parameter affects all methods. 
+
+The default (assuming daily price data) is weekly Wednesday returns ```returns_freq = 'W-WED'```.
+
+For price data with monthly observations 
+(such us hedged funds), monthly returns should be used ```returns_freq = 'M'```.
+
+
+2. ```span``` defines the estimation span for ewma covariance matrix. This parameter affects all methods which use 
+EWMA covariance matrix:
+```
+PortfolioObjective in [MAX_DIVERSIFICATION, EQUAL_RISK_CONTRIBUTION, MIN_VARIANCE]
+```   
+and 
+```
+PortfolioObjective in [QUADRATIC_UTILITY, MAXIMUM_SHARPE_RATIO]
+```   
+
+The span is defined as the number of returns
+for the half-life of EWMA filter: ```ewma_lambda = 1 - 2 / (span+1)```. ```span=52``` with weekly returns means that 
+last 52 weekly returns (one year of data) contribute 50% of weight to estimated covariance matrix
+
+The default (assuming weekly returns) is 52: ```span=52```.
+
+For monthly returns, I recommend to use ```span=12``` or ```span=24```.
+
+
+3. ```rebalancing_freq``` defines the frequency of weights update. This parameter affects all methods.
+
+The default value is quarterly rebalancing  ```rebalancing_freq='Q'```.
+
+For the following methods 
+```
+PortfolioObjective in [QUADRATIC_UTILITY, MAXIMUM_SHARPE_RATIO, MAX_MIXTURE_CARA]
+```   
+Rebalancing frequency is also the rolling sample update frequency when mean returns and mixture distributions are estimated.
+
+
+4. ```roll_window``` defines the number of past returns applied for estimation of rolling mean returns and mixture distributions.
+
+This parameter affects the following optimisers 
+```
+PortfolioObjective in [QUADRATIC_UTILITY, MAXIMUM_SHARPE_RATIO, MAX_MIXTURE_CARA]
+```   
+and it is linked to ```rebalancing_freq```. 
+
+Default value is ```roll_window=20``` which means that data for past 20 (quarters) are used in the sample
+with ```rebalancing_freq='Q'```
+
+For monthly rebalancing, I recomend to use ```roll_window=60``` which corresponds to using past 5 years of data
+
+### 4. Price time series data <a name="ts"></a>
+
+The input to all optimisers is dataframe prices which contains dividend and split adjusted prices.
+
+The price data can include assets with prices starting an ending at different times.
+
+All optimisers will set maximum weight to zero for assets with missing prices in the estimation sample period.  
 
 
 
@@ -248,11 +332,29 @@ qis.save_fig(fig=fig, file_name=f"example_customised_report", local_path=f"figur
 ![image info](optimalportfolios/examples/figures/example_customised_report.PNG)
 
 
-### 3. Optimal allocation to cryptocurrencies <a name="crypto"></a>
+### 3. Parameters sensitivity backtest <a name="sensitivity"></a>
+
+See script in ```optimalportfolios.examples.parameter_sensitivity_backtest.py```
+
+![image info](optimalportfolios/examples/figures/max_diversification_span.PNG)
+
+
+
+### 4. Multi optimisers cross backtest <a name="cross"></a>
+
+See script in ```optimalportfolios.examples.multi_optimisers_backtest.py```
+
+![image info](optimalportfolios/examples/figures/multi_optimisers_backtest.PNG)
+
+
+
+
+### 5. Optimal allocation to cryptocurrencies <a name="crypto"></a>
 
 Computations and visualisations for 
 paper "Optimal Allocation to Cryptocurrencies in Diversified Portfolios" [https://ssrn.com/abstract=4217841](https://ssrn.com/abstract=4217841)
-   are implemented in module ```optimalportfolios.crypto_allocation```, see README in this module
+   are implemented in module ```optimalportfolios.crypto_allocation```,
+see [README in this module](https://github.com/ArturSepp/OptimalPortfolios/blob/master/optimalportfolios/examples/crypto_allocation/README.md)
 
 
 ## **Updates** <a name="updates"></a>
@@ -264,7 +366,7 @@ Implementation of optimisation methods and data considered in
 forthcoming in Risk. Available at SSRN: https://ssrn.com/abstract=4217841
 
 
-#### 2 September 2023,  Version 1.0.6 released
+#### 2 September 2023,  Version 1.0.7 released
 Added subpackage ```optimisation.rolling``` with optimisers grouped by the type of inputs and
 data thy require.
 
