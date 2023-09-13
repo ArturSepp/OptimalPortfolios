@@ -6,7 +6,7 @@ from qis import PerfStat, PerfParams, BenchmarkReturnsQuantileRegimeSpecs
 
 BENCHMARK_TABLE_COLUMNS2 = (PerfStat.PA_RETURN,
                             PerfStat.VOL,
-                            PerfStat.SHARPE,
+                            PerfStat.SHARPE_EXCESS,
                             PerfStat.MAX_DD,
                             # PerfStat.MAX_DD_VOL,
                             PerfStat.BEST,
@@ -23,7 +23,7 @@ FIG_SIZE11_2 = (4.70, 0.95)
 FIG_SIZE11_2a = (4.70, 0.6)
 
 
-PERF_PARAMS = PerfParams(freq_vol='M', freq_reg='M', freq_drawdown='M')
+PERF_PARAMS = PerfParams(freq_vol='M', freq_reg='M', freq_drawdown='M', alpha_an_factor=12)
 
 REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='M')
 
@@ -33,7 +33,6 @@ KWARGS = dict(fontsize=7,
               weight='normal',
               markersize=2,
               framealpha=0.8,
-              alpha_an_factor=365.0,
               date_format='%b-%y',
               trend_line_colors=['darkred'],
               trend_linewidth=2.0,

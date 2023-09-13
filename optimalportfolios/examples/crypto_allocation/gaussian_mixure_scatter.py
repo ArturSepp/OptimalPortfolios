@@ -18,8 +18,7 @@ def run_unit_test(unit_test: UnitTests):
     perf_params = qis.PerfParams(freq='W-WED')
     kwargs = dict(fontsize=12, digits_to_show=1, sharpe_digits=2,
                   alpha_format='{0:+0.0%}',
-                  beta_format='{:0.1f}',
-                  alpha_an_factor=12)
+                  beta_format='{:0.1f}')
 
     time_periods = [qis.TimePeriod('31Aug2002', '31Dec2019'), qis.TimePeriod('31Dec2019', '16Dec2022')]
 

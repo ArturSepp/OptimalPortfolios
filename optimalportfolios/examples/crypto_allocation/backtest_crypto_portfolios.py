@@ -67,7 +67,6 @@ PERF_COLUMNS_LONG = (PerfStat.START_DATE,
 FIG_KWARGS = dict(fontsize=12, digits_to_show=1, sharpe_digits=2,
                   alpha_format='{0:+0.0%}',
                   beta_format='{:0.1f}',
-                  alpha_an_factor=12,
                   x_date_freq='Q',
                   perf_params=PERF_PARAMS,
                   regime_params=REGIME_PARAMS,
@@ -758,8 +757,7 @@ def backtest_constant_weight_portfolios(crypto_asset: str = 'BTC',
     figs = []
     kwargs = dict(fontsize=12, digits_to_show=1, sharpe_digits=2,
                   alpha_format='{0:+0.0%}',
-                  beta_format='{:0.1f}',
-                  alpha_an_factor=12)
+                  beta_format='{:0.1f}')
     # time series
     with sns.axes_style('darkgrid'):
         fig, ax = plt.subplots(1, 1, figsize=(16, 8), tight_layout=True)

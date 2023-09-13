@@ -13,7 +13,7 @@ from qis import TimePeriod, PerfParams, BenchmarkReturnsQuantileRegimeSpecs, Per
 import optimalportfolios.utils.gaussian_mixture as gm
 from optimalportfolios.examples.crypto_allocation.load_prices import Assets, load_prices, load_risk_free_rate
 
-PERF_PARAMS = PerfParams(freq_vol='M', freq_reg='M', freq_drawdown='M', rates_data=load_risk_free_rate())
+PERF_PARAMS = PerfParams(freq_vol='M', freq_reg='M', freq_drawdown='M', rates_data=load_risk_free_rate(), alpha_an_factor=12)
 REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='Q')
 
 FIGSIZE = (14, 6)
@@ -79,7 +79,6 @@ def plot_performance_table(prices: pd.DataFrame,
                                             fontsize=9,
                                             transpose=False,
                                             special_rows_colors=[(1, 'lightblue')],
-                                            alpha_an_factor=12,
                                             is_log_returns=True,
                                             cmap='Greys'))
     fig, axs = plt.subplots(len(time_period_dict.keys()), 1, figsize=(12, 3.0), constrained_layout=True)
@@ -118,7 +117,6 @@ def plot_performance_tables(benchmark: str,
                                             #heatmap_columns=[4],
                                             fontsize=9,
                                             transpose=False,
-                                            alpha_an_factor=12,
                                             is_log_returns=True,
                                             cmap='Greys'))
 
@@ -356,7 +354,6 @@ def run_unit_test(unit_test: UnitTests):
         prices1 = prices[[Assets.BAL, Assets.BTC]].dropna()
         kwargs = dict(alpha_format='{0:+0.0%}',
                       beta_format='{:0.1f}',
-                      alpha_an_factor=12,
                       is_vol_norm=False,
                       framealpha=0.9)
         with sns.axes_style('darkgrid'):
