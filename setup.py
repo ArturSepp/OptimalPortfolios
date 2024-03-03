@@ -16,7 +16,7 @@ requirements = read_requirements("requirements.txt")
 
 setup(
     name='optimalportfolios',
-    version='1.0.9',
+    version='1.0.10',
     author='Artur Sepp',
     author_email='artursepp@gmail.com',
     url='https://github.com/ArturSepp/OptimalPortfolios',

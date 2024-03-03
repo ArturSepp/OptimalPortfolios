@@ -68,7 +68,7 @@ def run_max_diversification_sensitivity_to_span(prices: pd.DataFrame,
                                                             portfolio_objective=PortfolioObjective.MAX_DIVERSIFICATION,
                                                             min_weights=min_weights,
                                                             max_weights=max_weights,
-                                                            rebalancing_freq='Q',  # portfolio rebalancing
+                                                            rebalancing_freq='QE',  # portfolio rebalancing
                                                             returns_freq=returns_freq,
                                                             span=span,
                                                             ticker=f"span-{ticker}",  # portfolio id

@@ -27,7 +27,7 @@ def compute_rolling_weights_mixture_carra(prices: pd.DataFrame,
                                           max_weights: Dict[str, float] = None,
                                           fixed_weights: Dict[str, float] = None,
                                           is_long_only: bool = True,
-                                          rebalancing_freq: str = 'Q',
+                                          rebalancing_freq: str = 'QE',
                                           roll_window: int = 20,  # number of periods in mixure estimation
                                           returns_freq: str = 'W-WED',  # frequency for returns computing mixure distr
                                           is_log_returns: bool = True,
@@ -84,7 +84,7 @@ def compute_rolling_weights_mixture_carra(prices: pd.DataFrame,
 
 def backtest_rolling_mixure_portfolio(prices: pd.DataFrame,
                                       time_period: TimePeriod = None,
-                                      rebalancing_freq: str = 'Q',
+                                      rebalancing_freq: str = 'QE',
                                       roll_window: int = 20,  # number of periods in mixure estimation
                                       returns_freq: str = 'W-WED',  # frequency for returns computing mixure distr
                                       is_log_returns: bool = True,
@@ -122,7 +122,7 @@ def backtest_rolling_mixure_portfolio(prices: pd.DataFrame,
 
 def estimate_rolling_mixture(prices: Union[pd.Series, pd.DataFrame],
                              returns_freq: str = 'W-WED',
-                             rebalancing_freq: str = 'Q',
+                             rebalancing_freq: str = 'QE',
                              roll_window: int = 20,
                              n_components: int = 3,
                              is_log_returns: bool = True,
@@ -187,7 +187,7 @@ def run_unit_test(unit_test: UnitTests):
     elif unit_test == UnitTests.MIXTURE_PORTFOLIOS:
         #prices = prices.dropna()
         weights = compute_rolling_weights_mixture_carra(prices=prices,
-                                                        rebalancing_freq='Q',
+                                                        rebalancing_freq='QE',
                                                         n_components=3,
                                                         roll_window=20,
                                                         carra=0.5)

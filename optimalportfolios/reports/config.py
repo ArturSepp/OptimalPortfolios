@@ -23,9 +23,9 @@ FIG_SIZE11_2 = (4.70, 0.95)
 FIG_SIZE11_2a = (4.70, 0.6)
 
 
-PERF_PARAMS = PerfParams(freq_vol='M', freq_reg='M', freq_drawdown='M', alpha_an_factor=12)
+PERF_PARAMS = PerfParams(freq_vol='ME', freq_reg='ME', freq_drawdown='ME', alpha_an_factor=12)
 
-REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='M')
+REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='ME')
 
 KWARGS = dict(fontsize=7,
               linewidth=0.5,
@@ -36,7 +36,7 @@ KWARGS = dict(fontsize=7,
               date_format='%b-%y',
               trend_line_colors=['darkred'],
               trend_linewidth=2.0,
-              x_date_freq='Q',
+              x_date_freq='QE',
               short=True)
 
 # for py blocks

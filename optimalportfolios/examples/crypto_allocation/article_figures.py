@@ -13,11 +13,10 @@ from qis import TimePeriod, PerfParams, BenchmarkReturnsQuantileRegimeSpecs, Per
 import optimalportfolios.utils.gaussian_mixture as gm
 from optimalportfolios.examples.crypto_allocation.load_prices import Assets, load_prices, load_risk_free_rate
 
-PERF_PARAMS = PerfParams(freq_vol='M', freq_reg='M', freq_drawdown='M', rates_data=load_risk_free_rate(), alpha_an_factor=12)
-REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='Q')
+PERF_PARAMS = PerfParams(freq_vol='ME', freq_reg='ME', freq_drawdown='ME', rates_data=load_risk_free_rate(), alpha_an_factor=12)
+REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='QE')
 
 FIGSIZE = (14, 6)
-FIGSIZE1 = (14, 5)
 
 FIGURE_SAVE_PATH = "C://Users//artur//OneDrive//My Papers//Working Papers//CryptoAllocation. Zurich. Jan 2022//figs1//"
 SAVE_FIGS = True
@@ -52,7 +51,7 @@ PERF_COLUMNS_LONG = [PerfStat.START_DATE,
                      PerfStat.PA_RETURN,
                      PerfStat.AN_LOG_RETURN,
                      PerfStat.VOL,
-                     PerfStat.SHARPE,
+                     PerfStat.SHARPE_RF0,
                      PerfStat.SHARPE_LOG_AN,
                      PerfStat.SHARPE_LOG_EXCESS,
                      PerfStat.MAX_DD,
@@ -188,14 +187,14 @@ def plot_corr_tables(prices: pd.DataFrame,
         for time_period, ax, title in zip(time_period, axs, titles):
             prices1 = time_period.locate(prices)
             qis.plot_returns_corr_table(prices=prices1,
-                                        freq='M',
+                                        freq='ME',
                                         ax=ax,
                                         is_fig_out=True,
                                         title=f"{title} {time_period.to_str()}",
                                         **kwargs)
 
             dfs_out[f"{title} {time_period.to_str()}"] = qis.plot_returns_corr_table(prices=prices1,
-                                                                                     freq='M',
+                                                                                     freq='ME',
                                                                                      ax=ax,
                                                                                      is_fig_out=False,
                                                                                      title=f"{title} {time_period.to_str()}",
@@ -207,7 +206,7 @@ def plot_mixures(prices: pd.DataFrame,
                  start_end_date_full: TimePeriod,
                  time_period: TimePeriod
                  ) -> Tuple[plt.Figure, plt.Figure, Dict]:
-    rets = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq='M')
+    rets = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq='ME')
     n_components = 3
 
     kwargs = dict(fontsize=12, digits_to_show=1, sharpe_digits=2)
@@ -276,6 +275,10 @@ def run_unit_test(unit_test: UnitTests):
                             '(B) 31Mar2016-31Dec2019': TimePeriod(start='31Mar2016', end='31Dec2019'),
                             f'(C) 31Dec2019-{end_date}': TimePeriod(start='31Dec2019', end=end_date)}
 
+        time_period_dict = {f'(A) Since Inception-{end_date}': TimePeriod(start='19Jul2010', end=end_date),
+                            f'(B) 31Mar2016-{end_date}': TimePeriod(start='31Mar2016', end=end_date),
+                            f'(C) 31Dec2019-{end_date}': TimePeriod(start='31Dec2019', end=end_date)}
+
         fig, dfs_out = plot_performance_table(prices=prices,
                                               benchmark=Assets.BAL.value,
                                               time_period_dict=time_period_dict)
@@ -318,6 +321,9 @@ def run_unit_test(unit_test: UnitTests):
                        TimePeriod('19Jul2010', end_date)]
         time_period = [TimePeriod('19Jul2010', '31Dec2017'),
                        TimePeriod('31Dec2017', end_date)]
+        time_period = [TimePeriod('19Jul2010', '31Mar2016'),
+                       TimePeriod('31Mar2016', end_date),
+                       TimePeriod('31Dec2019', end_date)]
         prices2 = load_prices(crypto_asset=None).dropna()
         fig, dfs_out = plot_corr_tables(prices=prices2, time_period=time_period)
         if SAVE_FIGS:
@@ -336,7 +342,7 @@ def run_unit_test(unit_test: UnitTests):
 
         time_period = TimePeriod('30Jun2016', end_date)
         with sns.axes_style('darkgrid'):
-            fig, ax = plt.subplots(1, 1, figsize=FIGSIZE1, constrained_layout=True)
+            fig, ax = plt.subplots(1, 1, figsize=FIGSIZE, constrained_layout=True)
             qis.plot_returns_corr_matrix_time_series(prices=prices,
                                                      time_period=time_period,
                                                      corr_matrix_output=qis.CorrMatrixOutput.TOP_ROW,
@@ -345,7 +351,7 @@ def run_unit_test(unit_test: UnitTests):
                                                      trend_line=qis.TrendLine.NONE,
                                                      ewm_lambda=1.0-2.0/(24.0+1.0),
                                                      title='EWMA Correlations of monthly returns',
-                                                     freq='M',
+                                                     freq='ME',
                                                      ax=ax,
                                                      **{'framealpha': 0.90})
 
@@ -362,7 +368,7 @@ def run_unit_test(unit_test: UnitTests):
                                  benchmark=Assets.BAL.value,
                                  xlabel=f"{Assets.BAL.value} returns",
                                  ylabel=f"{Assets.BTC.value} returns",
-                                 freq='M',
+                                 freq='ME',
                                  order=1,
                                  ci=95,
                                  ax=axs[0],
@@ -371,7 +377,7 @@ def run_unit_test(unit_test: UnitTests):
                                  benchmark=Assets.BAL.value,
                                  xlabel=f"{Assets.BAL.value} returns",
                                  ylabel=f"Assets returns",
-                                 freq='M',
+                                 freq='ME',
                                  order=1,
                                  ci=95,
                                  ax=axs[1],
@@ -382,7 +388,7 @@ def run_unit_test(unit_test: UnitTests):
         prices = prices[Assets.BTC]
         time_period = TimePeriod('18Dec2017', end_date)
 
-        rets = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq='M')
+        rets = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq='ME')
         rets1 = time_period.locate(rets)
 
         with sns.axes_style('white'):
@@ -394,8 +400,8 @@ def run_unit_test(unit_test: UnitTests):
         prices = load_prices().dropna()
         start_end_date_full = TimePeriod('19Jul2010', end_date)
         time_period = TimePeriod('18Dec2017', end_date)
-        start_end_date_full = TimePeriod('19Jul2010', '18Dec2017')
-        time_period = TimePeriod('18Dec2017', end_date)
+        start_end_date_full = TimePeriod('19Jul2010', '31Dec2017')
+        time_period = TimePeriod('31Dec2017', end_date)
         fig1, fig2, dfs_out = plot_mixures(prices=prices, start_end_date_full=start_end_date_full, time_period=time_period)
         if SAVE_FIGS:
             qis.save_fig(fig1, file_name='clusters', local_path=FIGURE_SAVE_PATH)
@@ -407,7 +413,7 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.PERF_TABLES_CRYPTO
+    unit_test = UnitTests.CORR_TABLE
 
     is_run_all_tests = False
     if is_run_all_tests:

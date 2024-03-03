@@ -33,9 +33,9 @@ class OptimisationParams(NamedTuple):
     """
     marginal_asset_ew_weight: float = 0.02  # allocation for equal weight
     first_asset_target_weight: float = 0.75  # first asset is the benchmark
-    rebalancing_freq: str = 'Q'  # when portfolio weigths are aupdate  
+    rebalancing_freq: str = 'QE'  # when portfolio weigths are aupdate  
     roll_window: int = 20  # hw many periods are used for rolling estimation of mv returns and mixure
-    returns_freq: str = 'M'  # frequency of returns
+    returns_freq: str = 'ME'  # frequency of returns
     span: int = 24   # for ewma window
     is_log_returns: bool = True  # use logreturns
     carra: float = 0.5  # carra parameter
@@ -53,9 +53,9 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
                                          optimisation_type: OptimisationType = OptimisationType.MIXTURE,
                                          marginal_asset_ew_weight: float = 0.02,  # allocation for equal weight
                                          first_asset_target_weight: float = 0.75,  # first asset is the benchmark
-                                         rebalancing_freq: str = 'Q',
+                                         rebalancing_freq: str = 'QE',
                                          roll_window: int = 20,  # hw many rebalancing_freq periods are used for roll_window
-                                         returns_freq: str = 'M',
+                                         returns_freq: str = 'ME',
                                          span: int = 24,
                                          is_log_returns: bool = True,
                                          carra: float = 0.5,

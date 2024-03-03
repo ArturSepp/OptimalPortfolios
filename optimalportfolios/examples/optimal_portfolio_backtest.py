@@ -50,7 +50,7 @@ prices = prices.loc['2003':, :]  # use price data from 2003
 portfolio_objective = PortfolioObjective.MAX_DIVERSIFICATION  # define portfolio objective
 min_weights = {x: 0.0 for x in prices.columns} # all weights >= 0
 max_weights = {x: 1.0 for x in prices.columns}  # all weights <= 1
-rebalancing_freq = 'Q'  # weights rebalancing frequency
+rebalancing_freq = 'QE'  # weights rebalancing frequency
 returns_freq = 'W-WED'  # use weekly returns
 span = 52  # span of number of returns_freq-returns for covariance estimation = 12y
 is_long_only = True  # all weights >= 0
@@ -96,7 +96,7 @@ qis.save_fig(fig=fig, file_name=f"example_portfolio_factsheet", local_path=f"fig
 def run_customised_reporting(portfolio_data) -> plt.Figure:
     with sns.axes_style("darkgrid"):
         fig, axs = plt.subplots(3, 1, figsize=(12, 12), tight_layout=True)
-    kwargs = dict(x_date_freq='A', framealpha=0.8)
+    kwargs = dict(x_date_freq='YE', framealpha=0.8)
     portfolio_data.plot_nav(ax=axs[0], **kwargs)
     portfolio_data.plot_weights(ncol=len(prices.columns)//3,
                                 legend_stats=qis.LegendStats.AVG_LAST,

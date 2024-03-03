@@ -15,17 +15,17 @@ from optimalportfolios.examples.crypto_allocation.load_prices import Assets, loa
 from optimalportfolios.reports.marginal_backtest import OptimisationParams, OptimisationType, backtest_marginal_optimal_portfolios
 from optimalportfolios.reports.config import KWARGS_SUPTITLE, KWARGS_TITLE, KWARGS_FIG, KWARGS_TEXT
 
-PERF_PARAMS = PerfParams(freq_vol='M', freq_reg='M', freq_drawdown='M', rates_data=load_risk_free_rate())
-REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='Q')
+PERF_PARAMS = PerfParams(freq_vol='ME', freq_reg='ME', freq_drawdown='ME', rates_data=load_risk_free_rate())
+REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='QE')
 
 LOCAL_PATH = "C://Users//artur//OneDrive//analytics//outputs//"
 FIGURE_SAVE_PATH = "C://Users//artur//OneDrive//My Papers//Working Papers//CryptoAllocation. Zurich. Jan 2022//figs1//"
 SAVE_FIGS = False
 
 OPTIMISATION_PARAMS = OptimisationParams(first_asset_target_weight=0.75,  # first asset is the benchmark
-                                         rebalancing_freq='Q',  # when portfolio weigths are aupdate
+                                         rebalancing_freq='QE',  # when portfolio weigths are aupdate
                                          roll_window=23,  # number of quarters are used for rolling estimation of mv returns and mixure = 6 years
-                                         returns_freq='M',  # frequency of returns
+                                         returns_freq='ME',  # frequency of returns
                                          span=30,  # for window of ewma covariance for monthly return = 2.5 years
                                          is_log_returns=True,
                                          carra=0.5,  # carra parameter
@@ -67,7 +67,7 @@ PERF_COLUMNS_LONG = (PerfStat.START_DATE,
 FIG_KWARGS = dict(fontsize=12, digits_to_show=1, sharpe_digits=2,
                   alpha_format='{0:+0.0%}',
                   beta_format='{:0.1f}',
-                  x_date_freq='Q',
+                  x_date_freq='QE',
                   perf_params=PERF_PARAMS,
                   regime_params=REGIME_PARAMS,
                   perf_columns=PERF_COLUMNS)
@@ -276,7 +276,7 @@ def run_backtest_pdf_report(prices_unconstrained: pd.DataFrame,
         kwargs_w = qis.update_kwargs(kwargs, dict(ncol=2, bbox_to_anchor=(0.5, 1.20)))
 
         fig_weights_alt, ax = plt.subplots(1, 1, figsize=(figsize[0], 6), constrained_layout=True)
-        alts_crypto.plot_weights(ax=ax, freq='M', **kwargs_w)
+        alts_crypto.plot_weights(ax=ax, freq='ME', **kwargs_w)
         b_fig_weights_alt = p.Block([p.Paragraph("", **KWARGS_TITLE),
                                      p.Paragraph(f"(A) Alternatives Portfolio Weights", **KWARGS_TITLE),
                                      p.Block(fig_weights_alt, **KWARGS_FIG)],
@@ -286,7 +286,7 @@ def run_backtest_pdf_report(prices_unconstrained: pd.DataFrame,
         fig_weights_bal, ax = plt.subplots(1, 1, figsize=(figsize[0], 6), constrained_layout=True)
         # move bal to the end
         columns = list(bal_crypto.weights.columns[1:]) + [bal_crypto.weights.columns[0]]
-        bal_crypto.plot_weights(columns=columns, freq='M', ax=ax, **kwargs_w)
+        bal_crypto.plot_weights(columns=columns, freq='ME', ax=ax, **kwargs_w)
         b_fig_weights_bal = p.Block([p.Paragraph("", **KWARGS_TITLE),
                                      p.Paragraph(f"(E) {first_asset_target_weight:0.0%}/{1.0 - first_asset_target_weight:0.0%} "
                                                  f"Balanced/Alts Portfolio weights", **KWARGS_TITLE),
@@ -533,7 +533,7 @@ def produce_article_figures(time_period: TimePeriod,
             qis.save_fig(ra_tables, file_name=f"ratable_{optimisation_type}", local_path=FIGURE_SAVE_PATH)
 
         # weights
-        kwargs_w = qis.update_kwargs(FIG_KWARGS, dict(ncol=3, bbox_to_anchor=(0.5, 1.20), freq='M'))
+        kwargs_w = qis.update_kwargs(FIG_KWARGS, dict(ncol=3, bbox_to_anchor=(0.5, 1.20), freq='ME'))
 
         for idx, crypto_asset in enumerate(crypto_assets):
             alts_cryptos[crypto_asset][optimisation_type].plot_weights(title=f"{optimisation_type} with {crypto_asset} for Alts",
@@ -707,7 +707,7 @@ def produce_article_figures(time_period: TimePeriod,
 
 
 def backtest_constant_weight_portfolios(crypto_asset: str = 'BTC',
-                                        rebalance_freq: str = 'Q',
+                                        rebalance_freq: str = 'QE',
                                         is_alternatives: bool = False,
                                         time_period: TimePeriod = None,
                                         time_period_dict: Dict[str, TimePeriod] = None
@@ -852,7 +852,7 @@ def run_unit_test(unit_test: UnitTests):
         time_period = TimePeriod('31Dec2015', end_date)
         backtest_constant_weight_portfolios(
                                         crypto_asset='ETH',
-                                        rebalance_freq='Q',
+                                        rebalance_freq='QE',
                                         is_alternatives=False,
                                         time_period=time_period,
                                         time_period_dict=time_period_dict)

@@ -70,7 +70,7 @@ def run_multi_optimisers_backtest(prices: pd.DataFrame,
                                                             portfolio_objective=portfolio_objective,
                                                             min_weights=min_weights,
                                                             max_weights=max_weights,
-                                                            rebalancing_freq='Q',  # portfolio rebalancing
+                                                            rebalancing_freq='QE',  # portfolio rebalancing
                                                             ticker=f"{ticker}",  # portfolio id
                                                             rebalancing_costs=0.0010  # 10bp for rebalancin
                                                             )

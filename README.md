@@ -148,7 +148,7 @@ Key parameters include the specification of the estimation sample.
 The default (assuming daily price data) is weekly Wednesday returns ```returns_freq = 'W-WED'```.
 
 For price data with monthly observations 
-(such us hedged funds), monthly returns should be used ```returns_freq = 'M'```.
+(such us hedged funds), monthly returns should be used ```returns_freq = 'ME'```.
 
 
 2. ```span``` defines the estimation span for ewma covariance matrix. This parameter affects all methods which use 
@@ -172,7 +172,7 @@ For monthly returns, I recommend to use ```span=12``` or ```span=24```.
 
 3. ```rebalancing_freq``` defines the frequency of weights update. This parameter affects all methods.
 
-The default value is quarterly rebalancing  ```rebalancing_freq='Q'```.
+The default value is quarterly rebalancing  ```rebalancing_freq='QE'```.
 
 For the following methods 
 ```
@@ -190,7 +190,7 @@ PortfolioObjective in [QUADRATIC_UTILITY, MAXIMUM_SHARPE_RATIO, MAX_MIXTURE_CARA
 and it is linked to ```rebalancing_freq```. 
 
 Default value is ```roll_window=20``` which means that data for past 20 (quarters) are used in the sample
-with ```rebalancing_freq='Q'```
+with ```rebalancing_freq='QE'```
 
 For monthly rebalancing, I recomend to use ```roll_window=60``` which corresponds to using past 5 years of data
 
@@ -256,7 +256,7 @@ prices, benchmark_prices, group_data = fetch_universe_data()
 portfolio_objective = PortfolioObjective.MAX_DIVERSIFICATION  # define portfolio objective
 min_weights = {x: 0.0 for x in prices.columns} # all weights >= 0
 max_weights = {x: 1.0 for x in prices.columns}  # all weights <= 1
-rebalancing_freq = 'Q'  # weights rebalancing frequency
+rebalancing_freq = 'QE'  # weights rebalancing frequency
 returns_freq = None  # use data implied frequency = B
 span = 72  # span of number of returns for covariance estimation = 3 months
 is_gross_notional_one = True  # sum of weights = 1.0
@@ -310,7 +310,7 @@ Portfolio data class ```PortfolioData``` is implemented in [QIS package](https:/
 def run_customised_reporting(portfolio_data) -> plt.Figure:
     with sns.axes_style("darkgrid"):
         fig, axs = plt.subplots(3, 1, figsize=(12, 12), tight_layout=True)
-    kwargs = dict(x_date_freq='A', framealpha=0.8)
+    kwargs = dict(x_date_freq='YE', framealpha=0.8)
     portfolio_data.plot_nav(ax=axs[0], **kwargs)
     portfolio_data.plot_weights(ncol=len(prices.columns)//3,
                                 legend_stats=qis.LegendStats.AVG_LAST,

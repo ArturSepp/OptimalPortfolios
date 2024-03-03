@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "optimalportfolios"
-version = "1.0.9"
+version = "1.0.10"
 description = "Simulation and backtesting of optimal portfolios"
 license = "LICENSE.txt"
 authors = ["Artur Sepp <artursepp@gmail.com>"]
@@ -31,19 +31,19 @@ packages = [ {include = "optimalportfolios"} ]
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.11"
-numpy = ">=1.22.4"
-numba = ">=0.56.0"
-scipy = ">=1.9.0"
-pandas = ">=1.5.3"
-matplotlib = ">=3.5.2"
-seaborn = ">=0.11.2"
+numpy = ">=1.26.4"
+numba = ">=0.59.0"
+scipy = ">=1.12.0"
+pandas = ">=2.2.0"
+matplotlib = ">=3.8.3"
+seaborn = ">=0.13.2"
 scikit_learn = ">=1.3.0"
 cvxpy = ">=1.3.2"
-qis = ">=2.0.14"
+qis = ">=2.0.39"
 cryptocmd = ">=0.6.1"
 pybloqs = ">=1.2.13"
-setuptools = ">=63.2.0"
-yfinance = ">=0.2.3"
+setuptools = ">=69.1.1"
+yfinance = ">=0.2.37"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

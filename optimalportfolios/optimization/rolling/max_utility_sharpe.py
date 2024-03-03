@@ -23,7 +23,7 @@ def compute_rolling_max_utility_sharpe_weights(prices: pd.DataFrame,
                                                fixed_weights: Dict[str, float] = None,
                                                is_long_only: bool = True,
                                                returns_freq: Optional[str] = 'W-WED',
-                                               rebalancing_freq: str = 'Q',
+                                               rebalancing_freq: str = 'QE',
                                                roll_window: int = 20,  # defined on number of periods in rebalancing_freq
                                                span: int = 52,
                                                carra: float = 0.5,
@@ -83,7 +83,7 @@ def backtest_rolling_max_utility_sharpe_portfolios(prices: pd.DataFrame,
                                                    max_weights: Dict[str, float] = None,
                                                    fixed_weights: Dict[str, float] = None,
                                                    returns_freq: Optional[str] = 'W-WED',
-                                                   rebalancing_freq: str = 'Q',
+                                                   rebalancing_freq: str = 'QE',
                                                    roll_window: int = 20,
                                                    span: int = 52,
                                                    carra: float = 0.5,
@@ -122,7 +122,7 @@ def backtest_rolling_max_utility_sharpe_portfolios(prices: pd.DataFrame,
 
 def estimate_rolling_means_covar(prices: pd.DataFrame,
                                  returns_freq: str = 'W-WED',
-                                 rebalancing_freq: str = 'Q',
+                                 rebalancing_freq: str = 'QE',
                                  roll_window: int = 20,  # defined on number of periods in rebalancing_freq
                                  span: int = 52,
                                  is_log_returns: bool = True,
@@ -183,8 +183,8 @@ def run_unit_test(unit_test: UnitTests):
     if unit_test == UnitTests.ROLLING_MEANS_COVAR:
         # prices = prices[['SPY', 'TLT']].dropna()
 
-        means, covars = estimate_rolling_means_covar(prices=prices, rebalancing_freq='Q', roll_window=20)
-        #  = estimate_rolling_data(prices=prices, rebalancing_freq='M', roll_window=60)
+        means, covars = estimate_rolling_means_covar(prices=prices, rebalancing_freq='QE', roll_window=20)
+        #  = estimate_rolling_data(prices=prices, rebalancing_freq='ME', roll_window=60)
 
         vols = {}
         covs = {}
@@ -226,7 +226,7 @@ def run_unit_test(unit_test: UnitTests):
         port_data = backtest_rolling_max_utility_sharpe_portfolios(prices=prices,
                                                                    portfolio_objective=PortfolioObjective.MAXIMUM_SHARPE_RATIO,
                                                                    carra=0.0,
-                                                                   rebalancing_freq='Q',
+                                                                   rebalancing_freq='QE',
                                                                    roll_window=20,
                                                                    returns_freq='W-WED')
         with sns.axes_style("darkgrid"):

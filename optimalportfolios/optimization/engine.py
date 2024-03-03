@@ -22,7 +22,7 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
                                     fixed_weights: Dict[str, float] = None,
                                     is_long_only: bool = True,
                                     returns_freq: Optional[str] = 'W-WED',  # returns freq
-                                    rebalancing_freq: str = 'Q',  # portfolio rebalancing
+                                    rebalancing_freq: str = 'QE',  # portfolio rebalancing
                                     span: int = 52,  # ewma span for covariance matrix estimation
                                     roll_window: int = 20,  # linked to returns at rebalancing_freq
                                     carra: float = 0.5,  # carra parameters
@@ -88,7 +88,7 @@ def backtest_rolling_optimal_portfolio(prices: pd.DataFrame,
                                        fixed_weights: Dict[str, float] = None,
                                        is_long_only: bool = True,
                                        returns_freq: Optional[str] = 'W-WED',  # returns freq
-                                       rebalancing_freq: str = 'Q',  # portfolio rebalancing
+                                       rebalancing_freq: str = 'QE',  # portfolio rebalancing
                                        span: int = 52,  # ewma span for covariance matrix estimation
                                        carra: float = 0.5,  # carra parameters
                                        time_period: qis.TimePeriod = None,  # portfolio

@@ -92,7 +92,7 @@ def create_balanced_price() -> pd.Series:
     prices = pd.concat([spy, ief], axis=1).dropna()
     balanced = qis.backtest_model_portfolio(prices=prices,
                                             weights=[0.6, 0.4],
-                                            rebalance_freq='Q',
+                                            rebalance_freq='QE',
                                             is_rebalanced_at_first_date=True,
                                             rebalancing_costs=0.005,
                                             ticker=Assets.BAL.value)
