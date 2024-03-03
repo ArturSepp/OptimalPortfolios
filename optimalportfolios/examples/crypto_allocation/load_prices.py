@@ -63,7 +63,7 @@ def update_prices() -> pd.DataFrame:
 
     prices = pd.concat([bal, btc, eth, hf, pe, re, macro, cta, coms, gld], axis=1)
     # to business day frequency
-    prices = prices.asfreq('B', method='ffill').fillna(method='ffill')
+    prices = prices.asfreq('B', method='ffill').ffill()
     qis.save_df_to_csv(prices, file_name=PRICE_DATA_FILE, local_path=LOCAL_PATH)
 
     return prices
