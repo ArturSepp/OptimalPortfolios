@@ -78,6 +78,17 @@ Optional dependencies:
     pybloqs ">=1.2.13" (for producing html and pdf factsheets)
 
 
+To use pybloqs for pandas > 2.x, 
+locate file "...\Lib\site-packages\pybloqs\jinja\table.html" and change line 44 from:
+
+{% for col_name, cell in row.iteritems() %}
+
+to:
+
+{% for col_name, cell in row.items() %}
+
+
+
 ## **Portfolio optimisers** <a name="optimisers"></a>
 
 

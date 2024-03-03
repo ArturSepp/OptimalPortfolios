@@ -1,6 +1,14 @@
 """
 backtesting report for BTC portfolios
+to use pybloqs for pandas > 2.x
+locate file "...\Lib\site-packages\pybloqs\jinja\table.html"
+change line 44 from:
+{% for col_name, cell in row.iteritems() %}
+to:
+{% for col_name, cell in row.items() %}
+
 """
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
