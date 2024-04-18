@@ -111,9 +111,10 @@ def plot_mixure1(x: np.ndarray,
     x_ = np.linspace(np.min(x), np.max(x), 100)
 
     # find useful parameters
-    mean = gmm.fit(x).means_
-    covs = gmm.fit(x).covariances_
-    weights = gmm.fit(x).weights_
+    fitted_model = gmm.fit(x)
+    mean = fitted_model.means_
+    covs = fitted_model.covariances_
+    weights = fitted_model.weights_
 
     # create necessary things to plot
     x_axis = np.linspace(1.25*np.min(x), 1.25*np.max(x), 100)

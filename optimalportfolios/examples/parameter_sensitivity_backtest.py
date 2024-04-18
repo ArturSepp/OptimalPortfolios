@@ -10,8 +10,7 @@ from enum import Enum
 import qis as qis
 
 # package
-from optimalportfolios.optimization.config import PortfolioObjective
-from optimalportfolios.optimization.engine import backtest_rolling_optimal_portfolio
+from optimalportfolios import PortfolioObjective, backtest_rolling_optimal_portfolio
 import optimalportfolios.local_path as local_path
 
 

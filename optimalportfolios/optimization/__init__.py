@@ -6,6 +6,22 @@ from optimalportfolios.optimization.config import (PortfolioObjective,
 from optimalportfolios.optimization.engine import (compute_rolling_optimal_weights,
                                                    backtest_rolling_optimal_portfolio)
 
+from optimalportfolios.optimization.solvers.quadratic import (maximize_portfolio_objective_qp,
+                                                              max_qp_portfolio_vol_target,
+                                                              max_portfolio_sharpe_qp,
+                                                              solve_analytic_log_opt,
+                                                              print_portfolio_outputs)
+
+from optimalportfolios.optimization.solvers.nonlinear import (solve_equal_risk_contribution,
+                                                              solve_max_diversification,
+                                                              solve_risk_parity_alt,
+                                                              solve_risk_parity_constr_vol,
+                                                              solve_cara,
+                                                              solve_cara_mixture,
+                                                              calculate_diversification_ratio,
+                                                              calculate_risk_contribution,
+                                                              calculate_portfolio_var)
+
 from optimalportfolios.optimization.rolling.risk_based import (compute_rolling_ewma_risk_based_weights,
                                                                backtest_rolling_ewma_risk_based_portfolio)
 
