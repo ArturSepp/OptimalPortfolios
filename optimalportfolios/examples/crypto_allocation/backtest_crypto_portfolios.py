@@ -533,7 +533,7 @@ def produce_article_figures(time_period: TimePeriod,
             prices.columns = [x.replace('\n', ' ') for x in prices.columns]
             qis.plot_prices_with_dd(prices=prices.drop([benchmark_name], axis=1),
                                     pivot_prices=prices[benchmark_name],
-                                    performance_label=qis.PerformanceLabel.DETAILED,
+                                    perf_stats_labels=qis.PerfStatsLabels.DETAILED_EXCESS_SHARPE.value,
                                     axs=ts_axs[:, idx],
                                     **qis.update_kwargs(FIG_KWARGS, dict(fontsize=10)))
 
@@ -772,7 +772,7 @@ def backtest_constant_weight_portfolios(crypto_asset: str = 'BTC',
         figs.append(fig)
         qis.plot_prices(prices=navs,
                         title=f"Simulation of 60/40 portfolio with {crypto_asset} overlay",
-                        performance_label=qis.PerformanceLabel.TOTAL_DETAILED,
+                        perf_stats_labels=qis.PerfStatsLabels.DETAILED_EXCESS_SHARPE.value,
                         perf_params=PERF_PARAMS,
                         ax=ax,
                         **kwargs)
@@ -780,7 +780,7 @@ def backtest_constant_weight_portfolios(crypto_asset: str = 'BTC',
         fig, axs = plt.subplots(2, 1, figsize=(10, 12), tight_layout=True)
         figs.append(fig)
         qis.plot_prices_with_dd(prices=navs,
-                                performance_label=qis.PerformanceLabel.TOTAL_DETAILED,
+                                perf_stats_labels=qis.PerfStatsLabels.DETAILED_EXCESS_SHARPE.value,
                                 perf_params=PERF_PARAMS,
                                 axs=axs,
                                 **kwargs)
