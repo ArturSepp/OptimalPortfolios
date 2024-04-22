@@ -1,10 +1,7 @@
 """
 minimal example of using the backtester
 """
-
-# imports
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import yfinance as yf
@@ -48,7 +45,7 @@ prices = prices.loc['2003':, :]  # use price data from 2003
 
 # 3.a. define optimisation setup
 portfolio_objective = PortfolioObjective.MAX_DIVERSIFICATION  # define portfolio objective
-min_weights = {x: 0.0 for x in prices.columns} # all weights >= 0
+min_weights = {x: 0.0 for x in prices.columns}  # all weights >= 0
 max_weights = {x: 1.0 for x in prices.columns}  # all weights <= 1
 rebalancing_freq = 'QE'  # weights rebalancing frequency
 returns_freq = 'W-WED'  # use weekly returns
@@ -79,17 +76,17 @@ portfolio_data = qis.backtest_model_portfolio(prices=prices,
 # for group-based reporting set_group_data
 portfolio_data.set_group_data(group_data=group_data, group_order=list(group_data.unique()))
 # set time period for portfolio reporting
-time_period = qis.TimePeriod('01Jan2006', '31Aug2023')
-fig = qis.generate_strategy_factsheet(portfolio_data=portfolio_data,
-                                      benchmark_prices=benchmark_prices,
-                                      time_period=time_period,
-                                      **qis.fetch_default_report_kwargs(time_period=time_period))
+time_period = qis.TimePeriod('01Jan2006', prices.index[-1])
+figs = qis.generate_strategy_factsheet(portfolio_data=portfolio_data,
+                                       benchmark_prices=benchmark_prices,
+                                       time_period=time_period,
+                                       **qis.fetch_default_report_kwargs(time_period=time_period))
 # save report to pdf and png
-qis.save_figs_to_pdf(figs=[fig],
+qis.save_figs_to_pdf(figs=figs,
                      file_name=f"{portfolio_data.nav.name}_portfolio_factsheet",
                      orientation='landscape',
                      local_path="C://Users//Artur//OneDrive//analytics//outputs")
-qis.save_fig(fig=fig, file_name=f"example_portfolio_factsheet", local_path=f"figures/")
+qis.save_fig(fig=figs[0], file_name=f"example_portfolio_factsheet", local_path=f"figures/")
 
 
 # 6. can create customised reporting using portfolio_data custom reporting

@@ -5,7 +5,7 @@ backtest parameter sensitivity of one method
 import pandas as pd
 import matplotlib.pyplot as plt
 import yfinance as yf
-from typing import Tuple
+from typing import Tuple, List
 from enum import Enum
 import qis as qis
 
@@ -43,7 +43,7 @@ def run_max_diversification_sensitivity_to_span(prices: pd.DataFrame,
                                                 benchmark_prices: pd.DataFrame,
                                                 group_data: pd.Series,
                                                 time_period: qis.TimePeriod  # for reporting
-                                                ) -> plt.Figure:
+                                                ) -> List[ plt.Figure]:
     """
     test maximum diversification optimiser to span parameter
     span is number period for ewm filter
@@ -77,10 +77,11 @@ def run_max_diversification_sensitivity_to_span(prices: pd.DataFrame,
 
     # run cross portfolio report
     multi_portfolio_data = qis.MultiPortfolioData(portfolio_datas=portfolio_datas, benchmark_prices=benchmark_prices)
-    fig = qis.generate_multi_portfolio_factsheet(multi_portfolio_data=multi_portfolio_data,
-                                                 time_period=time_period,
-                                                 **qis.fetch_default_report_kwargs(time_period=time_period))
-    return fig
+    figs = qis.generate_multi_portfolio_factsheet(multi_portfolio_data=multi_portfolio_data,
+                                                  time_period=time_period,
+                                                  add_strategy_factsheets=True,
+                                                  **qis.fetch_default_report_kwargs(time_period=time_period))
+    return figs
 
 
 class UnitTests(Enum):
@@ -93,14 +94,14 @@ def run_unit_test(unit_test: UnitTests):
         prices, benchmark_prices, group_data = fetch_universe_data()
         prices = prices.loc['2003':, :]
         time_period = qis.TimePeriod(start='01Jan2005', end=prices.index[-1])  # backtest reporting
-        fig = run_max_diversification_sensitivity_to_span(prices=prices,
+        figs = run_max_diversification_sensitivity_to_span(prices=prices,
                                                           benchmark_prices=benchmark_prices,
                                                           group_data=group_data,
                                                           time_period=time_period)
 
         # save png and pdf
-        qis.save_fig(fig=fig, file_name=f"max_diversification_span", local_path=f"figures/")
-        qis.save_figs_to_pdf(figs=[fig],
+        qis.save_fig(fig=figs[0], file_name=f"max_diversification_span", local_path=f"figures/")
+        qis.save_figs_to_pdf(figs=figs,
                              file_name=f"max_diversification_span",
                              orientation='landscape',
                              local_path=local_path.get_output_path())
