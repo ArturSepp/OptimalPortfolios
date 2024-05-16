@@ -12,11 +12,12 @@ def filter_covar_and_vectors(covar: np.ndarray,
                              vectors: Dict[str, pd.Series] = None
                              ) -> Tuple[pd.DataFrame, Optional[Dict[str, pd.Series]]]:
     """
-    eliminate covar with nans
+    filter out assets with zero variance or nans
     filter corresponding vectors (can be means, win_max_weights, etc
     """
     covar_pd = pd.DataFrame(covar, index=tickers, columns=tickers)
-    is_good_asset = np.where(np.greater(np.diag(covar), 0.0))
+    variances = np.diag(covar)
+    is_good_asset = np.where(np.logical_and(np.greater(variances, 0.0), np.isnan(variances) == False))
     good_tickers = tickers[is_good_asset]
     covar_pd = covar_pd.loc[good_tickers, good_tickers]
     if vectors is not None:
@@ -24,3 +25,21 @@ def filter_covar_and_vectors(covar: np.ndarray,
     else:
         good_vectors = None
     return covar_pd, good_vectors
+
+
+def filter_covar_and_vectors_for_nans(covar: pd.DataFrame,
+                                      vectors: Dict[str, pd.Series] = None
+                                      ) -> Tuple[pd.DataFrame, Optional[Dict[str, pd.Series]]]:
+    """
+    filter out assets with zero variance or nans
+    filter corresponding vectors (can be means, win_max_weights, etc
+    """
+    variances = np.diag(covar.to_numpy())
+    is_good_asset = np.where(np.logical_and(np.greater(variances, 0.0), np.isnan(variances) == False))
+    good_tickers = covar.index[is_good_asset]
+    covar = covar.loc[good_tickers, good_tickers]
+    if vectors is not None:
+        good_vectors = {key: vector[good_tickers] for key, vector in vectors.items()}
+    else:
+        good_vectors = None
+    return covar, good_vectors

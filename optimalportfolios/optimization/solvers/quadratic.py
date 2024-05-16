@@ -74,57 +74,6 @@ def maximize_portfolio_objective_qp(portfolio_objective: PortfolioObjective,
     return optimal_weights
 
 
-def maximaze_alpha_over_tracking_error(covar: np.ndarray,
-                                       means: np.ndarray = None,
-                                       benchmark_weights: np.ndarray = None,
-                                       min_weights: np.ndarray = None,
-                                       max_weights: np.ndarray = None,
-                                       is_long_only: bool = True,
-                                       max_leverage: float = None,  # for long short portfolios
-                                       exposure_budget_eq: Optional[Tuple[np.ndarray, float]] = None,
-                                       carra: float = 1.0
-                                       ) -> np.ndarray:
-    """
-    cvx solution for max objective
-    subject to linear constraints
-         1. weight_min <= w <= weight_max
-         2. sum(w) = 1
-         3. exposure_budget_eq[0]^t*w = exposure_budget_eq[1]
-    """
-
-    n = covar.shape[0]
-    w = cvx.Variable(n)
-    portfolio_var = cvx.quad_form(w-benchmark_weights, covar)
-
-    objective_fun = means.T @ (w - benchmark_weights) - 0.5 * carra * portfolio_var
-
-    objective = cvx.Maximize(objective_fun)
-
-    # add constraints
-    constraints = []
-    # _gross_notional = 1:
-    constraints = constraints + [cvx.sum(w) == 1]
-    if is_long_only:
-        constraints = constraints + [w >= 0.0]
-    if min_weights is not None:
-        constraints = constraints + [w >= min_weights]
-    if max_weights is not None:
-        constraints = constraints + [w <= max_weights]
-    if exposure_budget_eq is not None:
-        constraints = constraints + [exposure_budget_eq[0] @ w == exposure_budget_eq[1]]
-    if max_leverage is not None:
-        constraints = constraints + [cvx.norm(w, 1) <= max_leverage]
-
-    problem = cvx.Problem(objective, constraints)
-    problem.solve(verbose=False)
-
-    optimal_weights = w.value
-    if optimal_weights is None:
-        raise ValueError(f"not solved")
-
-    return optimal_weights
-
-
 def max_qp_portfolio_vol_target(portfolio_objective: PortfolioObjective,
                                 covar: np.ndarray,
                                 means: np.ndarray = None,

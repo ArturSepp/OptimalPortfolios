@@ -12,6 +12,9 @@ from optimalportfolios.optimization.solvers.quadratic import (maximize_portfolio
                                                               solve_analytic_log_opt,
                                                               print_portfolio_outputs)
 
+from optimalportfolios.optimization.solvers.tracking_error import (withnans_maximize_alpha_over_tracking_error,
+                                                                   maximize_alpha_over_tracking_error)
+
 from optimalportfolios.optimization.solvers.nonlinear import (solve_equal_risk_contribution,
                                                               solve_max_diversification,
                                                               solve_risk_parity_alt,

@@ -1,2 +1,2 @@
 
-from optimalportfolios.utils import filter_nans
+from optimalportfolios.utils.filter_nans import filter_covar_and_vectors
