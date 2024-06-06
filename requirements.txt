@@ -10,3 +10,4 @@ cryptocmd>=0.6.1
 pybloqs>=1.2.13
 yfinance>=0.2.37
 qis>=2.0.53
+psycopg2>=2.9.5

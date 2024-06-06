@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "optimalportfolios"
-version = "1.0.17"
+version = "1.0.18"
 description = "Simulation and backtesting of optimal portfolios"
 license = "LICENSE.txt"
 authors = ["Artur Sepp <artursepp@gmail.com>"]
@@ -44,6 +44,7 @@ cryptocmd = ">=0.6.1"
 pybloqs = ">=1.2.13"
 setuptools = ">=69.1.1"
 yfinance = ">=0.2.37"
+psycopg2 = ">=2.9.5"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
