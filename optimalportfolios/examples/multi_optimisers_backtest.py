@@ -4,46 +4,20 @@ backtest several optimisers
 # imports
 import pandas as pd
 import matplotlib.pyplot as plt
-import yfinance as yf
-from typing import Tuple, List
+from typing import List
 from enum import Enum
 import qis as qis
 
 # package
-from optimalportfolios.optimization.config import PortfolioObjective
-from optimalportfolios.optimization.engine import backtest_rolling_optimal_portfolio
-import optimalportfolios.local_path as local_path
-
-
-def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
-    """
-    fetch universe data for the portfolio construction:
-    1. dividend and split adjusted end of day prices: price data may start / end at different dates
-    2. benchmark prices which is used for portfolio reporting and benchmarking
-    3. universe group data for portfolio reporting and risk attribution for large universes
-    this function is using yfinance to fetch the price data
-    """
-    universe_data = dict(SPY='Equities',
-                         QQQ='Equities',
-                         EEM='Equities',
-                         TLT='Bonds',
-                         IEF='Bonds',
-                         LQD='Credit',
-                         HYG='HighYield',
-                         GLD='Gold')
-    tickers = list(universe_data.keys())
-    group_data = pd.Series(universe_data)
-    prices = yf.download(tickers, start=None, end=None, ignore_tz=True)['Adj Close']
-    prices = prices[tickers]  # arrange as given
-    prices = prices.asfreq('B', method='ffill')  # refill at B frequency
-    benchmark_prices = prices[['SPY', 'TLT']]
-    return prices, benchmark_prices, group_data
+from optimalportfolios import Constraints, backtest_rolling_optimal_portfolio, PortfolioObjective
+from optimalportfolios.examples.universe import fetch_benchmark_universe_data
 
 
 def run_multi_optimisers_backtest(prices: pd.DataFrame,
                                   benchmark_prices: pd.DataFrame,
                                   group_data: pd.Series,
-                                  time_period: qis.TimePeriod  # for reporting
+                                  time_period: qis.TimePeriod,  # for weights
+                                  perf_time_period: qis.TimePeriod  # for reporting
                                   ) -> List[plt.Figure]:
     """
     backtest multi optimisers
@@ -55,12 +29,13 @@ def run_multi_optimisers_backtest(prices: pd.DataFrame,
     portfolio_objectives = {'MaxDiversification': PortfolioObjective.MAX_DIVERSIFICATION,
                             'EqualRisk': PortfolioObjective.EQUAL_RISK_CONTRIBUTION,
                             'MinVariance': PortfolioObjective.MIN_VARIANCE,
-                            'MaxSharpe': PortfolioObjective.MAXIMUM_SHARPE_RATIO}
-                            # 'MaxMixtureCarra': PortfolioObjective.MAX_MIXTURE_CARA}
+                            'MaxSharpe': PortfolioObjective.MAXIMUM_SHARPE_RATIO,
+                            'MaxCarraMixture': PortfolioObjective.MAX_CARA_MIXTURE}
 
-    # set global params for portfolios
-    min_weights = {x: 0.0 for x in prices.columns}  # all weights >= 0
-    max_weights = {x: 0.5 for x in prices.columns}  # all weights <= 0.5
+    # set global constaints for portfolios
+    constraints0 = Constraints(is_long_only=True,
+                               min_weights=pd.Series(0.0, index=prices.columns),
+                               max_weights=pd.Series(0.5, index=prices.columns))
 
     # now create a list of portfolios
     portfolio_datas = []
@@ -68,19 +43,27 @@ def run_multi_optimisers_backtest(prices: pd.DataFrame,
         print(ticker)
         portfolio_data = backtest_rolling_optimal_portfolio(prices=prices,
                                                             portfolio_objective=portfolio_objective,
-                                                            min_weights=min_weights,
-                                                            max_weights=max_weights,
+                                                            constraints0=constraints0,
+                                                            time_period=time_period,
+                                                            perf_time_period=perf_time_period,
+                                                            returns_freq='W-WED',  # covar matrix estimation on weekly returns
                                                             rebalancing_freq='QE',  # portfolio rebalancing
-                                                            ticker=f"{ticker}",  # portfolio id
-                                                            rebalancing_costs=0.0010  # 10bp for rebalancin
+                                                            span=52,  # ewma span for covariance matrix estimation: span = 1y of weekly returns
+                                                            roll_window=5*52,  # linked to returns at rebalancing_freq: 5y of data for max sharpe and mixture carra
+                                                            carra=0.5,  # carra parameter
+                                                            n_mixures=3,  # for mixture carra utility
+                                                            rebalancing_costs=0.0010,  # 10bp for rebalancin
+                                                            weight_implementation_lag=1,  # weights are implemnted next day after comuting
+                                                            ticker=f"{ticker}"  # portfolio id
                                                             )
+        portfolio_data.set_group_data(group_data=group_data)
         portfolio_datas.append(portfolio_data)
 
     # run cross portfolio report
     multi_portfolio_data = qis.MultiPortfolioData(portfolio_datas=portfolio_datas, benchmark_prices=benchmark_prices)
     figs = qis.generate_multi_portfolio_factsheet(multi_portfolio_data=multi_portfolio_data,
                                                   time_period=time_period,
-                                                  add_strategy_factsheets=True,
+                                                  add_strategy_factsheets=False,
                                                   **qis.fetch_default_report_kwargs(time_period=time_period))
     return figs
 
@@ -91,15 +74,17 @@ class UnitTests(Enum):
 
 def run_unit_test(unit_test: UnitTests):
 
+    import optimalportfolios.local_path as local_path
+
     if unit_test == UnitTests.MULTI_OPTIMISERS_BACKTEST:
-        prices, benchmark_prices, group_data = fetch_universe_data()
-        prices = prices.loc['2000':, :]  # need 5 years for max sharpe and max carra methods
-        print(prices)
-        time_period = qis.TimePeriod(start='01Jan2005', end=prices.index[-1])  # backtest reporting
+        prices, benchmark_prices, ac_loadings, benchmark_weights, group_data = fetch_benchmark_universe_data()
+        time_period = qis.TimePeriod(start='31Dec1998', end=prices.index[-1])  # backtest start: need 6y of data for rolling Sharpe and max mixure portfolios
+        perf_time_period = qis.TimePeriod(start='31Dec2004', end=prices.index[-1])  # backtest reporting
         figs = run_multi_optimisers_backtest(prices=prices,
                                              benchmark_prices=benchmark_prices,
                                              group_data=group_data,
-                                             time_period=time_period)
+                                             time_period=time_period,
+                                             perf_time_period=perf_time_period)
 
         # save png and pdf
         qis.save_fig(fig=figs[0], file_name=f"multi_optimisers_backtest", local_path=f"figures/")

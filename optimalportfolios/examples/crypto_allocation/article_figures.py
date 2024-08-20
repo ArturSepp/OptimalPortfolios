@@ -18,7 +18,7 @@ REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='QE')
 
 FIGSIZE = (14, 6)
 
-FIGURE_SAVE_PATH = "C://Users//artur//OneDrive//My Papers//Working Papers//CryptoAllocation. Zurich. Jan 2022//figs1//"
+FIGURE_SAVE_PATH = "C://Users//artur//OneDrive//My Papers//Published Papers//CryptoAllocation. Zurich. Jan 2022//UpdatedFigures//"
 SAVE_FIGS = True
 
 PERF_COLUMNS0 = [#PerfStat.END_DATE,
@@ -78,7 +78,6 @@ def plot_performance_table(prices: pd.DataFrame,
                                             fontsize=9,
                                             transpose=False,
                                             special_rows_colors=[(1, 'lightblue')],
-                                            is_log_returns=True,
                                             cmap='Greys'))
     fig, axs = plt.subplots(len(time_period_dict.keys()), 1, figsize=(12, 3.0), constrained_layout=True)
     dfs_out = {}
@@ -116,7 +115,6 @@ def plot_performance_tables(benchmark: str,
                                             #heatmap_columns=[4],
                                             fontsize=9,
                                             transpose=False,
-                                            is_log_returns=True,
                                             cmap='Greys'))
 
     fig, axs = plt.subplots(len(time_period_dict.keys()), 1, figsize=(11, 5), constrained_layout=True)
@@ -259,6 +257,7 @@ class UnitTests(Enum):
     SCATTER = 6
     PDF_PLOT = 7
     PLOT_MIXURE = 8
+    PERFORMANCE_CHECK = 9
 
 
 def run_unit_test(unit_test: UnitTests):
@@ -306,7 +305,7 @@ def run_unit_test(unit_test: UnitTests):
             qis.save_fig(fig, file_name='performance_table', local_path=FIGURE_SAVE_PATH)
 
     elif unit_test == UnitTests.ANNUAL_ROLLING_TABLES:
-        price = load_prices(assets=[Assets.BTC]).dropna().iloc[:, 0].loc[:end_date]
+        price = load_prices(assets=[Assets.BTC], is_updated=True).dropna().iloc[:, 0]#.loc[:end_date]
         fig, dfs_out = plot_annual_tables(price=price, perf_params=PERF_PARAMS)
         if SAVE_FIGS:
             qis.save_fig(fig, file_name='rolling_annual_table', local_path=FIGURE_SAVE_PATH)
@@ -408,12 +407,21 @@ def run_unit_test(unit_test: UnitTests):
             qis.save_fig(fig2, file_name='params', local_path=FIGURE_SAVE_PATH)
             qis.save_df_to_excel(dfs_out, file_name='clusters_params', local_path=FIGURE_SAVE_PATH)
 
+    elif unit_test == UnitTests.PERFORMANCE_CHECK:
+        time_period_from_last = qis.TimePeriod('30Jun2023', '16Aug2024')
+        prices = load_prices(crypto_asset=None, is_updated=True)
+        prices1 = time_period_from_last.locate(prices)
+        qis.plot_ra_perf_table_benchmark(prices=prices1,
+                                         benchmark=Assets.BAL.value,
+                                         perf_params=PERF_PARAMS,
+                                         perf_columns=PERF_COLUMNS_LONG)
+
     plt.show()
 
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.CORR_TABLE
+    unit_test = UnitTests.ANNUAL_ROLLING_TABLES
 
     is_run_all_tests = False
     if is_run_all_tests:

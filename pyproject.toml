@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "optimalportfolios"
-version = "1.0.18"
+version = "2.1.1"
 description = "Simulation and backtesting of optimal portfolios"
 license = "LICENSE.txt"
 authors = ["Artur Sepp <artursepp@gmail.com>"]
@@ -24,6 +24,7 @@ classifiers=[
         "Topic :: Office/Business :: Financial :: Investment",
     ]
 packages = [ {include = "optimalportfolios"} ]
+exclude=["OptimalPortfolios/examples/figures"]
 
 [tool.poetry.urls]
 "Issues" = "https://github.com/ArturSepp/OptimalPortfolios/issues"
@@ -39,8 +40,7 @@ matplotlib = ">=3.8.3"
 seaborn = ">=0.13.2"
 scikit_learn = ">=1.3.0"
 cvxpy = ">=1.3.2"
-qis = ">=2.0.39"
-cryptocmd = ">=0.6.1"
+qis = ">=2.1.1"
 pybloqs = ">=1.2.13"
 setuptools = ">=69.1.1"
 yfinance = ">=0.2.37"

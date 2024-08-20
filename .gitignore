@@ -1,4 +1,6 @@
 # created by virtualenv automatically
+/quant_strats/
+
 .idea/
 Lib/
 Scripts/

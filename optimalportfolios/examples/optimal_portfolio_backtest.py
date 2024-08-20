@@ -9,8 +9,7 @@ from typing import Tuple
 import qis as qis
 
 # package
-from optimalportfolios.optimization.config import PortfolioObjective
-from optimalportfolios.optimization.engine import compute_rolling_optimal_weights
+from optimalportfolios import compute_rolling_optimal_weights, PortfolioObjective, Constraints
 
 
 # 1. we define the investment universe and allocation by asset classes
@@ -41,42 +40,40 @@ def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
 
 # 2. get universe data
 prices, benchmark_prices, group_data = fetch_universe_data()
-prices = prices.loc['2003':, :]  # use price data from 2003
+time_period = qis.TimePeriod('31Dec2004', '16Aug2024')   # period for computing weights backtest
 
 # 3.a. define optimisation setup
 portfolio_objective = PortfolioObjective.MAX_DIVERSIFICATION  # define portfolio objective
-min_weights = {x: 0.0 for x in prices.columns}  # all weights >= 0
-max_weights = {x: 1.0 for x in prices.columns}  # all weights <= 1
-rebalancing_freq = 'QE'  # weights rebalancing frequency
 returns_freq = 'W-WED'  # use weekly returns
+rebalancing_freq = 'QE'  # weights rebalancing frequency: rebalancing is quarterly on WED
 span = 52  # span of number of returns_freq-returns for covariance estimation = 12y
-is_long_only = True  # all weights >= 0
+constraints0 = Constraints(is_long_only=True,
+                           min_weights=pd.Series(0.0, index=prices.columns),
+                           max_weights=pd.Series(0.5, index=prices.columns))
 
-# 3.b. compute rolling portfolio weights rebalanced every quarter
+# 3.b. compute solvers portfolio weights rebalanced every quarter
 weights = compute_rolling_optimal_weights(prices=prices,
                                           portfolio_objective=portfolio_objective,
-                                          min_weights=min_weights,
-                                          max_weights=max_weights,
+                                          constraints0=constraints0,
+                                          time_period=time_period,
                                           rebalancing_freq=rebalancing_freq,
-                                          is_long_only=is_long_only,
                                           span=span)
 
 # 4. given portfolio weights, construct the performance of the portfolio
 funding_rate = None  # on positive / negative cash balances
 rebalancing_costs = 0.0010  # rebalancing costs per volume = 10bp
-portfolio_data = qis.backtest_model_portfolio(prices=prices,
+weight_implementation_lag = 1  # portfolio is implemented next day after weights are computed
+portfolio_data = qis.backtest_model_portfolio(prices=prices.loc[weights.index[0]:, :],
                                               weights=weights,
-                                              is_rebalanced_at_first_date=True,
                                               ticker='MaxDiversification',
                                               funding_rate=funding_rate,
-                                              rebalancing_costs=rebalancing_costs,
-                                              is_output_portfolio_data=True)
+                                              weight_implementation_lag=weight_implementation_lag,
+                                              rebalancing_costs=rebalancing_costs)
 
 # 5. using portfolio_data run the reporting with strategy factsheet
 # for group-based reporting set_group_data
 portfolio_data.set_group_data(group_data=group_data, group_order=list(group_data.unique()))
 # set time period for portfolio reporting
-time_period = qis.TimePeriod('01Jan2006', prices.index[-1])
 figs = qis.generate_strategy_factsheet(portfolio_data=portfolio_data,
                                        benchmark_prices=benchmark_prices,
                                        time_period=time_period,
@@ -86,19 +83,21 @@ qis.save_figs_to_pdf(figs=figs,
                      file_name=f"{portfolio_data.nav.name}_portfolio_factsheet",
                      orientation='landscape',
                      local_path="C://Users//Artur//OneDrive//analytics//outputs")
-qis.save_fig(fig=figs[0], file_name=f"example_portfolio_factsheet", local_path=f"figures/")
+qis.save_fig(fig=figs[0], file_name=f"example_portfolio_factsheet1", local_path=f"figures/")
+qis.save_fig(fig=figs[1], file_name=f"example_portfolio_factsheet2", local_path=f"figures/")
 
 
 # 6. can create customised reporting using portfolio_data custom reporting
 def run_customised_reporting(portfolio_data) -> plt.Figure:
     with sns.axes_style("darkgrid"):
         fig, axs = plt.subplots(3, 1, figsize=(12, 12), tight_layout=True)
-    kwargs = dict(x_date_freq='YE', framealpha=0.8)
+    perf_params = qis.PerfParams(freq='W-WED', freq_reg='ME')
+    kwargs = dict(x_date_freq='YE', framealpha=0.8, perf_params=perf_params)
     portfolio_data.plot_nav(ax=axs[0], **kwargs)
     portfolio_data.plot_weights(ncol=len(prices.columns)//3,
                                 legend_stats=qis.LegendStats.AVG_LAST,
                                 title='Portfolio weights',
-                                bbox_to_anchor=None,
+                                freq='QE',
                                 ax=axs[1],
                                 **kwargs)
     portfolio_data.plot_returns_scatter(benchmark_price=benchmark_prices.iloc[:, 0],

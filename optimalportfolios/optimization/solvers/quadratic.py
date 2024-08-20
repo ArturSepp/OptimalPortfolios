@@ -1,29 +1,97 @@
 """
-portfolio optimization using objective functions
+portfolio optimization using quadratic objective functions
 """
 # packages
 import numpy as np
 import pandas as pd
 import cvxpy as cvx
-import seaborn as sns
-import matplotlib.pyplot as plt
+import qis as qis
 from numba import jit
 from enum import Enum
-from typing import Tuple, Optional
+from typing import Tuple
 
-from optimalportfolios.optimization.config import PortfolioObjective
+from optimalportfolios.config import PortfolioObjective
+from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 
 
-def maximize_portfolio_objective_qp(portfolio_objective: PortfolioObjective,
-                                    covar: np.ndarray,
-                                    means: np.ndarray = None,
-                                    min_weights: np.ndarray = None,
-                                    max_weights: np.ndarray = None,
-                                    is_long_only: bool = True,
-                                    max_leverage: float = None,  # for long short portfolios
-                                    exposure_budget_eq: Optional[Tuple[np.ndarray, float]] = None,
-                                    carra: float = 1.0
-                                    ) -> np.ndarray:
+def rolling_quadratic_optimisation(prices: pd.DataFrame,
+                                   constraints0: Constraints,
+                                   time_period: qis.TimePeriod,  # when we start building portfolios
+                                   portfolio_objective: PortfolioObjective = PortfolioObjective.MIN_VARIANCE,
+                                   returns_freq: str = 'W-WED',
+                                   rebalancing_freq: str = 'QE',
+                                   span: int = 52,  # 1y of weekly returns
+                                   carra: float = 1.0
+                                   ) -> pd.DataFrame:
+    """
+    compute quadratic optimisation for portfolio_objective in [PortfolioObjective.MIN_VARIANCE,
+                                                                PortfolioObjective.QUADRATIC_UTILITY]
+    """
+    # compute ewma covar with fill nans in covar using zeros
+    returns = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=returns_freq)
+    returns_np = returns.to_numpy()
+    x = returns_np - qis.compute_ewm(returns_np, span=span)
+    covar_tensor_txy = qis.compute_ewm_covar_tensor(a=x, span=span, nan_backfill=qis.NanBackfill.ZERO_FILL)
+    an_factor = qis.infer_an_from_data(data=returns)
+
+    # generate rebalancing dates on the returns index
+    rebalancing_schedule = qis.generate_rebalancing_indicators(df=returns, freq=rebalancing_freq)
+
+    tickers = prices.columns.to_list()
+    weights = {}
+    weights_0 = None
+    for idx, (date, value) in enumerate(rebalancing_schedule.items()):
+        if value and date >= time_period.start:
+            pd_covar = pd.DataFrame(an_factor*covar_tensor_txy[idx], index=tickers, columns=tickers)
+            weights_ = wrapper_quadratic_optimisation(pd_covar=pd_covar,
+                                                      constraints0=constraints0,
+                                                      weights_0=weights_0,
+                                                      portfolio_objective=portfolio_objective,
+                                                      carra=carra)
+            weights_0 = weights_  # update for next rebalancing
+            weights[date] = weights_
+
+    weights = pd.DataFrame.from_dict(weights, orient='index')
+    weights = weights.reindex(columns=tickers)
+    return weights
+
+
+def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
+                                   constraints0: Constraints,
+                                   portfolio_objective: PortfolioObjective = PortfolioObjective.MIN_VARIANCE,
+                                   weights_0: pd.Series = None,
+                                   carra: float = 1.0,
+                                   solver: str = 'ECOS_BB'
+                                   ) -> pd.Series:
+    """
+    create wrapper accounting for nans or zeros in covar matrix
+    assets in columns/rows of covar must correspond to alphas.index
+    """
+    # filter out assets with zero variance or nans
+    clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar)
+    constraints = constraints0.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
+                                                         total_to_good_ratio=len(pd_covar.columns) / len(clean_covar.columns),
+                                                         weights_0=weights_0)
+
+    weights = cvx_quadratic_optimisation(portfolio_objective=portfolio_objective,
+                                         covar=clean_covar.to_numpy(),
+                                         constraints=constraints,
+                                         carra=carra,
+                                         solver=solver)
+    weights = pd.Series(weights, index=clean_covar.index)
+    weights = weights.reindex(index=pd_covar.index).fillna(0.0)  # align with tickers
+    return weights
+
+
+def cvx_quadratic_optimisation(portfolio_objective: PortfolioObjective,
+                               covar: np.ndarray,
+                               constraints: Constraints,
+                               means: np.ndarray = None,
+                               verbose: bool = False,
+                               solver: str = 'ECOS_BB',
+                               carra: float = 1.0
+                               ) -> np.ndarray:
     """
     cvx solution for max objective
     subject to linear constraints
@@ -31,9 +99,14 @@ def maximize_portfolio_objective_qp(portfolio_objective: PortfolioObjective,
          2. sum(w) = 1
          3. exposure_budget_eq[0]^t*w = exposure_budget_eq[1]
     """
-
+    # set up problem
     n = covar.shape[0]
-    w = cvx.Variable(n)
+    if constraints.is_long_only:
+        nonneg = True
+    else:
+        nonneg = False
+    w = cvx.Variable(n, nonneg=nonneg)
+
     portfolio_var = cvx.quad_form(w, covar)
 
     if portfolio_objective == PortfolioObjective.MIN_VARIANCE:
@@ -47,58 +120,43 @@ def maximize_portfolio_objective_qp(portfolio_objective: PortfolioObjective,
     else:
         raise ValueError(f"unknown portfolio_objective")
 
+    # set solver
     objective = cvx.Maximize(objective_fun)
-
-    # add constraints
-    constraints = []
-    # _gross_notional = 1:
-    constraints = constraints + [cvx.sum(w) == 1]
-    if is_long_only:
-        constraints = constraints + [w >= 0.0]
-    if min_weights is not None:
-        constraints = constraints + [w >= min_weights]
-    if max_weights is not None:
-        constraints = constraints + [w <= max_weights]
-    if exposure_budget_eq is not None:
-        constraints = constraints + [exposure_budget_eq[0] @ w == exposure_budget_eq[1]]
-    if max_leverage is not None:
-        constraints = constraints + [cvx.norm(w, 1) <= max_leverage]
-
-    problem = cvx.Problem(objective, constraints)
-    problem.solve(verbose=True)
+    constraints_ = constraints.set_cvx_constraints(w=w, covar=covar)
+    problem = cvx.Problem(objective, constraints_)
+    problem.solve(verbose=verbose, solver=solver)
 
     optimal_weights = w.value
     if optimal_weights is None:
-        raise ValueError(f"not solved")
+        # raise ValueError(f"not solved")
+        print(f"not solved")
+        if constraints.weights_0 is not None:
+            optimal_weights = constraints.weights_0.to_numpy()
+            print(f"using weights_0")
+        else:
+            optimal_weights = np.zeros(n)
+            print(f"using zeroweights")
 
     return optimal_weights
 
 
 def max_qp_portfolio_vol_target(portfolio_objective: PortfolioObjective,
                                 covar: np.ndarray,
+                                constraints: Constraints,
                                 means: np.ndarray = None,
-                                weight_min: np.ndarray = None,
-                                weight_max: np.ndarray = None,
-                                is_long_only: bool = True,
-                                exposure_budget_eq: Tuple[np.ndarray, float] = None,
                                 vol_target: float = 0.12
                                 ) -> np.ndarray:
     """
     implement vol target
     """
-
     max_iter = 20
     sol_tol = 10e-6
-
     def f(lambda_n: float) -> float:
-        w_n = maximize_portfolio_objective_qp(portfolio_objective=portfolio_objective,
-                                              covar=covar,
-                                              means=means,
-                                              min_weights=weight_min,
-                                              max_weights=weight_max,
-                                              is_long_only=is_long_only,
-                                              exposure_budget_eq=exposure_budget_eq,
-                                              carra=lambda_n)
+        w_n = cvx_quadratic_optimisation(portfolio_objective=portfolio_objective,
+                                         covar=covar,
+                                         means=means,
+                                         constraints=constraints,
+                                         carra=lambda_n)
 
         print('lambda_n='+str(lambda_n))
         print_portfolio_outputs(optimal_weights=w_n,
@@ -138,88 +196,15 @@ def max_qp_portfolio_vol_target(portfolio_objective: PortfolioObjective,
             b = lambda_n
         print('it='+str(it))
 
-    w_n = maximize_portfolio_objective_qp(portfolio_objective=portfolio_objective,
-                                          covar=covar,
-                                          means=means,
-                                          min_weights=weight_min,
-                                          max_weights=weight_max,
-                                          is_long_only=is_long_only,
-                                          exposure_budget_eq=exposure_budget_eq,
-                                          carra=lambda_n)
+    w_n = cvx_quadratic_optimisation(portfolio_objective=portfolio_objective,
+                                     covar=covar,
+                                     means=means,
+                                     constraints=constraints,
+                                     carra=lambda_n)
     print_portfolio_outputs(optimal_weights=w_n,
                             covar=covar,
                             means=means)
     return w_n
-
-
-def max_portfolio_sharpe_qp(covar: np.ndarray,
-                            means: np.ndarray,
-                            min_weights: np.ndarray = None,
-                            max_weights: np.ndarray = None,
-                            is_long_only: bool = True,
-                            exposure_budget_eq: Tuple[np.ndarray, float] = None,
-                            exposure_budget_le: Tuple[np.ndarray, float] = None,
-                            max_leverage: float = None,   # for long-short portfolios
-                            is_print_log: bool = False
-                            ) -> np.ndarray:
-    """
-    max means^t*w / sqrt(w^t @ covar @ w)
-    subject to
-     1. weight_min <= w <= weight_max
-    """
-    n = covar.shape[0]
-    z = cvx.Variable(n+1)
-    y = z[:n]
-    k = z[n]
-
-    objective = cvx.Minimize(cvx.quad_form(y, covar))
-
-    # add constraints
-    constraints = [means.T @ y == 1.0]  # scaling
-
-    if max_leverage is None:
-        constraints = constraints + [cvx.sum(y) == k]
-    else:
-        constraints = constraints + [cvx.sum(y) >= k]  #scaling
-
-    if is_long_only:
-        constraints = constraints + [y >= 0]
-
-    if exposure_budget_eq is not None:
-        constraints = constraints + [exposure_budget_eq[0] @ y == exposure_budget_eq[1]*k]
-
-    if exposure_budget_le is not None:
-        constraints = constraints + [exposure_budget_le[0] @ y <= exposure_budget_le[1]*k]
-
-    if min_weights is not None:
-        constraints = constraints + [y >= k * min_weights]
-    if max_weights is not None:
-        constraints = constraints + [y <= k * max_weights]
-
-    problem = cvx.Problem(objective, constraints)
-    problem.solve()
-
-    optimal_weights = z.value
-
-    if optimal_weights is not None:
-        optimal_weights = optimal_weights[:n] / optimal_weights[n]  # apply rescaling
-    else:
-
-        print(f"max_port_sharpe_qp optimal_weights not found = {optimal_weights}")
-        print(f"covar={covar}")
-        print(f"means={means}")
-        if min_weights is not None:
-            print(f"setting optimal_weights to weight_min = {min_weights}")
-            optimal_weights = min_weights
-        else:
-            print(f"setting optimal_weights to 0")
-            optimal_weights = np.zeros_like(n)
-
-    if is_print_log:
-        weights_str = ' '.join([f"{w:0.3f}" for w in optimal_weights])
-        print(weights_str)
-
-    return optimal_weights
 
 
 @jit(nopython=True)
@@ -227,7 +212,7 @@ def solve_analytic_log_opt(covar: np.ndarray,
                            means: np.ndarray,
                            exposure_budget_eq: Tuple[np.ndarray, float] = None,
                            gamma: float = 1.0
-                           )-> np.ndarray:
+                           ) -> np.ndarray:
 
     """
     analytic solution for max{means^t*w - 0.5*gamma*w^t*covar*w}
@@ -286,23 +271,25 @@ class UnitTests(Enum):
 
 
 def run_unit_test(unit_test: UnitTests):
+    
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    from optimalportfolios.optimization.solvers.max_sharpe import cvx_maximize_portfolio_sharpe
 
     means = np.array([-0.01, 0.05])  # sharpe = [-.1, 0.5]
     covar = np.array([[0.2**2, -0.0075],
                       [-0.0075, 0.1**2]])
+    constraints = Constraints()
 
     if unit_test == UnitTests.MIN_VAR:
 
         weight_min = np.array([0.0, 0.0])
         weight_max = np.array([10.0, 10.0])
 
-        optimal_weights = maximize_portfolio_objective_qp(portfolio_objective=PortfolioObjective.MIN_VARIANCE,
-                                                          covar=covar,
-                                                          means=means,
-                                                          min_weights=None,
-                                                          max_weights=None,
-                                                          is_long_only=True,
-                                                          exposure_budget_eq=None)
+        optimal_weights = cvx_quadratic_optimisation(portfolio_objective=PortfolioObjective.MIN_VARIANCE,
+                                                     covar=covar,
+                                                     means=means,
+                                                     constraints=constraints)
 
         print_portfolio_outputs(optimal_weights=optimal_weights,
                                 covar=covar,
@@ -311,14 +298,11 @@ def run_unit_test(unit_test: UnitTests):
     elif unit_test == UnitTests.MAX_UTILITY:
 
         gamma = 50*np.trace(covar)
-        optimal_weights = maximize_portfolio_objective_qp(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
-                                                          covar=covar,
-                                                          means=means,
-                                                          min_weights=None,
-                                                          max_weights=None,
-                                                          is_long_only=True,
-                                                          exposure_budget_eq=None,
-                                                          carra=gamma)
+        optimal_weights = cvx_quadratic_optimisation(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
+                                                     covar=covar,
+                                                     means=means,
+                                                     constraints=constraints,
+                                                     carra=gamma)
 
         print_portfolio_outputs(optimal_weights=optimal_weights,
                                 covar=covar,
@@ -341,10 +325,11 @@ def run_unit_test(unit_test: UnitTests):
                                                   exposure_budget_eq=exposure_budget_eq,
                                                   gamma=lang_lambda)
             else:
-                w_lambda = maximize_portfolio_objective_qp(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
-                                                           covar=covar,
-                                                           means=means,
-                                                           carra=lang_lambda)
+                w_lambda = cvx_quadratic_optimisation(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
+                                                      covar=covar,
+                                                      means=means,
+                                                      constraints=constraints,
+                                                      carra=lang_lambda)
 
             portfolio_vol = np.sqrt(w_lambda.T@covar@w_lambda)
             portfolio_sharpe = means.T @ w_lambda / portfolio_vol
@@ -364,7 +349,6 @@ def run_unit_test(unit_test: UnitTests):
         sns.lineplot(data=protfolio_data[['mean', 'vol']], ax=axs[1])
 
     elif unit_test == UnitTests.MAX_UTILITY_VOL_TARGET:
-
         optimal_weights = max_qp_portfolio_vol_target(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
                                                       covar=covar,
                                                       means=means,
@@ -394,11 +378,11 @@ def run_unit_test(unit_test: UnitTests):
                                                   exposure_budget_eq=exposure_budget_eq,
                                                   gamma=lang_lambda)
             else:
-                w_lambda = maximize_portfolio_objective_qp(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
-                                                           covar=covar,
-                                                           means=means,
-                                                           exposure_budget_eq=exposure_budget_eq,
-                                                           carra=lang_lambda)
+                w_lambda = cvx_quadratic_optimisation(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
+                                                      covar=covar,
+                                                      means=means,
+                                                      constraints=constraints,
+                                                      carra=lang_lambda)
 
             print(f"portfolio with lambda = {lang_lambda}")
             print_portfolio_outputs(optimal_weights=w_lambda,
@@ -417,9 +401,9 @@ def run_unit_test(unit_test: UnitTests):
         protfolio_data = pd.concat([portfolio_return, portfolio_vol, portfolio_sharpe], axis=1)
         print(protfolio_data)
 
-        opt_sharpe_w = max_portfolio_sharpe_qp(covar=covar,
-                                               means=means,
-                                               exposure_budget_eq=exposure_budget_eq)
+        opt_sharpe_w = cvx_maximize_portfolio_sharpe(covar=covar,
+                                                     means=means,
+                                                     constraints=constraints)
 
         print(f"exact solution")
         print_portfolio_outputs(optimal_weights=opt_sharpe_w,
@@ -464,9 +448,9 @@ def run_unit_test(unit_test: UnitTests):
 
         # invest 100% in first asset
         exposure_budget_eq = (np.array([1.0, 0.0]), 1.0)
-        optimal_weights = max_portfolio_sharpe_qp(covar=covar,
-                                                  means=means,
-                                                  exposure_budget_eq=exposure_budget_eq)
+        optimal_weights = cvx_maximize_portfolio_sharpe(covar=covar,
+                                                        means=means,
+                                                        constraints=constraints)
 
         print_portfolio_outputs(optimal_weights=optimal_weights,
                                 covar=covar,

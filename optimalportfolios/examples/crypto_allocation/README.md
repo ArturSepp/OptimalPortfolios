@@ -1,7 +1,7 @@
 Implementation of simulations for paper:
 
-Sepp A. (2023) Optimal Allocation to Cryptocurrencies in Diversified Portfolios, Risk (forthcoming)
-Available at SSRN: https://ssrn.com/abstract=4217841
+Sepp A. (2023) Optimal Allocation to Cryptocurrencies in Diversified Portfolios,
+Risk (October 2023, 1-6) Available at SSRN: https://ssrn.com/abstract=4217841
 
 The analysis presented in the paper can be replicated or extended using this module
 
@@ -25,6 +25,6 @@ optimaportfolios/examples/crypto_allocation/article_figures.py
 
 3) Generate reports of simulated investment portfolios as reported in the article
  ```python 
-optimaportfolios/examples/crypto_allocation/backtest_crypto_portfolios.py
+optimaportfolios/examples/crypto_allocation/backtest_portfolios_for_article.py
 ```
 
