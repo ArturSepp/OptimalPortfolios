@@ -43,6 +43,7 @@ class Constraints:
     max_target_portfolio_vol_an: float = None  # for optimisation with maximum portfolio volatility target
     min_target_portfolio_vol_an: float = None  # for optimisation with maximum portfolio volatility target
     group_lower_upper_constraints: GroupLowerUpperConstraints = None  # for group allocations constraints
+    apply_total_to_good_ratio_for_constraints: bool = True  # for constraint rescale
 
     def copy(self) -> Constraints:
         this = asdict(self).copy()
@@ -73,11 +74,15 @@ class Constraints:
         if this.min_weights is not None:
             this.min_weights = this.min_weights[valid_tickers].fillna(0.0)
         if this.max_weights is not None:
-            this.max_weights = total_to_good_ratio*this.max_weights[valid_tickers].fillna(0.0)
+            if self.apply_total_to_good_ratio_for_constraints:
+                this.max_weights = total_to_good_ratio*this.max_weights[valid_tickers].fillna(0.0)
+            else:
+                this.max_weights = this.max_weights[valid_tickers].fillna(0.0)
         if this.group_lower_upper_constraints is not None:
             this.group_lower_upper_constraints = this.group_lower_upper_constraints.update(valid_tickers=valid_tickers)
         if this.turnover_constraint is not None:
-            this.turnover_constraint *= total_to_good_ratio
+            if self.apply_total_to_good_ratio_for_constraints:
+                this.turnover_constraint *= total_to_good_ratio
         if weights_0 is not None:
             this.weights_0 = weights_0.reindex(index=valid_tickers).fillna(0.0)
         if asset_returns is not None:
