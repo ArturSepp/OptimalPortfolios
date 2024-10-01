@@ -44,8 +44,8 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
         if value and date >= time_period.start:
             pd_covar = pd.DataFrame(an_factor*covar_tensor_txy[idx], index=tickers, columns=tickers)
             # call optimiser
+            print(f"date={date}")
             if print_inputs:
-                print(f"date={date}")
                 print(f"pd_covar=\n{pd_covar}")
                 print(f"alphas=\n{alphas.loc[date, :]}")
                 print(f"yields=\n{yields.loc[date, :]}")
