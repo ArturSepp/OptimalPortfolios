@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "optimalportfolios"
-version = "2.1.3"
+version = "2.1.6"
 description = "Simulation and backtesting of optimal portfolios"
 license = "LICENSE.txt"
 authors = ["Artur Sepp <artursepp@gmail.com>"]
@@ -24,7 +24,8 @@ classifiers=[
         "Topic :: Office/Business :: Financial :: Investment",
     ]
 packages = [ {include = "optimalportfolios"} ]
-exclude=["OptimalPortfolios/examples/figures"]
+exclude=["optimalportfolios/examples/figures",
+         "optimalportfolios/examples/crypto_allocation/data"]
 
 [tool.poetry.urls]
 "Issues" = "https://github.com/ArturSepp/OptimalPortfolios/issues"

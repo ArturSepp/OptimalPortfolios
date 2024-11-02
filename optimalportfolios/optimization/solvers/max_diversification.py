@@ -6,11 +6,12 @@ import numpy as np
 import pandas as pd
 import qis as qis
 from scipy.optimize import minimize
-from typing import List
+from typing import List, Optional
 
 from optimalportfolios.utils.portfolio_funcs import calculate_diversification_ratio
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.utils.covar_matrix import squeeze_covariance_matrix
 
 
 def rolling_maximise_diversification(prices: pd.DataFrame,
@@ -18,7 +19,8 @@ def rolling_maximise_diversification(prices: pd.DataFrame,
                                      time_period: qis.TimePeriod,  # when we start building portfolios
                                      returns_freq: str = 'W-WED',
                                      rebalancing_freq: str = 'QE',
-                                     span: int = 52  # 1y of weekly returns
+                                     span: int = 52,  # 1y of weekly returns
+                                     squeeze_factor: Optional[float] = None  # for squeezing covar matrix
                                      ) -> pd.DataFrame:
     """
     compute rolling maximum diversification portfolios
@@ -42,7 +44,8 @@ def rolling_maximise_diversification(prices: pd.DataFrame,
             pd_covar = pd.DataFrame(an_factor*covar_tensor_txy[idx], index=tickers, columns=tickers)
             weights_ = wrapper_maximise_diversification(pd_covar=pd_covar,
                                                         constraints0=constraints0,
-                                                        weights_0=weights_0)
+                                                        weights_0=weights_0,
+                                                        squeeze_factor=squeeze_factor)
             weights_0 = weights_  # update for next rebalancing
             weights[date] = weights_
 
@@ -54,6 +57,7 @@ def rolling_maximise_diversification(prices: pd.DataFrame,
 def wrapper_maximise_diversification(pd_covar: pd.DataFrame,
                                      constraints0: Constraints,
                                      weights_0: pd.Series = None,
+                                     squeeze_factor: Optional[float] = None,  # for squeezing covar matrix
                                      ) -> pd.Series:
     """
     create wrapper accounting for nans or zeros in covar matrix
@@ -62,6 +66,8 @@ def wrapper_maximise_diversification(pd_covar: pd.DataFrame,
     # filter out assets with zero variance or nans
     vectors = None
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar, vectors=vectors)
+    if squeeze_factor is not None and squeeze_factor > 0.0:
+        clean_covar = squeeze_covariance_matrix(clean_covar, squeeze_factor=squeeze_factor)
 
     constraints = constraints0.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
                                                          total_to_good_ratio=len(pd_covar.columns) / len(clean_covar.columns),

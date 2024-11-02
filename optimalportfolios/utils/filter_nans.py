@@ -28,14 +28,20 @@ def filter_covar_and_vectors(covar: np.ndarray,
 
 
 def filter_covar_and_vectors_for_nans(pd_covar: pd.DataFrame,
-                                      vectors: Dict[str, pd.Series] = None
+                                      vectors: Dict[str, pd.Series] = None,
+                                      inclusion_indicators: pd.Series = None
                                       ) -> Tuple[pd.DataFrame, Optional[Dict[str, pd.Series]]]:
     """
     filter out assets with zero variance or nans
     filter corresponding vectors (can be means, win_max_weights, etc
+    inclusion_indicators are ones if asset is included for the allocation
     """
     variances = np.diag(pd_covar.to_numpy())
-    is_good_asset = np.where(np.logical_and(np.greater(variances, 0.0), np.isnan(variances) == False))
+    is_good_asset = np.logical_and(np.greater(variances, 0.0), np.isnan(variances) == False)
+    if inclusion_indicators is not None:
+        is_included = inclusion_indicators.loc[pd_covar.columns].to_numpy()
+        is_good_asset = np.where(np.isclose(is_included, 1.0), is_good_asset, False)
+
     good_tickers = pd_covar.index[is_good_asset]
     pd_covar = pd_covar.loc[good_tickers, good_tickers]
     if vectors is not None:

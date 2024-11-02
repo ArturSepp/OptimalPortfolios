@@ -9,6 +9,7 @@ from typing import Optional, List, Tuple
 
 from optimalportfolios import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.utils.covar_matrix import squeeze_covariance_matrix
 
 
 def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
@@ -18,7 +19,8 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
                                     time_period: qis.TimePeriod,  # when we start building portfolios
                                     returns_freq: str = 'W-WED',
                                     rebalancing_freq: str = 'QE',
-                                    span: int = 52,  # 2y
+                                    span: int = 52,  # 1y
+                                    squeeze_factor: Optional[float] = None,
                                     solver: str = 'ECOS_BB'
                                     ) -> pd.DataFrame:
     """
@@ -47,6 +49,7 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
                                                        benchmark_weights=benchmark_weights,
                                                        constraints0=constraints0,
                                                        weights_0=weights_0,
+                                                       squeeze_factor=squeeze_factor,
                                                        solver=solver)
             weights_0 = weights_  # update for next rebalancing
             weights[date] = weights_
@@ -61,6 +64,7 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
                                     benchmark_weights: pd.Series,
                                     constraints0: Constraints,
                                     weights_0: pd.Series = None,
+                                    squeeze_factor: Optional[float] = None,
                                     solver: str = 'ECOS_BB'
                                     ) -> pd.Series:
     """
@@ -70,6 +74,9 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
     # filter out assets with zero variance or nans
     vectors = dict(alphas=alphas)
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar, vectors=vectors)
+
+    if squeeze_factor is not None and squeeze_factor > 0.0:
+        clean_covar = squeeze_covariance_matrix(clean_covar, squeeze_factor=squeeze_factor)
 
     constraints = constraints0.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
                                                          total_to_good_ratio=len(pd_covar.columns) / len(clean_covar.columns),

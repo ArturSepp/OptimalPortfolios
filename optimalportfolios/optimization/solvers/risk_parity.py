@@ -7,11 +7,13 @@ import numpy as np
 import pandas as pd
 import qis as qis
 from scipy.optimize import minimize
+from typing import Optional
 from enum import Enum
 
 from optimalportfolios.utils.portfolio_funcs import (calculate_portfolio_var, calculate_risk_contribution)
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints, long_only_constraint, total_weight_constraint
+from optimalportfolios.utils.covar_matrix import squeeze_covariance_matrix
 
 
 def rolling_equal_risk_contribution(prices: pd.DataFrame,
@@ -20,7 +22,8 @@ def rolling_equal_risk_contribution(prices: pd.DataFrame,
                                     risk_budget: pd.Series = None,
                                     returns_freq: str = 'W-WED',
                                     rebalancing_freq: str = 'QE',
-                                    span: int = 52  # 1y of weekly returns
+                                    span: int = 52,  # 1y of weekly returns
+                                    squeeze_factor: Optional[float] = None
                                     ) -> pd.DataFrame:
     """
     compute equal risk contribution
@@ -45,7 +48,8 @@ def rolling_equal_risk_contribution(prices: pd.DataFrame,
             weights_ = wrapper_equal_risk_contribution(pd_covar=pd_covar,
                                                        constraints0=constraints0,
                                                        weights_0=weights_0,
-                                                       risk_budget=risk_budget)
+                                                       risk_budget=risk_budget,
+                                                       squeeze_factor=squeeze_factor)
             weights_0 = weights_  # update for next rebalancing
             weights[date] = weights_
 
@@ -57,7 +61,8 @@ def rolling_equal_risk_contribution(prices: pd.DataFrame,
 def wrapper_equal_risk_contribution(pd_covar: pd.DataFrame,
                                     constraints0: Constraints,
                                     weights_0: pd.Series = None,
-                                    risk_budget: pd.Series = None
+                                    risk_budget: pd.Series = None,
+                                    squeeze_factor: Optional[float] = None
                                     ) -> pd.Series:
     """
     create wrapper accounting for nans or zeros in covar matrix
@@ -67,10 +72,12 @@ def wrapper_equal_risk_contribution(pd_covar: pd.DataFrame,
     vectors = dict(min_weights=constraints0.min_weights, max_weights=constraints0.max_weights,
                    weights_0=weights_0, risk_budget=risk_budget)
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar, vectors=vectors)
+
+    if squeeze_factor is not None and squeeze_factor > 0.0:
+        clean_covar = squeeze_covariance_matrix(clean_covar, squeeze_factor=squeeze_factor)
+
     total_to_good_ratio = len(pd_covar.columns) / len(clean_covar.columns)
 
-    if weights_0 is not None:
-        weights_0 = weights_0.loc[clean_covar.columns].fillna(0.0)
     if risk_budget is not None:
         risk_budget = risk_budget.loc[clean_covar.columns].fillna(0.0)
         risk_budget *= total_to_good_ratio

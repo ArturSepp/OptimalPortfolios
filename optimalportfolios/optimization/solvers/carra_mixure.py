@@ -6,12 +6,13 @@ import numpy as np
 import pandas as pd
 import qis as qis
 from scipy.optimize import minimize
-from typing import List
+from typing import List, Optional
 from enum import Enum
 
 from optimalportfolios.utils.gaussian_mixture import fit_gaussian_mixture
 from optimalportfolios.utils.portfolio_funcs import (calculate_portfolio_var, calculate_risk_contribution)
 from optimalportfolios.optimization.constraints import (Constraints, total_weight_constraint, long_only_constraint)
+from optimalportfolios.utils.covar_matrix import squeeze_covariance_matrix
 
 
 def rolling_maximize_cara_mixture(prices: pd.DataFrame,
@@ -21,7 +22,8 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
                                   roll_window: int = 52*6,  # number of returns in mixture estimation, default is 6y of weekly returns
                                   returns_freq: str = 'W-WED',  # frequency for returns computing mixure distr
                                   carra: float = 0.5,  # carra parameters
-                                  n_components: int = 3
+                                  n_components: int = 3,
+                                  squeeze_factor: Optional[float] = None  # for squeezing covar matrix
                                   ) -> pd.DataFrame:
     """
     solve solvers mixture Carra portfolios
@@ -45,6 +47,9 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
             constraints = constraints0.update_with_valid_tickers(valid_tickers=rets_.columns.to_list(),
                                                                  total_to_good_ratio=len(tickers)/len(rets_.columns),
                                                                  weights_0=weights_0)
+            if squeeze_factor is not None and squeeze_factor > 0.0:
+                params.covars = [squeeze_covariance_matrix(covars, squeeze_factor=squeeze_factor) for covars in params.covars]
+
             weights_ = wrapper_maximize_cara_mixture(means=params.means,
                                                      covars=params.covars,
                                                      probs=params.probs,

@@ -10,3 +10,7 @@ from optimalportfolios.utils.portfolio_funcs import (calculate_portfolio_var,
 
 from optimalportfolios.utils.gaussian_mixture import fit_gaussian_mixture
 
+from optimalportfolios.utils.covar_matrix import squeeze_covariance_matrix
+
+
+

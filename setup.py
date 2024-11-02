@@ -16,7 +16,7 @@ requirements = read_requirements("requirements.txt")
 
 setup(
     name='optimalportfolios',
-    version='2.1.3',
+    version='2.1.6',
     author='Artur Sepp',
     author_email='artursepp@gmail.com',
     url='https://github.com/ArturSepp/OptimalPortfolios',
@@ -24,7 +24,7 @@ setup(
     long_description_content_type="text/x-rst",  # If this causes a warning, upgrade your setuptools package
     long_description=long_description,
     license="MIT license",
-    packages=find_packages(exclude=["OptimalPortfolios/examples/figures"]),  # Don't include test directory in binary distribution
+    packages=find_packages(exclude=["optimalportfolios/examples/figures", "optimalportfolios/examples/crypto_allocation/data"]),
     install_requires=requirements,
     classifiers=[
         "Programming Language :: Python :: 3",

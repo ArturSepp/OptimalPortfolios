@@ -5,12 +5,13 @@ import numpy as np
 import pandas as pd
 import cvxpy as cvx
 import qis as qis
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 from enum import Enum
 from qis import TimePeriod
 
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.utils.covar_matrix import squeeze_covariance_matrix
 
 
 def rolling_maximize_portfolio_sharpe(prices: pd.DataFrame,
@@ -21,6 +22,7 @@ def rolling_maximize_portfolio_sharpe(prices: pd.DataFrame,
                                       span: int = 52,  # 1y
                                       roll_window: int = 20,  # defined on number of periods in rebalancing_freq
                                       solver: str = 'ECOS_BB',
+                                      squeeze_factor: Optional[float] = None,  # for squeezing covar matrix
                                       print_inputs: bool = False
                                       ) -> pd.DataFrame:
     """
@@ -48,6 +50,7 @@ def rolling_maximize_portfolio_sharpe(prices: pd.DataFrame,
                                                          means=means.loc[date, :],
                                                          constraints0=constraints0,
                                                          weights_0=weights_0,
+                                                         squeeze_factor=squeeze_factor,
                                                          solver=solver)
 
             weights_0 = weights_  # update for next rebalancing
@@ -62,6 +65,7 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
                                       means: pd.Series,
                                       constraints0: Constraints,
                                       weights_0: pd.Series = None,
+                                      squeeze_factor: Optional[float] = None,  # for squeezing covar matrix
                                       solver: str = 'ECOS_BB'
                                       ) -> pd.Series:
     """
@@ -71,6 +75,9 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
     # filter out assets with zero variance or nans
     vectors = dict(means=means)
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar, vectors=vectors)
+
+    if squeeze_factor is not None and squeeze_factor > 0.0:
+        clean_covar = squeeze_covariance_matrix(clean_covar, squeeze_factor=squeeze_factor)
 
     constraints = constraints0.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
                                                          total_to_good_ratio=len(pd_covar.columns) / len(clean_covar.columns),
