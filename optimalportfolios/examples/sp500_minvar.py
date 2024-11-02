@@ -69,6 +69,7 @@ def create_sp500_universe():
 
 def load_sp500_universe() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
     prices = qis.load_df_from_csv(file_name='sp500_prices', local_path=LOCAL_PATH)
+    prices.index = prices.index.tz_localize(None)  # remove tz info
     inclusion_indicators = qis.load_df_from_csv(file_name='sp500_inclusions', local_path=LOCAL_PATH)
     group_data = qis.load_df_from_csv(file_name='sp500_groups', parse_dates=False, local_path=LOCAL_PATH).iloc[:, 0]
     return prices, inclusion_indicators, group_data
