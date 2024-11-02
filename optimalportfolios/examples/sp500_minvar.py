@@ -69,8 +69,8 @@ def create_sp500_universe():
 
 def load_sp500_universe() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
     prices = qis.load_df_from_csv(file_name='sp500_prices', local_path=LOCAL_PATH)
-    prices.index = prices.index.tz_localize(None)  # remove tz info
     inclusion_indicators = qis.load_df_from_csv(file_name='sp500_inclusions', local_path=LOCAL_PATH)
+    inclusion_indicators.index = inclusion_indicators.index.tz_localize(tz=prices.index.tz)  # align tz info
     group_data = qis.load_df_from_csv(file_name='sp500_groups', parse_dates=False, local_path=LOCAL_PATH).iloc[:, 0]
     return prices, inclusion_indicators, group_data
 
@@ -118,7 +118,7 @@ def run_unit_test(unit_test: UnitTests):
 
     elif unit_test == UnitTests.CROSS_BACKTEST:
 
-        time_period = qis.TimePeriod('31Dec2010', '31Jan2024')
+        time_period = qis.TimePeriod('31Dec2010', '31Jan2024', tz='UTC')
         # define squeeze_factors
         squeeze_factors = [0.0, 0.25, 0.5]
         # squeeze_factors = [0.0, 0.125, 0.250, 0.375, 0.5, 0.7, 0.9]
@@ -127,7 +127,7 @@ def run_unit_test(unit_test: UnitTests):
                                              squeeze_factors=squeeze_factors)
 
         # run cross portfolio report
-        benchmark_prices = yf.download(['SPY'], start=None, end=None, ignore_tz=True)['Adj Close'].asfreq('B').ffill().rename('SPY')
+        benchmark_prices = yf.download('SPY', start=None, end=None, ignore_tz=True)['Adj Close'].asfreq('B').ffill()
         multi_portfolio_data = qis.MultiPortfolioData(portfolio_datas=portfolio_datas,
                                                       benchmark_prices=benchmark_prices)
 
@@ -146,7 +146,7 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.CREATE_UNIVERSE_DATA
+    unit_test = UnitTests.CROSS_BACKTEST
 
     is_run_all_tests = False
     if is_run_all_tests:
