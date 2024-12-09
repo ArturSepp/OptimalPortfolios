@@ -5,17 +5,17 @@ import numpy as np
 import pandas as pd
 import cvxpy as cvx
 import qis as qis
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Union, Dict
 
 from optimalportfolios import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
-from optimalportfolios.utils.covar_matrix import squeeze_covariance_matrix
+from optimalportfolios.utils.covar_matrix import squeeze_covariance_matrix, estimate_rolling_ewma_covar, estimate_rolling_lasso_covar
 
 
 def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
                                     alphas: pd.DataFrame,
                                     constraints0: Constraints,
-                                    benchmark_weights: pd.Series,
+                                    benchmark_weights: Union[pd.Series, pd.DataFrame],
                                     time_period: qis.TimePeriod,  # when we start building portfolios
                                     returns_freq: str = 'W-WED',
                                     rebalancing_freq: str = 'QE',
@@ -26,33 +26,97 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
     """
     maximise portfolio alpha subject to constraint on tracking tracking error
     """
-    # compute ewma covar with fill nans in covar using zeros
-    returns = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=returns_freq)
-    returns_np = returns.to_numpy()
-    x = returns_np - qis.compute_ewm(returns_np, span=span)
-    covar_tensor_txy = qis.compute_ewm_covar_tensor(a=x, span=span, nan_backfill=qis.NanBackfill.ZERO_FILL)
-    an_factor = qis.infer_an_from_data(data=returns)
-
-    # create rebalancing schedule
-    rebalancing_schedule = qis.generate_rebalancing_indicators(df=returns, freq=rebalancing_freq)
-    alphas = alphas.reindex(index=rebalancing_schedule.index, method='ffill')
+    # estimate covar at rebalancing schedule
+    pd_covars = estimate_rolling_ewma_covar(prices=prices,
+                                            time_period=time_period,
+                                            returns_freq=returns_freq,
+                                            rebalancing_freq=rebalancing_freq,
+                                            span=span)
+    rebalancing_schedule = list(pd_covars.keys())
+    alphas = alphas.reindex(index=rebalancing_schedule, method='ffill')
 
     tickers = prices.columns.to_list()
     weights = {}
-    weights_0 = benchmark_weights   # initially take SAA weights
+    # extend benchmark weights
+    if isinstance(benchmark_weights, pd.DataFrame):
+        weights_0 = benchmark_weights.iloc[:, 0]
+        benchmark_weights = benchmark_weights.reindex(index=rebalancing_schedule, method='ffill').fillna(0.0)
+    else:
+        weights_0 = benchmark_weights
+        # crate df with weights
+        benchmark_weights = benchmark_weights.to_frame(name=rebalancing_schedule[0]).T.reindex(index=rebalancing_schedule, method='ffill').fillna(0.0)
 
-    for idx, (date, value) in enumerate(rebalancing_schedule.items()):
-        if value and date >= time_period.start:
-            pd_covar = pd.DataFrame(an_factor*covar_tensor_txy[idx], index=tickers, columns=tickers)
-            weights_ = wrapper_maximise_alpha_over_tre(pd_covar=pd_covar,
-                                                       alphas=alphas.loc[date, :],
-                                                       benchmark_weights=benchmark_weights,
-                                                       constraints0=constraints0,
-                                                       weights_0=weights_0,
-                                                       squeeze_factor=squeeze_factor,
-                                                       solver=solver)
-            weights_0 = weights_  # update for next rebalancing
-            weights[date] = weights_
+    for date, pd_covar in pd_covars.items():
+        weights_ = wrapper_maximise_alpha_over_tre(pd_covar=pd_covar,
+                                                   alphas=alphas.loc[date, :],
+                                                   benchmark_weights=benchmark_weights.loc[date, :],
+                                                   constraints0=constraints0,
+                                                   weights_0=weights_0,
+                                                   squeeze_factor=squeeze_factor,
+                                                   solver=solver)
+        weights_0 = weights_  # update for next rebalancing
+        weights[date] = weights_
+
+    weights = pd.DataFrame.from_dict(weights, orient='index')
+    weights = weights.reindex(columns=tickers)
+    return weights
+
+
+def rolling_maximise_alpha_over_tre_lasso_covar(benchmark_prices: pd.DataFrame,
+                                                prices: pd.DataFrame,
+                                                alphas: pd.DataFrame,
+                                                constraints0: Constraints,
+                                                benchmark_weights: Union[pd.Series, pd.DataFrame],
+                                                time_period: qis.TimePeriod,  # when we start building portfolios
+                                                pd_covars: Dict[pd.Timestamp, pd.DataFrame] = None,
+                                                returns_freq: str = 'W-WED',
+                                                rebalancing_freq: str = 'QE',
+                                                span: int = 52,  # 1y
+                                                reg_lambda: float = 1e-8,
+                                                squeeze_factor: Optional[float] = None,
+                                                solver: str = 'ECOS_BB'
+                                                ) -> pd.DataFrame:
+    """
+    maximise portfolio alpha subject to constraint on tracking tracking error
+    """
+    # estimate covar at rebalancing schedule
+    if pd_covars is None:
+        pd_covars = estimate_rolling_lasso_covar(benchmark_prices=benchmark_prices,
+                                                 prices=prices,
+                                                 time_period=time_period,
+                                                 returns_freq=returns_freq,
+                                                 rebalancing_freq=rebalancing_freq,
+                                                 span=span,
+                                                 reg_lambda=reg_lambda,
+                                                 squeeze_factor=squeeze_factor)
+
+    rebalancing_schedule = list(pd_covars.keys())
+    alphas = alphas.reindex(index=rebalancing_schedule, method='ffill').fillna(0.0)
+
+    tickers = prices.columns.to_list()
+    weights = {}
+    # extend benchmark weights
+    if isinstance(benchmark_weights, pd.DataFrame):
+        weights_0 = benchmark_weights.iloc[:, 0]
+        benchmark_weights = benchmark_weights.reindex(index=rebalancing_schedule, method='ffill').fillna(0.0)
+    else:
+        weights_0 = benchmark_weights
+        # crate df with weights
+        benchmark_weights = benchmark_weights.to_frame(name=rebalancing_schedule[0]).T.reindex(index=rebalancing_schedule, method='ffill').fillna(0.0)
+
+    for date, pd_covar in pd_covars.items():
+        weights_ = wrapper_maximise_alpha_over_tre(pd_covar=pd_covar,
+                                                   alphas=alphas.loc[date, :],
+                                                   benchmark_weights=benchmark_weights.loc[date, :],
+                                                   constraints0=constraints0,
+                                                   weights_0=weights_0,
+                                                   squeeze_factor=None,  # taling care of
+                                                   solver=solver)
+        if np.all(np.isclose(weights_, 0.0)):
+            weights_ = benchmark_weights.loc[date, :]
+
+        weights_0 = weights_  # update for next rebalancing
+        weights[date] = weights_
 
     weights = pd.DataFrame.from_dict(weights, orient='index')
     weights = weights.reindex(columns=tickers)
@@ -112,6 +176,7 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
          3. exposure_budget_eq[0]^t*w = exposure_budget_eq[1]
     here we assume that all assets are valid: Sigma is invertable
     """
+    # covar1 = cvx.psd_wrap(covar)
     n = covar.shape[0]
     if constraints.is_long_only:
         nonneg = True

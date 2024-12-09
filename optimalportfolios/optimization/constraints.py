@@ -26,6 +26,10 @@ class GroupLowerUpperConstraints:
                                               group_max_allocation=self.group_max_allocation)
         return new_self
 
+    def print(self):
+        print(f"group_loadings:\n{self.group_loadings}")
+        print(f"min_max:\n{self.group_loadings}")
+
 
 @dataclass
 class Constraints:

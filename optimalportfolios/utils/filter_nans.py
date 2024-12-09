@@ -37,7 +37,7 @@ def filter_covar_and_vectors_for_nans(pd_covar: pd.DataFrame,
     inclusion_indicators are ones if asset is included for the allocation
     """
     variances = np.diag(pd_covar.to_numpy())
-    is_good_asset = np.logical_and(np.greater(variances, 0.0), np.isnan(variances) == False)
+    is_good_asset = np.logical_and(np.greater(variances, 1e-8), np.isnan(variances) == False)
     if inclusion_indicators is not None:
         is_included = inclusion_indicators.loc[pd_covar.columns].to_numpy()
         is_good_asset = np.where(np.isclose(is_included, 1.0), is_good_asset, False)
@@ -48,7 +48,10 @@ def filter_covar_and_vectors_for_nans(pd_covar: pd.DataFrame,
         good_vectors = {}
         for key, vector in vectors.items():
             if vector is not None:
-                good_vectors[key] = vector[good_tickers].fillna(0.0)
+                if isinstance(vector, pd.Series):
+                    good_vectors[key] = vector[good_tickers].fillna(0.0)
+                else:
+                    raise TypeError(f"vector muts be pd.Series not type={type(vector)}")
     else:
         good_vectors = None
     return pd_covar, good_vectors

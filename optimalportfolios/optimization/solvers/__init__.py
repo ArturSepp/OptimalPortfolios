@@ -16,6 +16,7 @@ from optimalportfolios.optimization.solvers.quadratic import (rolling_quadratic_
                                                               cvx_quadratic_optimisation)
 
 from optimalportfolios.optimization.solvers.risk_parity import (rolling_equal_risk_contribution,
+                                                                rolling_equal_risk_contribution_lasso_covar,
                                                                 wrapper_equal_risk_contribution,
                                                                 opt_equal_risk_contribution)
 
@@ -24,5 +25,6 @@ from optimalportfolios.optimization.solvers.target_return import (rolling_maximi
                                                                   cvx_maximise_alpha_with_target_return)
 
 from optimalportfolios.optimization.solvers.tracking_error import (rolling_maximise_alpha_over_tre,
+                                                                   rolling_maximise_alpha_over_tre_lasso_covar,
                                                                    wrapper_maximise_alpha_over_tre,
                                                                    cvx_maximise_alpha_over_tre)

@@ -36,12 +36,8 @@ def fetch_benchmark_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Data
     equal_weight = 1.0 / len(universe_data.keys())
     benchmark_weights = {x: equal_weight for x in universe_data.keys()}
 
-    # asset class loadings  todo qis
-    ac_groups = group_data.unique()
-    ac_loadings = {}
-    for ac in ac_groups:
-        ac_loadings[ac] = pd.Series(np.where(group_data == ac, 1.0, 0.0), index=group_data.index)
-    ac_loadings = pd.DataFrame.from_dict(ac_loadings, orient='columns')
+    # asset class loadings
+    ac_loadings = qis.set_group_loadings(group_data=group_data)
 
     tickers = list(universe_data.keys())
     benchmark_weights = pd.Series(benchmark_weights)

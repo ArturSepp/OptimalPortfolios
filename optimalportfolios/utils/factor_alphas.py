@@ -19,6 +19,7 @@ class AlphaSignal(Enum):
 
 
 def compute_low_beta_alphas(prices: pd.DataFrame,
+                            benchmark_price: pd.Series = None,
                             returns_freq: Optional[str] = 'W-WED',
                             beta_span: int = 52,
                             mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA
@@ -27,8 +28,13 @@ def compute_low_beta_alphas(prices: pd.DataFrame,
     compute beta to equal weight benchmark
     """
     returns = qis.to_returns(prices, freq=returns_freq, is_log_returns=True)
-    equal_weight_benchmark_returns = pd.Series(np.nanmean(returns.to_numpy(), axis=1), index=returns.index)
-    ewm_linear_model = qis.EwmLinearModel(x=equal_weight_benchmark_returns.to_frame('benchmark'), y=returns)
+    if benchmark_price is None:  # use equal weight returns
+        benchmark_returns = pd.Series(np.nanmean(returns.to_numpy(), axis=1), index=returns.index)
+    else:
+        benchmark_price = benchmark_price.reindex(index=prices.index, method='ffill')
+        benchmark_returns = qis.to_returns(benchmark_price, freq=returns_freq, is_log_returns=True)
+
+    ewm_linear_model = qis.EwmLinearModel(x=benchmark_returns.to_frame('benchmark'), y=returns)
     ewm_linear_model.fit(span=beta_span, mean_adj_type=mean_adj_type, is_x_correlated=True)
     ewma_betas = ewm_linear_model.loadings['benchmark']
     # set zeros to nans for signal
@@ -38,6 +44,7 @@ def compute_low_beta_alphas(prices: pd.DataFrame,
 
 
 def compute_momentum_alphas(prices: pd.DataFrame,
+                            benchmark_price: pd.Series = None,
                             returns_freq: str = 'W-WED',
                             long_span: int = 13,
                             short_span: Optional[int] = None,
@@ -45,6 +52,11 @@ def compute_momentum_alphas(prices: pd.DataFrame,
                             mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.NONE
                             ) -> pd.DataFrame:
     returns = qis.to_returns(prices, freq=returns_freq, is_log_returns=True)
+    if benchmark_price is not None: # adjust
+        benchmark_price = benchmark_price.reindex(index=prices.index, method='ffill')
+        benchmark_returns = qis.to_returns(benchmark_price, freq=returns_freq, is_log_returns=True)
+        returns = returns.subtract(qis.np_array_to_df_columns(a=benchmark_returns.to_numpy(), ncols=len(returns.columns)))
+
     momentum = qis.compute_ewm_long_short_filtered_ra_returns(returns=returns,
                                                               vol_span=vol_span,
                                                               long_span=long_span,
