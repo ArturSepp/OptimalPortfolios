@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 import cvxpy as cvx
 from dataclasses import dataclass, asdict
-from typing import List
+from typing import List, Tuple, Optional
 
 
 @dataclass
@@ -17,8 +17,8 @@ class GroupLowerUpperConstraints:
     add constraints that each asset group is group_min_allocation <= sum group weights <= group_max_allocation
     """
     group_loadings: pd.DataFrame  # columns=instruments, index=groups, data=1 if instrument in indexed group else 0
-    group_min_allocation: pd.Series  # index=groups, data=group min allocation 
-    group_max_allocation: pd.Series  # index=groups, data=group max allocation 
+    group_min_allocation: Optional[pd.Series]  # index=groups, data=group min allocation
+    group_max_allocation: Optional[pd.Series]  # index=groups, data=group max allocation
 
     def update(self, valid_tickers: List[str]) -> GroupLowerUpperConstraints:
         new_self = GroupLowerUpperConstraints(group_loadings=self.group_loadings.loc[valid_tickers, :],
@@ -28,7 +28,8 @@ class GroupLowerUpperConstraints:
 
     def print(self):
         print(f"group_loadings:\n{self.group_loadings}")
-        print(f"min_max:\n{self.group_loadings}")
+        print(f"group_min_allocation:\n{self.group_min_allocation}")
+        print(f"group_max_allocation:\n{self.group_max_allocation}")
 
 
 @dataclass
@@ -72,20 +73,27 @@ class Constraints:
                                   weights_0: pd.Series = None,
                                   asset_returns: pd.Series = None,
                                   benchmark_weights: pd.Series = None,
-                                  target_return: float = None
+                                  target_return: float = None,
+                                  rebalancing_indicators: pd.Series = None,
+                                  apply_total_to_good_ratio: bool = True
                                   ) -> Constraints:
+        """
+        if rebalancing_indicators == 0, then min and max weights are set to weight0
+        """
         this = self.copy()
         if this.min_weights is not None:
             this.min_weights = this.min_weights[valid_tickers].fillna(0.0)
         if this.max_weights is not None:
-            if self.apply_total_to_good_ratio_for_constraints:
-                this.max_weights = total_to_good_ratio*this.max_weights[valid_tickers].fillna(0.0)
+            if apply_total_to_good_ratio and self.apply_total_to_good_ratio_for_constraints:
+                # do not change max_weight == 1
+                max_weight = this.max_weights[valid_tickers]
+                this.max_weights = max_weight.where(np.isclose(max_weight, 1.0), other=total_to_good_ratio*max_weight).fillna(0.0)
             else:
                 this.max_weights = this.max_weights[valid_tickers].fillna(0.0)
         if this.group_lower_upper_constraints is not None:
             this.group_lower_upper_constraints = this.group_lower_upper_constraints.update(valid_tickers=valid_tickers)
         if this.turnover_constraint is not None:
-            if self.apply_total_to_good_ratio_for_constraints:
+            if apply_total_to_good_ratio and self.apply_total_to_good_ratio_for_constraints:
                 this.turnover_constraint *= total_to_good_ratio
         if weights_0 is not None:
             this.weights_0 = weights_0.reindex(index=valid_tickers).fillna(0.0)
@@ -93,9 +101,19 @@ class Constraints:
             this.asset_returns = asset_returns.reindex(index=valid_tickers).fillna(0.0)
         if benchmark_weights is not None:
             benchmark_weights_ = benchmark_weights.reindex(index=valid_tickers).fillna(0.0)
-            this.benchmark_weights = benchmark_weights_ / np.nansum(benchmark_weights_)
+            this.benchmark_weights = benchmark_weights_  # / np.nansum(benchmark_weights_)
         if target_return is not None:
             this.target_return = target_return
+
+        # check rebalancing indicators
+        if rebalancing_indicators is not None and weights_0 is not None:
+            rebalancing_indicators = rebalancing_indicators[this.weights_0.index].fillna(1.0)  # by default rebalance
+            is_rebalanced = np.isclose(rebalancing_indicators, 1.0)
+            if this.min_weights is not None:
+                this.min_weights = this.min_weights.where(is_rebalanced, other=weights_0)
+            if this.max_weights is not None:
+                this.max_weights = this.max_weights.where(is_rebalanced, other=weights_0)
+
         return this
 
     def set_cvx_constraints(self,
@@ -182,11 +200,15 @@ class Constraints:
                 group_loading = group_lower_upper_constraints.group_loadings[group].to_numpy()
                 if np.any(np.isclose(group_loading, 0.0) == False):  # exclude groups with zero loading
                     if exposure_scaler is None:
-                        constraints += [group_loading @ w >= group_lower_upper_constraints.group_min_allocation[group]]
-                        constraints += [group_loading @ w <= group_lower_upper_constraints.group_max_allocation[group]]
+                        if group_lower_upper_constraints.group_min_allocation is not None:
+                            constraints += [group_loading @ w >= group_lower_upper_constraints.group_min_allocation[group]]
+                        if group_lower_upper_constraints.group_max_allocation is not None:
+                            constraints += [group_loading @ w <= group_lower_upper_constraints.group_max_allocation[group]]
                     else:
-                        constraints += [group_loading @ w >= exposure_scaler * group_lower_upper_constraints.group_min_allocation[group]]
-                        constraints += [group_loading @ w <= exposure_scaler * group_lower_upper_constraints.group_max_allocation[group]]
+                        if group_lower_upper_constraints.group_min_allocation is not None:
+                            constraints += [group_loading @ w >= exposure_scaler * group_lower_upper_constraints.group_min_allocation[group]]
+                        if group_lower_upper_constraints.group_max_allocation is not None:
+                            constraints += [group_loading @ w <= exposure_scaler * group_lower_upper_constraints.group_max_allocation[group]]
 
         return constraints
 
@@ -195,15 +217,15 @@ class Constraints:
         constraints for cvx solver
         """
         constraints = []
-        if self.is_long_only:
+        if self.is_long_only and self.min_weights is None:
             constraints += [{'type': 'ineq', 'fun': long_only_constraint}]
 
         # exposure
-        if self.max_exposure == self.min_exposure:
-            constraints += [{'type': 'eq', 'fun': lambda x: self.max_exposure - np.sum(x)}]
-        else:
-            constraints += [{'type': 'ineq', 'fun': lambda x: self.max_exposure - np.sum(x)}]  # >=0
-            constraints += [{'type': 'ineq', 'fun': lambda x: np.sum(x) - self.min_exposure}]  # <=0
+        #if self.max_exposure == self.min_exposure:
+        #    constraints += [{'type': 'eq', 'fun': lambda x: self.max_exposure - np.sum(x)}]
+        #else:
+        constraints += [{'type': 'ineq', 'fun': lambda x: self.max_exposure - np.sum(x)}]  # >=0
+        constraints += [{'type': 'ineq', 'fun': lambda x: np.sum(x) - self.min_exposure}]  # <=0
 
         # min weights
         if self.min_weights is not None:
@@ -226,13 +248,53 @@ class Constraints:
             group_lower_upper_constraints = self.group_lower_upper_constraints
             for group in group_lower_upper_constraints.group_loadings.columns:
                 group_loading = group_lower_upper_constraints.group_loadings[group].to_numpy()
-                min_weight = group_lower_upper_constraints.group_min_allocation[group]
-                max_weight = group_lower_upper_constraints.group_max_allocation[group]
                 if np.any(np.isclose(group_loading, 0.0) == False):  # exclude groups with zero loading
-                    constraints += [{'type': 'ineq', 'fun': lambda x: group_loading * x - min_weight}]
-                    constraints += [{'type': 'ineq', 'fun': lambda x: max_weight - group_loading * x}]
-
+                    if group_lower_upper_constraints.group_min_allocation is not None:
+                        min_weight = group_lower_upper_constraints.group_min_allocation[group]
+                        constraints += [{'type': 'ineq', 'fun': lambda x: group_loading * x - min_weight}]
+                    if group_lower_upper_constraints.group_max_allocation is not None:
+                        max_weight = group_lower_upper_constraints.group_max_allocation[group]
+                        constraints += [{'type': 'ineq', 'fun': lambda x: max_weight - group_loading * x}]
         return constraints
+
+    def set_pyrb_constraints(self, covar: np.ndarray = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        constraints for pyrb solver
+        """
+        constraints = []
+        if self.is_long_only and self.min_weights is None:
+            n = covar.shape[0]
+            bounds = np.array([(0.0, 1.0) for _ in np.arange((n))])
+
+        elif self.min_weights is not None and self.max_weights is not None:
+            bounds = np.array([(x, y) for x, y in zip(self.min_weights.to_numpy(), self.max_weights.to_numpy())])
+        else:
+            bounds = None
+
+        # group constraints
+        # C*x <= d
+        if self.group_lower_upper_constraints is not None:
+            group_lower_upper_constraints = self.group_lower_upper_constraints
+            c_rows = []
+            c_lhs = []
+            for group in group_lower_upper_constraints.group_loadings.columns:
+                group_loading = group_lower_upper_constraints.group_loadings[group].to_numpy()
+                if np.any(np.isclose(group_loading, 0.0) == False):  # exclude groups with zero loading
+                    if group_lower_upper_constraints.group_min_allocation is not None:
+                        min_weight = group_lower_upper_constraints.group_min_allocation[group]
+                        c_rows.append(-1.0 * group_loading)
+                        c_lhs.append(-1.0 * min_weight)
+                    if group_lower_upper_constraints.group_max_allocation is not None:
+                        max_weight = group_lower_upper_constraints.group_max_allocation[group]
+                        c_rows.append(group_loading)
+                        c_lhs.append(max_weight)
+            c_rows = np.vstack(c_rows)
+            c_lhs = np.array(c_lhs)
+        else:
+            c_rows = None
+            c_lhs = None
+
+        return bounds, c_rows, c_lhs
 
 
 def total_weight_constraint(x, total: float = 1.0):

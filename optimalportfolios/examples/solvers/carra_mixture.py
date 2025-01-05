@@ -24,7 +24,7 @@ def run_unit_test(unit_test: UnitTests):
 
     import optimalportfolios.local_path as lp
 
-    prices, benchmark_prices, ac_loadings, benchmark_weights, group_data = fetch_benchmark_universe_data()
+    prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
 
     # add costraints that each asset class is 10% <= sum ac weights <= 30% (benchamrk is 20% each)
     group_min_allocation = pd.Series(0.05, index=ac_loadings.columns)
@@ -86,7 +86,7 @@ def run_unit_test(unit_test: UnitTests):
             portfolio_data.set_group_data(group_data=group_data)
             portfolio_datas.append(portfolio_data)
         multi_portfolio_data = qis.MultiPortfolioData(portfolio_datas, benchmark_prices=benchmark_prices)
-        kwargs = qis.fetch_default_report_kwargs(time_period=time_period, is_daily=True, add_rates_data=True)
+        kwargs = qis.fetch_default_report_kwargs(time_period=time_period, add_rates_data=True)
         figs = qis.generate_strategy_benchmark_factsheet_plt(multi_portfolio_data=multi_portfolio_data,
                                                              time_period=time_period,
                                                              add_strategy_factsheet=True,

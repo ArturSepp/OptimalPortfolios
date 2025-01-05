@@ -6,7 +6,7 @@ computations (to avoid hindsight bias) and for generation of rolling optimal por
 2. implementation of core optimisation solvers:
    1. Minimum variance
    2. Maximum quadratic utility
-   3. Equal risk contribution
+   3. Budgeted risk contribution (risk parity for equal budgets)
    4. Maximum diversification
    5. Maximum Sharpe ratio
    6. Maximum Cara utility under Gaussian mixture model
@@ -25,11 +25,17 @@ dependecy path increasing sequentially as follows.
 various quadratic and nonlinear solvers. Each solver is implemented 
 in a module independently from other solvers.
 
-2. ```reports``` is module for computing performance statistics and performance attribution including returns, volatilities, etc.
+2. ```utils``` is module for auxiliary analytics, in particular:
+   
+    i. covar_matrix implements covariance estimator using EWMA and Lasso methods
+   
+    ii. lasso implements lasso estimator including group lasso estimator 
 
-3. ```examples.solvers``` provides example of running all implemented solvers.
+3. ```reports``` is module for computing performance statistics and performance attribution including returns, volatilities, etc.
 
-4. ```examples.crypto_allocation``` is module for computations and visualisations for 
+4. ```examples.solvers``` provides example of running all implemented solvers.
+
+5```examples.crypto_allocation``` is module for computations and visualisations for 
 paper "Optimal Allocation to Cryptocurrencies in Diversified Portfolios" [https://ssrn.com/abstract=4217841](https://ssrn.com/abstract=4217841)
    (see paper for description of the rolling-forward methodology and estimation of inputs)
 
@@ -50,7 +56,8 @@ paper "Optimal Allocation to Cryptocurrencies in Diversified Portfolios" [https:
    2. [Customised reporting](#report)
    3. [Parameters sensitivity backtest](#sensitivity)
    4. [Multi optimisers cross backtest](#cross)
-   5. [Optimal allocation to cryptocurrencies](#crypto)
+   5. [Backtest of multi covariance estimators](#covars)
+   6. [Optimal allocation to cryptocurrencies](#crypto)
 5. [Contributions](#contributions)
 6. [Updates](#updates)
 7. [Disclaimer](#disclaimer)
@@ -81,21 +88,12 @@ Core dependencies:
     seaborn = ">=0.12.2",
     scikit_learn = ">=1.3.0",
     cvxpy = ">=1.3.2",
-    qis = ">=2.1.1",
+    qis = ">=2.1.33",
+    quadprog = ">=0.1.13"
 
 Optional dependencies:
     yfinance ">=0.2.3" (for getting test price data),
     pybloqs ">=1.2.13" (for producing html and pdf factsheets)
-
-
-To use pybloqs for pandas > 2.x, 
-locate file "...\Lib\site-packages\pybloqs\jinja\table.html" and change line 44 from:
-
-{% for col_name, cell in row.iteritems() %}
-
-to:
-
-{% for col_name, cell in row.items() %}
 
 
 
@@ -118,6 +116,13 @@ assets are set to zero.
 the estimation of covariance matrix and other inputs on roll-forward basis. 
 For each update date the rolling layer call the wrapper layer 2) with estimated
 inputs as of the update date.
+
+For rolling level function, the estimated covariance matrix can be passed as dictionary of type Dict[pd.Timestamp, pd.DataFrame] 
+with dataframes containing covariance matrices for the universe and with keys being rebalancing times 
+
+The default covariance is estimated using EWMA function with
+covar_estimator = CovarEstimator(returns_freq=returns_freq, rebalancing_freq=rebalancing_freq, span=span)
+
 
 The recommended usage is as follows.
 
@@ -477,7 +482,17 @@ See example script in ```optimalportfolios.examples.multi_optimisers_backtest.py
 ![image info](optimalportfolios/examples/figures/multi_optimisers_backtest.PNG)
 
 
-### 5. Optimal allocation to cryptocurrencies <a name="crypto"></a>
+
+### 5. Backtest of multi covariance estimators <a name="covars"></a>
+
+Multiple covariance estimators can be backtested for the same optimisation method
+
+See example script in ```optimalportfolios.examples.multi_covar_estimation_backtest.py```
+
+![image info](optimalportfolios/examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)
+
+
+### 6. Optimal allocation to cryptocurrencies <a name="crypto"></a>
 
 Computations and visualisations for 
 paper "Optimal Allocation to Cryptocurrencies in Diversified Portfolios" [https://ssrn.com/abstract=4217841](https://ssrn.com/abstract=4217841)
@@ -505,6 +520,16 @@ Add new solvers for tracking error and target return optimisations.
 
 Add exmples of running all solvers
 
+#### 05 January 2025,  Version 3.1.1 released
+
+Added Lasso estimator and Group lasso estimator using cvxpy quadratic problems
+
+Added covariance estimator using factor model with Lasso betas
+
+Estimated covariance matrices can be passed to rolling solvers, CovarEstimator type is added for different covariance estimators 
+
+Risk budgeting is implemented using pyrb package with pyrb forked for optimalportfolio package
+
 
 ## **Disclaimer** <a name="disclaimer"></a>
 
@@ -513,6 +538,3 @@ OptimalPortfolios package is distributed FREE & WITHOUT ANY WARRANTY under the G
 See the [LICENSE.txt](https://github.com/ArturSepp/OptimalPortfolios/blob/master/LICENSE.txt) in the release for details.
 
 Please report any bugs or suggestions by opening an [issue](https://github.com/ArturSepp/OptimalPortfolios/issues).
-
-
-

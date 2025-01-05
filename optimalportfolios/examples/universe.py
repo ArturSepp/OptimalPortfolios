@@ -11,7 +11,7 @@ from typing import Tuple
 from enum import Enum
 
 
-def fetch_benchmark_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+def fetch_benchmark_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.DataFrame]:
     """
     fetch a universe of etfs
     define custom universe with asset class grouping
@@ -43,8 +43,13 @@ def fetch_benchmark_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Data
     benchmark_weights = pd.Series(benchmark_weights)
     prices = yf.download(tickers=tickers, start=None, end=None, ignore_tz=True)['Adj Close'][tickers]
     prices = prices.asfreq('B').ffill()
+    # for group lass
+    ac_benchmark_prices = prices[['SPY', 'TLT', 'LQD', 'HYG', 'GSG']].rename(dict(SPY='Equities', TLT='Bonds', IG='LQD', HYG='HighYield', GLD='Commodts'))
+
+    # select asset class benchmarks from universe
     benchmark_prices = prices[['SPY', 'TLT']]
-    return prices, benchmark_prices, ac_loadings, benchmark_weights, group_data
+
+    return prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices
 
 
 class UnitTests(Enum):
@@ -53,7 +58,7 @@ class UnitTests(Enum):
 
 def run_unit_test(unit_test: UnitTests):
 
-    prices, benchmark_prices, ac_loadings, benchmark_weights, group_data = fetch_benchmark_universe_data()
+    prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
 
     if unit_test == UnitTests.ILLUSTRATE_INPUT_DATA:
         with sns.axes_style('darkgrid'):

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "optimalportfolios"
-version = "2.1.9"
+version = "3.1.1"
 description = "Simulation and backtesting of optimal portfolios"
 license = "LICENSE.txt"
 authors = ["Artur Sepp <artursepp@gmail.com>"]
@@ -23,7 +23,8 @@ classifiers=[
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: Office/Business :: Financial :: Investment",
     ]
-packages = [ {include = "optimalportfolios"} ]
+packages = [ {include = "optimalportfolios"},
+             {include = "pyrb"}]
 exclude=["optimalportfolios/examples/figures",
          "optimalportfolios/examples/crypto_allocation/data"]
 
@@ -46,6 +47,7 @@ pybloqs = ">=1.2.13"
 setuptools = ">=69.1.1"
 yfinance = ">=0.2.37"
 psycopg2 = ">=2.9.5"
+quadprog = ">=0.1.13"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

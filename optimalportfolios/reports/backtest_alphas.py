@@ -47,7 +47,8 @@ def backtest_alpha_signas(prices: pd.DataFrame,
         portfolio_datas.append(mandate_portfolio)
 
     multi_portfolio_data = qis.MultiPortfolioData(portfolio_datas, benchmark_prices=benchmark_prices)
-    kwargs = qis.fetch_default_report_kwargs(time_period=time_period, is_daily=False, add_rates_data=False)
+    kwargs = qis.fetch_default_report_kwargs(time_period=time_period, reporting_frequency=qis.ReportingFrequency.MONTHLY,
+                                             add_rates_data=False)
     figs = qis.generate_strategy_benchmark_factsheet_plt(multi_portfolio_data=multi_portfolio_data,
                                                          backtest_name=f"{alpha_signal.value} portfolios",
                                                          time_period=time_period,
@@ -99,7 +100,8 @@ def multi_backtest_alpha_signas(prices: pd.DataFrame,
         portfolio_datas.append(mandate_portfolio)
 
     multi_portfolio_data = qis.MultiPortfolioData(portfolio_datas, benchmark_prices=benchmark_prices)
-    kwargs = qis.fetch_default_report_kwargs(time_period=time_period, is_daily=False, add_rates_data=False)
+    kwargs = qis.fetch_default_report_kwargs(time_period=time_period, reporting_frequency=qis.ReportingFrequency.MONTHLY,
+                                             add_rates_data=False)
     figs = qis.generate_multi_portfolio_factsheet(multi_portfolio_data=multi_portfolio_data,
                                                   backtest_name=f"Alpha portfolios",
                                                   time_period=time_period,
@@ -179,7 +181,8 @@ def cross_backtest_alpha_signas(prices: pd.DataFrame,
         portfolio_datas.append(mandate_portfolio)
 
     multi_portfolio_data = qis.MultiPortfolioData(portfolio_datas, benchmark_prices=benchmark_prices)
-    kwargs = qis.fetch_default_report_kwargs(time_period=time_period, is_daily=False, add_rates_data=False)
+    kwargs = qis.fetch_default_report_kwargs(time_period=time_period, reporting_frequency=qis.ReportingFrequency.MONTHLY,
+                                             add_rates_data=False)
     figs = qis.generate_multi_portfolio_factsheet(multi_portfolio_data=multi_portfolio_data,
                                                   backtest_name=f"{alpha_signal.value} cross portfolios",
                                                   time_period=time_period,

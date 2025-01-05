@@ -67,7 +67,7 @@ def run_unit_test(unit_test: UnitTests):
 
     import optimalportfolios.local_path as local_path
 
-    prices, benchmark_prices, ac_loadings, benchmark_weights, group_data = fetch_benchmark_universe_data()
+    prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
 
     # add costraints that each asset class is 10% <= sum ac weights <= 30% (benchamrk is 20% each)
     group_min_allocation = pd.Series(0.0, index=ac_loadings.columns)

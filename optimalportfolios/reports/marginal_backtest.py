@@ -116,6 +116,9 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
     ticker_wo = f"{optimisation_type.value} w/o {marginal_asset}"
     ticker_with = f"{optimisation_type.value} with {marginal_asset}"
 
+    # default ewma estimator
+    covar_estimator = opt.CovarEstimator(returns_freq=returns_freq, rebalancing_freq=rebalancing_freq, span=span)
+
     if optimisation_type == OptimisationType.EW:
         weights_wo = ew_weights_wo
         weights_with = ew_weights_with
@@ -123,34 +126,26 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
 
     elif optimisation_type == OptimisationType.ERC:
         constraints0 = opt.Constraints()
-        weights_wo = opt.rolling_equal_risk_contribution(prices=prices_without_asset,
-                                                         constraints0=constraints0,
-                                                         time_period=time_period,
-                                                         risk_budget=budget_wo,
-                                                         returns_freq=returns_freq,
-                                                         rebalancing_freq=rebalancing_freq,
-                                                         span=span)
-        weights_with = opt.rolling_equal_risk_contribution(prices=prices_with_asset,
-                                                           constraints0=constraints0,
-                                                           time_period=time_period,
-                                                           risk_budget=budget_with,
-                                                           returns_freq=returns_freq,
-                                                           rebalancing_freq=rebalancing_freq,
-                                                           span=span)
+        weights_wo = opt.rolling_risk_budgeting(prices=prices_without_asset,
+                                                constraints0=constraints0,
+                                                time_period=time_period,
+                                                risk_budget=budget_wo,
+                                                covar_estimator=covar_estimator)
+        weights_with = opt.rolling_risk_budgeting(prices=prices_with_asset,
+                                                  constraints0=constraints0,
+                                                  time_period=time_period,
+                                                  risk_budget=budget_with,
+                                                  covar_estimator=covar_estimator)
 
     elif optimisation_type == OptimisationType.MAX_DIV:
         weights_wo = opt.rolling_maximise_diversification(prices=prices_without_asset,
                                                           constraints0=opt.Constraints(min_weights=weight_min_wo, max_weights=weight_max_wo),
                                                           time_period=time_period,
-                                                          returns_freq=returns_freq,
-                                                          rebalancing_freq=rebalancing_freq,
-                                                          span=span)
+                                                          covar_estimator=covar_estimator)
         weights_with = opt.rolling_maximise_diversification(prices=prices_with_asset,
                                                             constraints0=opt.Constraints(min_weights=weight_min_with, max_weights=weight_max_with),
                                                             time_period=time_period,
-                                                            returns_freq=returns_freq,
-                                                            rebalancing_freq=rebalancing_freq,
-                                                            span=span)
+                                                            covar_estimator=covar_estimator)
 
     elif optimisation_type == OptimisationType.MAX_SHARPE:
         weights_wo = opt.rolling_maximize_portfolio_sharpe(prices=prices_without_asset,

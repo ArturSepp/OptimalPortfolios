@@ -77,7 +77,7 @@ def run_unit_test(unit_test: UnitTests):
     import optimalportfolios.local_path as local_path
 
     if unit_test == UnitTests.MULTI_OPTIMISERS_BACKTEST:
-        prices, benchmark_prices, ac_loadings, benchmark_weights, group_data = fetch_benchmark_universe_data()
+        prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
         time_period = qis.TimePeriod(start='31Dec1998', end=prices.index[-1])  # backtest start: need 6y of data for rolling Sharpe and max mixure portfolios
         perf_time_period = qis.TimePeriod(start='31Dec2004', end=prices.index[-1])  # backtest reporting
         figs = run_multi_optimisers_backtest(prices=prices,

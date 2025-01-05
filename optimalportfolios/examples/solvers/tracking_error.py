@@ -7,7 +7,7 @@ import seaborn as sns
 import qis as qis
 from enum import Enum
 
-from optimalportfolios import (Constraints, GroupLowerUpperConstraints,
+from optimalportfolios import (Constraints, GroupLowerUpperConstraints, CovarEstimator,
                                compute_te_turnover,
                                rolling_maximise_alpha_over_tre,
                                wrapper_maximise_alpha_over_tre)
@@ -43,11 +43,13 @@ def run_etf_tracking_portfolio(prices: pd.DataFrame,
                                weights_0=benchmark_weights,
                                group_lower_upper_constraints=group_lower_upper_constraints)
 
+    covar_estimator = CovarEstimator()
     weights = rolling_maximise_alpha_over_tre(prices=prices,
                                               alphas=alphas,
                                               benchmark_weights=benchmark_weights,
                                               constraints0=constraints0,
-                                              time_period=time_period)
+                                              time_period=time_period,
+                                              covar_estimator=covar_estimator)
     return weights
 
 
@@ -61,7 +63,7 @@ def run_unit_test(unit_test: UnitTests):
 
     import optimalportfolios.local_path as lp
 
-    prices, benchmark_prices, ac_loadings, benchmark_weights, group_data = fetch_benchmark_universe_data()
+    prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
 
     if unit_test == UnitTests.ONE_STEP_OPTIMISATION:
         # optimise using last available data as inputs
@@ -197,7 +199,7 @@ def run_unit_test(unit_test: UnitTests):
                                                                 ticker=f"Benchmark Portfolio")
         benchmark_portfolio_data.set_group_data(group_data=group_data)
 
-        kwargs = qis.fetch_default_report_kwargs(time_period=time_period, is_daily=True, add_rates_data=True)
+        kwargs = qis.fetch_default_report_kwargs(time_period=time_period, add_rates_data=True)
         multi_portfolio_data = qis.MultiPortfolioData([portfolio_data, benchmark_portfolio_data],
                                                       benchmark_prices=benchmark_prices)
         figs = qis.generate_strategy_benchmark_factsheet_plt(multi_portfolio_data=multi_portfolio_data,

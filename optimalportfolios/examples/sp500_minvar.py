@@ -19,7 +19,7 @@ from typing import Tuple, List
 from enum import Enum
 
 # optimalportfolios
-from optimalportfolios import (PortfolioObjective, Constraints, rolling_quadratic_optimisation)
+from optimalportfolios import (PortfolioObjective, Constraints, rolling_quadratic_optimisation, CovarEstimator)
 from optimalportfolios.local_path import get_resource_path
 
 # path to save universe data
@@ -87,14 +87,13 @@ def run_cross_backtest(time_period: qis.TimePeriod,
 
     portfolio_datas = []
     for squeeze_factor in squeeze_factors:
+        covar_estimator = CovarEstimator(squeeze_factor=squeeze_factor, returns_freq='W-WED', rebalancing_freq='QE')
         weights = rolling_quadratic_optimisation(prices=prices,
                                                  constraints0=constraints0,
                                                  portfolio_objective=PortfolioObjective.MIN_VARIANCE,
                                                  time_period=time_period,
-                                                 squeeze_factor=squeeze_factor,
-                                                 returns_freq='W-WED',
-                                                 rebalancing_freq='QE',
-                                                 inclusion_indicators=inclusion_indicators)
+                                                 inclusion_indicators=inclusion_indicators,
+                                                 covar_estimator=covar_estimator)
         portfolio_data = qis.backtest_model_portfolio(prices=time_period.locate(prices),
                                                       weights=weights,
                                                       ticker=f"squeeze={squeeze_factor: 0.3f}",

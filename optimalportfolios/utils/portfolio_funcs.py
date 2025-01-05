@@ -5,11 +5,21 @@ from __future__ import division
 
 import numpy as np
 import pandas as pd
-from typing import Tuple, Union, List
+from typing import Tuple, Union
+from numba import njit
 
 
+@njit
 def calculate_portfolio_var(w: np.ndarray, covar: np.ndarray) -> float:
     return w.T @ covar @ w
+
+
+@njit
+def calculate_risk_contribution(w: np.ndarray, covar: np.ndarray) -> np.ndarray:
+    portfolio_vol = np.sqrt(w.T @ covar @ w)
+    marginal_risk_contribution = covar @ w.T
+    rc = np.multiply(marginal_risk_contribution, w) / portfolio_vol
+    return rc
 
 
 def compute_portfolio_vol(covar: Union[np.ndarray, pd.DataFrame],
@@ -45,10 +55,3 @@ def calculate_diversification_ratio(w: np.ndarray, covar: np.ndarray) -> float:
     portfolio_vol = np.sqrt(calculate_portfolio_var(w, covar))
     diversification_ratio = avg_weighted_vol/portfolio_vol
     return diversification_ratio
-
-
-def calculate_risk_contribution(w: np.ndarray, covar: np.ndarray) -> np.ndarray:
-    portfolio_vol = np.sqrt(calculate_portfolio_var(w, covar))
-    marginal_risk_contribution = covar @ w.T
-    rc = np.multiply(marginal_risk_contribution, w) / portfolio_vol
-    return rc

@@ -8,60 +8,54 @@ import cvxpy as cvx
 import qis as qis
 from numba import jit
 from enum import Enum
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict
 
+# optimalportfolios
 from optimalportfolios.config import PortfolioObjective
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
-from optimalportfolios.utils.covar_matrix import squeeze_covariance_matrix
+from optimalportfolios.utils.covar_matrix import CovarEstimator
 
 
 def rolling_quadratic_optimisation(prices: pd.DataFrame,
                                    constraints0: Constraints,
                                    time_period: qis.TimePeriod,  # when we start building portfolios
+                                   pd_covars: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
                                    inclusion_indicators: Optional[pd.DataFrame] = None,  # if asset is included into optimisation
                                    portfolio_objective: PortfolioObjective = PortfolioObjective.MIN_VARIANCE,
-                                   returns_freq: str = 'W-WED',
-                                   rebalancing_freq: str = 'QE',
-                                   span: int = 52,  # 1y of weekly returns
-                                   carra: float = 1.0,
-                                   squeeze_factor: Optional[float] = None  # for squeezing covar matrix
+                                   covar_estimator: CovarEstimator = CovarEstimator(),  # default estimator
+                                   carra: float = 1.0
                                    ) -> pd.DataFrame:
     """
     compute quadratic optimisation for portfolio_objective in [PortfolioObjective.MIN_VARIANCE,
                                                                 PortfolioObjective.QUADRATIC_UTILITY]
+    pd_covars: Dict[timestamp, covar matrix] can be precomputed
+    portolio is rebalances at pd_covars.keys()
     """
-    # compute ewma covar with fill nans in covar using zeros
-    returns = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=returns_freq)
-    returns_np = returns.to_numpy()
-    x = returns_np - qis.compute_ewm(returns_np, span=span)
-    covar_tensor_txy = qis.compute_ewm_covar_tensor(a=x, span=span, nan_backfill=qis.NanBackfill.ZERO_FILL)
-    an_factor = qis.infer_an_from_data(data=returns)
+    if pd_covars is None:  # use default ewm covar with covar_estimator
+        pd_covars = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
 
     # generate rebalancing dates on the returns index
-    rebalancing_schedule = qis.generate_rebalancing_indicators(df=returns, freq=rebalancing_freq)
+    rebalancing_schedule = list(pd_covars.keys())
     tickers = prices.columns.to_list()
 
     if inclusion_indicators is not None:  # reindex at rebalancing
         inclusion_indicators1 = inclusion_indicators.reindex(columns=tickers)
-        inclusion_indicators1 = inclusion_indicators1.reindex(index=rebalancing_schedule.index, method='ffill')
+        inclusion_indicators1 = inclusion_indicators1.reindex(index=rebalancing_schedule, method='ffill')
     else:
-        inclusion_indicators1 = pd.DataFrame(1.0, index=rebalancing_schedule.index, columns=tickers)
+        inclusion_indicators1 = pd.DataFrame(1.0, index=rebalancing_schedule, columns=tickers)
 
     weights = {}
     weights_0 = None
-    for idx, (date, value) in enumerate(rebalancing_schedule.items()):
-        if value and date >= time_period.start:
-            pd_covar = pd.DataFrame(an_factor*covar_tensor_txy[idx], index=tickers, columns=tickers)
-            weights_ = wrapper_quadratic_optimisation(pd_covar=pd_covar,
-                                                      constraints0=constraints0,
-                                                      weights_0=weights_0,
-                                                      portfolio_objective=portfolio_objective,
-                                                      carra=carra,
-                                                      squeeze_factor=squeeze_factor,
-                                                      inclusion_indicators=inclusion_indicators1.loc[date, :])
-            weights_0 = weights_  # update for next rebalancing
-            weights[date] = weights_
+    for date, pd_covar in pd_covars.items():
+        weights_ = wrapper_quadratic_optimisation(pd_covar=pd_covar,
+                                                  constraints0=constraints0,
+                                                  weights_0=weights_0,
+                                                  portfolio_objective=portfolio_objective,
+                                                  carra=carra,
+                                                  inclusion_indicators=inclusion_indicators1.loc[date, :])
+        weights_0 = weights_  # update for next rebalancing
+        weights[date] = weights_
 
     weights = pd.DataFrame.from_dict(weights, orient='index')
     weights = weights.reindex(columns=tickers)
@@ -74,7 +68,6 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
                                    portfolio_objective: PortfolioObjective = PortfolioObjective.MIN_VARIANCE,
                                    weights_0: pd.Series = None,
                                    carra: float = 1.0,
-                                   squeeze_factor: Optional[float] = None,  # for squeezing covar matrix
                                    solver: str = 'ECOS_BB'
                                    ) -> pd.Series:
     """
@@ -84,9 +77,6 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
     # filter out assets with zero variance or nans
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar,
                                                                   inclusion_indicators=inclusion_indicators)
-    # squeeze covar if needed
-    if squeeze_factor is not None and squeeze_factor > 0.0:
-        clean_covar = squeeze_covariance_matrix(clean_covar, squeeze_factor=squeeze_factor)
 
     constraints = constraints0.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
                                                          total_to_good_ratio=len(pd_covar.columns) / len(clean_covar.columns),
@@ -371,10 +361,6 @@ def run_unit_test(unit_test: UnitTests):
         optimal_weights = max_qp_portfolio_vol_target(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
                                                       covar=covar,
                                                       means=means,
-                                                      weight_min=None,
-                                                      weight_max=None,
-                                                      is_long_only=True,
-                                                      exposure_budget_eq=None,
                                                       vol_target=0.08)
 
         print_portfolio_outputs(optimal_weights=optimal_weights,

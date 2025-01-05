@@ -9,7 +9,7 @@ from typing import Optional, List, Tuple, Union, Dict
 
 from optimalportfolios import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
-from optimalportfolios.utils.covar_matrix import squeeze_covariance_matrix, estimate_rolling_ewma_covar, estimate_rolling_lasso_covar
+from optimalportfolios.utils.covar_matrix import CovarEstimator
 
 
 def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
@@ -17,109 +17,52 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
                                     constraints0: Constraints,
                                     benchmark_weights: Union[pd.Series, pd.DataFrame],
                                     time_period: qis.TimePeriod,  # when we start building portfolios
-                                    returns_freq: str = 'W-WED',
-                                    rebalancing_freq: str = 'QE',
-                                    span: int = 52,  # 1y
-                                    squeeze_factor: Optional[float] = None,
+                                    covar_estimator: CovarEstimator = CovarEstimator(),  # default covar estimator
+                                    pd_covars: Dict[pd.Timestamp, pd.DataFrame] = None,
+                                    rebalancing_indicators: pd.DataFrame = None,
+                                    apply_total_to_good_ratio: bool = True,
                                     solver: str = 'ECOS_BB'
                                     ) -> pd.DataFrame:
     """
     maximise portfolio alpha subject to constraint on tracking tracking error
     """
     # estimate covar at rebalancing schedule
-    pd_covars = estimate_rolling_ewma_covar(prices=prices,
-                                            time_period=time_period,
-                                            returns_freq=returns_freq,
-                                            rebalancing_freq=rebalancing_freq,
-                                            span=span)
-    rebalancing_schedule = list(pd_covars.keys())
-    alphas = alphas.reindex(index=rebalancing_schedule, method='ffill')
+    if pd_covars is None:  # use default ewm covar with covar_estimator
+        pd_covars = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
 
-    tickers = prices.columns.to_list()
+    rebalancing_dates = list(pd_covars.keys())
+    alphas = alphas.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)
+
     weights = {}
     # extend benchmark weights
     if isinstance(benchmark_weights, pd.DataFrame):
-        weights_0 = benchmark_weights.iloc[:, 0]
-        benchmark_weights = benchmark_weights.reindex(index=rebalancing_schedule, method='ffill').fillna(0.0)
+        benchmark_weights = benchmark_weights.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)
     else:
-        weights_0 = benchmark_weights
-        # crate df with weights
-        benchmark_weights = benchmark_weights.to_frame(name=rebalancing_schedule[0]).T.reindex(index=rebalancing_schedule, method='ffill').fillna(0.0)
+        benchmark_weights = benchmark_weights.to_frame(name=rebalancing_dates[0]).T.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)
 
+    if rebalancing_indicators is not None:  #  need to reindex at pd_covars index
+        rebalancing_indicators = rebalancing_indicators.reindex(index=rebalancing_dates).fillna(0.0)  # by default no rebalancing
+
+    weights_0 = None  # it will relax turnover constraint for the first rebalancing
     for date, pd_covar in pd_covars.items():
+        if rebalancing_indicators is not None:
+            rebalancing_indicators_t = rebalancing_indicators.loc[date, :]
+        else:
+            rebalancing_indicators_t = None
         weights_ = wrapper_maximise_alpha_over_tre(pd_covar=pd_covar,
                                                    alphas=alphas.loc[date, :],
                                                    benchmark_weights=benchmark_weights.loc[date, :],
                                                    constraints0=constraints0,
+                                                   rebalancing_indicators=rebalancing_indicators_t,
                                                    weights_0=weights_0,
-                                                   squeeze_factor=squeeze_factor,
+                                                   apply_total_to_good_ratio=apply_total_to_good_ratio,
                                                    solver=solver)
-        weights_0 = weights_  # update for next rebalancing
-        weights[date] = weights_
-
-    weights = pd.DataFrame.from_dict(weights, orient='index')
-    weights = weights.reindex(columns=tickers)
-    return weights
-
-
-def rolling_maximise_alpha_over_tre_lasso_covar(benchmark_prices: pd.DataFrame,
-                                                prices: pd.DataFrame,
-                                                alphas: pd.DataFrame,
-                                                constraints0: Constraints,
-                                                benchmark_weights: Union[pd.Series, pd.DataFrame],
-                                                time_period: qis.TimePeriod,  # when we start building portfolios
-                                                pd_covars: Dict[pd.Timestamp, pd.DataFrame] = None,
-                                                returns_freq: str = 'W-WED',
-                                                rebalancing_freq: str = 'QE',
-                                                span: int = 52,  # 1y
-                                                reg_lambda: float = 1e-8,
-                                                squeeze_factor: Optional[float] = None,
-                                                solver: str = 'ECOS_BB'
-                                                ) -> pd.DataFrame:
-    """
-    maximise portfolio alpha subject to constraint on tracking tracking error
-    """
-    # estimate covar at rebalancing schedule
-    if pd_covars is None:
-        pd_covars = estimate_rolling_lasso_covar(benchmark_prices=benchmark_prices,
-                                                 prices=prices,
-                                                 time_period=time_period,
-                                                 returns_freq=returns_freq,
-                                                 rebalancing_freq=rebalancing_freq,
-                                                 span=span,
-                                                 reg_lambda=reg_lambda,
-                                                 squeeze_factor=squeeze_factor)
-
-    rebalancing_schedule = list(pd_covars.keys())
-    alphas = alphas.reindex(index=rebalancing_schedule, method='ffill').fillna(0.0)
-
-    tickers = prices.columns.to_list()
-    weights = {}
-    # extend benchmark weights
-    if isinstance(benchmark_weights, pd.DataFrame):
-        weights_0 = benchmark_weights.iloc[:, 0]
-        benchmark_weights = benchmark_weights.reindex(index=rebalancing_schedule, method='ffill').fillna(0.0)
-    else:
-        weights_0 = benchmark_weights
-        # crate df with weights
-        benchmark_weights = benchmark_weights.to_frame(name=rebalancing_schedule[0]).T.reindex(index=rebalancing_schedule, method='ffill').fillna(0.0)
-
-    for date, pd_covar in pd_covars.items():
-        weights_ = wrapper_maximise_alpha_over_tre(pd_covar=pd_covar,
-                                                   alphas=alphas.loc[date, :],
-                                                   benchmark_weights=benchmark_weights.loc[date, :],
-                                                   constraints0=constraints0,
-                                                   weights_0=weights_0,
-                                                   squeeze_factor=None,  # taling care of
-                                                   solver=solver)
-        if np.all(np.isclose(weights_, 0.0)):
-            weights_ = benchmark_weights.loc[date, :]
 
         weights_0 = weights_  # update for next rebalancing
         weights[date] = weights_
 
     weights = pd.DataFrame.from_dict(weights, orient='index')
-    weights = weights.reindex(columns=tickers)
+    weights = weights.reindex(columns=prices.columns.to_list())
     return weights
 
 
@@ -128,7 +71,8 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
                                     benchmark_weights: pd.Series,
                                     constraints0: Constraints,
                                     weights_0: pd.Series = None,
-                                    squeeze_factor: Optional[float] = None,
+                                    rebalancing_indicators: pd.Series = None,
+                                    apply_total_to_good_ratio: bool = True,
                                     solver: str = 'ECOS_BB'
                                     ) -> pd.Series:
     """
@@ -138,14 +82,16 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
     # filter out assets with zero variance or nans
     vectors = dict(alphas=alphas)
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar, vectors=vectors)
-
-    if squeeze_factor is not None and squeeze_factor > 0.0:
-        clean_covar = squeeze_covariance_matrix(clean_covar, squeeze_factor=squeeze_factor)
+    if apply_total_to_good_ratio:
+        total_to_good_ratio = len(pd_covar.columns) / len(clean_covar.columns)
+    else:
+        total_to_good_ratio = 1.0
 
     constraints = constraints0.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
-                                                         total_to_good_ratio=len(pd_covar.columns) / len(clean_covar.columns),
+                                                         total_to_good_ratio=total_to_good_ratio,
                                                          weights_0=weights_0,
-                                                         benchmark_weights=benchmark_weights)
+                                                         benchmark_weights=benchmark_weights,
+                                                         rebalancing_indicators=rebalancing_indicators)
 
     weights = cvx_maximise_alpha_over_tre(covar=clean_covar.to_numpy(),
                                           alphas=good_vectors['alphas'].to_numpy(),
@@ -159,7 +105,8 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
 def cvx_maximise_alpha_over_tre(covar: np.ndarray,
                                 alphas: np.ndarray,
                                 constraints: Constraints,
-                                solver: str = 'ECOS_BB'
+                                solver: str = 'ECOS_BB',
+                                verbose: bool = False
                                 ) -> np.ndarray:
     """
     numpy level one step solution of problem
@@ -183,6 +130,7 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
     else:
         nonneg = False
     w = cvx.Variable(n, nonneg=nonneg)
+    covar = cvx.psd_wrap(covar)
 
     # set solver
     benchmark_weights = constraints.benchmark_weights.to_numpy()
@@ -191,7 +139,7 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
     constraints_ = constraints.set_cvx_constraints(w=w, covar=covar)
 
     problem = cvx.Problem(objective, constraints_)
-    problem.solve(verbose=False, solver=solver)
+    problem.solve(verbose=verbose, solver=solver)
 
     optimal_weights = w.value
     if optimal_weights is None:

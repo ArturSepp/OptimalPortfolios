@@ -45,7 +45,7 @@ def run_bonds_etf_optimal_portfolio(prices: pd.DataFrame,
                                                         time_period=time_period,
                                                         span=52,
                                                         rebalancing_freq='ME',
-                                                        print_inputs=True)
+                                                        verbose=True)
     return weights
 
 
@@ -115,7 +115,7 @@ def run_unit_test(unit_test: UnitTests):
 
     import optimalportfolios.local_path as lp
 
-    prices, benchmark_prices, dividends, yields, target_returns, group_data = fetch_benchmark_universe_data()
+    prices, benchmark_prices, dividends, yields, target_returns, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
 
     if unit_test == UnitTests.ILLUSTRATE_INPUT_DATA:
         with sns.axes_style('darkgrid'):
@@ -177,7 +177,7 @@ def run_unit_test(unit_test: UnitTests):
                                                       weight_implementation_lag=1,
                                                       ticker=f"Optimal Portfolio")
         portfolio_data.set_group_data(group_data=group_data)
-        kwargs = qis.fetch_default_report_kwargs(time_period=time_period, is_daily=True, add_rates_data=True)
+        kwargs = qis.fetch_default_report_kwargs(time_period=time_period, add_rates_data=True)
         figs = qis.generate_strategy_factsheet(portfolio_data=portfolio_data,
                                                benchmark_prices=benchmark_prices,
                                                time_period=time_period,

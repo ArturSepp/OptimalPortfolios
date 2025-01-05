@@ -1,12 +1,15 @@
 """
 compute alphas
 """
-from enum import Enum
-from typing import List, Optional
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
 import qis as qis
+from enum import Enum
+from typing import List, Optional, Tuple
+
+from optimalportfolios.utils.lasso import LassoModel
 
 
 class AlphaSignal(Enum):
@@ -23,9 +26,10 @@ def compute_low_beta_alphas(prices: pd.DataFrame,
                             returns_freq: Optional[str] = 'W-WED',
                             beta_span: int = 52,
                             mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA
-                            ) -> pd.DataFrame:
+                            ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    compute beta to equal weight benchmark
+    compute beta to benchmark_price
+    if benchmark_price is None then compute equal weight benchmark
     """
     returns = qis.to_returns(prices, freq=returns_freq, is_log_returns=True)
     if benchmark_price is None:  # use equal weight returns
@@ -40,7 +44,33 @@ def compute_low_beta_alphas(prices: pd.DataFrame,
     # set zeros to nans for signal
     ewma_betas = ewma_betas.replace({0.0: np.nan})
     alphas = qis.df_to_cross_sectional_score(df=-1.0 * ewma_betas)
-    return alphas
+    return alphas, ewma_betas
+
+
+def compute_low_beta_alphas_different_freqs(prices: pd.DataFrame,
+                                            rebalancing_freqs: pd.Series,
+                                            benchmark_price: pd.Series = None,
+                                            beta_span: int = 52,
+                                            mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA
+                                            ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    compute beta to benchmark_price
+    if benchmark_price is None then compute equal weight benchmark
+    rebalancing_freqs is
+    """
+    rebalancing_freqs = rebalancing_freqs[prices.columns]
+    group_freqs = qis.get_group_dict(group_data=rebalancing_freqs)
+    ewma_betas = []
+    for freq, asset_tickers in group_freqs.items():
+        alphas_, ewma_betas_ = compute_low_beta_alphas(prices=prices[asset_tickers],
+                                                       benchmark_price=benchmark_price,
+                                                       returns_freq=freq,
+                                                       beta_span=beta_span,
+                                                       mean_adj_type=mean_adj_type)
+        ewma_betas.append(ewma_betas_)
+    ewma_betas = pd.concat(ewma_betas, axis=1)[prices.columns].ffill()
+    alphas = qis.df_to_cross_sectional_score(df=-1.0 * ewma_betas)
+    return alphas, ewma_betas
 
 
 def compute_momentum_alphas(prices: pd.DataFrame,
@@ -50,7 +80,11 @@ def compute_momentum_alphas(prices: pd.DataFrame,
                             short_span: Optional[int] = None,
                             vol_span: Optional[int] = 13,
                             mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.NONE
-                            ) -> pd.DataFrame:
+                            ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    compute momentum relative benchmark_price
+    if benchmark_price is None then compute equal weight benchmark
+    """
     returns = qis.to_returns(prices, freq=returns_freq, is_log_returns=True)
     if benchmark_price is not None: # adjust
         benchmark_price = benchmark_price.reindex(index=prices.index, method='ffill')
@@ -65,7 +99,37 @@ def compute_momentum_alphas(prices: pd.DataFrame,
                                                               mean_adj_type=mean_adj_type)
     # momentum = qis.map_signal_to_weight(signals=momentum, loc=0.0, slope_right=0.5, slope_left=0.5, tail_level=3.0)
     alphas = qis.df_to_cross_sectional_score(df=momentum)
-    return alphas
+    return alphas, momentum
+
+
+def compute_momentum_alphas_different_freqs(prices: pd.DataFrame,
+                                            rebalancing_freqs: pd.Series,
+                                            benchmark_price: pd.Series = None,
+                                            long_span: int = 13,
+                                            short_span: Optional[int] = None,
+                                            vol_span: Optional[int] = 13,
+                                            mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.NONE
+                                            ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    compute momentum relative benchmark_price
+    if benchmark_price is None then compute equal weight benchmark
+    rebalancing_freqs is
+    """
+    rebalancing_freqs = rebalancing_freqs[prices.columns]
+    group_freqs = qis.get_group_dict(group_data=rebalancing_freqs)
+    momentum = []
+    for freq, asset_tickers in group_freqs.items():
+        alphas_, momentum_ = compute_momentum_alphas(prices=prices[asset_tickers],
+                                                       benchmark_price=benchmark_price,
+                                                       returns_freq=freq,
+                                                       long_span=long_span,
+                                                       short_span=short_span,
+                                                       vol_span=vol_span,
+                                                       mean_adj_type=mean_adj_type)
+        momentum.append(momentum_)
+    momentum = pd.concat(momentum, axis=1)[prices.columns].ffill()
+    alphas = qis.df_to_cross_sectional_score(df=momentum)
+    return alphas, momentum
 
 
 def compute_ra_carry_alphas(prices: pd.DataFrame,
@@ -147,7 +211,7 @@ def compute_grouped_momentum_alphas(prices: pd.DataFrame,
         grouped_prices = {'_': prices}
     groups_momentum_alphas = []
     for group, gprice in grouped_prices.items():
-        groups_momentum_alphas_ = compute_momentum_alphas(prices=gprice,
+        groups_momentum_alphas_, _ = compute_momentum_alphas(prices=gprice,
                                                           returns_freq=returns_freq,
                                                           long_span=mom_long_span,
                                                           short_span=mom_short_span,
@@ -169,7 +233,7 @@ def compute_grouped_low_beta_alphas(prices: pd.DataFrame,
         grouped_prices = {'_': prices}
     groups_low_beta_alphas = []
     for group, gprice in grouped_prices.items():
-        groups_low_beta_alphas_ = compute_low_beta_alphas(prices=gprice, returns_freq=returns_freq, beta_span=beta_span)
+        groups_low_beta_alphas_, _ = compute_low_beta_alphas(prices=gprice, returns_freq=returns_freq, beta_span=beta_span)
         groups_low_beta_alphas.append(groups_low_beta_alphas_)
     groups_low_beta_alphas = pd.concat(groups_low_beta_alphas, axis=1)[prices.columns]  # align
     return groups_low_beta_alphas
@@ -197,3 +261,26 @@ def compute_alpha_long_only_weights(prices: pd.DataFrame,
                                     returns_freq=returns_freq)
     signal_weights = qis.df_to_long_only_allocation_sum1(df=alphas)
     return signal_weights
+
+
+def estimate_lasso_alphas(prices: pd.DataFrame,
+                          benchmark_prices: pd.DataFrame,
+                          lasso_model: LassoModel,
+                          rebalancing_freq: str = 'ME'
+                          ) -> pd.DataFrame:
+    """
+    compute alphas = return_t - (factor_returns_t*beta_{t_1}
+    """
+    y = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
+    x = qis.to_returns(prices=benchmark_prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
+
+    betas, residual_vars, r2_t = lasso_model.estimate_rolling_betas(x=x, y=y)
+    estimation_dates = list(betas.keys())
+    excess_returns = {}
+    for date0, date1 in zip(estimation_dates[:-1], estimation_dates[1:]):
+        x_return1 = x.loc[date1, :]
+        y_return1 = y.loc[date1, :]
+        betas0 = betas[date0]
+        excess_returns[date1] = y_return1 - x_return1 @ betas0
+    excess_returns = pd.DataFrame.from_dict(excess_returns, orient='index')
+    return excess_returns
