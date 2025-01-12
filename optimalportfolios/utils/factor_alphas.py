@@ -86,7 +86,7 @@ def compute_momentum_alphas(prices: pd.DataFrame,
     if benchmark_price is None then compute equal weight benchmark
     """
     returns = qis.to_returns(prices, freq=returns_freq, is_log_returns=True)
-    if benchmark_price is not None: # adjust
+    if benchmark_price is not None:  # adjust
         benchmark_price = benchmark_price.reindex(index=prices.index, method='ffill')
         benchmark_returns = qis.to_returns(benchmark_price, freq=returns_freq, is_log_returns=True)
         returns = returns.subtract(qis.np_array_to_df_columns(a=benchmark_returns.to_numpy(), ncols=len(returns.columns)))
@@ -120,12 +120,12 @@ def compute_momentum_alphas_different_freqs(prices: pd.DataFrame,
     momentum = []
     for freq, asset_tickers in group_freqs.items():
         alphas_, momentum_ = compute_momentum_alphas(prices=prices[asset_tickers],
-                                                       benchmark_price=benchmark_price,
-                                                       returns_freq=freq,
-                                                       long_span=long_span,
-                                                       short_span=short_span,
-                                                       vol_span=vol_span,
-                                                       mean_adj_type=mean_adj_type)
+                                                     benchmark_price=benchmark_price,
+                                                     returns_freq=freq,
+                                                     long_span=long_span,
+                                                     short_span=short_span,
+                                                     vol_span=vol_span,
+                                                     mean_adj_type=mean_adj_type)
         momentum.append(momentum_)
     momentum = pd.concat(momentum, axis=1)[prices.columns].ffill()
     alphas = qis.df_to_cross_sectional_score(df=momentum)

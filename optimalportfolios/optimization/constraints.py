@@ -8,8 +8,8 @@ import pandas as pd
 import numpy as np
 import cvxpy as cvx
 from dataclasses import dataclass, asdict
-from typing import List, Tuple, Optional
-
+from typing import List, Tuple, Optional, Union
+from cvxpy.atoms.affine.wraps import psd_wrap
 
 @dataclass
 class GroupLowerUpperConstraints:
@@ -118,7 +118,7 @@ class Constraints:
 
     def set_cvx_constraints(self,
                             w: cvx.Variable,  # problem variable
-                            covar: np.ndarray = None,
+                            covar: Union[np.ndarray, psd_wrap] = None,
                             exposure_scaler: cvx.Variable = None  # can be used for max sharpe contraints
                             ) -> List:
         """

@@ -55,6 +55,7 @@ def _cycle(x, c, var, _varphi, sigma_x, Sx, budgets, pi, bounds, lambda_log, cov
 
         x[i] = x_tilde
         x = np.ascontiguousarray(x)  # to remove numpy warning
+        cov = np.ascontiguousarray(cov)  # to remove numpy warning
         Sx = np.dot(cov, x)
         Sx = np.ascontiguousarray(Sx)  # to remove numpy warning
         sigma_x = np.sqrt(np.dot(Sx, x))

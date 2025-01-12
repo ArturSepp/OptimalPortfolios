@@ -97,6 +97,11 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
                                           alphas=good_vectors['alphas'].to_numpy(),
                                           constraints=constraints,
                                           solver=solver)
+
+    #weights = cvx_minimise_tre(covar=clean_covar.to_numpy(),
+    #                           alphas=good_vectors['alphas'].to_numpy(),
+    #                           constraints=constraints,
+    #                           solver=solver)
     weights = pd.Series(weights, index=clean_covar.index)
     weights = weights.reindex(index=pd_covar.index).fillna(0.0)  # align with tickers
     return weights
@@ -109,21 +114,17 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
                                 verbose: bool = False
                                 ) -> np.ndarray:
     """
-    numpy level one step solution of problem
+    numpy level solution of quadratic problem:
     max alpha@w
     such that
-    w @ Sigma @ w.t <= tracking_err_vol_constraint
+    (w-benchmark_weights) @ Sigma @ (w-benchmark_weights).t <= tracking_err_vol_constraint
     sum(abs(w-w_0)) <= turnover_constraint
-    sum(w) = 1 # exposure constraint
-    w >= 0  # long only constraint
-
     subject to linear constraints
          1. weight_min <= w <= weight_max
          2. sum(w) = 1
          3. exposure_budget_eq[0]^t*w = exposure_budget_eq[1]
-    here we assume that all assets are valid: Sigma is invertable
+    here we assume that all assets are valid: Sigma is invertible
     """
-    # covar1 = cvx.psd_wrap(covar)
     n = covar.shape[0]
     if constraints.is_long_only:
         nonneg = True
@@ -155,78 +156,73 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
     return optimal_weights
 
 
-def minimize_tracking_error(covar: np.ndarray,
-                            benchmark_weights: np.ndarray = None,
-                            min_weights: np.ndarray = None,
-                            max_weights: np.ndarray = None,
-                            is_long_only: bool = True,
-                            max_leverage: float = None,  # for long short portfolios
-                            turnover_constraint: Optional[float] = 0.5,
-                            weights_0: np.ndarray = None,
-                            group_exposures_min_max: Optional[List[Tuple[np.ndarray, float, float]]] = None,
-                            solver: str = 'ECOS_BB',
-                            verbose: bool = False
-                            ) -> np.ndarray:
+def cvx_minimise_tre(covar: np.ndarray,
+                     constraints: Constraints,
+                     alphas: Optional[np.ndarray] = None,
+                     tre_weight: Optional[float] = 0.00001,
+                     turnover_weight: Optional[float] = 0.001,
+                     solver: str = 'ECOS_BB',
+                     verbose: bool = False
+                     ) -> np.ndarray:
     """
-    TODO: revise
-    max alpha@w
-    such that
-    w @ Sigma @ w.t <= tracking_err_vol_constraint
-    sum(abs(w-w_0)) <= turnover_constraint
-    sum(w) = 1 # exposure constraint
-    w >= 0  # long only constraint
-
+    numpy level solution of quadratic problem:
+    max { alpha@w - tre_weight * (w-benchmark_weights) @ Sigma @ (w-benchmark_weights).t - turnover_weight*sum(abs(w-w_0))}
     subject to linear constraints
          1. weight_min <= w <= weight_max
          2. sum(w) = 1
          3. exposure_budget_eq[0]^t*w = exposure_budget_eq[1]
+    here we assume that all assets are valid: Sigma is invertible
     """
     n = covar.shape[0]
-    w = cvx.Variable(n)
+    if constraints.is_long_only:
+        nonneg = True
+    else:
+        nonneg = False
+    w = cvx.Variable(n, nonneg=nonneg)
     covar = cvx.psd_wrap(covar)
-    tracking_error_var = cvx.quad_form(w-benchmark_weights, covar)
 
-    objective_fun = tracking_error_var
+    constraints1 = constraints.copy()
+    # set solver
+    benchmark_weights = constraints.benchmark_weights.to_numpy()
+    if alphas is not None:
+        objective_fun = alphas.T @ (w - benchmark_weights)
 
-    objective = cvx.Minimize(objective_fun)
+        if tre_weight is not None:
+            constraints1.tracking_err_vol_constraint = None  # disable from constraints
+            tracking_error_var = cvx.quad_form(w - benchmark_weights, covar)
+            objective_fun += -1.0*tre_weight*tracking_error_var
 
-    # add constraints
-    constraints = []
-    # gross_notional = 1:
-    constraints = constraints + [cvx.sum(w) == 1]
+    else:
+        if tre_weight is None:
+            raise ValueError(f"tre_weight must be given for tre without alphas")
 
-    # tracking error constraint
-    # constraints += [tracking_error_var <= tracking_err_vol_constraint ** 2]  # variance constraint
+        constraints1.tracking_err_vol_constraint = None  # disable from constraints
+        tracking_error_var = cvx.quad_form(w - benchmark_weights, covar)
+        objective_fun = -1.0*tre_weight*tracking_error_var
 
-    # turnover_constraint:
-    if turnover_constraint is not None:
-        if weights_0 is None:
-            raise ValueError(f"weights_0 must be given")
-        constraints += [cvx.norm(w-weights_0, 1) <= turnover_constraint]
+    # add turover
+    if turnover_weight is not None:
+        constraints1.turnover_constraint = None  # disable from constraints
+        if constraints1.weights_0 is None:
+            print(f"weights_0 must be given for turnover_constraint")
+        else:
+            objective_fun += -1.0*turnover_weight*cvx.norm(w - constraints1.weights_0, 1)
 
-    if is_long_only:
-        constraints = constraints + [w >= 0.0]
-    if min_weights is not None:
-        constraints = constraints + [w >= min_weights]
-    if max_weights is not None:
-        constraints = constraints + [w <= max_weights]
-    if group_exposures_min_max is not None:
-        for group_exposures_min_max_ in group_exposures_min_max:
-            constraints = constraints + [group_exposures_min_max_[0] @ w >= group_exposures_min_max_[1]]
-            constraints = constraints + [group_exposures_min_max_[0] @ w <= group_exposures_min_max_[2]]
+    objective = cvx.Maximize(objective_fun)
+    constraints_ = constraints1.set_cvx_constraints(w=w, covar=covar)
 
-    if max_leverage is not None:
-        constraints = constraints + [cvx.norm(w, 1) <= max_leverage]
-
-    problem = cvx.Problem(objective, constraints)
+    problem = cvx.Problem(objective, constraints_)
     problem.solve(verbose=verbose, solver=solver)
 
     optimal_weights = w.value
     if optimal_weights is None:
-        raise ValueError(f"not solved")
-
-    #if group_exposures_min_max is not None:
-    #    for group_exposures_min_max_ in group_exposures_min_max:
-    #        print(f"exposure: {group_exposures_min_max_[1]} <= {group_exposures_min_max_[0] @ optimal_weights} <= {group_exposures_min_max_[2]} ")
+        # raise ValueError(f"not solved")
+        print(f"not solved")
+        if constraints.weights_0 is not None:
+            optimal_weights = constraints.weights_0.to_numpy()
+            print(f"using weights_0")
+        else:
+            optimal_weights = np.zeros(n)
+            print(f"using zeroweights")
 
     return optimal_weights
