@@ -16,7 +16,7 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
                                     constraints0: Constraints,
                                     time_period: qis.TimePeriod,
                                     portfolio_objective: PortfolioObjective = PortfolioObjective.MAX_DIVERSIFICATION,
-                                    pd_covars: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
+                                    covar_dict: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
                                     risk_budget: pd.Series = None,
                                     returns_freq: Optional[str] = 'W-WED',  # returns freq
                                     rebalancing_freq: str = 'QE',  # portfolio rebalancing
@@ -28,15 +28,15 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
     """
     wrapper function that links implemented optimisation solvers optimisation methods
     for portfolio_objective in config.PortfolioObjective
-    pd_covars: Dict[timestamp, covar matrix] can be precomputed
-    portolio is rebalances at pd_covars.keys()
+    covar_dict: Dict[timestamp, covar matrix] can be precomputed
+    portolio is rebalances at covar_dict.keys()
     """
     covar_estimator = CovarEstimator(returns_freq=returns_freq, rebalancing_freq=rebalancing_freq, span=span)
     if portfolio_objective == PortfolioObjective.EQUAL_RISK_CONTRIBUTION:
         weights = opt.rolling_risk_budgeting(prices=prices,
                                              constraints0=constraints0,
                                              time_period=time_period,
-                                             pd_covars=pd_covars,
+                                             covar_dict=covar_dict,
                                              risk_budget=risk_budget,
                                              covar_estimator=covar_estimator)
 
@@ -44,7 +44,7 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
         weights = opt.rolling_maximise_diversification(prices=prices,
                                                        constraints0=constraints0,
                                                        time_period=time_period,
-                                                       pd_covars=pd_covars,
+                                                       covar_dict=covar_dict,
                                                        covar_estimator=covar_estimator)
 
     elif portfolio_objective in [PortfolioObjective.MIN_VARIANCE, PortfolioObjective.QUADRATIC_UTILITY]:
@@ -52,7 +52,7 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
                                                      constraints0=constraints0,
                                                      portfolio_objective=portfolio_objective,
                                                      time_period=time_period,
-                                                     pd_covars=pd_covars,
+                                                     covar_dict=covar_dict,
                                                      covar_estimator=covar_estimator,
                                                      carra=carra)
 
@@ -84,7 +84,7 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
 def backtest_rolling_optimal_portfolio(prices: pd.DataFrame,
                                        constraints0: Constraints,
                                        time_period: qis.TimePeriod,  # for computing weights
-                                       pd_covars: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
+                                       covar_dict: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
                                        perf_time_period: qis.TimePeriod = None,  # for computing performance
                                        portfolio_objective: PortfolioObjective = PortfolioObjective.MAX_DIVERSIFICATION,
                                        returns_freq: Optional[str] = 'W-WED',  # returns freq
@@ -100,13 +100,13 @@ def backtest_rolling_optimal_portfolio(prices: pd.DataFrame,
     """
     compute solvers portfolio weights and return portfolio data
     weight_implementation_lag: Optional[int] = None  # = 1 for daily data otherwise skip
-    pd_covars: Dict[timestamp, covar matrix] can be precomputed
-    portolio is rebalances at pd_covars.keys()
+    covar_dict: Dict[timestamp, covar matrix] can be precomputed
+    portolio is rebalances at covar_dict.keys()
     """
     weights = compute_rolling_optimal_weights(prices=prices,
                                               time_period=time_period,
                                               constraints0=constraints0,
-                                              pd_covars=pd_covars,
+                                              covar_dict=covar_dict,
                                               portfolio_objective=portfolio_objective,
                                               returns_freq=returns_freq,
                                               rebalancing_freq=rebalancing_freq,

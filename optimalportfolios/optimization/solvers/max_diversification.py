@@ -18,20 +18,20 @@ from optimalportfolios.utils.covar_matrix import CovarEstimator
 def rolling_maximise_diversification(prices: pd.DataFrame,
                                      constraints0: Constraints,
                                      time_period: qis.TimePeriod,  # when we start building portfolios
-                                     pd_covars: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
+                                     covar_dict: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
                                      covar_estimator: CovarEstimator = CovarEstimator()  # default EWMA estimator
                                      ) -> pd.DataFrame:
     """
     compute rolling maximum diversification portfolios
-    pd_covars: Dict[timestamp, covar matrix] can be precomputed
-    portolio is rebalances at pd_covars.keys()
+    covar_dict: Dict[timestamp, covar matrix] can be precomputed
+    portolio is rebalances at covar_dict.keys()
     """
-    if pd_covars is None:  # use default ewm covar with covar_estimator
-        pd_covars = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+    if covar_dict is None:  # use default ewm covar with covar_estimator
+        covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
 
     weights = {}
     weights_0 = None
-    for date, pd_covar in pd_covars.items():
+    for date, pd_covar in covar_dict.items():
         weights_ = wrapper_maximise_diversification(pd_covar=pd_covar,
                                                     constraints0=constraints0,
                                                     weights_0=weights_0)

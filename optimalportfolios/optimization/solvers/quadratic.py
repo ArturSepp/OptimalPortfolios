@@ -20,7 +20,7 @@ from optimalportfolios.utils.covar_matrix import CovarEstimator
 def rolling_quadratic_optimisation(prices: pd.DataFrame,
                                    constraints0: Constraints,
                                    time_period: qis.TimePeriod,  # when we start building portfolios
-                                   pd_covars: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
+                                   covar_dict: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
                                    inclusion_indicators: Optional[pd.DataFrame] = None,  # if asset is included into optimisation
                                    portfolio_objective: PortfolioObjective = PortfolioObjective.MIN_VARIANCE,
                                    covar_estimator: CovarEstimator = CovarEstimator(),  # default estimator
@@ -29,14 +29,14 @@ def rolling_quadratic_optimisation(prices: pd.DataFrame,
     """
     compute quadratic optimisation for portfolio_objective in [PortfolioObjective.MIN_VARIANCE,
                                                                 PortfolioObjective.QUADRATIC_UTILITY]
-    pd_covars: Dict[timestamp, covar matrix] can be precomputed
-    portolio is rebalances at pd_covars.keys()
+    covar_dict: Dict[timestamp, covar matrix] can be precomputed
+    portolio is rebalances at covar_dict.keys()
     """
-    if pd_covars is None:  # use default ewm covar with covar_estimator
-        pd_covars = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+    if covar_dict is None:  # use default ewm covar with covar_estimator
+        covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
 
     # generate rebalancing dates on the returns index
-    rebalancing_schedule = list(pd_covars.keys())
+    rebalancing_schedule = list(covar_dict.keys())
     tickers = prices.columns.to_list()
 
     if inclusion_indicators is not None:  # reindex at rebalancing
@@ -47,7 +47,7 @@ def rolling_quadratic_optimisation(prices: pd.DataFrame,
 
     weights = {}
     weights_0 = None
-    for date, pd_covar in pd_covars.items():
+    for date, pd_covar in covar_dict.items():
         weights_ = wrapper_quadratic_optimisation(pd_covar=pd_covar,
                                                   constraints0=constraints0,
                                                   weights_0=weights_0,

@@ -18,7 +18,7 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
                                     benchmark_weights: Union[pd.Series, pd.DataFrame],
                                     time_period: qis.TimePeriod,  # when we start building portfolios
                                     covar_estimator: CovarEstimator = CovarEstimator(),  # default covar estimator
-                                    pd_covars: Dict[pd.Timestamp, pd.DataFrame] = None,
+                                    covar_dict: Dict[pd.Timestamp, pd.DataFrame] = None,
                                     rebalancing_indicators: pd.DataFrame = None,
                                     apply_total_to_good_ratio: bool = True,
                                     solver: str = 'ECOS_BB'
@@ -27,10 +27,10 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
     maximise portfolio alpha subject to constraint on tracking tracking error
     """
     # estimate covar at rebalancing schedule
-    if pd_covars is None:  # use default ewm covar with covar_estimator
-        pd_covars = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+    if covar_dict is None:  # use default ewm covar with covar_estimator
+        covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
 
-    rebalancing_dates = list(pd_covars.keys())
+    rebalancing_dates = list(covar_dict.keys())
     alphas = alphas.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)
 
     weights = {}
@@ -40,11 +40,11 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
     else:
         benchmark_weights = benchmark_weights.to_frame(name=rebalancing_dates[0]).T.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)
 
-    if rebalancing_indicators is not None:  #  need to reindex at pd_covars index
+    if rebalancing_indicators is not None:  #  need to reindex at covar_dict index
         rebalancing_indicators = rebalancing_indicators.reindex(index=rebalancing_dates).fillna(0.0)  # by default no rebalancing
 
     weights_0 = None  # it will relax turnover constraint for the first rebalancing
-    for date, pd_covar in pd_covars.items():
+    for date, pd_covar in covar_dict.items():
         if rebalancing_indicators is not None:
             rebalancing_indicators_t = rebalancing_indicators.loc[date, :]
         else:

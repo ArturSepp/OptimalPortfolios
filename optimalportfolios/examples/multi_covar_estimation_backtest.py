@@ -96,13 +96,13 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
 
     # now create a list of portfolios
     portfolio_datas = []
-    for key, pd_covars in covars_dict.items():
+    for key, covar_dict in covars_dict.items():
         portfolio_data = backtest_rolling_optimal_portfolio(prices=prices,
                                                             portfolio_objective=portfolio_objective,
                                                             constraints0=constraints0,
                                                             time_period=time_period,
                                                             perf_time_period=perf_time_period,
-                                                            pd_covars=pd_covars,
+                                                            covar_dict=covar_dict,
                                                             rebalancing_costs=0.0010,  # 10bp for rebalancin
                                                             weight_implementation_lag=1,  # weights are implemnted next day after comuting
                                                             ticker=f"{key}"  # portfolio id

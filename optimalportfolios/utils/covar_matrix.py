@@ -267,7 +267,7 @@ def wrapper_estimate_rolling_lasso_covar(benchmark_prices: pd.DataFrame,
     wrapper for lasso covar estimation using either fixed rebalancing frequency or rolling rebalancing frequency
     """
     if isinstance(rebalancing_freq, str):
-        pd_covars = estimate_rolling_lasso_covar(benchmark_prices=benchmark_prices,
+        covar_dict = estimate_rolling_lasso_covar(benchmark_prices=benchmark_prices,
                                                  prices=prices,
                                                  time_period=time_period,
                                                  lasso_model=lasso_model,
@@ -278,7 +278,7 @@ def wrapper_estimate_rolling_lasso_covar(benchmark_prices: pd.DataFrame,
                                                  squeeze_factor=squeeze_factor,
                                                  residual_var_weight=residual_var_weight)
     else:
-        pd_covars = estimate_rolling_lasso_covar_different_freq(benchmark_prices=benchmark_prices,
+        covar_dict = estimate_rolling_lasso_covar_different_freq(benchmark_prices=benchmark_prices,
                                                                 prices=prices,
                                                                 time_period=time_period,
                                                                 lasso_model=lasso_model,
@@ -288,7 +288,7 @@ def wrapper_estimate_rolling_lasso_covar(benchmark_prices: pd.DataFrame,
                                                                 is_apply_vol_normalised_returns=is_apply_vol_normalised_returns,
                                                                 squeeze_factor=squeeze_factor,
                                                                 residual_var_weight=residual_var_weight)
-    return pd_covars
+    return covar_dict
 
 
 def estimate_lasso_covar(x: pd.DataFrame,

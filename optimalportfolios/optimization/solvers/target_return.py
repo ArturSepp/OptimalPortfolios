@@ -18,7 +18,7 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
                                               target_returns: pd.Series,
                                               constraints0: Constraints,
                                               time_period: qis.TimePeriod,  # when we start building portfolios
-                                              pd_covars: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
+                                              covar_dict: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
                                               returns_freq: str = 'W-WED',
                                               rebalancing_freq: str = 'QE',
                                               span: int = 52,  # 1y
@@ -29,8 +29,8 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
     """
     maximise portfolio alpha subject to constraint on tracking tracking error
     """
-    if pd_covars is None:  # use default ewm covar
-        pd_covars = estimate_rolling_ewma_covar(prices=prices,
+    if covar_dict is None:  # use default ewm covar
+        covar_dict = estimate_rolling_ewma_covar(prices=prices,
                                                 time_period=time_period,
                                                 returns_freq=returns_freq,
                                                 rebalancing_freq=rebalancing_freq,
@@ -38,14 +38,14 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
                                                 squeeze_factor=squeeze_factor)
 
     # create rebalancing schedule: it must much idx in covar_tensor_txy using returns.index
-    rebalancing_schedule = list(pd_covars.keys())
+    rebalancing_schedule = list(covar_dict.keys())
     alphas = alphas.reindex(index=rebalancing_schedule, method='ffill')
     yields = yields.reindex(index=rebalancing_schedule, method='ffill')
     target_returns = target_returns.reindex(index=rebalancing_schedule, method='ffill')
 
     weights = {}
     weights_0 = None
-    for date, pd_covar in pd_covars.items():
+    for date, pd_covar in covar_dict.items():
 
         if verbose:
             print(f"date={date}")

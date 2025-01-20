@@ -33,12 +33,12 @@ class Params:
         """
         returns params as dfs indexed by tickers or all_tickers
         """
-        pd_covars = []
+        covar_dict = []
         for covar in self.covars:
             covar_pd = pd.DataFrame(scaler*covar, index=tickers, columns=tickers)
             if all_tickers is not None:
                 covar_pd = covar_pd.reindex(index=all_tickers).reindex(columns=all_tickers)
-            pd_covars.append(covar_pd)
+            covar_dict.append(covar_pd)
 
         pd_means = []
         for mean in self.means:
@@ -47,7 +47,7 @@ class Params:
                 mean_pd = mean_pd.reindex(all_tickers)
             pd_means.append(mean_pd)
 
-        return pd_covars, pd_means, self.probs
+        return covar_dict, pd_means, self.probs
 
     def get_params(self, idx: int = 0) -> pd.DataFrame:
         means = np.array([mean[idx] for mean in self.means])

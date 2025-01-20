@@ -10,12 +10,12 @@ from numba import njit
 
 
 @njit
-def calculate_portfolio_var(w: np.ndarray, covar: np.ndarray) -> float:
+def compute_portfolio_variance(w: np.ndarray, covar: np.ndarray) -> float:
     return w.T @ covar @ w
 
 
 @njit
-def calculate_risk_contribution(w: np.ndarray, covar: np.ndarray) -> np.ndarray:
+def compute_portfolio_risk_contributions(w: np.ndarray, covar: np.ndarray) -> np.ndarray:
     portfolio_vol = np.sqrt(w.T @ covar @ w)
     marginal_risk_contribution = covar @ w.T
     rc = np.multiply(marginal_risk_contribution, w) / portfolio_vol
@@ -29,7 +29,7 @@ def compute_portfolio_vol(covar: Union[np.ndarray, pd.DataFrame],
         covar = covar.to_numpy()
     if isinstance(weights, pd.Series):
         weights = weights.to_numpy()
-    return np.sqrt(calculate_portfolio_var(w=weights, covar=covar))
+    return np.sqrt(compute_portfolio_variance(w=weights, covar=covar))
 
 
 def compute_te_turnover(covar: np.ndarray,
@@ -52,6 +52,6 @@ def compute_te_turnover(covar: np.ndarray,
 
 def calculate_diversification_ratio(w: np.ndarray, covar: np.ndarray) -> float:
     avg_weighted_vol = np.sqrt(np.diag(covar)) @ w.T
-    portfolio_vol = np.sqrt(calculate_portfolio_var(w, covar))
+    portfolio_vol = np.sqrt(compute_portfolio_variance(w, covar))
     diversification_ratio = avg_weighted_vol/portfolio_vol
     return diversification_ratio

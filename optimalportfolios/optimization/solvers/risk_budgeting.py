@@ -11,7 +11,7 @@ from scipy.optimize import minimize
 from typing import Dict
 from enum import Enum
 
-from optimalportfolios.utils.portfolio_funcs import (calculate_portfolio_var, calculate_risk_contribution)
+from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance, compute_portfolio_risk_contributions)
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.utils.covar_matrix import CovarEstimator
@@ -22,7 +22,7 @@ from pyrb import ConstrainedRiskBudgeting
 def rolling_risk_budgeting(prices: pd.DataFrame,
                            constraints0: Constraints,
                            time_period: qis.TimePeriod,  # when we start building portfolios
-                           pd_covars: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
+                           covar_dict: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
                            covar_estimator: CovarEstimator = CovarEstimator(),  # default covar estimator is ewma
                            risk_budget: pd.Series = None,
                            rebalancing_indicators: pd.DataFrame = None,  # whe assets can be rebalanced
@@ -31,19 +31,19 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
     """
     compute equal risk contribution
     risk_budget sets the risk budgets
-    pd_covars: Dict[timestamp, covar matrix] can be precomputed
-    portolio is rebalances at pd_covars.keys()
+    covar_dict: Dict[timestamp, covar matrix] can be precomputed
+    portolio is rebalances at covar_dict.keys()
     """
-    if pd_covars is None:  # use default ewm covar with covar_estimator
-        pd_covars = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+    if covar_dict is None:  # use default ewm covar with covar_estimator
+        covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
 
-    if rebalancing_indicators is not None:  # need to reindex at pd_covars index
-        rebalancing_dates = list(pd_covars.keys())
+    if rebalancing_indicators is not None:  # need to reindex at covar_dict index
+        rebalancing_dates = list(covar_dict.keys())
         rebalancing_indicators = rebalancing_indicators.reindex(index=rebalancing_dates).fillna(0.0)  # by default no rebalancing
 
     weights = {}
     weights_0 = None
-    for date, pd_covar in pd_covars.items():
+    for date, pd_covar in covar_dict.items():
         if rebalancing_indicators is not None and weights_0 is not None:
             rebalancing_indicators_t = rebalancing_indicators.loc[date, :]
         else:
@@ -132,7 +132,7 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
         weights = weights.where(np.isclose(inclusion_indicators, 1.0), other=fixed_weights)
 
     if verbouse:
-        asset_rc = calculate_risk_contribution(weights0, clean_covar.to_numpy())
+        asset_rc = compute_portfolio_risk_contributions(weights0, clean_covar.to_numpy())
         asset_rc_ratio = asset_rc / np.nansum(asset_rc)
         df = pd.concat([pd.Series(weights0, index=clean_covar.columns, name='weights'),
                         pd.Series(asset_rc, index=clean_covar.columns, name='asset_rc'),
@@ -234,8 +234,8 @@ def opt_risk_budgeting_scipy(covar: np.ndarray,
 
 def risk_budget_objective(x, pars):
     covar, budget = pars[0], pars[1]
-    asset_rc = calculate_risk_contribution(x, covar)
-    sig_p = np.sqrt(calculate_portfolio_var(x, covar))
+    asset_rc = compute_portfolio_risk_contributions(x, covar)
+    sig_p = np.sqrt(compute_portfolio_variance(x, covar))
     if budget is not None:
         risk_target = np.where(np.isnan(budget), asset_rc, np.multiply(sig_p, budget))  # budget can be nan f
     else:
@@ -277,7 +277,7 @@ def run_unit_test(unit_test: UnitTests):
 
         print(f"risk_budget={risk_budget}")
         print(f"weights={w_rb}")
-        asset_rc = calculate_risk_contribution(w_rb, covar)
+        asset_rc = compute_portfolio_risk_contributions(w_rb, covar)
         print(f"asset_rc={asset_rc/np.nansum(asset_rc)}")
 
         bounds = np.array([(0.0, 0.0, 0.4), (0.4, 0.4, 0.4)]).T
@@ -288,7 +288,7 @@ def run_unit_test(unit_test: UnitTests):
         # print(this)
         weights = this.x
         print(f"weights={weights}, sum={np.sum(weights)}")
-        asset_rc = calculate_risk_contribution(weights, covar)
+        asset_rc = compute_portfolio_risk_contributions(weights, covar)
         print(f"asset_rc_new={asset_rc/np.nansum(asset_rc)}")
 
     elif unit_test == UnitTests.PYRB:

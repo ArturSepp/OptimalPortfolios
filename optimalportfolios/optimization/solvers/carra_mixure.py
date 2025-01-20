@@ -10,7 +10,7 @@ from typing import List, Optional
 from enum import Enum
 
 from optimalportfolios.utils.gaussian_mixture import fit_gaussian_mixture
-from optimalportfolios.utils.portfolio_funcs import (calculate_portfolio_var, calculate_risk_contribution)
+from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance, compute_portfolio_risk_contributions)
 from optimalportfolios.optimization.constraints import (Constraints, total_weight_constraint, long_only_constraint)
 from optimalportfolios.utils.covar_matrix import squeeze_covariance_matrix
 
@@ -146,8 +146,8 @@ def opt_maximize_cara(means: np.ndarray,
 
     if is_print_log:
         print(f'return_p = {w_rb@means}, '
-              f'sigma_p = {np.sqrt(calculate_portfolio_var(w_rb, covar))}, weights: {w_rb}, '
-              f'risk contrib.s: {calculate_risk_contribution(w_rb, covar).T} '
+              f'sigma_p = {np.sqrt(compute_portfolio_variance(w_rb, covar))}, weights: {w_rb}, '
+              f'risk contrib.s: {compute_portfolio_risk_contributions(w_rb, covar).T} '
               f'sum of weights: {sum(w_rb)}')
     return w_rb
 

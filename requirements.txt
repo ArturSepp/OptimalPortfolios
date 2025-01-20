@@ -11,3 +11,4 @@ yfinance>=0.2.37
 qis>=2.1.33
 psycopg2>=2.9.5
 quadprog>=0.1.13
+ecos>=2.0.12
