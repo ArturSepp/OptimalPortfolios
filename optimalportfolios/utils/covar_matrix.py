@@ -268,26 +268,26 @@ def wrapper_estimate_rolling_lasso_covar(benchmark_prices: pd.DataFrame,
     """
     if isinstance(rebalancing_freq, str):
         covar_dict = estimate_rolling_lasso_covar(benchmark_prices=benchmark_prices,
-                                                 prices=prices,
-                                                 time_period=time_period,
-                                                 lasso_model=lasso_model,
-                                                 returns_freq=returns_freq,
-                                                 rebalancing_freq=rebalancing_freq,
-                                                 span=span,
-                                                 is_apply_vol_normalised_returns=is_apply_vol_normalised_returns,
-                                                 squeeze_factor=squeeze_factor,
-                                                 residual_var_weight=residual_var_weight)
+                                                  prices=prices,
+                                                  time_period=time_period,
+                                                  lasso_model=lasso_model,
+                                                  returns_freq=returns_freq,
+                                                  rebalancing_freq=rebalancing_freq,
+                                                  span=span,
+                                                  is_apply_vol_normalised_returns=is_apply_vol_normalised_returns,
+                                                  squeeze_factor=squeeze_factor,
+                                                  residual_var_weight=residual_var_weight)
     else:
         covar_dict = estimate_rolling_lasso_covar_different_freq(benchmark_prices=benchmark_prices,
-                                                                prices=prices,
-                                                                time_period=time_period,
-                                                                lasso_model=lasso_model,
-                                                                returns_freq=returns_freq,
-                                                                rebalancing_freqs=rebalancing_freq,
-                                                                span=span,
-                                                                is_apply_vol_normalised_returns=is_apply_vol_normalised_returns,
-                                                                squeeze_factor=squeeze_factor,
-                                                                residual_var_weight=residual_var_weight)
+                                                                 prices=prices,
+                                                                 time_period=time_period,
+                                                                 lasso_model=lasso_model,
+                                                                 returns_freq=returns_freq,
+                                                                 rebalancing_freqs=rebalancing_freq,
+                                                                 span=span,
+                                                                 is_apply_vol_normalised_returns=is_apply_vol_normalised_returns,
+                                                                 squeeze_factor=squeeze_factor,
+                                                                 residual_var_weight=residual_var_weight)
     return covar_dict
 
 
@@ -386,3 +386,5 @@ def squeeze_covariance_matrix(covar: Union[np.ndarray, pd.DataFrame],
         squeezed_cov_matrix = squeezed_cov_matrix.to_numpy()
 
     return squeezed_cov_matrix
+
+

@@ -8,6 +8,7 @@ import cvxpy as cvx
 import numpy as np
 import pandas as pd
 import qis as qis
+import scipy.cluster.hierarchy as spc
 from dataclasses import dataclass, asdict
 from typing import Optional, Tuple, Dict
 from enum import Enum
@@ -15,7 +16,8 @@ from enum import Enum
 
 class LassoModelType(Enum):
     LASSO = 1
-    GROUP_LASSO = 2
+    GROUP_LASSO = 2  # use defined groups for lass
+    GROUP_LASSO_CLUSTERS = 3  # use statistical clusters for lasso
 
 
 @dataclass
@@ -73,7 +75,16 @@ class LassoModel:
         """
         x_np, y_np = self.get_x_y_np(x=x, y=y)
 
-        if self.model_type == LassoModelType.GROUP_LASSO:
+        if self.model_type == LassoModelType.LASSO:
+            estimated_beta = solve_lasso_cvx_problem(x=x_np,
+                                                     y=y_np,
+                                                     reg_lambda=self.reg_lambda,
+                                                     span=self.span,
+                                                     verbose=verbose,
+                                                     solver=self.solver,
+                                                     apply_independent_nan_filter=apply_independent_nan_filter)
+
+        elif self.model_type == LassoModelType.GROUP_LASSO:
             # create group loadings
             group_loadings = qis.set_group_loadings(group_data=self.group_data[y.columns])
             estimated_beta = solve_group_lasso_cvx_problem(x=x_np,
@@ -83,14 +94,24 @@ class LassoModel:
                                                            span=self.span,
                                                            verbose=verbose,
                                                            solver=self.solver)
+        elif self.model_type == LassoModelType.GROUP_LASSO_CLUSTERS:
+            # create group loadings using ewma corr matrix
+            corr_matrix = qis.compute_ewm_covar(a=y_np, span=self.span, is_corr=True)
+            corr_matrix = pd.DataFrame(corr_matrix, columns=y.columns, index=y.columns)
+            clusters = compute_clusters_from_corr_matrix(corr_matrix=corr_matrix)
+            # print(f"clusters=\n{clusters}")
+            group_loadings = qis.set_group_loadings(group_data=clusters)
+            estimated_beta = solve_group_lasso_cvx_problem(x=x_np,
+                                                           y=y_np,
+                                                           group_loadings=group_loadings.to_numpy(),
+                                                           reg_lambda=self.reg_lambda,
+                                                           span=self.span,
+                                                           verbose=verbose,
+                                                           solver=self.solver)
+
         else:
-            estimated_beta = solve_lasso_cvx_problem(x=x_np,
-                                                     y=y_np,
-                                                     reg_lambda=self.reg_lambda,
-                                                     span=self.span,
-                                                     verbose=verbose,
-                                                     solver=self.solver,
-                                                     apply_independent_nan_filter=apply_independent_nan_filter)
+            raise NotImplementedError(f"{self.model_type}")
+
         self.x = x
         self.y = y
         self.estimated_betas = pd.DataFrame(estimated_beta, index=x.columns, columns=y.columns)
@@ -308,3 +329,12 @@ def compute_residual_variance_r2(x: np.ndarray,
     ss_total = np.nansum(np.square(weights * (y - np.nanmean(y, axis=0))), axis=0) / num_nonnans
     r2 = np.divide(ss_res, ss_total, where=ss_total > 0.0)
     return ss_res, r2
+
+
+def compute_clusters_from_corr_matrix(corr_matrix: pd.DataFrame) -> pd.Series:
+    corr_matrix = corr_matrix.fillna(0.0)
+    pdist = spc.distance.pdist(1.0 - corr_matrix.to_numpy())
+    linkage = spc.linkage(pdist, method='ward')
+    idx = spc.fcluster(linkage, 0.5 * np.max(pdist), 'distance')
+    clusters = pd.Series(idx, index=corr_matrix.columns)
+    return clusters

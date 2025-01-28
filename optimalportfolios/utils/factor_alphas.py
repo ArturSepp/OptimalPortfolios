@@ -51,26 +51,36 @@ def compute_low_beta_alphas_different_freqs(prices: pd.DataFrame,
                                             rebalancing_freqs: pd.Series,
                                             benchmark_price: pd.Series = None,
                                             beta_span: int = 52,
-                                            mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA
-                                            ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+                                            mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA,
+                                            group_data: pd.Series = None
+                                            ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     compute beta to benchmark_price
     if benchmark_price is None then compute equal weight benchmark
-    rebalancing_freqs is
+    when group_data is used recommended to have same frequency
     """
     rebalancing_freqs = rebalancing_freqs[prices.columns]
     group_freqs = qis.get_group_dict(group_data=rebalancing_freqs)
     ewma_betas = []
+    group_alphas = []
     for freq, asset_tickers in group_freqs.items():
-        alphas_, ewma_betas_ = compute_low_beta_alphas(prices=prices[asset_tickers],
-                                                       benchmark_price=benchmark_price,
-                                                       returns_freq=freq,
-                                                       beta_span=beta_span,
-                                                       mean_adj_type=mean_adj_type)
-        ewma_betas.append(ewma_betas_)
+        if group_data is not None:
+            grouped_prices = qis.split_df_by_groups(df=prices[asset_tickers], group_data=group_data)
+        else:
+            grouped_prices = {'_': prices[asset_tickers]}
+        for group, gprice in grouped_prices.items():
+            alphas_, ewma_betas_ = compute_low_beta_alphas(prices=gprice,
+                                                           benchmark_price=benchmark_price,
+                                                           returns_freq=freq,
+                                                           beta_span=beta_span,
+                                                           mean_adj_type=mean_adj_type)
+            group_alphas.append(alphas_)
+            ewma_betas.append(ewma_betas_)
     ewma_betas = pd.concat(ewma_betas, axis=1)[prices.columns].ffill()
-    alphas = qis.df_to_cross_sectional_score(df=-1.0 * ewma_betas)
-    return alphas, ewma_betas
+    group_alphas = pd.concat(group_alphas, axis=1)[prices.columns].ffill()
+    # global_alphas is joint alphas with different frequencies ignoring groups
+    global_alphas = qis.df_to_cross_sectional_score(df=-1.0*ewma_betas)[prices.columns].ffill()
+    return group_alphas, global_alphas, ewma_betas
 
 
 def compute_momentum_alphas(prices: pd.DataFrame,
@@ -108,8 +118,9 @@ def compute_momentum_alphas_different_freqs(prices: pd.DataFrame,
                                             long_span: int = 13,
                                             short_span: Optional[int] = None,
                                             vol_span: Optional[int] = 13,
-                                            mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.NONE
-                                            ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+                                            mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.NONE,
+                                            group_data: pd.Series = None
+                                            ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     compute momentum relative benchmark_price
     if benchmark_price is None then compute equal weight benchmark
@@ -117,19 +128,28 @@ def compute_momentum_alphas_different_freqs(prices: pd.DataFrame,
     """
     rebalancing_freqs = rebalancing_freqs[prices.columns]
     group_freqs = qis.get_group_dict(group_data=rebalancing_freqs)
-    momentum = []
+    group_alphas = []
+    group_momentum = []
     for freq, asset_tickers in group_freqs.items():
-        alphas_, momentum_ = compute_momentum_alphas(prices=prices[asset_tickers],
-                                                     benchmark_price=benchmark_price,
-                                                     returns_freq=freq,
-                                                     long_span=long_span,
-                                                     short_span=short_span,
-                                                     vol_span=vol_span,
-                                                     mean_adj_type=mean_adj_type)
-        momentum.append(momentum_)
-    momentum = pd.concat(momentum, axis=1)[prices.columns].ffill()
-    alphas = qis.df_to_cross_sectional_score(df=momentum)
-    return alphas, momentum
+        if group_data is not None:
+            grouped_prices = qis.split_df_by_groups(df=prices[asset_tickers], group_data=group_data)
+        else:
+            grouped_prices = {'_': prices[asset_tickers]}
+        for group, gprice in grouped_prices.items():
+            alphas_, momentum_ = compute_momentum_alphas(prices=gprice,
+                                                         benchmark_price=benchmark_price,
+                                                         returns_freq=freq,
+                                                         long_span=long_span,
+                                                         short_span=short_span,
+                                                         vol_span=vol_span,
+                                                         mean_adj_type=mean_adj_type)
+            group_alphas.append(alphas_)
+            group_momentum.append(momentum_)
+
+    momentum = pd.concat(group_momentum, axis=1)[prices.columns].ffill()
+    group_alphas = pd.concat(group_alphas, axis=1)[prices.columns].ffill()
+    global_alphas = qis.df_to_cross_sectional_score(df=momentum)
+    return group_alphas, global_alphas, momentum
 
 
 def compute_ra_carry_alphas(prices: pd.DataFrame,

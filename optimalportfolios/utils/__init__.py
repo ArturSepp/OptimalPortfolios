@@ -14,7 +14,7 @@ from optimalportfolios.utils.lasso import (LassoModelType,
                                            LassoModel,
                                            solve_lasso_cvx_problem,
                                            solve_group_lasso_cvx_problem,
-                                           compute_residual_variance_r2)
+                                           compute_residual_variance_r2, compute_clusters_from_corr_matrix)
 
 from optimalportfolios.utils.covar_matrix import (CovarEstimator,
                                                   wrapper_estimate_rolling_covar,
