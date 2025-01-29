@@ -192,6 +192,8 @@ def estimate_rolling_lasso_covar_different_freq(benchmark_prices: pd.DataFrame,
                                                 rebalancing_freq: str = 'ME',  # for x returns
                                                 is_apply_vol_normalised_returns: bool = False,
                                                 span: int = 52,  # 1y of weekly returns
+                                                span_freq_dict: Optional[Dict[str, int]] = None,  # spans for different freqs
+                                                var_scaler_freq_dict: Optional[Dict[str, float]] = None,  # var scaler for different freqs
                                                 squeeze_factor: Optional[float] = None,
                                                 residual_var_weight: float = 1.0
                                                 ) -> Dict[pd.Timestamp, pd.DataFrame]:
@@ -221,13 +223,18 @@ def estimate_rolling_lasso_covar_different_freq(benchmark_prices: pd.DataFrame,
     for freq, asset_tickers in group_freqs.items():
         y = qis.to_returns(prices=prices[asset_tickers], is_log_returns=True, drop_first=True, freq=freq)
         x = qis.to_returns(prices=benchmark_prices, is_log_returns=True, drop_first=True, freq=freq)
-        betas_freqs[freq], residual_vars_freqs[freq], r2_t = lasso_model.estimate_rolling_betas(x=x, y=y)
+        if span_freq_dict is not None:
+            span_f = span_freq_dict[freq]
+        else:
+            span_f = span
+        betas_freqs[freq], residual_vars_freqs[freq], r2_t = lasso_model.estimate_rolling_betas(x=x, y=y, span=span_f)
 
     # 3. compute y_covars at x_covars frequency
     _, an_factor = qis.get_period_days(rebalancing_freq)  # an factor is frequency of x returns
     y_covars = {}
     for idx, (date, x_covar) in enumerate(x_covars.items()):
         # generate aligned betas
+        # residual vars are
         asset_last_betas = []
         last_residual_vars = []
         for freq in group_freqs.keys():
@@ -235,7 +242,11 @@ def estimate_rolling_lasso_covar_different_freq(benchmark_prices: pd.DataFrame,
             if last_update_date is None:  # wait until all last dates are valie
                 continue
             asset_last_betas.append(betas_freqs[freq][last_update_date])
-            last_residual_vars.append(residual_vars_freqs[freq][last_update_date])
+            if var_scaler_freq_dict is not None:
+                scaler = var_scaler_freq_dict[freq]
+            else:
+                scaler = 1.0
+            last_residual_vars.append(scaler*residual_vars_freqs[freq][last_update_date])
         asset_last_betas = pd.concat(asset_last_betas, axis=1)  # pandas with colums = assets
         last_residual_vars = pd.concat(last_residual_vars, axis=0)  # series
 
@@ -259,6 +270,8 @@ def wrapper_estimate_rolling_lasso_covar(benchmark_prices: pd.DataFrame,
                                          lasso_model: LassoModel,
                                          returns_freq: str = 'W-WED',
                                          span: int = 52,  # 1y of weekly returns
+                                         span_freq_dict: Optional[Dict[str, int]] = None,  # spans for different freqs
+                                         var_scaler_freq_dict: Optional[Dict[str, float]] = None,  # var scaler for different freqs
                                          squeeze_factor: Optional[float] = None,
                                          is_apply_vol_normalised_returns: bool = False,
                                          residual_var_weight: float = 1.0
@@ -285,6 +298,8 @@ def wrapper_estimate_rolling_lasso_covar(benchmark_prices: pd.DataFrame,
                                                                  returns_freq=returns_freq,
                                                                  rebalancing_freqs=rebalancing_freq,
                                                                  span=span,
+                                                                 span_freq_dict=span_freq_dict,
+                                                                 var_scaler_freq_dict=var_scaler_freq_dict,
                                                                  is_apply_vol_normalised_returns=is_apply_vol_normalised_returns,
                                                                  squeeze_factor=squeeze_factor,
                                                                  residual_var_weight=residual_var_weight)

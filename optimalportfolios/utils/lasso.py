@@ -68,18 +68,19 @@ class LassoModel:
             x: pd.DataFrame,
             y: pd.DataFrame,
             verbose: bool = False,
-            apply_independent_nan_filter: bool = True
+            apply_independent_nan_filter: bool = True,
+            span: Optional[float] = None
             ) -> LassoModel:
         """
         estimate model lasso coefficients for full sample
         """
         x_np, y_np = self.get_x_y_np(x=x, y=y)
-
+        span = span or self.span
         if self.model_type == LassoModelType.LASSO:
             estimated_beta = solve_lasso_cvx_problem(x=x_np,
                                                      y=y_np,
                                                      reg_lambda=self.reg_lambda,
-                                                     span=self.span,
+                                                     span=span,
                                                      verbose=verbose,
                                                      solver=self.solver,
                                                      apply_independent_nan_filter=apply_independent_nan_filter)
@@ -91,12 +92,12 @@ class LassoModel:
                                                            y=y_np,
                                                            group_loadings=group_loadings.to_numpy(),
                                                            reg_lambda=self.reg_lambda,
-                                                           span=self.span,
+                                                           span=span,
                                                            verbose=verbose,
                                                            solver=self.solver)
         elif self.model_type == LassoModelType.GROUP_LASSO_CLUSTERS:
             # create group loadings using ewma corr matrix
-            corr_matrix = qis.compute_ewm_covar(a=y_np, span=self.span, is_corr=True)
+            corr_matrix = qis.compute_ewm_covar(a=y_np, span=span, is_corr=True)
             corr_matrix = pd.DataFrame(corr_matrix, columns=y.columns, index=y.columns)
             clusters = compute_clusters_from_corr_matrix(corr_matrix=corr_matrix)
             # print(f"clusters=\n{clusters}")
@@ -105,7 +106,7 @@ class LassoModel:
                                                            y=y_np,
                                                            group_loadings=group_loadings.to_numpy(),
                                                            reg_lambda=self.reg_lambda,
-                                                           span=self.span,
+                                                           span=span,
                                                            verbose=verbose,
                                                            solver=self.solver)
 
@@ -120,7 +121,8 @@ class LassoModel:
     def estimate_rolling_betas(self,
                                x: pd.DataFrame,
                                y: pd.DataFrame,
-                               verbose: bool = False
+                               verbose: bool = False,
+                               span: Optional[float] = None
                                ) -> Tuple[Dict[pd.Timestamp, pd.DataFrame], Dict[pd.Timestamp, pd.Series], Dict[pd.Timestamp, pd.Series]]:
         """
         fit rolling time series of betas
@@ -130,21 +132,21 @@ class LassoModel:
         r2_t = {}
         for idx, date in enumerate(y.index):
             if idx > self.warm_up_periods:
-                self.fit(x=x.iloc[:idx, :], y=y.iloc[:idx, :], verbose=verbose)
-                betas, residual_vars, r2 = self.get_betas_residual_var_r2()
+                self.fit(x=x.iloc[:idx, :], y=y.iloc[:idx, :], verbose=verbose, span=span)
+                betas, residual_vars, r2 = self.get_betas_residual_var_r2(span=span)
                 betas_t[date] = betas
                 residual_vars_t[date] = residual_vars
                 r2_t[date] = r2
         return betas_t, residual_vars_t, r2_t
 
-    def get_betas_residual_var_r2(self) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
+    def get_betas_residual_var_r2(self, span: Optional[float] = None) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
         if self.estimated_betas is None:
             raise ValueError(f"calibrate model")
         x_np, y_np = self.get_x_y_np(x=self.x, y=self.y)
         residual_vars, r2 = compute_residual_variance_r2(x=x_np,
                                                          y=y_np,
                                                          beta=self.estimated_betas.to_numpy(),
-                                                         span=self.span)
+                                                         span=span or self.span)
         residual_vars = pd.Series(residual_vars, index=self.estimated_betas.columns)
         r2 = pd.Series(r2, index=self.estimated_betas.columns)
         return self.estimated_betas, residual_vars, r2
