@@ -31,7 +31,7 @@ def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
                          GLD='Gold')
     tickers = list(universe_data.keys())
     group_data = pd.Series(universe_data)
-    prices = yf.download(tickers, start=None, end=None, ignore_tz=True)['Adj Close']
+    prices = yf.download(tickers, start=None, end=None, ignore_tz=True)['Close']
     prices = prices[tickers]  # arrange as given
     prices = prices.asfreq('B', method='ffill')  # refill at B frequency
     benchmark_prices = prices[['SPY', 'TLT']]
@@ -43,7 +43,7 @@ prices, benchmark_prices, group_data = fetch_universe_data()
 time_period = qis.TimePeriod('31Dec2004', '16Aug2024')   # period for computing weights backtest
 
 # 3.a. define optimisation setup
-portfolio_objective = PortfolioObjective.MAX_DIVERSIFICATION  # define portfolio objective
+portfolio_objective = PortfolioObjective.EQUAL_RISK_CONTRIBUTION  # define portfolio objective
 returns_freq = 'W-WED'  # use weekly returns
 rebalancing_freq = 'QE'  # weights rebalancing frequency: rebalancing is quarterly on WED
 span = 52  # span of number of returns_freq-returns for covariance estimation = 12y

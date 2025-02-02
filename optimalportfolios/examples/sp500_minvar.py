@@ -42,7 +42,7 @@ def create_sp500_universe():
         return inclusion_indicators
 
     def fetch_universe_prices(tickers: List[str]) -> pd.DataFrame:
-        prices = yf.download(tickers=tickers, start=None, end=None, ignore_tz=True)['Adj Close']
+        prices = yf.download(tickers=tickers, start=None, end=None, ignore_tz=True)['Close']
         return prices[tickers]
 
     def fetch_universe_industry(tickers: List[str]) -> pd.Series:
@@ -126,7 +126,7 @@ def run_unit_test(unit_test: UnitTests):
                                              squeeze_factors=squeeze_factors)
 
         # run cross portfolio report
-        benchmark_prices = yf.download('SPY', start=None, end=None, ignore_tz=True)['Adj Close'].asfreq('B').ffill()
+        benchmark_prices = yf.download('SPY', start=None, end=None, ignore_tz=True)['Close'].asfreq('B').ffill()
         multi_portfolio_data = qis.MultiPortfolioData(portfolio_datas=portfolio_datas,
                                                       benchmark_prices=benchmark_prices)
 

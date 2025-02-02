@@ -82,7 +82,7 @@ def fetch_benchmark_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Data
 
     tickers = list(universe_data.keys())
     group_data = pd.Series(universe_data)  # for portfolio reporting
-    prices = yf.download(tickers=tickers, start=None, end=None, ignore_tz=True)['Adj Close'][tickers]
+    prices = yf.download(tickers=tickers, start=None, end=None, ignore_tz=True)['Close'][tickers]
     prices = prices.asfreq('B', method='ffill')
 
     dividends = {}
@@ -99,8 +99,8 @@ def fetch_benchmark_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Data
     yields = pd.DataFrame.from_dict(yields, orient='columns')
 
     benchmarks = ['AGG']
-    benchmark_prices = yf.download(tickers=benchmarks, start=None, end=None, ignore_tz=True)['Adj Close'].to_frame('AGG')#[benchmarks]
-    target_returns = yf.download('^IRX', start=None, end=None)['Adj Close'].dropna() / 100.0
+    benchmark_prices = yf.download(tickers=benchmarks, start=None, end=None, ignore_tz=True)['Close'].to_frame('AGG')#[benchmarks]
+    target_returns = yf.download('^IRX', start=None, end=None)['Close'].dropna() / 100.0
     target_returns = target_returns.reindex(index=prices.index).ffill().rename('Target return')
     return prices, benchmark_prices, dividends, yields, target_returns, group_data
 

@@ -313,7 +313,7 @@ def run_unit_test(unit_test: UnitTests):
 
     elif unit_test == UnitTests.PLOT_MIXURE:
         import yfinance as yf
-        prices = yf.download(tickers=['SPY', 'TLT'], start=None, end=None)['Adj Close'].dropna()
+        prices = yf.download(tickers=['SPY', 'TLT'], start=None, end=None)['Close'].dropna()
         perf_params = qis.PerfParams(freq='W-WED')
         kwargs = dict(fontsize=12, digits_to_show=1, sharpe_digits=2,
                       alpha_format='{0:+0.0%}',

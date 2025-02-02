@@ -34,8 +34,8 @@ benchmark_tickers = ['SPY', 'IEF', 'LQD', 'USO', 'GLD', 'UUP']
 asset_group_loadings = qis.set_group_loadings(group_data=instrument_data)
 print(asset_group_loadings)
 
-asset_prices = yf.download(asset_tickers, start=None, end=None)['Adj Close'][asset_tickers].asfreq('B', method='ffill')
-benchmark_prices = yf.download(benchmark_tickers, start=None, end=None)['Adj Close'][benchmark_tickers].reindex(index=asset_prices.index, method='ffill')
+asset_prices = yf.download(asset_tickers, start=None, end=None)['Close'][asset_tickers].asfreq('B', method='ffill')
+benchmark_prices = yf.download(benchmark_tickers, start=None, end=None)['Close'][benchmark_tickers].reindex(index=asset_prices.index, method='ffill')
 
 y = qis.to_returns(asset_prices, freq='ME', drop_first=True)
 x = qis.to_returns(benchmark_prices, freq='ME', drop_first=True)

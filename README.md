@@ -370,7 +370,7 @@ def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
                          GLD='Gold')
     tickers = list(universe_data.keys())
     group_data = pd.Series(universe_data)
-    prices = yf.download(tickers, start=None, end=None, ignore_tz=True)['Adj Close']
+    prices = yf.download(tickers, start=None, end=None, ignore_tz=True)['Close']
     prices = prices[tickers]  # arrange as given
     prices = prices.asfreq('B', method='ffill')  # refill at B frequency
     benchmark_prices = prices[['SPY', 'TLT']]

@@ -26,7 +26,8 @@ def update_test_prices() -> pd.DataFrame:
     tickers = list(UNIVERSE_DATA.keys())
     prices = yf.download(tickers=tickers,
                          start=None, end=None,
-                         ignore_tz=True)['Adj Close']
+                         ignore_tz=True, auto_adjust=True)
+    prices = prices['Close']
     prices = prices.asfreq('B', method='ffill')  # rescale to business days
     prices = prices[tickers]  # align order
     qis.save_df_to_csv(df=prices, file_name=FILE_NAME, local_path=local_path.get_resource_path())

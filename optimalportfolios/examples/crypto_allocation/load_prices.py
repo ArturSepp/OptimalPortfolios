@@ -48,13 +48,13 @@ def update_prices_with_yf() -> pd.DataFrame:
     bal = create_balanced_price()
 
     # REET starts from Jul 08, 2014 - use IYR for backfill
-    iyr = yf.download('IYR', start=None, end=None, ignore_tz=True)['Adj Close'].rename(Assets.RE.value)
-    reet = yf.download('REET', start=None, end=None, ignore_tz=True)['Adj Close'].rename(Assets.RE.value)
+    iyr = yf.download('IYR', start=None, end=None, ignore_tz=True)['Close'].rename(Assets.RE.value)
+    reet = yf.download('REET', start=None, end=None, ignore_tz=True)['Close'].rename(Assets.RE.value)
     re = qis.bfill_timeseries(df_newer=reet, df_older=iyr, is_prices=True)
 
     # COMT starts from 2014-10-16, use GSG for backfill
-    coms0 = yf.download('GSG', start=None, end=None, ignore_tz=True)['Adj Close'].rename(Assets.COMS.value)
-    coms1 = yf.download('COMT', start=None, end=None, ignore_tz=True)['Adj Close'].rename(Assets.COMS.value)
+    coms0 = yf.download('GSG', start=None, end=None, ignore_tz=True)['Close'].rename(Assets.COMS.value)
+    coms1 = yf.download('COMT', start=None, end=None, ignore_tz=True)['Close'].rename(Assets.COMS.value)
     coms = qis.bfill_timeseries(df_newer=coms1, df_older=coms0, is_prices=True)
 
     # use local copies
@@ -63,8 +63,8 @@ def update_prices_with_yf() -> pd.DataFrame:
     macro = qis.load_df_from_excel(file_name=MACRO_PRICE, local_path=LOCAL_PATH).iloc[:, 0].rename(Assets.MACRO.value)
 
     # etfs
-    gld = yf.download('GLD', start=None, end=None, ignore_tz=True)['Adj Close'].rename(Assets.GLD.value)
-    pe = yf.download('PSP', start=None, end=None, ignore_tz=True)['Adj Close'].rename(Assets.PE.value)
+    gld = yf.download('GLD', start=None, end=None, ignore_tz=True)['Close'].rename(Assets.GLD.value)
+    pe = yf.download('PSP', start=None, end=None, ignore_tz=True)['Close'].rename(Assets.PE.value)
 
     prices = pd.concat([bal, btc, eth, hf, pe, re, macro, cta, coms, gld], axis=1)
     # to business day frequency
@@ -87,13 +87,13 @@ def update_prices_with_bloomberg() -> pd.DataFrame:
     bal = create_balanced_price()
 
     # REET starts from Jul 08, 2014 - use IYR for backfill
-    iyr = yf.download('IYR', start=None, end=None, ignore_tz=True)['Adj Close'].rename(Assets.RE.value)
-    reet = yf.download('REET', start=None, end=None, ignore_tz=True)['Adj Close'].rename(Assets.RE.value)
+    iyr = yf.download('IYR', start=None, end=None, ignore_tz=True)['Close'].rename(Assets.RE.value)
+    reet = yf.download('REET', start=None, end=None, ignore_tz=True)['Close'].rename(Assets.RE.value)
     re = qis.bfill_timeseries(df_newer=reet, df_older=iyr, is_prices=True)
 
     # COMT starts from 2014-10-16, use GSG for backfill
-    coms0 = yf.download('GSG', start=None, end=None, ignore_tz=True)['Adj Close'].rename(Assets.COMS.value)
-    coms1 = yf.download('COMT', start=None, end=None, ignore_tz=True)['Adj Close'].rename(Assets.COMS.value)
+    coms0 = yf.download('GSG', start=None, end=None, ignore_tz=True)['Close'].rename(Assets.COMS.value)
+    coms1 = yf.download('COMT', start=None, end=None, ignore_tz=True)['Close'].rename(Assets.COMS.value)
     coms = qis.bfill_timeseries(df_newer=coms1, df_older=coms0, is_prices=True)
 
     # use bbg
@@ -102,8 +102,8 @@ def update_prices_with_bloomberg() -> pd.DataFrame:
     macro = fetch_field_timeseries_per_tickers(tickers={'HFRIMDT Index': Assets.MACRO.value}).iloc[:, 0]
 
     # etfs
-    gld = yf.download('GLD', start=None, end=None, ignore_tz=True)['Adj Close'].rename(Assets.GLD.value)
-    pe = yf.download('PSP', start=None, end=None, ignore_tz=True)['Adj Close'].rename(Assets.PE.value)
+    gld = yf.download('GLD', start=None, end=None, ignore_tz=True)['Close'].rename(Assets.GLD.value)
+    pe = yf.download('PSP', start=None, end=None, ignore_tz=True)['Close'].rename(Assets.PE.value)
 
     prices = pd.concat([bal, btc, eth, hf, pe, re, macro, cta, coms, gld], axis=1).sort_index()
     # to business day frequency
@@ -131,8 +131,8 @@ def create_eth_price(btc_price: pd.Series) -> pd.Series:
 
 
 def create_balanced_price() -> pd.Series:
-    spy = yf.download('SPY', start=None, end=None, ignore_tz=True)['Adj Close'].rename('SPY')
-    ief = yf.download('IEF', start=None, end=None, ignore_tz=True)['Adj Close'].rename('IEF')
+    spy = yf.download('SPY', start=None, end=None, ignore_tz=True)['Close'].rename('SPY')
+    ief = yf.download('IEF', start=None, end=None, ignore_tz=True)['Close'].rename('IEF')
     prices = pd.concat([spy, ief], axis=1).dropna()
     balanced = qis.backtest_model_portfolio(prices=prices,
                                             weights=[0.6, 0.4],
@@ -171,7 +171,7 @@ def load_prices(assets: List[Assets] = None,
 
 
 def load_risk_free_rate() -> pd.Series:
-    return yf.download('^IRX', start=None, end=None)['Adj Close'].dropna() / 100.0
+    return yf.download('^IRX', start=None, end=None)['Close'].dropna() / 100.0
 
 
 class UnitTests(Enum):
@@ -209,7 +209,7 @@ def run_unit_test(unit_test: UnitTests):
     elif unit_test == UnitTests.CREATE_BALANCED_PRICE:
         price = create_balanced_price()
         print(price)
-        bal = yf.download('AOR', start=None, end=None, ignore_tz=True)['Adj Close'].rename('AOR')
+        bal = yf.download('AOR', start=None, end=None, ignore_tz=True)['Close'].rename('AOR')
         prices = pd.concat([price, bal], axis=1).dropna()
         qis.plot_prices_with_dd(prices=prices)
 
@@ -217,7 +217,7 @@ def run_unit_test(unit_test: UnitTests):
         assets = ['IYR', 'REZ', 'REET']
         prices = []
         for asset in assets:
-            prices.append(yf.download(asset, start=None, end=None, ignore_tz=True)['Adj Close'].rename(asset))
+            prices.append(yf.download(asset, start=None, end=None, ignore_tz=True)['Close'].rename(asset))
         prices = pd.concat(prices, axis=1).dropna()
         qis.plot_prices_with_dd(prices=prices)
 
