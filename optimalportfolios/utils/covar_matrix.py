@@ -29,7 +29,7 @@ class CovarEstimator:
     squeeze_factor: Optional[float] = None  # squeezing factor
     lasso_model: LassoModel = None  # for lasso estimator
     residual_var_weight: float = 1.0  # for lasso covars
-    benchmark_prices: pd.DataFrame = None  # for lasso covars
+    risk_factor_prices: pd.DataFrame = None  # for lasso covars
 
     def fit_rolling_covars(self,
                            prices: pd.DataFrame,
@@ -40,14 +40,14 @@ class CovarEstimator:
         """
         covars = wrapper_estimate_rolling_covar(prices=prices,
                                                 time_period=time_period,
-                                                benchmark_prices=self.benchmark_prices,
+                                                risk_factor_prices=self.risk_factor_prices,
                                                 covar_estimator=self)
         return covars
 
 
 def wrapper_estimate_rolling_covar(prices: pd.DataFrame,
                                    time_period: qis.TimePeriod,  # starting time of sampling estimator
-                                   benchmark_prices: pd.DataFrame = None,  # for lasso covars
+                                   risk_factor_prices: pd.DataFrame = None,  # for lasso covars
                                    covar_estimator: CovarEstimator = CovarEstimator()
                                    ) -> Dict[pd.Timestamp, pd.DataFrame]:
     """
@@ -65,11 +65,11 @@ def wrapper_estimate_rolling_covar(prices: pd.DataFrame,
                                              squeeze_factor=covar_estimator.squeeze_factor)
 
     elif covar_estimator.covar_estimator_type == CovarEstimatorType.LASSO:
-        if benchmark_prices is None:
-            raise ValueError(f"benchmark_prices must be passed for Lasso estimator")
+        if risk_factor_prices is None:
+            raise ValueError(f"risk_factor_prices must be passed for Lasso estimator")
         if covar_estimator.lasso_model is None:
             raise ValueError(f"lasso_model must be passed for Lasso estimator")
-        covars = wrapper_estimate_rolling_lasso_covar(benchmark_prices=benchmark_prices,
+        covars = wrapper_estimate_rolling_lasso_covar(risk_factors_prices=risk_factor_prices,
                                                       prices=prices,
                                                       time_period=time_period,  # when we start building portfolios
                                                       lasso_model=covar_estimator.lasso_model,
@@ -131,7 +131,7 @@ def estimate_rolling_ewma_covar(prices: pd.DataFrame,
     return covars
 
 
-def estimate_rolling_lasso_covar(benchmark_prices: pd.DataFrame,
+def estimate_rolling_lasso_covar(risk_factor_prices: pd.DataFrame,
                                  prices: pd.DataFrame,
                                  time_period: qis.TimePeriod,  # when we start building portfolios
                                  lasso_model: LassoModel,
@@ -148,7 +148,7 @@ def estimate_rolling_lasso_covar(benchmark_prices: pd.DataFrame,
     compute covar matrix
     """
     # 1. compute x-factors ewm covar at rebalancing freq
-    x_covars = estimate_rolling_ewma_covar(prices=benchmark_prices,
+    x_covars = estimate_rolling_ewma_covar(prices=risk_factor_prices,
                                            time_period=time_period,
                                            returns_freq=returns_freq,
                                            rebalancing_freq=rebalancing_freq,
@@ -160,10 +160,11 @@ def estimate_rolling_lasso_covar(benchmark_prices: pd.DataFrame,
 
     # 2. estimate betas of y-returns at different samples
     y = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
-    x = qis.to_returns(prices=benchmark_prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
+    x = qis.to_returns(prices=risk_factor_prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
     betas, residual_vars, r2_t = lasso_model.estimate_rolling_betas(x=x, y=y)
 
     # 3. compute y_covars at x_covars frequency
+    an_factor = qis.infer_an_from_data(data=x)
     y_covars = {}
     for date, x_covar in x_covars.items():
         # find last update date from
@@ -173,7 +174,6 @@ def estimate_rolling_lasso_covar(benchmark_prices: pd.DataFrame,
         last_residual_vars = residual_vars[last_update_date][prices.columns]
 
         # compute covar
-        an_factor = qis.infer_an_from_data(data=x)
         betas_np = asset_last_betas.to_numpy()
         betas_covar = np.transpose(betas_np) @ x_covar.to_numpy() @ betas_np
         if not np.isclose(residual_var_weight, 0.0):
@@ -183,7 +183,7 @@ def estimate_rolling_lasso_covar(benchmark_prices: pd.DataFrame,
     return y_covars
 
 
-def estimate_rolling_lasso_covar_different_freq(benchmark_prices: pd.DataFrame,
+def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
                                                 prices: pd.DataFrame,
                                                 rebalancing_freqs: pd.Series,
                                                 time_period: qis.TimePeriod,  # when we start building portfolios
@@ -205,7 +205,7 @@ def estimate_rolling_lasso_covar_different_freq(benchmark_prices: pd.DataFrame,
     rebalancing_freqs is rebalancing for y  returns
     """
     # 1. compute x-factors ewm covar at rebalancing freq
-    x_covars = estimate_rolling_ewma_covar(prices=benchmark_prices,
+    x_covars = estimate_rolling_ewma_covar(prices=risk_factor_prices,
                                            time_period=time_period,
                                            returns_freq=returns_freq,
                                            rebalancing_freq=rebalancing_freq,
@@ -222,7 +222,7 @@ def estimate_rolling_lasso_covar_different_freq(benchmark_prices: pd.DataFrame,
     residual_vars_freqs: Dict[str, Dict[pd.Timestamp, pd.Series]] = {}
     for freq, asset_tickers in group_freqs.items():
         y = qis.to_returns(prices=prices[asset_tickers], is_log_returns=True, drop_first=True, freq=freq)
-        x = qis.to_returns(prices=benchmark_prices, is_log_returns=True, drop_first=True, freq=freq)
+        x = qis.to_returns(prices=risk_factor_prices, is_log_returns=True, drop_first=True, freq=freq)
         if span_freq_dict is not None:
             span_f = span_freq_dict[freq]
         else:
@@ -259,11 +259,12 @@ def estimate_rolling_lasso_covar_different_freq(benchmark_prices: pd.DataFrame,
         betas_covar = np.transpose(betas_np) @ x_covar.to_numpy() @ betas_np
         if not np.isclose(residual_var_weight, 0.0):
             betas_covar += residual_var_weight * np.diag(last_residual_vars.to_numpy())
-        y_covars[date] = pd.DataFrame(an_factor*betas_covar, index=prices.columns, columns=prices.columns)
+        betas_covar *= an_factor
+        y_covars[date] = pd.DataFrame(betas_covar, index=prices.columns, columns=prices.columns)
     return y_covars
 
 
-def wrapper_estimate_rolling_lasso_covar(benchmark_prices: pd.DataFrame,
+def wrapper_estimate_rolling_lasso_covar(risk_factors_prices: pd.DataFrame,
                                          prices: pd.DataFrame,
                                          rebalancing_freq: Union[str, pd.Series],
                                          time_period: qis.TimePeriod,  # when we start building portfolios
@@ -280,7 +281,7 @@ def wrapper_estimate_rolling_lasso_covar(benchmark_prices: pd.DataFrame,
     wrapper for lasso covar estimation using either fixed rebalancing frequency or rolling rebalancing frequency
     """
     if isinstance(rebalancing_freq, str):
-        covar_dict = estimate_rolling_lasso_covar(benchmark_prices=benchmark_prices,
+        covar_dict = estimate_rolling_lasso_covar(risk_factor_prices=risk_factors_prices,
                                                   prices=prices,
                                                   time_period=time_period,
                                                   lasso_model=lasso_model,
@@ -291,7 +292,7 @@ def wrapper_estimate_rolling_lasso_covar(benchmark_prices: pd.DataFrame,
                                                   squeeze_factor=squeeze_factor,
                                                   residual_var_weight=residual_var_weight)
     else:
-        covar_dict = estimate_rolling_lasso_covar_different_freq(benchmark_prices=benchmark_prices,
+        covar_dict = estimate_rolling_lasso_covar_different_freq(risk_factor_prices=risk_factors_prices,
                                                                  prices=prices,
                                                                  time_period=time_period,
                                                                  lasso_model=lasso_model,

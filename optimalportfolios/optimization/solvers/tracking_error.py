@@ -7,7 +7,7 @@ import cvxpy as cvx
 import qis as qis
 from typing import Optional, List, Tuple, Union, Dict
 
-from optimalportfolios import filter_covar_and_vectors_for_nans
+from optimalportfolios import filter_covar_and_vectors_for_nans, compute_portfolio_risk_contribution_outputs
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.utils.covar_matrix import CovarEstimator
 
@@ -73,8 +73,9 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
                                     weights_0: pd.Series = None,
                                     rebalancing_indicators: pd.Series = None,
                                     apply_total_to_good_ratio: bool = True,
-                                    solver: str = 'ECOS_BB'
-                                    ) -> pd.Series:
+                                    solver: str = 'ECOS_BB',
+                                    detailed_output: bool = False
+                                    ) -> Union[pd.Series, pd.DataFrame]:
     """
     create wrapper accounting for nans or zeros in covar matrix
     assets in columns/rows of covar must correspond to alphas.index
@@ -104,7 +105,12 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
     #                           solver=solver)
     weights = pd.Series(weights, index=clean_covar.index)
     weights = weights.reindex(index=pd_covar.index).fillna(0.0)  # align with tickers
-    return weights
+
+    if detailed_output:
+        out = compute_portfolio_risk_contribution_outputs(weights=weights, clean_covar=clean_covar)
+    else:
+        out = weights
+    return out
 
 
 def cvx_maximise_alpha_over_tre(covar: np.ndarray,

@@ -283,16 +283,16 @@ def compute_alpha_long_only_weights(prices: pd.DataFrame,
     return signal_weights
 
 
-def estimate_lasso_alphas(prices: pd.DataFrame,
-                          benchmark_prices: pd.DataFrame,
-                          lasso_model: LassoModel,
-                          rebalancing_freq: str = 'ME'
-                          ) -> pd.DataFrame:
+def estimate_lasso_regression_alphas(prices: pd.DataFrame,
+                                     risk_factors_prices: pd.DataFrame,
+                                     lasso_model: LassoModel,
+                                     rebalancing_freq: str = 'ME'
+                                     ) -> pd.DataFrame:
     """
     compute alphas = return_t - (factor_returns_t*beta_{t_1}
     """
     y = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
-    x = qis.to_returns(prices=benchmark_prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
+    x = qis.to_returns(prices=risk_factors_prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
 
     betas, residual_vars, r2_t = lasso_model.estimate_rolling_betas(x=x, y=y)
     estimation_dates = list(betas.keys())

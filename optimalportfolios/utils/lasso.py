@@ -76,7 +76,9 @@ class LassoModel:
         """
         x_np, y_np = self.get_x_y_np(x=x, y=y)
         span = span or self.span
-        if self.model_type == LassoModelType.LASSO:
+
+        # also use lasso for 1-d y
+        if self.model_type == LassoModelType.LASSO or y_np.shape[1] == 1:
             estimated_beta = solve_lasso_cvx_problem(x=x_np,
                                                      y=y_np,
                                                      reg_lambda=self.reg_lambda,

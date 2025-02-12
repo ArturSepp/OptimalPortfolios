@@ -8,10 +8,12 @@ import numpy as np
 import pandas as pd
 import qis as qis
 from scipy.optimize import minimize
-from typing import Dict
+from typing import Dict, Union, Optional
 from enum import Enum
 
-from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance, compute_portfolio_risk_contributions)
+from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance,
+                                                     compute_portfolio_risk_contributions,
+                                                     compute_portfolio_risk_contribution_outputs)
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.utils.covar_matrix import CovarEstimator
@@ -67,8 +69,8 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
                            risk_budget: pd.Series = None,
                            rebalancing_indicators: pd.Series = None,
                            apply_total_to_good_ratio: bool = True,
-                           verbouse: bool = False
-                           ) -> pd.Series:
+                           detailed_output: bool = False
+                           ) -> Union[pd.Series, pd.DataFrame]:
     """
     create wrapper accounting for nans or zeros in covar matrix
     assets in columns/rows of covar must correspond to alphas.index
@@ -131,17 +133,12 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
             weights = weights * left_allocation / np.nansum(weights)
         weights = weights.where(np.isclose(inclusion_indicators, 1.0), other=fixed_weights)
 
-    if verbouse:
-        asset_rc = compute_portfolio_risk_contributions(weights0, clean_covar.to_numpy())
-        asset_rc_ratio = asset_rc / np.nansum(asset_rc)
-        df = pd.concat([pd.Series(weights0, index=clean_covar.columns, name='weights'),
-                        pd.Series(asset_rc, index=clean_covar.columns, name='asset_rc'),
-                        risk_budget.rename('risk_budget'),
-                        pd.Series(asset_rc_ratio, index=clean_covar.columns, name='asset_rc_ratio')
-                        ], axis=1)
-        print(df)
+    if detailed_output:
+        df = compute_portfolio_risk_contribution_outputs(weights=weights, clean_covar=clean_covar, risk_budget=risk_budget)
+    else:
+        df = weights
 
-    return weights
+    return df
 
 
 def opt_risk_budgeting(covar: np.ndarray,

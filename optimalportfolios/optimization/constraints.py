@@ -11,6 +11,7 @@ from dataclasses import dataclass, asdict
 from typing import List, Tuple, Optional, Union
 from cvxpy.atoms.affine.wraps import psd_wrap
 
+
 @dataclass
 class GroupLowerUpperConstraints:
     """
@@ -81,38 +82,39 @@ class Constraints:
         if rebalancing_indicators == 0, then min and max weights are set to weight0
         """
         this = self.copy()
-        if this.min_weights is not None:
-            this.min_weights = this.min_weights[valid_tickers].fillna(0.0)
-        if this.max_weights is not None:
-            if apply_total_to_good_ratio and self.apply_total_to_good_ratio_for_constraints:
-                # do not change max_weight == 1
-                max_weight = this.max_weights[valid_tickers]
-                this.max_weights = max_weight.where(np.isclose(max_weight, 1.0), other=total_to_good_ratio*max_weight).fillna(0.0)
-            else:
-                this.max_weights = this.max_weights[valid_tickers].fillna(0.0)
-        if this.group_lower_upper_constraints is not None:
-            this.group_lower_upper_constraints = this.group_lower_upper_constraints.update(valid_tickers=valid_tickers)
-        if this.turnover_constraint is not None:
-            if apply_total_to_good_ratio and self.apply_total_to_good_ratio_for_constraints:
-                this.turnover_constraint *= total_to_good_ratio
-        if weights_0 is not None:
-            this.weights_0 = weights_0.reindex(index=valid_tickers).fillna(0.0)
-        if asset_returns is not None:
-            this.asset_returns = asset_returns.reindex(index=valid_tickers).fillna(0.0)
-        if benchmark_weights is not None:
-            benchmark_weights_ = benchmark_weights.reindex(index=valid_tickers).fillna(0.0)
-            this.benchmark_weights = benchmark_weights_  # / np.nansum(benchmark_weights_)
-        if target_return is not None:
-            this.target_return = target_return
-
-        # check rebalancing indicators
-        if rebalancing_indicators is not None and weights_0 is not None:
-            rebalancing_indicators = rebalancing_indicators[this.weights_0.index].fillna(1.0)  # by default rebalance
-            is_rebalanced = np.isclose(rebalancing_indicators, 1.0)
+        with pd.option_context('future.no_silent_downcasting', True):
             if this.min_weights is not None:
-                this.min_weights = this.min_weights.where(is_rebalanced, other=weights_0)
+                this.min_weights = this.min_weights[valid_tickers].fillna(0.0)
             if this.max_weights is not None:
-                this.max_weights = this.max_weights.where(is_rebalanced, other=weights_0)
+                if apply_total_to_good_ratio and self.apply_total_to_good_ratio_for_constraints:
+                    # do not change max_weight == 1
+                    max_weight = this.max_weights[valid_tickers]
+                    this.max_weights = max_weight.where(np.isclose(max_weight, 1.0), other=total_to_good_ratio*max_weight).fillna(0.0)
+                else:
+                    this.max_weights = this.max_weights[valid_tickers].fillna(0.0)
+            if this.group_lower_upper_constraints is not None:
+                this.group_lower_upper_constraints = this.group_lower_upper_constraints.update(valid_tickers=valid_tickers)
+            if this.turnover_constraint is not None:
+                if apply_total_to_good_ratio and self.apply_total_to_good_ratio_for_constraints:
+                    this.turnover_constraint *= total_to_good_ratio
+            if weights_0 is not None:
+                this.weights_0 = weights_0.reindex(index=valid_tickers).fillna(0.0)
+            if asset_returns is not None:
+                this.asset_returns = asset_returns.reindex(index=valid_tickers).fillna(0.0)
+            if benchmark_weights is not None:
+                benchmark_weights_ = benchmark_weights.reindex(index=valid_tickers).fillna(0.0)
+                this.benchmark_weights = benchmark_weights_  # / np.nansum(benchmark_weights_)
+            if target_return is not None:
+                this.target_return = target_return
+
+            # check rebalancing indicators
+            if rebalancing_indicators is not None and weights_0 is not None:
+                rebalancing_indicators = rebalancing_indicators[this.weights_0.index].fillna(1.0)  # by default rebalance
+                is_rebalanced = np.isclose(rebalancing_indicators, 1.0)
+                if this.min_weights is not None:
+                    this.min_weights = this.min_weights.where(is_rebalanced, other=weights_0)
+                if this.max_weights is not None:
+                    this.max_weights = this.max_weights.where(is_rebalanced, other=weights_0)
 
         return this
 

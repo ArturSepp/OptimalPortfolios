@@ -5,7 +5,7 @@ from __future__ import division
 
 import numpy as np
 import pandas as pd
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
 from numba import njit
 
 
@@ -55,3 +55,21 @@ def calculate_diversification_ratio(w: np.ndarray, covar: np.ndarray) -> float:
     portfolio_vol = np.sqrt(compute_portfolio_variance(w, covar))
     diversification_ratio = avg_weighted_vol/portfolio_vol
     return diversification_ratio
+
+
+def compute_portfolio_risk_contribution_outputs(weights: pd.Series,
+                                                clean_covar: pd.DataFrame,
+                                                risk_budget: Optional[pd.Series] = None
+                                                ) -> pd.DataFrame:
+    weights = weights.loc[clean_covar.columns]
+    asset_rc = compute_portfolio_risk_contributions(weights.to_numpy(), clean_covar.to_numpy())
+    asset_rc_ratio = asset_rc / np.nansum(asset_rc)
+    if risk_budget is None:
+        risk_budget = pd.Series(0.0, index=clean_covar.columns)
+    df = pd.concat([pd.Series(weights, index=clean_covar.columns, name='weights'),
+                    pd.Series(asset_rc, index=clean_covar.columns, name='risk contribution'),
+                    risk_budget.rename('Risk Budget'),
+                    pd.Series(asset_rc_ratio, index=clean_covar.columns, name='asset_rc_ratio')
+                    ], axis=1)
+    return df
+

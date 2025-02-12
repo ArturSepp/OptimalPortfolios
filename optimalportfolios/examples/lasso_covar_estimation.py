@@ -105,7 +105,7 @@ def run_unit_test(unit_test: UnitTests):
 
     elif unit_test == UnitTests.LASSO_COVAR_DIFFERENT_FREQUENCIES:
         lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO, **lasso_params)
-        y_covars = estimate_rolling_lasso_covar_different_freq(benchmark_prices=benchmark_prices,
+        y_covars = estimate_rolling_lasso_covar_different_freq(risk_factor_prices=benchmark_prices,
                                                                prices=asset_prices,
                                                                rebalancing_freqs=sampling_freqs,
                                                                time_period=qis.TimePeriod('31Dec2019', '13Dec2024'),
