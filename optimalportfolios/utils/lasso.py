@@ -59,6 +59,9 @@ class LassoModel:
             if self.span is None:
                 x_np = x_np - np.nanmean(x_np, axis=0)
                 y_np = y_np - np.nanmean(y_np, axis=0)
+                # after demean x_np[0, :] and y_np[0, :] will be zeros
+                x_np = x_np[1:, :]
+                y_np = y_np[1:, :]
             else:
                 x_np = x_np - qis.compute_ewm(x_np, span=self.span)
                 y_np = y_np - qis.compute_ewm(y_np, span=self.span)
@@ -322,15 +325,18 @@ def compute_residual_variance_r2(x: np.ndarray,
 
     t = x.shape[0]
     if span is not None:
-        weights = qis.compute_expanding_power(n=t, power_lambda=np.sqrt(1.0 - 2.0 / (span+1.0)), reverse_columns=True)
+        # weights = qis.compute_expanding_power(n=t, power_lambda=np.sqrt(1.0 - 2.0 / (span+1.0)), reverse_columns=True)
+        weights = qis.compute_expanding_power(n=t, power_lambda=1.0 - 2.0 / (span + 1.0), reverse_columns=True)
     else:
         weights = np.ones(t)
     if y.ndim == 2:
         weights = np.tile(weights, (y.shape[1], 1)).T  # map to columns
     num_nonnans = np.count_nonzero(~np.isnan(y), axis=0)
     # weighted residuals
-    ss_res = np.nansum(np.square(weights * (x @ beta - y)), axis=0) / num_nonnans
-    ss_total = np.nansum(np.square(weights * (y - np.nanmean(y, axis=0))), axis=0) / num_nonnans
+    norm_weights = weights / num_nonnans
+    norm_weights = norm_weights / np.nansum(norm_weights, axis=0)
+    ss_res = np.nansum(norm_weights * np.square((x @ beta - y)), axis=0)
+    ss_total = np.nansum(norm_weights * np.square((y - np.nanmean(y, axis=0))), axis=0)
     r2 = np.divide(ss_res, ss_total, where=ss_total > 0.0)
     return ss_res, r2
 

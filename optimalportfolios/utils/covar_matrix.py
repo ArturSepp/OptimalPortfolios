@@ -104,6 +104,9 @@ def estimate_rolling_ewma_covar(prices: pd.DataFrame,
     returns_np = returns.to_numpy()
     if demean:
         x = returns_np - qis.compute_ewm(returns_np, span=span)
+        # x.iloc[0, :] will be zero so shift the period
+        returns = returns.iloc[1:, :]
+        x = x[1:, :]
     else:
         x = returns_np
 
