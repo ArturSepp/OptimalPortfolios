@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "optimalportfolios"
-version = "3.1.8"
+version = "3.1.9"
 description = "Simulation and backtesting of optimal portfolios"
 license = "LICENSE.txt"
 authors = ["Artur Sepp <artursepp@gmail.com>"]

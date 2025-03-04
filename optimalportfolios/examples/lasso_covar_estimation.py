@@ -63,17 +63,17 @@ def run_unit_test(unit_test: UnitTests):
     if unit_test == UnitTests.LASSO_BETAS:
         # full regression
         lasso_model_full = LassoModel(model_type=LassoModelType.LASSO, **qis.update_kwargs(lasso_params, dict(reg_lambda=0.0)))
-        betas0, residual_vars, r2_t = lasso_model_full.fit(x=x, y=y).get_betas_residual_var_r2()
+        betas0, residual_vars, r2_t = lasso_model_full.fit(x=x, y=y).compute_residual_alpha_r2()
         betas0 = betas0.where(np.abs(betas0) > 1e-5, other=np.nan)
 
         # independent Lasso
         lasso_model = LassoModel(model_type=LassoModelType.LASSO, **lasso_params)
-        betas_lasso, residual_vars, r2_t = lasso_model.fit(x=x, y=y).get_betas_residual_var_r2()
+        betas_lasso, residual_vars, r2_t = lasso_model.fit(x=x, y=y).compute_residual_alpha_r2()
         betas_lasso = betas_lasso.where(np.abs(betas_lasso) > 1e-5, other=np.nan)
 
         # group Lasso
         group_lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO, **lasso_params)
-        betas_group_lasso, residual_vars, r2_t = group_lasso_model.fit(x=x, y=y).get_betas_residual_var_r2()
+        betas_group_lasso, residual_vars, r2_t = group_lasso_model.fit(x=x, y=y).compute_residual_alpha_r2()
         betas_group_lasso = betas_group_lasso.where(np.abs(betas_group_lasso) > 1e-5, other=np.nan)
 
         fig, axs = plt.subplots(3, 1, figsize=(12, 10), tight_layout=True)
@@ -111,7 +111,8 @@ def run_unit_test(unit_test: UnitTests):
                                                                time_period=qis.TimePeriod('31Dec2019', '13Dec2024'),
                                                                rebalancing_freq='ME',
                                                                lasso_model=lasso_model,
-                                                               is_apply_vol_normalised_returns=False)
+                                                               is_apply_vol_normalised_returns=False
+                                                               ).y_covars
         for date, covar in y_covars.items():
             print(date)
             print(covar)

@@ -18,6 +18,7 @@ from optimalportfolios.utils.lasso import (LassoModelType,
                                            compute_residual_variance_r2, compute_clusters_from_corr_matrix)
 
 from optimalportfolios.utils.covar_matrix import (CovarEstimator,
+                                                  EstimatedCovarData,
                                                   wrapper_estimate_rolling_covar,
                                                   estimate_rolling_ewma_covar,
                                                   estimate_rolling_lasso_covar,
@@ -30,6 +31,10 @@ from optimalportfolios.utils.factor_alphas import (compute_low_beta_alphas,
                                                    compute_low_beta_alphas_different_freqs,
                                                    compute_momentum_alphas,
                                                    compute_momentum_alphas_different_freqs,
-                                                   compute_ra_carry_alphas, estimate_lasso_regression_alphas)
+                                                   compute_ra_carry_alphas,
+                                                   estimate_lasso_regression_alphas,
+                                                   wrapper_compute_low_beta_alphas,
+                                                   wrapper_estimate_regression_alphas)
 
-from optimalportfolios.utils.manager_alphas import (ManagerAlphas, compute_manager_alphas)
+from optimalportfolios.utils.manager_alphas import (ManagerAlphas,
+                                                    compute_manager_alphas)

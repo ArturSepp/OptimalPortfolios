@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import qis as qis
 from enum import Enum
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Union
 
 from optimalportfolios.utils.lasso import LassoModel
 
@@ -81,6 +81,41 @@ def compute_low_beta_alphas_different_freqs(prices: pd.DataFrame,
     # global_alphas is joint alphas with different frequencies ignoring groups
     global_alphas = qis.df_to_cross_sectional_score(df=-1.0*ewma_betas)[prices.columns].ffill()
     return group_alphas, global_alphas, ewma_betas
+
+
+def wrapper_compute_low_beta_alphas(prices: pd.DataFrame,
+                                    benchmark_price: pd.Series,
+                                    rebalancing_freq: Union[str, pd.Series],
+                                    group_data_alphas: pd.Series,
+                                    beta_span: int = 12,
+                                    momentum_long_span: int = 12
+                                    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """
+    use wrapper dependent on frequencies
+    """
+    if isinstance(rebalancing_freq, pd.Series):
+        beta_score, _, beta = compute_low_beta_alphas_different_freqs(prices=prices,
+                                                                      benchmark_price=benchmark_price,
+                                                                      rebalancing_freqs=rebalancing_freq.loc[prices.columns],
+                                                                      beta_span=beta_span,
+                                                                      group_data=group_data_alphas)
+        momentum_score, _, momentum = compute_momentum_alphas_different_freqs(prices=prices,
+                                                                              benchmark_price=benchmark_price,
+                                                                              rebalancing_freqs=
+                                                                              rebalancing_freq.loc[prices.columns],
+                                                                              long_span=momentum_long_span,
+                                                                              group_data=group_data_alphas)
+    else:  # to do implement groups
+        beta_score, beta = compute_low_beta_alphas(prices=prices, benchmark_price=benchmark_price,
+                                                   returns_freq=rebalancing_freq, beta_span=beta_span)
+        momentum_score, momentum = compute_momentum_alphas(prices=prices, benchmark_price=benchmark_price,
+                                                           returns_freq=rebalancing_freq,
+                                                           long_span=momentum_long_span)
+    #momentum_score = momentum / np.nanstd(momentum, axis=1, keepdims=True)
+    #beta_score = qis.df_to_cross_sectional_score(df=beta)
+    alpha_scores = beta_score.reindex(index=momentum_score.index, method='ffill')
+    alpha_scores = alpha_scores.add(momentum_score) / np.sqrt(2.0)
+    return alpha_scores, momentum, beta, momentum_score, beta_score
 
 
 def compute_momentum_alphas(prices: pd.DataFrame,
@@ -289,12 +324,13 @@ def estimate_lasso_regression_alphas(prices: pd.DataFrame,
                                      rebalancing_freq: str = 'ME'
                                      ) -> pd.DataFrame:
     """
+    using new lasso model
     compute alphas = return_t - (factor_returns_t*beta_{t_1}
     """
     y = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
     x = qis.to_returns(prices=risk_factors_prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
 
-    betas, residual_vars, r2_t = lasso_model.estimate_rolling_betas(x=x, y=y)
+    betas, total_vars, residual_vars, r2_t = lasso_model.estimate_rolling_betas(x=x, y=y)
     estimation_dates = list(betas.keys())
     excess_returns = {}
     for date0, date1 in zip(estimation_dates[:-1], estimation_dates[1:]):
@@ -303,4 +339,46 @@ def estimate_lasso_regression_alphas(prices: pd.DataFrame,
         betas0 = betas[date0]
         excess_returns[date1] = y_return1 - x_return1 @ betas0
     excess_returns = pd.DataFrame.from_dict(excess_returns, orient='index')
+    return excess_returns
+
+
+def wrapper_estimate_regression_alphas(prices: pd.DataFrame,
+                                       risk_factors_prices: pd.DataFrame,
+                                       estimated_betas: Dict[pd.Timestamp, pd.DataFrame],
+                                       rebalancing_freq: Union[str, pd.Series],
+                                       annualisation_freq_dict: Optional[Dict[str, float]] = {'ME': 12, 'QE': 4}
+                                       ) -> pd.DataFrame:
+    """
+    using estimated factor model
+    compute alphas = return_t - (factor_returns_t*beta_{t_1}
+    """
+    estimated_betas_dates = list(estimated_betas.keys())
+
+    def estimate_excess_return(x_: pd.DataFrame, y_: pd.DataFrame, freq: str) -> pd.DataFrame:
+        estimation_dates = x.index
+        excess_returns = {}
+        for date0, date1 in zip(estimation_dates[:-1], estimation_dates[1:]):
+            if date0 in estimated_betas_dates:
+                x_t = x_.loc[date1, :]
+                y_t = y_.loc[date1, :]
+                betas0 = estimated_betas[date0].loc[:, y_.columns]
+                excess_returns[date1] = y_t - x_t @ betas0
+        excess_returns = pd.DataFrame.from_dict(excess_returns, orient='index')
+        if annualisation_freq_dict is not None:
+            excess_returns *= annualisation_freq_dict[freq]
+        return excess_returns
+
+    if isinstance(rebalancing_freq, str):
+        x = qis.to_returns(prices=risk_factors_prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
+        y = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
+        excess_returns = estimate_excess_return(x_=x, y_=y, freq=rebalancing_freq)
+
+    else:
+        group_freqs = qis.get_group_dict(group_data=rebalancing_freq.loc[prices.columns])
+        excess_returns = []
+        for freq, asset_tickers in group_freqs.items():
+            y = qis.to_returns(prices=prices[asset_tickers], is_log_returns=True, drop_first=True, freq=freq)
+            x = qis.to_returns(prices=risk_factors_prices, is_log_returns=True, drop_first=True, freq=freq)
+            excess_returns.append(estimate_excess_return(x_=x, y_=y, freq=freq))
+        excess_returns = pd.concat(excess_returns, axis=1)[prices.columns]
     return excess_returns

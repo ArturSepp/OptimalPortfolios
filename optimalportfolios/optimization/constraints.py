@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 import cvxpy as cvx
 from dataclasses import dataclass, asdict
-from typing import List, Tuple, Optional, Union
+from typing import List, Tuple, Optional, Union, Literal
 from cvxpy.atoms.affine.wraps import psd_wrap
 
 
@@ -31,6 +31,47 @@ class GroupLowerUpperConstraints:
         print(f"group_loadings:\n{self.group_loadings}")
         print(f"group_min_allocation:\n{self.group_min_allocation}")
         print(f"group_max_allocation:\n{self.group_max_allocation}")
+
+
+def merge_group_lower_upper_constraints(group_lower_upper_constraints1: GroupLowerUpperConstraints,
+                                        group_lower_upper_constraints2: GroupLowerUpperConstraints,
+                                        duplicated_keep: Literal['last', 'first'] = 'last'
+                                        ) -> GroupLowerUpperConstraints:
+    group_loadings = pd.concat([group_lower_upper_constraints1.group_loadings,
+                                group_lower_upper_constraints2.group_loadings
+                                ], axis=1)
+    # check for duplicates
+    if np.any(group_loadings.columns.duplicated()):
+        group_loadings = group_loadings.iloc[:, ~group_loadings.columns.duplicated(keep=duplicated_keep)]
+        with pd.option_context('future.no_silent_downcasting', True):
+            group_loadings = group_loadings.fillna(0.0)  # just in case
+
+    if (group_lower_upper_constraints1.group_min_allocation is not None
+            and group_lower_upper_constraints2.group_min_allocation is not None):
+        group_min_allocation = pd.concat([group_lower_upper_constraints1.group_min_allocation,
+                                          group_lower_upper_constraints2.group_min_allocation])
+        # check for duplicates
+        group_min_allocation = group_min_allocation.loc[~group_min_allocation.index.duplicated(keep=duplicated_keep)]
+        with pd.option_context('future.no_silent_downcasting', True):
+            group_min_allocation = group_min_allocation.fillna(0.0)  # just in case
+    else:
+        group_min_allocation = None
+
+    if (group_lower_upper_constraints1.group_max_allocation is not None
+            and group_lower_upper_constraints2.group_max_allocation is not None):
+        group_max_allocation = pd.concat([group_lower_upper_constraints1.group_max_allocation,
+                                          group_lower_upper_constraints2.group_max_allocation])
+        # check for duplicates
+        group_max_allocation = group_max_allocation.loc[~group_max_allocation.index.duplicated(keep=duplicated_keep)]
+        with pd.option_context('future.no_silent_downcasting', True):
+            group_max_allocation = group_max_allocation.fillna(0.0)  # just in case
+
+    else:
+        group_max_allocation = None
+    group_lower_upper_constraints = GroupLowerUpperConstraints(group_loadings=group_loadings,
+                                                               group_min_allocation=group_min_allocation,
+                                                               group_max_allocation=group_max_allocation)
+    return group_lower_upper_constraints
 
 
 @dataclass

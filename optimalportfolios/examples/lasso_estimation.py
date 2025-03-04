@@ -7,8 +7,7 @@ from sklearn.linear_model import MultiTaskLasso
 import yfinance as yf
 import qis as qis
 
-from optimalportfolios.utils.lasso import (compute_residual_variance_r2, solve_lasso_cvx_problem,
-                                           solve_group_lasso_cvx_problem, select_non_nan_x_y)
+from optimalportfolios.utils.lasso import (solve_lasso_cvx_problem, solve_group_lasso_cvx_problem)
 
 # select multi asset ETFs
 instrument_data = dict(SPY='SPY',
@@ -61,7 +60,7 @@ print(beta4)
 
 model = MultiTaskLasso(alpha=1e-3, fit_intercept=False)
 
-x, y = select_non_nan_x_y(x=x, y=y)
+x, y = qis.select_non_nan_x_y(x=x, y=y)
 model.fit(X=x, y=y)
 params = pd.DataFrame(model.coef_.T, index=benchmark_tickers, columns=asset_tickers)
 params = params.where(np.abs(params) > 1e-4, other=np.nan)

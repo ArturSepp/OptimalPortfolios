@@ -68,12 +68,15 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
     lasso_model = LassoModel(model_type=LassoModelType.LASSO,
                              group_data=group_data, reg_lambda=1e-6, span=span,
                              warm_up_periods=span, solver='ECOS_BB')
-    lasso_covars = estimate_rolling_lasso_covar(lasso_model=lasso_model,
-                                                is_apply_vol_normalised_returns=False,
-                                                **lasso_kwargs)
-    lasso_covars_norm = estimate_rolling_lasso_covar(lasso_model=lasso_model,
+    lasso_covar_data = estimate_rolling_lasso_covar(lasso_model=lasso_model,
+                                                    is_apply_vol_normalised_returns=False,
+                                                    **lasso_kwargs)
+    lasso_covars = lasso_covar_data.y_covars
+    lasso_covar_data_norm = estimate_rolling_lasso_covar(lasso_model=lasso_model,
                                                      is_apply_vol_normalised_returns=True,
                                                      **lasso_kwargs)
+    lasso_covars_norm = lasso_covar_data_norm.y_covars
+
 
     # 4. Group Lasso model using ac_benchmarks from universe
     group_lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO,
@@ -81,9 +84,11 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
     group_lasso_covars = estimate_rolling_lasso_covar(lasso_model=group_lasso_model,
                                                       is_apply_vol_normalised_returns=False,
                                                       **lasso_kwargs)
+    group_lasso_covars = group_lasso_covars.y_covars
     group_lasso_covars_norm = estimate_rolling_lasso_covar(lasso_model=group_lasso_model,
                                                            is_apply_vol_normalised_returns=True,
                                                            **lasso_kwargs)
+    group_lasso_covars_norm = group_lasso_covars_norm.y_covars
     # create dict of estimated covars
     covars_dict = {'EWMA': ewma_covars, 'EWMA vol norm': ewma_covars_vol_norm,
                    'Lasso': lasso_covars, 'Lasso VolNorn': lasso_covars_norm,

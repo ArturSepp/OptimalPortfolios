@@ -29,7 +29,7 @@ class LassoModel:
     """
     model_type: LassoModelType = LassoModelType.LASSO
     group_data: pd.Series = None
-    reg_lambda: float = 1e-8
+    reg_lambda: float = 1e-5
     span: Optional[int] = None  # for weight
     fill_nans_to_zero: bool = True
     demean: bool = True
@@ -38,6 +38,7 @@ class LassoModel:
     estimated_betas: pd.DataFrame = None
     solver: str = 'ECOS_BB'
     warm_up_periods: int = 12  # period to start rolling estimation
+    clusters: Optional[pd.Series] = None
 
     def __post_init__(self):
         if self.model_type == LassoModelType.GROUP_LASSO and self.group_data is None:
@@ -59,12 +60,12 @@ class LassoModel:
             if self.span is None:
                 x_np = x_np - np.nanmean(x_np, axis=0)
                 y_np = y_np - np.nanmean(y_np, axis=0)
-                # after demean x_np[0, :] and y_np[0, :] will be zeros
-                x_np = x_np[1:, :]
-                y_np = y_np[1:, :]
             else:
                 x_np = x_np - qis.compute_ewm(x_np, span=self.span)
                 y_np = y_np - qis.compute_ewm(y_np, span=self.span)
+                # after demean  x_np[0, :] and y_np[0, :] will be zeros
+                x_np = x_np[1:, :]
+                y_np = y_np[1:, :]
         return x_np, y_np
 
     def fit(self,
@@ -79,7 +80,7 @@ class LassoModel:
         """
         x_np, y_np = self.get_x_y_np(x=x, y=y)
         span = span or self.span
-
+        clusters = None
         # also use lasso for 1-d y
         if self.model_type == LassoModelType.LASSO or y_np.shape[1] == 1:
             estimated_beta = solve_lasso_cvx_problem(x=x_np,
@@ -121,6 +122,7 @@ class LassoModel:
         self.x = x
         self.y = y
         self.estimated_betas = pd.DataFrame(estimated_beta, index=x.columns, columns=y.columns)
+        self.clusters = clusters
         return self
 
     def estimate_rolling_betas(self,
@@ -128,33 +130,39 @@ class LassoModel:
                                y: pd.DataFrame,
                                verbose: bool = False,
                                span: Optional[float] = None
-                               ) -> Tuple[Dict[pd.Timestamp, pd.DataFrame], Dict[pd.Timestamp, pd.Series], Dict[pd.Timestamp, pd.Series]]:
+                               ) -> Tuple[Dict[pd.Timestamp, pd.DataFrame],
+                                          Dict[pd.Timestamp, pd.Series], Dict[pd.Timestamp, pd.Series], Dict[pd.Timestamp, pd.Series]]:
         """
         fit rolling time series of betas
         """
         betas_t = {}
+        total_vars_t = {}
         residual_vars_t = {}
         r2_t = {}
         for idx, date in enumerate(y.index):
             if idx > self.warm_up_periods:
                 self.fit(x=x.iloc[:idx, :], y=y.iloc[:idx, :], verbose=verbose, span=span)
-                betas, residual_vars, r2 = self.get_betas_residual_var_r2(span=span)
+                betas, total_vars, residual_vars, r2 = self.compute_residual_alpha_r2(span=span)
                 betas_t[date] = betas
+                total_vars_t[date] = total_vars
                 residual_vars_t[date] = residual_vars
                 r2_t[date] = r2
-        return betas_t, residual_vars_t, r2_t
+        return betas_t, total_vars_t, residual_vars_t, r2_t
 
-    def get_betas_residual_var_r2(self, span: Optional[float] = None) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
+    def compute_residual_alpha_r2(self,
+                                  span: Optional[float] = None
+                                  ) -> Tuple[pd.DataFrame, pd.Series, pd.Series, pd.Series]:
         if self.estimated_betas is None:
             raise ValueError(f"calibrate model")
         x_np, y_np = self.get_x_y_np(x=self.x, y=self.y)
-        residual_vars, r2 = compute_residual_variance_r2(x=x_np,
-                                                         y=y_np,
-                                                         beta=self.estimated_betas.to_numpy(),
-                                                         span=span or self.span)
+        total_vars, residual_vars, r2 = compute_residual_variance_r2(x=x_np,
+                                                                     y=y_np,
+                                                                     beta=self.estimated_betas.to_numpy(),
+                                                                     span=span or self.span)
         residual_vars = pd.Series(residual_vars, index=self.estimated_betas.columns)
+        total_vars = pd.Series(total_vars, index=self.estimated_betas.columns)
         r2 = pd.Series(r2, index=self.estimated_betas.columns)
-        return self.estimated_betas, residual_vars, r2
+        return self.estimated_betas, total_vars, residual_vars, r2
 
 
 def solve_lasso_cvx_problem(x: np.ndarray,
@@ -244,6 +252,7 @@ def solve_group_lasso_cvx_problem(x: np.ndarray,
                                   group_loadings: np.ndarray,
                                   reg_lambda: float = 1e-8,
                                   span: Optional[int] = None,  # for weight
+                                  nonneg: bool = False,
                                   verbose: bool = False,
                                   solver: str = 'ECOS_BB'
                                   ) -> np.ndarray:
@@ -270,7 +279,7 @@ def solve_group_lasso_cvx_problem(x: np.ndarray,
     x, y = qis.select_non_nan_x_y(x=x, y=y)
 
     # set variables
-    beta = cvx.Variable((n_x, n_y))
+    beta = cvx.Variable((n_x, n_y), nonneg=nonneg)
     nan_vector = np.full((n_x, n_y), np.nan)
 
     # check suffient obs
@@ -292,8 +301,9 @@ def solve_group_lasso_cvx_problem(x: np.ndarray,
 
     # produce group loadings
     group_masks = [np.isclose(group_loadings[:, group_idx], 1.0) for group_idx in np.arange(n_groups)]
-    # need to compute the sum of squares per each instrument in y -> sum by axis=1: beta[:, mask] is matrix
-    group_norms = cvx.sum([reg_lambda*np.sqrt(np.sum(group_masks))*cvx.sum(cvx.norm2(beta[:, mask], axis=1)) for mask in group_masks])
+    # need to compute the sum of squares per each column in y -> sum by axis=1: beta[:, mask] is matrix
+    # groups are weighted by sqrt(number of members / n_groups)
+    group_norms = cvx.sum([reg_lambda*np.sqrt(np.sum(mask)/n_groups)*cvx.sum(cvx.norm2(beta[:, mask], axis=1)) for mask in group_masks])
 
     objective_fun = objective_fun + group_norms
 
@@ -315,7 +325,7 @@ def compute_residual_variance_r2(x: np.ndarray,
                                  y: np.ndarray,
                                  beta: np.ndarray,
                                  span: Optional[int] = None
-                                 ) -> Tuple[np.ndarray, np.ndarray]:
+                                 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     compute residual var for y = x*beta
     """
@@ -337,8 +347,8 @@ def compute_residual_variance_r2(x: np.ndarray,
     norm_weights = norm_weights / np.nansum(norm_weights, axis=0)
     ss_res = np.nansum(norm_weights * np.square((x @ beta - y)), axis=0)
     ss_total = np.nansum(norm_weights * np.square((y - np.nanmean(y, axis=0))), axis=0)
-    r2 = np.divide(ss_res, ss_total, where=ss_total > 0.0)
-    return ss_res, r2
+    r2 = 1.0 - np.divide(ss_res, ss_total, where=ss_total > 0.0)
+    return ss_total, ss_res, r2
 
 
 def compute_clusters_from_corr_matrix(corr_matrix: pd.DataFrame) -> pd.Series:

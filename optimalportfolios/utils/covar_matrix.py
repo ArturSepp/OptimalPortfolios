@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import qis as qis
 from typing import Union, Optional, Dict
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from enum import Enum
 from optimalportfolios.utils.lasso import LassoModel
 
@@ -45,6 +45,23 @@ class CovarEstimator:
         return covars
 
 
+@dataclass
+class EstimatedCovarData:
+    """
+    outputs from lasso estimatior of rolling covariances
+    """
+    x_covars: Dict[pd.Timestamp, pd.DataFrame]
+    y_covars: Dict[pd.Timestamp, pd.DataFrame]
+    asset_last_betas_t: Dict[pd.Timestamp, pd.DataFrame]
+    last_residual_vars_t: Dict[pd.Timestamp, pd.DataFrame]
+    total_vars_pd: pd.DataFrame
+    residual_vars_pd: pd.DataFrame
+    r2_pd: pd.DataFrame
+
+    def to_dict(self):
+        return asdict(self)
+
+
 def wrapper_estimate_rolling_covar(prices: pd.DataFrame,
                                    time_period: qis.TimePeriod,  # starting time of sampling estimator
                                    risk_factor_prices: pd.DataFrame = None,  # for lasso covars
@@ -78,7 +95,8 @@ def wrapper_estimate_rolling_covar(prices: pd.DataFrame,
                                                       span=covar_estimator.span,  # 1y of weekly returns
                                                       is_apply_vol_normalised_returns=covar_estimator.is_apply_vol_normalised_returns,
                                                       squeeze_factor=covar_estimator.squeeze_factor,
-                                                      residual_var_weight=covar_estimator.residual_var_weight)
+                                                      residual_var_weight=covar_estimator.residual_var_weight
+                                                      ).y_covars
 
     else:
         raise NotImplementedError(f"covar_estimator_specs.covar_estimator={covar_estimator.covar_estimator_type}")
@@ -144,7 +162,7 @@ def estimate_rolling_lasso_covar(risk_factor_prices: pd.DataFrame,
                                  is_apply_vol_normalised_returns: bool = False,
                                  squeeze_factor: Optional[float] = None,
                                  residual_var_weight: float = 1.0
-                                 ) -> Dict[pd.Timestamp, pd.DataFrame]:
+                                 ) -> EstimatedCovarData:
     """
     use benchmarks to compute the benchmark covar matrix
     use lasso to estimate betas
@@ -164,11 +182,14 @@ def estimate_rolling_lasso_covar(risk_factor_prices: pd.DataFrame,
     # 2. estimate betas of y-returns at different samples
     y = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
     x = qis.to_returns(prices=risk_factor_prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
-    betas, residual_vars, r2_t = lasso_model.estimate_rolling_betas(x=x, y=y)
+    betas, total_vars, residual_vars, r2_t = lasso_model.estimate_rolling_betas(x=x, y=y)
 
     # 3. compute y_covars at x_covars frequency
-    an_factor = qis.infer_an_from_data(data=x)
+    # an_factor = qis.infer_an_from_data(data=x)
+    _, an_factor = qis.get_period_days(freq=returns_freq)  # annualisation factor is provided based on returns freq
     y_covars = {}
+    asset_last_betas_t = {}
+    last_residual_vars_t = {}
     for date, x_covar in x_covars.items():
         # find last update date from
         last_update_date = qis.find_upto_date_from_datetime_index(index=list(betas.keys()), date=date)
@@ -183,7 +204,18 @@ def estimate_rolling_lasso_covar(risk_factor_prices: pd.DataFrame,
             betas_covar += residual_var_weight * np.diag(last_residual_vars.to_numpy())
         y_covars[date] = pd.DataFrame(an_factor*betas_covar, index=prices.columns, columns=prices.columns)
 
-    return y_covars
+        asset_last_betas_t[date] = asset_last_betas
+        last_residual_vars_t[date] = last_residual_vars
+
+    covar_data = EstimatedCovarData(x_covars=x_covars,
+                                    y_covars=y_covars,
+                                    asset_last_betas_t=asset_last_betas_t,
+                                    last_residual_vars_t=last_residual_vars_t,
+                                    total_vars_pd=pd.DataFrame.from_dict(total_vars, orient='index'),
+                                    residual_vars_pd=pd.DataFrame.from_dict(residual_vars, orient='index'),
+                                    r2_pd=pd.DataFrame.from_dict(r2_t, orient='index'))
+
+    return covar_data
 
 
 def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
@@ -199,7 +231,7 @@ def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame
                                                 var_scaler_freq_dict: Optional[Dict[str, float]] = None,  # var scaler for different freqs
                                                 squeeze_factor: Optional[float] = None,
                                                 residual_var_weight: float = 1.0
-                                                ) -> Dict[pd.Timestamp, pd.DataFrame]:
+                                                ) -> EstimatedCovarData:
     """
     use benchmarks to compute the benchmark covar matrix
     use lasso to estimate betas
@@ -222,7 +254,9 @@ def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame
     rebalancing_freqs = rebalancing_freqs[prices.columns]
     group_freqs = qis.get_group_dict(group_data=rebalancing_freqs)
     betas_freqs: Dict[str, Dict[pd.Timestamp, pd.DataFrame]] = {}
+    total_vars_freqs: Dict[str, Dict[pd.Timestamp, pd.Series]] = {}
     residual_vars_freqs: Dict[str, Dict[pd.Timestamp, pd.Series]] = {}
+    r2_freqs: Dict[str, Dict[pd.Timestamp, pd.Series]] = {}
     for freq, asset_tickers in group_freqs.items():
         y = qis.to_returns(prices=prices[asset_tickers], is_log_returns=True, drop_first=True, freq=freq)
         x = qis.to_returns(prices=risk_factor_prices, is_log_returns=True, drop_first=True, freq=freq)
@@ -230,16 +264,22 @@ def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame
             span_f = span_freq_dict[freq]
         else:
             span_f = span
-        betas_freqs[freq], residual_vars_freqs[freq], r2_t = lasso_model.estimate_rolling_betas(x=x, y=y, span=span_f)
+        betas_freqs[freq], total_vars_freqs[freq], residual_vars_freqs[freq], r2_freqs[freq] = lasso_model.estimate_rolling_betas(x=x, y=y, span=span_f)
 
     # 3. compute y_covars at x_covars frequency
     _, an_factor = qis.get_period_days(rebalancing_freq)  # an factor is frequency of x returns
     y_covars = {}
+    asset_last_betas_t = {}
+    last_total_vars_t = {}
+    last_residual_vars_t = {}
+    last_r2_vars_t = {}
     for idx, (date, x_covar) in enumerate(x_covars.items()):
         # generate aligned betas
         # residual vars are
         asset_last_betas = []
+        last_total_vars = []
         last_residual_vars = []
+        last_r2 = []
         for freq in group_freqs.keys():
             last_update_date = qis.find_upto_date_from_datetime_index(index=list(betas_freqs[freq].keys()), date=date)
             if last_update_date is None:  # wait until all last dates are valie
@@ -249,14 +289,20 @@ def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame
                 scaler = var_scaler_freq_dict[freq]
             else:
                 scaler = 1.0
-            last_residual_vars.append(scaler*residual_vars_freqs[freq][last_update_date])
+            last_total_vars.append(scaler * total_vars_freqs[freq][last_update_date])
+            last_residual_vars.append(scaler * residual_vars_freqs[freq][last_update_date])
+            last_r2.append(r2_freqs[freq][last_update_date])
         asset_last_betas = pd.concat(asset_last_betas, axis=1)  # pandas with colums = assets
+        last_total_vars = pd.concat(last_total_vars, axis=0)  # series
         last_residual_vars = pd.concat(last_residual_vars, axis=0)  # series
-
+        last_r2 = pd.concat(last_r2, axis=0)  # series
+        
         # align
         asset_last_betas = asset_last_betas.reindex(index=x_covar.index).reindex(columns=prices.columns).fillna(0.0)
+        last_total_vars = last_total_vars.reindex(index=prices.columns).fillna(0.0)
         last_residual_vars = last_residual_vars.reindex(index=prices.columns).fillna(0.0)
-
+        last_r2 = last_r2.reindex(index=prices.columns).fillna(0.0)
+        
         # compute covar
         betas_np = asset_last_betas.to_numpy()
         betas_covar = np.transpose(betas_np) @ x_covar.to_numpy() @ betas_np
@@ -264,7 +310,22 @@ def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame
             betas_covar += residual_var_weight * np.diag(last_residual_vars.to_numpy())
         betas_covar *= an_factor
         y_covars[date] = pd.DataFrame(betas_covar, index=prices.columns, columns=prices.columns)
-    return y_covars
+        
+        # store outs
+        asset_last_betas_t[date] = asset_last_betas
+        last_total_vars_t[date] = last_total_vars
+        last_residual_vars_t[date] = last_residual_vars
+        last_r2_vars_t[date] = last_r2
+
+    covar_data = EstimatedCovarData(x_covars=x_covars,
+                                    y_covars=y_covars,
+                                    asset_last_betas_t=asset_last_betas_t,
+                                    last_residual_vars_t=last_residual_vars_t,
+                                    total_vars_pd=pd.DataFrame.from_dict(last_total_vars_t, orient='index'),
+                                    residual_vars_pd=pd.DataFrame.from_dict(last_residual_vars_t, orient='index'),
+                                    r2_pd=pd.DataFrame.from_dict(last_r2_vars_t, orient='index'))
+
+    return covar_data
 
 
 def wrapper_estimate_rolling_lasso_covar(risk_factors_prices: pd.DataFrame,
@@ -279,12 +340,12 @@ def wrapper_estimate_rolling_lasso_covar(risk_factors_prices: pd.DataFrame,
                                          squeeze_factor: Optional[float] = None,
                                          is_apply_vol_normalised_returns: bool = False,
                                          residual_var_weight: float = 1.0
-                                         ) -> Dict[pd.Timestamp, pd.DataFrame]:
+                                         ) -> EstimatedCovarData:
     """
     wrapper for lasso covar estimation using either fixed rebalancing frequency or rolling rebalancing frequency
     """
     if isinstance(rebalancing_freq, str):
-        covar_dict = estimate_rolling_lasso_covar(risk_factor_prices=risk_factors_prices,
+        covar_data = estimate_rolling_lasso_covar(risk_factor_prices=risk_factors_prices,
                                                   prices=prices,
                                                   time_period=time_period,
                                                   lasso_model=lasso_model,
@@ -295,7 +356,7 @@ def wrapper_estimate_rolling_lasso_covar(risk_factors_prices: pd.DataFrame,
                                                   squeeze_factor=squeeze_factor,
                                                   residual_var_weight=residual_var_weight)
     else:
-        covar_dict = estimate_rolling_lasso_covar_different_freq(risk_factor_prices=risk_factors_prices,
+        covar_data = estimate_rolling_lasso_covar_different_freq(risk_factor_prices=risk_factors_prices,
                                                                  prices=prices,
                                                                  time_period=time_period,
                                                                  lasso_model=lasso_model,
@@ -307,7 +368,7 @@ def wrapper_estimate_rolling_lasso_covar(risk_factors_prices: pd.DataFrame,
                                                                  is_apply_vol_normalised_returns=is_apply_vol_normalised_returns,
                                                                  squeeze_factor=squeeze_factor,
                                                                  residual_var_weight=residual_var_weight)
-    return covar_dict
+    return covar_data
 
 
 def estimate_lasso_covar(x: pd.DataFrame,
@@ -338,7 +399,7 @@ def estimate_lasso_covar(x: pd.DataFrame,
             covar_x = squeeze_covariance_matrix(covar=covar_x, squeeze_factor=squeeze_factor)
 
     # 2. estimate betas
-    betas, residual_vars, r2_t = lasso_model.fit(x=x, y=y, verbose=verbose).get_betas_residual_var_r2()
+    betas, residual_vars, r2_t = lasso_model.fit(x=x, y=y, verbose=verbose).compute_residual_alpha_r2()
 
     # make sure aligned
     betas = betas.reindex(index=x.columns).reindex(columns=y.columns).fillna(0.0)
