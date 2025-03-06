@@ -33,18 +33,25 @@ class ManagerAlphas:
         if date not in self.alpha_scores.index:
             raise KeyError(f"{date} is not in {self.alpha_scores.index}")
         snapshot = self.alpha_scores.loc[date, :].to_frame('Alpha Scores')
-        if self.beta is not None:
-            snapshot = pd.concat([snapshot, self.beta.loc[date, :].to_frame('Beta')], axis=1)
-        if self.momentum is not None:
-            snapshot = pd.concat([snapshot, self.momentum.loc[date, :].to_frame('Momentum')], axis=1)
-        if self.managers_alphas is not None:
-            snapshot = pd.concat([snapshot, self.managers_alphas.loc[date, :].to_frame('Managers Alpha')], axis=1)
+
         if self.momentum_score is not None:
             snapshot = pd.concat([snapshot, self.momentum_score.loc[date, :].to_frame('Momentum Score')], axis=1)
         if self.beta_score is not None:
             snapshot = pd.concat([snapshot, self.beta_score.loc[date, :].to_frame('Beta Score')], axis=1)
         if self.managers_scores is not None:
-            snapshot = pd.concat([snapshot, self.managers_scores.loc[date, :].to_frame('Managers Score')], axis=1)
+            if date in self.managers_scores.index:
+                snapshot = pd.concat([snapshot, self.managers_scores.loc[date, :].to_frame('Managers Score')], axis=1)
+            else:
+                snapshot = pd.concat([snapshot, self.managers_scores.iloc[-1, :].to_frame('Managers Score')], axis=1)
+        if self.momentum is not None:
+            snapshot = pd.concat([snapshot, self.momentum.loc[date, :].to_frame('Momentum')], axis=1)
+        if self.beta is not None:
+            snapshot = pd.concat([snapshot, self.beta.loc[date, :].to_frame('Beta')], axis=1)
+        if self.managers_alphas is not None:
+            if date in self.managers_alphas.index:
+                snapshot = pd.concat([snapshot, self.managers_alphas.loc[date, :].to_frame('Managers Alpha')], axis=1)
+            else:
+                snapshot = pd.concat([snapshot, self.managers_alphas.iloc[-1, :].to_frame('Managers Alpha')], axis=1)
         return snapshot
 
     def to_dict(self) -> Dict[str, pd.DataFrame]:

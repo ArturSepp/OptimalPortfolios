@@ -180,8 +180,9 @@ def estimate_rolling_lasso_covar(risk_factor_prices: pd.DataFrame,
                                            apply_an_factor=False)
 
     # 2. estimate betas of y-returns at different samples
-    y = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
-    x = qis.to_returns(prices=risk_factor_prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
+    y = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=returns_freq)
+    x = qis.to_returns(prices=risk_factor_prices, is_log_returns=True, drop_first=True, freq=returns_freq)
+    # todo: can reduce the number of evaluations if returns_freq << rebalancing_freq
     betas, total_vars, residual_vars, r2_t = lasso_model.estimate_rolling_betas(x=x, y=y)
 
     # 3. compute y_covars at x_covars frequency
@@ -261,7 +262,10 @@ def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame
         y = qis.to_returns(prices=prices[asset_tickers], is_log_returns=True, drop_first=True, freq=freq)
         x = qis.to_returns(prices=risk_factor_prices, is_log_returns=True, drop_first=True, freq=freq)
         if span_freq_dict is not None:
-            span_f = span_freq_dict[freq]
+            if freq in span_freq_dict.keys():
+                span_f = span_freq_dict[freq]
+            else:
+                raise KeyError(f"no span for freq={freq}")
         else:
             span_f = span
         betas_freqs[freq], total_vars_freqs[freq], residual_vars_freqs[freq], r2_freqs[freq] = lasso_model.estimate_rolling_betas(x=x, y=y, span=span_f)

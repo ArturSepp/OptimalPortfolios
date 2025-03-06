@@ -75,6 +75,39 @@ def merge_group_lower_upper_constraints(group_lower_upper_constraints1: GroupLow
 
 
 @dataclass
+class GroupTrackingErrorConstraint:
+    """
+    add constraints that the tracking error for each asset group is
+    tracking_error_var = cvx.quad_form(group_loading*(w - self.benchmark_weights.to_numpy()), covar)
+    constraints += [tracking_error_var <= self.tracking_err_vol_constraint ** 2]  # variance constraint
+
+    """
+    group_loadings: pd.DataFrame  # columns=instruments, index=groups, data=1 if instrument in indexed group else 0
+    group_tre_vols: pd.Series  # index=groups, data=group min allocation
+
+    def update(self, valid_tickers: List[str]) -> GroupTrackingErrorConstraint:
+        new_self = GroupTrackingErrorConstraint(group_loadings=self.group_loadings.loc[valid_tickers, :],
+                                                group_tre_vols=self.group_tre_vols)
+        return new_self
+
+    def set_group_tre_constraints(self, w: cvx.Variable, benchmark_weights:pd.Series, covar: np.ndarray) -> List:
+        constraints = []
+        for group in self.group_loadings.columns:
+            group_loading = self.group_loadings[group].copy()
+            if np.any(np.isclose(group_loading, 0.0) == False):  # exclude groups with zero loading
+                # aling just in case
+                group_loading = group_loading.loc[benchmark_weights.index]
+                tracking_error_var = cvx.quad_form(cvx.multiply(group_loading.to_numpy(), w - benchmark_weights.to_numpy()), covar)
+                constraints += [tracking_error_var <= self.group_tre_vols[group] ** 2]  # variance constraint
+                # constraints = [tracking_error_var <= self.group_tre_vols[group] ** 2]  # variance constraint
+        return constraints
+
+    def print(self):
+        print(f"group_loadings:\n{self.group_loadings}")
+        print(f"group_tre_vols:\n{self.group_tre_vols}")
+
+
+@dataclass
 class Constraints:
     is_long_only: bool = True  # for positive allocation weights
     min_weights: pd.Series = None  # instrument min weights  
@@ -85,11 +118,13 @@ class Constraints:
     tracking_err_vol_constraint: float = None  # annualised sqrt tracking error
     weights_0: pd.Series = None  # for turnover constraints
     turnover_constraint: float = None  # for turnover constraints
+    turnover_costs: pd.Series = None  # for weights of turnover constraints
     target_return: float = None  # for optimisation with target return
     asset_returns: pd.Series = None  # for optimisation with target return
     max_target_portfolio_vol_an: float = None  # for optimisation with maximum portfolio volatility target
     min_target_portfolio_vol_an: float = None  # for optimisation with maximum portfolio volatility target
     group_lower_upper_constraints: GroupLowerUpperConstraints = None  # for group allocations constraints
+    group_tracking_error_constraint: GroupTrackingErrorConstraint = None
     apply_total_to_good_ratio_for_constraints: bool = True  # for constraint rescale
 
     def copy(self) -> Constraints:
@@ -99,6 +134,10 @@ class Constraints:
             this['group_lower_upper_constraints'] = GroupLowerUpperConstraints(group_loadings=gluc.group_loadings,
                                                                                group_min_allocation=gluc.group_min_allocation,
                                                                                group_max_allocation=gluc.group_max_allocation)
+        if self.group_tracking_error_constraint is not None:
+            gluc = self.group_tracking_error_constraint
+            this['group_tracking_error_constraint'] = GroupTrackingErrorConstraint(group_loadings=gluc.group_loadings,
+                                                                                   group_tre_vols=gluc.group_tre_vols)
         return Constraints(**this)
 
     def update(self, valid_tickers: List[str], **kwargs) -> Constraints:
@@ -107,6 +146,8 @@ class Constraints:
         if self.group_lower_upper_constraints is not None:  # asdict will make is dictionary, need to create object
             group_lower_upper_constraints = self.group_lower_upper_constraints.update(valid_tickers=valid_tickers)
             self_dict['group_lower_upper_constraints'] = group_lower_upper_constraints
+        if self.group_tracking_error_constraint is not None:
+            self_dict['group_tracking_error_constraint'] = self.group_tracking_error_constraint.update(valid_tickers=valid_tickers)
         return Constraints(**self_dict)
 
     def update_with_valid_tickers(self,
@@ -135,9 +176,13 @@ class Constraints:
                     this.max_weights = this.max_weights[valid_tickers].fillna(0.0)
             if this.group_lower_upper_constraints is not None:
                 this.group_lower_upper_constraints = this.group_lower_upper_constraints.update(valid_tickers=valid_tickers)
+            if this.group_tracking_error_constraint is not None:
+                this.group_tracking_error_constraint = this.group_tracking_error_constraint.update(valid_tickers=valid_tickers)
             if this.turnover_constraint is not None:
                 if apply_total_to_good_ratio and self.apply_total_to_good_ratio_for_constraints:
                     this.turnover_constraint *= total_to_good_ratio
+            if this.turnover_costs is not None:
+                this.turnover_costs = this.turnover_costs.reindex(index=valid_tickers).fillna(1.0)
             if weights_0 is not None:
                 this.weights_0 = weights_0.reindex(index=valid_tickers).fillna(0.0)
             if asset_returns is not None:
@@ -227,10 +272,24 @@ class Constraints:
             if self.weights_0 is None:
                 print(f"weights_0 must be given for turnover_constraint")
             else:
-                constraints += [cvx.norm(w - self.weights_0, 1) <= self.turnover_constraint]
+                if self.turnover_costs is not None:
+                    constraints += [cvx.norm(cvx.multiply(self.turnover_costs.to_numpy(), w - self.weights_0), 1) <= self.turnover_constraint]
+                else:
+                    constraints += [cvx.norm(w - self.weights_0, 1) <= self.turnover_constraint]
 
         # tracking error constraint
-        if self.tracking_err_vol_constraint is not None:
+        if self.group_tracking_error_constraint is not None:
+            if self.benchmark_weights is None:
+                raise ValueError(f"benchmark_weights must be given")
+            for group in self.group_tracking_error_constraint.group_loadings.columns:
+                group_loading = self.group_tracking_error_constraint.group_loadings[group].copy()
+                if np.any(np.isclose(group_loading, 0.0) == False):  # exclude groups with zero loading
+                    # aling just in case
+                    group_loading = group_loading.loc[self.benchmark_weights.index]
+                    tracking_error_var = cvx.quad_form(cvx.multiply(group_loading.to_numpy(), w - self.benchmark_weights.to_numpy()), covar)
+                    constraints += [tracking_error_var <= self.group_tracking_error_constraint.group_tre_vols[group] ** 2]  # variance constraint
+
+        elif self.tracking_err_vol_constraint is not None:
             if self.benchmark_weights is None:
                 raise ValueError(f"benchmark_weights must be given")
             tracking_error_var = cvx.quad_form(w - self.benchmark_weights.to_numpy(), covar)
