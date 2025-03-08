@@ -26,7 +26,7 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
                            time_period: qis.TimePeriod,  # when we start building portfolios
                            covar_dict: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
                            covar_estimator: CovarEstimator = CovarEstimator(),  # default covar estimator is ewma
-                           risk_budget: pd.Series = None,
+                           risk_budget: Union[pd.Series, Dict[str, float]] = None,
                            rebalancing_indicators: pd.DataFrame = None,  # whe assets can be rebalanced
                            apply_total_to_good_ratio: bool = True
                            ) -> pd.DataFrame:
@@ -66,7 +66,7 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
 def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
                            constraints0: Constraints,
                            weights_0: pd.Series = None,
-                           risk_budget: pd.Series = None,
+                           risk_budget: Union[pd.Series, Dict[str, float]] = None,
                            rebalancing_indicators: pd.Series = None,
                            apply_total_to_good_ratio: bool = True,
                            detailed_output: bool = False
@@ -81,6 +81,12 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
     """
     # assets with zero risk budgets are excluded from optimisation
     if risk_budget is not None:  # exclude assets with risk_badget = 0
+        if isinstance(risk_budget, Dict):
+            risk_budget = pd.Series(risk_budget)
+        elif isinstance(risk_budget, pd.Series):
+            pass
+        else:
+            raise NotImplementedError(f"{type(risk_budget)}")
         inclusion_indicators = pd.Series(np.where(risk_budget.fillna(0.0) > 0.0, 1.0, 0.0), index=risk_budget.index)
     else:
         inclusion_indicators = pd.Series(1.0, index=pd_covar.columns)

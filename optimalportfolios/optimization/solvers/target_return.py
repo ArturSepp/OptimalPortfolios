@@ -31,11 +31,11 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
     """
     if covar_dict is None:  # use default ewm covar
         covar_dict = estimate_rolling_ewma_covar(prices=prices,
-                                                time_period=time_period,
-                                                returns_freq=returns_freq,
-                                                rebalancing_freq=rebalancing_freq,
-                                                span=span,
-                                                squeeze_factor=squeeze_factor)
+                                                 time_period=time_period,
+                                                 returns_freq=returns_freq,
+                                                 rebalancing_freq=rebalancing_freq,
+                                                 span=span,
+                                                 squeeze_factor=squeeze_factor)
 
     # create rebalancing schedule: it must much idx in covar_tensor_txy using returns.index
     rebalancing_schedule = list(covar_dict.keys())

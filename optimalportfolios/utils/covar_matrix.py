@@ -90,7 +90,7 @@ def wrapper_estimate_rolling_covar(prices: pd.DataFrame,
                                                       prices=prices,
                                                       time_period=time_period,  # when we start building portfolios
                                                       lasso_model=covar_estimator.lasso_model,
-                                                      returns_freq=covar_estimator.returns_freq,
+                                                      factor_returns_freq=covar_estimator.returns_freq,
                                                       rebalancing_freq=covar_estimator.rebalancing_freq,
                                                       span=covar_estimator.span,  # 1y of weekly returns
                                                       is_apply_vol_normalised_returns=covar_estimator.is_apply_vol_normalised_returns,
@@ -224,7 +224,7 @@ def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame
                                                 rebalancing_freqs: pd.Series,
                                                 time_period: qis.TimePeriod,  # when we start building portfolios
                                                 lasso_model: LassoModel,
-                                                returns_freq: str = 'W-WED',
+                                                factor_returns_freq: str = 'W-WED',
                                                 rebalancing_freq: str = 'ME',  # for x returns
                                                 is_apply_vol_normalised_returns: bool = False,
                                                 span: int = 52,  # 1y of weekly returns
@@ -243,7 +243,7 @@ def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame
     # 1. compute x-factors ewm covar at rebalancing freq
     x_covars = estimate_rolling_ewma_covar(prices=risk_factor_prices,
                                            time_period=time_period,
-                                           returns_freq=returns_freq,
+                                           returns_freq=factor_returns_freq,
                                            rebalancing_freq=rebalancing_freq,
                                            span=span,
                                            demean=lasso_model.demean,
@@ -337,7 +337,7 @@ def wrapper_estimate_rolling_lasso_covar(risk_factors_prices: pd.DataFrame,
                                          rebalancing_freq: Union[str, pd.Series],
                                          time_period: qis.TimePeriod,  # when we start building portfolios
                                          lasso_model: LassoModel,
-                                         returns_freq: str = 'W-WED',
+                                         factor_returns_freq: str = 'W-WED',
                                          span: int = 52,  # 1y of weekly returns
                                          span_freq_dict: Optional[Dict[str, int]] = None,  # spans for different freqs
                                          var_scaler_freq_dict: Optional[Dict[str, float]] = None,  # var scaler for different freqs
@@ -353,7 +353,7 @@ def wrapper_estimate_rolling_lasso_covar(risk_factors_prices: pd.DataFrame,
                                                   prices=prices,
                                                   time_period=time_period,
                                                   lasso_model=lasso_model,
-                                                  returns_freq=returns_freq,
+                                                  returns_freq=factor_returns_freq,
                                                   rebalancing_freq=rebalancing_freq,
                                                   span=span,
                                                   is_apply_vol_normalised_returns=is_apply_vol_normalised_returns,
@@ -364,7 +364,7 @@ def wrapper_estimate_rolling_lasso_covar(risk_factors_prices: pd.DataFrame,
                                                                  prices=prices,
                                                                  time_period=time_period,
                                                                  lasso_model=lasso_model,
-                                                                 returns_freq=returns_freq,
+                                                                 factor_returns_freq=factor_returns_freq,
                                                                  rebalancing_freqs=rebalancing_freq,
                                                                  span=span,
                                                                  span_freq_dict=span_freq_dict,
@@ -470,5 +470,3 @@ def squeeze_covariance_matrix(covar: Union[np.ndarray, pd.DataFrame],
         squeezed_cov_matrix = squeezed_cov_matrix.to_numpy()
 
     return squeezed_cov_matrix
-
-

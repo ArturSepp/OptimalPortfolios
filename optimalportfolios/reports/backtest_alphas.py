@@ -40,7 +40,7 @@ def backtest_alpha_signas(prices: pd.DataFrame,
         weight = time_period.locate(weight).asfreq(rebalancing_freq, method='ffill')
         mandate_portfolio = qis.backtest_model_portfolio(prices=prices.loc[weight.index[0]:, :],
                                                          weights=weight,
-                                                         rebalance_freq=rebalancing_freq,
+                                                         rebalancing_freq=rebalancing_freq,
                                                          rebalancing_costs=rebalancing_costs,
                                                          ticker=f"{ticker}")
         mandate_portfolio.set_group_data(group_data=group_data, group_order=group_order)
@@ -93,7 +93,7 @@ def multi_backtest_alpha_signas(prices: pd.DataFrame,
         weight = time_period.locate(weight).asfreq(rebalancing_freq, method='ffill')
         mandate_portfolio = qis.backtest_model_portfolio(prices=prices.loc[weight.index[0]:, :],
                                                          weights=weight,
-                                                         rebalance_freq=rebalancing_freq,
+                                                         rebalancing_freq=rebalancing_freq,
                                                          rebalancing_costs=rebalancing_costs,
                                                          ticker=f"{ticker}")
         mandate_portfolio.set_group_data(group_data=group_data, group_order=group_order)
@@ -174,7 +174,7 @@ def cross_backtest_alpha_signas(prices: pd.DataFrame,
         weight = time_period.locate(weight).asfreq(rebalancing_freq, method='ffill')
         mandate_portfolio = qis.backtest_model_portfolio(prices=prices.loc[weight.index[0]:, :],
                                                          weights=weight,
-                                                         rebalance_freq=rebalancing_freq,
+                                                         rebalancing_freq=rebalancing_freq,
                                                          rebalancing_costs=rebalancing_costs,
                                                          ticker=f"{ticker}")
         mandate_portfolio.set_group_data(group_data=group_data, group_order=group_order)

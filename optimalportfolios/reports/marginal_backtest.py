@@ -191,7 +191,7 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
 
     portfolio_wo = qis.backtest_model_portfolio(prices=qis.truncate_prior_to_start(df=prices_without_asset, start=weights_wo.index[0]),
                                                 weights=weights_wo,
-                                                rebalance_freq=rebalancing_freq,
+                                                rebalancing_freq=rebalancing_freq,
                                                 is_rebalanced_at_first_date=True,
                                                 rebalancing_costs=rebalancing_costs,
                                                 weight_implementation_lag=weight_implementation_lag,
@@ -199,7 +199,7 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
 
     portfolio_with = qis.backtest_model_portfolio(prices=qis.truncate_prior_to_start(df=prices_with_asset, start=weights_with.index[0]),
                                                   weights=weights_with,
-                                                  rebalance_freq=rebalancing_freq,
+                                                  rebalancing_freq=rebalancing_freq,
                                                   is_rebalanced_at_first_date=True,
                                                   rebalancing_costs=rebalancing_costs,
                                                   weight_implementation_lag=weight_implementation_lag,

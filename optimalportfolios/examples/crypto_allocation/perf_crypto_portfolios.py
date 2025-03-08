@@ -336,7 +336,7 @@ def run_backtest_pdf_report(prices_unconstrained: pd.DataFrame,
 
 
 def backtest_constant_weight_portfolios(crypto_asset: str = 'BTC',
-                                        rebalance_freq: str = 'QE',
+                                        rebalancing_freq: str = 'QE',
                                         is_alternatives: bool = False,
                                         perf_time_period: TimePeriod = None,
                                         time_period_dict: Dict[str, TimePeriod] = None
@@ -376,7 +376,7 @@ def backtest_constant_weight_portfolios(crypto_asset: str = 'BTC',
 
         portfolio_wo = qis.backtest_model_portfolio(prices=prices,
                                                     weights=weights,
-                                                    rebalance_freq=rebalance_freq,
+                                                    rebalancing_freq=rebalancing_freq,
                                                     is_rebalanced_at_first_date=True,
                                                     ticker=ticker)
         navs.append(portfolio_wo.nav)
@@ -477,7 +477,7 @@ def run_unit_test(unit_test: UnitTests):
                             '2021Q1-now': TimePeriod(start='31Dec2020', end=end_date)}
         backtest_constant_weight_portfolios(
                                         crypto_asset='ETH',
-                                        rebalance_freq='QE',
+                                        rebalancing_freq='QE',
                                         is_alternatives=False,
                                         perf_time_period=perf_time_period,
                                         time_period_dict=time_period_dict)
