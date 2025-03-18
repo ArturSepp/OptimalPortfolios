@@ -81,7 +81,7 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
     """
     # assets with zero risk budgets are excluded from optimisation
     if risk_budget is not None:  # exclude assets with risk_badget = 0
-        if isinstance(risk_budget, Dict):
+        if isinstance(risk_budget, dict):
             risk_budget = pd.Series(risk_budget)
         elif isinstance(risk_budget, pd.Series):
             pass

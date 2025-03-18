@@ -28,7 +28,7 @@ class LassoModel:
 
     """
     model_type: LassoModelType = LassoModelType.LASSO
-    group_data: pd.Series = None
+    group_data: Optional[pd.Series] = None
     reg_lambda: float = 1e-5
     span: Optional[int] = None  # for weight
     fill_nans_to_zero: bool = True

@@ -18,7 +18,7 @@ from optimalportfolios.utils.lasso import (LassoModelType,
                                            compute_residual_variance_r2, compute_clusters_from_corr_matrix)
 
 from optimalportfolios.utils.covar_matrix import (CovarEstimator,
-                                                  EstimatedCovarData,
+                                                  EstimatedRollingCovarData,
                                                   wrapper_estimate_rolling_covar,
                                                   estimate_rolling_ewma_covar,
                                                   estimate_rolling_lasso_covar,

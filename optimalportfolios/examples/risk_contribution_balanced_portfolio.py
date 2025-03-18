@@ -57,9 +57,16 @@ figs1 = qis.generate_strategy_benchmark_factsheet_plt(multi_portfolio_data=multi
                                                       **report_kwargs)
 qis.save_figs_to_pdf(figs1, file_name='risk_portfolio', local_path=lp.get_output_path())
 
-figs2, dfs = weights_tracking_error_report_by_ac_subac(multi_portfolio_data=multi_portfolio_data, time_period=time_period)
+figs2, dfs = weights_tracking_error_report_by_ac_subac(multi_portfolio_data=multi_portfolio_data, time_period=time_period,
+                                                       **report_kwargs)
 
 qis.save_figs_to_pdf(figs2, file_name='risk_portfolio2', local_path=lp.get_output_path())
+
+all_navs = multi_portfolio_data.get_navs(add_benchmarks_to_navs=True)
+
+fig = qis.generate_multi_asset_factsheet(prices=all_navs, benchmark='SPY', time_period=time_period,
+                                         **report_kwargs)
+qis.save_figs_to_pdf([fig], file_name='risk_portfolio3', local_path=lp.get_output_path())
 
 plt.close('all')
 

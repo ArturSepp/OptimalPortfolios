@@ -146,3 +146,4 @@ dmypy.json
 /dist/
 *.xml
 *.pyc
+/mac_portfolio_optimizer/
