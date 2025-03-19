@@ -56,7 +56,10 @@ class EstimatedCovarData:
     last_residual_vars: pd.DataFrame
     last_total_vars: pd.DataFrame
     last_r2: pd.DataFrame
-
+    clusters: Dict[str, pd.Series]
+    linkages: Dict[str, np.ndarray]
+    cutoffs: Dict[str, float]
+    
     def to_dict(self):
         return asdict(self)
 
@@ -254,7 +257,7 @@ def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame
                                                 is_apply_vol_normalised_returns: bool = False,
                                                 span: int = 52,  # 1y of weekly returns
                                                 span_freq_dict: Optional[Dict[str, int]] = None,  # spans for different freqs
-                                                var_scaler_freq_dict: Optional[Dict[str, float]] = None,  # var scaler for different freqs
+                                                var_scaler_freq_dict: Optional[Dict[str, float]] = None,
                                                 squeeze_factor: Optional[float] = None,
                                                 residual_var_weight: float = 1.0
                                                 ) -> EstimatedRollingCovarData:
@@ -264,6 +267,8 @@ def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame
     compute covar matrix
     rebalancing_freq is rebalancing for x returns
     rebalancing_freqs is rebalancing for y  returns
+    var_scaler_freq_dict: var scaler for different freq. If factor_returns_freq is ME and some frequencies ar QE
+    we neet var_scaler_freq_dict['QE'] = 1/3 to extrapolate vara and covars to ME frequency
     """
     # 1. compute x-factors ewm covar at rebalancing freq
     x_covars = estimate_rolling_ewma_covar(prices=risk_factor_prices,
@@ -403,13 +408,11 @@ def wrapper_estimate_rolling_lasso_covar(risk_factors_prices: pd.DataFrame,
 def estimate_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
                                         prices: pd.DataFrame,
                                         rebalancing_freqs: pd.Series,
-                                        time_period: qis.TimePeriod,  # when we start building portfolios
                                         lasso_model: LassoModel,
                                         factor_returns_freq: str = 'W-WED',
                                         rebalancing_freq: str = 'ME',  # for x returns
                                         is_apply_vol_normalised_returns: bool = False,
-                                        span_freq_dict: Optional[Dict[str, int]] = None,
-                                        # spans for different freqs
+                                        span_freq_dict: Optional[Dict[str, int]] = None, # spans for different freqs
                                         var_scaler_freq_dict: Optional[Dict[str, float]] = None,
                                         # var scaler for different freqs
                                         squeeze_factor: Optional[float] = None,
@@ -426,7 +429,8 @@ def estimate_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
     qqq
     """
     # 1. compute x-factors ewm covar at rebalancing freq
-    returns = compute_returns_from_prices(prices=prices, returns_freq=factor_returns_freq, demean=True, span=lasso_model.span)
+    returns = compute_returns_from_prices(prices=risk_factor_prices, returns_freq=factor_returns_freq,
+                                          demean=True, span=lasso_model.span)
     x = returns.to_numpy()
     if is_apply_vol_normalised_returns:
         covar_tensor_txy, _, _ = qis.compute_ewm_covar_tensor_vol_norm_returns(a=x, span=lasso_model.span, nan_backfill=qis.NanBackfill.ZERO_FILL)
@@ -434,7 +438,7 @@ def estimate_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
         covar_tensor_txy = qis.compute_ewm_covar_tensor(a=x, span=lasso_model.span, nan_backfill=qis.NanBackfill.ZERO_FILL)
 
     # last x_covar at valuation date = returns.index[-1]
-    x_covar = pd.DataFrame(covar_tensor_txy[-1], columns=returns.columns, index=returns.index)
+    x_covar = pd.DataFrame(covar_tensor_txy[-1], columns=returns.columns, index=returns.columns)
 
     # 2. estimate betas of y-returns at different samples
     rebalancing_freqs = rebalancing_freqs[prices.columns]
@@ -443,7 +447,10 @@ def estimate_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
     total_vars_freqs: Dict[str, pd.Series] = {}
     residual_vars_freqs: Dict[str, pd.Series] = {}
     r2_freqs: Dict[str, Dict[pd.Timestamp, pd.Series]] = {}
-
+    clusters: Dict[str, pd.Series] = {}
+    linkages: Dict[str, np.ndarray] = {}
+    cutoffs: Dict[str, float] = {}
+    
     # estimate by frequencies
     for freq, asset_tickers in group_freqs.items():
         y = compute_returns_from_prices(prices=prices[asset_tickers], returns_freq=freq, demean=False)
@@ -456,11 +463,14 @@ def estimate_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
                 raise KeyError(f"no span for freq={freq}")
         else:
             span_f = lasso_model.span
-        betas_freqs[freq], total_vars_freqs[freq], residual_vars_freqs[freq], r2_freqs[freq] = lasso_model.estimate_rolling_betas(x=x, y=y, span=span_f)
 
         lasso_model.fit(x=x, y=y, verbose=verbose)
-        betas_freqs[freq], total_vars_freqs[freq], residual_vars_freqs[freq], r2_freqs[freq] = lasso_model.compute_residual_alpha_r2()
-
+        betas_freqs[freq], total_vars_freqs[freq], residual_vars_freqs[freq], r2_freqs[freq] =\
+            lasso_model.compute_residual_alpha_r2(span=span_f)
+        clusters[freq] = lasso_model.clusters
+        linkages[freq] = lasso_model.linkage
+        cutoffs[freq] = lasso_model.cutoff
+        
     # 3. compute y_covars at x_covars frequency
     _, an_factor = qis.get_period_days(rebalancing_freq)  # an factor is frequency of x returns
 
@@ -504,7 +514,10 @@ def estimate_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
                                     asset_last_betas=asset_last_betas,
                                     last_residual_vars=last_residual_vars,
                                     last_total_vars=last_total_vars,
-                                    last_r2=last_r2)
+                                    last_r2=last_r2,
+                                    clusters=clusters,
+                                    linkages=linkages,
+                                    cutoffs=cutoffs)
 
     return covar_data
 

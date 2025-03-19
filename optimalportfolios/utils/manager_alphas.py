@@ -68,7 +68,7 @@ def compute_manager_alphas(prices: pd.DataFrame,
                            beta_span: int = 12,
                            momentum_long_span: int = 12,
                            managers_alpha_span: int = 12,
-                           annualisation_freq_dict: Optional[Dict[str, float]] = {'ME': 12, 'QE': 4}
+                           return_annualisation_freq_dict: Optional[Dict[str, float]] = {'ME': 12.0, 'QE': 4.0}
                            ) -> ManagerAlphas:
     """
     for multi-asset portfolios we compute alpha based on the type:
@@ -97,7 +97,7 @@ def compute_manager_alphas(prices: pd.DataFrame,
                                                         risk_factors_prices=risk_factors_prices,
                                                         estimated_betas=estimated_betas,
                                                         rebalancing_freq=rebalancing_freq,
-                                                        annualisation_freq_dict=annualisation_freq_dict)
+                                                        return_annualisation_freq_dict=return_annualisation_freq_dict)
     # alphas_ = excess_returns.rolling(managers_alpha_span).sum()
     managers_alphas = qis.compute_ewm(data=excess_returns, span=managers_alpha_span)
     # managers_scores = qis.df_to_cross_sectional_score(df=managers_alphas)

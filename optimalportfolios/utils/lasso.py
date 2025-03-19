@@ -38,7 +38,11 @@ class LassoModel:
     estimated_betas: pd.DataFrame = None
     solver: str = 'ECOS_BB'
     warm_up_periods: int = 12  # period to start rolling estimation
+
+    # computed internally
     clusters: Optional[pd.Series] = None
+    linkage: Optional[np.ndarray] = None
+    cutoff: float = None
 
     def __post_init__(self):
         if self.model_type == LassoModelType.GROUP_LASSO and self.group_data is None:
@@ -81,6 +85,8 @@ class LassoModel:
         x_np, y_np = self.get_x_y_np(x=x, y=y)
         span = span or self.span
         clusters = None
+        linkage = None
+        cutoff = None
         # also use lasso for 1-d y
         if self.model_type == LassoModelType.LASSO or y_np.shape[1] == 1:
             estimated_beta = solve_lasso_cvx_problem(x=x_np,
@@ -105,7 +111,7 @@ class LassoModel:
             # create group loadings using ewma corr matrix
             corr_matrix = qis.compute_ewm_covar(a=y_np, span=span, is_corr=True)
             corr_matrix = pd.DataFrame(corr_matrix, columns=y.columns, index=y.columns)
-            clusters = compute_clusters_from_corr_matrix(corr_matrix=corr_matrix)
+            clusters, linkage, cutoff = compute_clusters_from_corr_matrix(corr_matrix=corr_matrix)
             # print(f"clusters=\n{clusters}")
             group_loadings = qis.set_group_loadings(group_data=clusters)
             estimated_beta = solve_group_lasso_cvx_problem(x=x_np,
@@ -123,6 +129,8 @@ class LassoModel:
         self.y = y
         self.estimated_betas = pd.DataFrame(estimated_beta, index=x.columns, columns=y.columns)
         self.clusters = clusters
+        self.linkage = linkage
+        self.cutoff = cutoff
         return self
 
     def estimate_rolling_betas(self,
@@ -351,10 +359,11 @@ def compute_residual_variance_r2(x: np.ndarray,
     return ss_total, ss_res, r2
 
 
-def compute_clusters_from_corr_matrix(corr_matrix: pd.DataFrame) -> pd.Series:
+def compute_clusters_from_corr_matrix(corr_matrix: pd.DataFrame) -> Tuple[pd.Series, np.ndarray, float]:
     corr_matrix = corr_matrix.fillna(0.0)
     pdist = spc.distance.pdist(1.0 - corr_matrix.to_numpy())
     linkage = spc.linkage(pdist, method='ward')
-    idx = spc.fcluster(linkage, 0.5 * np.max(pdist), 'distance')
+    cutoff = 0.5 * np.max(pdist)
+    idx = spc.fcluster(linkage, cutoff, 'distance')
     clusters = pd.Series(idx, index=corr_matrix.columns)
-    return clusters
+    return clusters, linkage, cutoff

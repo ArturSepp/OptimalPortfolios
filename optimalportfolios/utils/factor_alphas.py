@@ -346,7 +346,7 @@ def wrapper_estimate_regression_alphas(prices: pd.DataFrame,
                                        risk_factors_prices: pd.DataFrame,
                                        estimated_betas: Dict[pd.Timestamp, pd.DataFrame],
                                        rebalancing_freq: Union[str, pd.Series],
-                                       annualisation_freq_dict: Optional[Dict[str, float]] = {'ME': 12, 'QE': 4}
+                                       return_annualisation_freq_dict: Optional[Dict[str, float]] = {'ME': 12.0, 'QE': 4.0}
                                        ) -> pd.DataFrame:
     """
     using estimated factor model
@@ -364,8 +364,8 @@ def wrapper_estimate_regression_alphas(prices: pd.DataFrame,
                 betas0 = estimated_betas[date0].loc[:, y_.columns]
                 excess_returns[date1] = y_t - x_t @ betas0
         excess_returns = pd.DataFrame.from_dict(excess_returns, orient='index')
-        if annualisation_freq_dict is not None:
-            excess_returns *= annualisation_freq_dict[freq]
+        if return_annualisation_freq_dict is not None:
+            excess_returns *= return_annualisation_freq_dict[freq]
         return excess_returns
 
     if isinstance(rebalancing_freq, str):
