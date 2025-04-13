@@ -6,16 +6,10 @@ for other asset classes we compute grouped alpha
 import numpy as np
 import pandas as pd
 import qis as qis
-from typing import Union, List, Tuple, Dict, Optional
+from typing import Union, Dict, Optional
 from dataclasses import dataclass, asdict
 
-from optimalportfolios.utils.lasso import LassoModel
-from optimalportfolios.utils.factor_alphas import (compute_low_beta_alphas_different_freqs,
-                                                   compute_momentum_alphas_different_freqs,
-                                                   compute_low_beta_alphas,
-                                                   compute_momentum_alphas,
-                                                   estimate_lasso_regression_alphas,
-                                                   wrapper_compute_low_beta_alphas,
+from optimalportfolios.utils.factor_alphas import (wrapper_compute_low_beta_alphas,
                                                    wrapper_estimate_regression_alphas)
 
 

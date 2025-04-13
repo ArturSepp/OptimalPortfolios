@@ -9,7 +9,7 @@ from typing import Optional, Dict
 
 from optimalportfolios import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
-from optimalportfolios.utils.covar_matrix import estimate_rolling_ewma_covar
+from optimalportfolios.covar_estimation.rolling_covar import estimate_rolling_ewma_covar
 
 
 def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,

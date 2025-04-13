@@ -7,7 +7,7 @@ from sklearn.linear_model import MultiTaskLasso
 import yfinance as yf
 import qis as qis
 
-from optimalportfolios.utils.lasso import (solve_lasso_cvx_problem, solve_group_lasso_cvx_problem)
+from optimalportfolios.lasso.lasso_model_estimator import (solve_lasso_cvx_problem, solve_group_lasso_cvx_problem)
 
 # select multi asset ETFs
 instrument_data = dict(SPY='SPY',

@@ -12,7 +12,7 @@ from enum import Enum
 from optimalportfolios.utils.gaussian_mixture import fit_gaussian_mixture
 from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance, compute_portfolio_risk_contributions)
 from optimalportfolios.optimization.constraints import (Constraints, total_weight_constraint, long_only_constraint)
-from optimalportfolios.utils.covar_matrix import squeeze_covariance_matrix
+from optimalportfolios.covar_estimation.utils import squeeze_covariance_matrix
 
 
 def rolling_maximize_cara_mixture(prices: pd.DataFrame,

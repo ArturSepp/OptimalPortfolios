@@ -11,7 +11,7 @@ from qis import TimePeriod
 
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
-from optimalportfolios.utils.covar_matrix import squeeze_covariance_matrix
+from optimalportfolios.covar_estimation.utils import squeeze_covariance_matrix
 
 
 def rolling_maximize_portfolio_sharpe(prices: pd.DataFrame,

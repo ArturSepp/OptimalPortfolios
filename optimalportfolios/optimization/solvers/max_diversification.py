@@ -12,7 +12,7 @@ from typing import List, Dict
 from optimalportfolios.utils.portfolio_funcs import calculate_diversification_ratio
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
-from optimalportfolios.utils.covar_matrix import CovarEstimator
+from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
 
 
 def rolling_maximise_diversification(prices: pd.DataFrame,

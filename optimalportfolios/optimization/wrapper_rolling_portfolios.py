@@ -7,7 +7,7 @@ import qis as qis
 from typing import Optional, Dict
 # optimalportfolios
 import optimalportfolios as opt
-from optimalportfolios.utils.covar_matrix import CovarEstimator
+from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.config import PortfolioObjective
 

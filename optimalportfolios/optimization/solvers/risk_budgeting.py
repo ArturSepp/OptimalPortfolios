@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import qis as qis
 from scipy.optimize import minimize
-from typing import Dict, Union, Optional
+from typing import Dict, Union
 from enum import Enum
 
 from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance,
@@ -16,7 +16,7 @@ from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance,
                                                      compute_portfolio_risk_contribution_outputs)
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
-from optimalportfolios.utils.covar_matrix import CovarEstimator
+from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
 
 from pyrb import ConstrainedRiskBudgeting
 

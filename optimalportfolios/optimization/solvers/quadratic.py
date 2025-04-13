@@ -14,7 +14,7 @@ from typing import Tuple, Optional, Dict
 from optimalportfolios.config import PortfolioObjective
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
-from optimalportfolios.utils.covar_matrix import CovarEstimator
+from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
 
 
 def rolling_quadratic_optimisation(prices: pd.DataFrame,

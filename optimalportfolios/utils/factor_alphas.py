@@ -9,7 +9,7 @@ import qis as qis
 from enum import Enum
 from typing import List, Optional, Tuple, Dict, Union
 
-from optimalportfolios.utils.lasso import LassoModel
+from optimalportfolios.lasso.lasso_model_estimator import LassoModel
 
 
 class AlphaSignal(Enum):

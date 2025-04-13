@@ -5,11 +5,11 @@ import numpy as np
 import pandas as pd
 import cvxpy as cvx
 import qis as qis
-from typing import Optional, List, Tuple, Union, Dict
+from typing import Optional, Union, Dict
 
 from optimalportfolios import filter_covar_and_vectors_for_nans, compute_portfolio_risk_contribution_outputs
 from optimalportfolios.optimization.constraints import Constraints
-from optimalportfolios.utils.covar_matrix import CovarEstimator
+from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
 
 
 def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,

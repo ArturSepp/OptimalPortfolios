@@ -77,10 +77,13 @@ class LassoModel:
             y: pd.DataFrame,
             verbose: bool = False,
             apply_independent_nan_filter: bool = True,
-            span: Optional[float] = None
+            span: Optional[float] = None,
+            is_adjust_for_newey_west: bool = False,
+            num_lags: int = 2
             ) -> LassoModel:
         """
         estimate model lasso coefficients for full sample
+        is_adjust_for_newey_west and num_lags for clustering of corr matrix for Cluster Group Lasso
         """
         x_np, y_np = self.get_x_y_np(x=x, y=y)
         span = span or self.span
@@ -107,9 +110,14 @@ class LassoModel:
                                                            span=span,
                                                            verbose=verbose,
                                                            solver=self.solver)
+
         elif self.model_type == LassoModelType.GROUP_LASSO_CLUSTERS:
             # create group loadings using ewma corr matrix
-            corr_matrix = qis.compute_ewm_covar(a=y_np, span=span, is_corr=True)
+            if is_adjust_for_newey_west:
+                corr_matrix = qis.compute_ewm_covar_newey_west(a=y_np, span=span, num_lags=num_lags, is_corr=True)
+            else:
+                corr_matrix = qis.compute_ewm_covar(a=y_np, span=span, is_corr=True)
+
             corr_matrix = pd.DataFrame(corr_matrix, columns=y.columns, index=y.columns)
             clusters, linkage, cutoff = compute_clusters_from_corr_matrix(corr_matrix=corr_matrix)
             # print(f"clusters=\n{clusters}")
@@ -137,11 +145,14 @@ class LassoModel:
                                x: pd.DataFrame,
                                y: pd.DataFrame,
                                verbose: bool = False,
-                               span: Optional[float] = None
+                               span: Optional[float] = None,
+                               is_adjust_for_newey_west: bool = False,
+                               num_lags: int = 2
                                ) -> Tuple[Dict[pd.Timestamp, pd.DataFrame],
                                           Dict[pd.Timestamp, pd.Series], Dict[pd.Timestamp, pd.Series], Dict[pd.Timestamp, pd.Series]]:
         """
         fit rolling time series of betas
+        is_adjust_for_newey_west for Cluster Group Lasso
         """
         betas_t = {}
         total_vars_t = {}
@@ -149,7 +160,8 @@ class LassoModel:
         r2_t = {}
         for idx, date in enumerate(y.index):
             if idx > self.warm_up_periods:
-                self.fit(x=x.iloc[:idx, :], y=y.iloc[:idx, :], verbose=verbose, span=span)
+                self.fit(x=x.iloc[:idx, :], y=y.iloc[:idx, :], verbose=verbose, span=span,
+                         is_adjust_for_newey_west=is_adjust_for_newey_west, num_lags=num_lags)
                 betas, total_vars, residual_vars, r2 = self.compute_residual_alpha_r2(span=span)
                 betas_t[date] = betas
                 total_vars_t[date] = total_vars
