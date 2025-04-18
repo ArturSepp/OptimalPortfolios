@@ -26,8 +26,10 @@ def rolling_maximise_diversification(prices: pd.DataFrame,
     covar_dict: Dict[timestamp, covar matrix] can be precomputed
     portolio is rebalances at covar_dict.keys()
     """
+
     if covar_dict is None:  # use default ewm covar with covar_estimator
-        covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+        covars = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+        covar_dict = covars.y_covars
 
     weights = {}
     weights_0 = None

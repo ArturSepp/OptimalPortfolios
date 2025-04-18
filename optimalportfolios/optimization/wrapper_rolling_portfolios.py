@@ -31,7 +31,7 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
     covar_dict: Dict[timestamp, covar matrix] can be precomputed
     portolio is rebalances at covar_dict.keys()
     """
-    covar_estimator = CovarEstimator(returns_freq=returns_freq, rebalancing_freq=rebalancing_freq, span=span)
+    covar_estimator = CovarEstimator(returns_freqs=returns_freq, rebalancing_freq=rebalancing_freq, span=span)
     if portfolio_objective == PortfolioObjective.EQUAL_RISK_CONTRIBUTION:
         weights = opt.rolling_risk_budgeting(prices=prices,
                                              constraints0=constraints0,
