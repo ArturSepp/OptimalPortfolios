@@ -51,7 +51,7 @@ def run_unit_test(unit_test: UnitTests):
 
         df_weight = pd.concat([benchmark_weights.rename('benchmark'), weights.rename('portfolio')], axis=1)
         print(f"weights=\n{df_weight}")
-        qis.plot_bars(df=df_weight)
+        qis.plot_bars(df=df_weight, stacked=False)
 
         te_vol, turnover, alpha, port_vol, benchmark_vol = compute_te_turnover(covar=pd_covar.to_numpy(),
                                                                                benchmark_weights=benchmark_weights,
@@ -64,7 +64,7 @@ def run_unit_test(unit_test: UnitTests):
 
     elif unit_test == UnitTests.ROLLING_OPTIMISATION:
         # optimise using last available data as inputs
-        time_period = qis.TimePeriod('31Jan2007', '19Jul2024')
+        time_period = qis.TimePeriod('31Jan2007', '17Apr2025')
         rebalancing_costs = 0.0003
         covar_estimator = CovarEstimator()
         weights = rolling_maximise_diversification(prices=prices,

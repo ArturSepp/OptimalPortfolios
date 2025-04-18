@@ -37,7 +37,7 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
     portolio is rebalances at covar_dict.keys()
     """
     if covar_dict is None:  # use default ewm covar with covar_estimator
-        covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+        covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period).y_covars
 
     if rebalancing_indicators is not None:  # need to reindex at covar_dict index
         rebalancing_dates = list(covar_dict.keys())

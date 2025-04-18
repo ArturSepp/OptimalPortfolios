@@ -26,9 +26,9 @@ def run_multi_optimisers_backtest(prices: pd.DataFrame,
     span = 20 for daily data implies last 20 (trading) days contribute 50% of weight for covariance estimation
     we test sensitivity from fast (small span) to slow (large span)
     """
-    portfolio_objectives = {'MaxDiversification': PortfolioObjective.MAX_DIVERSIFICATION,
-                            'EqualRisk': PortfolioObjective.EQUAL_RISK_CONTRIBUTION,
+    portfolio_objectives = {'EqualRisk': PortfolioObjective.EQUAL_RISK_CONTRIBUTION,
                             'MinVariance': PortfolioObjective.MIN_VARIANCE,
+                            'MaxDiversification': PortfolioObjective.MAX_DIVERSIFICATION,
                             'MaxSharpe': PortfolioObjective.MAXIMUM_SHARPE_RATIO,
                             'MaxCarraMixture': PortfolioObjective.MAX_CARA_MIXTURE}
 

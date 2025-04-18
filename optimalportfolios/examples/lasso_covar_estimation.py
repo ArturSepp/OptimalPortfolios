@@ -40,7 +40,6 @@ benchmark_prices = yf.download(benchmark_tickers, start=None, end=None)['Close']
 
 class UnitTests(Enum):
     LASSO_BETAS = 1
-    LASSO_COVAR = 2
     LASSO_COVAR_DIFFERENT_FREQUENCIES = 3
 
 
@@ -81,33 +80,11 @@ def run_unit_test(unit_test: UnitTests):
         qis.plot_heatmap(df=betas_lasso, title='(A) Independent Lasso Betas', var_format='{:.2f}', ax=axs[1])
         qis.plot_heatmap(df=betas_group_lasso, title='(B) Group Lasso Betas', var_format='{:.2f}', ax=axs[2])
 
-    elif unit_test == UnitTests.LASSO_COVAR:
-        # ewma covar
-        covar_tensor_txy = qis.compute_ewm_covar_tensor(a=y.to_numpy(), span=lasso_params['span'], nan_backfill=qis.NanBackfill.ZERO_FILL)
-        covar0 = pd.DataFrame(covar_tensor_txy[-1], index=y.columns, columns=y.columns)
-
-        lasso_model_full = LassoModel(model_type=LassoModelType.LASSO, **qis.update_kwargs(lasso_params, dict(reg_lambda=0.0)))
-        covar0 = estimate_lasso_covar(x=x, y=y, lasso_model=lasso_model_full)
-
-        # independent Lasso
-        lasso_model = LassoModel(model_type=LassoModelType.LASSO, **lasso_params)
-        covar_lasso = estimate_lasso_covar(x=x, y=y, lasso_model=lasso_model)
-
-        # group Lasso
-        group_lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO, **lasso_params)
-        covar_group_lasso = estimate_lasso_covar(x=x, y=y, lasso_model=group_lasso_model)
-
-        fig, axs = plt.subplots(3, 1, figsize=(12, 10), tight_layout=True)
-        an = 12.0
-        qis.plot_heatmap(df=an*covar0, title='(A) Ewma Covar', var_format='{:.3f}', ax=axs[0])
-        qis.plot_heatmap(df=an*covar_lasso, title='(A) Independent Lasso Covar', var_format='{:.3f}', ax=axs[1])
-        qis.plot_heatmap(df=an*covar_group_lasso, title='(B) Group Lasso Covar', var_format='{:.3f}', ax=axs[2])
-
     elif unit_test == UnitTests.LASSO_COVAR_DIFFERENT_FREQUENCIES:
         lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO, **lasso_params)
         y_covars = estimate_rolling_lasso_covar_different_freq(risk_factor_prices=benchmark_prices,
                                                                prices=asset_prices,
-                                                               rebalancing_freqs=sampling_freqs,
+                                                               returns_freqs=sampling_freqs,
                                                                time_period=qis.TimePeriod('31Dec2019', '13Dec2024'),
                                                                rebalancing_freq='ME',
                                                                lasso_model=lasso_model,
@@ -122,7 +99,7 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.LASSO_COVAR
+    unit_test = UnitTests.LASSO_BETAS
 
     is_run_all_tests = False
     if is_run_all_tests:

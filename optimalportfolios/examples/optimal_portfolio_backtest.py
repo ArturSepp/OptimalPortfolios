@@ -40,7 +40,7 @@ def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
 
 # 2. get universe data
 prices, benchmark_prices, group_data = fetch_universe_data()
-time_period = qis.TimePeriod('31Dec2004', '16Aug2024')   # period for computing weights backtest
+time_period = qis.TimePeriod('31Dec2004', '17Apr2025')   # period for computing weights backtest
 
 # 3.a. define optimisation setup
 portfolio_objective = PortfolioObjective.EQUAL_RISK_CONTRIBUTION  # define portfolio objective
@@ -76,6 +76,7 @@ portfolio_data.set_group_data(group_data=group_data, group_order=list(group_data
 # set time period for portfolio reporting
 figs = qis.generate_strategy_factsheet(portfolio_data=portfolio_data,
                                        benchmark_prices=benchmark_prices,
+                                       add_current_position_var_risk_sheet=True,
                                        time_period=time_period,
                                        **qis.fetch_default_report_kwargs(time_period=time_period))
 # save report to pdf and png

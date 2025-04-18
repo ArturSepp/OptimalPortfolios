@@ -173,7 +173,7 @@ def estimate_rolling_lasso_covar(risk_factor_prices: pd.DataFrame,
                                  squeeze_factor: Optional[float] = None,
                                  residual_var_weight: float = 1.0,
                                  is_adjust_for_newey_west: bool = False,
-                                 num_lags_newey_west: Dict[str, int] = {'ME': 0, 'QE': 2}
+                                 num_lags_newey_west: Optional[Dict[str, int]] = {'ME': 0, 'QE': 2}
                                  ) -> EstimatedRollingCovarData:
     """
     use benchmarks to compute the benchmark covar matrix
@@ -198,13 +198,16 @@ def estimate_rolling_lasso_covar(risk_factor_prices: pd.DataFrame,
     x = compute_returns_from_prices(prices=risk_factor_prices, returns_freq=returns_freq, demean=False, span=None)
 
     # todo: can reduce the number of evaluations if returns_freq << rebalancing_freq
+    if num_lags_newey_west is not None and factor_returns_freq in num_lags_newey_west:
+        num_lags = num_lags_newey_west[factor_returns_freq]
+    else:
+        num_lags = None
     betas, total_vars, residual_vars, r2_t = lasso_model.estimate_rolling_betas(x=x, y=y,
                                                                                 is_adjust_for_newey_west=is_adjust_for_newey_west,
-                                                                                num_lags=num_lags_newey_west[factor_returns_freq]
-                                                                                )
+                                                                                num_lags=num_lags)
 
     if is_adjust_for_newey_west:
-        ewm_nw, nw_ratios = qis.compute_ewm_newey_west_vol(data=y, span=span, num_lags=num_lags_newey_west[factor_returns_freq],
+        ewm_nw, nw_ratios = qis.compute_ewm_newey_west_vol(data=y, span=span, num_lags=num_lags,
                                                            mean_adj_type=qis.MeanAdjType.EWMA)
         # nw_ratios = qis.compute_ewm(data=nw_ratios.clip(lower=1.0), span=span)
 

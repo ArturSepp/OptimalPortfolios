@@ -28,7 +28,7 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
     """
     # estimate covar at rebalancing schedule
     if covar_dict is None:  # use default ewm covar with covar_estimator
-        covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+        covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period).y_covars
 
     rebalancing_dates = list(covar_dict.keys())
     alphas = alphas.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)

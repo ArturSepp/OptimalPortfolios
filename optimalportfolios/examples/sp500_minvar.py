@@ -87,7 +87,7 @@ def run_cross_backtest(time_period: qis.TimePeriod,
 
     portfolio_datas = []
     for squeeze_factor in squeeze_factors:
-        covar_estimator = CovarEstimator(squeeze_factor=squeeze_factor, returns_freq='W-WED', rebalancing_freq='QE')
+        covar_estimator = CovarEstimator(squeeze_factor=squeeze_factor, returns_freqs='W-WED', rebalancing_freq='QE')
         weights = rolling_quadratic_optimisation(prices=prices,
                                                  constraints0=constraints0,
                                                  portfolio_objective=PortfolioObjective.MIN_VARIANCE,
@@ -112,12 +112,15 @@ class UnitTests(Enum):
 
 def run_unit_test(unit_test: UnitTests):
 
+    import quant_strats.local_path as lp
+
     if unit_test == UnitTests.CREATE_UNIVERSE_DATA:
         create_sp500_universe()
 
     elif unit_test == UnitTests.CROSS_BACKTEST:
 
-        time_period = qis.TimePeriod('31Dec2010', '31Jan2024', tz='UTC')
+        # time_period = qis.TimePeriod('31Dec2010', '31Jan2024', tz='UTC')
+        time_period = qis.TimePeriod('31Dec2010', '31Jan2024')
         # define squeeze_factors
         squeeze_factors = [0.0, 0.25, 0.5]
         # squeeze_factors = [0.0, 0.125, 0.250, 0.375, 0.5, 0.7, 0.9]
@@ -140,7 +143,7 @@ def run_unit_test(unit_test: UnitTests):
         qis.save_figs_to_pdf(figs=figs,
                              file_name=f"sp500_squeeze_portfolio_factsheet",
                              orientation='landscape',
-                             local_path="C://Users//Artur//OneDrive//analytics//outputs")
+                             local_path=lp.get_output_path())
 
 
 if __name__ == '__main__':

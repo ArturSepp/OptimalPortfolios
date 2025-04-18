@@ -147,7 +147,7 @@ class Constraints:
     min_exposure: float = 1.0  # for long short portfolios: for long_portfolios = 1
     benchmark_weights: pd.Series = None  # for minimisation of tracking error 
     tracking_err_vol_constraint: float = None  # annualised sqrt tracking error
-    weights_0: pd.Series = None  # for turnover constraints
+    weights_0: Optional[pd.Series] = None  # for turnover constraints
     turnover_constraint: float = None  # for turnover constraints
     turnover_costs: pd.Series = None  # for weights of turnover constraints
     target_return: float = None  # for optimisation with target return
@@ -327,6 +327,7 @@ class Constraints:
                 if self.turnover_costs is not None:
                     constraints += [cvx.norm(cvx.multiply(self.turnover_costs.to_numpy(), w - self.weights_0), 1) <= self.turnover_constraint]
                 else:
+                    assert w.size == len(self.weights_0.index)
                     constraints += [cvx.norm(w - self.weights_0, 1) <= self.turnover_constraint]
 
         # tracking error constraint

@@ -47,8 +47,8 @@ def run_unit_test(unit_test: UnitTests):
                                 index=prices.columns, columns=prices.columns)
         print(f"pd_covar=\n{pd_covar}")
         weights = wrapper_quadratic_optimisation(pd_covar=pd_covar,
-                                                  constraints0=constraints0,
-                                                  weights_0=benchmark_weights)
+                                                 constraints0=constraints0,
+                                                 weights_0=benchmark_weights)
 
         df_weight = pd.concat([benchmark_weights.rename('benchmark'), weights.rename('portfolio')], axis=1)
         print(f"weights=\n{df_weight}")
@@ -65,7 +65,7 @@ def run_unit_test(unit_test: UnitTests):
 
     elif unit_test == UnitTests.ROLLING_OPTIMISATION:
         # optimise using last available data as inputs
-        time_period = qis.TimePeriod('31Jan2007', '16Aug2024')
+        time_period = qis.TimePeriod('31Jan2007', '17Apr2025')
         rebalancing_costs = 0.0003
         covar_estimator = CovarEstimator()
         weights = rolling_quadratic_optimisation(prices=prices,

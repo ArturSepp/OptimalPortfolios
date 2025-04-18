@@ -40,7 +40,7 @@ def run_etf_tracking_portfolio(prices: pd.DataFrame,
                                max_weights=3.0 * benchmark_weights,
                                tracking_err_vol_constraint=0.05,  # annualised vol difference
                                turnover_constraint=1.00,  # max turover at rebalancing
-                               weights_0=benchmark_weights,
+                               weights_0=None,
                                group_lower_upper_constraints=group_lower_upper_constraints)
 
     covar_estimator = CovarEstimator()
@@ -177,7 +177,7 @@ def run_unit_test(unit_test: UnitTests):
 
     elif unit_test == UnitTests.ROLLING_OPTIMISATION:
         # optimise using last available data as inputs
-        time_period = qis.TimePeriod('31Jan2007', '19Jul2024')
+        time_period = qis.TimePeriod('31Jan2007', '17Apr2025')
         rebalancing_costs = 0.0003
 
         weights = run_etf_tracking_portfolio(prices=prices,

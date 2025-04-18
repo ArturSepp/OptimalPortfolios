@@ -7,7 +7,7 @@ import qis as qis
 from typing import Optional, Dict
 # optimalportfolios
 import optimalportfolios as opt
-from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
+from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator, CovarEstimatorType
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.config import PortfolioObjective
 
@@ -17,6 +17,7 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
                                     time_period: qis.TimePeriod,
                                     portfolio_objective: PortfolioObjective = PortfolioObjective.MAX_DIVERSIFICATION,
                                     covar_dict: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
+                                    covar_estimator: CovarEstimator = None,
                                     risk_budget: pd.Series = None,
                                     returns_freq: Optional[str] = 'W-WED',  # returns freq
                                     rebalancing_freq: str = 'QE',  # portfolio rebalancing
@@ -31,7 +32,9 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
     covar_dict: Dict[timestamp, covar matrix] can be precomputed
     portolio is rebalances at covar_dict.keys()
     """
-    covar_estimator = CovarEstimator(returns_freqs=returns_freq, rebalancing_freq=rebalancing_freq, span=span)
+    if covar_estimator is None:
+        covar_estimator = CovarEstimator(returns_freqs=returns_freq, rebalancing_freq=rebalancing_freq, span=span,
+                                         covar_estimator_type=CovarEstimatorType.EWMA)
     if portfolio_objective == PortfolioObjective.EQUAL_RISK_CONTRIBUTION:
         weights = opt.rolling_risk_budgeting(prices=prices,
                                              constraints0=constraints0,

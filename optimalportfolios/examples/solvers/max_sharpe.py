@@ -65,7 +65,7 @@ def run_unit_test(unit_test: UnitTests):
 
     elif unit_test == UnitTests.ROLLING_OPTIMISATION:
         # optimise using last available data as inputs
-        time_period = qis.TimePeriod('31Jan2007', '16Aug2024')
+        time_period = qis.TimePeriod('31Jan2007', '17Apr2025')
         rebalancing_costs = 0.0003
 
         weights = rolling_maximize_portfolio_sharpe(prices=prices,

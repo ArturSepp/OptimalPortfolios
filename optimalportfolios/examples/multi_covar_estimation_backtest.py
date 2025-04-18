@@ -16,9 +16,9 @@ from optimalportfolios import (Constraints, PortfolioObjective,
                                estimate_rolling_lasso_covar)
 from optimalportfolios.examples.universe import fetch_benchmark_universe_data
 
-SUPPORTED_SOLVERS = [PortfolioObjective.MAX_DIVERSIFICATION,
-                     PortfolioObjective.EQUAL_RISK_CONTRIBUTION,
-                     PortfolioObjective.MIN_VARIANCE]
+SUPPORTED_SOLVERS = [PortfolioObjective.EQUAL_RISK_CONTRIBUTION,
+                     PortfolioObjective.MIN_VARIANCE,
+                     PortfolioObjective.MAX_DIVERSIFICATION]
 
 
 def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
@@ -56,7 +56,7 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
                                                        is_apply_vol_normalised_returns=True,
                                                        squeeze_factor=squeeze_factor)
     # lasso params
-    lasso_kwargs = dict(benchmark_prices=ac_benchmark_prices,
+    lasso_kwargs = dict(risk_factor_prices=ac_benchmark_prices,
                         prices=prices,
                         time_period=time_period,
                         returns_freq=returns_freq,

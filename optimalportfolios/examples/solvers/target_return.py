@@ -45,7 +45,7 @@ def run_bonds_etf_optimal_portfolio(prices: pd.DataFrame,
                                                         time_period=time_period,
                                                         span=52,
                                                         rebalancing_freq='ME',
-                                                        verbose=True)
+                                                        verbose=False)
     return weights
 
 
@@ -99,9 +99,10 @@ def fetch_benchmark_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Data
     yields = pd.DataFrame.from_dict(yields, orient='columns')
 
     benchmarks = ['AGG']
-    benchmark_prices = yf.download(tickers=benchmarks, start=None, end=None, ignore_tz=True)['Close'].to_frame('AGG')#[benchmarks]
+    benchmark_prices = yf.download(tickers=benchmarks, start=None, end=None, ignore_tz=True)['Close']
+    print(benchmark_prices)
     target_returns = yf.download('^IRX', start=None, end=None)['Close'].dropna() / 100.0
-    target_returns = target_returns.reindex(index=prices.index).ffill().rename('Target return')
+    target_returns = target_returns.iloc[:, 0].reindex(index=prices.index).ffill().rename('Target return')
     return prices, benchmark_prices, dividends, yields, target_returns, group_data
 
 
@@ -115,7 +116,7 @@ def run_unit_test(unit_test: UnitTests):
 
     import optimalportfolios.local_path as lp
 
-    prices, benchmark_prices, dividends, yields, target_returns, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
+    prices, benchmark_prices, dividends, yields, target_returns, group_data = fetch_benchmark_universe_data()
 
     if unit_test == UnitTests.ILLUSTRATE_INPUT_DATA:
         with sns.axes_style('darkgrid'):
@@ -163,8 +164,7 @@ def run_unit_test(unit_test: UnitTests):
 
     elif unit_test == UnitTests.ROLLING_OPTIMISATION:
         # optimise using last available data as inputs
-        time_period = qis.TimePeriod('31Jan2008', '19Jul2024')
-        time_period = qis.TimePeriod('31Dec2012', '19Jun2024')
+        time_period = qis.TimePeriod('31Dec2012', '17Apr2025')
         weights = run_bonds_etf_optimal_portfolio(prices=prices,
                                                   yields=yields,
                                                   target_returns=target_returns + 0.005,

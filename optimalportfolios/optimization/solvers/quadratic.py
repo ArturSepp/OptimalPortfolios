@@ -33,7 +33,7 @@ def rolling_quadratic_optimisation(prices: pd.DataFrame,
     portolio is rebalances at covar_dict.keys()
     """
     if covar_dict is None:  # use default ewm covar with covar_estimator
-        covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+        covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period).y_covars
 
     # generate rebalancing dates on the returns index
     rebalancing_schedule = list(covar_dict.keys())
@@ -64,7 +64,7 @@ def rolling_quadratic_optimisation(prices: pd.DataFrame,
 
 def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
                                    constraints0: Constraints,
-                                   inclusion_indicators: pd.Series,
+                                   inclusion_indicators: pd.Series = None,
                                    portfolio_objective: PortfolioObjective = PortfolioObjective.MIN_VARIANCE,
                                    weights_0: pd.Series = None,
                                    carra: float = 1.0,
