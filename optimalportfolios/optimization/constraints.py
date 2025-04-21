@@ -265,11 +265,12 @@ class Constraints:
             else:
                 constraints += [cvx.sum(w) <= self.max_exposure]
                 constraints += [cvx.sum(w) >= self.min_exposure]
-        else:  # for max sharpe
+
+        else:  # for max sharpe only max exposure works
             if self.max_exposure == self.min_exposure:
                 constraints += [cvx.sum(w) == exposure_scaler]
             else:
-                constraints += [cvx.sum(w) >= exposure_scaler]  # scaling
+                constraints += [cvx.sum(w) == exposure_scaler*self.max_exposure]
 
         # min weights
         if self.min_weights is not None:

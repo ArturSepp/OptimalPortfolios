@@ -115,7 +115,7 @@ def cvx_maximize_portfolio_sharpe(covar: np.ndarray,
     constraints_ = constraints.set_cvx_constraints(w=w, covar=covar, exposure_scaler=k)
 
     # add scaling constraints
-    constraints_ += [means.T @ w == 1.0]
+    constraints_ += [means.T @ w == constraints.max_exposure]
 
     problem = cvx.Problem(objective, constraints_)
     problem.solve(verbose=verbose, solver=solver)
