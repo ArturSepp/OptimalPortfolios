@@ -156,7 +156,7 @@ class Constraints:
     min_target_portfolio_vol_an: float = None  # for optimisation with maximum portfolio volatility target
     group_lower_upper_constraints: GroupLowerUpperConstraints = None  # for group allocations constraints
     group_tracking_error_constraint: GroupTrackingErrorConstraint = None
-    group_turnover_constraint: GroupTurnoverConstraint = None
+    group_turnover_constraint: Optional[GroupTurnoverConstraint] = None
     apply_total_to_good_ratio_for_constraints: bool = True  # for constraint rescale
 
     def copy(self) -> Constraints:

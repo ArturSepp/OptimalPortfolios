@@ -53,7 +53,7 @@ span = 52  # span of number of returns_freq-returns for covariance estimation = 
 constraints0 = Constraints(is_long_only=False,   # negative weights are allowed
                            max_exposure=1.0,  # defines maximum net exposure = sum(weights)
                            min_exposure=-1.0,  # defines minimum net exposure = sum(weights)
-                           min_weights=pd.Series(-0.25, index=prices.columns),
+                           min_weights=pd.Series(-0.25, index=prices.columns), # can go negative
                            max_weights=pd.Series(0.25, index=prices.columns)
                            )
 
