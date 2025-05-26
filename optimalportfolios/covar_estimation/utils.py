@@ -64,7 +64,7 @@ def squeeze_covariance_matrix(covar: Union[np.ndarray, pd.DataFrame],
 
 
 def compute_returns_from_prices(prices: pd.DataFrame,
-                                returns_freq: str = 'W-WED',
+                                returns_freq: str = 'ME',
                                 demean: bool = True,
                                 span: Optional[int] = 52
                                 ) -> pd.DataFrame:

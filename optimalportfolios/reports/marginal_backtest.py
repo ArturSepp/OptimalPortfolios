@@ -117,7 +117,7 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
     ticker_with = f"{optimisation_type.value} with {marginal_asset}"
 
     # default ewma estimator
-    covar_estimator = opt.CovarEstimator(returns_freq=returns_freq, rebalancing_freq=rebalancing_freq, span=span)
+    covar_estimator = opt.CovarEstimator(returns_freqs=returns_freq, rebalancing_freq=rebalancing_freq, span=span)
 
     if optimisation_type == OptimisationType.EW:
         weights_wo = ew_weights_wo
@@ -189,7 +189,11 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
         weights_wo = perf_time_period.locate(weights_wo)
         weights_with = perf_time_period.locate(weights_with)
 
-    portfolio_wo = qis.backtest_model_portfolio(prices=qis.truncate_prior_to_start(df=prices_without_asset, start=weights_wo.index[0]),
+    if isinstance(weights_wo, pd.DataFrame):
+        prices = qis.truncate_prior_to_start(df=prices_without_asset, start=weights_wo.index[0])
+    else:
+        prices = prices_without_asset
+    portfolio_wo = qis.backtest_model_portfolio(prices=prices,
                                                 weights=weights_wo,
                                                 rebalancing_freq=rebalancing_freq,
                                                 is_rebalanced_at_first_date=True,
@@ -197,7 +201,11 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
                                                 weight_implementation_lag=weight_implementation_lag,
                                                 ticker=ticker_wo)
 
-    portfolio_with = qis.backtest_model_portfolio(prices=qis.truncate_prior_to_start(df=prices_with_asset, start=weights_with.index[0]),
+    if isinstance(weights_with, pd.DataFrame):
+        prices = qis.truncate_prior_to_start(df=prices_with_asset, start=weights_with.index[0])
+    else:
+        prices = prices_with_asset
+    portfolio_with = qis.backtest_model_portfolio(prices=prices,
                                                   weights=weights_with,
                                                   rebalancing_freq=rebalancing_freq,
                                                   is_rebalanced_at_first_date=True,

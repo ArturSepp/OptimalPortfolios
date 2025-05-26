@@ -20,5 +20,5 @@ from optimalportfolios.utils.factor_alphas import (compute_low_beta_alphas,
                                                    wrapper_compute_low_beta_alphas,
                                                    wrapper_estimate_regression_alphas)
 
-from optimalportfolios.utils.manager_alphas import (ManagerAlphas,
-                                                    compute_manager_alphas)
+from optimalportfolios.utils.manager_alphas import (AlphasData,
+                                                    compute_joint_alphas)

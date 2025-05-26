@@ -14,7 +14,7 @@ from optimalportfolios.utils.factor_alphas import (wrapper_compute_low_beta_alph
 
 
 @dataclass
-class ManagerAlphas:
+class AlphasData:
     alpha_scores: pd.DataFrame
     beta: Optional[pd.DataFrame]
     momentum: Optional[pd.DataFrame]
@@ -52,18 +52,18 @@ class ManagerAlphas:
         return asdict(self)
 
 
-def compute_manager_alphas(prices: pd.DataFrame,
-                           benchmark_price: pd.Series,
-                           risk_factors_prices: pd.DataFrame,
-                           alpha_beta_type: pd.Series,
-                           rebalancing_freq: Union[str, pd.Series],
-                           estimated_betas: Dict[pd.Timestamp, pd.DataFrame],
-                           group_data_alphas: pd.Series,
-                           beta_span: int = 12,
-                           momentum_long_span: int = 12,
-                           managers_alpha_span: int = 12,
-                           return_annualisation_freq_dict: Optional[Dict[str, float]] = {'ME': 12.0, 'QE': 4.0}
-                           ) -> ManagerAlphas:
+def compute_joint_alphas(prices: pd.DataFrame,
+                         benchmark_price: pd.Series,
+                         risk_factors_prices: pd.DataFrame,
+                         alpha_beta_type: pd.Series,
+                         rebalancing_freq: Union[str, pd.Series],
+                         estimated_betas: Dict[pd.Timestamp, pd.DataFrame],
+                         group_data_alphas: pd.Series,
+                         beta_span: int = 12,
+                         momentum_long_span: int = 12,
+                         managers_alpha_span: int = 12,
+                         return_annualisation_freq_dict: Optional[Dict[str, float]] = {'ME': 12.0, 'QE': 4.0}
+                         ) -> AlphasData:
     """
     for multi-asset portfolios we compute alpha based on the type:
     1) Beta
@@ -101,11 +101,11 @@ def compute_manager_alphas(prices: pd.DataFrame,
     managers_scores = managers_scores.reindex(index=alpha_scores.index).ffill()
     alpha_scores = pd.concat([alpha_scores, managers_scores], axis=1)
     alpha_scores = alpha_scores[prices.columns].ffill()
-    alphas = ManagerAlphas(alpha_scores=alpha_scores,
-                           beta=beta,
-                           momentum=momentum,
-                           managers_alphas=managers_alphas,
-                           momentum_score=momentum_score,
-                           beta_score=beta_score,
-                           managers_scores=managers_scores)
+    alphas = AlphasData(alpha_scores=alpha_scores,
+                        beta=beta,
+                        momentum=momentum,
+                        managers_alphas=managers_alphas,
+                        momentum_score=momentum_score,
+                        beta_score=beta_score,
+                        managers_scores=managers_scores)
     return alphas

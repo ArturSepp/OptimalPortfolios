@@ -55,6 +55,7 @@ class CovarEstimator:
         rolling_covar_data = wrapper_estimate_rolling_covar(prices=prices,
                                                             risk_factor_prices=risk_factor_prices,
                                                             time_period=time_period,
+                                                            returns_freq=self.factor_returns_freq,
                                                             **self.to_dict())
         return rolling_covar_data
 

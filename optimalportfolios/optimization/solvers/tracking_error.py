@@ -24,7 +24,7 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
                                     solver: str = 'ECOS_BB'
                                     ) -> pd.DataFrame:
     """
-    maximise portfolio alpha subject to constraint on tracking tracking error
+    maximise portfolio alpha subject to constraint on tracking error
     """
     # estimate covar at rebalancing schedule
     if covar_dict is None:  # use default ewm covar with covar_estimator
@@ -37,11 +37,12 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
     # extend benchmark weights
     if isinstance(benchmark_weights, pd.DataFrame):
         benchmark_weights = benchmark_weights.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)
-    else:
-        benchmark_weights = benchmark_weights.to_frame(name=rebalancing_dates[0]).T.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)
+    else:  # for series do transformation
+        benchmark_weights = benchmark_weights.to_frame(
+            name=rebalancing_dates[0]).T.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)
 
-    if rebalancing_indicators is not None:  #  need to reindex at covar_dict index
-        rebalancing_indicators = rebalancing_indicators.reindex(index=rebalancing_dates).fillna(0.0)  # by default no rebalancing
+    if rebalancing_indicators is not None:  # need to reindex at covar_dict index: by default no rebalancing
+        rebalancing_indicators = rebalancing_indicators.reindex(index=rebalancing_dates).fillna(0.0)
 
     weights_0 = None  # it will relax turnover constraint for the first rebalancing
     for date, pd_covar in covar_dict.items():
@@ -74,7 +75,8 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
                                     rebalancing_indicators: pd.Series = None,
                                     apply_total_to_good_ratio: bool = True,
                                     solver: str = 'ECOS_BB',
-                                    detailed_output: bool = False
+                                    detailed_output: bool = False,
+                                    is_apply_tre_utility_objective: bool = False
                                     ) -> Union[pd.Series, pd.DataFrame]:
     """
     create wrapper accounting for nans or zeros in covar matrix
@@ -94,15 +96,17 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
                                                          benchmark_weights=benchmark_weights,
                                                          rebalancing_indicators=rebalancing_indicators)
 
-    weights = cvx_maximise_alpha_over_tre(covar=clean_covar.to_numpy(),
-                                          alphas=good_vectors['alphas'].to_numpy(),
-                                          constraints=constraints,
-                                          solver=solver)
+    if is_apply_tre_utility_objective:
+        weights = cvx_maximise_alpha_with_tre_utility(covar=clean_covar.to_numpy(),
+                                                      alphas=good_vectors['alphas'].to_numpy(),
+                                                      constraints=constraints,
+                                                      solver=solver)
+    else:
+        weights = cvx_maximise_alpha_over_tre(covar=clean_covar.to_numpy(),
+                                              alphas=good_vectors['alphas'].to_numpy(),
+                                              constraints=constraints,
+                                              solver=solver)
 
-    #weights = cvx_minimise_tre(covar=clean_covar.to_numpy(),
-    #                           alphas=good_vectors['alphas'].to_numpy(),
-    #                           constraints=constraints,
-    #                           solver=solver)
     weights = pd.Series(weights, index=clean_covar.index)
     weights = weights.reindex(index=pd_covar.index).fillna(0.0)  # align with tickers
 
@@ -162,17 +166,17 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
     return optimal_weights
 
 
-def cvx_minimise_tre(covar: np.ndarray,
-                     constraints: Constraints,
-                     alphas: Optional[np.ndarray] = None,
-                     tre_weight: Optional[float] = 0.00001,
-                     turnover_weight: Optional[float] = 0.001,
-                     solver: str = 'ECOS_BB',
-                     verbose: bool = False
-                     ) -> np.ndarray:
+def cvx_maximise_alpha_with_tre_utility(covar: np.ndarray,
+                                        constraints: Constraints,
+                                        alphas: Optional[np.ndarray] = None,
+                                        tre_weight: Optional[float] = 0.00001,
+                                        turnover_weight: Optional[float] = 0.001,
+                                        solver: str = 'ECOS_BB',
+                                        verbose: bool = False
+                                        ) -> np.ndarray:
     """
-    numpy level solution of quadratic problem:
-    max { alpha@w - tre_weight * (w-benchmark_weights) @ Sigma @ (w-benchmark_weights).t - turnover_weight*sum(abs(w-w_0))}
+    numpy level solution of quadratic problem with utility weights:
+    max { alpha@w - tre_weight * (w-benchmark_weights)@Sigma@(w-benchmark_weights).t - turnover_weight*sum(abs(w-w_0))}
     subject to linear constraints
          1. weight_min <= w <= weight_max
          2. sum(w) = 1

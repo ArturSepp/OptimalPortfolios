@@ -42,6 +42,7 @@ def wrapper_estimate_rolling_covar(prices: pd.DataFrame,
                                    time_period: qis.TimePeriod,  # starting time of sampling estimator
                                    covar_estimator_type: CovarEstimatorType = CovarEstimatorType.EWMA,
                                    risk_factor_prices: pd.DataFrame = None,  # for lasso covars
+                                   returns_freq: str = 'ME',
                                    **kwargs
                                    ) -> EstimatedRollingCovarData:
     """
@@ -50,6 +51,7 @@ def wrapper_estimate_rolling_covar(prices: pd.DataFrame,
     if covar_estimator_type == CovarEstimatorType.EWMA:
         covars = estimate_rolling_ewma_covar(prices=prices,
                                              time_period=time_period,
+                                             returns_freq=returns_freq,
                                              **kwargs)
         covar_data = EstimatedRollingCovarData(x_covars=covars, y_covars=covars)
 
@@ -114,7 +116,7 @@ def wrapper_estimate_rolling_lasso_covar(risk_factors_prices: pd.DataFrame,
                                          time_period: qis.TimePeriod,  # when we start building portfolios
                                          lasso_model: LassoModel,
                                          rebalancing_freq: str = 'ME',
-                                         factor_returns_freq: str = 'W-WED',
+                                         factor_returns_freq: str = 'ME',
                                          span_freq_dict: Optional[Dict[str, int]] = None,  # spans for different freqs
                                          var_scaler_freq_dict: Optional[Dict[str, float]] = None,  # var scaler for different freqs
                                          squeeze_factor: Optional[float] = None,

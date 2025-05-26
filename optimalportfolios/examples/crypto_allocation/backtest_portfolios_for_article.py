@@ -19,7 +19,7 @@ REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='QE')
 LOCAL_PATH = "C://Users//artur//OneDrive//analytics//outputs//"
 FIGURE_SAVE_PATH = "C://Users//artur//OneDrive//My Papers//Published Papers//CryptoAllocation. Zurich. Jan 2022//UpdatedFigures//"
 
-SAVE_FIGS = True
+SAVE_FIGS = False
 
 
 OPTIMISATION_PARAMS = OptimisationParams(first_asset_target_weight=0.75,  # first asset is the benchmark
@@ -30,7 +30,8 @@ OPTIMISATION_PARAMS = OptimisationParams(first_asset_target_weight=0.75,  # firs
                                          carra=0.5,  # carra parameter
                                          n_mixures=3,
                                          rebalancing_costs=0.0050,  # rebalancing costs for portfolios
-                                         weight_implementation_lag=1)
+                                         weight_implementation_lag=1,
+                                         marginal_asset_ew_weight=0.02)
 
 
 PERF_COLUMNS = [PerfStat.TOTAL_RETURN,
@@ -63,7 +64,7 @@ def run_joint_backtest(prices_unconstrained: pd.DataFrame,
                        marginal_asset: str,
                        time_period: TimePeriod,
                        perf_time_period: TimePeriod,
-                       optimisation_type: OptimisationType = OptimisationType.MAX_DIV
+                       optimisation_type: OptimisationType = OptimisationType.MAX_DIV,
                        ) -> Tuple[PortfolioData, PortfolioData, PortfolioData, PortfolioData]:
     """
     report backtest for alts wo and with BTC and for balanced wo and with BTC
@@ -91,7 +92,7 @@ def produce_article_backtests(time_period: TimePeriod,
                               perf_time_period: TimePeriod,
                               perf_attrib_time_period_dict: Dict[str, Dict[str, TimePeriod]],
                               optimisation_types: List[OptimisationType] = (OptimisationType.ERC,
-                                                                          OptimisationType.MAX_DIV),
+                                                                            OptimisationType.MAX_DIV),
                               benchmark_name: str = '100% Balanced',
                               is_updated: bool = True
                               ) -> None:
@@ -131,14 +132,28 @@ def produce_article_backtests(time_period: TimePeriod,
                                                                           optimisation_type=optimisation_type)
             alts_cryptos[crypto_asset][optimisation_type] = alts_crypto
             bal_cryptos[crypto_asset][optimisation_type] = bal_crypto
-            alts_prices_[f"100% Alts\nw/o crypto"] = alts_wo.nav
-            alts_prices_[f"100% Alts\nwith {crypto_asset}"] = alts_crypto.nav
-            balanced_prices_[f"75%/25% Bal/Alts\nw/o crypto"] = bal_wo.nav
-            balanced_prices_[f"75%/25% Bal/Alts\nwith {crypto_asset}"] = bal_crypto.nav
+            if optimisation_type == OptimisationType.EW:
+                marginal_asset_ew_weight = OPTIMISATION_PARAMS.to_dict()['marginal_asset_ew_weight']
+                alts_prices_[f"100% Alts\nw/o crypto"] = alts_wo.nav
+                alts_prices_[f"100% Alts\nwith {marginal_asset_ew_weight:0.0%} {crypto_asset}"] = alts_crypto.nav
+                balanced_prices_[f"75%/25% Bal/Alts\nw/o crypto"] = bal_wo.nav
+                balanced_prices_[f"75%/25% Bal/Alts\nwith {marginal_asset_ew_weight:0.0%} {crypto_asset}"] = bal_crypto.nav
+            else:
+                alts_prices_[f"100% Alts\nw/o crypto"] = alts_wo.nav
+                alts_prices_[f"100% Alts\nwith {crypto_asset}"] = alts_crypto.nav
+                balanced_prices_[f"75%/25% Bal/Alts\nw/o crypto"] = bal_wo.nav
+                balanced_prices_[f"75%/25% Bal/Alts\nwith {crypto_asset}"] = bal_crypto.nav
 
             # get weights
-            alts_crypto_weight[crypto_asset].append(alts_crypto.get_input_weights()[crypto_asset].rename(optimisation_type.value))
-            bal_crypto_weight[crypto_asset].append(bal_crypto.get_input_weights()[crypto_asset].rename(optimisation_type.value))
+            alts_crypto_weight_ = alts_crypto.get_input_weights()
+            if not isinstance(alts_crypto_weight_, pd.DataFrame):
+                alts_crypto_weight_ = alts_crypto.get_weights()
+            alts_crypto_weight[crypto_asset].append(alts_crypto_weight_[crypto_asset].rename(optimisation_type.value))
+
+            bal_crypto_weight_ = bal_crypto.get_input_weights()
+            if not isinstance(bal_crypto_weight_, pd.DataFrame):
+                bal_crypto_weight_ = bal_crypto.get_weights()
+            bal_crypto_weight[crypto_asset].append(bal_crypto_weight_[crypto_asset].rename(optimisation_type.value))
 
             # perf attribution for crypto_asset
             perf_alts_crypto_, perf_bal_crypto_ = {}, {}
@@ -269,7 +284,7 @@ def produce_article_backtests(time_period: TimePeriod,
             alts_cryptos[crypto_asset][optimisation_type].plot_weights(title=f"(A) {optimisation_type} with {crypto_asset} for Alts",
                                                                        ax=weights_axs_by_crypto[0],
                                                                        **kwargs_w)
-            columns0 = bal_cryptos[crypto_asset][optimisation_type].input_weights.columns
+            columns0 = bal_cryptos[crypto_asset][optimisation_type].prices.columns
             columns = list(columns0[1:]) + [columns0[0]]
             bal_cryptos[crypto_asset][optimisation_type].plot_weights(title=f"{optimisation_type} with {crypto_asset} for Balanced",
                                                                       columns=columns,
@@ -284,10 +299,6 @@ def produce_article_backtests(time_period: TimePeriod,
                 qis.save_fig(ts_weights_by_crypto, file_name=f"ts_weights_by_crypto {crypto_asset}_{optimisation_type}", local_path=FIGURE_SAVE_PATH)
 
         blocks.append(p.Paragraph(f"{optimisation_type}", **KWARGS_SUPTITLE))
-        #blocks.append(p.Block([
-        #    p.Paragraph(f"{optimisation_type} Risk-adjusted Performance Table", **KWARGS_TITLE),
-        #    p.Block(ra_tables, **KWARGS_FIG)],
-        #    **KWARGS_TEXT))
         blocks.append(p.Block([
             p.Paragraph(f"{optimisation_type} Risk-adjusted Performance Table with Weights", **KWARGS_TITLE),
             p.Block(ra_tables_weights, **KWARGS_FIG)],
@@ -459,10 +470,13 @@ class UnitTests(Enum):
 
 
 def run_unit_test(unit_test: UnitTests):
+
     optimisation_types = [OptimisationType.ERC,
                           OptimisationType.MAX_DIV,
                           OptimisationType.MAX_SHARPE,
                           OptimisationType.MIXTURE]
+
+    # optimisation_types = [OptimisationType.EW]
 
     end_date = '16Aug2024'
     time_period = TimePeriod('19Jul2010', end_date)  # for weight calculations
