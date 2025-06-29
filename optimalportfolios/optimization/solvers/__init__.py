@@ -17,7 +17,8 @@ from optimalportfolios.optimization.solvers.quadratic import (rolling_quadratic_
 
 from optimalportfolios.optimization.solvers.risk_budgeting import (rolling_risk_budgeting,
                                                                    wrapper_risk_budgeting,
-                                                                   opt_risk_budgeting)
+                                                                   opt_risk_budgeting,
+                                                                   solve_for_risk_budgets_from_given_weights)
 
 from optimalportfolios.optimization.solvers.target_return import (rolling_maximise_alpha_with_target_return,
                                                                   wrapper_maximise_alpha_with_target_return,

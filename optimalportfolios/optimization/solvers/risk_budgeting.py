@@ -17,7 +17,6 @@ from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance,
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
-
 from pyrb import ConstrainedRiskBudgeting
 
 
@@ -235,7 +234,7 @@ def opt_risk_budgeting_scipy(covar: np.ndarray,
     return optimal_weights
 
 
-def risk_budget_objective(x, pars):
+def risk_budget_objective(x, pars) -> float:
     covar, budget = pars[0], pars[1]
     asset_rc = compute_portfolio_risk_contributions(x, covar)
     sig_p = np.sqrt(compute_portfolio_variance(x, covar))
@@ -246,6 +245,63 @@ def risk_budget_objective(x, pars):
     # sse = np.nansum(np.square(asset_rc - risk_target))
     sse = np.nanmean(np.square(asset_rc - risk_target))
     return sse
+
+
+def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
+                                              given_weights: pd.Series,
+                                              time_period: qis.TimePeriod,
+                                              covar_dict: Dict[pd.Timestamp, pd.DataFrame]
+                                              ) -> pd.Series:
+    """
+    solve for risk_budgets with produced weights matching given_weights
+    not recommended
+    """
+
+    def objective_function(risk_budgets: np.ndarray) -> float:
+        risk_budgets = pd.Series(risk_budgets, index=prices.columns)
+        print(f"risk_budgets={risk_budgets}")
+        risk_budget_weights = rolling_risk_budgeting(prices=prices,
+                                                     time_period=time_period,
+                                                     covar_dict=covar_dict,
+                                                     risk_budget=risk_budgets,
+                                                     constraints0=Constraints(is_long_only=True))
+        sse = np.nanmean(np.abs(np.nanmean(risk_budget_weights, axis=0) - given_weights.to_numpy()))
+        return sse
+
+    # set x0 using average risk contributions for
+    is_use_avg_rc = True
+    if is_use_avg_rc:
+        portfolio_rc = {}
+        for date, pd_covar in covar_dict.items():
+            rc = qis.compute_portfolio_risk_contributions(w=given_weights, covar=pd_covar)
+            rc = np.clip(a=rc, a_min=1e-5, a_max=None)  # to avoid negative budgets
+            portfolio_rc[date] = rc / np.nansum(rc)
+        avg_portfolio_rc = pd.DataFrame.from_dict(portfolio_rc, orient='index').mean(0)
+        # print(f"avg_portfolio_rc={avg_portfolio_rc}")
+        x0 = avg_portfolio_rc.to_numpy()
+    else:
+        x0 = given_weights.to_numpy()
+
+    min_weights = np.zeros_like(x0)
+    max_weights = np.ones_like(x0)
+
+    bounds = [(x, y) for x, y in zip(min_weights, max_weights)]
+
+    # set zero risk budget to nan to exlude from computations
+    options = {'ftol': 1e-8, 'maxiter': 100}
+    constraints = [{'type': 'eq', 'fun': lambda x: np.sum(x) - 1.0}]
+    res = minimize(objective_function, x0, method='SLSQP',
+                   constraints=constraints, bounds=bounds, options=options)
+
+    risk_budgets = res.x
+
+    if risk_budgets is None:
+        # raise ValueError(f"not solved")
+        print(f"risk_budgets solution not solved")
+        risk_budgets = np.zeros_like(x0)
+        print(f"using risk_budgets")
+    risk_budgets = pd.Series(risk_budgets, index=prices.columns)
+    return risk_budgets
 
 
 class UnitTests(Enum):
