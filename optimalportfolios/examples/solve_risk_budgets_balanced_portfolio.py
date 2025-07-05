@@ -100,7 +100,7 @@ def run_unit_test(unit_test: UnitTests):
 
     from optimalportfolios import local_path as lp
 
-    is_60_40 = True
+    is_60_40 = False
 
     if is_60_40:
         given_static_weights = {'SPY': 0.6, 'IEF': 0.4}
@@ -110,13 +110,15 @@ def run_unit_test(unit_test: UnitTests):
 
     prices = yf.download(tickers=given_static_weights.index.to_list(), start=None, end=None, ignore_tz=True)['Close']
     prices = prices[given_static_weights.index].dropna()
+    print(prices)
 
-    time_period = qis.TimePeriod('31Dec2019', '27Jun2025')
+    time_period = qis.TimePeriod('31Dec2004', '27Jun2025')
+    rebalancing_freq = 'QE'
 
     # compute covar matrix using 1y span
     covar_dict = estimate_rolling_ewma_covar(prices=prices,
                                              time_period=time_period,
-                                             rebalancing_freq='YE',
+                                             rebalancing_freq=rebalancing_freq,
                                              returns_freq='W-WED',
                                              span=52)
 
