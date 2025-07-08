@@ -67,7 +67,7 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
     # 3. Group Lasso model using ac_benchmarks from universe
     lasso_model = LassoModel(model_type=LassoModelType.LASSO,
                              group_data=group_data, reg_lambda=1e-6, span=span,
-                             warm_up_periods=span, solver='ECOS_BB')
+                             warmup_period=span, solver='ECOS_BB')
     lasso_covar_data = estimate_rolling_lasso_covar(lasso_model=lasso_model,
                                                     is_apply_vol_normalised_returns=False,
                                                     **lasso_kwargs)

@@ -23,7 +23,7 @@ dependecy path increasing sequentially as follows.
 
 1. ```optimisation``` with sub-package ```solvers``` contains implementation of
 various quadratic and nonlinear solvers. Each solver is implemented 
-in a module independently from other solvers.
+in a module independently of other solvers.
 
 2. ```utils``` is module for auxiliary analytics, in particular:
    

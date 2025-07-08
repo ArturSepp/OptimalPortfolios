@@ -37,7 +37,7 @@ class LassoModel:
     y: pd.DataFrame = None
     estimated_betas: pd.DataFrame = None
     solver: str = 'ECOS_BB'
-    warm_up_periods: int = 12  # period to start rolling estimation
+    warmup_period: Optional[int] = 12  # period to start rolling estimation
 
     # computed internally
     clusters: Optional[pd.Series] = None
@@ -55,6 +55,10 @@ class LassoModel:
         return LassoModel(**this)
 
     def get_x_y_np(self, x: pd.DataFrame, y: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        if y data is missing it is replaced by zero
+        final check if the number of data points is sufficient to estimate beta is given by warmup_period in fit()
+        """
         if self.fill_nans_to_zero:
             y = y.fillna(0.0)
             x = x.fillna(0.0)
@@ -133,6 +137,14 @@ class LassoModel:
         else:
             raise NotImplementedError(f"{self.model_type}")
 
+        # enforce local  warmup_period for
+        if self.warmup_period is not None:
+            # set columns_idx_to_exclude only for y with insufficient history
+            num_non_nans = np.count_nonzero(~np.isnan(y), axis=0)
+            columns_idx_to_exclude = np.where(num_non_nans > self.warmup_period, False, True)
+            if np.any(columns_idx_to_exclude):
+                estimated_beta[:, columns_idx_to_exclude] = 0.0
+
         self.x = x
         self.y = y
         self.estimated_betas = pd.DataFrame(estimated_beta, index=x.columns, columns=y.columns)
@@ -159,7 +171,7 @@ class LassoModel:
         residual_vars_t = {}
         r2_t = {}
         for idx, date in enumerate(y.index):
-            if idx > self.warm_up_periods:
+            if idx > self.warmup_period:  # global warm-up period
                 self.fit(x=x.iloc[:idx, :], y=y.iloc[:idx, :], verbose=verbose, span=span,
                          is_adjust_for_newey_west=is_adjust_for_newey_west, num_lags=num_lags)
                 betas, total_vars, residual_vars, r2 = self.compute_residual_alpha_r2(span=span)
@@ -271,7 +283,7 @@ def solve_group_lasso_cvx_problem(x: np.ndarray,
                                   y: np.ndarray,
                                   group_loadings: np.ndarray,
                                   reg_lambda: float = 1e-8,
-                                  span: Optional[int] = None,  # for weight
+                                  span: Optional[int] = None,
                                   nonneg: bool = False,
                                   verbose: bool = False,
                                   solver: str = 'ECOS_BB'
@@ -283,6 +295,7 @@ def solve_group_lasso_cvx_problem(x: np.ndarray,
     size of nonnan x and dependent on column in y
     out[ut array is (n_x, n_y)
     group_loadings is array (n_y, number groups): with l_ij = 1 if instrument i is in group j and zero otherwise
+    span: defines exponential weight
     """
     # assume multifactor model
     assert y.ndim in [2]
@@ -368,6 +381,12 @@ def compute_residual_variance_r2(x: np.ndarray,
     ss_res = np.nansum(norm_weights * np.square((x @ beta - y)), axis=0)
     ss_total = np.nansum(norm_weights * np.square((y - np.nanmean(y, axis=0))), axis=0)
     r2 = 1.0 - np.divide(ss_res, ss_total, where=ss_total > 0.0)
+    # filter out staticstic for zero betas which are produces when the data length for column in Y is not sufficient
+    is_betas_zero = np.where(np.count_nonzero(beta, axis=0) == 0, True, False)
+    if np.any(is_betas_zero):
+        ss_total = np.where(is_betas_zero, np.nan, ss_total)
+        ss_res = np.where(is_betas_zero, np.nan, ss_total)
+        r2 = np.where(is_betas_zero, np.nan, ss_total)
     return ss_total, ss_res, r2
 
 

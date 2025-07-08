@@ -1,5 +1,6 @@
 # created by virtualenv automatically
 /quant_strats/
+/mac_portfolio_optimizer/
 
 .idea/
 Lib/
@@ -146,4 +147,3 @@ dmypy.json
 /dist/
 *.xml
 *.pyc
-/mac_portfolio_optimizer/
