@@ -353,12 +353,12 @@ def wrapper_estimate_regression_alphas(prices: pd.DataFrame,
     compute alphas = return_t - (factor_returns_t*beta_{t_1}
     """
     estimated_betas_dates = list(estimated_betas.keys())
-
+    
     def estimate_excess_return(x_: pd.DataFrame, y_: pd.DataFrame, freq: str) -> pd.DataFrame:
         estimation_dates = x.index
         excess_returns = {}
         for date0, date1 in zip(estimation_dates[:-1], estimation_dates[1:]):
-            if date0 in estimated_betas_dates:
+            if date0 in estimated_betas_dates and date1 in y_.index and date1 in x_.index:
                 x_t = x_.loc[date1, :]
                 y_t = y_.loc[date1, :]
                 betas0 = estimated_betas[date0].loc[:, y_.columns]
