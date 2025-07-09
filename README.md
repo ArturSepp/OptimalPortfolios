@@ -1,9 +1,9 @@
 ## **Optimal Portfolios Backtester** <a name="analytics"></a>
 
 optimalportfolios package implements analytics for backtesting of optimal portfolios including:
-1. computing of inputs (covariance matrices, returns) for roll forward
+1. Computing of inputs (covariance matrices, returns) for roll forward
 computations (to avoid hindsight bias) and for generation of rolling optimal portfolios
-2. implementation of core optimisation solvers:
+2. Implementation of core optimisation solvers:
    1. Minimum variance
    2. Maximum quadratic utility
    3. Budgeted risk contribution (risk parity for equal budgets)
@@ -11,10 +11,15 @@ computations (to avoid hindsight bias) and for generation of rolling optimal por
    5. Maximum Sharpe ratio
    6. Maximum Cara utility under Gaussian mixture model
    7. Tracking error minimisation 
-3. the rolling backtests are compatible with incomplete time series
+3. Rolling portfolio optimisation methods are compatible with incomplete time series
 for roll forward analysis so that the portfolio universe can include instruments with different price histories
-4. computing performances of simulated portfolios
-5. reporting of backtested portfolios and cross-sectional analysis
+
+No pre-filtering of universe prices is necessary as rolling optimisers will detect 
+eligeble assets when their variances and covariances are available for 
+inclusion into time-t allocation set
+
+4. Computing performances of simulated portfolios
+5. Reporting of backtested portfolios and cross-sectional analysis
 
 
 
@@ -25,19 +30,34 @@ dependecy path increasing sequentially as follows.
 various quadratic and nonlinear solvers. Each solver is implemented 
 in a module independently of other solvers.
 
-2. ```utils``` is module for auxiliary analytics, in particular:
+2. ```covar_estimation``` contains implementation of rolling methods for estimating
+covariance matrices using EWMA and Lasso methods.
+
+3. ```lasso``` with sub-package ```laasso_model_estimator``` contains implementation of
+lasso based estimator of covariance matrix using the methodology developed in 
+paper: Sepp A., Ossa I., and Kastenholz M. (2025),
+"Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios"
+(https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5250221)
+
    
-    i. covar_matrix implements covariance estimator using EWMA and Lasso methods
-   
-    ii. lasso implements lasso estimator including group lasso estimator 
+4. ```utils``` is module for auxiliary analytics, in particular
 
-3. ```reports``` is module for computing performance statistics and performance attribution including returns, volatilities, etc.
+5. ```reports``` is module for computing performance statistics and performance attribution including returns, volatilities, etc.
 
-4. ```examples.solvers``` provides example of running all implemented solvers.
+6. ```examples.solvers``` provides example of running all implemented solvers.
 
-5```examples.crypto_allocation``` is module for computations and visualisations for 
-paper "Optimal Allocation to Cryptocurrencies in Diversified Portfolios" [https://ssrn.com/abstract=4217841](https://ssrn.com/abstract=4217841)
-   (see paper for description of the rolling-forward methodology and estimation of inputs)
+### **Illustrations and examples of publicated papers** <a name="analytics"></a>
+
+1. ```examples.crypto_allocation``` is module for computations and visualisations for  
+Sepp A. (2023) "Optimal Allocation to Cryptocurrencies in Diversified Portfolios",
+Risk, October 2023, 1-6, https://ssrn.com/abstract=4217841
+
+2. ```examples.robust_optimisation_saa_taa``` is module for example of using
+Hierarchical Clustering Group Lasso (HCGL) method for rolling estimation of covariance matrix and for solving Strategic Asset Allocation
+using risk-budgeted optimisation as introduced in paper  
+Sepp A., Ossa I., and Kastenholz M. (2025),
+"Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios",
+https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5250221
 
 
 # Table of contents
@@ -58,6 +78,7 @@ paper "Optimal Allocation to Cryptocurrencies in Diversified Portfolios" [https:
    4. [Multi optimisers cross backtest](#cross)
    5. [Backtest of multi covariance estimators](#covars)
    6. [Optimal allocation to cryptocurrencies](#crypto)
+   7. [Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios](#hcgl)
 5. [Contributions](#contributions)
 6. [Updates](#updates)
 7. [Disclaimer](#disclaimer)
@@ -524,6 +545,14 @@ Computations and visualisations for
 paper "Optimal Allocation to Cryptocurrencies in Diversified Portfolios" [https://ssrn.com/abstract=4217841](https://ssrn.com/abstract=4217841)
    are implemented in module ```optimalportfolios.examples.crypto_allocation```,
 see [README in this module](https://github.com/ArturSepp/OptimalPortfolios/blob/master/optimalportfolios/examples/crypto_allocation/README.md)
+
+
+### 7. Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios <a name="hcgl"></a>
+
+Computations and visualisations for 
+paper "Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios" [https://ssrn.com/abstract=5250221](https://ssrn.com/abstract=5250221)
+   are implemented in module ```optimalportfolios.examples.robust_optimisation_saa_taa```,
+see [README in this module](https://github.com/ArturSepp/OptimalPortfolios/blob/master/optimalportfolios/examples/robust_optimisation_saa_taa/README.md)
 
 
 ## **Updates** <a name="updates"></a>

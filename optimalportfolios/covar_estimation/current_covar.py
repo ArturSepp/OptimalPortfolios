@@ -231,7 +231,7 @@ def estimate_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
     compute covar matrix
     rebalancing_freq is rebalancing for x returns
     rebalancing_freqs is rebalancing for y  returns
-    qqq
+    span_freq_dict: for example {'ME': 12, 'QE': 4} defines spans specific to frequency
     """
     # 1. compute x-factors ewm covar at rebalancing freq
     if x_covar is None:
