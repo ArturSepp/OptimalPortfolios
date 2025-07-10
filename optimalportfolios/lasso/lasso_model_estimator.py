@@ -38,7 +38,7 @@ class LassoModel:
     estimated_betas: pd.DataFrame = None
     solver: str = 'ECOS_BB'
     warmup_period: Optional[int] = 12  # period to start rolling estimation
-
+    exclude_zero_betas: bool = True  # eliminate residual for zero betas
     # computed internally
     clusters: Optional[pd.Series] = None
     linkage: Optional[np.ndarray] = None
@@ -190,7 +190,8 @@ class LassoModel:
         total_vars, residual_vars, r2 = compute_residual_variance_r2(x=x_np,
                                                                      y=y_np,
                                                                      beta=self.estimated_betas.to_numpy(),
-                                                                     span=span or self.span)
+                                                                     span=span or self.span,
+                                                                     exclude_zero_betas=self.exclude_zero_betas)
         residual_vars = pd.Series(residual_vars, index=self.estimated_betas.columns)
         total_vars = pd.Series(total_vars, index=self.estimated_betas.columns)
         r2 = pd.Series(r2, index=self.estimated_betas.columns)
@@ -268,7 +269,6 @@ def solve_lasso_cvx_problem(x: np.ndarray,
     objective = cvx.Minimize(objective_fun)
     problem = cvx.Problem(objective)
     problem.solve(verbose=verbose, solver=solver)
-    # problem.solve()
 
     estimated_beta = beta.value
     if estimated_beta is None:
@@ -357,10 +357,13 @@ def solve_group_lasso_cvx_problem(x: np.ndarray,
 def compute_residual_variance_r2(x: np.ndarray,
                                  y: np.ndarray,
                                  beta: np.ndarray,
-                                 span: Optional[int] = None
+                                 span: Optional[int] = None,
+                                 exclude_zero_betas: bool = True
                                  ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     compute residual var for y = x*beta
+    exclude_zero_betas: when some columns in y have nan values they are replaced by zeros
+    if some columns in y are all zeros, estimated betas are zeros, in this case we ignore the residuals as well
     """
     assert x.shape[0] == y.shape[0]
     assert beta.shape[0] == x.shape[1]
@@ -382,11 +385,12 @@ def compute_residual_variance_r2(x: np.ndarray,
     ss_total = np.nansum(norm_weights * np.square((y - np.nanmean(y, axis=0))), axis=0)
     r2 = 1.0 - np.divide(ss_res, ss_total, where=ss_total > 0.0)
     # filter out staticstic for zero betas which are produces when the data length for column in Y is not sufficient
-    is_betas_zero = np.where(np.count_nonzero(beta, axis=0) == 0, True, False)
-    if np.any(is_betas_zero):
-        ss_total = np.where(is_betas_zero, np.nan, ss_total)
-        ss_res = np.where(is_betas_zero, np.nan, ss_total)
-        r2 = np.where(is_betas_zero, np.nan, ss_total)
+    if exclude_zero_betas:
+        is_betas_zero = np.where(np.count_nonzero(beta, axis=0) == 0, True, False)
+        if np.any(is_betas_zero):
+            ss_total = np.where(is_betas_zero, np.nan, ss_total)
+            ss_res = np.where(is_betas_zero, np.nan, ss_total)
+            r2 = np.where(is_betas_zero, np.nan, ss_total)
     return ss_total, ss_res, r2
 
 
