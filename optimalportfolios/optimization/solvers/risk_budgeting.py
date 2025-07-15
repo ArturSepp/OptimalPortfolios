@@ -259,7 +259,7 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
 
     def objective_function(risk_budgets: np.ndarray) -> float:
         risk_budgets = pd.Series(risk_budgets, index=prices.columns)
-        print(f"risk_budgets={risk_budgets}")
+        # print(f"risk_budgets={risk_budgets}")
         risk_budget_weights = rolling_risk_budgeting(prices=prices,
                                                      time_period=time_period,
                                                      covar_dict=covar_dict,
@@ -274,7 +274,7 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
         portfolio_rc = {}
         for date, pd_covar in covar_dict.items():
             rc = qis.compute_portfolio_risk_contributions(w=given_weights, covar=pd_covar)
-            rc = np.clip(a=rc, a_min=1e-5, a_max=None)  # to avoid negative budgets
+            # rc = np.clip(a=rc, a_min=1e-5, a_max=None)  # to avoid negative budgets
             portfolio_rc[date] = rc / np.nansum(rc)
         avg_portfolio_rc = pd.DataFrame.from_dict(portfolio_rc, orient='index').mean(0)
         # print(f"avg_portfolio_rc={avg_portfolio_rc}")
@@ -288,7 +288,7 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
     bounds = [(x, y) for x, y in zip(min_weights, max_weights)]
 
     # set zero risk budget to nan to exlude from computations
-    options = {'ftol': 1e-8, 'maxiter': 100}
+    options = {'ftol': 1e-12, 'maxiter': 100}
     constraints = [{'type': 'eq', 'fun': lambda x: np.sum(x) - 1.0}]
     res = minimize(objective_function, x0, method='SLSQP',
                    constraints=constraints, bounds=bounds, options=options)
