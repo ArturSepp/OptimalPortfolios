@@ -33,8 +33,8 @@ benchmark_tickers = ['SPY', 'IEF', 'LQD', 'USO', 'GLD', 'UUP']
 asset_group_loadings = qis.set_group_loadings(group_data=instrument_data)
 print(asset_group_loadings)
 
-asset_prices = yf.download(asset_tickers, start=None, end=None)['Close'][asset_tickers].asfreq('B', method='ffill')
-benchmark_prices = yf.download(benchmark_tickers, start=None, end=None)['Close'][benchmark_tickers].reindex(index=asset_prices.index, method='ffill')
+asset_prices = yf.download(asset_tickers, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'][asset_tickers].asfreq('B', method='ffill')
+benchmark_prices = yf.download(benchmark_tickers, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'][benchmark_tickers].reindex(index=asset_prices.index, method='ffill')
 
 y = qis.to_returns(asset_prices, freq='ME', drop_first=True)
 x = qis.to_returns(benchmark_prices, freq='ME', drop_first=True)
@@ -48,7 +48,7 @@ params = dict(reg_lambda=1e-5, span=24, nonneg=False)
 #beta2 = pd.DataFrame(beta2, index=benchmark_tickers, columns=asset_tickers)
 #beta2 = beta2.where(np.abs(beta2) > 1e-4, other=np.nan)
 
-beta3 = solve_lasso_cvx_problem(x=x, y=y, **params, apply_independent_nan_filter=False)
+beta3, _, _ = solve_lasso_cvx_problem(x=x, y=y, **params, apply_independent_nan_filter=False)
 beta3 = pd.DataFrame(beta3, index=benchmark_tickers, columns=asset_tickers)
 beta3 = beta3.where(np.abs(beta3) > 1e-4, other=np.nan)
 print(beta3)

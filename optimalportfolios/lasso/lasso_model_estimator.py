@@ -96,7 +96,7 @@ class LassoModel:
         cutoff = None
         # also use lasso for 1-d y
         if self.model_type == LassoModelType.LASSO or y_np.shape[1] == 1:
-            estimated_beta = solve_lasso_cvx_problem(x=x_np,
+            estimated_beta, _, _ = solve_lasso_cvx_problem(x=x_np,
                                                      y=y_np,
                                                      reg_lambda=self.reg_lambda,
                                                      span=span,
@@ -205,8 +205,9 @@ def solve_lasso_cvx_problem(x: np.ndarray,
                             verbose: bool = False,
                             solver: str = 'ECOS_BB',
                             nonneg: bool = False,
-                            apply_independent_nan_filter: bool = True
-                            ) -> np.ndarray:
+                            apply_independent_nan_filter: bool = True,
+                            is_declining: bool = False
+                            ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     solve lasso for n dimensional matrix of dependent variables y
     each column in y is estimated using independent lasso model
@@ -230,14 +231,17 @@ def solve_lasso_cvx_problem(x: np.ndarray,
     if apply_independent_nan_filter and y.ndim == 2:
         # apply recursive 1-d estimation with independent set of non-nan basis
         betas = np.zeros((n_x, n_y))
+        alphas = np.zeros(n_y)
+        r2s = np.zeros(n_y)
         for idx in np.arange(n_y):
-            betas[:, idx] = solve_lasso_cvx_problem(x=x, y=y[:, idx],
-                                                    reg_lambda=reg_lambda,
-                                                    span=span,
-                                                    verbose=verbose,
-                                                    solver=solver,
-                                                    nonneg=nonneg)
-        return betas
+            betas[:, idx], alphas[idx], r2s[idx] = solve_lasso_cvx_problem(x=x, y=y[:, idx],
+                                                                           reg_lambda=reg_lambda,
+                                                                           span=span,
+                                                                           verbose=verbose,
+                                                                           solver=solver,
+                                                                           nonneg=nonneg,
+                                                                           is_declining=is_declining)
+        return betas, alphas, r2s
 
     # select non nan basis
     x, y = qis.select_non_nan_x_y(x=x, y=y)
@@ -254,7 +258,7 @@ def solve_lasso_cvx_problem(x: np.ndarray,
     t = x.shape[0]
     if t < 5:  # too little observations
         print(f"small number of non nans in lasso t={t}")
-        return nan_vector
+        return nan_vector, np.nan, np.nan
 
     # compute weights
     if span is not None:
@@ -262,21 +266,39 @@ def solve_lasso_cvx_problem(x: np.ndarray,
     else:
         weights = np.ones(t)
 
+    constraints = None
     if n_y > 1:
         weights = np.tile(weights, (n_y, 1)).T  # map to columns
+    else:
+        if is_declining:
+            constraints = [cvx.sum(beta) <= 0.50]
+            for idx in np.arange(n_x):
+                if idx < n_x-1:
+                    constraints += [beta[idx] - beta[idx+1] >= 0.0]
 
     objective_fun = (1.0 / t) * cvx.sum_squares(cvx.multiply(weights, x @ beta - y)) + reg_lambda * cvx.norm1(beta)
     objective = cvx.Minimize(objective_fun)
-    problem = cvx.Problem(objective)
+    problem = cvx.Problem(objective, constraints)
     problem.solve(verbose=verbose, solver=solver)
 
     estimated_beta = beta.value
     if estimated_beta is None:
         # raise ValueError(f"not solved")
         print(f"not solved")
-        return nan_vector
+        return nan_vector, np.nan, np.nan
     else:
-        return estimated_beta
+        weights2 = np.square(weights)
+        norm_weights = weights2 / np.nansum(weights2, axis=0)
+        residuals = (x @ estimated_beta - y)
+        alpha = np.nansum(norm_weights * residuals, axis=0)
+        ss_res = np.nansum(norm_weights * np.square(residuals), axis=0)
+        ss_total = np.nansum(norm_weights * np.square((y - np.nanmean(y, axis=0))), axis=0)
+        r2 = 1.0 - np.divide(ss_res, ss_total, where=ss_total > 0.0)
+
+        print(alpha)
+        print(r2)
+
+        return estimated_beta, alpha, r2
 
 
 def solve_group_lasso_cvx_problem(x: np.ndarray,

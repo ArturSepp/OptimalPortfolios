@@ -93,6 +93,9 @@ def estimate_rolling_ewma_covar(prices: pd.DataFrame,
 
     # create rebalancing schedule
     rebalancing_schedule = qis.generate_rebalancing_indicators(df=returns, freq=rebalancing_freq)
+    if np.all(rebalancing_schedule == False):
+        raise ValueError(f"rebalancing shedule is empty for return period {qis.get_time_period(df=returns).to_str()} "
+                         f"and rebalancing_freq={rebalancing_freq}")
 
     tickers = prices.columns.to_list()
     covars = {}

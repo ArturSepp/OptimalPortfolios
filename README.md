@@ -404,7 +404,7 @@ def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
         prices = pickle.load(PRICES_CACHE_PATH.open("rb"))
     else:
         print("Starting prices download from YFinance")
-        prices = yf.download(tickers, start=None, end=None, ignore_tz=True)['Close']
+        prices = yf.download(tickers, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close']
         pickle.dump(prices, PRICES_CACHE_PATH.open("wb"))
 
     prices = prices[tickers]  # arrange as given

@@ -108,7 +108,7 @@ def run_unit_test(unit_test: UnitTests):
         given_static_weights = {'SPY': 0.55, 'IEF': 0.35, 'GLD': 0.1}
     given_static_weights = pd.Series(given_static_weights)
 
-    prices = yf.download(tickers=given_static_weights.index.to_list(), start=None, end=None, ignore_tz=True)['Close']
+    prices = yf.download(tickers=given_static_weights.index.to_list(), start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close']
     prices = prices[given_static_weights.index].dropna()
     print(prices)
 

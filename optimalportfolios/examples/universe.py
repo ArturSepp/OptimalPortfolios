@@ -41,7 +41,7 @@ def fetch_benchmark_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Data
 
     tickers = list(universe_data.keys())
     benchmark_weights = pd.Series(benchmark_weights)
-    prices = yf.download(tickers=tickers, start=None, end=None, ignore_tz=True)['Close'][tickers]
+    prices = yf.download(tickers=tickers, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'][tickers]
     prices = prices.asfreq('B').ffill()
     # for group lass
     ac_benchmark_prices = prices[['SPY', 'TLT', 'LQD', 'HYG', 'GSG']].rename(dict(SPY='Equities', TLT='Bonds', IG='LQD', HYG='HighYield', GLD='Commodts'))
