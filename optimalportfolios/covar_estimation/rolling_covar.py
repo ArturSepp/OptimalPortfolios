@@ -276,7 +276,7 @@ def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame
                                                 squeeze_factor: Optional[float] = None,
                                                 residual_var_weight: float = 1.0,
                                                 is_adjust_for_newey_west: bool = False,
-                                                num_lags_newey_west: Dict[str, int] = {'ME': 0, 'QE': 2}
+                                                num_lags_newey_west: Optional[Dict[str, int]] = {'ME': 0, 'QE': 2}
                                                 ) -> EstimatedRollingCovarData:
     """
     use benchmarks to compute the benchmark covar matrix
@@ -320,10 +320,14 @@ def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame
                 raise KeyError(f"no span for freq={freq}")
         else:
             span_f = lasso_model.span
+        if num_lags_newey_west is not None and freq in num_lags_newey_west.keys():
+            num_lags = num_lags_newey_west[freq]
+        else:
+            num_lags = None
         betas_freqs[freq], total_vars_freqs[freq], residual_vars_freqs[freq], r2_freqs[freq] \
             = lasso_model.estimate_rolling_betas(x=x, y=y, span=span_f,
                                                  is_adjust_for_newey_west=is_adjust_for_newey_west,
-                                                 num_lags=num_lags_newey_west[freq])
+                                                 num_lags=num_lags)
 
         if is_adjust_for_newey_west:
             ewm_nw, nw_ratios_ = qis.compute_ewm_newey_west_vol(data=y, span=span_f, num_lags=num_lags_newey_west[freq],

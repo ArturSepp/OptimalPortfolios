@@ -7,7 +7,7 @@ import qis as qis
 from enum import Enum
 
 from optimalportfolios import (Constraints, GroupLowerUpperConstraints,
-                               compute_te_turnover,
+                               compute_tre_turnover_stats,
                                rolling_maximize_cara_mixture,
                                wrapper_maximize_cara_mixture,
                                fit_gaussian_mixture)
@@ -56,10 +56,10 @@ def run_unit_test(unit_test: UnitTests):
 
         pd_covar = pd.DataFrame(12.0 * qis.compute_masked_covar_corr(data=returns, is_covar=True),
                                 index=prices.columns, columns=prices.columns)
-        te_vol, turnover, alpha, port_vol, benchmark_vol = compute_te_turnover(covar=pd_covar.to_numpy(),
-                                                                               benchmark_weights=benchmark_weights,
-                                                                               weights=weights,
-                                                                               weights_0=benchmark_weights)
+        te_vol, turnover, alpha, port_vol, benchmark_vol = compute_tre_turnover_stats(covar=pd_covar.to_numpy(),
+                                                                                      benchmark_weights=benchmark_weights,
+                                                                                      weights=weights,
+                                                                                      weights_0=benchmark_weights)
         print(f"port_vol={port_vol:0.4f}, benchmark_vol={benchmark_vol:0.4f}, te_vol={te_vol:0.4f}, "
               f"turnover={turnover:0.4f}, alpha={alpha:0.4f}")
 

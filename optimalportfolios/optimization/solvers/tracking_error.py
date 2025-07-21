@@ -58,8 +58,10 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
                                                    weights_0=weights_0,
                                                    apply_total_to_good_ratio=apply_total_to_good_ratio,
                                                    solver=solver)
-
-        weights_0 = weights_  # update for next rebalancing
+        if np.all(np.equal(weights_, 0.0)):
+            weights_0 = None
+        else:
+            weights_0 = weights_  # update for next rebalancing
         weights[date] = weights_
 
     weights = pd.DataFrame.from_dict(weights, orient='index')

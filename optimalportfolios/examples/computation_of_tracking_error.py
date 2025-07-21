@@ -1,0 +1,68 @@
+"""
+example of minimization of tracking error
+"""
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import qis as qis
+import yfinance as yf
+from enum import Enum
+
+from optimalportfolios import (Constraints, GroupLowerUpperConstraints, CovarEstimator,
+                               compute_tre_turnover_stats,
+                               wrapper_quadratic_optimisation,
+                               wrapper_risk_budgeting,
+                               wrapper_maximise_diversification,
+                               estimate_current_ewma_covar,
+                               PortfolioObjective,
+                               compute_portfolio_vol,
+                               local_path)
+
+from optimalportfolios.examples.universe import fetch_benchmark_universe_data
+
+def create_stocks_data():
+    dow_30_tickers = ['NVDA', 'MSFT', 'AAPL', 'AMZN', 'JPM', 'WMT', 'V', 'JNJ', 'PG', 'HD', 'KO', 'CSCO', 'IBM',
+                      'CVX', 'UNH', 'CRM', 'DIS', 'AXP', 'MCD', 'GS', 'MRK', 'CAT', 'VZ', 'BA', 'AMGN', 'HON', 'NKE',
+                      'SHW', 'MMM', 'TRV']
+    prices = yf.download(tickers=dow_30_tickers, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'][dow_30_tickers]
+    qis.save_df_to_csv(df=prices, file_name='dow30_prices', local_path=local_path.get_resource_path())
+
+# create_stocks_data()
+prices = qis.load_df_from_csv(file_name='dow30_prices', local_path=local_path.get_resource_path())
+print(prices)
+benchmark_weights = pd.Series(1.0/len(prices.columns), index=prices.columns)
+
+# prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
+time_period = qis.TimePeriod(start='31Dec2009', end=prices.index[-1])
+perf_time_period = qis.TimePeriod(start='31Dec2004', end=prices.index[-1])  # backtest reporting
+
+covar_matrix = estimate_current_ewma_covar(prices=prices, span=3*52)
+print(covar_matrix)
+
+# portfolio_weights = wrapper_risk_budgeting(pd_covar=covar_matrix, constraints0=Constraints(is_long_only=True))
+# portfolio_weights = wrapper_quadratic_optimisation(pd_covar=covar_matrix, constraints0=Constraints(is_long_only=True))
+portfolio_weights = wrapper_maximise_diversification(pd_covar=covar_matrix, constraints0=Constraints(is_long_only=True))
+
+print(f"benchmark_vol={compute_portfolio_vol(covar_matrix, benchmark_weights):.2%}, "
+      f"portfolio_vol={compute_portfolio_vol(covar_matrix, portfolio_weights):.2%},"
+      f"tracking_error={compute_portfolio_vol(covar_matrix, benchmark_weights-portfolio_weights):.2%}")
+
+risk_contributions = qis.compute_portfolio_risk_contributions(w=portfolio_weights, covar=covar_matrix)
+risk_contributions_rel = risk_contributions / np.nansum(risk_contributions)
+
+tre_contributions = qis.compute_portfolio_risk_contributions(w=(portfolio_weights-benchmark_weights), covar=covar_matrix)
+tre_contributions_rel = tre_contributions / np.nansum(tre_contributions)
+
+df = pd.concat([benchmark_weights.rename('benchmark'),
+                portfolio_weights.rename('portfolio'),
+                risk_contributions.rename('risk-contribs bp'),
+                risk_contributions_rel.rename('risk-contribs %'),
+                tre_contributions.rename('tre contribs bp'),
+                tre_contributions_rel.rename('tre contribs %'),
+                ], axis=1)
+df.loc['total', :] = df.sum(axis=0)
+qis.plot_df_table(df=df, var_format='{:.2%}')
+
+plt.show()
+
+

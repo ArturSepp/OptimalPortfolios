@@ -32,12 +32,12 @@ def compute_portfolio_vol(covar: Union[np.ndarray, pd.DataFrame],
     return np.sqrt(compute_portfolio_variance(w=weights, covar=covar))
 
 
-def compute_te_turnover(covar: np.ndarray,
-                        benchmark_weights: pd.Series,
-                        weights: pd.Series,
-                        weights_0: pd.Series,
-                        alphas: pd.Series = None
-                        ) -> Tuple[float, float, float, float, float]:
+def compute_tre_turnover_stats(covar: np.ndarray,
+                               benchmark_weights: pd.Series,
+                               weights: pd.Series,
+                               weights_0: pd.Series,
+                               alphas: pd.Series = None
+                               ) -> Tuple[float, float, float, float, float]:
     weight_diff = weights.subtract(benchmark_weights)
     benchmark_vol = np.sqrt(benchmark_weights @ covar @ benchmark_weights.T)
     port_vol = np.sqrt(weights @ covar @ weights.T)

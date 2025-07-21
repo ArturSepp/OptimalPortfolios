@@ -8,7 +8,7 @@ import qis as qis
 from enum import Enum
 
 from optimalportfolios import (Constraints, GroupLowerUpperConstraints, CovarEstimator,
-                               compute_te_turnover,
+                               compute_tre_turnover_stats,
                                rolling_maximise_alpha_over_tre,
                                wrapper_maximise_alpha_over_tre)
 
@@ -103,11 +103,11 @@ def run_unit_test(unit_test: UnitTests):
         print(f"df_weight=\n{df_weight}")
         qis.plot_bars(df=df_weight.iloc[:, :2])
 
-        te_vol, turnover, alpha, port_vol, benchmark_vol = compute_te_turnover(covar=pd_covar.to_numpy(),
-                                                                               benchmark_weights=benchmark_weights,
-                                                                               weights=weights,
-                                                                               weights_0=benchmark_weights,
-                                                                               alphas=alphas)
+        te_vol, turnover, alpha, port_vol, benchmark_vol = compute_tre_turnover_stats(covar=pd_covar.to_numpy(),
+                                                                                      benchmark_weights=benchmark_weights,
+                                                                                      weights=weights,
+                                                                                      weights_0=benchmark_weights,
+                                                                                      alphas=alphas)
         print(f"port_vol={port_vol:0.4f}, benchmark_vol={benchmark_vol:0.4f}, te_vol={te_vol:0.4f}, "
               f"turnover={turnover:0.4f}, alpha={alpha:0.4f}")
 
@@ -149,11 +149,11 @@ def run_unit_test(unit_test: UnitTests):
 
                 weights = pd.Series(weights, index=prices.columns)
                 weights_grid[port_name] = weights
-                te_vol, turnover, port_alpha, port_vol, benchmark_vol = compute_te_turnover(covar=pd_covar.to_numpy(),
-                                                                                            benchmark_weights=benchmark_weights,
-                                                                                            weights=weights,
-                                                                                            weights_0=benchmark_weights,
-                                                                                            alphas=alphas)
+                te_vol, turnover, port_alpha, port_vol, benchmark_vol = compute_tre_turnover_stats(covar=pd_covar.to_numpy(),
+                                                                                                   benchmark_weights=benchmark_weights,
+                                                                                                   weights=weights,
+                                                                                                   weights_0=benchmark_weights,
+                                                                                                   alphas=alphas)
                 port_name_ = f"turnover<{turnover_constraint:0.2f}"
                 port_vols_[port_name_] = port_vol
                 te_vols_[port_name_] = te_vol

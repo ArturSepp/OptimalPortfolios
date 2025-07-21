@@ -3,7 +3,7 @@ from optimalportfolios.utils.filter_nans import (filter_covar_and_vectors,
                                                  filter_covar_and_vectors_for_nans)
 
 from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_vol,
-                                                     compute_te_turnover)
+                                                     compute_tre_turnover_stats)
 
 from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance,
                                                      calculate_diversification_ratio,
@@ -22,3 +22,7 @@ from optimalportfolios.utils.factor_alphas import (compute_low_beta_alphas,
 
 from optimalportfolios.utils.manager_alphas import (AlphasData,
                                                     compute_joint_alphas)
+
+from optimalportfolios.utils.returns_unsmoother import (adjust_returns_with_ar1,
+                                                        compute_ar1_unsmoothed_prices)
+

@@ -8,7 +8,7 @@ import qis as qis
 from enum import Enum
 
 from optimalportfolios import (Constraints, GroupLowerUpperConstraints, CovarEstimator,
-                               compute_te_turnover,
+                               compute_tre_turnover_stats,
                                wrapper_risk_budgeting,
                                rolling_risk_budgeting)
 
@@ -54,10 +54,10 @@ def run_unit_test(unit_test: UnitTests):
         print(f"weights=\n{df_weight}")
         qis.plot_bars(df=df_weight)
 
-        te_vol, turnover, alpha, port_vol, benchmark_vol = compute_te_turnover(covar=pd_covar.to_numpy(),
-                                                                               benchmark_weights=benchmark_weights,
-                                                                               weights=weights,
-                                                                               weights_0=benchmark_weights)
+        te_vol, turnover, alpha, port_vol, benchmark_vol = compute_tre_turnover_stats(covar=pd_covar.to_numpy(),
+                                                                                      benchmark_weights=benchmark_weights,
+                                                                                      weights=weights,
+                                                                                      weights_0=benchmark_weights)
         print(f"port_vol={port_vol:0.4f}, benchmark_vol={benchmark_vol:0.4f}, te_vol={te_vol:0.4f}, "
               f"turnover={turnover:0.4f}, alpha={alpha:0.4f}")
 
