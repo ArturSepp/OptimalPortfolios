@@ -24,13 +24,14 @@ def create_stocks_data():
     dow_30_tickers = ['NVDA', 'MSFT', 'AAPL', 'AMZN', 'JPM', 'WMT', 'V', 'JNJ', 'PG', 'HD', 'KO', 'CSCO', 'IBM',
                       'CVX', 'UNH', 'CRM', 'DIS', 'AXP', 'MCD', 'GS', 'MRK', 'CAT', 'VZ', 'BA', 'AMGN', 'HON', 'NKE',
                       'SHW', 'MMM', 'TRV']
-    prices = yf.download(tickers=dow_30_tickers, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'][dow_30_tickers]
+    prices = yf.download(tickers=dow_30_tickers, start="2003-12-31", end="2025-07-18", ignore_tz=True, auto_adjust=True)['Close'][dow_30_tickers]
     qis.save_df_to_csv(df=prices, file_name='dow30_prices', local_path=local_path.get_resource_path())
 
 # create_stocks_data()
 prices = qis.load_df_from_csv(file_name='dow30_prices', local_path=local_path.get_resource_path())
 print(prices)
-benchmark_weights = pd.Series(1.0/len(prices.columns), index=prices.columns)
+# benchmark_weights = pd.Series(1.0/len(prices.columns), index=prices.columns)
+benchmark_weights = qis.df_to_weight_allocation_sum1(df=prices.iloc[-1, :])
 
 # prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
 time_period = qis.TimePeriod(start='31Dec2009', end=prices.index[-1])
@@ -59,7 +60,7 @@ df = pd.concat([benchmark_weights.rename('benchmark'),
                 risk_contributions_rel.rename('risk-contribs %'),
                 tre_contributions.rename('tre contribs bp'),
                 tre_contributions_rel.rename('tre contribs %'),
-                ], axis=1)
+                ], axis=1).sort_values(by='portfolio', ascending=False)
 df.loc['total', :] = df.sum(axis=0)
 qis.plot_df_table(df=df, var_format='{:.2%}')
 
