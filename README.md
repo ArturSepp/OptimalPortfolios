@@ -1,5 +1,28 @@
-## **Optimal Portfolios Backtester** <a name="analytics"></a>
+## 🚀 **Optimal Portfolios Construction and Backtesting: optimalportfolios**
 
+> optimalportfolios package implements analytics for constructing and backtesting of multi-asset portfolios using risk-return maximization, risk budgeting, and similar optimal portfolio construction methods
+
+---
+
+| 📊 Metric | 🔢 Value |
+|-----------|----------|
+| PyPI Version | ![PyPI](https://img.shields.io/pypi/v/optimalportfolios?style=flat-square) |
+| Python Versions | ![Python](https://img.shields.io/pypi/pyversions/optimalportfolios?style=flat-square) |
+| License | ![License](https://img.shields.io/github/license/ArturSepp/OptimalPortfolios.svg?style=flat-square)|
+
+
+### 📈 Package Statistics
+
+| 📊 Metric | 🔢 Value |
+|-----------|----------|
+| Total Downloads | [![Total](https://pepy.tech/badge/optimalportfolios)](https://pepy.tech/project/optimalportfolios) |
+| Monthly | ![Monthly](https://pepy.tech/badge/optimalportfolios/month) |
+| Weekly | ![Weekly](https://pepy.tech/badge/optimalportfolios/week) |
+| GitHub Stars | ![GitHub stars](https://img.shields.io/github/stars/ArturSepp/OptimalPortfolios?style=flat-square&logo=github) |
+| GitHub Forks | ![GitHub forks](https://img.shields.io/github/forks/ArturSepp/OptimalPortfolios?style=flat-square&logo=github) |
+
+
+## **Optimal Portfolios Backtester** <a name="analytics"></a>
 optimalportfolios package implements analytics for backtesting of optimal portfolios including:
 1. Computing of inputs (covariance matrices, returns) for roll forward
 computations (to avoid hindsight bias) and for generation of rolling optimal portfolios
