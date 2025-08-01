@@ -1,4 +1,4 @@
-## 🚀 **Optimal Portfolios Construction and Backtesting: optimalportfolios**
+# 🚀 **Optimal Portfolios Construction and Backtesting: optimalportfolios**
 
 > optimalportfolios package implements analytics for constructing and backtesting of multi-asset portfolios using risk-return maximization, risk budgeting, and similar optimal portfolio construction methods
 
