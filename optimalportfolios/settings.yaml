@@ -1,0 +1,19 @@
+# set pc/developer local paths
+# add to gitignore afterwards
+# set paths to dbs
+
+
+RESOURCE_PATH:
+  "..\\"
+
+LOCAL_RESOURCE_PATH:
+  "..\\"
+
+UNIVERSE_PATH:
+  "..\\"
+
+OUTPUT_PATH:
+  "..\\"
+
+AWS_POSTGRES:
+  ""
