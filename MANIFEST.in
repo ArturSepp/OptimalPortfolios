@@ -1,0 +1,40 @@
+# MANIFEST.in
+# Controls what files are included in the source distribution (sdist)
+
+# Include essential package files
+include README.md
+include LICENSE.txt
+include pyproject.toml
+include requirements*.txt
+
+# Include all Python source files
+recursive-include optimalportfolios *.py
+
+# Include specific data files that the package needs
+recursive-include optimalportfolios/data *.csv
+recursive-include optimalportfolios/templates *.html
+recursive-include optimalportfolios/static *.css *.js
+recursive-include optimalportfolios *.yml *.yaml *.json *.txt *.md
+
+# Explicitly exclude figures, notebooks, resources, and image files
+recursive-exclude optimalportfolios/examples/figures *
+recursive-exclude optimalportfolios/examples/resources *
+recursive-exclude optimalportfolios/notebooks *
+recursive-exclude optimalportfolios *figures*
+global-exclude *.png
+global-exclude *.jpg
+global-exclude *.jpeg
+global-exclude *.gif
+global-exclude *.svg
+global-exclude *.pdf
+global-exclude *.eps
+global-exclude *.ipynb
+
+# Exclude development and build artifacts
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * .DS_Store
+recursive-exclude * .git*
+recursive-exclude * *.egg-info
+global-exclude *.pyc
+global-exclude *.pyo
