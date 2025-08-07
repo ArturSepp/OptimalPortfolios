@@ -174,7 +174,7 @@ def load_risk_free_rate() -> pd.Series:
     return yf.download('^IRX', start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].dropna() / 100.0
 
 
-class UnitTests(Enum):
+class LocalTests(Enum):
     UPDATE_PRICES_WITH_YF = 1
     CREATE_ETH = 2
     CHECK_PRICES = 3
@@ -183,14 +183,19 @@ class UnitTests(Enum):
     UPDATE_PRICES_WITH_BLOOMBERG = 6
 
 
-def run_unit_test(unit_test: UnitTests):
+def run_local_test(local_test: LocalTests):
+    """Run local tests for development and debugging purposes.
 
-    if unit_test == UnitTests.UPDATE_PRICES_WITH_YF:
+    These are integration tests that download real data and generate reports.
+    Use for quick verification during development.
+    """
+
+    if local_test == LocalTests.UPDATE_PRICES_WITH_YF:
         update_prices_with_yf()
         prices = load_prices()
         print(prices)
 
-    elif unit_test == UnitTests.CREATE_ETH:
+    elif local_test == LocalTests.CREATE_ETH:
         # btc_price = qis.load_df_from_csv(file_name=BTC_PRICES_FROM_2010, local_path=LOCAL_PATH).iloc[:, 0]
         # eth_price = create_eth_price(btc_price=btc_price)
         # print(eth_price)
@@ -201,19 +206,19 @@ def run_unit_test(unit_test: UnitTests):
         qis.plot_ra_perf_table(prices=prices)
         qis.plot_prices_with_dd(prices=prices, start_to_one=False)
 
-    elif unit_test == UnitTests.CHECK_PRICES:
+    elif local_test == LocalTests.CHECK_PRICES:
         prices = load_prices(crypto_asset=None, is_updated=True)
         qis.plot_ra_perf_table(prices=prices)
         qis.plot_prices_with_dd(prices=prices)
 
-    elif unit_test == UnitTests.CREATE_BALANCED_PRICE:
+    elif local_test == LocalTests.CREATE_BALANCED_PRICE:
         price = create_balanced_price()
         print(price)
         bal = yf.download('AOR', start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].rename('AOR')
         prices = pd.concat([price, bal], axis=1).dropna()
         qis.plot_prices_with_dd(prices=prices)
 
-    elif unit_test == UnitTests.CHECK_REAL_ESTATE:
+    elif local_test == LocalTests.CHECK_REAL_ESTATE:
         assets = ['IYR', 'REZ', 'REET']
         prices = []
         for asset in assets:
@@ -221,7 +226,7 @@ def run_unit_test(unit_test: UnitTests):
         prices = pd.concat(prices, axis=1).dropna()
         qis.plot_prices_with_dd(prices=prices)
 
-    elif unit_test == UnitTests.UPDATE_PRICES_WITH_BLOOMBERG:
+    elif local_test == LocalTests.UPDATE_PRICES_WITH_BLOOMBERG:
         prices = update_prices_with_bloomberg()
         qis.plot_prices_with_dd(prices=prices)
 
@@ -230,11 +235,4 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.CREATE_ETH
-
-    is_run_all_tests = False
-    if is_run_all_tests:
-        for unit_test in UnitTests:
-            run_unit_test(unit_test=unit_test)
-    else:
-        run_unit_test(unit_test=unit_test)
+    run_local_test(local_test=LocalTests.CREATE_ETH)

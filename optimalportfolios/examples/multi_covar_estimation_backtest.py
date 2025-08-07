@@ -124,15 +124,20 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
     return figs
 
 
-class UnitTests(Enum):
+class LocalTests(Enum):
     MULTI_COVAR_ESTIMATORS_BACKTEST = 1
 
 
-def run_unit_test(unit_test: UnitTests):
+def run_local_test(local_test: LocalTests):
+    """Run local tests for development and debugging purposes.
+
+    These are integration tests that download real data and generate reports.
+    Use for quick verification during development.
+    """
 
     import optimalportfolios.local_path as local_path
 
-    if unit_test == UnitTests.MULTI_COVAR_ESTIMATORS_BACKTEST:
+    if local_test == LocalTests.MULTI_COVAR_ESTIMATORS_BACKTEST:
         # portfolio_objective = PortfolioObjective.MAX_DIVERSIFICATION
         # portfolio_objective = PortfolioObjective.EQUAL_RISK_CONTRIBUTION
         portfolio_objective = PortfolioObjective.MIN_VARIANCE
@@ -163,11 +168,4 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.MULTI_COVAR_ESTIMATORS_BACKTEST
-
-    is_run_all_tests = False
-    if is_run_all_tests:
-        for unit_test in UnitTests:
-            run_unit_test(unit_test=unit_test)
-    else:
-        run_unit_test(unit_test=unit_test)
+    run_local_test(local_test=LocalTests.MULTI_COVAR_ESTIMATORS_BACKTEST)

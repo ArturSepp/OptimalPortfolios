@@ -172,21 +172,26 @@ def carra_objective_mixture(w: np.ndarray, pars: List[np.ndarray]) -> float:
     return v
 
 
-class UnitTests(Enum):
+class LocalTests(Enum):
     CARA = 1
     CARA_MIX = 2
 
 
-def run_unit_test(unit_test: UnitTests):
+def run_local_test(local_test: LocalTests):
+    """Run local tests for development and debugging purposes.
 
-    if unit_test == UnitTests.CARA:
+    These are integration tests that download real data and generate reports.
+    Use for quick verification during development.
+    """
+
+    if local_test == LocalTests.CARA:
         means = np.array([0.3, 0.1])
         covar = np.array([[0.2 ** 2, 0.01],
                           [0.01, 0.1 ** 2]])
         w_rb = opt_maximize_cara(means=means, covar=covar, carra=10, is_exp=False, disp=True)
         w_rb = opt_maximize_cara(means=means, covar=covar, carra=10, is_exp=True, disp=True)
 
-    elif unit_test == UnitTests.CARA_MIX:
+    elif local_test == LocalTests.CARA_MIX:
         means = [np.array([0.05, -0.1]), np.array([0.05, 2.0])]
         covars = [np.array([[0.2 ** 2, 0.01],
                           [0.01, 0.2 ** 2]]),
@@ -202,12 +207,4 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.CARA_MIX
-
-    is_run_all_tests = False
-    if is_run_all_tests:
-        for unit_test in UnitTests:
-            run_unit_test(unit_test=unit_test)
-    else:
-        run_unit_test(unit_test=unit_test)
-
+    run_local_test(local_test=LocalTests.CARA_MIX)

@@ -253,16 +253,21 @@ def estimate_rolling_mixture(prices: Union[pd.Series, pd.DataFrame],
     return means, sigmas, probs
 
 
-class UnitTests(Enum):
+class LocalTests(Enum):
     FIT1 = 1
     FIT2 = 2
     ROLLING_FIT = 3
     PLOT_MIXURE = 4
 
 
-def run_unit_test(unit_test: UnitTests):
+def run_local_test(local_test: LocalTests):
+    """Run local tests for development and debugging purposes.
 
-    if unit_test == UnitTests.FIT1:
+    These are integration tests that download real data and generate reports.
+    Use for quick verification during development.
+    """
+
+    if local_test == LocalTests.FIT1:
         size = 1000
         p1 = 0.8
         mu1, sigma1 = 0.0, 0.2
@@ -283,7 +288,7 @@ def run_unit_test(unit_test: UnitTests):
         print(params)
         plot_mixure1(x=x)
 
-    elif unit_test == UnitTests.FIT2:
+    elif local_test == LocalTests.FIT2:
         size = 1000
         p1 = 0.8
         mu1, sigma1 = np.array([0, 0]), np.array([[0.2, 0.0], [0.0, 0.2]])
@@ -303,7 +308,7 @@ def run_unit_test(unit_test: UnitTests):
         print(params)
         plot_mixure2(x)
 
-    elif unit_test == UnitTests.ROLLING_FIT:
+    elif local_test == LocalTests.ROLLING_FIT:
         from optimalportfolios.test_data import load_test_data
         prices = load_test_data()
         prices = prices.loc['2000':, :]  # have at least 3 assets
@@ -311,7 +316,7 @@ def run_unit_test(unit_test: UnitTests):
         means, sigmas, probs = estimate_rolling_mixture(prices=prices)
         print(means)
 
-    elif unit_test == UnitTests.PLOT_MIXURE:
+    elif local_test == LocalTests.PLOT_MIXURE:
         import yfinance as yf
         prices = yf.download(tickers=['SPY', 'TLT'], start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].dropna()
         perf_params = qis.PerfParams(freq='W-WED')
@@ -347,11 +352,4 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.PLOT_MIXURE
-
-    is_run_all_tests = False
-    if is_run_all_tests:
-        for unit_test in UnitTests:
-            run_unit_test(unit_test=unit_test)
-    else:
-        run_unit_test(unit_test=unit_test)
+    run_local_test(local_test=LocalTests.PLOT_MIXURE)

@@ -15,13 +15,18 @@ from optimalportfolios import (Constraints, GroupLowerUpperConstraints, CovarEst
 from optimalportfolios.examples.universe import fetch_benchmark_universe_data
 
 
-class UnitTests(Enum):
+class LocalTests(Enum):
     ONE_STEP_OPTIMISATION = 1
     TRACKING_ERROR_GRID = 2
     ROLLING_OPTIMISATION = 3
 
 
-def run_unit_test(unit_test: UnitTests):
+def run_local_test(local_test: LocalTests):
+    """Run local tests for development and debugging purposes.
+
+    These are integration tests that download real data and generate reports.
+    Use for quick verification during development.
+    """
 
     import optimalportfolios.local_path as lp
 
@@ -39,7 +44,7 @@ def run_unit_test(unit_test: UnitTests):
                                max_weights=pd.Series(1.0, index=prices.columns),
                                weights_0=benchmark_weights)
 
-    if unit_test == UnitTests.ONE_STEP_OPTIMISATION:
+    if local_test == LocalTests.ONE_STEP_OPTIMISATION:
         # optimise using last available data as inputs
         returns = qis.to_returns(prices, freq='W-WED', is_log_returns=True)
         pd_covar = pd.DataFrame(52.0 * qis.compute_masked_covar_corr(data=returns, is_covar=True),
@@ -63,7 +68,7 @@ def run_unit_test(unit_test: UnitTests):
 
         plt.show()
 
-    elif unit_test == UnitTests.ROLLING_OPTIMISATION:
+    elif local_test == LocalTests.ROLLING_OPTIMISATION:
         # optimise using last available data as inputs
         time_period = qis.TimePeriod('31Jan2007', '17Apr2025')
         rebalancing_costs = 0.0003
@@ -100,11 +105,4 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.ROLLING_OPTIMISATION
-
-    is_run_all_tests = False
-    if is_run_all_tests:
-        for unit_test in UnitTests:
-            run_unit_test(unit_test=unit_test)
-    else:
-        run_unit_test(unit_test=unit_test)
+    run_local_test(local_test=LocalTests.ROLLING_OPTIMISATION)

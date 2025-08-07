@@ -465,11 +465,16 @@ def produce_article_backtests(time_period: TimePeriod,
     plt.close('all')
 
 
-class UnitTests(Enum):
+class LocalTests(Enum):
     BACKTEST_ARTICLE_FIGURES = 1
 
 
-def run_unit_test(unit_test: UnitTests):
+def run_local_test(local_test: LocalTests):
+    """Run local tests for development and debugging purposes.
+
+    These are integration tests that download real data and generate reports.
+    Use for quick verification during development.
+    """
 
     optimisation_types = [OptimisationType.ERC,
                           OptimisationType.MAX_DIV,
@@ -483,7 +488,7 @@ def run_unit_test(unit_test: UnitTests):
     # perf_time_period = TimePeriod('31Mar2016', end_date)  # for reporting
     perf_time_period = TimePeriod('31Mar2016', end_date)  # for reporting
 
-    if unit_test == UnitTests.BACKTEST_ARTICLE_FIGURES:
+    if local_test == LocalTests.BACKTEST_ARTICLE_FIGURES:
         time_period_dict_btc = {'16Q2-23Q2': TimePeriod(start='31Mar2016', end=end_date),
                                 '21Q1-23Q1': TimePeriod(start='31Dec2020', end='31Mar2023')}
         time_period_dict_eth = {'16Q2-23Q2': TimePeriod(start='31Mar2016', end=end_date),
@@ -499,11 +504,4 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.BACKTEST_ARTICLE_FIGURES
-
-    is_run_all_tests = False
-    if is_run_all_tests:
-        for unit_test in UnitTests:
-            run_unit_test(unit_test=unit_test)
-    else:
-        run_unit_test(unit_test=unit_test)
+    run_local_test(local_test=LocalTests.BACKTEST_ARTICLE_FIGURES)

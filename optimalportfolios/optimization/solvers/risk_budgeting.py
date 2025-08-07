@@ -304,14 +304,19 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
     return risk_budgets
 
 
-class UnitTests(Enum):
+class LocalTests(Enum):
     RISK_PARITY = 1
     PYRB = 2
 
 
-def run_unit_test(unit_test: UnitTests):
+def run_local_test(local_test: LocalTests):
+    """Run local tests for development and debugging purposes.
 
-    if unit_test == UnitTests.RISK_PARITY:
+    These are integration tests that download real data and generate reports.
+    Use for quick verification during development.
+    """
+
+    if local_test == LocalTests.RISK_PARITY:
         # risk_budget = np.array([0.50, 0.0, 0.5])
         # risk_budget = np.array([0.333, 0.333, 0.334])
         risk_budget = np.array([0.45, 0.45, 0.1])
@@ -350,17 +355,10 @@ def run_unit_test(unit_test: UnitTests):
         asset_rc = compute_portfolio_risk_contributions(weights, covar)
         print(f"asset_rc_new={asset_rc/np.nansum(asset_rc)}")
 
-    elif unit_test == UnitTests.PYRB:
+    elif local_test == LocalTests.PYRB:
         pass
 
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.RISK_PARITY
-
-    is_run_all_tests = False
-    if is_run_all_tests:
-        for unit_test in UnitTests:
-            run_unit_test(unit_test=unit_test)
-    else:
-        run_unit_test(unit_test=unit_test)
+    run_local_test(local_test=LocalTests.RISK_PARITY)

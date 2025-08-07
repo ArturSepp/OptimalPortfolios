@@ -38,12 +38,17 @@ benchmark_prices = yf.download(benchmark_tickers, start="2003-12-31", end=None, 
     index=asset_prices.index, method='ffill')
 
 
-class UnitTests(Enum):
+class LocalTests(Enum):
     LASSO_BETAS = 1
     LASSO_COVAR_DIFFERENT_FREQUENCIES = 3
 
 
-def run_unit_test(unit_test: UnitTests):
+def run_local_test(local_test: LocalTests):
+    """Run local tests for development and debugging purposes.
+
+    These are integration tests that download real data and generate reports.
+    Use for quick verification during development.
+    """
 
     pd.set_option('display.max_rows', 500)
     pd.set_option('display.max_columns', 500)
@@ -59,7 +64,7 @@ def run_unit_test(unit_test: UnitTests):
     y = y - np.nanmean(y, axis=0)
     x = x - np.nanmean(x, axis=0)
 
-    if unit_test == UnitTests.LASSO_BETAS:
+    if local_test == LocalTests.LASSO_BETAS:
         # full regression
         lasso_model_full = LassoModel(model_type=LassoModelType.LASSO, **qis.update_kwargs(lasso_params, dict(reg_lambda=0.0)))
         betas0, total_vars, residual_vars, r2_t = lasso_model_full.fit(x=x, y=y).compute_residual_alpha_r2()
@@ -80,7 +85,7 @@ def run_unit_test(unit_test: UnitTests):
         qis.plot_heatmap(df=betas_lasso, title='(A) Independent Lasso Betas', var_format='{:.2f}', ax=axs[1])
         qis.plot_heatmap(df=betas_group_lasso, title='(B) Group Lasso Betas', var_format='{:.2f}', ax=axs[2])
 
-    elif unit_test == UnitTests.LASSO_COVAR_DIFFERENT_FREQUENCIES:
+    elif local_test == LocalTests.LASSO_COVAR_DIFFERENT_FREQUENCIES:
         lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO, **lasso_params)
         y_covars = estimate_rolling_lasso_covar_different_freq(risk_factor_prices=benchmark_prices,
                                                                prices=asset_prices,
@@ -99,11 +104,4 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.LASSO_BETAS
-
-    is_run_all_tests = False
-    if is_run_all_tests:
-        for unit_test in UnitTests:
-            run_unit_test(unit_test=unit_test)
-    else:
-        run_unit_test(unit_test=unit_test)
+    run_local_test(local_test=LocalTests.LASSO_BETAS)

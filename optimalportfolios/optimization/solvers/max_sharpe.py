@@ -180,12 +180,17 @@ def estimate_rolling_means_covar(prices: pd.DataFrame,
     return means, covars
 
 
-class UnitTests(Enum):
+class LocalTests(Enum):
     ROLLING_MEANS_COVAR = 1
     SHARPE = 2
 
 
-def run_unit_test(unit_test: UnitTests):
+def run_local_test(local_test: LocalTests):
+    """Run local tests for development and debugging purposes.
+
+    These are integration tests that download real data and generate reports.
+    Use for quick verification during development.
+    """
 
     import seaborn as sns
     import matplotlib.pyplot as plt
@@ -193,7 +198,7 @@ def run_unit_test(unit_test: UnitTests):
     prices = load_test_data()
     prices = prices.loc['2000':, :]  # need 5 years for max sharpe and max carra methods
 
-    if unit_test == UnitTests.ROLLING_MEANS_COVAR:
+    if local_test == LocalTests.ROLLING_MEANS_COVAR:
         # prices = prices[['SPY', 'TLT']].dropna()
 
         means, covars = estimate_rolling_means_covar(prices=prices, rebalancing_freq='QE', roll_window=20)
@@ -232,11 +237,4 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.ROLLING_MEANS_COVAR
-
-    is_run_all_tests = False
-    if is_run_all_tests:
-        for unit_test in UnitTests:
-            run_unit_test(unit_test=unit_test)
-    else:
-        run_unit_test(unit_test=unit_test)
+    run_local_test(local_test=LocalTests.ROLLING_MEANS_COVAR)

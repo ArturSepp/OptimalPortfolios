@@ -52,15 +52,20 @@ def fetch_benchmark_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Data
     return prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices
 
 
-class UnitTests(Enum):
+class LocalTests(Enum):
     ILLUSTRATE_INPUT_DATA = 1
 
 
-def run_unit_test(unit_test: UnitTests):
+def run_local_test(local_test: LocalTests):
+    """Run local tests for development and debugging purposes.
+
+    These are integration tests that download real data and generate reports.
+    Use for quick verification during development.
+    """
 
     prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
 
-    if unit_test == UnitTests.ILLUSTRATE_INPUT_DATA:
+    if local_test == LocalTests.ILLUSTRATE_INPUT_DATA:
         with sns.axes_style('darkgrid'):
             fig, axs = plt.subplots(2, 1, figsize=(14, 12), constrained_layout=True)
             qis.plot_prices_with_dd(prices=prices, axs=axs)
@@ -70,11 +75,4 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.ILLUSTRATE_INPUT_DATA
-
-    is_run_all_tests = False
-    if is_run_all_tests:
-        for unit_test in UnitTests:
-            run_unit_test(unit_test=unit_test)
-    else:
-        run_unit_test(unit_test=unit_test)
+    run_local_test(local_test=LocalTests.ILLUSTRATE_INPUT_DATA)

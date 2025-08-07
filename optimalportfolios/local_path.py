@@ -1,6 +1,8 @@
 """
 get local path using setting.yaml
 setting.yaml is untracked file with PC specific paths
+use:
+git update-index --skip-worktree optimalportfolios/settings.yaml
 """
 import yaml
 from pathlib import Path

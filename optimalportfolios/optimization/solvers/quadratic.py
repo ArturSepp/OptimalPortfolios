@@ -270,7 +270,7 @@ def print_portfolio_outputs(optimal_weights: np.ndarray,
     print(line_str)
 
 
-class UnitTests(Enum):
+class LocalTests(Enum):
     MIN_VAR = 1
     MAX_UTILITY = 2
     EFFICIENT_FRONTIER = 3
@@ -279,7 +279,12 @@ class UnitTests(Enum):
     REGIME_SHARPE = 6
 
 
-def run_unit_test(unit_test: UnitTests):
+def run_local_test(local_test: LocalTests):
+    """Run local tests for development and debugging purposes.
+
+    These are integration tests that download real data and generate reports.
+    Use for quick verification during development.
+    """
     
     import seaborn as sns
     import matplotlib.pyplot as plt
@@ -290,7 +295,7 @@ def run_unit_test(unit_test: UnitTests):
                       [-0.0075, 0.1**2]])
     constraints = Constraints()
 
-    if unit_test == UnitTests.MIN_VAR:
+    if local_test == LocalTests.MIN_VAR:
 
         weight_min = np.array([0.0, 0.0])
         weight_max = np.array([10.0, 10.0])
@@ -304,7 +309,7 @@ def run_unit_test(unit_test: UnitTests):
                                 covar=covar,
                                 means=means)
 
-    elif unit_test == UnitTests.MAX_UTILITY:
+    elif local_test == LocalTests.MAX_UTILITY:
 
         gamma = 50*np.trace(covar)
         optimal_weights = cvx_quadratic_optimisation(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
@@ -317,7 +322,7 @@ def run_unit_test(unit_test: UnitTests):
                                 covar=covar,
                                 means=means)
 
-    elif unit_test == UnitTests.EFFICIENT_FRONTIER:
+    elif local_test == LocalTests.EFFICIENT_FRONTIER:
 
         portfolio_mus = []
         portfolio_vols = []
@@ -357,7 +362,7 @@ def run_unit_test(unit_test: UnitTests):
         sns.lineplot(x='vol', y='mean', data=protfolio_data, ax=axs[0])
         sns.lineplot(data=protfolio_data[['mean', 'vol']], ax=axs[1])
 
-    elif unit_test == UnitTests.MAX_UTILITY_VOL_TARGET:
+    elif local_test == LocalTests.MAX_UTILITY_VOL_TARGET:
         optimal_weights = max_qp_portfolio_vol_target(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
                                                       covar=covar,
                                                       means=means,
@@ -367,7 +372,7 @@ def run_unit_test(unit_test: UnitTests):
                                 covar=covar,
                                 means=means)
 
-    elif unit_test == UnitTests.SHARPE:
+    elif local_test == LocalTests.SHARPE:
 
         portfolio_mus = []
         portfolio_vols = []
@@ -415,7 +420,7 @@ def run_unit_test(unit_test: UnitTests):
                                 covar=covar,
                                 means=means)
 
-    elif unit_test == UnitTests.REGIME_SHARPE:
+    elif local_test == LocalTests.REGIME_SHARPE:
 
         # case of two assets:
         # inputs:
@@ -466,11 +471,4 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.SHARPE
-
-    is_run_all_tests = False
-    if is_run_all_tests:
-        for unit_test in UnitTests:
-            run_unit_test(unit_test=unit_test)
-    else:
-        run_unit_test(unit_test=unit_test)
+    run_local_test(local_test=LocalTests.SHARPE)

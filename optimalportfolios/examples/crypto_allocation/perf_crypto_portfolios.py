@@ -428,14 +428,19 @@ def backtest_constant_weight_portfolios(crypto_asset: str = 'BTC',
     qis.save_figs_to_pdf(figs, file_name=filename)
 
 
-class UnitTests(Enum):
+class LocalTests(Enum):
     ALL_OPTIMISATION_TYPES = 1
     PERFORMANCE_ATTRIB_TABLE = 2
     WEIGHTS_FIGURE = 3
     CONSTANT_WEIGHT_PORTFOLIOS = 4
 
 
-def run_unit_test(unit_test: UnitTests):
+def run_local_test(local_test: LocalTests):
+    """Run local tests for development and debugging purposes.
+
+    These are integration tests that download real data and generate reports.
+    Use for quick verification during development.
+    """
 
     optimisation_types = [OptimisationType.ERC,
                           OptimisationType.MAX_DIV,
@@ -446,7 +451,7 @@ def run_unit_test(unit_test: UnitTests):
     time_period = TimePeriod('19Jul2010', end_date)  # for weight calculations
     perf_time_period = TimePeriod('31Mar2016', end_date)  # for reporting
 
-    if unit_test == UnitTests.ALL_OPTIMISATION_TYPES:
+    if local_test == LocalTests.ALL_OPTIMISATION_TYPES:
 
         time_period_dict = {'1y': TimePeriod(start='31Mar2022', end=perf_time_period.end),
                             '2y': TimePeriod(start='31Mar2021', end=perf_time_period.end),
@@ -460,19 +465,19 @@ def run_unit_test(unit_test: UnitTests):
                                                perf_time_period=perf_time_period,
                                                time_period_dict=time_period_dict)
 
-    elif unit_test == UnitTests.PERFORMANCE_ATTRIB_TABLE:
+    elif local_test == LocalTests.PERFORMANCE_ATTRIB_TABLE:
         time_period_dict = {'2016Q1-now': TimePeriod(start='31Dec2015', end=end_date),
                             '2021Q1-now': TimePeriod(start='31Dec2020', end=end_date)}
         create_performance_attrib_table(optimisation_types=optimisation_types,
                                         time_period_dict=time_period_dict,
                                         time_period=time_period)
 
-    elif unit_test == UnitTests.WEIGHTS_FIGURE:
+    elif local_test == LocalTests.WEIGHTS_FIGURE:
         plot_weights_timeseries(time_period=time_period,
                                 perf_time_period=perf_time_period,
                                 optimisation_types=optimisation_types)
 
-    elif unit_test == UnitTests.CONSTANT_WEIGHT_PORTFOLIOS:
+    elif local_test == LocalTests.CONSTANT_WEIGHT_PORTFOLIOS:
         time_period_dict = {'2016Q2-now': TimePeriod(start='31Mar2016', end=end_date),
                             '2021Q1-now': TimePeriod(start='31Dec2020', end=end_date)}
         backtest_constant_weight_portfolios(
@@ -487,11 +492,4 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.ALL_OPTIMISATION_TYPES
-
-    is_run_all_tests = False
-    if is_run_all_tests:
-        for unit_test in UnitTests:
-            run_unit_test(unit_test=unit_test)
-    else:
-        run_unit_test(unit_test=unit_test)
+    run_local_test(local_test=LocalTests.ALL_OPTIMISATION_TYPES)

@@ -90,13 +90,18 @@ def plot_static_risk_budgets_vs_weights(prices: pd.DataFrame,
     return figs
 
 
-class UnitTests(Enum):
+class LocalTests(Enum):
     SOLVE_FOR_RISK_BUDGETS = 1
     ILLUSTRATE_WEIGHTS = 2
 
 
 @qis.timer
-def run_unit_test(unit_test: UnitTests):
+def run_local_test(local_test: LocalTests):
+    """Run local tests for development and debugging purposes.
+
+    These are integration tests that download real data and generate reports.
+    Use for quick verification during development.
+    """
 
     from optimalportfolios import local_path as lp
 
@@ -122,14 +127,14 @@ def run_unit_test(unit_test: UnitTests):
                                              returns_freq='W-WED',
                                              span=52)
 
-    if unit_test == UnitTests.SOLVE_FOR_RISK_BUDGETS:
+    if local_test == LocalTests.SOLVE_FOR_RISK_BUDGETS:
         risk_budgets = solve_for_risk_budgets_from_given_weights(prices=prices,
                                                                  given_weights=given_static_weights,
                                                                  time_period=time_period,
                                                                  covar_dict=covar_dict)
         print(risk_budgets)
 
-    elif unit_test == UnitTests.ILLUSTRATE_WEIGHTS:
+    elif local_test == LocalTests.ILLUSTRATE_WEIGHTS:
         risk_budgets = solve_for_risk_budgets_from_given_weights(prices=prices,
                                                                  given_weights=given_static_weights,
                                                                  time_period=time_period,
@@ -150,11 +155,4 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.ILLUSTRATE_WEIGHTS
-
-    is_run_all_tests = False
-    if is_run_all_tests:
-        for unit_test in UnitTests:
-            run_unit_test(unit_test=unit_test)
-    else:
-        run_unit_test(unit_test=unit_test)
+    run_local_test(local_test=LocalTests.ILLUSTRATE_WEIGHTS)

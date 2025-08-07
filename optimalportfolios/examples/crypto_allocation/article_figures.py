@@ -248,7 +248,7 @@ def plot_mixures(prices: pd.DataFrame,
         return fig1, fig2, dfs_out
 
 
-class UnitTests(Enum):
+class LocalTests(Enum):
     PERF_TABLES_CRYPTO = 1
     PERF_TABLES_ALL = 2
     ANNUAL_ROLLING_TABLES = 3
@@ -260,11 +260,16 @@ class UnitTests(Enum):
     PERFORMANCE_CHECK = 9
 
 
-def run_unit_test(unit_test: UnitTests):
+def run_local_test(local_test: LocalTests):
+    """Run local tests for development and debugging purposes.
+
+    These are integration tests that download real data and generate reports.
+    Use for quick verification during development.
+    """
 
     end_date = '30Jun2023'
 
-    if unit_test == UnitTests.PERF_TABLES_CRYPTO:
+    if local_test == LocalTests.PERF_TABLES_CRYPTO:
 
         prices = load_prices(assets=[Assets.BAL, Assets.BTC, Assets.ETH])
         prices = prices.loc['19Jul2010':]  # since bitcoin inception
@@ -285,7 +290,7 @@ def run_unit_test(unit_test: UnitTests):
             qis.save_fig(fig, file_name='performance_table_crypto', local_path=FIGURE_SAVE_PATH)
             qis.save_df_to_excel(dfs_out, file_name='performance_table_crypto', local_path=FIGURE_SAVE_PATH)
 
-    elif unit_test == UnitTests.PERF_TABLES_ALL:
+    elif local_test == LocalTests.PERF_TABLES_ALL:
 
         prices1 = load_prices(crypto_asset='BTC').dropna()
         prices2 = load_prices(crypto_asset=None).dropna()
@@ -304,14 +309,14 @@ def run_unit_test(unit_test: UnitTests):
         if SAVE_FIGS:
             qis.save_fig(fig, file_name='performance_table', local_path=FIGURE_SAVE_PATH)
 
-    elif unit_test == UnitTests.ANNUAL_ROLLING_TABLES:
+    elif local_test == LocalTests.ANNUAL_ROLLING_TABLES:
         price = load_prices(assets=[Assets.BTC], is_updated=True).dropna().iloc[:, 0]#.loc[:end_date]
         fig, dfs_out = plot_annual_tables(price=price, perf_params=PERF_PARAMS)
         if SAVE_FIGS:
             qis.save_fig(fig, file_name='rolling_annual_table', local_path=FIGURE_SAVE_PATH)
             qis.save_df_to_excel(dfs_out, file_name='rolling_annual_table', local_path=FIGURE_SAVE_PATH)
 
-    elif unit_test == UnitTests.CORR_TABLE:
+    elif local_test == LocalTests.CORR_TABLE:
         time_period = [TimePeriod('19Jul2010', '31Dec2015'),
                        TimePeriod('31Dec2015', '31Dec2019'),
                        TimePeriod('31Dec2019', end_date)]
@@ -329,7 +334,7 @@ def run_unit_test(unit_test: UnitTests):
             qis.save_fig(fig, file_name='corr_table', local_path=FIGURE_SAVE_PATH)
             qis.save_df_to_excel(dfs_out, file_name='corr_table', local_path=FIGURE_SAVE_PATH)
 
-    elif unit_test == UnitTests.CORR_TIME_SERIES:
+    elif local_test == LocalTests.CORR_TIME_SERIES:
 
         is_crypto_bal = True
         if is_crypto_bal:
@@ -354,7 +359,7 @@ def run_unit_test(unit_test: UnitTests):
                                                      ax=ax,
                                                      **{'framealpha': 0.90})
 
-    elif unit_test == UnitTests.SCATTER:
+    elif local_test == LocalTests.SCATTER:
         prices = load_prices().dropna()
         prices1 = prices[[Assets.BAL, Assets.BTC]].dropna()
         kwargs = dict(alpha_format='{0:+0.0%}',
@@ -382,7 +387,7 @@ def run_unit_test(unit_test: UnitTests):
                                  ax=axs[1],
                                  **kwargs)
 
-    elif unit_test == UnitTests.PDF_PLOT:
+    elif local_test == LocalTests.PDF_PLOT:
         prices = load_prices().dropna()
         prices = prices[Assets.BTC]
         time_period = TimePeriod('18Dec2017', end_date)
@@ -395,7 +400,7 @@ def run_unit_test(unit_test: UnitTests):
             gm.plot_mixure1(x=rets.to_numpy().reshape(-1, 1), ax=axs[0])
             gm.plot_mixure1(x=rets1.to_numpy().reshape(-1, 1), ax=axs[1])
 
-    elif unit_test == UnitTests.PLOT_MIXURE:
+    elif local_test == LocalTests.PLOT_MIXURE:
         prices = load_prices().dropna()
         start_end_date_full = TimePeriod('19Jul2010', end_date)
         time_period = TimePeriod('18Dec2017', end_date)
@@ -407,7 +412,7 @@ def run_unit_test(unit_test: UnitTests):
             qis.save_fig(fig2, file_name='params', local_path=FIGURE_SAVE_PATH)
             qis.save_df_to_excel(dfs_out, file_name='clusters_params', local_path=FIGURE_SAVE_PATH)
 
-    elif unit_test == UnitTests.PERFORMANCE_CHECK:
+    elif local_test == LocalTests.PERFORMANCE_CHECK:
         time_period_from_last = qis.TimePeriod('30Jun2023', '16Aug2024')
         prices = load_prices(crypto_asset=None, is_updated=True)
         prices1 = time_period_from_last.locate(prices)
@@ -421,11 +426,4 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.ANNUAL_ROLLING_TABLES
-
-    is_run_all_tests = False
-    if is_run_all_tests:
-        for unit_test in UnitTests:
-            run_unit_test(unit_test=unit_test)
-    else:
-        run_unit_test(unit_test=unit_test)
+    run_local_test(local_test=LocalTests.ANNUAL_ROLLING_TABLES)

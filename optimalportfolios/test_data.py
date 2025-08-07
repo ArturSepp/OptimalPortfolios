@@ -37,29 +37,27 @@ def load_test_data() -> pd.DataFrame:
     return prices
 
 
-class UnitTests(Enum):
+class LocalTests(Enum):
     UPDATE_TEST_PRICES = 1
     LOAD_TEST_PRICES = 2
 
 
-def run_unit_test(unit_test: UnitTests):
+def run_local_test(local_test: LocalTests):
+    """Run local tests for development and debugging purposes.
 
-    if unit_test == UnitTests.UPDATE_TEST_PRICES:
+    These are integration tests that download real data and generate reports.
+    Use for quick verification during development.
+    """
+
+    if local_test == LocalTests.UPDATE_TEST_PRICES:
         prices = update_test_prices()
         print(prices)
 
-    elif unit_test == UnitTests.LOAD_TEST_PRICES:
+    elif local_test == LocalTests.LOAD_TEST_PRICES:
         prices = load_test_data()
         print(prices)
 
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.UPDATE_TEST_PRICES
-
-    is_run_all_tests = False
-    if is_run_all_tests:
-        for unit_test in UnitTests:
-            run_unit_test(unit_test=unit_test)
-    else:
-        run_unit_test(unit_test=unit_test)
+    run_local_test(local_test=LocalTests.UPDATE_TEST_PRICES)

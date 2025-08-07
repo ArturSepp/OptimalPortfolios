@@ -59,11 +59,16 @@ def run_max_diversification_sensitivity_to_span(prices: pd.DataFrame,
     return figs
 
 
-class UnitTests(Enum):
+class LocalTests(Enum):
     MAX_DIVERSIFICATION_SPAN = 1
 
 
-def run_unit_test(unit_test: UnitTests):
+def run_local_test(local_test: LocalTests):
+    """Run local tests for development and debugging purposes.
+
+    These are integration tests that download real data and generate reports.
+    Use for quick verification during development.
+    """
 
     import optimalportfolios.local_path as local_path
 
@@ -80,7 +85,7 @@ def run_unit_test(unit_test: UnitTests):
                                max_weights=pd.Series(0.2, index=prices.columns),
                                group_lower_upper_constraints=group_lower_upper_constraints)
 
-    if unit_test == UnitTests.MAX_DIVERSIFICATION_SPAN:
+    if local_test == LocalTests.MAX_DIVERSIFICATION_SPAN:
 
         time_period = qis.TimePeriod(start='31Dec1998', end=prices.index[-1])  # backtest start for weights computation
         perf_time_period = qis.TimePeriod(start='31Dec2004', end=prices.index[-1])  # backtest reporting
@@ -102,11 +107,4 @@ def run_unit_test(unit_test: UnitTests):
 
 if __name__ == '__main__':
 
-    unit_test = UnitTests.MAX_DIVERSIFICATION_SPAN
-
-    is_run_all_tests = False
-    if is_run_all_tests:
-        for unit_test in UnitTests:
-            run_unit_test(unit_test=unit_test)
-    else:
-        run_unit_test(unit_test=unit_test)
+    run_local_test(local_test=LocalTests.MAX_DIVERSIFICATION_SPAN)
