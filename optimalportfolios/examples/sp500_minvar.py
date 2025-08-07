@@ -71,11 +71,7 @@ def run_local_test(local_test: LocalTests):
     These are integration tests that download real data and generate reports.
     Use for quick verification during development.
     """
-    """Run local tests for development and debugging purposes.
 
-    These are integration tests that download real data and generate reports.
-    Use for quick verification during development.
-    """
     import quant_strats.local_path as lp
     from optimalportfolios.examples.sp500_universe import load_sp500_universe_yahoo
 
