@@ -618,14 +618,14 @@ See the [LICENSE.txt](https://github.com/ArturSepp/OptimalPortfolios/blob/master
 Please report any bugs or suggestions by opening an [issue](https://github.com/ArturSepp/OptimalPortfolios/issues).
 
 
-# BibTeX Citations for QIS (Quantitative Investment Strategies) Package
+## BibTeX Citations for optimalportfolios (Optimal Portfolios) Package
 
-If you use QIS in your research, please cite it as:
+If you use optimalportfolios in your research, please cite it as:
 
 ```bibtex
-@software{optimalportfolios2024,
+@software{sepp2024optimalportfolios,
   author={Sepp, Artur},
-  title={{OptimalPortfolios}: Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python},
+  title={OptimalPortfolios: Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python},
   year={2024},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
