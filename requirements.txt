@@ -16,4 +16,4 @@ cvxpy>=1.7.0
 ecos>=2.0.0
 quadprog>=0.1.11
 scikit-learn>=1.7.0
-qis>=3.3.3
+qis>=3.3.10

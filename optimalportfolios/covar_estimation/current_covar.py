@@ -13,6 +13,7 @@ from typing import Optional, Union, Dict, Any
 from optimalportfolios.covar_estimation.config import CovarEstimatorType
 from optimalportfolios.lasso.lasso_model_estimator import LassoModel
 from optimalportfolios.covar_estimation.utils import squeeze_covariance_matrix, compute_returns_from_prices
+from optimalportfolios.covar_estimation.annualisation import get_conversion_factor
 
 
 @dataclass
@@ -98,12 +99,10 @@ def wrapper_estimate_current_lasso_covar(risk_factors_prices: pd.DataFrame,
                                          returns_freqs: Union[str, pd.Series] = 'ME',
                                          factor_returns_freq: str = 'W-WED',
                                          span_freq_dict: Optional[Dict[str, int]] = None,  # spans for different freqs
-                                         var_scaler_freq_dict: Optional[Dict[str, float]] = None,  # var scaler for different freqs
                                          squeeze_factor: Optional[float] = None,
                                          is_apply_vol_normalised_returns: bool = False,
                                          residual_var_weight: float = 1.0,
-                                         is_adjust_for_newey_west: bool = False,
-                                         num_lags_newey_west: Dict[str, int] = {'ME': 0, 'QE': 2},
+                                         num_lags_newey_west_dict: Optional[Dict[str, int]] = None,
                                          **kwargs
                                          ) -> EstimatedCurrentCovarData:
     """
@@ -113,12 +112,12 @@ def wrapper_estimate_current_lasso_covar(risk_factors_prices: pd.DataFrame,
         covar_data = estimate_lasso_covar(risk_factor_prices=risk_factors_prices,
                                           prices=prices,
                                           lasso_model=lasso_model,
-                                          returns_freq=factor_returns_freq,
+                                          factor_returns_freq=factor_returns_freq,
+                                          returns_freq=returns_freqs,
                                           is_apply_vol_normalised_returns=is_apply_vol_normalised_returns,
                                           squeeze_factor=squeeze_factor,
                                           residual_var_weight=residual_var_weight,
-                                          is_adjust_for_newey_west=is_adjust_for_newey_west,
-                                          num_lags_newey_west=num_lags_newey_west)
+                                          num_lags_newey_west_dict=num_lags_newey_west_dict)
     else:
         covar_data = estimate_lasso_covar_different_freq(risk_factor_prices=risk_factors_prices,
                                                          prices=prices,
@@ -126,12 +125,10 @@ def wrapper_estimate_current_lasso_covar(risk_factors_prices: pd.DataFrame,
                                                          factor_returns_freq=factor_returns_freq,
                                                          returns_freqs=returns_freqs,
                                                          span_freq_dict=span_freq_dict,
-                                                         var_scaler_freq_dict=var_scaler_freq_dict,
                                                          is_apply_vol_normalised_returns=is_apply_vol_normalised_returns,
                                                          squeeze_factor=squeeze_factor,
                                                          residual_var_weight=residual_var_weight,
-                                                         is_adjust_for_newey_west=is_adjust_for_newey_west,
-                                                         num_lags_newey_west=num_lags_newey_west)
+                                                         num_lags_newey_west_dict=num_lags_newey_west_dict)
     return covar_data
 
 
@@ -144,8 +141,7 @@ def estimate_lasso_covar(risk_factor_prices: pd.DataFrame,
                          squeeze_factor: Optional[float] = None,
                          is_apply_vol_normalised_returns: bool = False,
                          residual_var_weight: float = 1.0,
-                         is_adjust_for_newey_west: bool = True,
-                         num_lags_newey_west: Dict[str, int] = {'ME': 0, 'QE': 2},
+                         num_lags_newey_west_dict: Optional[Dict[str, int]] = None,
                          verbose: bool = False
                          ) -> EstimatedCurrentCovarData:
     """
@@ -162,27 +158,38 @@ def estimate_lasso_covar(risk_factor_prices: pd.DataFrame,
                                               is_apply_vol_normalised_returns=is_apply_vol_normalised_returns,
                                               squeeze_factor=squeeze_factor,
                                               apply_an_factor=False)
+        factor_scale_an = get_conversion_factor(from_freq=factor_returns_freq, to_freq='YE')
+        # print(f"factor_scale_an={factor_scale_an}")
+        x_covar *= factor_scale_an
 
     # 2. estimate betas at returns_freq
     y = compute_returns_from_prices(prices=prices, returns_freq=returns_freq, demean=False)
     x = compute_returns_from_prices(prices=risk_factor_prices, returns_freq=returns_freq, demean=False)
 
-    lasso_model.fit(x=x, y=y, verbose=verbose,
-                    is_adjust_for_newey_west=is_adjust_for_newey_west,
-                    num_lags=num_lags_newey_west[returns_freq])
+    num_lags_newey_west = None
+    if num_lags_newey_west_dict is not None:
+        num_lags_newey_west = num_lags_newey_west_dict[returns_freq]
+
+    lasso_model.fit(x=x, y=y, verbose=verbose, num_lags_newey_west=num_lags_newey_west)
     asset_last_betas, last_total_vars, last_residual_vars, last_r2 = lasso_model.compute_residual_alpha_r2()
+
+    # annualise ido vols
+    idio_var_scaler = get_conversion_factor(from_freq=returns_freq, to_freq='YE')
+    # print(f"idio_var_scaler for {returns_freq} = {idio_var_scaler}")
+    last_total_vars *= idio_var_scaler
+    last_residual_vars *= idio_var_scaler
 
     # make sure aligned
     asset_last_betas = asset_last_betas.reindex(index=x.columns).reindex(columns=y.columns).fillna(0.0)
     betas_np = asset_last_betas.to_numpy()
-    betas_covar = np.transpose(betas_np) @ x_covar @ betas_np
+    betas_covar = np.transpose(betas_np) @ x_covar.to_numpy() @ betas_np
     if not np.isclose(residual_var_weight, 0.0):
         betas_covar += residual_var_weight * np.diag(last_residual_vars.to_numpy())
 
-    if is_adjust_for_newey_west:
+    if num_lags_newey_west_dict is not None:
         ewm_nw, nw_ratios_pd = qis.compute_ewm_newey_west_vol(data=y,
                                                               span=lasso_model.span,
-                                                              num_lags=num_lags_newey_west[returns_freq],
+                                                              num_lags=num_lags_newey_west_dict[returns_freq],
                                                               mean_adj_type=qis.MeanAdjType.EWMA)
         last_nw_ratios = nw_ratios_pd.iloc[-1, :].reindex(index=prices.columns).fillna(1.0) # series
         adj = np.sqrt(last_nw_ratios.to_numpy())
@@ -191,8 +198,7 @@ def estimate_lasso_covar(risk_factor_prices: pd.DataFrame,
     else:
         last_nw_ratios = None
 
-    _, an_factor = qis.get_period_days(returns_freq)  # an factor is frequency of x returns
-    y_covar = pd.DataFrame(an_factor*betas_covar, index=y.columns, columns=y.columns)
+    y_covar = pd.DataFrame(betas_covar, index=y.columns, columns=y.columns)
 
     covar_data = EstimatedCurrentCovarData(x_covar=x_covar,
                                            y_covar=y_covar,
@@ -214,22 +220,18 @@ def estimate_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
                                         returns_freqs: pd.Series,
                                         x_covar: Dict[pd.Timestamp, pd.DataFrame] = None,
                                         factor_returns_freq: str = 'W-WED',
-                                        rebalancing_freq: str = 'ME',  # for x returns
                                         is_apply_vol_normalised_returns: bool = False,
                                         span_freq_dict: Optional[Dict[str, int]] = None,  # spans for different freqs
-                                        var_scaler_freq_dict: Optional[Dict[str, float]] = None,
                                         residual_var_weight: float = 1.0,
                                         squeeze_factor: Optional[float] = None,
                                         verbose: bool = False,
-                                        is_adjust_for_newey_west: bool = True,
-                                        num_lags_newey_west: Dict[str, int] = {'ME': 0, 'QE': 2}
+                                        num_lags_newey_west_dict: Optional[Dict[str, int]] = None
                                         ) -> EstimatedCurrentCovarData:
     """
     compute covar matrix at last valuation date
     use benchmarks to compute the benchmark covar matrix
     use lasso to estimate betas
     compute covar matrix
-    rebalancing_freq is rebalancing for x returns
     rebalancing_freqs is rebalancing for y  returns
     span_freq_dict: for example {'ME': 12, 'QE': 4} defines spans specific to frequency
     """
@@ -242,6 +244,11 @@ def estimate_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
                                               is_apply_vol_normalised_returns=is_apply_vol_normalised_returns,
                                               squeeze_factor=squeeze_factor,
                                               apply_an_factor=False)
+
+        # find factor annualisation
+        factor_scale_an = get_conversion_factor(from_freq=factor_returns_freq, to_freq='YE')
+        # print(f"factor_scale_an={factor_scale_an}")
+        x_covar *= factor_scale_an
 
     # 2. estimate betas of y-returns at different samples
     returns_freqs = returns_freqs[prices.columns]
@@ -268,9 +275,10 @@ def estimate_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
         else:
             span_f = lasso_model.span
 
-        lasso_model.fit(x=x, y=y, verbose=verbose,
-                        is_adjust_for_newey_west=is_adjust_for_newey_west,
-                        num_lags=num_lags_newey_west[freq])
+        num_lags_newey_west = None
+        if num_lags_newey_west_dict is not None and freq in num_lags_newey_west_dict.keys():
+            num_lags_newey_west = num_lags_newey_west_dict[freq]
+        lasso_model.fit(x=x, y=y, verbose=verbose, num_lags_newey_west=num_lags_newey_west)
 
         betas_freqs[freq], total_vars_freqs[freq], residual_vars_freqs[freq], r2_freqs[freq] =\
             lasso_model.compute_residual_alpha_r2(span=span_f)
@@ -278,16 +286,14 @@ def estimate_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
         linkages[freq] = lasso_model.linkage
         cutoffs[freq] = lasso_model.cutoff
 
-        if is_adjust_for_newey_west:
+        if num_lags_newey_west is not None:
             ewm_nw, nw_ratios_pd = qis.compute_ewm_newey_west_vol(data=y,
                                                                   span=span_f,
-                                                                  num_lags=num_lags_newey_west[freq],
+                                                                  num_lags=num_lags_newey_west,
                                                                   mean_adj_type=qis.MeanAdjType.EWMA)
             nw_ratios[freq] = nw_ratios_pd.iloc[-1, :]
 
     # 3. compute y_covars at x_covars frequency
-    _, an_factor = qis.get_period_days(rebalancing_freq)  # an factor is frequency of x returns
-
     # generate aligned betas
     asset_last_betas = []
     last_total_vars = []
@@ -296,15 +302,16 @@ def estimate_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
     last_nw_ratios = []
     for freq in group_freqs.keys():
         asset_last_betas.append(betas_freqs[freq])
-        if var_scaler_freq_dict is not None:
-            scaler = var_scaler_freq_dict[freq]
-        else:
-            scaler = 1.0
-        last_total_vars.append(scaler * total_vars_freqs[freq])
-        last_residual_vars.append(scaler * residual_vars_freqs[freq])
+
+        # annualise ido vols
+        idio_var_scaler = get_conversion_factor(from_freq=freq, to_freq='YE')
+        # print(f"idio_var_scaler for {freq} = {idio_var_scaler}")
+
+        last_total_vars.append(idio_var_scaler * total_vars_freqs[freq])
+        last_residual_vars.append(idio_var_scaler * residual_vars_freqs[freq])
         last_r2.append(r2_freqs[freq])
 
-        if is_adjust_for_newey_west:
+        if num_lags_newey_west_dict is not None:
             last_nw_ratios.append(nw_ratios[freq])
 
     # merge and align
@@ -320,7 +327,7 @@ def estimate_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
     if not np.isclose(residual_var_weight, 0.0):
         betas_covar += residual_var_weight * np.diag(last_residual_vars.to_numpy())
 
-    if is_adjust_for_newey_west:
+    if num_lags_newey_west_dict is not None:
         last_nw_ratios = pd.concat(last_nw_ratios).reindex(index=prices.columns).fillna(1.0) # series
         adj = np.sqrt(last_nw_ratios.to_numpy())
         norm = np.outer(adj, adj)
@@ -328,7 +335,6 @@ def estimate_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
     else:
         last_nw_ratios = None
 
-    betas_covar *= an_factor
     y_covar = pd.DataFrame(betas_covar, index=prices.columns, columns=prices.columns)
 
     covar_data = EstimatedCurrentCovarData(x_covar=x_covar,

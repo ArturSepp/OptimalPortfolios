@@ -31,7 +31,7 @@ sampling_freqs = group_data.map({'Equity': 'ME', 'Bonds': 'ME', 'Mixed': 'QE'})
 asset_tickers = group_data.index.to_list()
 benchmark_tickers = ['SPY', 'IEF', 'LQD', 'USO', 'GLD', 'UUP']
 asset_group_loadings = qis.set_group_loadings(group_data=group_data)
-print(asset_group_loadings)
+# print(asset_group_loadings)
 
 asset_prices = yf.download(asset_tickers, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'][asset_tickers].asfreq('B', method='ffill')
 benchmark_prices = yf.download(benchmark_tickers, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'][benchmark_tickers].reindex(
@@ -55,7 +55,7 @@ def run_local_test(local_test: LocalTests):
     pd.set_option('display.width', 1000)
 
     # set lasso model, x and y are demeaned
-    lasso_params = dict(group_data=group_data, reg_lambda=1e-5, span=120, demean=False, solver='ECOS_BB')
+    lasso_params = dict(group_data=group_data, reg_lambda=1e-4, span=120, demean=False, solver='ECOS_BB')
 
     # set x and y
     y = qis.to_returns(asset_prices, freq='ME', drop_first=True)
@@ -86,22 +86,26 @@ def run_local_test(local_test: LocalTests):
         qis.plot_heatmap(df=betas_group_lasso, title='(B) Group Lasso Betas', var_format='{:.2f}', ax=axs[2])
 
     elif local_test == LocalTests.LASSO_COVAR_DIFFERENT_FREQUENCIES:
-        lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO, **lasso_params)
-        y_covars = estimate_rolling_lasso_covar_different_freq(risk_factor_prices=benchmark_prices,
+        lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO_CLUSTERS, **lasso_params)
+        covar_data = estimate_rolling_lasso_covar_different_freq(risk_factor_prices=benchmark_prices,
                                                                prices=asset_prices,
                                                                returns_freqs=sampling_freqs,
                                                                time_period=qis.TimePeriod('31Dec2019', '13Dec2024'),
-                                                               rebalancing_freq='ME',
+                                                               rebalancing_freq='YE',
                                                                lasso_model=lasso_model,
                                                                is_apply_vol_normalised_returns=False
-                                                               ).y_covars
-        for date, covar in y_covars.items():
+                                                               )
+        for date, covar in covar_data.y_covars.items():
             print(date)
             print(covar)
+
+        for date, beta in covar_data.asset_last_betas_t.items():
+            print(date)
+            print(beta)
 
     plt.show()
 
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.LASSO_BETAS)
+    run_local_test(local_test=LocalTests.LASSO_COVAR_DIFFERENT_FREQUENCIES)

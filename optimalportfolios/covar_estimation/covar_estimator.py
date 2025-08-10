@@ -5,7 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import qis as qis
 from typing import Union, Optional, Dict, Any
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, asdict
 
 # project
 from optimalportfolios.covar_estimation.config import CovarEstimatorType
@@ -33,9 +33,7 @@ class CovarEstimator:
     squeeze_factor: Optional[float] = None  # squeezing factor for ewma covars
     residual_var_weight: float = 1.0  # for lasso covars
     span_freq_dict: Optional[Dict[str, int]] = None  # spans for different freqs
-    var_scaler_freq_dict: Optional[Dict[str, float]] = None  # var scaler for different freqs
-    is_adjust_for_newey_west: bool = False
-    num_lags_newey_west: Dict[str, int] = field(default_factory=lambda: {'ME': 0, 'QE': 2})
+    num_lags_newey_west_dict: Optional[Dict[str, int]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         this = asdict(self)

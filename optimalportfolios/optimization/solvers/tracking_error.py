@@ -21,6 +21,7 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
                                     covar_dict: Dict[pd.Timestamp, pd.DataFrame] = None,
                                     rebalancing_indicators: pd.DataFrame = None,
                                     apply_total_to_good_ratio: bool = True,
+                                    is_apply_tre_utility_objective: bool = False,
                                     solver: str = 'ECOS_BB'
                                     ) -> pd.DataFrame:
     """
@@ -57,6 +58,7 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
                                                    rebalancing_indicators=rebalancing_indicators_t,
                                                    weights_0=weights_0,
                                                    apply_total_to_good_ratio=apply_total_to_good_ratio,
+                                                   is_apply_tre_utility_objective=is_apply_tre_utility_objective,
                                                    solver=solver)
         if np.all(np.equal(weights_, 0.0)):
             weights_0 = None
@@ -196,20 +198,18 @@ def cvx_maximise_alpha_with_tre_utility(covar: np.ndarray,
     constraints1 = constraints.copy()
     # set solver
     benchmark_weights = constraints.benchmark_weights.to_numpy()
+
+    # compute tracking error var
+    constraints1.tracking_err_vol_constraint = None  # disable from constraints
+    tracking_error_var = cvx.quad_form(w - benchmark_weights, covar)
+
     if alphas is not None:
         objective_fun = alphas.T @ (w - benchmark_weights)
-
         if tre_weight is not None:
-            constraints1.tracking_err_vol_constraint = None  # disable from constraints
-            tracking_error_var = cvx.quad_form(w - benchmark_weights, covar)
             objective_fun += -1.0*tre_weight*tracking_error_var
-
     else:
         if tre_weight is None:
             raise ValueError(f"tre_weight must be given for tre without alphas")
-
-        constraints1.tracking_err_vol_constraint = None  # disable from constraints
-        tracking_error_var = cvx.quad_form(w - benchmark_weights, covar)
         objective_fun = -1.0*tre_weight*tracking_error_var
 
     # add turover

@@ -39,6 +39,7 @@ class LassoModel:
     solver: str = 'ECOS_BB'
     warmup_period: Optional[int] = 12  # period to start rolling estimation
     exclude_zero_betas: bool = True  # eliminate residual for zero betas
+    nonneg: bool = False  # restriction for estimated betas
     # computed internally
     clusters: Optional[pd.Series] = None
     linkage: Optional[np.ndarray] = None
@@ -82,12 +83,10 @@ class LassoModel:
             verbose: bool = False,
             apply_independent_nan_filter: bool = True,
             span: Optional[float] = None,
-            is_adjust_for_newey_west: bool = False,
-            num_lags: int = 2
+            num_lags_newey_west: Optional[int] = None
             ) -> LassoModel:
         """
         estimate model lasso coefficients for full sample
-        is_adjust_for_newey_west and num_lags for clustering of corr matrix for Cluster Group Lasso
         """
         x_np, y_np = self.get_x_y_np(x=x, y=y)
         span = span or self.span
@@ -97,12 +96,13 @@ class LassoModel:
         # also use lasso for 1-d y
         if self.model_type == LassoModelType.LASSO or y_np.shape[1] == 1:
             estimated_beta, _, _ = solve_lasso_cvx_problem(x=x_np,
-                                                     y=y_np,
-                                                     reg_lambda=self.reg_lambda,
-                                                     span=span,
-                                                     verbose=verbose,
-                                                     solver=self.solver,
-                                                     apply_independent_nan_filter=apply_independent_nan_filter)
+                                                           y=y_np,
+                                                           reg_lambda=self.reg_lambda,
+                                                           span=span,
+                                                           verbose=verbose,
+                                                           solver=self.solver,
+                                                           apply_independent_nan_filter=apply_independent_nan_filter,
+                                                           nonneg=self.nonneg)
 
         elif self.model_type == LassoModelType.GROUP_LASSO:
             # create group loadings
@@ -113,12 +113,13 @@ class LassoModel:
                                                            reg_lambda=self.reg_lambda,
                                                            span=span,
                                                            verbose=verbose,
-                                                           solver=self.solver)
+                                                           solver=self.solver,
+                                                           nonneg=self.nonneg)
 
         elif self.model_type == LassoModelType.GROUP_LASSO_CLUSTERS:
             # create group loadings using ewma corr matrix
-            if is_adjust_for_newey_west:
-                corr_matrix = qis.compute_ewm_covar_newey_west(a=y_np, span=span, num_lags=num_lags, is_corr=True)
+            if num_lags_newey_west is not None:
+                corr_matrix = qis.compute_ewm_covar_newey_west(a=y_np, span=span, num_lags=num_lags_newey_west, is_corr=True)
             else:
                 corr_matrix = qis.compute_ewm_covar(a=y_np, span=span, is_corr=True)
 
@@ -132,7 +133,8 @@ class LassoModel:
                                                            reg_lambda=self.reg_lambda,
                                                            span=span,
                                                            verbose=verbose,
-                                                           solver=self.solver)
+                                                           solver=self.solver,
+                                                           nonneg=self.nonneg)
 
         else:
             raise NotImplementedError(f"{self.model_type}")
@@ -158,13 +160,11 @@ class LassoModel:
                                y: pd.DataFrame,
                                verbose: bool = False,
                                span: Optional[float] = None,
-                               is_adjust_for_newey_west: bool = False,
-                               num_lags: int = 2
+                               num_lags_newey_west: Optional[int] = None
                                ) -> Tuple[Dict[pd.Timestamp, pd.DataFrame],
                                           Dict[pd.Timestamp, pd.Series], Dict[pd.Timestamp, pd.Series], Dict[pd.Timestamp, pd.Series]]:
         """
         fit rolling time series of betas
-        is_adjust_for_newey_west for Cluster Group Lasso
         """
         betas_t = {}
         total_vars_t = {}
@@ -172,8 +172,7 @@ class LassoModel:
         r2_t = {}
         for idx, date in enumerate(y.index):
             if idx > self.warmup_period:  # global warm-up period
-                self.fit(x=x.iloc[:idx, :], y=y.iloc[:idx, :], verbose=verbose, span=span,
-                         is_adjust_for_newey_west=is_adjust_for_newey_west, num_lags=num_lags)
+                self.fit(x=x.iloc[:idx, :], y=y.iloc[:idx, :], verbose=verbose, span=span, num_lags_newey_west=num_lags_newey_west)
                 betas, total_vars, residual_vars, r2 = self.compute_residual_alpha_r2(span=span)
                 betas_t[date] = betas
                 total_vars_t[date] = total_vars
