@@ -21,6 +21,12 @@ class GroupLowerUpperConstraints:
     group_min_allocation: Optional[pd.Series]  # index=groups, data=group min allocation
     group_max_allocation: Optional[pd.Series]  # index=groups, data=group max allocation
 
+    def __post_init__(self):
+        if self.group_min_allocation is not None:
+            assert self.group_min_allocation.index.equals(self.group_loadings.columns)
+        if self.group_max_allocation is not None:
+            assert self.group_max_allocation.index.equals(self.group_loadings.columns)
+
     def update(self, valid_tickers: List[str]) -> GroupLowerUpperConstraints:
         new_self = GroupLowerUpperConstraints(group_loadings=self.group_loadings.loc[valid_tickers, :],
                                               group_min_allocation=self.group_min_allocation,
@@ -37,37 +43,50 @@ def merge_group_lower_upper_constraints(group_lower_upper_constraints1: GroupLow
                                         group_lower_upper_constraints2: GroupLowerUpperConstraints,
                                         duplicated_keep: Literal['last', 'first'] = 'last'
                                         ) -> GroupLowerUpperConstraints:
-    group_loadings = pd.concat([group_lower_upper_constraints1.group_loadings,
-                                group_lower_upper_constraints2.group_loadings
+
+    # check if columns do overlap
+    overlaps = list(set(group_lower_upper_constraints1.group_loadings.columns) & set(group_lower_upper_constraints2.group_loadings.columns))
+    if len(overlaps) > 0 :
+        overlaps1 = {x: f"{x}_1" for x in overlaps}
+        overlaps2 = {x: f"{x}_2" for x in overlaps}
+    else:
+        overlaps1 = {}
+        overlaps2 = {}
+
+    group_loadings = pd.concat([group_lower_upper_constraints1.group_loadings.rename(overlaps1, axis=1),
+                                group_lower_upper_constraints2.group_loadings.rename(overlaps2, axis=1)
                                 ], axis=1)
-    # check for duplicates
-    if np.any(group_loadings.columns.duplicated()):
-        group_loadings = group_loadings.iloc[:, ~group_loadings.columns.duplicated(keep=duplicated_keep)]
-        with pd.option_context('future.no_silent_downcasting', True):
-            group_loadings = group_loadings.fillna(0.0)  # just in case
 
     if (group_lower_upper_constraints1.group_min_allocation is not None
             and group_lower_upper_constraints2.group_min_allocation is not None):
-        group_min_allocation = pd.concat([group_lower_upper_constraints1.group_min_allocation,
-                                          group_lower_upper_constraints2.group_min_allocation])
-        # check for duplicates
-        group_min_allocation = group_min_allocation.loc[~group_min_allocation.index.duplicated(keep=duplicated_keep)]
-        with pd.option_context('future.no_silent_downcasting', True):
-            group_min_allocation = group_min_allocation.fillna(0.0)  # just in case
+        group_min_allocation = pd.concat([group_lower_upper_constraints1.group_min_allocation.rename(overlaps1),
+                                          group_lower_upper_constraints2.group_min_allocation.rename(overlaps2)])
+    elif (group_lower_upper_constraints1.group_min_allocation is not None
+          and group_lower_upper_constraints2.group_min_allocation is None):
+        group_min_allocation = group_lower_upper_constraints1.group_min_allocation.rename(overlaps1)
+    elif (group_lower_upper_constraints1.group_min_allocation is None
+          and group_lower_upper_constraints2.group_min_allocation is not None):
+        group_min_allocation = group_lower_upper_constraints2.group_min_allocation.rename(overlaps2)
     else:
         group_min_allocation = None
+    if group_min_allocation is not None:  # fill missing will large negative number
+        group_min_allocation = group_min_allocation.reindex(index=group_loadings.columns).fillna(-1e16)
 
     if (group_lower_upper_constraints1.group_max_allocation is not None
             and group_lower_upper_constraints2.group_max_allocation is not None):
-        group_max_allocation = pd.concat([group_lower_upper_constraints1.group_max_allocation,
-                                          group_lower_upper_constraints2.group_max_allocation])
-        # check for duplicates
-        group_max_allocation = group_max_allocation.loc[~group_max_allocation.index.duplicated(keep=duplicated_keep)]
-        with pd.option_context('future.no_silent_downcasting', True):
-            group_max_allocation = group_max_allocation.fillna(0.0)  # just in case
-
+        group_max_allocation = pd.concat([group_lower_upper_constraints1.group_max_allocation.rename(overlaps1),
+                                          group_lower_upper_constraints2.group_max_allocation.rename(overlaps2)])
+    elif (group_lower_upper_constraints1.group_max_allocation is not None
+            and group_lower_upper_constraints2.group_max_allocation is None):
+        group_max_allocation = group_lower_upper_constraints1.group_max_allocation.rename(overlaps1)
+    elif (group_lower_upper_constraints1.group_max_allocation is None
+            and group_lower_upper_constraints2.group_max_allocation is not None):
+        group_max_allocation = group_lower_upper_constraints2.group_max_allocation.rename(overlaps2)
     else:
         group_max_allocation = None
+    if group_max_allocation is not None:  # fill missing will large positive number
+        group_max_allocation = group_max_allocation.reindex(index=group_loadings.columns).fillna(1e16)
+
     group_lower_upper_constraints = GroupLowerUpperConstraints(group_loadings=group_loadings,
                                                                group_min_allocation=group_min_allocation,
                                                                group_max_allocation=group_max_allocation)
@@ -189,6 +208,18 @@ class Constraints:
         if self.group_turnover_constraint is not None:
             self_dict['group_turnover_constraint'] = self.group_turnover_constraint.update(valid_tickers=valid_tickers)
         return Constraints(**self_dict)
+
+    def update_group_lower_upper_constraints(self,
+                                             group_lower_upper_constraints: GroupLowerUpperConstraints
+                                             ) -> Constraints:
+        this = self.copy()
+        if this.group_lower_upper_constraints is not None:
+            this.group_lower_upper_constraints = merge_group_lower_upper_constraints(
+                group_lower_upper_constraints1=this.group_lower_upper_constraints,
+                group_lower_upper_constraints2=group_lower_upper_constraints)
+        else:
+            this.group_lower_upper_constraints = group_lower_upper_constraints
+        return this
 
     def update_with_valid_tickers(self,
                                   valid_tickers: List[str],

@@ -13,7 +13,7 @@ from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
 
 
 def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
-                                    alphas: pd.DataFrame,
+                                    alphas: Optional[pd.DataFrame],
                                     constraints0: Constraints,
                                     benchmark_weights: Union[pd.Series, pd.DataFrame],
                                     time_period: qis.TimePeriod,  # when we start building portfolios
@@ -30,9 +30,12 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
     # estimate covar at rebalancing schedule
     if covar_dict is None:  # use default ewm covar with covar_estimator
         covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period).y_covars
-
     rebalancing_dates = list(covar_dict.keys())
-    alphas = alphas.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)
+
+    if alphas is None:
+        is_apply_tre_utility_objective = True
+    else:
+        alphas = alphas.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)
 
     weights = {}
     # extend benchmark weights
@@ -51,8 +54,9 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
             rebalancing_indicators_t = rebalancing_indicators.loc[date, :]
         else:
             rebalancing_indicators_t = None
+        alphas_t = alphas.loc[date, :] if alphas is not None else None
         weights_ = wrapper_maximise_alpha_over_tre(pd_covar=pd_covar,
-                                                   alphas=alphas.loc[date, :],
+                                                   alphas=alphas_t,
                                                    benchmark_weights=benchmark_weights.loc[date, :],
                                                    constraints0=constraints0,
                                                    rebalancing_indicators=rebalancing_indicators_t,
@@ -72,7 +76,7 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
 
 
 def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
-                                    alphas: pd.Series,
+                                    alphas: Optional[pd.Series],
                                     benchmark_weights: pd.Series,
                                     constraints0: Constraints,
                                     weights_0: pd.Series = None,
@@ -87,7 +91,11 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
     assets in columns/rows of covar must correspond to alphas.index
     """
     # filter out assets with zero variance or nans
-    vectors = dict(alphas=alphas)
+    if alphas is None:
+        is_apply_tre_utility_objective = True
+        vectors = None
+    else:
+        vectors = dict(alphas=alphas)
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar, vectors=vectors)
     if apply_total_to_good_ratio:
         total_to_good_ratio = len(pd_covar.columns) / len(clean_covar.columns)
@@ -100,14 +108,19 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
                                                          benchmark_weights=benchmark_weights,
                                                          rebalancing_indicators=rebalancing_indicators)
 
+    if alphas is not None:
+        alphas_np = good_vectors['alphas'].to_numpy()
+    else:
+        alphas_np = None
+
     if is_apply_tre_utility_objective:
-        weights = cvx_maximise_alpha_with_tre_utility(covar=clean_covar.to_numpy(),
-                                                      alphas=good_vectors['alphas'].to_numpy(),
-                                                      constraints=constraints,
-                                                      solver=solver)
+        weights = cvx_maximise_tre_utility(covar=clean_covar.to_numpy(),
+                                           alphas=alphas_np,
+                                           constraints=constraints,
+                                           solver=solver)
     else:
         weights = cvx_maximise_alpha_over_tre(covar=clean_covar.to_numpy(),
-                                              alphas=good_vectors['alphas'].to_numpy(),
+                                              alphas=alphas_np,
                                               constraints=constraints,
                                               solver=solver)
 
@@ -170,14 +183,14 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
     return optimal_weights
 
 
-def cvx_maximise_alpha_with_tre_utility(covar: np.ndarray,
-                                        constraints: Constraints,
-                                        alphas: Optional[np.ndarray] = None,
-                                        tre_weight: Optional[float] = 0.00001,
-                                        turnover_weight: Optional[float] = 0.001,
-                                        solver: str = 'ECOS_BB',
-                                        verbose: bool = False
-                                        ) -> np.ndarray:
+def cvx_maximise_tre_utility(covar: np.ndarray,
+                             constraints: Constraints,
+                             alphas: Optional[np.ndarray] = None,
+                             tre_weight: Optional[float] = 1.0,
+                             turnover_weight: Optional[float] = 0.1,
+                             solver: str = 'ECOS_BB',
+                             verbose: bool = False
+                             ) -> np.ndarray:
     """
     numpy level solution of quadratic problem with utility weights:
     max { alpha@w - tre_weight * (w-benchmark_weights)@Sigma@(w-benchmark_weights).t - turnover_weight*sum(abs(w-w_0))}
