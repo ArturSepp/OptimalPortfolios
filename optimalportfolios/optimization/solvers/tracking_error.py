@@ -84,7 +84,8 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
                                     apply_total_to_good_ratio: bool = True,
                                     solver: str = 'ECOS_BB',
                                     detailed_output: bool = False,
-                                    is_apply_tre_utility_objective: bool = False
+                                    is_apply_tre_utility_objective: bool = False,
+                                    verbose: bool = False
                                     ) -> Union[pd.Series, pd.DataFrame]:
     """
     create wrapper accounting for nans or zeros in covar matrix
@@ -117,12 +118,14 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
         weights = cvx_maximise_tre_utility(covar=clean_covar.to_numpy(),
                                            alphas=alphas_np,
                                            constraints=constraints,
-                                           solver=solver)
+                                           solver=solver,
+                                           verbose=verbose)
     else:
         weights = cvx_maximise_alpha_over_tre(covar=clean_covar.to_numpy(),
                                               alphas=alphas_np,
                                               constraints=constraints,
-                                              solver=solver)
+                                              solver=solver,
+                                              verbose=verbose)
 
     weights = pd.Series(weights, index=clean_covar.index)
     weights = weights.reindex(index=pd_covar.index).fillna(0.0)  # align with tickers
