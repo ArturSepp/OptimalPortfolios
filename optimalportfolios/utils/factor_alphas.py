@@ -330,7 +330,7 @@ def estimate_lasso_regression_alphas(prices: pd.DataFrame,
     y = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
     x = qis.to_returns(prices=risk_factors_prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
 
-    betas, total_vars, residual_vars, r2_t = lasso_model.estimate_rolling_betas(x=x, y=y)
+    betas, total_vars, residual_vars, r2_t, clusters = lasso_model.estimate_rolling_betas(x=x, y=y)
     estimation_dates = list(betas.keys())
     excess_returns = {}
     for date0, date1 in zip(estimation_dates[:-1], estimation_dates[1:]):
@@ -364,7 +364,7 @@ def wrapper_estimate_regression_alphas(prices: pd.DataFrame,
                 betas0 = estimated_betas[date0].loc[:, y_.columns]
                 excess_returns[date1] = y_t - x_t @ betas0
         excess_returns = pd.DataFrame.from_dict(excess_returns, orient='index')
-        if return_annualisation_freq_dict is not None:
+        if return_annualisation_freq_dict is not None and freq in return_annualisation_freq_dict.keys():
             excess_returns *= return_annualisation_freq_dict[freq]
         return excess_returns
 

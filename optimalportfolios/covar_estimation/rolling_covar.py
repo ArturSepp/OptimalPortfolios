@@ -16,7 +16,7 @@ from typing import Dict, Optional, Union
 
 # project
 from optimalportfolios.covar_estimation.config import CovarEstimatorType
-from optimalportfolios.lasso.lasso_model_estimator import LassoModel
+from optimalportfolios.lasso.lasso_model_estimator import LassoModel, ClusterDataByDates
 from optimalportfolios.covar_estimation.utils import squeeze_covariance_matrix, compute_returns_from_prices
 from optimalportfolios.covar_estimation.annualisation import get_conversion_factor
 
@@ -30,11 +30,12 @@ class EstimatedRollingCovarData:
     x_covars: Dict[pd.Timestamp, pd.DataFrame]
     y_covars: Optional[Dict[pd.Timestamp, pd.DataFrame]] = None
     asset_last_betas_t: Optional[Dict[pd.Timestamp, pd.DataFrame]] = None
-    last_residual_vars_t: Optional[Dict[pd.Timestamp, pd.DataFrame]] = None
     total_vars_pd: Optional[pd.DataFrame] = None  # annualised
     residual_vars_pd: Optional[pd.DataFrame] = None  # annualised
     r2_pd: Optional[pd.DataFrame] = None
     last_nw_ratios_pd: Optional[pd.DataFrame] = None
+    cluster_data: Optional[Dict[str, ClusterDataByDates]] = None
+
 
     def to_dict(self):
         return asdict(self)
@@ -236,10 +237,10 @@ def estimate_rolling_lasso_covar(risk_factor_prices: pd.DataFrame,
         num_lags_newey_west = num_lags_newey_west_dict[factor_returns_freq]
     else:
         num_lags_newey_west = None
-    betas, total_vars, residual_vars, r2_t = lasso_model.estimate_rolling_betas(x=x, y=y, num_lags_newey_west=num_lags_newey_west)
+    betas, total_vars, residual_vars, r2_t, cluster_data = lasso_model.estimate_rolling_betas(x=x, y=y, num_lags_newey_west=num_lags_newey_west)
 
     if num_lags_newey_west is not None:
-        ewm_nw, nw_ratios = qis.compute_ewm_newey_west_vol(data=y, span=span, num_lags_newey_west=num_lags_newey_west,
+        ewm_nw, nw_ratios = qis.compute_ewm_newey_west_vol(data=y, span=span, num_lags=num_lags_newey_west,
                                                            mean_adj_type=qis.MeanAdjType.EWMA)
         # nw_ratios = qis.compute_ewm(data=nw_ratios.clip(lower=1.0), span=span)
 
@@ -247,12 +248,13 @@ def estimate_rolling_lasso_covar(risk_factor_prices: pd.DataFrame,
     # annualise ido vols
     idio_var_scaler = get_conversion_factor(from_freq=returns_freq, to_freq='YE')
     # print(f"idio_var_scaler for {returns_freq} = {idio_var_scaler}")
-    total_vars *= idio_var_scaler
-    residual_vars *= idio_var_scaler
+    # total_vars *= idio_var_scaler
+    # residual_vars *= idio_var_scaler
+    total_vars = {key: idio_var_scaler*df for key, df in total_vars.items()}
+    residual_vars = {key: idio_var_scaler*df for key, df in residual_vars.items()}
 
     y_covars = {}
     asset_last_betas_t = {}
-    last_residual_vars_t = {}
     last_nw_ratios_t = {}
     for date, x_covar in x_covars.items():
         # find last update date from
@@ -277,7 +279,6 @@ def estimate_rolling_lasso_covar(risk_factor_prices: pd.DataFrame,
         y_covars[date] = pd.DataFrame(betas_covar, index=prices.columns, columns=prices.columns)
 
         asset_last_betas_t[date] = asset_last_betas
-        last_residual_vars_t[date] = last_residual_vars
 
     if num_lags_newey_west_dict is not None:
         last_nw_ratios_pd = pd.DataFrame.from_dict(last_nw_ratios_t, orient='index')
@@ -287,11 +288,11 @@ def estimate_rolling_lasso_covar(risk_factor_prices: pd.DataFrame,
     covar_data = EstimatedRollingCovarData(x_covars=x_covars,
                                            y_covars=y_covars,
                                            asset_last_betas_t=asset_last_betas_t,
-                                           last_residual_vars_t=last_residual_vars_t,
                                            total_vars_pd=pd.DataFrame.from_dict(total_vars, orient='index'),
                                            residual_vars_pd=pd.DataFrame.from_dict(residual_vars, orient='index'),
                                            r2_pd=pd.DataFrame.from_dict(r2_t, orient='index'),
-                                           last_nw_ratios_pd=last_nw_ratios_pd)
+                                           last_nw_ratios_pd=last_nw_ratios_pd,
+                                           cluster_data={rebalancing_freq: cluster_data})
     return covar_data
 
 
@@ -343,6 +344,7 @@ def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame
     residual_vars_freqs: Dict[str, Dict[pd.Timestamp, pd.Series]] = {}
     r2_freqs: Dict[str, Dict[pd.Timestamp, pd.Series]] = {}
     nw_ratios: Dict[str, pd.DataFrame] = {}
+    cluster_data: Dict[str, ClusterDataByDates] = {}
 
     for freq, asset_tickers in group_freqs.items():
         y = qis.to_returns(prices=prices[asset_tickers], is_log_returns=True, drop_first=True, freq=freq)
@@ -358,7 +360,7 @@ def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame
             num_lags_newey_west = num_lags_newey_west_dict[freq]
         else:
             num_lags_newey_west = None
-        betas_freqs[freq], total_vars_freqs[freq], residual_vars_freqs[freq], r2_freqs[freq] \
+        betas_freqs[freq], total_vars_freqs[freq], residual_vars_freqs[freq], r2_freqs[freq], cluster_data[freq] \
             = lasso_model.estimate_rolling_betas(x=x, y=y, span=span_f, num_lags_newey_west=num_lags_newey_west)
 
         if num_lags_newey_west is not None:
@@ -439,10 +441,10 @@ def estimate_rolling_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame
     covar_data = EstimatedRollingCovarData(x_covars=x_covars,
                                            y_covars=y_covars,
                                            asset_last_betas_t=asset_last_betas_t,
-                                           last_residual_vars_t=last_residual_vars_t,
                                            total_vars_pd=pd.DataFrame.from_dict(last_total_vars_t, orient='index'),
                                            residual_vars_pd=pd.DataFrame.from_dict(last_residual_vars_t, orient='index'),
                                            r2_pd=pd.DataFrame.from_dict(last_r2_vars_t, orient='index'),
-                                           last_nw_ratios_pd=last_nw_ratios_pd)
+                                           last_nw_ratios_pd=last_nw_ratios_pd,
+                                           cluster_data=cluster_data)
 
     return covar_data

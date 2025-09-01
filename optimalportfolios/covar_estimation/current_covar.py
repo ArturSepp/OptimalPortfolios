@@ -170,7 +170,7 @@ def estimate_lasso_covar(risk_factor_prices: pd.DataFrame,
     if num_lags_newey_west_dict is not None:
         num_lags_newey_west = num_lags_newey_west_dict[returns_freq]
 
-    lasso_model.fit(x=x, y=y, verbose=verbose, num_lags_newey_west=num_lags_newey_west)
+    lasso_model.fit(x=x, y=y, verbose=verbose, num_lags=num_lags_newey_west)
     asset_last_betas, last_total_vars, last_residual_vars, last_r2 = lasso_model.compute_residual_alpha_r2()
 
     # annualise ido vols

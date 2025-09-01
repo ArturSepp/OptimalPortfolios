@@ -58,7 +58,7 @@ def compute_joint_alphas(prices: pd.DataFrame,
                          alpha_beta_type: pd.Series,
                          rebalancing_freq: Union[str, pd.Series],
                          estimated_betas: Dict[pd.Timestamp, pd.DataFrame],
-                         group_data_alphas: pd.Series,
+                         group_data_alphas: Optional[pd.Series],
                          beta_span: int = 12,
                          momentum_long_span: int = 12,
                          managers_alpha_span: int = 12,
@@ -74,33 +74,42 @@ def compute_joint_alphas(prices: pd.DataFrame,
     """
     # 1. compute momentum and low betas for selected universe
     beta_assets = alpha_beta_type.loc[alpha_beta_type == 'Beta'].index.to_list()
-    if len(beta_assets) == 0:
-        raise NotImplementedError
-    alpha_scores, momentum, beta, momentum_score, beta_score = wrapper_compute_low_beta_alphas(prices=prices[beta_assets],
-                                                                                               benchmark_price=benchmark_price,
-                                                                                               rebalancing_freq=rebalancing_freq,
-                                                                                               group_data_alphas=group_data_alphas.loc[beta_assets],
-                                                                                               beta_span=beta_span,
-                                                                                               momentum_long_span=momentum_long_span)
+    if len(beta_assets) > 0:
+        if group_data_alphas is not None:
+            group_data_alphas = group_data_alphas.loc[beta_assets]
+        alpha_scores, momentum, beta, momentum_score, beta_score = wrapper_compute_low_beta_alphas(prices=prices[beta_assets],
+                                                                                                   benchmark_price=benchmark_price,
+                                                                                                   rebalancing_freq=rebalancing_freq,
+                                                                                                   group_data_alphas=group_data_alphas,
+                                                                                                   beta_span=beta_span,
+                                                                                                   momentum_long_span=momentum_long_span)
+    else:
+        alpha_scores, momentum, beta, momentum_score, beta_score = None, None, None, None, None
+
     # 2. compute alphas for managers
     alpha_assets = alpha_beta_type.loc[alpha_beta_type == 'Alpha'].index.to_list()
-    if len(alpha_assets) == 0:
-        raise NotImplementedError
-
-    excess_returns = wrapper_estimate_regression_alphas(prices=prices[alpha_assets],
-                                                        risk_factors_prices=risk_factors_prices,
-                                                        estimated_betas=estimated_betas,
-                                                        rebalancing_freq=rebalancing_freq,
-                                                        return_annualisation_freq_dict=return_annualisation_freq_dict)
-    # alphas_ = excess_returns.rolling(managers_alpha_span).sum()
-    managers_alphas = qis.compute_ewm(data=excess_returns, span=managers_alpha_span)
-    # managers_scores = qis.df_to_cross_sectional_score(df=managers_alphas)
-    managers_scores = managers_alphas / np.nanstd(managers_alphas, axis=1, keepdims=True)
+    if len(alpha_assets) > 0:
+        excess_returns = wrapper_estimate_regression_alphas(prices=prices[alpha_assets],
+                                                            risk_factors_prices=risk_factors_prices,
+                                                            estimated_betas=estimated_betas,
+                                                            rebalancing_freq=rebalancing_freq,
+                                                            return_annualisation_freq_dict=return_annualisation_freq_dict)
+        # alphas_ = excess_returns.rolling(managers_alpha_span).sum()
+        managers_alphas = qis.compute_ewm(data=excess_returns, span=managers_alpha_span)
+        # managers_scores = qis.df_to_cross_sectional_score(df=managers_alphas)
+        managers_scores = managers_alphas.divide(np.nanstd(managers_alphas, axis=1, keepdims=True))
+    else:
+        managers_alphas = None
+        managers_scores = None
 
     # merge
-    managers_scores = managers_scores.reindex(index=alpha_scores.index).ffill()
-    alpha_scores = pd.concat([alpha_scores, managers_scores], axis=1)
-    alpha_scores = alpha_scores[prices.columns].ffill()
+    if alpha_scores is not None and managers_scores is not None:
+        managers_scores = managers_scores.reindex(index=alpha_scores.index).ffill()
+        alpha_scores = pd.concat([alpha_scores, managers_scores], axis=1)
+        alpha_scores = alpha_scores[prices.columns].ffill()
+    elif alpha_scores is None and managers_scores is not None:
+        alpha_scores = managers_scores
+
     alphas = AlphasData(alpha_scores=alpha_scores,
                         beta=beta,
                         momentum=momentum,

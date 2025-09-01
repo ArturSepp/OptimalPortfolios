@@ -39,9 +39,9 @@ class GroupLowerUpperConstraints:
     def __post_init__(self):
         """Validate that allocation series indices match group loadings columns."""
         if self.group_min_allocation is not None:
-            assert self.group_min_allocation.index.equals(self.group_loadings.columns)
+            assert self.group_min_allocation.index.isin(self.group_loadings.columns).all()
         if self.group_max_allocation is not None:
-            assert self.group_max_allocation.index.equals(self.group_loadings.columns)
+            assert self.group_max_allocation.index.isin(self.group_loadings.columns).all()
 
     def copy(self) -> GroupLowerUpperConstraints:
         """Create a copy.

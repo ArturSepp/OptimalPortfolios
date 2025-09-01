@@ -21,6 +21,13 @@ class LassoModelType(Enum):
 
 
 @dataclass
+class ClusterDataByDates:
+    clusters: Dict[pd.Timestamp, pd.Series]
+    linkages: Dict[pd.Timestamp, np.ndarray]
+    cutoffs: Dict[pd.Timestamp, float]
+
+
+@dataclass
 class LassoModel:
     """
     wrapper for lasso model
@@ -162,7 +169,10 @@ class LassoModel:
                                span: Optional[float] = None,
                                num_lags_newey_west: Optional[int] = None
                                ) -> Tuple[Dict[pd.Timestamp, pd.DataFrame],
-                                          Dict[pd.Timestamp, pd.Series], Dict[pd.Timestamp, pd.Series], Dict[pd.Timestamp, pd.Series]]:
+                                          Dict[pd.Timestamp, pd.Series],
+                                          Dict[pd.Timestamp, pd.Series],
+                                          Dict[pd.Timestamp, pd.Series],
+                                          ClusterDataByDates]:
         """
         fit rolling time series of betas
         """
@@ -170,6 +180,9 @@ class LassoModel:
         total_vars_t = {}
         residual_vars_t = {}
         r2_t = {}
+        clusters = {}
+        linkages = {}
+        cutoffs = {}
         for idx, date in enumerate(y.index):
             if idx > self.warmup_period:  # global warm-up period
                 self.fit(x=x.iloc[:idx, :], y=y.iloc[:idx, :], verbose=verbose, span=span, num_lags_newey_west=num_lags_newey_west)
@@ -178,7 +191,12 @@ class LassoModel:
                 total_vars_t[date] = total_vars
                 residual_vars_t[date] = residual_vars
                 r2_t[date] = r2
-        return betas_t, total_vars_t, residual_vars_t, r2_t
+                clusters[date] = self.clusters
+                linkages[date] = self.linkage
+                cutoffs[date] = self.cutoff
+        cluster_data = ClusterDataByDates(clusters=clusters, linkages=linkages, cutoffs=cutoffs)
+
+        return betas_t, total_vars_t, residual_vars_t, r2_t, cluster_data
 
     def compute_residual_alpha_r2(self,
                                   span: Optional[float] = None

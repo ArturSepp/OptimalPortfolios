@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optimalportfolios"
-version = "3.4.4"
+version = "3.4.5"
 description = "Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python"
 readme = "README.md"
 license = {file = "LICENSE.txt"}
@@ -78,7 +78,7 @@ dependencies = [
     "ecos>=2.0.0",
     "quadprog>=0.1.11",
     "scikit-learn>=1.7.0",
-    "qis>=3.3.10",
+    "qis>=3.3.14",
 ]
 
 [project.optional-dependencies]
