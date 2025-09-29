@@ -106,10 +106,10 @@ def compute_joint_alphas(prices: pd.DataFrame,
     if alpha_scores is not None and managers_scores is not None:
         managers_scores = managers_scores.reindex(index=alpha_scores.index).ffill()
         alpha_scores = pd.concat([alpha_scores, managers_scores], axis=1)
-        alpha_scores = alpha_scores[prices.columns].ffill()
+        alpha_scores = alpha_scores.reindex(columns=prices.columns)
     elif alpha_scores is None and managers_scores is not None:
         alpha_scores = managers_scores
-
+    alpha_scores = alpha_scores.fillna(0.0)
     alphas = AlphasData(alpha_scores=alpha_scores,
                         beta=beta,
                         momentum=momentum,

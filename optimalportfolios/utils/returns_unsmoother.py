@@ -1,6 +1,7 @@
 """
 returns unsmoothing using AR-1 betas
 """
+import numpy as np
 import pandas as pd
 import qis as qis
 from typing import Optional, Tuple
@@ -10,7 +11,7 @@ def adjust_returns_with_ar1(returns: pd.DataFrame,
                             span: int = 20,
                             mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.NONE,
                             warmup_period: Optional[int] = 10,
-                            max_value_for_beta: float = 0.75,
+                            max_value_for_beta: Optional[float] = 0.75,
                             apply_ewma_mean_smoother: bool = True
                             ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
@@ -23,7 +24,8 @@ def adjust_returns_with_ar1(returns: pd.DataFrame,
                                                                     y_data=returns,
                                                                     mean_adj_type=mean_adj_type,
                                                                     span=span)
-    betas = betas.clip(lower=0.0, upper=max_value_for_beta)
+    if max_value_for_beta is not None:
+        betas = betas.clip(lower=0.0, upper=max_value_for_beta)
     if apply_ewma_mean_smoother:
         betas = qis.compute_ewm(data=betas, span=span)
 
@@ -41,13 +43,16 @@ def compute_ar1_unsmoothed_prices(prices: pd.DataFrame,
                                   span: int = 20,
                                   mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.NONE,
                                   warmup_period: Optional[int] = 8,
-                                  max_value_for_beta: float = 0.5
+                                  max_value_for_beta: Optional[float] = 0.5,
+                                  is_log_returns: bool = True
                                   ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    y = qis.to_returns(prices, freq=freq, drop_first=False)
+    y = qis.to_returns(prices, freq=freq, drop_first=False, is_log_returns=is_log_returns)
     unsmoothed, betas, ewm_r2 = adjust_returns_with_ar1(returns=y,
                                                         span=span,
                                                         mean_adj_type=mean_adj_type,
                                                         warmup_period=warmup_period,
                                                         max_value_for_beta=max_value_for_beta)
+    if is_log_returns:  # back to compounded
+        unsmoothed = np.expm1(unsmoothed)
     navs = qis.returns_to_nav(returns=unsmoothed)
     return navs, unsmoothed, betas, ewm_r2

@@ -97,7 +97,7 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
                                                     alphas=good_vectors['alphas'].to_numpy(),
                                                     constraints=constraints,
                                                     solver=solver)
-
+    weights[np.isinf(weights)] = 0.0
     weights = pd.Series(weights, index=clean_covar.index)
     weights = weights.reindex(index=pd_covar.index).fillna(0.0)  # align with tickers
 

@@ -87,7 +87,7 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
                                             means=good_vectors['means'].to_numpy(),
                                             constraints=constraints,
                                             solver=solver)
-
+    weights[np.isinf(weights)] = 0.0
     weights = pd.Series(weights, index=clean_covar.index)
     weights = weights.reindex(index=pd_covar.index).fillna(0.0)  # align with tickers
 

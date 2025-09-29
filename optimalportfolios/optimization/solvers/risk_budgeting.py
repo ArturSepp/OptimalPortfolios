@@ -128,6 +128,7 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
     weights0 = opt_risk_budgeting(covar=clean_covar.to_numpy(),
                                   constraints=constraints,
                                   risk_budget=risk_budget_np)
+    weights0[np.isinf(weights0)] = 0.0
     weights = pd.Series(weights0, index=clean_covar.index)
     weights = weights.reindex(index=pd_covar.index).fillna(0.0)  # align with tickers
 
