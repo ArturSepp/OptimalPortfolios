@@ -43,7 +43,9 @@ class EstimatedRollingCovarData:
     def get_linear_factor_model(self,
                                 x_factors: pd.DataFrame,
                                 y_assets: pd.DataFrame,
-                                to_returns: bool = True
+                                to_returns: bool = True,
+                                demean: bool = True,
+                                span: Optional[str] = 52
                                 ) -> qis.LinearModel:
         """
         asset_last_betas_t -> Dict[factor, pd.DataFrame(factor_betas, index=time, columns=assets)]
@@ -51,7 +53,8 @@ class EstimatedRollingCovarData:
         if self.asset_last_betas_t is None:
             raise ValueError(f"asset_last_betas_t must be provided")
         # define factors
-        factors = self.asset_last_betas_t[list(self.asset_last_betas_t.keys())[0]].index
+        estimation_dates = list(self.asset_last_betas_t.keys())
+        factors = self.asset_last_betas_t[estimation_dates[0]].index  #
         factor_loadings = {}
         for factor in factors:
             factor_betas = {}
@@ -60,10 +63,14 @@ class EstimatedRollingCovarData:
             factor_loadings[factor] = pd.DataFrame.from_dict(factor_betas, orient='index')
 
         if to_returns:
-            x_factors = qis.to_returns(prices=x_factors.reindex(index=self.asset_last_betas_t.keys()).ffill(),
-                                       is_first_zero=True)
-            y_assets = qis.to_returns(prices=y_assets.reindex(index=self.asset_last_betas_t.keys()).ffill(),
-                                      is_first_zero=True)
+            x_factors = compute_returns_from_prices(prices=x_factors.reindex(index=estimation_dates).ffill(),
+                                                    returns_freq=None,  demean=demean, span=span, drop_first=False, is_first_zero=True)
+            y_assets = compute_returns_from_prices(prices=y_assets.reindex(index=estimation_dates).ffill(),
+                                                    returns_freq=None, demean=demean, span=span, drop_first=False, is_first_zero=True)
+        else:
+            x_factors = x_factors.reindex(index=estimation_dates)
+            y_assets = y_assets.reindex(index=estimation_dates)
+
         linear_model = qis.LinearModel(x=x_factors, y=y_assets, loadings=factor_loadings,
                                        x_covars=self.x_covars,
                                        residual_vars=self.residual_vars_pd)
@@ -237,7 +244,8 @@ def estimate_rolling_lasso_covar(risk_factor_prices: pd.DataFrame,
         num_lags_newey_west = num_lags_newey_west_dict[factor_returns_freq]
     else:
         num_lags_newey_west = None
-    betas, total_vars, residual_vars, r2_t, cluster_data = lasso_model.estimate_rolling_betas(x=x, y=y, num_lags_newey_west=num_lags_newey_west)
+    betas, total_vars, residual_vars, r2_t, cluster_data = lasso_model.estimate_rolling_betas(x=x, y=y, span=span,
+                                                                                              num_lags_newey_west=num_lags_newey_west)
 
     if num_lags_newey_west is not None:
         ewm_nw, nw_ratios = qis.compute_ewm_newey_west_vol(data=y, span=span, num_lags=num_lags_newey_west,
@@ -259,6 +267,9 @@ def estimate_rolling_lasso_covar(risk_factor_prices: pd.DataFrame,
     for date, x_covar in x_covars.items():
         # find last update date from
         last_update_date = qis.find_upto_date_from_datetime_index(index=list(betas.keys()), date=date)
+        if last_update_date is None:  # wait until all last dates are valid
+            continue
+
         # align
         asset_last_betas = betas[last_update_date].loc[x_covar.index, prices.columns]
         last_residual_vars = residual_vars[last_update_date][prices.columns]
@@ -277,7 +288,6 @@ def estimate_rolling_lasso_covar(risk_factor_prices: pd.DataFrame,
             last_nw_ratios_t[date] = last_nw_ratios
 
         y_covars[date] = pd.DataFrame(betas_covar, index=prices.columns, columns=prices.columns)
-
         asset_last_betas_t[date] = asset_last_betas
 
     if num_lags_newey_west_dict is not None:

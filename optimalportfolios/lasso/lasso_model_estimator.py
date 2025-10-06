@@ -222,8 +222,7 @@ def solve_lasso_cvx_problem(x: np.ndarray,
                             verbose: bool = False,
                             solver: str = 'ECOS_BB',
                             nonneg: bool = False,
-                            apply_independent_nan_filter: bool = True,
-                            is_declining: bool = False
+                            apply_independent_nan_filter: bool = True
                             ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     solve lasso for n dimensional matrix of dependent variables y
@@ -256,8 +255,7 @@ def solve_lasso_cvx_problem(x: np.ndarray,
                                                                            span=span,
                                                                            verbose=verbose,
                                                                            solver=solver,
-                                                                           nonneg=nonneg,
-                                                                           is_declining=is_declining)
+                                                                           nonneg=nonneg)
         return betas, alphas, r2s
 
     # select non nan basis
@@ -286,12 +284,6 @@ def solve_lasso_cvx_problem(x: np.ndarray,
     constraints = None
     if n_y > 1:
         weights = np.tile(weights, (n_y, 1)).T  # map to columns
-    else:
-        if is_declining:
-            constraints = [cvx.sum(beta) <= 0.50]
-            for idx in np.arange(n_x):
-                if idx < n_x-1:
-                    constraints += [beta[idx] - beta[idx+1] >= 0.0]
 
     objective_fun = (1.0 / t) * cvx.sum_squares(cvx.multiply(weights, x @ beta - y)) + reg_lambda * cvx.norm1(beta)
     objective = cvx.Minimize(objective_fun)
@@ -311,10 +303,6 @@ def solve_lasso_cvx_problem(x: np.ndarray,
         ss_res = np.nansum(norm_weights * np.square(residuals), axis=0)
         ss_total = np.nansum(norm_weights * np.square((y - np.nanmean(y, axis=0))), axis=0)
         r2 = 1.0 - np.divide(ss_res, ss_total, where=ss_total > 0.0)
-
-        print(alpha)
-        print(r2)
-
         return estimated_beta, alpha, r2
 
 

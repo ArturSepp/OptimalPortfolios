@@ -64,16 +64,19 @@ def squeeze_covariance_matrix(covar: Union[np.ndarray, pd.DataFrame],
 
 
 def compute_returns_from_prices(prices: pd.DataFrame,
-                                returns_freq: str = 'ME',
+                                returns_freq: Optional[str] = 'ME',
                                 demean: bool = True,
+                                drop_first: bool = True,
+                                is_first_zero: bool = False,
                                 span: Optional[int] = 52
                                 ) -> pd.DataFrame:
     """
     compute returns for covar matrix estimation
     """
-    returns = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=returns_freq)
+    returns = qis.to_returns(prices=prices, is_log_returns=True, is_first_zero=is_first_zero, drop_first=drop_first, freq=returns_freq)
     if demean:
         returns = returns - qis.compute_ewm(returns, span=span)
         # returns.iloc[0, :] will be zero so shift the period
-        returns = returns.iloc[1:, :]
+        if drop_first:
+            returns = returns.iloc[1:, :]
     return returns
