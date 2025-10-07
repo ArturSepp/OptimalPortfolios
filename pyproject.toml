@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optimalportfolios"
-version = "3.4.7"
+version = "3.4.8"
 description = "Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python"
 readme = "README.md"
 license = {file = "LICENSE.txt"}

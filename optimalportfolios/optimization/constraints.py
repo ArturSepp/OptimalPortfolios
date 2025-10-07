@@ -41,13 +41,13 @@ class GroupLowerUpperConstraints:
         if self.group_min_allocation is not None:
             this = self.group_min_allocation.index.isin(self.group_loadings.columns)
             if not this.all():
-                print(f"{self.group_min_allocation.index} missing in\n{self.group_loadings.columns}")
+                warnings.warm(f"{self.group_min_allocation.index} missing in\n{self.group_loadings.columns}")
             # temp fix to ensure that min allocation is zero for given group loadings
             self.group_min_allocation.reindex(index=self.group_loadings.columns).fillna(0)
         if self.group_max_allocation is not None:
             this = self.group_max_allocation.index.isin(self.group_loadings.columns)
             if not this.all():
-                print(f"{self.group_max_allocation.index} missing in\n{self.group_loadings.columns}")
+                warnings.warm(f"{self.group_max_allocation.index} missing in\n{self.group_loadings.columns}")
             # temp fix to ensure that max allocation is zero for given group loadings
             self.group_max_allocation.reindex(index=self.group_loadings.columns).fillna(0)
 
@@ -132,8 +132,7 @@ def merge_group_lower_upper_constraints(
             and appropriately filled missing bounds.
     """
     # Check for overlapping column names and create rename mappings
-    overlaps = list(set(group_lower_upper_constraints1.group_loadings.columns) &
-                    set(group_lower_upper_constraints2.group_loadings.columns))
+    overlaps = list(set(group_lower_upper_constraints1.group_loadings.columns) & set(group_lower_upper_constraints2.group_loadings.columns))
 
     if len(overlaps) > 0:
         overlaps1 = {x: f"{x}_1" for x in overlaps}
@@ -143,10 +142,20 @@ def merge_group_lower_upper_constraints(
         overlaps2 = {}
 
     # Merge group loadings
+    duplicates = group_lower_upper_constraints1.group_loadings.index.duplicated()
+    if duplicates.any():
+        warnings.warn(f"Duplicate values in group_lower_upper_constraints1.group_loadings.index:"
+                      f" {group_lower_upper_constraints1.group_loadings.index[duplicates].unique()}")
+
+    duplicates = group_lower_upper_constraints2.group_loadings.index.duplicated()
+    if duplicates.any():
+        warnings.warn(f"Duplicate values in group_lower_upper_constraints2.group_loadings.index"
+                      f" {group_lower_upper_constraints2.group_loadings.index[duplicates].unique()}")
+
     group_loadings = pd.concat([
         group_lower_upper_constraints1.group_loadings.rename(overlaps1, axis=1),
         group_lower_upper_constraints2.group_loadings.rename(overlaps2, axis=1)
-    ], axis=1)
+    ], axis=1).fillna(0.0)
 
     # Merge minimum allocations
     if (group_lower_upper_constraints1.group_min_allocation is not None and
@@ -165,9 +174,8 @@ def merge_group_lower_upper_constraints(
         group_min_allocation = None
 
     if group_min_allocation is not None:
-        group_min_allocation = group_min_allocation.reindex(
-            index=group_loadings.columns
-        ).fillna(filling_value_for_missing_lower_bound)
+        group_min_allocation = group_min_allocation.reindex(index=group_loadings.columns
+                                                            ).fillna(filling_value_for_missing_lower_bound)
 
     # Merge maximum allocations
     if (group_lower_upper_constraints1.group_max_allocation is not None and
@@ -316,7 +324,7 @@ class GroupTurnoverConstraint:
         """
         constraints = []
         if weights_0 is None:
-            print(f"weights_0 must be given for turnover_constraint")
+            warnings.warm(f"weights_0 must be given for turnover_constraint")
         else:
             for group in self.group_loadings.columns:
                 group_loading = self.group_loadings[group].copy()
@@ -655,7 +663,7 @@ class Constraints:
         # Portfolio-level turnover constraint
         elif self.turnover_constraint is not None:
             if self.weights_0 is None:
-                print("weights_0 must be given for turnover constraint")
+                warnings.warm("weights_0 must be given for turnover constraint")
             else:
                 if self.turnover_costs is not None:
                     constraints += [
