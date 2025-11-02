@@ -35,7 +35,7 @@ def run_etf_tracking_portfolio(prices: pd.DataFrame,
                                                                group_min_allocation=group_min_allocation,
                                                                group_max_allocation=group_max_allocation)
 
-    constraints0 = Constraints(is_long_only=True,
+    constraints = Constraints(is_long_only=True,
                                min_weights=0.0 * benchmark_weights,
                                max_weights=3.0 * benchmark_weights,
                                tracking_err_vol_constraint=0.05,  # annualised vol difference
@@ -47,7 +47,7 @@ def run_etf_tracking_portfolio(prices: pd.DataFrame,
     weights = rolling_maximise_alpha_over_tre(prices=prices,
                                               alphas=alphas,
                                               benchmark_weights=benchmark_weights,
-                                              constraints0=constraints0,
+                                              constraints=constraints,
                                               time_period=time_period,
                                               covar_estimator=covar_estimator)
     return weights
@@ -87,7 +87,7 @@ def run_local_test(local_test: LocalTests):
                                                                    group_min_allocation=group_min_allocation,
                                                                    group_max_allocation=group_max_allocation)
 
-        constraints0 = Constraints(is_long_only=True,
+        constraints = Constraints(is_long_only=True,
                                    min_weights=0.0*benchmark_weights,
                                    max_weights=2.0*benchmark_weights,
                                    tracking_err_vol_constraint=0.06,  # annualised vol difference
@@ -98,7 +98,7 @@ def run_local_test(local_test: LocalTests):
         weights = wrapper_maximise_alpha_over_tre(pd_covar=pd_covar,
                                                   alphas=alphas,
                                                   benchmark_weights=benchmark_weights,
-                                                  constraints0=constraints0,
+                                                  constraints=constraints,
                                                   weights_0=benchmark_weights)
 
         df_weight = pd.concat([benchmark_weights.rename('benchmark'),
@@ -139,7 +139,7 @@ def run_local_test(local_test: LocalTests):
             for turnover_constraint in turnover_constraints:
                 port_name = f"te_vol<{tracking_err_vol_constraint:0.2f}, turnover<{turnover_constraint:0.2f}"
 
-                constraints0 = Constraints(is_long_only=True,
+                constraints = Constraints(is_long_only=True,
                                            min_weights=0.0 * benchmark_weights,
                                            max_weights=2.0 * benchmark_weights,
                                            tracking_err_vol_constraint=tracking_err_vol_constraint,  # annualised vol difference
@@ -149,7 +149,7 @@ def run_local_test(local_test: LocalTests):
                 weights = wrapper_maximise_alpha_over_tre(pd_covar=pd_covar,
                                                           alphas=alphas,
                                                           benchmark_weights=benchmark_weights,
-                                                          constraints0=constraints0,
+                                                          constraints=constraints,
                                                           weights_0=benchmark_weights)
 
                 weights = pd.Series(weights, index=prices.columns)

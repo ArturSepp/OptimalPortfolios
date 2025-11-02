@@ -69,7 +69,7 @@ saa_rolling_weights = rolling_risk_budgeting(prices=universe_prices,
                                              time_period=time_period,
                                              covar_dict=rolling_covar_data.y_covars,
                                              risk_budget=risk_budget,
-                                             constraints0=Constraints(is_long_only=True))  # trivial constraints
+                                             constraints=Constraints(is_long_only=True))  # trivial constraints
 # 6. run backtest using portfolio weights using qis package
 saa_portfolio_data = qis.backtest_model_portfolio(prices=universe_prices,
                                                   weights=saa_rolling_weights,

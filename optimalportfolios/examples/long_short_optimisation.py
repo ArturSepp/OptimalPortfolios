@@ -50,7 +50,7 @@ rebalancing_freq = 'QE'  # weights rebalancing frequency: rebalancing is quarter
 span = 52  # span of number of returns_freq-returns for covariance estimation = 12y
 
 # use max_exposure = min_exposure so the sum of portfolio weight = 0
-constraints0 = Constraints(is_long_only=False,   # negative weights are allowed
+constraints = Constraints(is_long_only=False,   # negative weights are allowed
                            max_exposure=1.0,  # defines maximum net exposure = sum(weights)
                            min_exposure=-1.0,  # defines minimum net exposure = sum(weights)
                            min_weights=pd.Series(-0.25, index=prices.columns), # can go negative
@@ -60,7 +60,7 @@ constraints0 = Constraints(is_long_only=False,   # negative weights are allowed
 # 3.b. compute solvers portfolio weights rebalanced every quarter
 weights = compute_rolling_optimal_weights(prices=prices,
                                           portfolio_objective=portfolio_objective,
-                                          constraints0=constraints0,
+                                          constraints=constraints,
                                           time_period=time_period,
                                           rebalancing_freq=rebalancing_freq,
                                           span=span)

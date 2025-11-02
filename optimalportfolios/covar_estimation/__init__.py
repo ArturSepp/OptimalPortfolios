@@ -16,3 +16,5 @@ from optimalportfolios.covar_estimation.current_covar import (EstimatedCurrentCo
                                                               wrapper_estimate_current_lasso_covar,
                                                               estimate_lasso_covar,
                                                               estimate_lasso_covar_different_freq)
+
+from optimalportfolios.covar_estimation.covar_reporting import run_rolling_covar_report

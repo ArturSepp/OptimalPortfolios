@@ -16,7 +16,7 @@ from optimalportfolios.covar_estimation.utils import squeeze_covariance_matrix
 
 
 def rolling_maximize_cara_mixture(prices: pd.DataFrame,
-                                  constraints0: Constraints,
+                                  constraints: Constraints,
                                   time_period: qis.TimePeriod,  # when we start building portfolios
                                   rebalancing_freq: str = 'QE',
                                   roll_window: int = 52*6,  # number of returns in mixture estimation, default is 6y of weekly returns
@@ -44,7 +44,7 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
             # drop assets with
             rets_ = period.locate(returns).dropna(axis=1, how='any')
             params = fit_gaussian_mixture(x=rets_.to_numpy(), n_components=n_components, scaler=scaler)
-            constraints = constraints0.update_with_valid_tickers(valid_tickers=rets_.columns.to_list(),
+            constraints1 = constraints.update_with_valid_tickers(valid_tickers=rets_.columns.to_list(),
                                                                  total_to_good_ratio=len(tickers)/len(rets_.columns),
                                                                  weights_0=weights_0)
             if squeeze_factor is not None and squeeze_factor > 0.0:
@@ -53,7 +53,7 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
             weights_ = wrapper_maximize_cara_mixture(means=params.means,
                                                      covars=params.covars,
                                                      probs=params.probs,
-                                                     constraints0=constraints,
+                                                     constraints=constraints1,
                                                      tickers=rets_.columns.to_list(),
                                                      carra=carra)
             weights_0 = weights_  # update for next rebalancing
@@ -68,7 +68,7 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
 def wrapper_maximize_cara_mixture(means: List[np.ndarray],
                                   covars: List[np.ndarray],
                                   probs: np.ndarray,
-                                  constraints0: Constraints,
+                                  constraints: Constraints,
                                   tickers: List[str],
                                   carra: float = 0.5
                                   ) -> pd.Series:
@@ -78,7 +78,7 @@ def wrapper_maximize_cara_mixture(means: List[np.ndarray],
     weights = opt_maximize_cara_mixture(means=means,
                                         covars=covars,
                                         probs=probs,
-                                        constraints=constraints0,
+                                        constraints=constraints,
                                         carra=carra)
     weights = pd.Series(weights, index=tickers)
     return weights
@@ -99,10 +99,11 @@ def opt_maximize_cara_mixture(means: List[np.ndarray],
     else:
         x0 = np.ones(n) / n
 
-    constraints_ = constraints.set_scipy_constraints()  # covar is not used for this method
+    constraints_, bounds = constraints.set_scipy_constraints()  # covar is not used for this method
     res = minimize(carra_objective_mixture, x0, args=[means, covars, probs, carra], method='SLSQP',
                    constraints=constraints_,
-                   options={'disp': verbose, 'ftol': 1e-12})
+                   bounds=bounds,
+                   options={'disp': verbose, 'ftol': 1e-8})
     optimal_weights = res.x
 
     if optimal_weights is None:
@@ -141,7 +142,7 @@ def opt_maximize_cara(means: np.ndarray,
     else:
         func = carra_objective
     res = minimize(func, x0, args=[means, covar, carra], method='SLSQP', constraints=cons,
-                   options={'disp': disp, 'ftol': 1e-16})
+                   options={'disp': disp, 'ftol': 1e-12})
     w_rb = res.x
 
     if is_print_log:

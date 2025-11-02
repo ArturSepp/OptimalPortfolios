@@ -43,9 +43,9 @@ print(covar_matrix)
 qis.plot_corr_matrix_from_covar(covar=covar_matrix)
 
 
-# portfolio_weights = wrapper_risk_budgeting(pd_covar=covar_matrix, constraints0=Constraints(is_long_only=True))
-# portfolio_weights = wrapper_quadratic_optimisation(pd_covar=covar_matrix, constraints0=Constraints(is_long_only=True))
-portfolio_weights = wrapper_maximise_diversification(pd_covar=covar_matrix, constraints0=Constraints(is_long_only=True))
+# portfolio_weights = wrapper_risk_budgeting(pd_covar=covar_matrix, constraints=Constraints(is_long_only=True))
+# portfolio_weights = wrapper_quadratic_optimisation(pd_covar=covar_matrix, constraints=Constraints(is_long_only=True))
+portfolio_weights = wrapper_maximise_diversification(pd_covar=covar_matrix, constraints=Constraints(is_long_only=True))
 
 print(f"benchmark_vol={compute_portfolio_vol(covar_matrix, benchmark_weights):.2%}, "
       f"portfolio_vol={compute_portfolio_vol(covar_matrix, portfolio_weights):.2%},"

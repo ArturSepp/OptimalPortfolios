@@ -21,7 +21,7 @@ from pyrb import ConstrainedRiskBudgeting
 
 
 def rolling_risk_budgeting(prices: pd.DataFrame,
-                           constraints0: Constraints,
+                           constraints: Constraints,
                            time_period: qis.TimePeriod,  # when we start building portfolios
                            covar_dict: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
                            covar_estimator: CovarEstimator = CovarEstimator(),  # default covar estimator is ewma
@@ -50,7 +50,7 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
         else:
             rebalancing_indicators_t = None
         weights_ = wrapper_risk_budgeting(pd_covar=pd_covar,
-                                          constraints0=constraints0,
+                                          constraints=constraints,
                                           weights_0=weights_0,
                                           risk_budget=risk_budget,
                                           rebalancing_indicators=rebalancing_indicators_t,
@@ -63,7 +63,7 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
 
 
 def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
-                           constraints0: Constraints,
+                           constraints: Constraints,
                            weights_0: pd.Series = None,
                            risk_budget: Union[pd.Series, Dict[str, float]] = None,
                            rebalancing_indicators: pd.Series = None,
@@ -99,7 +99,7 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
     else:
         fixed_weights = None
 
-    vectors = dict(min_weights=constraints0.min_weights, max_weights=constraints0.max_weights, risk_budget=risk_budget)
+    vectors = dict(min_weights=constraints.min_weights, max_weights=constraints.max_weights, risk_budget=risk_budget)
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar, vectors=vectors,
                                                                   inclusion_indicators=inclusion_indicators)
 
@@ -119,14 +119,14 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
     else:
         risk_budget_np = None
 
-    constraints = constraints0.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
+    constraints1 = constraints.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
                                                          total_to_good_ratio=total_to_good_ratio,
                                                          weights_0=weights_0,
                                                          rebalancing_indicators=None,  # don't need to account here
                                                          apply_total_to_good_ratio=apply_total_to_good_ratio)
 
     weights0 = opt_risk_budgeting(covar=clean_covar.to_numpy(),
-                                  constraints=constraints,
+                                  constraints=constraints1,
                                   risk_budget=risk_budget_np)
     weights0[np.isinf(weights0)] = 0.0
     weights = pd.Series(weights0, index=clean_covar.index)
@@ -206,12 +206,7 @@ def opt_risk_budgeting_scipy(covar: np.ndarray,
     if risk_budget is None:
         risk_budget = np.ones(n) / n
 
-    if constraints.min_weights is not None and constraints.max_weights is not None:
-        bounds = [(x, y) for x, y in zip(constraints.min_weights.to_numpy(), constraints.max_weights.to_numpy())]
-    else:
-        bounds = None
-
-    constraints_ = constraints.set_scipy_constraints(covar=covar)
+    constraints_, bounds = constraints.set_scipy_constraints(covar=covar)
 
     # set zero risk budget to nan to exlude from computations
     risk_budget = np.where(np.isclose(risk_budget, 0.0), np.nan, risk_budget)
@@ -265,7 +260,7 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
                                                      time_period=time_period,
                                                      covar_dict=covar_dict,
                                                      risk_budget=risk_budgets,
-                                                     constraints0=Constraints(is_long_only=True))
+                                                     constraints=Constraints(is_long_only=True))
         sse = np.nanmean(np.abs(np.nanmean(risk_budget_weights, axis=0) - given_weights.to_numpy()))
         return sse
 
@@ -289,7 +284,7 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
     bounds = [(x, y) for x, y in zip(min_weights, max_weights)]
 
     # set zero risk budget to nan to exlude from computations
-    options = {'ftol': 1e-12, 'maxiter': 100}
+    options = {'ftol': 1e-8, 'maxiter': 100}
     constraints = [{'type': 'eq', 'fun': lambda x: np.sum(x) - 1.0}]
     res = minimize(objective_function, x0, method='SLSQP',
                    constraints=constraints, bounds=bounds, options=options)

@@ -28,7 +28,7 @@ def run_bonds_etf_optimal_portfolio(prices: pd.DataFrame,
     # momentum = qis.map_signal_to_weight(signals=momentum, loc=0.0, slope_right=0.5, slope_left=0.5, tail_level=3.0)
     alphas = qis.df_to_cross_sectional_score(df=momentum)
 
-    constraints0 = Constraints(is_long_only=True,
+    constraints = Constraints(is_long_only=True,
                                min_weights=pd.Series(0.0, index=prices.columns),
                                max_weights=pd.Series(0.2, index=prices.columns),
                                max_target_portfolio_vol_an=0.065,
@@ -41,7 +41,7 @@ def run_bonds_etf_optimal_portfolio(prices: pd.DataFrame,
                                                         alphas=alphas,
                                                         yields=yields,
                                                         target_returns=target_returns,
-                                                        constraints0=constraints0,
+                                                        constraints=constraints,
                                                         time_period=time_period,
                                                         span=52,
                                                         rebalancing_freq='ME',
@@ -147,7 +147,7 @@ def run_local_test(local_test: LocalTests):
         momenum_1y = prices.divide(prices.shift(260)) - 1.0
         alphas = qis.df_to_cross_sectional_score(df=momenum_1y.iloc[-1, :])
         print(f"alphas=\n{alphas}")
-        constraints0 = Constraints(is_long_only=True,
+        constraints = Constraints(is_long_only=True,
                                    min_weights=pd.Series(0.0, index=prices.columns),
                                    max_weights=pd.Series(0.15, index=prices.columns),
                                    max_target_portfolio_vol_an=0.065,
@@ -157,7 +157,7 @@ def run_local_test(local_test: LocalTests):
 
         weights = wrapper_maximise_alpha_with_target_return(pd_covar=pd_covar, alphas=alphas, yields=last_yields,
                                                             target_return=target_return,
-                                                            constraints0=constraints0)
+                                                            constraints=constraints)
         print(f"weights={weights}")
         print(f"exposure = {np.sum(weights)}")
         print(f"portfolio_vol = {compute_portfolio_vol(covar=pd_covar, weights=weights)}")

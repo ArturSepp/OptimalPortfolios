@@ -14,7 +14,7 @@ from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
 
 def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
                                     alphas: Optional[pd.DataFrame],
-                                    constraints0: Constraints,
+                                    constraints: Constraints,
                                     benchmark_weights: Union[pd.Series, pd.DataFrame],
                                     time_period: qis.TimePeriod,  # when we start building portfolios
                                     covar_estimator: CovarEstimator = CovarEstimator(),  # default covar estimator
@@ -58,7 +58,7 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
         weights_ = wrapper_maximise_alpha_over_tre(pd_covar=pd_covar,
                                                    alphas=alphas_t,
                                                    benchmark_weights=benchmark_weights.loc[date, :],
-                                                   constraints0=constraints0,
+                                                   constraints=constraints,
                                                    rebalancing_indicators=rebalancing_indicators_t,
                                                    weights_0=weights_0,
                                                    apply_total_to_good_ratio=apply_total_to_good_ratio,
@@ -78,7 +78,7 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
 def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
                                     alphas: Optional[pd.Series],
                                     benchmark_weights: pd.Series,
-                                    constraints0: Constraints,
+                                    constraints: Constraints,
                                     weights_0: pd.Series = None,
                                     rebalancing_indicators: pd.Series = None,
                                     apply_total_to_good_ratio: bool = True,
@@ -103,7 +103,7 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
     else:
         total_to_good_ratio = 1.0
 
-    constraints = constraints0.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
+    constraints1 = constraints.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
                                                          total_to_good_ratio=total_to_good_ratio,
                                                          weights_0=weights_0,
                                                          benchmark_weights=benchmark_weights,
@@ -117,13 +117,13 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
     if is_apply_tre_utility_objective:
         weights = cvx_maximise_tre_utility(covar=clean_covar.to_numpy(),
                                            alphas=alphas_np,
-                                           constraints=constraints,
+                                           constraints=constraints1,
                                            solver=solver,
                                            verbose=verbose)
     else:
         weights = cvx_maximise_alpha_over_tre(covar=clean_covar.to_numpy(),
                                               alphas=alphas_np,
-                                              constraints=constraints,
+                                              constraints=constraints1,
                                               solver=solver,
                                               verbose=verbose)
     weights[np.isinf(weights)] = 0.0

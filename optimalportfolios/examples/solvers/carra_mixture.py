@@ -37,7 +37,7 @@ def run_local_test(local_test: LocalTests):
     group_lower_upper_constraints = GroupLowerUpperConstraints(group_loadings=ac_loadings,
                                                                group_min_allocation=group_min_allocation,
                                                                group_max_allocation=group_max_allocation)
-    constraints0 = Constraints(is_long_only=True,
+    constraints = Constraints(is_long_only=True,
                                group_lower_upper_constraints=group_lower_upper_constraints,
                                min_weights=pd.Series(0.0, index=prices.columns),
                                max_weights=pd.Series(0.5, index=prices.columns),
@@ -51,7 +51,7 @@ def run_local_test(local_test: LocalTests):
         weights = wrapper_maximize_cara_mixture(means=params.means,
                                                 covars=params.covars,
                                                 probs=params.probs,
-                                                constraints0=constraints0,
+                                                constraints=constraints,
                                                 tickers=returns.columns.to_list(),
                                                 carra=0.5)
 
@@ -76,7 +76,7 @@ def run_local_test(local_test: LocalTests):
         rebalancing_costs = 0.0003
 
         weights = rolling_maximize_cara_mixture(prices=prices,
-                                                constraints0=constraints0,
+                                                constraints=constraints,
                                                 roll_window=12*10,
                                                 returns_freq='ME',
                                                 time_period=time_period)

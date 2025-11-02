@@ -143,7 +143,7 @@ def run_local_test(local_test: LocalTests):
                                                       time_period=time_period,
                                                       covar_dict=covar_dict,
                                                       risk_budget=risk_budgets,
-                                                      constraints0=Constraints(is_long_only=True))
+                                                      constraints=Constraints(is_long_only=True))
 
         figs = plot_static_risk_budgets_vs_weights(prices=prices,
                                                    risk_budgets_weights=risk_budgets_weights,

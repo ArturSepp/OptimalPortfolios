@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import cvxpy as cvx
 from dataclasses import dataclass, asdict
-from typing import List, Tuple, Optional, Union, Literal
+from typing import List, Tuple, Optional, Union, Callable
 from cvxpy.atoms.affine.wraps import psd_wrap
 
 
@@ -663,7 +663,7 @@ class Constraints:
         # Portfolio-level turnover constraint
         elif self.turnover_constraint is not None:
             if self.weights_0 is None:
-                warnings.warm("weights_0 must be given for turnover constraint")
+                warnings.warn("weights_0 must be given for turnover constraint")
             else:
                 if self.turnover_costs is not None:
                     constraints += [
@@ -726,7 +726,36 @@ class Constraints:
 
         return constraints
 
-    def set_scipy_constraints(self, covar: np.ndarray = None) -> List:
+    def set_scipy_bounds(self, covar: np.ndarray = None):
+        # Set up bounds
+        if self.is_long_only and self.min_weights is None:
+            n = covar.shape[0]
+            bounds = np.array([(0.0, 1.0) for _ in range(n)])
+        elif self.min_weights is not None and self.max_weights is not None:
+            bounds = np.array([
+                (x, y) for x, y in zip(
+                    self.min_weights.to_numpy(),
+                    self.max_weights.to_numpy()
+                )
+            ])
+        elif self.min_weights is not None and self.max_weights is None:
+            bounds = np.array([
+                (x, y) for x, y in zip(
+                    self.min_weights.to_numpy(),
+                    [1.0] * len(self.min_weights.to_numpy())
+                )
+            ])
+        elif self.min_weights is None and self.max_weights is not None:
+            bounds = np.array([
+                (x, y) for x, y in zip(
+                    [0.0] * len(self.max_weights.to_numpy()),
+                    self.max_weights.to_numpy())
+            ])
+        else:
+            bounds = None
+        return bounds
+
+    def set_scipy_constraints(self, covar: np.ndarray = None) -> Tuple[List, np.ndarray]:
         """Generate SciPy-compatible constraints for portfolio optimization.
         Converts constraint specifications into SciPy constraint dictionaries
         that can be used with scipy.optimize.minimize.
@@ -751,19 +780,6 @@ class Constraints:
         constraints += [{'type': 'ineq', 'fun': lambda x: self.max_exposure - np.sum(x)}]
         constraints += [{'type': 'ineq', 'fun': lambda x: np.sum(x) - self.min_exposure}]
 
-        # Individual weight constraints
-        if self.min_weights is not None:
-            min_weights = (self.min_weights.to_numpy()
-                           if isinstance(self.min_weights, pd.Series)
-                           else self.min_weights)
-            constraints += [{'type': 'ineq', 'fun': lambda x: x - min_weights}]
-
-        if self.max_weights is not None:
-            max_weights = (self.max_weights.to_numpy()
-                           if isinstance(self.max_weights, pd.Series)
-                           else self.max_weights)
-            constraints += [{'type': 'ineq', 'fun': lambda x: max_weights - x}]
-
         # Group allocation constraints
         if self.group_lower_upper_constraints is not None:
             group_lower_upper_constraints = self.group_lower_upper_constraints
@@ -771,13 +787,15 @@ class Constraints:
                 group_loading = group_lower_upper_constraints.group_loadings[group].to_numpy()
                 if np.any(np.isclose(group_loading, 0.0) == False):
                     if group_lower_upper_constraints.group_min_allocation is not None:
-                        min_weight = group_lower_upper_constraints.group_min_allocation[group]
-                        constraints += [{'type': 'ineq', 'fun': lambda x: group_loading @ x - min_weight}]
-                    if group_lower_upper_constraints.group_max_allocation is not None:
-                        max_weight = group_lower_upper_constraints.group_max_allocation[group]
-                        constraints += [{'type': 'ineq', 'fun': lambda x: max_weight - group_loading @ x}]
+                        min_weight: float = group_lower_upper_constraints.group_min_allocation[group]
+                        constraints += [{ 'type': 'ineq', 'fun': make_min_constraint(group_loading, min_weight)}]
 
-        return constraints
+                    if group_lower_upper_constraints.group_max_allocation is not None:
+                        max_weight: float = group_lower_upper_constraints.group_max_allocation[group]
+                        constraints += [{ 'type': 'ineq', 'fun': make_max_constraint(group_loading, max_weight)}]
+
+        bounds = self.set_scipy_bounds(covar=covar)
+        return constraints, bounds
 
     def set_pyrb_constraints(
             self,
@@ -801,18 +819,7 @@ class Constraints:
             PyRB uses matrix form constraints where C*x <= d.
         """
         # Set up bounds
-        if self.is_long_only and self.min_weights is None:
-            n = covar.shape[0]
-            bounds = np.array([(0.0, 1.0) for _ in range(n)])
-        elif self.min_weights is not None and self.max_weights is not None:
-            bounds = np.array([
-                (x, y) for x, y in zip(
-                    self.min_weights.to_numpy(),
-                    self.max_weights.to_numpy()
-                )
-            ])
-        else:
-            bounds = None
+        bounds = self.set_scipy_bounds(covar=covar)
 
         # Set up group constraints in matrix form (C*x <= d)
         if self.group_lower_upper_constraints is not None:
@@ -876,3 +883,31 @@ def long_only_constraint(x):
         For SciPy optimization where constraint function should be >= 0.
     """
     return x
+
+
+def make_min_constraint( group_loading: np.ndarray, min_weight: float) -> Callable[[np.ndarray], float]:
+    """
+    Factory function to create minimum group allocation constraint.
+
+    Args:
+        group_loading: Array of group loadings for assets
+        min_weight: Minimum allocation weight for the group
+
+    Returns:
+        Constraint function that returns positive value when satisfied
+    """
+    return lambda x: group_loading @ x - min_weight
+
+
+def make_max_constraint(group_loading: np.ndarray, max_weight: float) -> Callable[[np.ndarray], float]:
+    """
+    Factory function to create maximum group allocation constraint.
+
+    Args:
+        group_loading: Array of group loadings for assets
+        max_weight: Maximum allocation weight for the group
+
+    Returns:
+        Constraint function that returns positive value when satisfied
+    """
+    return lambda x: max_weight - group_loading @ x

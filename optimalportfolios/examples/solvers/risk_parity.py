@@ -39,7 +39,7 @@ def run_local_test(local_test: LocalTests):
                                                                group_min_allocation=group_min_allocation,
                                                                group_max_allocation=group_max_allocation)
 
-    constraints0 = Constraints(is_long_only=True,
+    constraints = Constraints(is_long_only=True,
                                min_weights=pd.Series(0.0, index=prices.columns),
                                max_weights=pd.Series(1.0, index=prices.columns),
                                weights_0=benchmark_weights)
@@ -52,7 +52,7 @@ def run_local_test(local_test: LocalTests):
         print(f"pd_covar=\n{pd_covar}")
 
         weights = wrapper_risk_budgeting(pd_covar=pd_covar,
-                                         constraints0=constraints0,
+                                         constraints=constraints,
                                          weights_0=benchmark_weights)
 
         df_weight = pd.concat([benchmark_weights.rename('benchmark'), weights.rename('portfolio')], axis=1)
@@ -74,7 +74,7 @@ def run_local_test(local_test: LocalTests):
         rebalancing_costs = 0.0003
         covar_estimator = CovarEstimator(returns_freqs='W-WED', rebalancing_freq='ME', span=52)
         weights = rolling_risk_budgeting(prices=prices,
-                                         constraints0=constraints0,
+                                         constraints=constraints,
                                          time_period=time_period,
                                          covar_estimator=covar_estimator)
         print(weights)

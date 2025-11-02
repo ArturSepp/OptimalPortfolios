@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import qis as qis
 
 from optimalportfolios import LassoModel, LassoModelType, wrapper_estimate_current_lasso_covar
-from optimalportfolios.covar_estimation.examples.simulate_factor_returns import simulate_factor_model_returns
+from optimalportfolios.examples.covar_estimation.simulate_factor_returns import simulate_factor_model_returns
 
 
 simulation_results = simulate_factor_model_returns(n_assets=9, n_periods=20*260, seed=40)

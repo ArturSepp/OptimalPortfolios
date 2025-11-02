@@ -37,7 +37,7 @@ def run_local_test(local_test: LocalTests):
     group_lower_upper_constraints = GroupLowerUpperConstraints(group_loadings=ac_loadings,
                                                                group_min_allocation=group_min_allocation,
                                                                group_max_allocation=group_max_allocation)
-    constraints0 = Constraints(is_long_only=True,
+    constraints = Constraints(is_long_only=True,
                                min_weights=0.0 * benchmark_weights,
                                max_weights=3.0 * benchmark_weights,
                                weights_0=benchmark_weights,
@@ -51,7 +51,7 @@ def run_local_test(local_test: LocalTests):
         print(f"pd_covar=\n{pd_covar}")
 
         weights = wrapper_maximise_diversification(pd_covar=pd_covar,
-                                                   constraints0=constraints0,
+                                                   constraints=constraints,
                                                    weights_0=benchmark_weights)
 
         df_weight = pd.concat([benchmark_weights.rename('benchmark'), weights.rename('portfolio')], axis=1)
@@ -73,7 +73,7 @@ def run_local_test(local_test: LocalTests):
         rebalancing_costs = 0.0003
         covar_estimator = CovarEstimator()
         weights = rolling_maximise_diversification(prices=prices,
-                                                   constraints0=constraints0,
+                                                   constraints=constraints,
                                                    time_period=time_period,
                                                    covar_estimator=covar_estimator)
         print(weights)

@@ -18,7 +18,7 @@ from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
 
 
 def rolling_quadratic_optimisation(prices: pd.DataFrame,
-                                   constraints0: Constraints,
+                                   constraints: Constraints,
                                    time_period: qis.TimePeriod,  # when we start building portfolios
                                    covar_dict: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
                                    inclusion_indicators: Optional[pd.DataFrame] = None,  # if asset is included into optimisation
@@ -49,7 +49,7 @@ def rolling_quadratic_optimisation(prices: pd.DataFrame,
     weights_0 = None
     for date, pd_covar in covar_dict.items():
         weights_ = wrapper_quadratic_optimisation(pd_covar=pd_covar,
-                                                  constraints0=constraints0,
+                                                  constraints=constraints,
                                                   weights_0=weights_0,
                                                   portfolio_objective=portfolio_objective,
                                                   carra=carra,
@@ -63,7 +63,7 @@ def rolling_quadratic_optimisation(prices: pd.DataFrame,
 
 
 def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
-                                   constraints0: Constraints,
+                                   constraints: Constraints,
                                    inclusion_indicators: pd.Series = None,
                                    portfolio_objective: PortfolioObjective = PortfolioObjective.MIN_VARIANCE,
                                    weights_0: pd.Series = None,
@@ -78,13 +78,13 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar,
                                                                   inclusion_indicators=inclusion_indicators)
 
-    constraints = constraints0.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
+    constraints1 = constraints.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
                                                          total_to_good_ratio=len(pd_covar.columns) / len(clean_covar.columns),
                                                          weights_0=weights_0)
 
     weights = cvx_quadratic_optimisation(portfolio_objective=portfolio_objective,
                                          covar=clean_covar.to_numpy(),
-                                         constraints=constraints,
+                                         constraints=constraints1,
                                          carra=carra,
                                          solver=solver)
     weights[np.isinf(weights)] = 0.0

@@ -13,7 +13,7 @@ from optimalportfolios.config import PortfolioObjective
 
 
 def compute_rolling_optimal_weights(prices: pd.DataFrame,
-                                    constraints0: Constraints,
+                                    constraints: Constraints,
                                     time_period: qis.TimePeriod,
                                     portfolio_objective: PortfolioObjective = PortfolioObjective.MAX_DIVERSIFICATION,
                                     covar_dict: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
@@ -37,7 +37,7 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
                                          covar_estimator_type=CovarEstimatorType.EWMA)
     if portfolio_objective == PortfolioObjective.EQUAL_RISK_CONTRIBUTION:
         weights = opt.rolling_risk_budgeting(prices=prices,
-                                             constraints0=constraints0,
+                                             constraints=constraints,
                                              time_period=time_period,
                                              covar_dict=covar_dict,
                                              risk_budget=risk_budget,
@@ -45,14 +45,14 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
 
     elif portfolio_objective == PortfolioObjective.MAX_DIVERSIFICATION:
         weights = opt.rolling_maximise_diversification(prices=prices,
-                                                       constraints0=constraints0,
+                                                       constraints=constraints,
                                                        time_period=time_period,
                                                        covar_dict=covar_dict,
                                                        covar_estimator=covar_estimator)
 
     elif portfolio_objective in [PortfolioObjective.MIN_VARIANCE, PortfolioObjective.QUADRATIC_UTILITY]:
         weights = opt.rolling_quadratic_optimisation(prices=prices,
-                                                     constraints0=constraints0,
+                                                     constraints=constraints,
                                                      portfolio_objective=portfolio_objective,
                                                      time_period=time_period,
                                                      covar_dict=covar_dict,
@@ -61,7 +61,7 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
 
     elif portfolio_objective == PortfolioObjective.MAXIMUM_SHARPE_RATIO:
         weights = opt.rolling_maximize_portfolio_sharpe(prices=prices,
-                                                        constraints0=constraints0,
+                                                        constraints=constraints,
                                                         time_period=time_period,
                                                         returns_freq=returns_freq,
                                                         rebalancing_freq=rebalancing_freq,
@@ -70,7 +70,7 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
 
     elif portfolio_objective == PortfolioObjective.MAX_CARA_MIXTURE:
         weights = opt.rolling_maximize_cara_mixture(prices=prices,
-                                                    constraints0=constraints0,
+                                                    constraints=constraints,
                                                     time_period=time_period,
                                                     returns_freq=returns_freq,
                                                     rebalancing_freq=rebalancing_freq,
@@ -85,7 +85,7 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
 
 
 def backtest_rolling_optimal_portfolio(prices: pd.DataFrame,
-                                       constraints0: Constraints,
+                                       constraints: Constraints,
                                        time_period: qis.TimePeriod,  # for computing weights
                                        covar_dict: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
                                        perf_time_period: qis.TimePeriod = None,  # for computing performance
@@ -108,7 +108,7 @@ def backtest_rolling_optimal_portfolio(prices: pd.DataFrame,
     """
     weights = compute_rolling_optimal_weights(prices=prices,
                                               time_period=time_period,
-                                              constraints0=constraints0,
+                                              constraints=constraints,
                                               covar_dict=covar_dict,
                                               portfolio_objective=portfolio_objective,
                                               returns_freq=returns_freq,

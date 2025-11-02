@@ -19,7 +19,7 @@ def run_max_diversification_sensitivity_to_span(prices: pd.DataFrame,
                                                 group_data: pd.Series,
                                                 time_period: qis.TimePeriod,  # weight computations
                                                 perf_time_period: qis.TimePeriod,  # for reporting
-                                                constraints0: Constraints
+                                                constraints: Constraints
                                                 ) -> List[ plt.Figure]:
     """
     test maximum diversification optimiser to span parameter
@@ -37,7 +37,7 @@ def run_max_diversification_sensitivity_to_span(prices: pd.DataFrame,
     portfolio_datas = []
     for ticker, span in spans.items():
         portfolio_data = backtest_rolling_optimal_portfolio(prices=prices,
-                                                            constraints0=constraints0,
+                                                            constraints=constraints,
                                                             time_period=time_period,
                                                             portfolio_objective=PortfolioObjective.MAX_DIVERSIFICATION,
                                                             rebalancing_freq='QE',  # portfolio rebalancing
@@ -80,7 +80,7 @@ def run_local_test(local_test: LocalTests):
     group_lower_upper_constraints = GroupLowerUpperConstraints(group_loadings=ac_loadings,
                                                                group_min_allocation=group_min_allocation,
                                                                group_max_allocation=group_max_allocation)
-    constraints0 = Constraints(is_long_only=True,
+    constraints = Constraints(is_long_only=True,
                                min_weights=pd.Series(0.0, index=prices.columns),
                                max_weights=pd.Series(0.2, index=prices.columns),
                                group_lower_upper_constraints=group_lower_upper_constraints)
@@ -91,7 +91,7 @@ def run_local_test(local_test: LocalTests):
         perf_time_period = qis.TimePeriod(start='31Dec2004', end=prices.index[-1])  # backtest reporting
         figs = run_max_diversification_sensitivity_to_span(prices=prices,
                                                            benchmark_prices=benchmark_prices,
-                                                           constraints0=constraints0,
+                                                           constraints=constraints,
                                                            group_data=group_data,
                                                            time_period=time_period,
                                                            perf_time_period=perf_time_period)

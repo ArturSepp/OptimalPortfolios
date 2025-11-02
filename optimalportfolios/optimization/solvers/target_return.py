@@ -16,7 +16,7 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
                                               alphas: pd.DataFrame,
                                               yields: pd.DataFrame,
                                               target_returns: pd.Series,
-                                              constraints0: Constraints,
+                                              constraints: Constraints,
                                               time_period: qis.TimePeriod,  # when we start building portfolios
                                               covar_dict: Dict[pd.Timestamp, pd.DataFrame] = None,  # can be precomputed
                                               returns_freq: str = 'W-WED',
@@ -59,7 +59,7 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
                                                              alphas=alphas.loc[date, :],
                                                              yields=yields.loc[date, :],
                                                              target_return=target_returns[date],
-                                                             constraints0=constraints0,
+                                                             constraints=constraints,
                                                              weights_0=weights_0,
                                                              solver=solver)
 
@@ -75,7 +75,7 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
                                               alphas: pd.Series,
                                               yields: pd.Series,
                                               target_return: float,
-                                              constraints0: Constraints,
+                                              constraints: Constraints,
                                               weights_0: pd.Series = None,
                                               solver: str = 'ECOS_BB'
                                               ) -> pd.Series:
@@ -87,7 +87,7 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
     vectors = dict(alphas=alphas)
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar, vectors=vectors)
 
-    constraints = constraints0.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
+    constraints1 = constraints.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
                                                          total_to_good_ratio=len(pd_covar.columns) / len(clean_covar.columns),
                                                          weights_0=weights_0,
                                                          asset_returns=yields,
@@ -95,7 +95,7 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
 
     weights = cvx_maximise_alpha_with_target_return(covar=clean_covar.to_numpy(),
                                                     alphas=good_vectors['alphas'].to_numpy(),
-                                                    constraints=constraints,
+                                                    constraints=constraints1,
                                                     solver=solver)
     weights[np.isinf(weights)] = 0.0
     weights = pd.Series(weights, index=clean_covar.index)

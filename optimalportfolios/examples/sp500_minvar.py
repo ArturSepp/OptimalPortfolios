@@ -37,7 +37,7 @@ def run_cross_backtest(prices: pd.DataFrame,
     Returns:
         List of PortfolioData objects, one for each squeeze factor.
     """
-    constraints0 = Constraints(is_long_only=True,
+    constraints = Constraints(is_long_only=True,
                                min_weights=pd.Series(0.0, index=prices.columns),
                                max_weights=pd.Series(0.05, index=prices.columns))
 
@@ -45,7 +45,7 @@ def run_cross_backtest(prices: pd.DataFrame,
     for squeeze_factor in squeeze_factors:
         covar_estimator = CovarEstimator(squeeze_factor=squeeze_factor, returns_freqs='W-WED', rebalancing_freq='QE')
         weights = rolling_quadratic_optimisation(prices=prices,
-                                                 constraints0=constraints0,
+                                                 constraints=constraints,
                                                  portfolio_objective=PortfolioObjective.MIN_VARIANCE,
                                                  time_period=time_period,
                                                  inclusion_indicators=inclusion_indicators,

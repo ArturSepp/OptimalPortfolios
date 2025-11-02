@@ -48,14 +48,14 @@ portfolio_objective = PortfolioObjective.MAX_DIVERSIFICATION  # define portfolio
 returns_freq = 'W-WED'  # use weekly returns
 rebalancing_freq = 'QE'  # weights rebalancing frequency: rebalancing is quarterly on WED
 span = 52  # span of number of returns_freq-returns for covariance estimation = 12y
-constraints0 = Constraints(is_long_only=True,
+constraints = Constraints(is_long_only=True,
                            min_weights=pd.Series(0.0, index=prices.columns),
                            max_weights=pd.Series(0.5, index=prices.columns))
 
 # 3.b. compute solvers portfolio weights rebalanced every quarter
 weights = compute_rolling_optimal_weights(prices=prices,
                                           portfolio_objective=portfolio_objective,
-                                          constraints0=constraints0,
+                                          constraints=constraints,
                                           time_period=time_period,
                                           rebalancing_freq=rebalancing_freq,
                                           span=span)

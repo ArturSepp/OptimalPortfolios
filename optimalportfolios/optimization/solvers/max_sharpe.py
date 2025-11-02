@@ -15,7 +15,7 @@ from optimalportfolios.covar_estimation.utils import squeeze_covariance_matrix
 
 
 def rolling_maximize_portfolio_sharpe(prices: pd.DataFrame,
-                                      constraints0: Constraints,
+                                      constraints: Constraints,
                                       time_period: qis.TimePeriod,  # when we start building portfolios
                                       returns_freq: str = 'W-WED',
                                       rebalancing_freq: str = 'QE',
@@ -48,7 +48,7 @@ def rolling_maximize_portfolio_sharpe(prices: pd.DataFrame,
 
             weights_ = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
                                                          means=means.loc[date, :],
-                                                         constraints0=constraints0,
+                                                         constraints=constraints,
                                                          weights_0=weights_0,
                                                          squeeze_factor=squeeze_factor,
                                                          solver=solver)
@@ -63,7 +63,7 @@ def rolling_maximize_portfolio_sharpe(prices: pd.DataFrame,
 
 def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
                                       means: pd.Series,
-                                      constraints0: Constraints,
+                                      constraints: Constraints,
                                       weights_0: pd.Series = None,
                                       squeeze_factor: Optional[float] = None,  # for squeezing covar matrix
                                       solver: str = 'ECOS_BB'
@@ -79,13 +79,13 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
     if squeeze_factor is not None and squeeze_factor > 0.0:
         clean_covar = squeeze_covariance_matrix(clean_covar, squeeze_factor=squeeze_factor)
 
-    constraints = constraints0.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
+    constraints1 = constraints.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
                                                          total_to_good_ratio=len(pd_covar.columns) / len(clean_covar.columns),
                                                          weights_0=weights_0)
 
     weights = cvx_maximize_portfolio_sharpe(covar=clean_covar.to_numpy(),
                                             means=good_vectors['means'].to_numpy(),
-                                            constraints=constraints,
+                                            constraints=constraints1,
                                             solver=solver)
     weights[np.isinf(weights)] = 0.0
     weights = pd.Series(weights, index=clean_covar.index)

@@ -33,7 +33,7 @@ def run_multi_optimisers_backtest(prices: pd.DataFrame,
                             'MaxCarraMixture': PortfolioObjective.MAX_CARA_MIXTURE}
 
     # set global constaints for portfolios
-    constraints0 = Constraints(is_long_only=True,
+    constraints = Constraints(is_long_only=True,
                                min_weights=pd.Series(0.0, index=prices.columns),
                                max_weights=pd.Series(0.5, index=prices.columns))
 
@@ -43,7 +43,7 @@ def run_multi_optimisers_backtest(prices: pd.DataFrame,
         print(ticker)
         portfolio_data = backtest_rolling_optimal_portfolio(prices=prices,
                                                             portfolio_objective=portfolio_objective,
-                                                            constraints0=constraints0,
+                                                            constraints=constraints,
                                                             time_period=time_period,
                                                             perf_time_period=perf_time_period,
                                                             returns_freq='W-WED',  # covar matrix estimation on weekly returns

@@ -37,7 +37,7 @@ def run_local_test(local_test: LocalTests):
     group_lower_upper_constraints = GroupLowerUpperConstraints(group_loadings=ac_loadings,
                                                                group_min_allocation=group_min_allocation,
                                                                group_max_allocation=group_max_allocation)
-    constraints0 = Constraints(is_long_only=True,
+    constraints = Constraints(is_long_only=True,
                                group_lower_upper_constraints=group_lower_upper_constraints,
                                min_weights=pd.Series(0.0, index=prices.columns),
                                max_weights=pd.Series(1.0, index=prices.columns),
@@ -52,7 +52,7 @@ def run_local_test(local_test: LocalTests):
 
         weights = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
                                                     means=52.0*returns.mean(0),
-                                                    constraints0=constraints0,
+                                                    constraints=constraints,
                                                     weights_0=benchmark_weights)
 
         df_weight = pd.concat([benchmark_weights.rename('benchmark'), weights.rename('portfolio')], axis=1)
@@ -74,7 +74,7 @@ def run_local_test(local_test: LocalTests):
         rebalancing_costs = 0.0003
 
         weights = rolling_maximize_portfolio_sharpe(prices=prices,
-                                                    constraints0=constraints0,
+                                                    constraints=constraints,
                                                     time_period=time_period)
 
         print(weights)

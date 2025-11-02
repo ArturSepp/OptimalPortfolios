@@ -176,7 +176,7 @@ class FactorRiskParity:
         # Optimize
         result = minimize(objective_func, initial_weights,
                           method='SLSQP', bounds=bounds, constraints=constraints,
-                          options={'ftol': 1e-9, 'maxiter': 1000})
+                          options={'ftol': 1e-8, 'maxiter': 1000})
 
         if not result.success:
             print(f"Optimization warning: {result.message}")

@@ -57,7 +57,7 @@ for date, beta in covar_data.asset_last_betas_t.items():
 # build equal risk budget portfolio
 risk_budget = pd.Series(1.0 / len(prices.columns), index=prices.columns)
 risk_budget_weights = rolling_risk_budgeting(prices=prices,
-                                             constraints0=Constraints(),
+                                             constraints=Constraints(),
                                              time_period=time_period,
                                              covar_dict=covar_data.y_covars,
                                              risk_budget=risk_budget)

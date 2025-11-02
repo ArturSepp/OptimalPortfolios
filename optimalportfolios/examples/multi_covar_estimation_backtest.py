@@ -95,7 +95,7 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
                    'Group Lasso': group_lasso_covars, 'Group Lasso VolNorn': group_lasso_covars_norm}
 
     # set global constaints for portfolios
-    constraints0 = Constraints(is_long_only=True,
+    constraints = Constraints(is_long_only=True,
                                min_weights=pd.Series(0.0, index=prices.columns),
                                max_weights=pd.Series(0.5, index=prices.columns))
 
@@ -104,7 +104,7 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
     for key, covar_dict in covars_dict.items():
         portfolio_data = backtest_rolling_optimal_portfolio(prices=prices,
                                                             portfolio_objective=portfolio_objective,
-                                                            constraints0=constraints0,
+                                                            constraints=constraints,
                                                             time_period=time_period,
                                                             perf_time_period=perf_time_period,
                                                             covar_dict=covar_dict,
