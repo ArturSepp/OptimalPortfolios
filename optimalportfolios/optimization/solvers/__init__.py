@@ -24,6 +24,7 @@ from optimalportfolios.optimization.solvers.target_return import (rolling_maximi
                                                                   wrapper_maximise_alpha_with_target_return,
                                                                   cvx_maximise_alpha_with_target_return)
 
-from optimalportfolios.optimization.solvers.tracking_error import (rolling_maximise_alpha_over_tre,
+from optimalportfolios.optimization.solvers.tracking_error import (OptimiserAlphaOverTreConfig,
+                                                                   rolling_maximise_alpha_over_tre,
                                                                    wrapper_maximise_alpha_over_tre,
                                                                    cvx_maximise_alpha_over_tre)

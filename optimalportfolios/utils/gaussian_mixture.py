@@ -9,7 +9,7 @@ from scipy.stats import bernoulli
 from dataclasses import dataclass
 from enum import Enum
 from matplotlib.patches import Ellipse
-from typing import List, Tuple, Union, Dict
+from typing import List, Tuple, Union, Dict, Optional
 import qis
 
 RANDOM_STATE = 3
@@ -160,7 +160,9 @@ def plot_mixure2(x: np.ndarray,
                  columns: List[str] = None,
                  ax: plt.Subplot = None,
                  var_format: str = '{:.0%}',
-                 idx: int = 1,
+                 idx: Optional[int] = None,
+                 x_column: str = None,
+                 y_column: str = None,
                  **kwargs
                  ) -> None:
 
@@ -168,12 +170,13 @@ def plot_mixure2(x: np.ndarray,
         ax = plt.subplots(1, 1)
 
     gmm = GaussianMixture(n_components=n_components, covariance_type='full', random_state=RANDOM_STATE).fit(x)
-    order = gmm.means_.argsort(axis=0)[:, idx]
-    gmm.means_ = gmm.means_[order]
-    gmm.covariances_ = gmm.covariances_[order]
-    gmm.weights_ = gmm.weights_[order]
-    gmm.precisions_ = gmm.precisions_[order]
-    gmm.precisions_cholesky_ = gmm.precisions_cholesky_[order]
+    if idx is not None:
+        order = gmm.means_.argsort(axis=0)[:, idx]
+        gmm.means_ = gmm.means_[order]
+        gmm.covariances_ = gmm.covariances_[order]
+        gmm.weights_ = gmm.weights_[order]
+        gmm.precisions_ = gmm.precisions_[order]
+        gmm.precisions_cholesky_ = gmm.precisions_cholesky_[order]
 
     labels = gmm.predict(x)
 
@@ -187,9 +190,13 @@ def plot_mixure2(x: np.ndarray,
         colors = ['red', 'slategray', 'green']
     else:
         colors = qis.get_n_colors(n=n_components, last_color_fixed=False)
+
+    x = columns[0]
+    y = columns[1]
+
     sns.scatterplot(data=data,
-                    x=columns[0],
-                    y=columns[1],
+                    x=x,
+                    y=y,
                     hue=label,
                     palette=colors,
                     ax=ax)

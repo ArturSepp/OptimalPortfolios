@@ -1,15 +1,24 @@
-"""
-optimise alpha over tracking error
-"""
+"""Optimize alpha over tracking error."""
 import numpy as np
 import pandas as pd
 import cvxpy as cvx
 import qis as qis
-from typing import Optional, Union, Dict
+from typing import Optional, Union, Dict, NamedTuple
 
 from optimalportfolios import filter_covar_and_vectors_for_nans, compute_portfolio_risk_contribution_outputs
-from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.optimization.constraints import Constraints, ConstraintEnforcementType
 from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
+
+
+class OptimiserAlphaOverTreConfig(NamedTuple):
+    """Configuration for alpha over tracking error optimization."""
+    constraint_enforcement_type: ConstraintEnforcementType = ConstraintEnforcementType.FORCED_CONSTRAINTS
+    solver: str = 'ECOS_BB'  # CVXPY solver choice
+    # this specify weights of utility function for ConstraintEnforcementType.UTILITY_CONSTRAINTS
+    tre_utility_weight: Optional[float] = 1.0  # penalty weight for tracking error in utility
+    turnover_utility_weight: Optional[float] = 0.40  # penalty weight for turnover in utility
+    apply_total_to_good_ratio: bool = True  # adjust constraints for non-investable assets
+
 
 
 def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
@@ -20,56 +29,56 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
                                     covar_estimator: CovarEstimator = CovarEstimator(),  # default covar estimator
                                     covar_dict: Dict[pd.Timestamp, pd.DataFrame] = None,
                                     rebalancing_indicators: pd.DataFrame = None,
-                                    apply_total_to_good_ratio: bool = True,
-                                    is_apply_tre_utility_objective: bool = False,
-                                    solver: str = 'ECOS_BB'
+                                    optimiser_alpha_over_tre_config: OptimiserAlphaOverTreConfig = OptimiserAlphaOverTreConfig(),
                                     ) -> pd.DataFrame:
-    """
-    maximise portfolio alpha subject to constraint on tracking error
-    """
+    """Maximize portfolio alpha subject to tracking error constraint over rolling periods."""
     # estimate covar at rebalancing schedule
     if covar_dict is None:  # use default ewm covar with covar_estimator
         covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period).y_covars
     rebalancing_dates = list(covar_dict.keys())
 
-    if alphas is None:
-        is_apply_tre_utility_objective = True
-    else:
+    # align alphas with rebalancing dates
+    if alphas is not None:
         alphas = alphas.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)
 
     weights = {}
-    # extend benchmark weights
+    # extend benchmark weights to all rebalancing dates
     if isinstance(benchmark_weights, pd.DataFrame):
         benchmark_weights = benchmark_weights.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)
     else:  # for series do transformation
         benchmark_weights = benchmark_weights.to_frame(
             name=rebalancing_dates[0]).T.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)
 
+    # align rebalancing indicators with dates
     if rebalancing_indicators is not None:  # need to reindex at covar_dict index: by default no rebalancing
         rebalancing_indicators = rebalancing_indicators.reindex(index=rebalancing_dates).fillna(0.0)
 
     weights_0 = None  # it will relax turnover constraint for the first rebalancing
+    # loop through rebalancing dates and optimize
     for date, pd_covar in covar_dict.items():
+        # get rebalancing indicator for this date
         if rebalancing_indicators is not None:
             rebalancing_indicators_t = rebalancing_indicators.loc[date, :]
         else:
             rebalancing_indicators_t = None
+        # get alphas for this date
         alphas_t = alphas.loc[date, :] if alphas is not None else None
+        # optimize portfolio weights
         weights_ = wrapper_maximise_alpha_over_tre(pd_covar=pd_covar,
                                                    alphas=alphas_t,
                                                    benchmark_weights=benchmark_weights.loc[date, :],
                                                    constraints=constraints,
                                                    rebalancing_indicators=rebalancing_indicators_t,
                                                    weights_0=weights_0,
-                                                   apply_total_to_good_ratio=apply_total_to_good_ratio,
-                                                   is_apply_tre_utility_objective=is_apply_tre_utility_objective,
-                                                   solver=solver)
+                                                   optimiser_alpha_over_tre_config=optimiser_alpha_over_tre_config)
+        # reset weights_0 if all zeros, otherwise update
         if np.all(np.equal(weights_, 0.0)):
             weights_0 = None
         else:
             weights_0 = weights_  # update for next rebalancing
         weights[date] = weights_
 
+    # convert to dataframe and align with price columns
     weights = pd.DataFrame.from_dict(weights, orient='index')
     weights = weights.reindex(columns=prices.columns.to_list())
     return weights
@@ -81,55 +90,62 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
                                     constraints: Constraints,
                                     weights_0: pd.Series = None,
                                     rebalancing_indicators: pd.Series = None,
-                                    apply_total_to_good_ratio: bool = True,
-                                    solver: str = 'ECOS_BB',
                                     detailed_output: bool = False,
-                                    is_apply_tre_utility_objective: bool = False,
+                                    optimiser_alpha_over_tre_config: OptimiserAlphaOverTreConfig = OptimiserAlphaOverTreConfig(),
                                     verbose: bool = False
                                     ) -> Union[pd.Series, pd.DataFrame]:
-    """
-    create wrapper accounting for nans or zeros in covar matrix
-    assets in columns/rows of covar must correspond to alphas.index
-    """
+    """Wrapper for alpha optimization handling NaNs and zero-variance assets."""
     # filter out assets with zero variance or nans
     if alphas is None:
         is_apply_tre_utility_objective = True
         vectors = None
     else:
         vectors = dict(alphas=alphas)
+    # clean covariance matrix and filter vectors
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar, vectors=vectors)
-    if apply_total_to_good_ratio:
+
+    # compute scaling ratio for constraints adjustment
+    if optimiser_alpha_over_tre_config.apply_total_to_good_ratio:
         total_to_good_ratio = len(pd_covar.columns) / len(clean_covar.columns)
     else:
-        total_to_good_ratio = 1.0
+        total_to_good_ratio = None
 
+    # update constraints with valid tickers only
     constraints1 = constraints.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
                                                          total_to_good_ratio=total_to_good_ratio,
                                                          weights_0=weights_0,
                                                          benchmark_weights=benchmark_weights,
                                                          rebalancing_indicators=rebalancing_indicators)
 
+    # convert alphas to numpy array
     if alphas is not None:
         alphas_np = good_vectors['alphas'].to_numpy()
     else:
         alphas_np = None
 
-    if is_apply_tre_utility_objective:
+    # choose optimization method based on constraint enforcement type
+    if optimiser_alpha_over_tre_config.constraint_enforcement_type == ConstraintEnforcementType.UTILITY_CONSTRAINTS:
+        # use utility-based optimization with penalty weights
         weights = cvx_maximise_tre_utility(covar=clean_covar.to_numpy(),
                                            alphas=alphas_np,
                                            constraints=constraints1,
-                                           solver=solver,
+                                           solver=optimiser_alpha_over_tre_config.solver,
+                                           tre_utility_weight=optimiser_alpha_over_tre_config.tre_utility_weight,
+                                           turnover_utility_weight=optimiser_alpha_over_tre_config.turnover_utility_weight,
                                            verbose=verbose)
     else:
+        # use hard constraints optimization
         weights = cvx_maximise_alpha_over_tre(covar=clean_covar.to_numpy(),
                                               alphas=alphas_np,
                                               constraints=constraints1,
-                                              solver=solver,
+                                              solver=optimiser_alpha_over_tre_config.solver,
                                               verbose=verbose)
+    # clean up infinite values
     weights[np.isinf(weights)] = 0.0
     weights = pd.Series(weights, index=clean_covar.index)
     weights = weights.reindex(index=pd_covar.index).fillna(0.0)  # align with tickers
 
+    # return detailed output or just weights
     if detailed_output:
         out = compute_portfolio_risk_contribution_outputs(weights=weights, clean_covar=clean_covar)
     else:
@@ -143,35 +159,30 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
                                 solver: str = 'ECOS_BB',
                                 verbose: bool = False
                                 ) -> np.ndarray:
-    """
-    numpy level solution of quadratic problem:
-    max alpha@w
-    such that
-    (w-benchmark_weights) @ Sigma @ (w-benchmark_weights).t <= tracking_err_vol_constraint
-    sum(abs(w-w_0)) <= turnover_constraint
-    subject to linear constraints
-         1. weight_min <= w <= weight_max
-         2. sum(w) = 1
-         3. exposure_budget_eq[0]^t*w = exposure_budget_eq[1]
-    here we assume that all assets are valid: Sigma is invertible
-    """
+    """Maximize alpha subject to tracking error and linear constraints using CVXPY."""
     n = covar.shape[0]
+    # set non-negativity based on long-only constraint
     if constraints.is_long_only:
         nonneg = True
     else:
         nonneg = False
+    # create optimization variable
     w = cvx.Variable(n, nonneg=nonneg)
-    covar = cvx.psd_wrap(covar)
+    covar = cvx.psd_wrap(covar)  # wrap covariance for PSD constraint
 
-    # set solver
+    # set objective: maximize active alpha
     benchmark_weights = constraints.benchmark_weights.to_numpy()
     objective_fun = alphas.T @ (w - benchmark_weights)
     objective = cvx.Maximize(objective_fun)
-    constraints_ = constraints.set_cvx_constraints(w=w, covar=covar)
 
+    # build all constraints
+    constraints_ = constraints.set_cvx_all_constraints(w=w, covar=covar)
+
+    # solve optimization problem
     problem = cvx.Problem(objective, constraints_)
     problem.solve(verbose=verbose, solver=solver)
 
+    # extract solution with fallback to previous weights or zeros
     optimal_weights = w.value
     if optimal_weights is None:
         # raise ValueError(f"not solved")
@@ -189,59 +200,37 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
 def cvx_maximise_tre_utility(covar: np.ndarray,
                              constraints: Constraints,
                              alphas: Optional[np.ndarray] = None,
-                             tre_weight: Optional[float] = 1.0,
-                             turnover_weight: Optional[float] = 0.1,
+                             tre_utility_weight: Optional[float] = 1.0,
+                             turnover_utility_weight: Optional[float] = 0.40,
                              solver: str = 'ECOS_BB',
                              verbose: bool = False
                              ) -> np.ndarray:
-    """
-    numpy level solution of quadratic problem with utility weights:
-    max { alpha@w - tre_weight * (w-benchmark_weights)@Sigma@(w-benchmark_weights).t - turnover_weight*sum(abs(w-w_0))}
-    subject to linear constraints
-         1. weight_min <= w <= weight_max
-         2. sum(w) = 1
-         3. exposure_budget_eq[0]^t*w = exposure_budget_eq[1]
-    here we assume that all assets are valid: Sigma is invertible
-    """
+    """Maximize utility with tracking error and turnover penalties using CVXPY."""
     n = covar.shape[0]
+    # set non-negativity based on long-only constraint
     if constraints.is_long_only:
         nonneg = True
     else:
         nonneg = False
+    # create optimization variable
     w = cvx.Variable(n, nonneg=nonneg)
-    covar = cvx.psd_wrap(covar)
+    covar = cvx.psd_wrap(covar)  # wrap covariance for PSD constraint
 
     constraints1 = constraints.copy()
-    # set solver
-    benchmark_weights = constraints.benchmark_weights.to_numpy()
 
-    # compute tracking error var
-    constraints1.tracking_err_vol_constraint = None  # disable from constraints
-    tracking_error_var = cvx.quad_form(w - benchmark_weights, covar)
+    # set objective with utility penalties for TRE and turnover
+    objective_fun, constraints_ = constraints1.set_cvx_utility_objective_constraints(
+        w=w,
+        alphas=alphas,
+        covar=covar,
+        tre_utility_weight=tre_utility_weight,
+        turnover_utility_weight=turnover_utility_weight)
 
-    if alphas is not None:
-        objective_fun = alphas.T @ (w - benchmark_weights)
-        if tre_weight is not None:
-            objective_fun += -1.0*tre_weight*tracking_error_var
-    else:
-        if tre_weight is None:
-            raise ValueError(f"tre_weight must be given for tre without alphas")
-        objective_fun = -1.0*tre_weight*tracking_error_var
-
-    # add turover
-    if turnover_weight is not None:
-        constraints1.turnover_constraint = None  # disable from constraints
-        if constraints1.weights_0 is None:
-            print(f"weights_0 must be given for turnover_constraint")
-        else:
-            objective_fun += -1.0*turnover_weight*cvx.norm(w - constraints1.weights_0, 1)
-
-    objective = cvx.Maximize(objective_fun)
-    constraints_ = constraints1.set_cvx_constraints(w=w, covar=covar)
-
-    problem = cvx.Problem(objective, constraints_)
+    # solve optimization problem
+    problem = cvx.Problem(cvx.Maximize(objective_fun), constraints_)
     problem.solve(verbose=verbose, solver=solver)
 
+    # extract solution with fallback to previous weights or zeros
     optimal_weights = w.value
     if optimal_weights is None:
         # raise ValueError(f"not solved")

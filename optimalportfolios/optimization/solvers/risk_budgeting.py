@@ -108,22 +108,24 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
         return pd.Series(0.0, index=pd_covar.index)
 
     if apply_total_to_good_ratio:
-        total_to_good_ratio = len(pd_covar.columns) / len(clean_covar.columns)
+        total_to_good_ratio1 = len(pd_covar.columns) / len(clean_covar.columns)
+        total_to_good_ratio = total_to_good_ratio1
     else:
-        total_to_good_ratio = 1.0
+        total_to_good_ratio1 = 1.0
+        total_to_good_ratio = None
 
     if risk_budget is not None:
         risk_budget = risk_budget.loc[clean_covar.columns].fillna(0.0)
-        risk_budget *= total_to_good_ratio
+        risk_budget *= total_to_good_ratio1
         risk_budget_np = risk_budget.to_numpy()
     else:
         risk_budget_np = None
 
+    # don't need to account for rebalancing_indicators here
     constraints1 = constraints.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
                                                          total_to_good_ratio=total_to_good_ratio,
                                                          weights_0=weights_0,
-                                                         rebalancing_indicators=None,  # don't need to account here
-                                                         apply_total_to_good_ratio=apply_total_to_good_ratio)
+                                                         rebalancing_indicators=None)
 
     weights0 = opt_risk_budgeting(covar=clean_covar.to_numpy(),
                                   constraints=constraints1,

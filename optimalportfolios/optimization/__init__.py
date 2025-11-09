@@ -1,5 +1,6 @@
 
-from optimalportfolios.optimization.constraints import (Constraints,
+from optimalportfolios.optimization.constraints import (ConstraintEnforcementType,
+                                                        Constraints,
                                                         GroupLowerUpperConstraints,
                                                         GroupTrackingErrorConstraint,
                                                         GroupTurnoverConstraint,

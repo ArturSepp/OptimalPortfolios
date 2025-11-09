@@ -131,7 +131,7 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
     # set solver
     objective_fun = alphas.T @ w
     objective = cvx.Maximize(objective_fun)
-    constraints_ = constraints.set_cvx_constraints(w=w, covar=covar)
+    constraints_ = constraints.set_cvx_all_constraints(w=w, covar=covar)
     problem = cvx.Problem(objective, constraints_)
     problem.solve(verbose=verbose, solver=solver)
 

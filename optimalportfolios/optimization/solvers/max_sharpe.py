@@ -112,7 +112,7 @@ def cvx_maximize_portfolio_sharpe(covar: np.ndarray,
     k = z[n]
     objective = cvx.Minimize(cvx.quad_form(w, covar))
 
-    constraints_ = constraints.set_cvx_constraints(w=w, covar=covar, exposure_scaler=k)
+    constraints_ = constraints.set_cvx_all_constraints(w=w, covar=covar, exposure_scaler=k)
 
     # add scaling constraints
     constraints_ += [means.T @ w == constraints.max_exposure]
