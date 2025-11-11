@@ -97,7 +97,6 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
     """Wrapper for alpha optimization handling NaNs and zero-variance assets."""
     # filter out assets with zero variance or nans
     if alphas is None:
-        is_apply_tre_utility_objective = True
         vectors = None
     else:
         vectors = dict(alphas=alphas)

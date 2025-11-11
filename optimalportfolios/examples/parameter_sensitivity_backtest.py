@@ -20,7 +20,7 @@ def run_max_diversification_sensitivity_to_span(prices: pd.DataFrame,
                                                 time_period: qis.TimePeriod,  # weight computations
                                                 perf_time_period: qis.TimePeriod,  # for reporting
                                                 constraints: Constraints
-                                                ) -> List[ plt.Figure]:
+                                                ) -> List[plt.Figure]:
     """
     test maximum diversification optimiser to span parameter
     span is number period for ewm filter

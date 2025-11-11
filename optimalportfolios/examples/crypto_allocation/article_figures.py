@@ -18,9 +18,6 @@ REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='QE')
 
 FIGSIZE = (14, 6)
 
-FIGURE_SAVE_PATH = "C://Users//artur//OneDrive//My Papers//Published Papers//CryptoAllocation. Zurich. Jan 2022//UpdatedFigures//"
-SAVE_FIGS = True
-
 PERF_COLUMNS0 = [#PerfStat.END_DATE,
     PerfStat.TOTAL_RETURN,
     PerfStat.PA_RETURN,
@@ -266,6 +263,8 @@ def run_local_test(local_test: LocalTests):
     These are integration tests that download real data and generate reports.
     Use for quick verification during development.
     """
+    FIGURE_SAVE_PATH = "C://Users//artur//OneDrive//My Papers//Published Papers//CryptoAllocation. Zurich. Jan 2022//UpdatedFigures//"
+    SAVE_FIGS = True
 
     end_date = '30Jun2023'
 

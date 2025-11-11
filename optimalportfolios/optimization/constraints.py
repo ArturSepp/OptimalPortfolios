@@ -635,7 +635,7 @@ class Constraints:
 
         # Group allocation constraints
         if self.group_lower_upper_constraints is not None:
-            constraints += self.group_lower_upper_constraints .set_cvx_group_lower_upper_constraints(w=w,
+            constraints += self.group_lower_upper_constraints.set_cvx_group_lower_upper_constraints(w=w,
                                                                                                      exposure_scaler=exposure_scaler)
         return objective_fun, constraints
 
