@@ -43,7 +43,7 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
             period = qis.TimePeriod(rebalancing_schedule.index[idx - roll_window+1], date)
             # drop assets with
             rets_ = period.locate(returns).dropna(axis=1, how='any')
-            params = fit_gaussian_mixture(x=rets_.to_numpy(), n_components=n_components, scaler=scaler)
+            params = fit_gaussian_mixture(x=rets_.to_numpy(), n_components=n_components, an_factor=scaler)
             constraints1 = constraints.update_with_valid_tickers(valid_tickers=rets_.columns.to_list(),
                                                                  total_to_good_ratio=len(tickers)/len(rets_.columns),
                                                                  weights_0=weights_0)

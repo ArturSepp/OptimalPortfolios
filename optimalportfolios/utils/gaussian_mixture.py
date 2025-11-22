@@ -81,7 +81,7 @@ class Params:
 
 def fit_gaussian_mixture(x: np.ndarray,
                          n_components: int = 2,
-                         scaler: float = 1.0,
+                         an_factor: float = 1.0,
                          idx: int = None
                          ):
     gmm = GaussianMixture(n_components=n_components,
@@ -96,8 +96,8 @@ def fit_gaussian_mixture(x: np.ndarray,
         gmm.precisions_ = gmm.precisions_[order]
         gmm.precisions_cholesky_ = gmm.precisions_cholesky_[order]
 
-    return Params(means=[scaler*x for x in gmm.means_],  # convert to lists
-                  covars=[scaler*x for x in gmm.covariances_],
+    return Params(means=[an_factor * x for x in gmm.means_],  # convert to lists
+                  covars=[an_factor * x for x in gmm.covariances_],
                   probs=gmm.weights_)
 
 
@@ -244,7 +244,7 @@ def estimate_rolling_mixture(prices: Union[pd.Series, pd.DataFrame],
             period = qis.TimePeriod(dates_schedule[idx - roll_window+1], end)
             # period.print()
             rets_ = period.locate(rets).to_numpy()
-            params = fit_gaussian_mixture(x=rets_, n_components=n_components, scaler=scaler)
+            params = fit_gaussian_mixture(x=rets_, n_components=n_components, an_factor=scaler)
             mean = np.stack(params.means, axis=0).T[0]
             std = np.sqrt(np.array([params.covars[0][0], params.covars[1][0]]))
             prob = params.probs

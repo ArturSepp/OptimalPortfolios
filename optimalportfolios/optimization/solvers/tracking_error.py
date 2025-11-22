@@ -15,8 +15,6 @@ class OptimiserAlphaOverTreConfig(NamedTuple):
     constraint_enforcement_type: ConstraintEnforcementType = ConstraintEnforcementType.FORCED_CONSTRAINTS
     solver: str = 'ECOS_BB'  # CVXPY solver choice
     # this specify weights of utility function for ConstraintEnforcementType.UTILITY_CONSTRAINTS
-    tre_utility_weight: Optional[float] = 1.0  # penalty weight for tracking error in utility
-    turnover_utility_weight: Optional[float] = 0.40  # penalty weight for turnover in utility
     apply_total_to_good_ratio: bool = True  # adjust constraints for non-investable assets
 
 
@@ -129,8 +127,6 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
                                            alphas=alphas_np,
                                            constraints=constraints1,
                                            solver=optimiser_alpha_over_tre_config.solver,
-                                           tre_utility_weight=optimiser_alpha_over_tre_config.tre_utility_weight,
-                                           turnover_utility_weight=optimiser_alpha_over_tre_config.turnover_utility_weight,
                                            verbose=verbose)
     else:
         # use hard constraints optimization
@@ -199,8 +195,6 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
 def cvx_maximise_tre_utility(covar: np.ndarray,
                              constraints: Constraints,
                              alphas: Optional[np.ndarray] = None,
-                             tre_utility_weight: Optional[float] = 1.0,
-                             turnover_utility_weight: Optional[float] = 0.40,
                              solver: str = 'ECOS_BB',
                              verbose: bool = False
                              ) -> np.ndarray:
@@ -221,9 +215,7 @@ def cvx_maximise_tre_utility(covar: np.ndarray,
     objective_fun, constraints_ = constraints1.set_cvx_utility_objective_constraints(
         w=w,
         alphas=alphas,
-        covar=covar,
-        tre_utility_weight=tre_utility_weight,
-        turnover_utility_weight=turnover_utility_weight)
+        covar=covar)
 
     # solve optimization problem
     problem = cvx.Problem(cvx.Maximize(objective_fun), constraints_)

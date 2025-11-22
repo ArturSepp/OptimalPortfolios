@@ -46,7 +46,7 @@ def run_local_test(local_test: LocalTests):
     if local_test == LocalTests.ONE_STEP_OPTIMISATION:
         # optimise using last available data as inputs
         returns = qis.to_returns(prices, freq='ME', is_log_returns=True).dropna()
-        params = fit_gaussian_mixture(x=returns.to_numpy(), n_components=3, scaler=52)
+        params = fit_gaussian_mixture(x=returns.to_numpy(), n_components=3, an_factor=12)
 
         weights = wrapper_maximize_cara_mixture(means=params.means,
                                                 covars=params.covars,
