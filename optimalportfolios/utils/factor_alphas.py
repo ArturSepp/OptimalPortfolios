@@ -10,6 +10,7 @@ from enum import Enum
 from typing import List, Optional, Tuple, Dict, Union
 
 from optimalportfolios.lasso.lasso_model_estimator import LassoModel
+from qis import get_annualization_factor
 
 
 class AlphaSignal(Enum):
@@ -346,7 +347,7 @@ def wrapper_estimate_regression_alphas(prices: pd.DataFrame,
                                        risk_factors_prices: pd.DataFrame,
                                        estimated_betas: Dict[pd.Timestamp, pd.DataFrame],
                                        rebalancing_freq: Union[str, pd.Series],
-                                       return_annualisation_freq_dict: Optional[Dict[str, float]] = {'ME': 12.0, 'QE': 4.0}
+                                       annualise: bool = True,
                                        ) -> pd.DataFrame:
     """
     using estimated factor model
@@ -364,8 +365,9 @@ def wrapper_estimate_regression_alphas(prices: pd.DataFrame,
                 betas0 = estimated_betas[date0].loc[:, y_.columns]
                 excess_returns[date1] = y_t - x_t @ betas0
         excess_returns = pd.DataFrame.from_dict(excess_returns, orient='index')
-        if return_annualisation_freq_dict is not None and freq in return_annualisation_freq_dict.keys():
-            excess_returns *= return_annualisation_freq_dict[freq]
+        if annualise:
+            an = get_annualization_factor(freq=freq)
+            excess_returns *= an
         return excess_returns
 
     if isinstance(rebalancing_freq, str):
@@ -380,5 +382,6 @@ def wrapper_estimate_regression_alphas(prices: pd.DataFrame,
             y = qis.to_returns(prices=prices[asset_tickers], is_log_returns=True, drop_first=True, freq=freq)
             x = qis.to_returns(prices=risk_factors_prices, is_log_returns=True, drop_first=True, freq=freq)
             excess_returns.append(estimate_excess_return(x_=x, y_=y, freq=freq))
-        excess_returns = pd.concat(excess_returns, axis=1)[prices.columns]
+        excess_returns = pd.concat(excess_returns, axis=1)
+        excess_returns = excess_returns[prices.columns]
     return excess_returns

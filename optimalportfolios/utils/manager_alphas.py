@@ -61,8 +61,7 @@ def compute_joint_alphas(prices: pd.DataFrame,
                          group_data_alphas: Optional[pd.Series],
                          beta_span: int = 12,
                          momentum_long_span: int = 12,
-                         managers_alpha_span: int = 12,
-                         return_annualisation_freq_dict: Optional[Dict[str, float]] = {'ME': 12.0, 'QE': 4.0}
+                         managers_alpha_span: int = 12
                          ) -> AlphasData:
     """
     for multi-asset portfolios we compute alpha based on the type:
@@ -92,8 +91,7 @@ def compute_joint_alphas(prices: pd.DataFrame,
         excess_returns = wrapper_estimate_regression_alphas(prices=prices[alpha_assets],
                                                             risk_factors_prices=risk_factors_prices,
                                                             estimated_betas=estimated_betas,
-                                                            rebalancing_freq=rebalancing_freq,
-                                                            return_annualisation_freq_dict=return_annualisation_freq_dict)
+                                                            rebalancing_freq=rebalancing_freq)
         # alphas_ = excess_returns.rolling(managers_alpha_span).sum()
         managers_alphas = qis.compute_ewm(data=excess_returns, span=managers_alpha_span)
         # managers_scores = qis.df_to_cross_sectional_score(df=managers_alphas)

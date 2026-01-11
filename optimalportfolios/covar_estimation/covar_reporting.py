@@ -16,6 +16,7 @@ def run_rolling_covar_report(risk_factor_prices: pd.DataFrame,
                              prices: pd.DataFrame,
                              covar_estimator: CovarEstimator,
                              time_period: qis.TimePeriod,
+                             factors_beta_loading_signs: pd.DataFrame = None,
                              figsize: Tuple[float, float] = (14, 10),
                              is_plot: bool = True,
                              is_align_to_clusters_index: bool = True
@@ -26,8 +27,9 @@ def run_rolling_covar_report(risk_factor_prices: pd.DataFrame,
     # 1. estimate rolling covar for taa and betas
     # we need betas time series to estiate alphas
     rolling_covar_data = covar_estimator.fit_rolling_covars(risk_factor_prices=risk_factor_prices,
-                                                                prices=prices,
-                                                                time_period=time_period)
+                                                            prices=prices,
+                                                            time_period=time_period,
+                                                            factors_beta_loading_signs=factors_beta_loading_signs)
 
     figs = []
     dfs = {}

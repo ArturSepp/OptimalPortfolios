@@ -47,6 +47,7 @@ class LassoModel:
     warmup_period: Optional[int] = 12  # period to start rolling estimation
     exclude_zero_betas: bool = True  # eliminate residual for zero betas
     nonneg: bool = False  # restriction for estimated betas
+    factors_beta_loading_signs: pd.DataFrame = None
     # computed internally
     clusters: Optional[pd.Series] = None
     linkage: Optional[np.ndarray] = None
@@ -96,6 +97,12 @@ class LassoModel:
         estimate model lasso coefficients for full sample
         """
         x_np, y_np = self.get_x_y_np(x=x, y=y)
+
+        if self.factors_beta_loading_signs is not None:
+            factors_beta_loading_signs = self.factors_beta_loading_signs.loc[x.columns, y.columns]
+            factors_beta_loading_signs_np = factors_beta_loading_signs.to_numpy()
+        else:
+            factors_beta_loading_signs_np = None
         span = span or self.span
         clusters = None
         linkage = None
@@ -109,7 +116,8 @@ class LassoModel:
                                                            verbose=verbose,
                                                            solver=self.solver,
                                                            apply_independent_nan_filter=apply_independent_nan_filter,
-                                                           nonneg=self.nonneg)
+                                                           nonneg=self.nonneg
+                                                           )
 
         elif self.model_type == LassoModelType.GROUP_LASSO:
             # create group loadings
@@ -121,7 +129,8 @@ class LassoModel:
                                                            span=span,
                                                            verbose=verbose,
                                                            solver=self.solver,
-                                                           nonneg=self.nonneg)
+                                                           nonneg=self.nonneg,
+                                                           factors_beta_loading_signs=factors_beta_loading_signs_np)
 
         elif self.model_type == LassoModelType.GROUP_LASSO_CLUSTERS:
             # create group loadings using ewma corr matrix
@@ -141,7 +150,8 @@ class LassoModel:
                                                            span=span,
                                                            verbose=verbose,
                                                            solver=self.solver,
-                                                           nonneg=self.nonneg)
+                                                           nonneg=self.nonneg,
+                                                           factors_beta_loading_signs=factors_beta_loading_signs_np)
 
         else:
             raise NotImplementedError(f"{self.model_type}")
@@ -229,7 +239,8 @@ def solve_lasso_cvx_problem(x: np.ndarray,
     each column in y is estimated using independent lasso model
     if data is expected to contain nans, apply_independent_nan_filter = True will do recursive estimation with
     size of nonnan x and dependent on column in y
-    out[ut array is (n_x, n_y)
+    factors_beta_loading_signs is of size (n_x, n_y)
+    outut array is (n_x, n_y)
     """
     assert y.ndim in [1, 2]
     assert x.ndim in [1, 2]
@@ -313,7 +324,8 @@ def solve_group_lasso_cvx_problem(x: np.ndarray,
                                   span: Optional[int] = None,
                                   nonneg: bool = False,
                                   verbose: bool = False,
-                                  solver: str = 'ECOS_BB'
+                                  solver: str = 'ECOS_BB',
+                                  factors_beta_loading_signs: np.ndarray = None
                                   ) -> np.ndarray:
     """
     solve lasso for n dimensional matrix of dependent variables y
@@ -322,6 +334,7 @@ def solve_group_lasso_cvx_problem(x: np.ndarray,
     size of nonnan x and dependent on column in y
     out[ut array is (n_x, n_y)
     group_loadings is array (n_y, number groups): with l_ij = 1 if instrument i is in group j and zero otherwise
+    factors_beta_loading_signs defines signes of betas with size (n_x, n_y)
     span: defines exponential weight
     """
     # assume multifactor model
@@ -331,6 +344,10 @@ def solve_group_lasso_cvx_problem(x: np.ndarray,
     assert x.shape[0] == y.shape[0]
     assert y.shape[1] == group_loadings.shape[0]
 
+    if factors_beta_loading_signs is not None:
+        assert factors_beta_loading_signs.shape[0] == x.shape[1]
+        assert factors_beta_loading_signs.shape[1] == y.shape[1]
+
     n_x = x.shape[1]
     n_y = y.shape[1]
     n_groups = group_loadings.shape[1]
@@ -339,7 +356,21 @@ def solve_group_lasso_cvx_problem(x: np.ndarray,
     x, y = qis.select_non_nan_x_y(x=x, y=y)
 
     # set variables
-    beta = cvx.Variable((n_x, n_y), nonneg=nonneg)
+    constraints = None
+    if factors_beta_loading_signs is None:
+        beta = cvx.Variable((n_x, n_y), nonneg=nonneg)
+    else:
+        # Use: 0 = must be zero, 1 = nonneg, -1 or NaN = free
+        beta = cvx.Variable((n_x, n_y))
+        zero_mask = np.isclose(factors_beta_loading_signs, 0.0).astype(float)
+        nonneg_mask = np.greater(factors_beta_loading_signs, 0.0).astype(float)
+        # Everything else is free (no constraint)
+        constraints = []
+        if np.any(zero_mask > 0):
+            constraints = [cvx.multiply(zero_mask, beta) == 0]  # set zeros
+        if np.any(nonneg_mask > 0):
+            constraints.append(cvx.multiply(nonneg_mask, beta) >= 0)  # set where positive
+
     nan_vector = np.full((n_x, n_y), np.nan)
 
     # check suffient obs
@@ -368,9 +399,12 @@ def solve_group_lasso_cvx_problem(x: np.ndarray,
     objective_fun = objective_fun + group_norms
 
     objective = cvx.Minimize(objective_fun)
-    problem = cvx.Problem(objective)
+    if constraints is None:
+        problem = cvx.Problem(objective)
+    else:
+        problem = cvx.Problem(objective, constraints)
+
     problem.solve(verbose=verbose, solver=solver)
-    # problem.solve()
 
     estimated_beta = beta.value
     if estimated_beta is None:

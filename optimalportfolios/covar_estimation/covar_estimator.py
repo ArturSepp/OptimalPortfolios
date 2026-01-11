@@ -45,6 +45,7 @@ class CovarEstimator:
                            prices: pd.DataFrame,
                            time_period: qis.TimePeriod,
                            risk_factor_prices: pd.DataFrame = None,
+                           factors_beta_loading_signs: pd.DataFrame = None,
                            ) -> EstimatedRollingCovarData:
         """
         fit rolling covars at rebalancing_freq
@@ -54,6 +55,7 @@ class CovarEstimator:
                                                             risk_factor_prices=risk_factor_prices,
                                                             time_period=time_period,
                                                             returns_freq=self.factor_returns_freq,
+                                                            factors_beta_loading_signs=factors_beta_loading_signs,
                                                             **self.to_dict())
         return rolling_covar_data
 

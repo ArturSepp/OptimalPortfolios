@@ -2,7 +2,7 @@
 set common configuration for different reports
 """
 
-from qis import PerfStat, PerfParams, BenchmarkReturnsQuantileRegimeSpecs
+from qis import PerfStat, PerfParams, BenchmarkReturnsQuantilesRegime
 
 BENCHMARK_TABLE_COLUMNS2 = (PerfStat.PA_RETURN,
                             PerfStat.VOL,
@@ -23,9 +23,9 @@ FIG_SIZE11_2 = (4.70, 0.95)
 FIG_SIZE11_2a = (4.70, 0.6)
 
 
-PERF_PARAMS = PerfParams(freq_vol='ME', freq_reg='ME', freq_drawdown='ME', alpha_an_factor=12)
+PERF_PARAMS = PerfParams(freq_vol='ME', freq_reg='ME', freq_drawdown='ME')
 
-REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='ME')
+REGIME_CLASSIFIER = BenchmarkReturnsQuantilesRegime(freq='ME')
 
 KWARGS = dict(fontsize=7,
               linewidth=0.5,

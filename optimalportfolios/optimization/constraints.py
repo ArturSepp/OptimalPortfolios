@@ -143,16 +143,16 @@ class GroupLowerUpperConstraints:
             group_loading = self.group_loadings[group].to_numpy()
             if np.any(np.isclose(group_loading, 0.0) == False):
                 if self.group_min_allocation is not None:
-                    if group in self.group_min_allocation:
-                        this = self.group_min_allocation[group]
-                        if this is not None:
+                    if group in self.group_min_allocation.index:
+                        this = self.group_min_allocation.loc[group]
+                        if not np.isnan(this):
                             constraints += [group_loading @ w >= multiplier * this]
                     else:
                         warnings.warn(f"no group={group} in group_min_allocation, constraint skipped")
                 if self.group_max_allocation is not None:
-                    if group in self.group_max_allocation:
-                        this = self.group_max_allocation[group]
-                        if this is not None:
+                    if group in self.group_max_allocation.index:
+                        this = self.group_max_allocation.loc[group]
+                        if not np.isnan(this):
                             constraints += [group_loading @ w <= multiplier * this]
                     else:
                         warnings.warn(f"no group={group} in group_max_allocation, constraint skipped")
@@ -167,9 +167,7 @@ class GroupLowerUpperConstraints:
 
 def merge_group_lower_upper_constraints(
         group_lower_upper_constraints1: GroupLowerUpperConstraints,
-        group_lower_upper_constraints2: GroupLowerUpperConstraints,
-        filling_value_for_missing_lower_bound: float = -10.0,
-        filling_value_for_missing_upper_bound: float = 10.0
+        group_lower_upper_constraints2: GroupLowerUpperConstraints
 ) -> GroupLowerUpperConstraints:
     """Merge two GroupLowerUpperConstraints objects, handling overlaps with suffixes.
 
@@ -179,8 +177,8 @@ def merge_group_lower_upper_constraints(
     Args:
         group_lower_upper_constraints1: First constraint object.
         group_lower_upper_constraints2: Second constraint object.
-        filling_value_for_missing_lower_bound: Default for missing min allocations.
-        filling_value_for_missing_upper_bound: Default for missing max allocations.
+        Default for missing min allocations is np.nan so it is ignored by setting constraints
+        Default for missing max allocations is np.nan so it is ignored by setting constraints
 
     Returns:
         Merged GroupLowerUpperConstraints object.
@@ -228,8 +226,7 @@ def merge_group_lower_upper_constraints(
         group_min_allocation = None
 
     if group_min_allocation is not None:
-        group_min_allocation = group_min_allocation.reindex(index=group_loadings.columns
-                                                            ).fillna(filling_value_for_missing_lower_bound)
+        group_min_allocation = group_min_allocation.reindex(index=group_loadings.columns)
 
     # Merge maximum allocations with proper handling of None cases
     if (group_lower_upper_constraints1.group_max_allocation is not None and
@@ -248,9 +245,7 @@ def merge_group_lower_upper_constraints(
         group_max_allocation = None
 
     if group_max_allocation is not None:
-        group_max_allocation = group_max_allocation.reindex(
-            index=group_loadings.columns
-        ).fillna(filling_value_for_missing_upper_bound)
+        group_max_allocation = group_max_allocation.reindex(index=group_loadings.columns)
 
     return GroupLowerUpperConstraints(
         group_loadings=group_loadings,
@@ -481,7 +476,7 @@ class GroupTurnoverConstraint:
             for group in self.group_loadings.columns:
                 group_loading = self.group_loadings[group].loc[weights_0.index]
                 if np.any(np.isclose(group_loading, 0.0) == False):
-                    turnover_utility_weight = self.group_turnover_utility_weights[group]
+                    turnover_utility_weight = self.group_turnover_utility_weights.loc[group]
                     if not np.isnan(turnover_utility_weight):
                         term = -1.0 * turnover_utility_weight * cvx.norm(cvx.multiply(group_loading.to_numpy(), w - weights_0), 1)
                         objective_fun = add_term_to_objective_function(objective_fun, term)
@@ -536,6 +531,7 @@ class Constraints:
     asset_returns: pd.Series = None
     max_target_portfolio_vol_an: float = None
     min_target_portfolio_vol_an: float = None
+    constraint_enforcement_type: ConstraintEnforcementType = ConstraintEnforcementType.FORCED_CONSTRAINTS
     tre_utility_weight: Optional[float] = 1.0  # penalty weight for tracking error in utility
     turnover_utility_weight: Optional[float] = 0.40  # penalty weight for turnover in utility
     group_lower_upper_constraints: GroupLowerUpperConstraints = None
@@ -599,9 +595,7 @@ class Constraints:
 
     def update_group_lower_upper_constraints(
             self,
-            group_lower_upper_constraints: GroupLowerUpperConstraints,
-            filling_value_for_missing_lower_bound: float = -10.0,
-            filling_value_for_missing_upper_bound: float = 10.0
+            group_lower_upper_constraints: GroupLowerUpperConstraints
     ) -> Constraints:
         """Add or merge group lower/upper constraints.
 
@@ -617,9 +611,7 @@ class Constraints:
         if this.group_lower_upper_constraints is not None:
             this.group_lower_upper_constraints = merge_group_lower_upper_constraints(
                 group_lower_upper_constraints1=this.group_lower_upper_constraints,
-                group_lower_upper_constraints2=group_lower_upper_constraints,
-                filling_value_for_missing_lower_bound=filling_value_for_missing_lower_bound,
-                filling_value_for_missing_upper_bound=filling_value_for_missing_upper_bound)
+                group_lower_upper_constraints2=group_lower_upper_constraints)
         else:
             this.group_lower_upper_constraints = group_lower_upper_constraints
         return this
@@ -656,16 +648,16 @@ class Constraints:
         with pd.option_context('future.no_silent_downcasting', True):
             # Update individual weight constraints
             if this.min_weights is not None:
-                this.min_weights = this.min_weights[valid_tickers].fillna(0.0)
+                this.min_weights = this.min_weights.loc[valid_tickers].fillna(0.0)
             if this.max_weights is not None:
                 if total_to_good_ratio is not None:
-                    max_weight = this.max_weights[valid_tickers]
+                    max_weight = this.max_weights.loc[valid_tickers]
                     this.max_weights = max_weight.where(
                         np.isclose(max_weight, 1.0),
                         other=total_to_good_ratio * max_weight
                     ).fillna(0.0)
                 else:
-                    this.max_weights = this.max_weights[valid_tickers].fillna(0.0)
+                    this.max_weights = this.max_weights.loc[valid_tickers].fillna(0.0)
 
             # Update group constraints
             if this.group_lower_upper_constraints is not None:
@@ -984,12 +976,14 @@ class Constraints:
                 group_loading = group_lower_upper_constraints.group_loadings[group].to_numpy()
                 if np.any(np.isclose(group_loading, 0.0) == False):
                     if group_lower_upper_constraints.group_min_allocation is not None:
-                        min_weight: float = group_lower_upper_constraints.group_min_allocation[group]
-                        constraints += [{ 'type': 'ineq', 'fun': make_min_constraint(group_loading, min_weight)}]
+                        min_weight = group_lower_upper_constraints.group_min_allocation.loc[group]
+                        if not np.isnan(min_weight):
+                            constraints += [{ 'type': 'ineq', 'fun': make_min_constraint(group_loading, min_weight)}]
 
                     if group_lower_upper_constraints.group_max_allocation is not None:
-                        max_weight: float = group_lower_upper_constraints.group_max_allocation[group]
-                        constraints += [{ 'type': 'ineq', 'fun': make_max_constraint(group_loading, max_weight)}]
+                        max_weight = group_lower_upper_constraints.group_max_allocation.loc[group]
+                        if not np.isnan(max_weight):
+                            constraints += [{ 'type': 'ineq', 'fun': make_max_constraint(group_loading, max_weight)}]
 
         bounds = self.set_scipy_bounds(covar=covar)
         return constraints, bounds
@@ -1022,14 +1016,16 @@ class Constraints:
                 if np.any(np.isclose(group_loading, 0.0) == False):
                     # Minimum allocation: -group_loading * x <= -min_weight
                     if group_lower_upper_constraints.group_min_allocation is not None:
-                        min_weight = group_lower_upper_constraints.group_min_allocation[group]
-                        c_rows.append(-1.0 * group_loading)
-                        c_lhs.append(-1.0 * min_weight)
+                        min_weight = group_lower_upper_constraints.group_min_allocation.loc[group]
+                        if not np.isnan(min_weight):
+                            c_rows.append(-1.0 * group_loading)
+                            c_lhs.append(-1.0 * min_weight)
                     # Maximum allocation: group_loading * x <= max_weight
                     if group_lower_upper_constraints.group_max_allocation is not None:
-                        max_weight = group_lower_upper_constraints.group_max_allocation[group]
-                        c_rows.append(group_loading)
-                        c_lhs.append(max_weight)
+                        max_weight = group_lower_upper_constraints.group_max_allocation.loc[group]
+                        if not np.isnan(max_weight):
+                            c_rows.append(group_loading)
+                            c_lhs.append(max_weight)
 
             if c_rows:
                 c_rows = np.vstack(c_rows)

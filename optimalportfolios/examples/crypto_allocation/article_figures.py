@@ -8,13 +8,13 @@ from enum import Enum
 
 # qis
 import qis
-from qis import TimePeriod, PerfParams, BenchmarkReturnsQuantileRegimeSpecs, PerfStat
+from qis import TimePeriod, PerfParams, BenchmarkReturnsQuantilesRegime, PerfStat
 
 import optimalportfolios.utils.gaussian_mixture as gm
 from optimalportfolios.examples.crypto_allocation.load_prices import Assets, load_prices, load_risk_free_rate
 
-PERF_PARAMS = PerfParams(freq_vol='ME', freq_reg='ME', freq_drawdown='ME', rates_data=load_risk_free_rate(), alpha_an_factor=12)
-REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='QE')
+PERF_PARAMS = PerfParams(freq_vol='ME', freq_reg='ME', freq_drawdown='ME', rates_data=load_risk_free_rate())
+REGIME_CLASSIFIER = BenchmarkReturnsQuantilesRegime(freq='QE')
 
 FIGSIZE = (14, 6)
 

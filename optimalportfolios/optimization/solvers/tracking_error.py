@@ -12,7 +12,6 @@ from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
 
 class OptimiserAlphaOverTreConfig(NamedTuple):
     """Configuration for alpha over tracking error optimization."""
-    constraint_enforcement_type: ConstraintEnforcementType = ConstraintEnforcementType.FORCED_CONSTRAINTS
     solver: str = 'ECOS_BB'  # CVXPY solver choice
     # this specify weights of utility function for ConstraintEnforcementType.UTILITY_CONSTRAINTS
     apply_total_to_good_ratio: bool = True  # adjust constraints for non-investable assets
@@ -121,7 +120,7 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
         alphas_np = None
 
     # choose optimization method based on constraint enforcement type
-    if optimiser_alpha_over_tre_config.constraint_enforcement_type == ConstraintEnforcementType.UTILITY_CONSTRAINTS:
+    if constraints.constraint_enforcement_type == ConstraintEnforcementType.UTILITY_CONSTRAINTS:
         # use utility-based optimization with penalty weights
         weights = cvx_maximise_tre_utility(covar=clean_covar.to_numpy(),
                                            alphas=alphas_np,

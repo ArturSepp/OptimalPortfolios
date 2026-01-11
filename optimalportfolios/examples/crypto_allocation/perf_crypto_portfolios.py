@@ -17,7 +17,7 @@ from typing import List, Dict, Tuple, Optional
 from enum import Enum
 import pybloqs as p
 import qis as qis
-from qis import TimePeriod, PerfParams, BenchmarkReturnsQuantileRegimeSpecs, PerfStat
+from qis import TimePeriod, PerfParams, BenchmarkReturnsQuantilesRegime, PerfStat
 
 from optimalportfolios.examples.crypto_allocation.load_prices import Assets, load_prices, load_risk_free_rate
 from optimalportfolios.reports.marginal_backtest import OptimisationType
@@ -25,7 +25,7 @@ from optimalportfolios.reports.config import KWARGS_SUPTITLE, KWARGS_TITLE, KWAR
 from optimalportfolios.examples.crypto_allocation.backtest_portfolios_for_article import run_joint_backtest
 
 PERF_PARAMS = PerfParams(freq_vol='ME', freq_reg='ME', freq_drawdown='ME', rates_data=load_risk_free_rate())
-REGIME_PARAMS = BenchmarkReturnsQuantileRegimeSpecs(freq='QE')
+REGIME_CLASSIFIER = BenchmarkReturnsQuantilesRegime(freq='QE')
 
 LOCAL_PATH = "C://Users//artur//OneDrive//analytics//outputs//"
 FIGURE_SAVE_PATH = "C://Users//artur//OneDrive//My Papers//Working Papers//CryptoAllocation. Zurich. Jan 2022//figs1//"
@@ -51,7 +51,7 @@ FIG_KWARGS = dict(fontsize=12, digits_to_show=1, sharpe_digits=2,
                   beta_format='{:0.1f}',
                   x_date_freq='QE',
                   perf_params=PERF_PARAMS,
-                  regime_params=REGIME_PARAMS,
+                  regime_classifier=REGIME_CLASSIFIER,
                   perf_columns=PERF_COLUMNS)
 
 

@@ -80,6 +80,7 @@ def wrapper_estimate_rolling_covar(prices: pd.DataFrame,
                                    time_period: qis.TimePeriod,  # starting time of sampling estimator
                                    covar_estimator_type: CovarEstimatorType = CovarEstimatorType.EWMA,
                                    risk_factor_prices: pd.DataFrame = None,  # for lasso covars
+                                   factors_beta_loading_signs: pd.DataFrame = None,
                                    returns_freq: str = 'ME',
                                    **kwargs
                                    ) -> EstimatedRollingCovarData:
@@ -99,6 +100,7 @@ def wrapper_estimate_rolling_covar(prices: pd.DataFrame,
         covar_data = wrapper_estimate_rolling_lasso_covar(risk_factors_prices=risk_factor_prices,
                                                           prices=prices,
                                                           time_period=time_period,  # when we start building portfolios
+                                                          factors_beta_loading_signs=factors_beta_loading_signs,
                                                           **kwargs)
 
     else:
@@ -210,7 +212,8 @@ def estimate_rolling_lasso_covar(risk_factor_prices: pd.DataFrame,
                                  is_apply_vol_normalised_returns: bool = False,
                                  squeeze_factor: Optional[float] = None,
                                  residual_var_weight: float = 1.0,
-                                 num_lags_newey_west_dict: Optional[Dict[str, int]] = None
+                                 num_lags_newey_west_dict: Optional[Dict[str, int]] = None,
+                                 factors_beta_loading_signs: Optional[pd.DataFrame] = None
                                  ) -> EstimatedRollingCovarData:
     """
     use benchmarks to compute the benchmark covar matrix
@@ -245,7 +248,8 @@ def estimate_rolling_lasso_covar(risk_factor_prices: pd.DataFrame,
     else:
         num_lags_newey_west = None
     betas, total_vars, residual_vars, r2_t, cluster_data = lasso_model.estimate_rolling_betas(x=x, y=y, span=span,
-                                                                                              num_lags_newey_west=num_lags_newey_west)
+                                                                                              num_lags_newey_west=num_lags_newey_west,
+                                                                                              factors_beta_loading_signs=factors_beta_loading_signs)
 
     if num_lags_newey_west is not None:
         ewm_nw, nw_ratios = qis.compute_ewm_newey_west_vol(data=y, span=span, num_lags=num_lags_newey_west,
