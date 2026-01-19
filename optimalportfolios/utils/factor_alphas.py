@@ -320,7 +320,7 @@ def compute_alpha_long_only_weights(prices: pd.DataFrame,
 
 
 def estimate_lasso_regression_alphas(prices: pd.DataFrame,
-                                     risk_factors_prices: pd.DataFrame,
+                                     risk_factor_prices: pd.DataFrame,
                                      lasso_model: LassoModel,
                                      rebalancing_freq: str = 'ME'
                                      ) -> pd.DataFrame:
@@ -329,7 +329,7 @@ def estimate_lasso_regression_alphas(prices: pd.DataFrame,
     compute alphas = return_t - (factor_returns_t*beta_{t_1}
     """
     y = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
-    x = qis.to_returns(prices=risk_factors_prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
+    x = qis.to_returns(prices=risk_factor_prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
 
     betas, total_vars, residual_vars, r2_t, clusters = lasso_model.estimate_rolling_betas(x=x, y=y)
     estimation_dates = list(betas.keys())
@@ -343,15 +343,17 @@ def estimate_lasso_regression_alphas(prices: pd.DataFrame,
     return excess_returns
 
 
-def wrapper_estimate_regression_alphas(prices: pd.DataFrame,
-                                       risk_factors_prices: pd.DataFrame,
+def estimate_rolling_regression_alphas(prices: pd.DataFrame,
+                                       risk_factor_prices: pd.DataFrame,
                                        estimated_betas: Dict[pd.Timestamp, pd.DataFrame],
                                        rebalancing_freq: Union[str, pd.Series],
-                                       annualise: bool = True,
+                                       annualise: bool = True
                                        ) -> pd.DataFrame:
     """
     using estimated factor model
     compute alphas = return_t - (factor_returns_t*beta_{t_1}
+    important that factor model is estimated using mean-adjusted return
+    while regression alphas are estimated using total returns
     """
     estimated_betas_dates = list(estimated_betas.keys())
     
@@ -363,7 +365,7 @@ def wrapper_estimate_regression_alphas(prices: pd.DataFrame,
                 x_t = x_.loc[date1, :]
                 y_t = y_.loc[date1, :]
                 betas0 = estimated_betas[date0].loc[:, y_.columns]
-                excess_returns[date1] = y_t - x_t @ betas0
+                excess_returns[date1] = compute_excess_return(x_t=x_t, y_t=y_t, betas_t0=betas0, freq=freq)
         excess_returns = pd.DataFrame.from_dict(excess_returns, orient='index')
         if annualise:
             an = get_annualization_factor(freq=freq)
@@ -371,7 +373,7 @@ def wrapper_estimate_regression_alphas(prices: pd.DataFrame,
         return excess_returns
 
     if isinstance(rebalancing_freq, str):
-        x = qis.to_returns(prices=risk_factors_prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
+        x = qis.to_returns(prices=risk_factor_prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
         y = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=rebalancing_freq)
         excess_returns = estimate_excess_return(x_=x, y_=y, freq=rebalancing_freq)
 
@@ -380,8 +382,46 @@ def wrapper_estimate_regression_alphas(prices: pd.DataFrame,
         excess_returns = []
         for freq, asset_tickers in group_freqs.items():
             y = qis.to_returns(prices=prices[asset_tickers], is_log_returns=True, drop_first=True, freq=freq)
-            x = qis.to_returns(prices=risk_factors_prices, is_log_returns=True, drop_first=True, freq=freq)
+            x = qis.to_returns(prices=risk_factor_prices, is_log_returns=True, drop_first=True, freq=freq)
             excess_returns.append(estimate_excess_return(x_=x, y_=y, freq=freq))
         excess_returns = pd.concat(excess_returns, axis=1)
         excess_returns = excess_returns[prices.columns]
+    return excess_returns
+
+
+def estimate_regression_alphas(y: pd.DataFrame,
+                               x: pd.DataFrame,
+                               estimated_betas: pd.DataFrame,
+                               rebalancing_freq: Union[str, pd.Series]
+                               ) -> pd.DataFrame:
+    """
+    using estimated factor model
+    compute alphas = return_t - (factor_returns_t*beta_{t_1}
+    important that factor model is estimated using mean-adjusted return
+    while regression alphas are estimated using total returns
+    """
+
+    if isinstance(rebalancing_freq, str):
+        excess_returns = compute_excess_return(x_t=x, y_t=y, betas_t0=estimated_betas, freq=rebalancing_freq)
+
+    else:
+        group_freqs = qis.get_group_dict(group_data=rebalancing_freq.loc[y.columns])
+        excess_returns = []
+        for freq, asset_tickers in group_freqs.items():
+            y = qis.to_returns(prices=prices[asset_tickers], is_log_returns=True, drop_first=True, freq=freq)
+            x = qis.to_returns(prices=risk_factor_prices, is_log_returns=True, drop_first=True, freq=freq)
+            excess_returns.append(compute_excess_return(x_t=x, y_t=y[asset_tickers], betas_t0=estimated_betas, freq=freq))
+        excess_returns = pd.concat(excess_returns, axis=1)
+        excess_returns = excess_returns.reindex(columns=prices.columns)
+    return excess_returns
+
+
+def compute_excess_return(x_t: pd.DataFrame,
+                          y_t: pd.DataFrame,
+                          betas_t0: pd.DataFrame,
+                          freq: str = None) -> pd.DataFrame:
+    excess_returns = y_t - x_t @ betas_t0
+    if freq is not None:
+        an = get_annualization_factor(freq=freq)
+        excess_returns *= an
     return excess_returns

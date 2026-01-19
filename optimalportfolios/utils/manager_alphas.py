@@ -8,9 +8,10 @@ import pandas as pd
 import qis as qis
 from typing import Union, Dict, Optional
 from dataclasses import dataclass, asdict
+from scipy.stats import norm
 
 from optimalportfolios.utils.factor_alphas import (wrapper_compute_low_beta_alphas,
-                                                   wrapper_estimate_regression_alphas)
+                                                   estimate_rolling_regression_alphas)
 
 
 @dataclass
@@ -54,7 +55,7 @@ class AlphasData:
 
 def compute_joint_alphas(prices: pd.DataFrame,
                          benchmark_price: pd.Series,
-                         risk_factors_prices: pd.DataFrame,
+                         risk_factor_prices: pd.DataFrame,
                          alpha_beta_type: pd.Series,
                          rebalancing_freq: Union[str, pd.Series],
                          estimated_betas: Dict[pd.Timestamp, pd.DataFrame],
@@ -88,8 +89,8 @@ def compute_joint_alphas(prices: pd.DataFrame,
     # 2. compute alphas for managers
     alpha_assets = alpha_beta_type.loc[alpha_beta_type == 'Alpha'].index.to_list()
     if len(alpha_assets) > 0:
-        excess_returns = wrapper_estimate_regression_alphas(prices=prices[alpha_assets],
-                                                            risk_factors_prices=risk_factors_prices,
+        excess_returns = estimate_rolling_regression_alphas(prices=prices[alpha_assets],
+                                                            risk_factor_prices=risk_factor_prices,
                                                             estimated_betas=estimated_betas,
                                                             rebalancing_freq=rebalancing_freq)
         # alphas_ = excess_returns.rolling(managers_alpha_span).sum()
@@ -108,6 +109,10 @@ def compute_joint_alphas(prices: pd.DataFrame,
     elif alpha_scores is None and managers_scores is not None:
         alpha_scores = managers_scores
     alpha_scores = alpha_scores.fillna(0.0)
+
+    alpha_scores = qis.map_signal_to_weight(signals=alpha_scores,
+                                            signal_map_type=qis.SignalMapType.LaplaceCDF, loc=0.0, scale=1.0)
+
     alphas = AlphasData(alpha_scores=alpha_scores,
                         beta=beta,
                         momentum=momentum,

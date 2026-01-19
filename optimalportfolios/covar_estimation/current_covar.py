@@ -13,7 +13,7 @@ from typing import Optional, Union, Dict, Any
 from optimalportfolios.covar_estimation.config import CovarEstimatorType
 from optimalportfolios.lasso.lasso_model_estimator import LassoModel
 from optimalportfolios.covar_estimation.utils import squeeze_covariance_matrix, compute_returns_from_prices
-from optimalportfolios.covar_estimation.annualisation import get_conversion_factor
+from optimalportfolios.utils.factor_alphas import estimate_regression_alphas, compute_excess_return
 
 
 @dataclass
@@ -31,9 +31,26 @@ class EstimatedCurrentCovarData:
     linkages: Optional[Union[Dict[str, np.ndarray], np.ndarray]] = None
     cutoffs: Optional[Union[Dict[str, float], float]] = None
     nw_ratios: Optional[pd.Series] = None
+    alphas: Optional[pd.DataFrame] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
+    def get_snapshot(self, alpha_span: int = 120) -> pd.DataFrame:
+        df = self.asset_last_betas.copy().T
+        df['R2'] = self.last_r2
+        df['total vol'] = np.sqrt(self.last_total_vars)
+        df['residual vol'] = np.sqrt(self.last_residual_vars)
+
+        if alpha_span is not None:
+            alphas = qis.compute_ewm(self.alphas, span=alpha_span)
+            alpha = alphas.iloc[-1, :]
+        else:
+            alpha = self.alphas.iloc[-1, :]
+
+        df['alpha'] = alpha
+
+        return df
 
 
 def wrapper_estimate_current_covar(prices: pd.DataFrame,
@@ -52,7 +69,7 @@ def wrapper_estimate_current_covar(prices: pd.DataFrame,
     elif covar_estimator_type == CovarEstimatorType.LASSO:
         if risk_factor_prices is None:
             raise ValueError(f"risk_factor_prices must be passed for Lasso estimator")
-        covar_data = wrapper_estimate_current_lasso_covar(risk_factors_prices=risk_factor_prices,
+        covar_data = wrapper_estimate_current_lasso_covar(risk_factor_prices=risk_factor_prices,
                                                           prices=prices,
                                                           **kwargs)
 
@@ -86,17 +103,18 @@ def estimate_current_ewma_covar(prices: pd.DataFrame,
     if squeeze_factor is not None:
         covar_t = squeeze_covariance_matrix(covar=covar_t, squeeze_factor=squeeze_factor)
     if apply_an_factor:
-        an_factor = qis.infer_an_from_data(data=returns)
+        an_factor = qis.infer_annualisation_factor_from_df(data=returns)
     else:
         an_factor = 1.0
     current_covar = pd.DataFrame(an_factor*covar_t, columns=returns.columns, index=returns.columns)
     return current_covar
 
 
-def wrapper_estimate_current_lasso_covar(risk_factors_prices: pd.DataFrame,
-                                         prices: pd.DataFrame,
+def wrapper_estimate_current_lasso_covar(risk_factor_prices: pd.DataFrame,
+                                         prices: Optional[pd.DataFrame],
                                          lasso_model: LassoModel,
                                          returns_freqs: Union[str, pd.Series] = 'ME',
+                                         price_returns: Optional[pd.DataFrame] = None,
                                          factor_returns_freq: str = 'W-WED',
                                          span_freq_dict: Optional[Dict[str, int]] = None,  # spans for different freqs
                                          squeeze_factor: Optional[float] = None,
@@ -109,9 +127,10 @@ def wrapper_estimate_current_lasso_covar(risk_factors_prices: pd.DataFrame,
     wrapper for lasso covar estimation using either fixed rebalancing frequency or rolling rebalancing frequency
     """
     if isinstance(returns_freqs, str):
-        covar_data = estimate_lasso_covar(risk_factor_prices=risk_factors_prices,
+        covar_data = estimate_lasso_covar(risk_factor_prices=risk_factor_prices,
                                           prices=prices,
                                           lasso_model=lasso_model,
+                                          price_returns=price_returns,
                                           factor_returns_freq=factor_returns_freq,
                                           returns_freq=returns_freqs,
                                           is_apply_vol_normalised_returns=is_apply_vol_normalised_returns,
@@ -119,9 +138,10 @@ def wrapper_estimate_current_lasso_covar(risk_factors_prices: pd.DataFrame,
                                           residual_var_weight=residual_var_weight,
                                           num_lags_newey_west_dict=num_lags_newey_west_dict)
     else:
-        covar_data = estimate_lasso_covar_different_freq(risk_factor_prices=risk_factors_prices,
+        covar_data = estimate_lasso_covar_different_freq(risk_factor_prices=risk_factor_prices,
                                                          prices=prices,
                                                          lasso_model=lasso_model,
+                                                         price_returns=price_returns,
                                                          factor_returns_freq=factor_returns_freq,
                                                          returns_freqs=returns_freqs,
                                                          span_freq_dict=span_freq_dict,
@@ -133,8 +153,9 @@ def wrapper_estimate_current_lasso_covar(risk_factors_prices: pd.DataFrame,
 
 
 def estimate_lasso_covar(risk_factor_prices: pd.DataFrame,
-                         prices: pd.DataFrame,
+                         prices: Optional[pd.DataFrame],
                          lasso_model: LassoModel,
+                         price_returns: Optional[pd.DataFrame] = None,
                          x_covar: Optional[np.ndarray] = None,
                          factor_returns_freq: str = 'W-WED',
                          returns_freq: str = 'ME',
@@ -153,28 +174,34 @@ def estimate_lasso_covar(risk_factor_prices: pd.DataFrame,
     if x_covar is None:
         x_covar = estimate_current_ewma_covar(prices=risk_factor_prices,
                                               returns_freq=factor_returns_freq,
-                                              demean=True,
+                                              demean=lasso_model.demean,
                                               span=lasso_model.span,
                                               is_apply_vol_normalised_returns=is_apply_vol_normalised_returns,
                                               squeeze_factor=squeeze_factor,
                                               apply_an_factor=False)
-        factor_scale_an = get_conversion_factor(from_freq=factor_returns_freq, to_freq='YE')
+        factor_scale_an = qis.get_annualisation_conversion_factor(from_freq=factor_returns_freq, to_freq='YE')
         # print(f"factor_scale_an={factor_scale_an}")
         x_covar *= factor_scale_an
 
     # 2. estimate betas at returns_freq
-    y = compute_returns_from_prices(prices=prices, returns_freq=returns_freq, demean=False)
+    if price_returns is None:
+        y = compute_returns_from_prices(prices=prices, returns_freq=returns_freq, demean=False)
+        # y =
+    else:
+        assert pd.infer_freq(price_returns.index) == returns_freq
+        y = price_returns
+
     x = compute_returns_from_prices(prices=risk_factor_prices, returns_freq=returns_freq, demean=False)
 
     num_lags_newey_west = None
     if num_lags_newey_west_dict is not None:
         num_lags_newey_west = num_lags_newey_west_dict[returns_freq]
 
-    lasso_model.fit(x=x, y=y, verbose=verbose, num_lags=num_lags_newey_west)
+    lasso_model.fit(x=x, y=y, verbose=verbose, num_lags_newey_west=num_lags_newey_west)
     asset_last_betas, last_total_vars, last_residual_vars, last_r2 = lasso_model.compute_residual_alpha_r2()
 
     # annualise ido vols
-    idio_var_scaler = get_conversion_factor(from_freq=returns_freq, to_freq='YE')
+    idio_var_scaler = qis.get_annualisation_conversion_factor(from_freq=returns_freq, to_freq='YE')
     # print(f"idio_var_scaler for {returns_freq} = {idio_var_scaler}")
     last_total_vars *= idio_var_scaler
     last_residual_vars *= idio_var_scaler
@@ -191,12 +218,18 @@ def estimate_lasso_covar(risk_factor_prices: pd.DataFrame,
                                                               span=lasso_model.span,
                                                               num_lags=num_lags_newey_west_dict[returns_freq],
                                                               mean_adj_type=qis.MeanAdjType.EWMA)
-        last_nw_ratios = nw_ratios_pd.iloc[-1, :].reindex(index=prices.columns).fillna(1.0) # series
+        last_nw_ratios = nw_ratios_pd.iloc[-1, :].reindex(index=y.columns).fillna(1.0) # series
         adj = np.sqrt(last_nw_ratios.to_numpy())
         norm = np.outer(adj, adj)
         betas_covar = norm * betas_covar
     else:
         last_nw_ratios = None
+
+    # estimate alphas
+    alphas = compute_excess_return(y_t=y,
+                                   x_t=x,
+                                   betas_t0=asset_last_betas,
+                                   freq=returns_freq)
 
     y_covar = pd.DataFrame(betas_covar, index=y.columns, columns=y.columns)
 
@@ -209,7 +242,8 @@ def estimate_lasso_covar(risk_factor_prices: pd.DataFrame,
                                            clusters=lasso_model.clusters,
                                            linkages=lasso_model.linkage,
                                            cutoffs=lasso_model.cutoff,
-                                           nw_ratios=last_nw_ratios)
+                                           nw_ratios=last_nw_ratios,
+                                           alphas=alphas)
 
     return covar_data
 
@@ -246,7 +280,7 @@ def estimate_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
                                               apply_an_factor=False)
 
         # find factor annualisation
-        factor_scale_an = get_conversion_factor(from_freq=factor_returns_freq, to_freq='YE')
+        factor_scale_an = qis.get_annualisation_conversion_factor(from_freq=factor_returns_freq, to_freq='YE')
         # print(f"factor_scale_an={factor_scale_an}")
         x_covar *= factor_scale_an
 
@@ -304,7 +338,7 @@ def estimate_lasso_covar_different_freq(risk_factor_prices: pd.DataFrame,
         asset_last_betas.append(betas_freqs[freq])
 
         # annualise ido vols
-        idio_var_scaler = get_conversion_factor(from_freq=freq, to_freq='YE')
+        idio_var_scaler = qis.get_annualisation_conversion_factor(from_freq=freq, to_freq='YE')
         # print(f"idio_var_scaler for {freq} = {idio_var_scaler}")
 
         last_total_vars.append(idio_var_scaler * total_vars_freqs[freq])

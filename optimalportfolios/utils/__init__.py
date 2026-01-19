@@ -24,4 +24,6 @@ from optimalportfolios.utils.factor_alphas import (compute_low_beta_alphas,
                                                    compute_ra_carry_alphas,
                                                    estimate_lasso_regression_alphas,
                                                    wrapper_compute_low_beta_alphas,
-                                                   wrapper_estimate_regression_alphas)
+                                                   estimate_rolling_regression_alphas,
+                                                   estimate_regression_alphas,
+                                                   compute_excess_return)

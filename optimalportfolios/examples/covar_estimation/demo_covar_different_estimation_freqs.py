@@ -37,35 +37,35 @@ lasso_params = dict(reg_lambda=1e-5, span=120, demean=False, solver='ECOS_BB', w
 lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO_CLUSTERS, **lasso_params)
 
 
-covar_data_all_daily = wrapper_estimate_current_lasso_covar(risk_factors_prices=risk_factor_prices,
+covar_data_all_daily = wrapper_estimate_current_lasso_covar(risk_factor_prices=risk_factor_prices,
                                                             prices=asset_prices,
                                                             lasso_model=lasso_model,
                                                             returns_freqs='B',
                                                             factor_returns_freq='B')
                                                             
-covar_data_factor_daily_asset_mixed = wrapper_estimate_current_lasso_covar(risk_factors_prices=risk_factor_prices,
+covar_data_factor_daily_asset_mixed = wrapper_estimate_current_lasso_covar(risk_factor_prices=risk_factor_prices,
                                                                            prices=asset_prices,
                                                                            lasso_model=lasso_model,
                                                                            returns_freqs=group_data.map({'Equity': 'B', 'Bonds': 'W-WED', 'Mixed': 'ME'}),
                                                                            factor_returns_freq='B')
-covar_data_factor_weekly_all = wrapper_estimate_current_lasso_covar(risk_factors_prices=risk_factor_prices,
+covar_data_factor_weekly_all = wrapper_estimate_current_lasso_covar(risk_factor_prices=risk_factor_prices,
                                                                             prices=asset_prices,
                                                                             lasso_model=lasso_model,
                                                                             returns_freqs='W-WED',
                                                                             factor_returns_freq='W-WED')
-covar_data_factor_weekly_asset_mixed = wrapper_estimate_current_lasso_covar(risk_factors_prices=risk_factor_prices,
+covar_data_factor_weekly_asset_mixed = wrapper_estimate_current_lasso_covar(risk_factor_prices=risk_factor_prices,
                                                                             prices=asset_prices,
                                                                             lasso_model=lasso_model,
                                                                             returns_freqs=group_data.map({'Equity': 'ME', 'Bonds': 'ME', 'Mixed': 'QE'}),
                                                                             factor_returns_freq='W-WED')
 
-covar_data_factor_monthy_all = wrapper_estimate_current_lasso_covar(risk_factors_prices=risk_factor_prices,
+covar_data_factor_monthy_all = wrapper_estimate_current_lasso_covar(risk_factor_prices=risk_factor_prices,
                                                                             prices=asset_prices,
                                                                             lasso_model=lasso_model,
                                                                             returns_freqs='ME',
                                                                             factor_returns_freq='ME')
 
-covar_data_factor_monthy_asset_mixed = wrapper_estimate_current_lasso_covar(risk_factors_prices=risk_factor_prices,
+covar_data_factor_monthy_asset_mixed = wrapper_estimate_current_lasso_covar(risk_factor_prices=risk_factor_prices,
                                                                             prices=asset_prices,
                                                                             lasso_model=lasso_model,
                                                                             returns_freqs=group_data.map({'Equity': 'ME', 'Bonds': 'QE', 'Mixed': 'QE'}),
