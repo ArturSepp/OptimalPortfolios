@@ -1,7 +1,7 @@
 """
 generate and load prices for portfolio allocation problem
 update_prices_with_bloomberg() must used with  Bloomberg open
-update_prices_with_yf() uses yfinance + some data uploaded manually
+update_prices_with_yf() uses yfinance + some universe uploaded manually
 NB: CmcScraper stopped working so now only option is to use bloomberg
 """
 import pandas as pd
@@ -12,12 +12,12 @@ from enum import Enum
 # from cryptocmd import CmcScraper  its stopped working
 import qis
 
-# add the local path to data files
+# add the local path to universe files
 LOCAL_PATH = 'C://Users//artur//OneDrive//analytics//my_github//OptimalPortfolios//optimalportfolios//examples//crypto_allocation//data//'
 
-# data sources
-BTC_PRICES_FROM_2010 = 'BTC_from_2010'  # csv data with static BTC from2010 upto 31Jul2022
-HFRXGL_PRICE = 'HFRX_historical_HFRXGL'  # global HF from https://www.hfr.com/indices/hfrx-global-hedge-fund-index - download daily data, remove top and bottom rows with descriptive data
+# universe sources
+BTC_PRICES_FROM_2010 = 'BTC_from_2010'  # csv universe with static BTC from2010 upto 31Jul2022
+HFRXGL_PRICE = 'HFRX_historical_HFRXGL'  # global HF from https://www.hfr.com/indices/hfrx-global-hedge-fund-index - download daily universe, remove top and bottom rows with descriptive universe
 CTA_PRICE = 'CTA_Historical'  # SG CTA Index from https://wholesale.banking.societegenerale.com/en/prime-services-indices/
 MACRO_PRICE = 'Macro_Trading_Index_Historical'  # Macro SCTas from https://wholesale.banking.societegenerale.com/fileadmin/indices_feeds/Macro_Trading_Index_Historical.xls
 
@@ -41,7 +41,7 @@ class Assets(Enum):
 
 def update_prices_with_yf() -> pd.DataFrame:
     """
-    generate price data using yfinance
+    generate price universe using yfinance
     """
     btc = create_btc_price()
     eth = create_eth_price(btc_price=qis.load_df_from_csv(file_name=BTC_PRICES_FROM_2010, local_path=LOCAL_PATH).iloc[:, 0])
@@ -76,7 +76,7 @@ def update_prices_with_yf() -> pd.DataFrame:
 
 def update_prices_with_bloomberg() -> pd.DataFrame:
     """
-    generate price data using yfinance
+    generate price universe using yfinance
     """
     from bbg_fetch import fetch_field_timeseries_per_tickers
 
@@ -186,7 +186,7 @@ class LocalTests(Enum):
 def run_local_test(local_test: LocalTests):
     """Run local tests for development and debugging purposes.
 
-    These are integration tests that download real data and generate reports.
+    These are integration tests that download real universe and generate reports.
     Use for quick verification during development.
     """
 

@@ -7,7 +7,7 @@ from sklearn.linear_model import MultiTaskLasso
 import yfinance as yf
 import qis as qis
 
-from optimalportfolios.lasso.lasso_model_estimator import (solve_lasso_cvx_problem, solve_group_lasso_cvx_problem)
+from optimalportfolios.lasso.lasso_estimator import (solve_lasso_cvx_problem, solve_group_lasso_cvx_problem)
 
 # select multi asset ETFs
 instrument_data = dict(SPY='SPY',
@@ -44,17 +44,16 @@ x = x.to_numpy() - np.nanmean(x, axis=0)
 params = dict(reg_lambda=1e-5, span=24, nonneg=False)
 
 
-#beta2 = solve_lasso_problem_2d(x=x, y=y, **params, apply_independent_nan_filter=True)
 #beta2 = pd.DataFrame(beta2, index=benchmark_tickers, columns=asset_tickers)
 #beta2 = beta2.where(np.abs(beta2) > 1e-4, other=np.nan)
 
-beta3, _, _ = solve_lasso_cvx_problem(x=x, y=y, **params, apply_independent_nan_filter=False)
-beta3 = pd.DataFrame(beta3, index=benchmark_tickers, columns=asset_tickers)
+result = solve_lasso_cvx_problem(x=x, y=y, **params)
+beta3 = pd.DataFrame(result.estimated_beta, columns=benchmark_tickers, index=asset_tickers)
 beta3 = beta3.where(np.abs(beta3) > 1e-4, other=np.nan)
 print(beta3)
 
-beta4 = solve_group_lasso_cvx_problem(x=x, y=y, group_loadings=asset_group_loadings.to_numpy(), **params)
-beta4 = pd.DataFrame(beta4, index=benchmark_tickers, columns=asset_tickers)
+result = solve_group_lasso_cvx_problem(x=x, y=y, group_loadings=asset_group_loadings.to_numpy(), **params)
+beta4 = pd.DataFrame(result.estimated_beta, columns=benchmark_tickers, index=asset_tickers)
 beta4 = beta4.where(np.abs(beta4) > 1e-4, other=np.nan)
 print(beta4)
 

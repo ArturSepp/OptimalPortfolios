@@ -1,73 +1,64 @@
 """
-some utilities for estimation of covariance matrices
+Abstract base class for covariance matrix estimators.
+
+Defines the shared interface and configuration for all covariance estimators
+in the framework. Concrete implementations (EwmaCovarEstimator,
+FactorCovarEstimator) provide estimator-specific parameters and logic.
+
+The shared output contract is:
+    - fit_rolling_covars(**kwargs) -> Dict[pd.Timestamp, pd.DataFrame]
+
+Each subclass defines its own input signature (EWMA takes prices;
+factor model takes risk_factor_prices + asset_returns_dict), but all
+return the same type for downstream portfolio optimisation.
 """
 from __future__ import annotations
-import pandas as pd
-import qis as qis
-from typing import Union, Optional, Dict, Any
-from dataclasses import dataclass, asdict
 
-# project
-from optimalportfolios.covar_estimation.config import CovarEstimatorType
-from optimalportfolios.lasso.lasso_model_estimator import LassoModel
-from optimalportfolios.covar_estimation.rolling_covar import EstimatedRollingCovarData, wrapper_estimate_rolling_covar
-from optimalportfolios.covar_estimation.current_covar import EstimatedCurrentCovarData, wrapper_estimate_current_covar
+import pandas as pd
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, asdict
+from typing import Dict, Any
 
 
 @dataclass
-class CovarEstimator:
+class CovarEstimator(ABC):
     """
-    specifies estimator specific parameters
-    CovarEstimator supports:
-    fit_rolling_covars()
-    fit_covars()
+    Abstract base for covariance matrix estimators.
+
+    Subclasses must implement:
+        - ``fit_current_covar``: Single-date covariance estimation.
+        - ``fit_rolling_covars``: Rolling covariance estimation over a rebalancing schedule.
+
+    Input signatures are estimator-specific (different subclasses require
+    different data). The output contract is shared:
+        - fit_rolling_covars() -> Dict[pd.Timestamp, pd.DataFrame]
+
+    Args:
+        rebalancing_freq: Pandas frequency string for rolling estimation schedule
+            (e.g., 'QE' for quarter-end, 'ME' for month-end, 'YE' for year-end).
     """
-    covar_estimator_type: CovarEstimatorType = CovarEstimatorType.EWMA
-    lasso_model: LassoModel = None  # for mandatory lasso estimator
-    factor_returns_freq: str = 'W-WED' # for lasso estimator
-    rebalancing_freq: str = 'QE'  # sampling frequency for computing covariance matrix at rebalancing dates
-    returns_freqs: Union[str, pd.Series] = 'ME'  # frequency of returns for beta estimation
-    span: int = 52  # span for ewma estimate
-    is_apply_vol_normalised_returns: bool = False  # for ewma
-    demean: bool = True  # adjust for mean
-    squeeze_factor: Optional[float] = None  # squeezing factor for ewma covars
-    residual_var_weight: float = 1.0  # for lasso covars
-    span_freq_dict: Optional[Dict[str, int]] = None  # spans for different freqs
-    num_lags_newey_west_dict: Optional[Dict[str, int]] = None
+    rebalancing_freq: str = 'QE'
 
     def to_dict(self) -> Dict[str, Any]:
-        this = asdict(self)
-        if self.lasso_model is not None:  # need to make it dataclass
-            this['lasso_model'] = LassoModel(**this['lasso_model'])
-        return this
+        """Serialise estimator configuration to dictionary."""
+        return asdict(self)
 
-    def fit_rolling_covars(self,
-                           prices: pd.DataFrame,
-                           time_period: qis.TimePeriod,
-                           risk_factor_prices: pd.DataFrame = None,
-                           factors_beta_loading_signs: pd.DataFrame = None,
-                           ) -> EstimatedRollingCovarData:
+    @abstractmethod
+    def fit_current_covar(self, **kwargs) -> pd.DataFrame:
         """
-        fit rolling covars at rebalancing_freq
-        time_period is for what period we need
-        """
-        rolling_covar_data = wrapper_estimate_rolling_covar(prices=prices,
-                                                            risk_factor_prices=risk_factor_prices,
-                                                            time_period=time_period,
-                                                            returns_freq=self.factor_returns_freq,
-                                                            factors_beta_loading_signs=factors_beta_loading_signs,
-                                                            **self.to_dict())
-        return rolling_covar_data
+        Estimate covariance matrix at a single (latest) date.
 
-    def fit_current_covars(self,
-                           prices: pd.DataFrame,
-                           risk_factor_prices: pd.DataFrame = None,
-                           ) -> EstimatedCurrentCovarData:
+        Returns:
+            Annualised covariance matrix (N x N) as pd.DataFrame.
         """
-        fit rolling covars at rebalancing_freq
-        time_period is for what period we need
+        ...
+
+    @abstractmethod
+    def fit_rolling_covars(self, **kwargs) -> Dict[pd.Timestamp, pd.DataFrame]:
         """
-        rolling_covar_data = wrapper_estimate_current_covar(prices=prices,
-                                                            risk_factor_prices=risk_factor_prices,
-                                                            **self.to_dict())
-        return rolling_covar_data
+        Estimate rolling covariance matrices at each rebalancing date.
+
+        Returns:
+            Dict mapping rebalancing dates to annualised covariance matrices.
+        """
+        ...

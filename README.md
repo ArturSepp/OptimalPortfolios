@@ -1,6 +1,6 @@
 # 🚀 **Optimal Portfolios Construction and Backtesting: optimalportfolios**
 
-> optimalportfolios package implements analytics for constructing and backtesting of multi-asset portfolios using risk-return maximization, risk budgeting, and similar optimal portfolio construction methods
+> Production-grade multi-asset portfolio construction and backtesting in Python — from covariance estimation to rolling optimisation to factsheet reporting, in a single pipeline that handles real-world data
 
 ---
 
@@ -22,71 +22,221 @@
 | GitHub Forks | ![GitHub forks](https://img.shields.io/github/forks/ArturSepp/OptimalPortfolios?style=flat-square&logo=github) |
 
 
-## **Optimal Portfolios Backtester** <a name="analytics"></a>
-optimalportfolios package implements analytics for backtesting of optimal portfolios including:
-1. Computing of inputs (covariance matrices, returns) for roll forward
-computations (to avoid hindsight bias) and for generation of rolling optimal portfolios
-2. Implementation of core optimisation solvers:
-   1. Minimum variance
-   2. Maximum quadratic utility
-   3. Budgeted risk contribution (risk parity for equal budgets)
-   4. Maximum diversification
-   5. Maximum Sharpe ratio
-   6. Maximum Cara utility under Gaussian mixture model
-   7. Tracking error minimisation 
-3. Rolling portfolio optimisation methods are compatible with incomplete time series
-for roll forward analysis so that the portfolio universe can include instruments with different price histories
+## **Why optimalportfolios** <a name="analytics"></a>
 
-No pre-filtering of universe prices is necessary as rolling optimisers will detect 
-eligeble assets when their variances and covariances are available for 
-inclusion into time-t allocation set
+Most Python portfolio optimisation packages (PyPortfolioOpt, Riskfolio-Lib, skfolio)
+solve single-period allocation problems: given a covariance matrix and expected
+returns, find the optimal weights. This is useful for textbook exercises but
+insufficient for running a real multi-asset portfolio.
 
-4. Computing performances of simulated portfolios
-5. Reporting of backtested portfolios and cross-sectional analysis
+**optimalportfolios solves the production problem end-to-end:**
+estimate covariance → compute alpha signals → optimise with constraints →
+rebalance on schedule → backtest with transaction costs — all in a single
+roll-forward pipeline that handles incomplete data, mixed-frequency assets,
+and illiquid positions.
+
+### Key differentiators
+
+**Production multi-asset portfolio construction.**
+The package implements the full pipeline from the ROSAA framework: factor model
+covariance estimation → risk-budgeted SAA → alpha signal computation →
+TE-constrained TAA → rolling backtest. No other open-source package handles
+universes where equities rebalance monthly, alternatives rebalance quarterly,
+and private equity enters the allocation set only when sufficient return history
+is available. The constraint system (weight bounds, group allocation limits,
+tracking error budgets, turnover controls, rebalancing indicators for frozen
+positions) matches what real institutional PM teams need.
+
+**HCGL factor covariance estimation.**
+The Hierarchical Clustering Group LASSO factor model (published in JPM, 2026)
+produces sparse, structured covariance matrices for heterogeneous multi-asset
+universes. Unlike sample EWMA (unstable for 20+ assets) or Ledoit-Wolf
+shrinkage (no factor structure), HCGL estimates a factor model where asset
+betas are regularised via Group LASSO with hierarchical clustering. This yields
+covariance matrices that are stable across rebalancing periods, respect the
+underlying factor structure, and handle mixed return frequencies natively.
+
+**NaN-aware rolling backtesting.**
+The three-layer architecture (solver / wrapper / rolling) automatically handles
+real-world data: assets with missing prices receive zero weight, assets entering
+the universe mid-sample are included when sufficient history is available, and
+the rebalancing indicator system freezes illiquid positions at their current
+weight while re-optimising the liquid portion. No data cleaning or pre-filtering
+required.
+
+**Research-backed methodology.**
+The package is the reference implementation for the ROSAA framework published in
+*The Journal of Portfolio Management* (Sepp, Ossa, Kastenholz, 2026). The
+optimisation solvers, covariance estimators, and alpha signals are battle-tested
+on live multi-asset portfolios.
+
+### Quick-start: rolling backtest in 10 lines
+
+```python
+import qis as qis
+from optimalportfolios import (EwmaCovarEstimator, Constraints,
+                               PortfolioObjective, compute_rolling_optimal_weights)
+
+prices = ...  # pd.DataFrame of asset prices (may have NaNs, different start dates)
+time_period = qis.TimePeriod('31Dec2004', '15Mar2026')
+
+# estimate covariance → optimise → get rolling weights
+estimator = EwmaCovarEstimator(returns_freq='W-WED', span=52, rebalancing_freq='QE')
+covar_dict = estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+weights = compute_rolling_optimal_weights(prices=prices,
+                                          portfolio_objective=PortfolioObjective.MAX_DIVERSIFICATION,
+                                          constraints=Constraints(is_long_only=True),
+                                          time_period=time_period,
+                                          covar_dict=covar_dict)
+
+# backtest with transaction costs
+portfolio = qis.backtest_model_portfolio(prices=prices, weights=weights,
+                                         rebalancing_costs=0.001, ticker='MaxDiv')
+```
+
+That's it — from prices to backtested portfolio in 10 lines, with automatic NaN
+handling, roll-forward estimation (no hindsight bias), and any optimisation
+objective. Try doing this with PyPortfolioOpt or skfolio — you'll need to write
+the rolling loop, covariance estimation, NaN filtering, and backtesting yourself.
+
+### Design scope
+
+The optimisation solvers use quadratic and conic objective functions (variance,
+tracking error, Sharpe ratio, diversification ratio, CARA utility). The package
+does not implement non-quadratic risk measures (CVaR, MAD, drawdown constraints).
+For these, use Riskfolio-Lib or skfolio. The solver architecture (three-layer:
+mathematical / wrapper / rolling) makes it straightforward to add new solvers —
+each solver lives in its own module in `optimization/solvers/` and plugs into the
+rolling backtester via a single dispatch function.
 
 
+## **Package overview** <a name="overview"></a>
 
-OptimalPortfolios package is split into 5 main modules with the 
-dependecy path increasing sequentially as follows.
+```
+optimalportfolios/
+├── alphas/                        # Alpha signal computation (NEW in v4.1.1)
+│   ├── signals/
+│   │   ├── momentum.py            # compute_momentum_alpha()
+│   │   ├── low_beta.py            # compute_low_beta_alpha()
+│   │   └── managers_alpha.py      # compute_managers_alpha()
+│   ├── alpha_data.py              # AlphasData container
+│   ├── backtest_alphas.py         # Signal backtesting tool
+│   └── tests/
+│       └── signals_test.py
+├── covar_estimation/              # Covariance matrix estimation
+│   ├── covar_estimator.py         # CovarEstimator ABC
+│   ├── current_covar.py           # EwmaCovarEstimator, FactorCovarEstimator
+│   ├── rolling_covar.py           # RollingFactorCovarData, CurrentFactorCovarData
+│   └── covar_reporting.py         # Rolling covariance diagnostics
+├── lasso/                         # HCGL factor model
+│   └── lasso_model_estimator.py   # LassoModel, solve_group_lasso_cvx_problem
+├── optimization/                  # Portfolio optimisation
+│   ├── constraints.py             # Constraints, GroupLowerUpperConstraints
+│   ├── wrapper_rolling_portfolios.py  # compute_rolling_optimal_weights()
+│   └── solvers/
+│       ├── quadratic.py           # min variance, max quadratic utility
+│       ├── risk_budgeting.py      # constrained risk budgeting (pyrb)
+│       ├── max_diversification.py # maximum diversification ratio
+│       ├── max_sharpe.py          # maximum Sharpe ratio
+│       ├── tracking_error.py      # alpha-over-tracking-error
+│       ├── target_return.py       # alpha with target return constraint
+│       └── carra_mixure.py        # CARA utility under Gaussian mixture
+├── utils/                         # Auxiliary analytics
+│   ├── filter_nans.py             # NaN-aware covariance/vector filtering
+│   ├── portfolio_funcs.py         # Risk contributions, diversification ratio
+│   ├── gaussian_mixture.py        # Gaussian mixture fitting
+│   └── returns_unsmoother.py      # AR(1) return unsmoothing for PE/PD
+├── reports/                       # Performance reporting
+│   └── marginal_backtest.py       # Marginal asset contribution analysis
+└── examples/                      # Worked examples and paper reproductions
+    ├── solvers/                   # All solver examples
+    ├── covar_estimation/          # Covariance estimator examples
+    ├── robust_optimisation_saa_taa/  # ROSAA paper examples
+    └── crypto_allocation/         # Crypto paper examples
+```
 
-1. ```optimisation``` with sub-package ```solvers``` contains implementation of
-various quadratic and nonlinear solvers. Each solver is implemented 
-in a module independently of other solvers.
 
-2. ```covar_estimation``` contains implementation of rolling methods for estimating
-covariance matrices using EWMA and Lasso methods.
+## **Alpha signals module** <a name="alphas"></a>
 
-3. ```lasso``` with sub-package ```laasso_model_estimator``` contains implementation of
-lasso based estimator of covariance matrix using the methodology developed in 
-paper: Sepp A., Ossa I., and Kastenholz M. (2025),
-"Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios"
-(https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5250221)
+**New in v4.1.1.** The `alphas` module provides standalone alpha signal
+computation functions with a consistent interface. Each function handles
+single-frequency and mixed-frequency universes, supports within-group
+cross-sectional scoring, and returns both a dimensionless score and the
+raw signal for diagnostics.
 
-   
-4. ```utils``` is module for auxiliary analytics, in particular
+### Naming convention
 
-5. ```reports``` is module for computing performance statistics and performance attribution including returns, volatilities, etc.
+| Stage | What it is | Example |
+|-------|-----------|---------|
+| **Raw signal** | Observable quantity with units | Cumulative return, EWMA beta, regression residual |
+| **Score** | Cross-sectional z-score, dimensionless | Momentum rank, negated beta rank |
+| **Alpha** | Portfolio-ready signal after CDF mapping | Combined score mapped to [-1, 1] |
 
-6. ```examples.solvers``` provides example of running all implemented solvers.
+Pipeline: **raw signal → score → alpha**.
 
-### **Illustrations and examples of publicated papers** <a name="analytics"></a>
+### Available signals
 
-1. ```examples.crypto_allocation``` is module for computations and visualisations for  
-Sepp A. (2023) "Optimal Allocation to Cryptocurrencies in Diversified Portfolios",
-Risk, October 2023, 1-6, https://ssrn.com/abstract=4217841
+**Momentum** (`compute_momentum_alpha`) — EWMA-filtered risk-adjusted excess returns relative to a benchmark, converted to cross-sectional scores.
 
-2. ```examples.robust_optimisation_saa_taa``` is module for example of using
-Hierarchical Clustering Group Lasso (HCGL) method for rolling estimation of covariance matrix and for solving Strategic Asset Allocation
-using risk-budgeted optimisation as introduced in paper  
-Sepp A., Ossa I., and Kastenholz M. (2025),
-"Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios",
-https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5250221
+```python
+from optimalportfolios.alphas import compute_momentum_alpha
+
+score, raw_momentum = compute_momentum_alpha(
+    prices=prices, benchmark_price=benchmark, returns_freq='ME',
+    group_data=asset_class_groups, long_span=12)
+```
+
+**Low Beta** (`compute_low_beta_alpha`) — EWMA regression beta to benchmark, negated and cross-sectionally scored ("betting against beta").
+
+```python
+from optimalportfolios.alphas import compute_low_beta_alpha
+
+score, raw_beta = compute_low_beta_alpha(
+    prices=prices, benchmark_price=benchmark, returns_freq='ME',
+    group_data=asset_class_groups, beta_span=12)
+```
+
+**Managers Alpha** (`compute_managers_alpha`) — factor model regression residuals using pre-estimated betas from `FactorCovarEstimator`, EWMA-smoothed and cross-sectionally scored.
+
+```python
+from optimalportfolios.alphas import compute_managers_alpha
+
+score, raw_alpha = compute_managers_alpha(
+    prices=asset_prices, risk_factor_prices=factor_prices,
+    estimated_betas=rolling_data.get_y_betas(),
+    returns_freq='ME', alpha_span=12)
+```
+
+### Mixed-frequency support
+
+All signal functions accept `returns_freq` as a string (uniform) or a `pd.Series` (per-asset frequency). When mixed, the function groups by frequency, computes per group, and merges.
+
+```python
+# equities monthly, alternatives quarterly
+returns_freq = pd.Series({'SPY': 'ME', 'EZU': 'ME', 'HF_Macro': 'QE', 'PE': 'QE'})
+score, raw = compute_momentum_alpha(prices, returns_freq=returns_freq, ...)
+```
+
+### AlphasData container
+
+`AlphasData` holds the combined alpha scores and all intermediate components:
+
+```python
+from optimalportfolios.alphas import AlphasData
+
+data = AlphasData(alpha_scores=combined, momentum_score=mom, beta_score=beta, ...)
+snapshot = data.get_alphas_snapshot(date=pd.Timestamp('2024-12-31'))
+```
+
+See the [alphas module README](optimalportfolios/alphas/README.md) for full documentation.
 
 
 # Table of contents
-1. [Analytics](#analytics)
-2. [Installation](#installation)
-3. [Portfolio Optimisers](#optimisers)
+1. [Why optimalportfolios](#analytics)
+2. [Package overview](#overview)
+3. [Alpha signals module](#alphas)
+4. [Installation](#installation)
+5. [Portfolio Optimisers](#optimisers)
    1. [Implementation structure](#structure)
    2. [Example of implementation for Maximum Diversification Solver](#example_structure)
    3. [Constraints](#constraints)
@@ -94,7 +244,7 @@ https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5250221
    5. [Adding an optimiser](#adding)
    6. [Default parameters](#params)
    7. [Price time series data](#ts)
-4. [Examples](#examples)
+6. [Examples](#examples)
    1. [Optimal Portfolio Backtest](#optimal)
    2. [Customised reporting](#report)
    3. [Parameters sensitivity backtest](#sensitivity)
@@ -102,9 +252,9 @@ https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5250221
    5. [Backtest of multi covariance estimators](#covars)
    6. [Optimal allocation to cryptocurrencies](#crypto)
    7. [Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios](#hcgl)
-5. [Contributions](#contributions)
-6. [Updates](#updates)
-7. [Disclaimer](#disclaimer)
+7. [Contributions](#contributions)
+8. [Updates](#updates)
+9. [Disclaimer](#disclaimer)
 
 ## **Installation** <a name="installation"></a>
 install using
@@ -116,14 +266,14 @@ upgrade using
 pip install --upgrade optimalportfolios
 ```
 
-close using
+clone using
 ```python 
 git clone https://github.com/ArturSepp/OptimalPortfolios.git
 ```
 
 
 Core dependencies:
-    python = ">=3.8,<3.11",
+    python = ">=3.9",
     numba = ">=0.56.4",
     numpy = ">=1.22.4",
     scipy = ">=1.9.0",
@@ -145,42 +295,60 @@ Optional dependencies:
 
 ### 1. Implementation structure <a name="structure"></a>
 
-The implementation of each solver is split into the 3 layers:
+The implementation of each solver is split into 3 layers:
 
-1) Mathematical layer which takes clean inputs, formulates the optimisation
-problem and solves the 
-optimisation problem using Scipy or CVXPY solvers.
+1) **Mathematical layer** which takes clean inputs, formulates the optimisation
+problem and solves it using Scipy or CVXPY solvers.
 The logic of this layer is to solve the problem algorithmically by taking clean inputs.
 
-2) Wrapper level which takes inputs potentially containing nans, 
-filters them out and calls the solver in layer 1). The output weights of filtered out
-assets are set to zero.
+2) **Wrapper layer** which takes inputs potentially containing NaNs, 
+filters them out, and calls the solver in layer 1). The output weights of filtered out
+assets are set to zero. Includes rebalancing indicator support for freezing
+specific assets at their previous weights.
 
-3) Rolling level function with takes price time series as inputs and implements
-the estimation of covariance matrix and other inputs on roll-forward basis. 
-For each update date the rolling layer call the wrapper layer 2) with estimated
+3) **Rolling layer** which takes price time series as inputs and implements
+the estimation of covariance matrix and other inputs on a roll-forward basis. 
+For each update date the rolling layer calls the wrapper layer 2) with estimated
 inputs as of the update date.
 
-For rolling level function, the estimated covariance matrix can be passed as dictionary of type Dict[pd.Timestamp, pd.DataFrame] 
-with dataframes containing covariance matrices for the universe and with keys being rebalancing times 
+For rolling level function, the estimated covariance matrix can be passed as `Dict[pd.Timestamp, pd.DataFrame]` 
+with DataFrames containing covariance matrices for the universe and with keys being rebalancing times.
 
-The default covariance is estimated using EWMA function with
-covar_estimator = CovarEstimator(returns_freq=returns_freq, rebalancing_freq=rebalancing_freq, span=span)
+Covariance can be estimated using `EwmaCovarEstimator` (simple EWMA) or
+`FactorCovarEstimator` (HCGL factor model with LASSO betas).
+
+**Important design principle (v4.1.1):** covariance estimation is separated from
+portfolio optimisation. The recommended workflow is to estimate covariance
+matrices first, then pass them as `covar_dict` to any solver:
+
+```python
+from optimalportfolios import EwmaCovarEstimator, FactorCovarEstimator
+
+# estimate once
+estimator = EwmaCovarEstimator(returns_freq='W-WED', span=52, rebalancing_freq='QE')
+covar_dict = estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+
+# reuse across multiple solvers
+weights_rb = rolling_risk_budgeting(prices=prices, covar_dict=covar_dict, ...)
+weights_md = rolling_maximise_diversification(prices=prices, covar_dict=covar_dict, ...)
+weights_te = rolling_maximise_alpha_over_tre(prices=prices, covar_dict=covar_dict, ...)
+```
+
+This separation provides three benefits: (1) the same covariance matrices can be
+reused across multiple solvers without re-estimation, (2) covariance diagnostics
+and reporting can be inspected independently of the optimiser, and (3) different
+covariance estimators can be swapped in without modifying the solver code.
+For the HCGL factor model, use `FactorCovarEstimator` with `asset_returns_dict`
+for mixed-frequency universes (e.g., monthly equities + quarterly alternatives).
 
 
 The recommended usage is as follows.
 
 Layer 2) is used for live portfolios or for backtests which are implemented using 
-data augmentation
+data augmentation.
 
 Layer 3) is applied for roll forward backtests where all available data is processed
-using roll forward analysis
-
-For implementation of different estimation methods for covariance matrices
-and other inputs, we recommend to implement specific layers 2) or 3) with the 
-implementation of the estimation logic. 
-
-Layer 1 works with provided covariance matrices and inputs.
+using roll forward analysis.
 
 
 ### 2. Example of implementation for Maximum Diversification Solver <a name="example_structure"></a>
@@ -188,7 +356,7 @@ Layer 1 works with provided covariance matrices and inputs.
 Using example of ```optimization.solvers.max_diversification.py```
 
 1. Scipy solver ```opt_maximise_diversification()``` which takes "clean" inputs of the 
-covariance matrix of type ```np.ndarray``` without nans and
+covariance matrix of type ```np.ndarray``` without NaNs and
 ```Constraints``` dataclass which implements constraints for the solver.
 
 The lowest level of each optimisation method is ```opt_...``` or ```cvx_...``` function taking clean inputs and producing the optimal weights. 
@@ -196,37 +364,37 @@ The lowest level of each optimisation method is ```opt_...``` or ```cvx_...``` f
 The logic of this layer is to implement pure quant logic for the optimiser with cvx solver.
 
 2. Wrapper function ```wrapper_maximise_diversification()``` which takes inputs
-covariance matrix of type ```pd.Dataframe``` 
-potentially containing nans or assets with zero variance (when their time series are missing in the 
-estimation period) and filters out non-nan "clean" inputs and 
-updated constraints for OPT/CVX solver in layer 1.
+covariance matrix of type ```pd.DataFrame``` 
+potentially containing NaNs or assets with zero variance (when their time series are missing in the 
+estimation period) and filters out non-NaN "clean" inputs and 
+updates constraints for OPT/CVX solver in layer 1.
 
 The intermediary level of each optimisation method is ```wrapper_...``` function taking 
-"dirty" inputs, filtering inputs,  and producing the optimal weights. This wrapper can be called either 
+"dirty" inputs, filtering inputs, and producing the optimal weights. This wrapper can be called either 
 by rolling backtest simulations or by live portfolios for rebalancing.
 
 The logic of this layer is to filter out data and to be an interface for portfolio implementations.
 
 3. Rolling optimiser function ```rolling_maximise_diversification()``` takes the time series of data 
-and sliced these accordingly and at each rebalancing step call the wrapper in layer 2.
-In the end, the function outputs the time series of optiomal weight of assets in the universe.
-Price data of assets may have gaps and nans which is taken care of in the wrapper level.
+and slices these accordingly and at each rebalancing step calls the wrapper in layer 2.
+In the end, the function outputs the time series of optimal weights of assets in the universe.
+Price data of assets may have gaps and NaNs which is taken care of in the wrapper level.
 
-The backtesting of each optimisation method is implemented with ```rolling_...``` method with produces the time series of
+The backtesting of each optimisation method is implemented with ```rolling_...``` method which produces the time series of
 optimal portfolio weights.
 
-The logic of this layer is to faciliate the backtest of portfolio optimisation method and to produce
+The logic of this layer is to facilitate the backtest of portfolio optimisation method and to produce
 time series of portfolio weights using a Markovian setup. These weights are applied for the backtest 
-of the optimal portfolio and the underlying strategy
+of the optimal portfolio and the underlying strategy.
 
-Each module in ```optimization.solver``` implements specific optimisers and estimators for their inputs.
+Each module in ```optimization.solvers``` implements specific optimisers and estimators for their inputs.
 
 
 
 ### 3. Constraints <a name="constraints"></a>
 
 Dataclass ```Constraints``` in ```optimization.constraints``` implements 
-optimisation constraints in solver independent way.
+optimisation constraints in solver-independent way.
 
 The following inputs for various constraints are implemented.
 ```python 
@@ -323,10 +491,10 @@ Key parameters include the specification of the estimation sample.
 The default (assuming daily price data) is weekly Wednesday returns ```returns_freq = 'W-WED'```.
 
 For price data with monthly observations 
-(such us hedged funds), monthly returns should be used ```returns_freq = 'ME'```.
+(such as hedge funds), monthly returns should be used ```returns_freq = 'ME'```.
 
 
-2. ```span``` defines the estimation span for ewma covariance matrix. This parameter affects all methods which use 
+2. ```span``` defines the estimation span for EWMA covariance matrix. This parameter affects all methods which use 
 EWMA covariance matrix:
 ```
 PortfolioObjective in [MAX_DIVERSIFICATION, EQUAL_RISK_CONTRIBUTION, MIN_VARIANCE]
@@ -367,13 +535,13 @@ and it is linked to ```rebalancing_freq```.
 Default value is ```roll_window=20``` which means that data for past 20 (quarters) are used in the sample
 with ```rebalancing_freq='QE'```
 
-For monthly rebalancing, I recomend to use ```roll_window=60``` which corresponds to using past 5 years of data
+For monthly rebalancing, I recommend to use ```roll_window=60``` which corresponds to using past 5 years of data
 
 ### 7. Price time series data <a name="ts"></a>
 
 The input to all optimisers is dataframe prices which contains dividend and split adjusted prices.
 
-The price data can include assets with prices starting an ending at different times.
+The price data can include assets with prices starting and ending at different times.
 
 All optimisers will set maximum weight to zero for assets with missing prices in the estimation sample period.  
 
@@ -385,23 +553,15 @@ All optimisers will set maximum weight to zero for assets with missing prices in
 
 See script in ```optimalportfolios.examples.optimal_portfolio_backtest.py```
 
-```pythong
-import os
-import pickle
-from pathlib import Path
-
+```python
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 import yfinance as yf
 from typing import Tuple
 import qis as qis
 
-from optimalportfolios import compute_rolling_optimal_weights, PortfolioObjective, Constraints
-
-#: Cache YFinance price data for subsequent runs here
-PRICES_CACHE_PATH = Path("/tmp/prices.pickle")
-
-#: Where to store the results figures and such
-OUTPUT_PATH = Path("./output")
+from optimalportfolios import compute_rolling_optimal_weights, PortfolioObjective, Constraints, EwmaCovarEstimator
 
 
 def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
@@ -422,14 +582,7 @@ def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
                          GLD='Gold')
     tickers = list(universe_data.keys())
     group_data = pd.Series(universe_data)
-    if PRICES_CACHE_PATH.exists():
-        print("Using cached prcies")
-        prices = pickle.load(PRICES_CACHE_PATH.open("rb"))
-    else:
-        print("Starting prices download from YFinance")
-        prices = yf.download(tickers, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close']
-        pickle.dump(prices, PRICES_CACHE_PATH.open("wb"))
-
+    prices = yf.download(tickers, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close']
     prices = prices[tickers]  # arrange as given
     prices = prices.asfreq('B', method='ffill')  # refill at B frequency
     benchmark_prices = prices[['SPY', 'TLT']]
@@ -437,28 +590,29 @@ def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
 
 # 2. get universe data
 prices, benchmark_prices, group_data = fetch_universe_data()
-time_period = qis.TimePeriod('31Dec2004', '16Aug2024')   # period for computing weights backtest
+time_period = qis.TimePeriod('31Dec2004', '15Mar2026')   # period for computing weights backtest
 
 # 3.a. define optimisation setup
-print("Define optimisation")
 portfolio_objective = PortfolioObjective.MAX_DIVERSIFICATION  # define portfolio objective
 returns_freq = 'W-WED'  # use weekly returns
-rebalancing_freq = 'QE'  # weights rebalancing frequency: rebalancing is quarterly on WED
-span = 52  # span of number of returns_freq-returns for covariance estimation = 12y
+rebalancing_freq = 'QE'  # weights rebalancing frequency: rebalancing is quarterly
+span = 52  # span of number of returns_freq-returns for covariance estimation
 constraints = Constraints(is_long_only=True,
                            min_weights=pd.Series(0.0, index=prices.columns),
                            max_weights=pd.Series(0.5, index=prices.columns))
 
-# 3.b. compute solvers portfolio weights rebalanced every quarter
+# 3.b. estimate covariance matrices upfront, then pass to the optimiser
+ewma_estimator = EwmaCovarEstimator(returns_freq=returns_freq, span=span, rebalancing_freq=rebalancing_freq)
+covar_dict = ewma_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+
 weights = compute_rolling_optimal_weights(prices=prices,
                                           portfolio_objective=portfolio_objective,
                                           constraints=constraints,
                                           time_period=time_period,
                                           rebalancing_freq=rebalancing_freq,
-                                          span=span)
+                                          covar_dict=covar_dict)
 
 # 4. given portfolio weights, construct the performance of the portfolio
-print("Assigning weights")
 funding_rate = None  # on positive / negative cash balances
 rebalancing_costs = 0.0010  # rebalancing costs per volume = 10bp
 weight_implementation_lag = 1  # portfolio is implemented next day after weights are computed
@@ -471,7 +625,6 @@ portfolio_data = qis.backtest_model_portfolio(prices=prices.loc[weights.index[0]
 
 # 5. using portfolio_data run the reporting with strategy factsheet
 # for group-based reporting set_group_data
-print("Generating reports")
 portfolio_data.set_group_data(group_data=group_data, group_order=list(group_data.unique()))
 # set time period for portfolio reporting
 figs = qis.generate_strategy_factsheet(portfolio_data=portfolio_data,
@@ -479,21 +632,11 @@ figs = qis.generate_strategy_factsheet(portfolio_data=portfolio_data,
                                        time_period=time_period,
                                        **qis.fetch_default_report_kwargs(time_period=time_period))
 
-
-if not OUTPUT_PATH.exists():
-    os.makedirs(OUTPUT_PATH, exist_ok=True)
-
 # save report to pdf and png
 qis.save_figs_to_pdf(figs=figs,
                      file_name=f"{portfolio_data.nav.name}_portfolio_factsheet",
                      orientation='landscape',
-                     local_path=str(OUTPUT_PATH))
-
-qis.save_fig(fig=figs[0], file_name=f"example_portfolio_factsheet1", local_path=str(OUTPUT_PATH))
-if len(figs) > 1:
-    qis.save_fig(fig=figs[1], file_name=f"example_portfolio_factsheet2", local_path=str(OUTPUT_PATH))
-
-
+                     local_path="output/")
 ```
 ![image info](optimalportfolios/examples/figures/example_portfolio_factsheet1.PNG)
 ![image info](optimalportfolios/examples/figures/example_portfolio_factsheet2.PNG)
@@ -573,9 +716,15 @@ see [README in this module](https://github.com/ArturSepp/OptimalPortfolios/blob/
 ### 7. Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios <a name="hcgl"></a>
 
 Computations and visualisations for 
-paper "Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios" [https://ssrn.com/abstract=5250221](https://ssrn.com/abstract=5250221)
+paper "Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios"
    are implemented in module ```optimalportfolios.examples.robust_optimisation_saa_taa```,
 see [README in this module](https://github.com/ArturSepp/OptimalPortfolios/blob/master/optimalportfolios/examples/robust_optimisation_saa_taa/README.md)
+
+Published reference:
+Sepp A., Ossa I., and Kastenholz M. (2026),
+"Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios",
+*The Journal of Portfolio Management*, 52(4), 86-120.
+Available at https://www.pm-research.com/content/iijpormgmt/52/4/86
 
 
 ## **Updates** <a name="updates"></a>
@@ -596,17 +745,116 @@ Refactor the implementation of solvers with the 3 layers.
 
 Add new solvers for tracking error and target return optimisations.
 
-Add exmples of running all solvers
+Add examples of running all solvers.
 
 #### 05 January 2025,  Version 3.1.1 released
 
-Added Lasso estimator and Group lasso estimator using cvxpy quadratic problems
+Added Lasso estimator and Group Lasso estimator using cvxpy quadratic problems.
 
-Added covariance estimator using factor model with Lasso betas
+Added covariance estimator using factor model with Lasso betas.
 
-Estimated covariance matrices can be passed to rolling solvers, CovarEstimator type is added for different covariance estimators 
+Estimated covariance matrices can be passed to rolling solvers, CovarEstimator type is added for different covariance estimators.
 
-Risk budgeting is implemented using pyrb package with pyrb forked for optimalportfolio package
+Risk budgeting is implemented using pyrb package with pyrb forked for optimalportfolios package.
+
+
+#### March 2026,  Version 4.1.1 released
+
+**Alpha signals module** (`optimalportfolios.alphas`):
+- New `alphas/` package with three standalone signal functions: `compute_momentum_alpha`, `compute_low_beta_alpha`, `compute_managers_alpha`
+- Each function handles single-frequency and mixed-frequency universes via `returns_freq` (string or per-asset `pd.Series`)
+- Within-group cross-sectional scoring via `group_data` parameter
+- `AlphasData` container moved from `utils/manager_alphas.py` to `alphas/alpha_data.py`
+- `backtest_alphas.py` moved from `reports/` to `alphas/` with fixed function names (typo corrections: `backtest_alpha_signas` → `backtest_alpha_signals`, etc.)
+- Comprehensive test suite in `alphas/tests/signals_test.py`
+
+**Deprecated and removed:**
+- `utils/factor_alphas.py` — all functions migrated to `alphas/signals/`. The 9-function variant explosion (3 signal types × 3 frequency variants) is replaced by 3 functions, each handling all dispatch modes internally
+- `utils/manager_alphas.py` — `AlphasData` moved to `alphas/alpha_data.py`. `compute_joint_alphas()` is replaced by external aggregation (see migration guide below)
+- `reports/backtest_alphas.py` — moved to `alphas/backtest_alphas.py`
+
+**Risk budgeting fixes:**
+- Fixed `total_to_good_ratio` computation in `wrapper_risk_budgeting`: previously used `len(pd_covar.columns) / len(clean_covar.columns)` which over-inflated budgets when zero-budget and NaN assets coexisted. Now uses `n_eligible / n_valid` where `n_eligible` counts assets with positive risk budget
+- Replaced all `print()` fallback messages with `warnings.warn()` for proper logging
+- Removed unused `FactorCovarEstimator` import
+
+**Solver docstrings:**
+- Full docstrings added to all optimisation solvers (quadratic, risk_budgeting, max_diversification, max_sharpe, tracking_error, target_return, cara_mixture)
+- Full docstrings for the rolling portfolio dispatcher
+
+**Covariance estimation separation:**
+- Covariance estimation is now clearly separated from portfolio optimisation. The recommended workflow is to estimate covariance matrices upfront using `EwmaCovarEstimator` or `FactorCovarEstimator`, then pass the resulting `covar_dict` to any solver. This enables reusing the same covariance across multiple solvers, inspecting covariance diagnostics independently, and swapping estimators without modifying solver code.
+- Example code updated to reflect this pattern (see [Optimal Portfolio Backtest](#optimal))
+
+**Migration guide (v3.x → v4.1.1):**
+
+```python
+# Alpha signal imports
+# Old
+from optimalportfolios.utils.factor_alphas import compute_low_beta_alphas, compute_momentum_alphas
+from optimalportfolios.utils.manager_alphas import compute_joint_alphas, AlphasData
+
+# New
+from optimalportfolios.alphas import compute_low_beta_alpha, compute_momentum_alpha, compute_managers_alpha, AlphasData
+
+# Signal computation (old: 3 variants per signal)
+# Old
+score, beta = compute_low_beta_alphas(prices, returns_freq='ME', beta_span=12)
+group_score, global_score, beta = compute_low_beta_alphas_different_freqs(prices, rebalancing_freqs=freqs, ...)
+# New (one function handles both)
+score, beta = compute_low_beta_alpha(prices, returns_freq='ME', beta_span=12)           # single freq
+score, beta = compute_low_beta_alpha(prices, returns_freq=per_asset_freqs, beta_span=12)  # mixed freq
+
+# Backtest alphas (typo fix)
+# Old
+from optimalportfolios.reports.backtest_alphas import backtest_alpha_signas
+# New
+from optimalportfolios.alphas.backtest_alphas import backtest_alpha_signals
+
+# Covariance estimation (separate from optimisation)
+# Old (covariance estimated internally by solver)
+weights = compute_rolling_optimal_weights(prices=prices, portfolio_objective=objective,
+                                          constraints=constraints, time_period=time_period,
+                                          rebalancing_freq='QE', span=52)
+# New (estimate covariance first, then pass to solver)
+estimator = EwmaCovarEstimator(returns_freq='W-WED', span=52, rebalancing_freq='QE')
+covar_dict = estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+weights = compute_rolling_optimal_weights(prices=prices, portfolio_objective=objective,
+                                          constraints=constraints, time_period=time_period,
+                                          rebalancing_freq='QE', covar_dict=covar_dict)
+
+# Factor covariance estimator (class rename + prices → asset_returns_dict)
+# Old
+from optimalportfolios import CovarEstimator, CovarEstimatorType
+covar_estimator = CovarEstimator(covar_estimator_type=CovarEstimatorType.LASSO,
+                                  lasso_model=lasso_model, returns_freqs='ME', span=36, ...)
+rolling_data = covar_estimator.fit_rolling_covars(prices=prices,
+                                                   risk_factor_prices=risk_factor_prices,
+                                                   time_period=time_period)
+# New
+from optimalportfolios import FactorCovarEstimator
+covar_estimator = FactorCovarEstimator(lasso_model=lasso_model,
+                                        factor_returns_freq='ME', factor_covar_span=36, ...)
+asset_returns_dict = qis.compute_asset_returns_dict(prices=prices, is_log_returns=True, returns_freqs='ME')
+rolling_data = covar_estimator.fit_rolling_factor_covars(risk_factor_prices=risk_factor_prices,
+                                                          asset_returns_dict=asset_returns_dict,
+                                                          time_period=time_period)
+
+# Rolling solvers (covar_dict now required, no internal estimation)
+# Old
+weights = rolling_risk_budgeting(prices=prices, time_period=time_period,
+                                  covar_estimator=CovarEstimator(), risk_budget=budget,
+                                  constraints=constraints)
+# New
+weights = rolling_risk_budgeting(prices=prices, covar_dict=covar_dict,
+                                  risk_budget=budget, constraints=constraints)
+
+# Accessing factor betas
+# Old
+betas = rolling_data.asset_last_betas_t
+# New
+betas = rolling_data.get_y_betas()
+```
 
 
 ## **Disclaimer** <a name="disclaimer"></a>
@@ -618,7 +866,24 @@ See the [LICENSE.txt](https://github.com/ArturSepp/OptimalPortfolios/blob/master
 Please report any bugs or suggestions by opening an [issue](https://github.com/ArturSepp/OptimalPortfolios/issues).
 
 
-## BibTeX Citations for optimalportfolios (Optimal Portfolios) Package
+## **References**
+
+Sepp A. (2023),
+"Optimal Allocation to Cryptocurrencies in Diversified Portfolios",
+*Risk Magazine*, October 2023, 1-6.
+Available at https://ssrn.com/abstract=4217841
+
+Sepp A., Ossa I., and Kastenholz M. (2026),
+"Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios",
+*The Journal of Portfolio Management*, 52(4), 86-120.
+Available at https://www.pm-research.com/content/iijpormgmt/52/4/86
+
+Sepp A., Hansen E., and Kastenholz M. (2026),
+"Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors",
+*Working Paper*.
+
+
+## BibTeX Citations for optimalportfolios Package
 
 If you use optimalportfolios in your research, please cite it as:
 
@@ -628,5 +893,38 @@ If you use optimalportfolios in your research, please cite it as:
   title={OptimalPortfolios: Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python},
   year={2024},
   url={https://github.com/ArturSepp/OptimalPortfolios}
+}
+```
+
+```bibtex
+@article{sepp2023,
+  title={Optimal allocation to cryptocurrencies in diversified portfolios},
+  author={Sepp, Artur},
+  journal={Risk Magazine},
+  pages={1--6},
+  month={October},
+  year={2023},
+  url={https://ssrn.com/abstract=4217841}
+}
+```
+
+```bibtex
+@article{sepp2026rosaa,
+  author={Sepp, Artur and Ossa, Ivan and Kastenholz, Mika},
+  title={Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios},
+  journal={The Journal of Portfolio Management},
+  volume={52},
+  number={4},
+  pages={86--120},
+  year={2026}
+}
+```
+
+```bibtex
+@article{sepphansenkastenholz2026,
+  title={Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors},
+  author={Sepp, Artur and Hansen, Emilie H. and Kastenholz, Mika},
+  journal={Working Paper},
+  year={2026}
 }
 ```

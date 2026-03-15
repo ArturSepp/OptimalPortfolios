@@ -1,5 +1,17 @@
 """
-backtest multiple covariance estimators given parameter backtest several optimisers
+Backtest multiple covariance estimators given parameter backtest several optimisers.
+
+Compares EWMA vs LASSO-based factor covariance estimation using:
+- EWMA (plain and vol-normalised)
+- LASSO factor model (plain and vol-normalised)
+- Group LASSO factor model (plain and vol-normalised)
+
+Uses FactorCovarEstimator with qis.compute_asset_returns_dict() for the
+
+Reference:
+    Sepp A., Ossa I., and Kastenholz M. (2026),
+    "Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios",
+    The Journal of Portfolio Management, 52(4), 86-120.
 """
 # imports
 import pandas as pd
@@ -11,9 +23,9 @@ import qis as qis
 # package
 from optimalportfolios import (Constraints, PortfolioObjective,
                                backtest_rolling_optimal_portfolio,
-                               estimate_rolling_ewma_covar,
+                               EwmaCovarEstimator,
                                LassoModelType, LassoModel,
-                               estimate_rolling_lasso_covar)
+                               FactorCovarEstimator, CovarEstimatorType)
 from optimalportfolios.examples.universe import fetch_benchmark_universe_data
 
 SUPPORTED_SOLVERS = [PortfolioObjective.EQUAL_RISK_CONTRIBUTION,
@@ -27,91 +39,115 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
                                         group_data: pd.Series,
                                         time_period: qis.TimePeriod,  # for weights
                                         perf_time_period: qis.TimePeriod,  # for reporting
-                                        returns_freq: str = 'W-WED',  # covar matrix estimation on weekly returns
+                                        returns_freq: str = 'ME',  # covar matrix estimation on weekly returns
                                         rebalancing_freq: str = 'QE',  # portfolio rebalancing
-                                        span: int = 52,  # ewma span for covariance matrix estimation: span = 1y of weekly returns
+                                        span: int = 52,  # ewma span for covariance matrix estimation
                                         portfolio_objective: PortfolioObjective = PortfolioObjective.MAX_DIVERSIFICATION,
                                         squeeze_factor: Optional[float] = None
                                         ) -> List[plt.Figure]:
     """
-    backtest multi covar estimation
-    test maximum diversification optimiser to span parameter
-    portfolios are rebalanced at rebalancing_freq
+    Backtest multi covar estimation.
+    Test maximum diversification optimiser to span parameter.
+    Portfolios are rebalanced at rebalancing_freq.
     """
     if portfolio_objective not in SUPPORTED_SOLVERS:
         raise NotImplementedError(f"not supported {portfolio_objective}")
 
     # 1. EWMA covar
-    ewma_covars = estimate_rolling_ewma_covar(prices=prices, time_period=time_period,
-                                              rebalancing_freq=rebalancing_freq,
+    ewma_covar_estimator = EwmaCovarEstimator(rebalancing_freq=rebalancing_freq,
                                               returns_freq=returns_freq,
                                               span=span,
                                               is_apply_vol_normalised_returns=False,
                                               squeeze_factor=squeeze_factor)
-    # 2. ewma covar with vol norm returns
-    ewma_covars_vol_norm = estimate_rolling_ewma_covar(prices=prices, time_period=time_period,
-                                                       rebalancing_freq=rebalancing_freq,
-                                                       returns_freq=returns_freq,
-                                                       span=span,
-                                                       is_apply_vol_normalised_returns=True,
-                                                       squeeze_factor=squeeze_factor)
-    # lasso params
-    lasso_kwargs = dict(risk_factor_prices=ac_benchmark_prices,
-                        prices=prices,
-                        time_period=time_period,
-                        returns_freq=returns_freq,
-                        rebalancing_freq=rebalancing_freq,
-                        span=span,
-                        squeeze_factor=squeeze_factor,
-                        residual_var_weight=1.0)
-    # 3. Group Lasso model using ac_benchmarks from universe
+    ewma_covars = ewma_covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+
+    # 2. EWMA covar with vol norm returns
+    ewma_covar_estimator_norm = EwmaCovarEstimator(rebalancing_freq=rebalancing_freq,
+                                              returns_freq=returns_freq,
+                                              span=span,
+                                              is_apply_vol_normalised_returns=True,
+                                              squeeze_factor=squeeze_factor)
+    ewma_covars_vol_norm = ewma_covar_estimator_norm.fit_rolling_covars(prices=prices, time_period=time_period)
+
+    # precompute asset returns dict for lasso-based estimators
+    asset_returns_dict = qis.compute_asset_returns_dict(
+        prices=prices, is_log_returns=True, returns_freqs=returns_freq,
+    )
+    # 3. LASSO factor model
     lasso_model = LassoModel(model_type=LassoModelType.LASSO,
                              group_data=group_data, reg_lambda=1e-6, span=span,
                              warmup_period=span, solver='ECOS_BB')
-    lasso_covar_data = estimate_rolling_lasso_covar(lasso_model=lasso_model,
-                                                    is_apply_vol_normalised_returns=False,
-                                                    **lasso_kwargs)
+
+    lasso_estimator = FactorCovarEstimator(covar_estimator_type=CovarEstimatorType.LASSO,
+                                           lasso_model=lasso_model,
+                                           factor_returns_freq=returns_freq,
+                                           rebalancing_freq=rebalancing_freq)
+
+    lasso_covar_data = lasso_estimator.fit_rolling_factor_covars(
+        risk_factor_prices=ac_benchmark_prices,
+        asset_returns_dict=asset_returns_dict,
+        time_period=time_period
+    )
     lasso_covars = lasso_covar_data.y_covars
-    lasso_covar_data_norm = estimate_rolling_lasso_covar(lasso_model=lasso_model,
-                                                     is_apply_vol_normalised_returns=True,
-                                                     **lasso_kwargs)
+
+    # 4. LASSO with vol-normalised returns
+    asset_returns_dict_vol_norm = qis.compute_asset_returns_dict(
+        prices=prices, is_log_returns=True, returns_freqs=returns_freq,
+    )
+
+    lasso_covar_data_norm = lasso_estimator.fit_rolling_factor_covars(
+        risk_factor_prices=ac_benchmark_prices,
+        asset_returns_dict=asset_returns_dict_vol_norm,
+        time_period=time_period,
+    )
     lasso_covars_norm = lasso_covar_data_norm.y_covars
 
-
-    # 4. Group Lasso model using ac_benchmarks from universe
+    # 5. Group LASSO factor model
     group_lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO,
-                             group_data=group_data, reg_lambda=1e-6, span=span, solver='ECOS_BB')
-    group_lasso_covars = estimate_rolling_lasso_covar(lasso_model=group_lasso_model,
-                                                      is_apply_vol_normalised_returns=False,
-                                                      **lasso_kwargs)
-    group_lasso_covars = group_lasso_covars.y_covars
-    group_lasso_covars_norm = estimate_rolling_lasso_covar(lasso_model=group_lasso_model,
-                                                           is_apply_vol_normalised_returns=True,
-                                                           **lasso_kwargs)
-    group_lasso_covars_norm = group_lasso_covars_norm.y_covars
+                                   group_data=group_data, reg_lambda=1e-6,
+                                   span=span, solver='ECOS_BB')
+
+    group_lasso_estimator = FactorCovarEstimator(covar_estimator_type=CovarEstimatorType.LASSO,
+                                                  lasso_model=group_lasso_model,
+                                                  factor_returns_freq=returns_freq,
+                                                  rebalancing_freq=rebalancing_freq)
+
+    group_lasso_covar_data = group_lasso_estimator.fit_rolling_factor_covars(
+        risk_factor_prices=ac_benchmark_prices,
+        asset_returns_dict=asset_returns_dict,
+        time_period=time_period,
+    )
+    group_lasso_covars = group_lasso_covar_data.y_covars
+
+    # 6. Group LASSO with vol-normalised returns
+    group_lasso_covar_data_norm = group_lasso_estimator.fit_rolling_factor_covars(
+        risk_factor_prices=ac_benchmark_prices,
+        asset_returns_dict=asset_returns_dict_vol_norm,
+        time_period=time_period,
+    )
+    group_lasso_covars_norm = group_lasso_covar_data_norm.y_covars
+
     # create dict of estimated covars
     covars_dict = {'EWMA': ewma_covars, 'EWMA vol norm': ewma_covars_vol_norm,
-                   'Lasso': lasso_covars, 'Lasso VolNorn': lasso_covars_norm,
-                   'Group Lasso': group_lasso_covars, 'Group Lasso VolNorn': group_lasso_covars_norm}
+                   'Lasso': lasso_covars, 'Lasso VolNorm': lasso_covars_norm,
+                   'Group Lasso': group_lasso_covars, 'Group Lasso VolNorm': group_lasso_covars_norm}
 
-    # set global constaints for portfolios
+    # set global constraints for portfolios
     constraints = Constraints(is_long_only=True,
                                min_weights=pd.Series(0.0, index=prices.columns),
                                max_weights=pd.Series(0.5, index=prices.columns))
 
-    # now create a list of portfolios
+    # backtest each covar estimator
     portfolio_datas = []
     for key, covar_dict in covars_dict.items():
         portfolio_data = backtest_rolling_optimal_portfolio(prices=prices,
                                                             portfolio_objective=portfolio_objective,
                                                             constraints=constraints,
-                                                            time_period=time_period,
                                                             perf_time_period=perf_time_period,
                                                             covar_dict=covar_dict,
-                                                            rebalancing_costs=0.0010,  # 10bp for rebalancin
-                                                            weight_implementation_lag=1,  # weights are implemnted next day after comuting
-                                                            ticker=f"{key}"  # portfolio id
-                                                            )
+                                                            rebalancing_costs=0.0010,
+                                                            weight_implementation_lag=1,
+                                                            ticker=f"{key}")
         portfolio_data.set_group_data(group_data=group_data)
         portfolio_datas.append(portfolio_data)
 
@@ -129,25 +165,15 @@ class LocalTests(Enum):
 
 
 def run_local_test(local_test: LocalTests):
-    """Run local tests for development and debugging purposes.
-
-    These are integration tests that download real data and generate reports.
-    Use for quick verification during development.
-    """
-
-    import optimalportfolios.local_path as local_path
+    """Run local tests for development and debugging purposes."""
 
     if local_test == LocalTests.MULTI_COVAR_ESTIMATORS_BACKTEST:
-        # portfolio_objective = PortfolioObjective.MAX_DIVERSIFICATION
-        # portfolio_objective = PortfolioObjective.EQUAL_RISK_CONTRIBUTION
         portfolio_objective = PortfolioObjective.MIN_VARIANCE
-
-        # params = dict(returns_freq='W-WED', rebalancing_freq='QE', span=52)
-        params = dict(returns_freq='ME', rebalancing_freq='ME', span=12, squeeze_factor=0.01)
+        params = dict(returns_freq='ME', rebalancing_freq='QE', span=36)
 
         prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
-        time_period = qis.TimePeriod(start='31Dec1998', end=prices.index[-1])  # backtest start: need 6y of data for rolling Sharpe and max mixure portfolios
-        perf_time_period = qis.TimePeriod(start='31Dec2004', end=prices.index[-1])  # backtest reporting
+        time_period = qis.TimePeriod(start='31Dec2006', end='15Mar2026')
+        perf_time_period = qis.TimePeriod(start='31Dec2015', end='15Mar2026')
         figs = run_multi_covar_estimators_backtest(prices=prices,
                                                    benchmark_prices=benchmark_prices,
                                                    ac_benchmark_prices=ac_benchmark_prices,
@@ -157,12 +183,10 @@ def run_local_test(local_test: LocalTests):
                                                    portfolio_objective=portfolio_objective,
                                                    **params)
 
-        # save png and pdf
-        # qis.save_fig(fig=figs[0], file_name=f"{portfolio_objective.value}_multi_covar_estimator_backtest", local_path=f"figures/")
         qis.save_figs_to_pdf(figs=figs,
                              file_name=f"{portfolio_objective.value} multi_covar_estimator_backtest",
                              orientation='landscape',
-                             local_path=local_path.get_output_path())
+                             local_path=f"figures/")
     plt.show()
 
 

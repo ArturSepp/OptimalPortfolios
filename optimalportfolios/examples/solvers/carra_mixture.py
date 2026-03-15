@@ -23,7 +23,7 @@ class LocalTests(Enum):
 def run_local_test(local_test: LocalTests):
     """Run local tests for development and debugging purposes.
 
-    These are integration tests that download real data and generate reports.
+    These are integration tests that download real universe and generate reports.
     Use for quick verification during development.
     """
 
@@ -44,7 +44,7 @@ def run_local_test(local_test: LocalTests):
                                weights_0=benchmark_weights)
 
     if local_test == LocalTests.ONE_STEP_OPTIMISATION:
-        # optimise using last available data as inputs
+        # optimise using last available universe as inputs
         returns = qis.to_returns(prices, freq='ME', is_log_returns=True).dropna()
         params = fit_gaussian_mixture(x=returns.to_numpy(), n_components=3, an_factor=12)
 
@@ -71,7 +71,7 @@ def run_local_test(local_test: LocalTests):
         plt.show()
 
     elif local_test == LocalTests.ROLLING_OPTIMISATION:
-        # optimise using last available data as inputs
+        # optimise using last available universe as inputs
         time_period = qis.TimePeriod('31Jan2007', '17Apr2025')
         rebalancing_costs = 0.0003
 

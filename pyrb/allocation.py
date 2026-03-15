@@ -231,7 +231,7 @@ class ConstrainedRiskBudgeting(RiskBudgetingWithER):
     ):
         """
         Solve the constrained risk budgeting problem. It supports linear inequality (Cx <= d) and bounds constraints.
-        Notations follow the paper Constrained Risk Budgeting Portfolios by Richard J-C. and Roncalli T. (2019).
+        Notations follow the article_rosaa Constrained Risk Budgeting Portfolios by Richard J-C. and Roncalli T. (2019).
 
         Parameters
         ----------
@@ -340,7 +340,7 @@ class ConstrainedRiskBudgeting(RiskBudgetingWithER):
                 logging.exception(
                     "Bisection failed: "
                     + str(e)
-                    + ". If you are using expected returns the parameter 'c' need to be correctly scaled (see remark 1 in the paper). Otherwise please check the constraints or increase the bisection upper bound."
+                    + ". If you are using expected returns the parameter 'c' need to be correctly scaled (see remark 1 in the article_rosaa). Otherwise please check the constraints or increase the bisection upper bound."
                 )
             else:
                 logging.exception("Problem not solved: " + str(e))

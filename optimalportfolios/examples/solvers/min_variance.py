@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import qis as qis
 from enum import Enum
 
-from optimalportfolios import (Constraints, GroupLowerUpperConstraints, CovarEstimator,
+from optimalportfolios import (Constraints, GroupLowerUpperConstraints, EwmaCovarEstimator,
                                compute_tre_turnover_stats,
                                wrapper_quadratic_optimisation,
                                rolling_quadratic_optimisation)
@@ -24,7 +24,7 @@ class LocalTests(Enum):
 def run_local_test(local_test: LocalTests):
     """Run local tests for development and debugging purposes.
 
-    These are integration tests that download real data and generate reports.
+    These are integration tests that download real universe and generate reports.
     Use for quick verification during development.
     """
 
@@ -46,7 +46,7 @@ def run_local_test(local_test: LocalTests):
                                group_lower_upper_constraints=group_lower_upper_constraints)
 
     if local_test == LocalTests.ONE_STEP_OPTIMISATION:
-        # optimise using last available data as inputs
+        # optimise using last available universe as inputs
         returns = qis.to_returns(prices, freq='W-WED', is_log_returns=True)
         pd_covar = pd.DataFrame(52.0 * qis.compute_masked_covar_corr(data=returns, is_covar=True),
                                 index=prices.columns, columns=prices.columns)
@@ -69,14 +69,14 @@ def run_local_test(local_test: LocalTests):
         plt.show()
 
     elif local_test == LocalTests.ROLLING_OPTIMISATION:
-        # optimise using last available data as inputs
+        # optimise using last available universe as inputs
         time_period = qis.TimePeriod('31Jan2007', '17Apr2025')
         rebalancing_costs = 0.0003
-        covar_estimator = CovarEstimator()
+        covar_estimator = EwmaCovarEstimator()
+        covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
         weights = rolling_quadratic_optimisation(prices=prices,
                                                  constraints=constraints,
-                                                 time_period=time_period,
-                                                 covar_estimator=covar_estimator)
+                                                 covar_dict=covar_dict)
         print(weights)
 
         portfolio_dict = {'Optimal Portfolio': weights,

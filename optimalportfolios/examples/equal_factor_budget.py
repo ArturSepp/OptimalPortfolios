@@ -13,7 +13,7 @@ class FactorRiskParity:
 
     def __init__(self, returns_data):
         """
-        Initialize with returns data
+        Initialize with returns universe
 
         Parameters:
         -----------
@@ -263,7 +263,7 @@ class FactorRiskParity:
 
 # Example usage
 if __name__ == "__main__":
-    # Generate sample data
+    # Generate sample universe
     np.random.seed(42)
     n_assets = 5
     n_periods = 252  # Daily returns for 1 year
@@ -295,3 +295,6 @@ if __name__ == "__main__":
     # Plot results
     frp.plot_risk_contributions(comparison['asset_risk_parity'], method='assets')
     frp.plot_risk_contributions(comparison['factor_risk_parity'], method='factors')
+
+    plt.show()
+

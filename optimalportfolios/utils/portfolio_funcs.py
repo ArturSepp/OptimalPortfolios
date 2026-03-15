@@ -73,3 +73,18 @@ def compute_portfolio_risk_contribution_outputs(weights: pd.Series,
                     ], axis=1)
     return df
 
+
+def round_weights_to_pct(weights: pd.Series, decimals: int = 2) -> pd.Series:
+    """
+    Map portfolio weights from [0,1] to percentage [0,100] with rounding
+    that preserves the sum to exactly 100.0 using largest remainder method.
+    """
+    scaled = weights * 100.0
+    floored = np.floor(scaled * 10**decimals) / 10**decimals
+    remainders = scaled - floored
+    shortfall = round(100.0 - floored.sum(), decimals)
+    n_bumps = int(shortfall * 10**decimals)
+    # bump the largest remainders
+    bump_idx = remainders.nlargest(n_bumps).index
+    floored.loc[bump_idx] += 10**(-decimals)
+    return floored.round(decimals)

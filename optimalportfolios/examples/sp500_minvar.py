@@ -1,6 +1,6 @@
 """
 run Minimum Variance portfolio optimiser for S&P 500 universe
-The goal is to backtest the sensetivity of squeezing of the covariance matrix using SSRN paper
+The goal is to backtest the sensetivity of squeezing of the covariance matrix using SSRN article_rosaa
 Squeezing Financial Noise: A Novel Approach to Covariance Matrix Estimation
 https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4986939
 """
@@ -13,7 +13,7 @@ from typing import List
 from enum import Enum
 
 # optimalportfolios
-from optimalportfolios import PortfolioObjective, Constraints, rolling_quadratic_optimisation, CovarEstimator
+from optimalportfolios import PortfolioObjective, Constraints, rolling_quadratic_optimisation, FactorCovarEstimator
 
 
 def run_cross_backtest(prices: pd.DataFrame,
@@ -30,7 +30,7 @@ def run_cross_backtest(prices: pd.DataFrame,
     Args:
         prices: Asset price DataFrame.
         inclusion_indicators: S&P 500 inclusion indicators DataFrame.
-        group_data: Sector group data Series.
+        group_data: Sector group universe Series.
         time_period: Backtest time period.
         squeeze_factors: List of shrinkage factors for covariance estimation. Defaults to (0.0, 0.125, 0.250, 0.375, 0.5, 0.7, 0.9).
 
@@ -43,7 +43,7 @@ def run_cross_backtest(prices: pd.DataFrame,
 
     portfolio_datas = []
     for squeeze_factor in squeeze_factors:
-        covar_estimator = CovarEstimator(squeeze_factor=squeeze_factor, returns_freqs='W-WED', rebalancing_freq='QE')
+        covar_estimator = FactorCovarEstimator(squeeze_factor=squeeze_factor, factor_returns_freq='W-WED', rebalancing_freq='QE')
         weights = rolling_quadratic_optimisation(prices=prices,
                                                  constraints=constraints,
                                                  portfolio_objective=PortfolioObjective.MIN_VARIANCE,
@@ -68,7 +68,7 @@ class LocalTests(Enum):
 def run_local_test(local_test: LocalTests):
     """Run local tests for development and debugging purposes.
 
-    These are integration tests that download real data and generate reports.
+    These are integration tests that download real universe and generate reports.
     Use for quick verification during development.
     """
 

@@ -67,7 +67,7 @@ def solve_rb_ccd(
 ):
     """
     Solve the risk budgeting problem for standard deviation risk-based measure with bounds constraints using cyclical
-    coordinate descent (CCD). It is corresponding to solve equation (17) in the paper.
+    coordinate descent (CCD). It is corresponding to solve equation (17) in the article_rosaa.
 
     By default the function solve the ERC portfolio or the RB portfolio if budgets are given.
 

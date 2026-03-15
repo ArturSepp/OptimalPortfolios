@@ -1,6 +1,6 @@
 """
 create composition of S&P 500 universe compositions using members in https://github.com/fja05680/sp500
-note that some of the companies ever included in the S&P500 are de-listed and yfinance does not have data on them
+note that some of the companies ever included in the S&P500 are de-listed and yfinance does not have universe on them
 """
 
 # packages
@@ -12,7 +12,7 @@ from enum import Enum
 
 from optimalportfolios.local_path import get_resource_path
 
-# path to save universe data
+# path to save universe universe
 LOCAL_PATH = f"{get_resource_path()}//sp500//"
 # download from source: https://github.com/fja05680/sp500
 SP500_FILE = "S&P 500 Historical Components & Changes(07-12-2025).csv"
@@ -41,10 +41,10 @@ def create_inclusion_indicators() -> Tuple[pd.DataFrame, pd.DataFrame]:
 
 def create_sp500_universe_with_yahoo(local_path: str = LOCAL_PATH) -> None:
     """
-    Fetch S&P 500 price and sector data from Yahoo Finance and save to CSV files.
+    Fetch S&P 500 price and sector universe from Yahoo Finance and save to CSV files.
 
     Downloads historical prices and industry classifications for S&P 500 constituents,
-    then saves the cleaned data as 'sp500_prices_yahoo.csv', 'sp500_inclusions_yahoo.csv',
+    then saves the cleaned universe as 'sp500_prices_yahoo.csv', 'sp500_inclusions_yahoo.csv',
     and 'sp500_groups_yahoo.csv' files.
     """
     inclusion_indicators, inclusion_indicators_bbg = create_inclusion_indicators()
@@ -73,16 +73,16 @@ def create_sp500_universe_with_yahoo(local_path: str = LOCAL_PATH) -> None:
 
 
 def load_sp500_universe_yahoo(local_path: str = LOCAL_PATH) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
-    """Loads S&P 500 universe data from Yahoo Finance CSV files.
+    """Loads S&P 500 universe universe from Yahoo Finance CSV files.
 
-    Loads prices, inclusion indicators, and sector group data. Aligns timezone
+    Loads prices, inclusion indicators, and sector group universe. Aligns timezone
     information between prices and inclusion indicators.
 
     Args:
         local_path: Path to directory containing CSV files. Defaults to LOCAL_PATH.
 
     Returns:
-        Tuple of (prices DataFrame, inclusion indicators DataFrame, group data Series).
+        Tuple of (prices DataFrame, inclusion indicators DataFrame, group universe Series).
     """
     prices = qis.load_df_from_csv(file_name='sp500_prices_yahoo', local_path=local_path)
     inclusion_indicators = qis.load_df_from_csv(file_name='sp500_inclusions_yahoo', local_path=local_path)
@@ -94,13 +94,13 @@ def load_sp500_universe_yahoo(local_path: str = LOCAL_PATH) -> Tuple[pd.DataFram
 def create_sp500_universe_with_bloomberg(start_date: pd.Timestamp = pd.Timestamp('31Dec1995'),
                                          local_path: str = LOCAL_PATH
                                          ) -> None:
-    """Creates S&P 500 universe data using Bloomberg API.
+    """Creates S&P 500 universe universe using Bloomberg API.
 
-    Fetches prices, market cap, sector data, and inclusion indicators for S&P 500
+    Fetches prices, market cap, sector universe, and inclusion indicators for S&P 500
     constituents. Filters out delisted stocks without sectors and saves results to CSV.
 
     Args:
-        start_date: Start date for time series data. Defaults to Dec 31, 1995.
+        start_date: Start date for time series universe. Defaults to Dec 31, 1995.
         local_path: Path to directory for saving CSV files. Defaults to LOCAL_PATH.
     """
     from bbg_fetch import fetch_field_timeseries_per_tickers, fetch_fundamentals
@@ -134,16 +134,16 @@ def create_sp500_universe_with_bloomberg(start_date: pd.Timestamp = pd.Timestamp
 
 def load_sp500_universe_bloomberg(local_path: str = LOCAL_PATH
                                   ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series]:
-    """Loads S&P 500 universe data from Bloomberg CSV files.
+    """Loads S&P 500 universe universe from Bloomberg CSV files.
 
-    Loads prices, market cap, inclusion indicators, and sector group data
+    Loads prices, market cap, inclusion indicators, and sector group universe
     previously saved by create_sp500_universe_with_bloomberg().
 
     Args:
         local_path: Path to directory containing CSV files. Defaults to LOCAL_PATH.
 
     Returns:
-        Tuple of (prices DataFrame, market cap DataFrame, inclusion indicators DataFrame, group data Series).
+        Tuple of (prices DataFrame, market cap DataFrame, inclusion indicators DataFrame, group universe Series).
     """
     prices = qis.load_df_from_csv(file_name='sp500_prices_bloomberg', local_path=local_path)
     market_cap = qis.load_df_from_csv(file_name='sp500_market_cap_bloomberg', local_path=local_path)
@@ -161,7 +161,7 @@ class LocalTests(Enum):
 def run_local_test(local_test: LocalTests):
     """Run local tests for development and debugging purposes.
 
-    These are integration tests that download real data and generate reports.
+    These are integration tests that download real universe and generate reports.
     Use for quick verification during development.
     """
 

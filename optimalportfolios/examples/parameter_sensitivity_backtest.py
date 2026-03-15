@@ -10,7 +10,8 @@ import qis as qis
 
 # package
 from optimalportfolios import (PortfolioObjective, backtest_rolling_optimal_portfolio,
-                               Constraints, GroupLowerUpperConstraints)
+                               Constraints, GroupLowerUpperConstraints,
+                               EwmaCovarEstimator)
 from optimalportfolios.examples.universe import fetch_benchmark_universe_data
 
 
@@ -24,7 +25,7 @@ def run_max_diversification_sensitivity_to_span(prices: pd.DataFrame,
     """
     test maximum diversification optimiser to span parameter
     span is number period for ewm filter
-    span = 20 for daily data implies last 20 (trading) days contribute 50% of weight for covariance estimation
+    span = 20 for daily universe implies last 20 (trading) days contribute 50% of weight for covariance estimation
     we test sensitivity from fast (small span) to slow (large span)
     """
     # use daily returns
@@ -36,13 +37,13 @@ def run_max_diversification_sensitivity_to_span(prices: pd.DataFrame,
     # now create a list of portfolios
     portfolio_datas = []
     for ticker, span in spans.items():
+        ewma_estimator = EwmaCovarEstimator(returns_freq=returns_freq, span=span, rebalancing_freq='QE')
+        covar_dict = ewma_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
         portfolio_data = backtest_rolling_optimal_portfolio(prices=prices,
                                                             constraints=constraints,
-                                                            time_period=time_period,
                                                             portfolio_objective=PortfolioObjective.MAX_DIVERSIFICATION,
-                                                            rebalancing_freq='QE',  # portfolio rebalancing
                                                             returns_freq=returns_freq,
-                                                            span=span,
+                                                            covar_dict=covar_dict,
                                                             ticker=f"span-{ticker}",  # portfolio id
                                                             rebalancing_costs=0.0010,  # 10bp for rebalancin
                                                             weight_implementation_lag=1
@@ -66,7 +67,7 @@ class LocalTests(Enum):
 def run_local_test(local_test: LocalTests):
     """Run local tests for development and debugging purposes.
 
-    These are integration tests that download real data and generate reports.
+    These are integration tests that download real universe and generate reports.
     Use for quick verification during development.
     """
 
@@ -87,8 +88,8 @@ def run_local_test(local_test: LocalTests):
 
     if local_test == LocalTests.MAX_DIVERSIFICATION_SPAN:
 
-        time_period = qis.TimePeriod(start='31Dec1998', end=prices.index[-1])  # backtest start for weights computation
-        perf_time_period = qis.TimePeriod(start='31Dec2004', end=prices.index[-1])  # backtest reporting
+        time_period = qis.TimePeriod(start='31Dec1998', end='15Mar2026')  # backtest start for weights computation
+        perf_time_period = qis.TimePeriod(start='31Dec2004', end='15Mar2026')  # backtest reporting
         figs = run_max_diversification_sensitivity_to_span(prices=prices,
                                                            benchmark_prices=benchmark_prices,
                                                            constraints=constraints,

@@ -456,10 +456,10 @@ def produce_article_backtests(time_period: TimePeriod,
         qis.save_fig(fig_periods, file_name=f"perf_atrib_all", local_path=FIGURE_SAVE_PATH)
 
     b_report = p.VStack(vblocks)
-    filename = f"{LOCAL_PATH}Crypto_portfolios_backtests_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.pdf"
+    filename = f"Crypto_portfolios_backtests_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.pdf"
     b_report.save(filename)
     print(f"saved article report to {filename}")
-    qis.save_df_to_excel(dfs_out, file_name=filename)
+    qis.save_df_to_excel(dfs_out, file_name=filename, local_path=LOCAL_PATH)
     print(f"saved article tables to {filename}.xls")
     plt.close('all')
 
@@ -471,7 +471,7 @@ class LocalTests(Enum):
 def run_local_test(local_test: LocalTests):
     """Run local tests for development and debugging purposes.
 
-    These are integration tests that download real data and generate reports.
+    These are integration tests that download real universe and generate reports.
     Use for quick verification during development.
     """
 

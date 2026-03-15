@@ -4,7 +4,7 @@ returns unsmoothing using AR-1 betas
 import numpy as np
 import pandas as pd
 import qis as qis
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 
 def adjust_returns_with_ar1(returns: pd.DataFrame,
@@ -46,19 +46,36 @@ def adjust_returns_with_ar1(returns: pd.DataFrame,
 
 
 def compute_ar1_unsmoothed_prices(prices: pd.DataFrame,
-                                  freq: str = 'QE',
+                                  freq: Union[str, pd.Series] = 'QE',
                                   span: int = 40,
                                   mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA,
                                   warmup_period: Optional[int] = 8,
                                   max_value_for_beta: Optional[float] = 0.75,
                                   is_log_returns: bool = True
                                   ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    y = qis.to_returns(prices, freq=freq, drop_first=False, is_log_returns=is_log_returns)
-    unsmoothed, betas, ewm_r2 = adjust_returns_with_ar1(returns=y,
-                                                        span=span,
-                                                        mean_adj_type=mean_adj_type,
-                                                        warmup_period=warmup_period,
-                                                        max_value_for_beta=max_value_for_beta)
+    if isinstance(freq, str):
+        # Single frequency for all assets
+        y = qis.to_returns(prices, freq=freq, drop_first=False, is_log_returns=is_log_returns)
+        unsmoothed, betas, ewm_r2 = adjust_returns_with_ar1(returns=y,
+                                                            span=span,
+                                                            mean_adj_type=mean_adj_type,
+                                                            warmup_period=warmup_period,
+                                                            max_value_for_beta=max_value_for_beta)
+    else:
+        unsmoothed, betas, ewm_r2 = {}, {}, {}
+        for frequency, assets in freq.groupby(freq):
+            asset_list = assets.index.tolist()
+            if len(asset_list) > 0:
+                y = qis.to_returns(prices[asset_list], freq=str(frequency), drop_first=False, is_log_returns=is_log_returns)
+                unsmoothed[frequency], betas[frequency], ewm_r2[frequency] = adjust_returns_with_ar1(returns=y,
+                                                                                                     span=span,
+                                                                                                     mean_adj_type=mean_adj_type,
+                                                                                                     warmup_period=warmup_period,
+                                                                                                     max_value_for_beta=max_value_for_beta)
+        unsmoothed = pd.concat(unsmoothed.values(), axis=1).reindex(columns=prices.columns)  # type: ignore
+        betas = pd.concat(betas.values(), axis=1).reindex(columns=prices.columns)  # type: ignore
+        ewm_r2 = pd.concat(ewm_r2.values(), axis=1).reindex(columns=prices.columns)  # type: ignore
+
     if is_log_returns:  # back to compounded
         unsmoothed = np.expm1(unsmoothed)
     navs = qis.returns_to_nav(returns=unsmoothed)

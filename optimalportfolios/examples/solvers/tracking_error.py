@@ -7,7 +7,8 @@ import seaborn as sns
 import qis as qis
 from enum import Enum
 
-from optimalportfolios import (Constraints, GroupLowerUpperConstraints, CovarEstimator,
+from optimalportfolios import (Constraints, GroupLowerUpperConstraints,
+                                EwmaCovarEstimator,
                                compute_tre_turnover_stats,
                                rolling_maximise_alpha_over_tre,
                                wrapper_maximise_alpha_over_tre)
@@ -43,13 +44,17 @@ def run_etf_tracking_portfolio(prices: pd.DataFrame,
                                weights_0=None,
                                group_lower_upper_constraints=group_lower_upper_constraints)
 
-    covar_estimator = CovarEstimator()
+    ewma_covar_estimator = EwmaCovarEstimator(rebalancing_freq='ME',
+                                              returns_freq='W-WED',
+                                              span=52,
+                                              is_apply_vol_normalised_returns=False)
+    covar_dict = ewma_covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+
     weights = rolling_maximise_alpha_over_tre(prices=prices,
                                               alphas=alphas,
                                               benchmark_weights=benchmark_weights,
                                               constraints=constraints,
-                                              time_period=time_period,
-                                              covar_estimator=covar_estimator)
+                                              covar_dict=covar_dict)
     return weights
 
 
@@ -62,7 +67,7 @@ class LocalTests(Enum):
 def run_local_test(local_test: LocalTests):
     """Run local tests for development and debugging purposes.
 
-    These are integration tests that download real data and generate reports.
+    These are integration tests that download real universe and generate reports.
     Use for quick verification during development.
     """
 
@@ -71,7 +76,7 @@ def run_local_test(local_test: LocalTests):
     prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
 
     if local_test == LocalTests.ONE_STEP_OPTIMISATION:
-        # optimise using last available data as inputs
+        # optimise using last available universe as inputs
         returns = qis.to_returns(prices, freq='W-WED', is_log_returns=True)
         pd_covar = pd.DataFrame(52.0 * qis.compute_masked_covar_corr(data=returns, is_covar=True),
                                 index=prices.columns, columns=prices.columns)
@@ -120,7 +125,7 @@ def run_local_test(local_test: LocalTests):
 
     elif local_test == LocalTests.TRACKING_ERROR_GRID:
 
-        # optimise using last available data as inputs
+        # optimise using last available universe as inputs
         returns = qis.to_returns(prices, freq='W-WED', is_log_returns=True)
         pd_covar = pd.DataFrame(52.0 * qis.compute_masked_covar_corr(data=returns, is_covar=True),
                                 index=prices.columns, columns=prices.columns)
@@ -181,7 +186,7 @@ def run_local_test(local_test: LocalTests):
         print(f"port_alphas=\n{port_alphas}")
 
     elif local_test == LocalTests.ROLLING_OPTIMISATION:
-        # optimise using last available data as inputs
+        # optimise using last available universe as inputs
         time_period = qis.TimePeriod('31Jan2007', '17Apr2025')
         rebalancing_costs = 0.0003
 

@@ -9,7 +9,7 @@ from enum import Enum
 import qis as qis
 
 # package
-from optimalportfolios import Constraints, backtest_rolling_optimal_portfolio, PortfolioObjective
+from optimalportfolios import Constraints, backtest_rolling_optimal_portfolio, PortfolioObjective, EwmaCovarEstimator
 from optimalportfolios.examples.universe import fetch_benchmark_universe_data
 
 
@@ -23,7 +23,7 @@ def run_multi_optimisers_backtest(prices: pd.DataFrame,
     backtest multi optimisers
     test maximum diversification optimiser to span parameter
     span is number period for ewm filter
-    span = 20 for daily data implies last 20 (trading) days contribute 50% of weight for covariance estimation
+    span = 20 for daily universe implies last 20 (trading) days contribute 50% of weight for covariance estimation
     we test sensitivity from fast (small span) to slow (large span)
     """
     portfolio_objectives = {'EqualRisk': PortfolioObjective.EQUAL_RISK_CONTRIBUTION,
@@ -31,11 +31,17 @@ def run_multi_optimisers_backtest(prices: pd.DataFrame,
                             'MaxDiversification': PortfolioObjective.MAX_DIVERSIFICATION,
                             'MaxSharpe': PortfolioObjective.MAXIMUM_SHARPE_RATIO,
                             'MaxCarraMixture': PortfolioObjective.MAX_CARA_MIXTURE}
-
+    risk_budget = pd.Series(1./len(prices.columns), index=prices.columns)
     # set global constaints for portfolios
     constraints = Constraints(is_long_only=True,
                                min_weights=pd.Series(0.0, index=prices.columns),
                                max_weights=pd.Series(0.5, index=prices.columns))
+
+    ewma_estimator = EwmaCovarEstimator(returns_freq='W-WED', span=52, rebalancing_freq='QE')
+    covar_dict = ewma_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+    #for date, covar in covar_dict.items():
+    #    print(date)
+    #    print(covar)
 
     # now create a list of portfolios
     portfolio_datas = []
@@ -44,12 +50,13 @@ def run_multi_optimisers_backtest(prices: pd.DataFrame,
         portfolio_data = backtest_rolling_optimal_portfolio(prices=prices,
                                                             portfolio_objective=portfolio_objective,
                                                             constraints=constraints,
-                                                            time_period=time_period,
                                                             perf_time_period=perf_time_period,
+                                                            covar_dict=covar_dict,
+                                                            risk_budget=risk_budget,
                                                             returns_freq='W-WED',  # covar matrix estimation on weekly returns
                                                             rebalancing_freq='QE',  # portfolio rebalancing
                                                             span=52,  # ewma span for covariance matrix estimation: span = 1y of weekly returns
-                                                            roll_window=5*52,  # linked to returns at rebalancing_freq: 5y of data for max sharpe and mixture carra
+                                                            roll_window=5*52,  # linked to returns at rebalancing_freq: 5y of universe for max sharpe and mixture carra
                                                             carra=0.5,  # carra parameter
                                                             n_mixures=3,  # for mixture carra utility
                                                             rebalancing_costs=0.0010,  # 10bp for rebalancin
@@ -75,7 +82,7 @@ class LocalTests(Enum):
 def run_local_test(local_test: LocalTests):
     """Run local tests for development and debugging purposes.
 
-    These are integration tests that download real data and generate reports.
+    These are integration tests that download real universe and generate reports.
     Use for quick verification during development.
     """
 
@@ -83,8 +90,8 @@ def run_local_test(local_test: LocalTests):
 
     if local_test == LocalTests.MULTI_OPTIMISERS_BACKTEST:
         prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
-        time_period = qis.TimePeriod(start='31Dec1998', end=prices.index[-1])  # backtest start: need 6y of data for rolling Sharpe and max mixure portfolios
-        perf_time_period = qis.TimePeriod(start='31Dec2004', end=prices.index[-1])  # backtest reporting
+        time_period = qis.TimePeriod(start='31Dec1999', end=prices.index[-1])  # backtest start: need 6y of universe for rolling Sharpe and max mixure portfolios
+        perf_time_period = qis.TimePeriod(start='31Dec2007', end=prices.index[-1])  # backtest reporting
         figs = run_multi_optimisers_backtest(prices=prices,
                                              benchmark_prices=benchmark_prices,
                                              group_data=group_data,

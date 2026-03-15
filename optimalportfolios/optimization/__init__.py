@@ -9,4 +9,8 @@ from optimalportfolios.optimization.constraints import (ConstraintEnforcementTyp
 from optimalportfolios.optimization.wrapper_rolling_portfolios import (compute_rolling_optimal_weights,
                                                                        backtest_rolling_optimal_portfolio)
 
+
+from optimalportfolios.optimization.portfolio_result import PortfolioOptimisationResult
+
 from optimalportfolios.optimization.solvers.__init__ import *
+

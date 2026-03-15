@@ -1,6 +1,6 @@
 """
-implement test data for optimisations
-use update and save data for speed-up of test cases
+implement test universe for optimisations
+use update and save universe for speed-up of test cases
 """
 
 # imports
@@ -45,7 +45,7 @@ class LocalTests(Enum):
 def run_local_test(local_test: LocalTests):
     """Run local tests for development and debugging purposes.
 
-    These are integration tests that download real data and generate reports.
+    These are integration tests that download real universe and generate reports.
     Use for quick verification during development.
     """
 

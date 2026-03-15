@@ -115,7 +115,7 @@ class LocalTests(Enum):
 def run_local_test(local_test: LocalTests):
     """Run local tests for development and debugging purposes.
 
-    These are integration tests that download real data and generate reports.
+    These are integration tests that download real universe and generate reports.
     Use for quick verification during development.
     """
 
@@ -135,7 +135,7 @@ def run_local_test(local_test: LocalTests):
         plt.show()
 
     elif local_test == LocalTests.ONE_STEP_OPTIMISATION:
-        # optimise using last available data as inputs
+        # optimise using last available universe as inputs
         returns = qis.to_returns(prices, freq='W-WED', is_log_returns=True)
         pd_covar = pd.DataFrame(52.0 * qis.compute_masked_covar_corr(data=returns, is_covar=True),
                                 index=prices.columns, columns=prices.columns)
@@ -168,7 +168,7 @@ def run_local_test(local_test: LocalTests):
         plt.show()
 
     elif local_test == LocalTests.ROLLING_OPTIMISATION:
-        # optimise using last available data as inputs
+        # optimise using last available universe as inputs
         time_period = qis.TimePeriod('31Dec2012', '17Apr2025')
         weights = run_bonds_etf_optimal_portfolio(prices=prices,
                                                   yields=yields,

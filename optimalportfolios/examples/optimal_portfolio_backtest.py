@@ -9,17 +9,17 @@ from typing import Tuple
 import qis as qis
 
 # package
-from optimalportfolios import compute_rolling_optimal_weights, PortfolioObjective, Constraints
+from optimalportfolios import compute_rolling_optimal_weights, PortfolioObjective, Constraints, EwmaCovarEstimator
 
 
 # 1. we define the investment universe and allocation by asset classes
 def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
     """
-    fetch universe data for the portfolio construction:
-    1. dividend and split adjusted end of day prices: price data may start / end at different dates
+    fetch universe universe for the portfolio construction:
+    1. dividend and split adjusted end of day prices: price universe may start / end at different dates
     2. benchmark prices which is used for portfolio reporting and benchmarking
-    3. universe group data for portfolio reporting and risk attribution for large universes
-    this function is using yfinance to fetch the price data
+    3. universe group universe for portfolio reporting and risk attribution for large universes
+    this function is using yfinance to fetch the price universe
     """
     universe_data = dict(SPY='Equities',
                          QQQ='Equities',
@@ -38,10 +38,10 @@ def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
     return prices, benchmark_prices, group_data
 
 
-# 2. get universe data
+# 2. get universe universe
 prices, benchmark_prices, group_data = fetch_universe_data()
 print(prices)
-time_period = qis.TimePeriod('31Dec2004', '18Jul2025')   # period for computing weights backtest
+time_period = qis.TimePeriod('31Dec2004', '15Mar2026')   # period for computing weights backtest
 
 # 3.a. define optimisation setup
 portfolio_objective = PortfolioObjective.MAX_DIVERSIFICATION  # define portfolio objective
@@ -53,12 +53,14 @@ constraints = Constraints(is_long_only=True,
                            max_weights=pd.Series(0.5, index=prices.columns))
 
 # 3.b. compute solvers portfolio weights rebalanced every quarter
+ewma_estimator = EwmaCovarEstimator(returns_freq=returns_freq, span=span, rebalancing_freq=rebalancing_freq)
+covar_dict = ewma_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
 weights = compute_rolling_optimal_weights(prices=prices,
                                           portfolio_objective=portfolio_objective,
                                           constraints=constraints,
                                           time_period=time_period,
                                           rebalancing_freq=rebalancing_freq,
-                                          span=span)
+                                          covar_dict=covar_dict)
 
 # 4. given portfolio weights, construct the performance of the portfolio
 funding_rate = None  # on positive / negative cash balances

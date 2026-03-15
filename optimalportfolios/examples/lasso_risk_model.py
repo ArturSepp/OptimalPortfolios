@@ -6,11 +6,11 @@ import seaborn as sns
 import yfinance as yf
 import qis as qis
 
-import optimalportfolios.local_path
 from optimalportfolios import (LassoModel, LassoModelType,
                                Constraints,
                                rolling_risk_budgeting,
-                               estimate_rolling_lasso_covar_different_freq)
+                               FactorCovarEstimator,
+                               CovarEstimatorType)
 
 # select multi asset ETFs
 instrument_data = dict(IEFA='Equity',
@@ -41,25 +41,20 @@ risk_factor_prices = yf.download(risk_factor_tickers, start="2003-12-31", end=No
 time_period=qis.TimePeriod('31Dec2015', '13Dec2024')
 lasso_params = dict(reg_lambda=1e-5, span=120, demean=False, solver='ECOS_BB')
 lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO_CLUSTERS, **lasso_params)
-covar_data = estimate_rolling_lasso_covar_different_freq(risk_factor_prices=risk_factor_prices,
-                                                         prices=prices,
-                                                         returns_freqs=sampling_freqs,
-                                                         time_period=time_period,
-                                                         factor_returns_freq='W-WED',
-                                                         rebalancing_freq='QE',
-                                                         lasso_model=lasso_model
-                                                         )
-# print betas
-for date, beta in covar_data.asset_last_betas_t.items():
-    print(date)
-    print(beta)
+asset_returns_dict = {'ME': qis.to_returns(prices, freq='ME', is_log_returns=True)}
+covar_estimator = FactorCovarEstimator(covar_estimator_type=CovarEstimatorType.LASSO,
+                                       lasso_model=lasso_model,
+                                       factor_returns_freq='ME',
+                                       rebalancing_freq='QE')
+factor_covar_data = covar_estimator.fit_rolling_factor_covars(risk_factor_prices=risk_factor_prices, asset_returns_dict=asset_returns_dict,
+                                                              time_period=time_period)
+
 
 # build equal risk budget portfolio
 risk_budget = pd.Series(1.0 / len(prices.columns), index=prices.columns)
 risk_budget_weights = rolling_risk_budgeting(prices=prices,
                                              constraints=Constraints(),
-                                             time_period=time_period,
-                                             covar_dict=covar_data.y_covars,
+                                             covar_dict=factor_covar_data.y_covars,
                                              risk_budget=risk_budget)
 erb_portfolio_data = qis.backtest_model_portfolio(prices=prices,
                                                   weights=risk_budget_weights,
@@ -73,12 +68,12 @@ ew_portfolio_data = qis.backtest_model_portfolio(prices=prices,
                                                  ticker='EqualWeight')
 
 multi_portfolio_data = qis.MultiPortfolioData(portfolio_datas=[erb_portfolio_data, ew_portfolio_data],
-                                              covar_dict=covar_data.y_covars,
+                                              covar_dict=factor_covar_data.y_covars,
                                               benchmark_prices=risk_factor_prices['SPY'].to_frame())
 
 
 # get linear model
-risk_model = covar_data.get_linear_factor_model(x_factors=risk_factor_prices, y_assets=prices)
+risk_model = factor_covar_data.get_linear_factor_model(x_factors=risk_factor_prices, y_assets=prices)
 
 portfolio_factor_betas = risk_model.compute_agg_factor_exposures(weights=erb_portfolio_data.get_weights())
 

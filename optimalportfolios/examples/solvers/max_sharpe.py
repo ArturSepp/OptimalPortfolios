@@ -10,7 +10,8 @@ from enum import Enum
 from optimalportfolios import (Constraints, GroupLowerUpperConstraints,
                                compute_tre_turnover_stats,
                                rolling_maximize_portfolio_sharpe,
-                               wrapper_maximize_portfolio_sharpe)
+                               wrapper_maximize_portfolio_sharpe,
+                               EwmaCovarEstimator)
 
 from optimalportfolios.examples.universe import fetch_benchmark_universe_data
 
@@ -23,7 +24,7 @@ class LocalTests(Enum):
 def run_local_test(local_test: LocalTests):
     """Run local tests for development and debugging purposes.
 
-    These are integration tests that download real data and generate reports.
+    These are integration tests that download real universe and generate reports.
     Use for quick verification during development.
     """
 
@@ -44,7 +45,7 @@ def run_local_test(local_test: LocalTests):
                                weights_0=benchmark_weights)
 
     if local_test == LocalTests.ONE_STEP_OPTIMISATION:
-        # optimise using last available data as inputs
+        # optimise using last available universe as inputs
         returns = qis.to_returns(prices, freq='W-WED', is_log_returns=True)
         pd_covar = pd.DataFrame(52.0 * qis.compute_masked_covar_corr(data=returns, is_covar=True),
                                 index=prices.columns, columns=prices.columns)
@@ -69,13 +70,15 @@ def run_local_test(local_test: LocalTests):
         plt.show()
 
     elif local_test == LocalTests.ROLLING_OPTIMISATION:
-        # optimise using last available data as inputs
-        time_period = qis.TimePeriod('31Jan2007', '17Apr2025')
+        # optimise using last available universe as inputs
+        time_period = qis.TimePeriod('31Dec2016', '15Mar2026')
         rebalancing_costs = 0.0003
 
+        covar_estimator = EwmaCovarEstimator(returns_freq='ME', span=60, rebalancing_freq='YE')
+        covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
         weights = rolling_maximize_portfolio_sharpe(prices=prices,
                                                     constraints=constraints,
-                                                    time_period=time_period)
+                                                    covar_dict=covar_dict)
 
         print(weights)
 

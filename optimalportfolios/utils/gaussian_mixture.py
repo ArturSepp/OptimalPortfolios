@@ -234,7 +234,7 @@ def estimate_rolling_mixture(prices: Union[pd.Series, pd.DataFrame],
                                                  include_start_date=True,
                                                  include_end_date=True)
     if annualize:
-        _, scaler = qis.get_period_days(freq=returns_freq)
+        scaler = qis.get_annualization_factor(freq=returns_freq)
     else:
         scaler = 1.0
 
@@ -270,7 +270,7 @@ class LocalTests(Enum):
 def run_local_test(local_test: LocalTests):
     """Run local tests for development and debugging purposes.
 
-    These are integration tests that download real data and generate reports.
+    These are integration tests that download real universe and generate reports.
     Use for quick verification during development.
     """
 

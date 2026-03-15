@@ -6,19 +6,48 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import qis as qis
 import yfinance as yf
-from enum import Enum
-from qis.portfolio.ewm_portfolio_risk import compute_benchamark_portfolio_risk_contributions
 
 
-from optimalportfolios import (Constraints, GroupLowerUpperConstraints, CovarEstimator,
-                               compute_tre_turnover_stats,
-                               wrapper_quadratic_optimisation,
-                               wrapper_risk_budgeting,
+from optimalportfolios import (Constraints,
                                wrapper_maximise_diversification,
                                estimate_current_ewma_covar,
-                               PortfolioObjective,
                                compute_portfolio_vol,
                                local_path)
+
+
+def compute_benchamark_portfolio_risk_contributions(w_portfolio: pd.Series,
+                                                    w_benchmark: pd.Series,
+                                                    covar: pd.DataFrame,
+                                                    is_independent_risk: bool = False
+                                                    ) -> pd.Series:
+    """
+    Compute per-asset tracking error contributions of portfolio vs benchmark.
+
+    Two modes:
+    - is_independent_risk=False: marginal TE contributions (sum = total TE)
+    - is_independent_risk=True: independent (diagonal) TE contributions
+    """
+    active_weights = w_portfolio - w_benchmark
+    covar_np = covar.to_numpy()
+    active_np = active_weights.to_numpy()
+
+    if is_independent_risk:
+        # independent: use only diagonal of covar (asset vols), no cross terms
+        diag_var = np.diag(covar_np)
+        contributions = active_np ** 2 * diag_var
+        contributions = np.sign(active_np) * np.sqrt(np.abs(contributions))
+    else:
+        # marginal TE contributions: w_active @ covar / TE
+        portfolio_var = active_np @ covar_np @ active_np
+        te = np.sqrt(np.maximum(portfolio_var, 0.0))
+        if te < 1e-16:
+            contributions = np.zeros_like(active_np)
+        else:
+            # marginal contribution of each asset to TE
+            marginal = covar_np @ active_np
+            contributions = active_np * marginal / te
+
+    return pd.Series(contributions, index=w_portfolio.index)
 
 
 def create_stocks_data():

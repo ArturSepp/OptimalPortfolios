@@ -3,13 +3,16 @@
 This module provides a comprehensive framework for defining and enforcing portfolio
 constraints across multiple optimization backends. It supports individual asset
 constraints, group-based constraints, tracking error limits, and turnover controls.
+
+All dataclass containers are immutable (frozen=True). Mutation methods return new instances.
 """
 from __future__ import annotations, division
 import warnings
+import copy as _copy
 import pandas as pd
 import numpy as np
 import cvxpy as cvx
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, fields
 from typing import List, Tuple, Optional, Union, Callable
 from cvxpy.atoms.affine.wraps import psd_wrap
 from cvxpy.atoms.affine.add_expr import AddExpression
@@ -28,15 +31,36 @@ class ConstraintEnforcementType(Enum):
     UTILITY_CONSTRAINTS = 2  # constraints are added as utility to the objective
 
 
-@dataclass
+def _reindex_optional_series(s: Optional[pd.Series], index: pd.Index, fill_value: float = 0.0) -> Optional[pd.Series]:
+    """Reindex a Series to align with given index, filling missing values.
+
+    Args:
+        s: Series to reindex (may be None).
+        index: Target index to align to.
+        fill_value: Value for missing entries.
+
+    Returns:
+        Reindexed Series or None if input is None.
+    """
+    if s is None:
+        return None
+    return s.reindex(index=index, fill_value=fill_value)
+
+
+def _copy_optional_series(s: Optional[pd.Series]) -> Optional[pd.Series]:
+    """Copy a Series if not None."""
+    return s.copy() if s is not None else None
+
+
+@dataclass(frozen=True)
 class GroupLowerUpperConstraints:
     """Group-based allocation constraints with min/max limits.
 
     Enables portfolio constraints at the group level (e.g., sector, region, asset class)
-    rather than individual asset level. Groups are defined via binary loading matrices.
+    rather than individual asset level. Groups are defined via loading matrices (binary or fractional).
 
     Attributes:
-        group_loadings: Binary matrix (assets x groups) where 1 indicates membership.
+        group_loadings: Matrix (assets x groups) where positive values indicate membership/exposure.
         group_min_allocation: Minimum allocation per group (optional).
         group_max_allocation: Maximum allocation per group (optional).
     """
@@ -48,20 +72,55 @@ class GroupLowerUpperConstraints:
         """Validate allocation series indices match group loadings.
 
         Ensures consistency between group definitions and allocation constraints.
-        Fills missing values with zeros to prevent constraint violations.
+        Uses object.__setattr__ for frozen dataclass initialization.
         """
-        if self.group_min_allocation is not None:
-            this = self.group_min_allocation.index.isin(self.group_loadings.columns)
+        group_loadings = self.group_loadings
+        group_min_allocation = self.group_min_allocation
+        group_max_allocation = self.group_max_allocation
+
+        # drop group_loadings columns where all assets have zero loading
+        zero_cols = group_loadings.columns[
+            (group_loadings == 0).all(axis=0) | group_loadings.isna().all(axis=0)]
+        if len(zero_cols) > 0:
+            warnings.warn(
+                f"GroupLowerUpperConstraints: group_loadings columns {zero_cols.tolist()} "
+                f"have all zero loadings and dropped"
+            )
+            group_loadings = group_loadings.drop(columns=zero_cols)
+            if group_min_allocation is not None:
+                group_min_allocation = group_min_allocation.drop(index=zero_cols, errors='ignore')
+            if group_max_allocation is not None:
+                group_max_allocation = group_max_allocation.drop(index=zero_cols, errors='ignore')
+
+        # if no groups remain, nullify all constraints
+        if group_loadings.empty or len(group_loadings.columns) == 0:
+            warnings.warn(
+                "GroupLowerUpperConstraints: no valid group_loadings remain after dropping "
+                "zero-loading columns; setting all group constraints to None"
+            )
+            group_min_allocation = None
+            group_max_allocation = None
+
+        if group_min_allocation is not None:
+            this = group_loadings.columns.isin(group_min_allocation.index)
             if not this.all():
-                warnings.warn(f"{self.group_min_allocation.index} missing in\n{self.group_loadings.columns}")
-            # temp fix to ensure that min allocation is zero for given group loadings
-            self.group_min_allocation.reindex(index=self.group_loadings.columns).fillna(0)
-        if self.group_max_allocation is not None:
-            this = self.group_max_allocation.index.isin(self.group_loadings.columns)
+                missing = group_loadings.columns[~this]
+                warnings.warn(f"in group_min_allocation: loadings in\n{group_loadings.columns} "
+                              f"are missing for {missing}")
+            group_min_allocation = group_min_allocation.reindex(index=group_loadings.columns)
+
+        if group_max_allocation is not None:
+            this = group_loadings.columns.isin(group_max_allocation.index)
             if not this.all():
-                warnings.warn(f"{self.group_max_allocation.index} missing in\n{self.group_loadings.columns}")
-            # temp fix to ensure that max allocation is zero for given group loadings
-            self.group_max_allocation.reindex(index=self.group_loadings.columns).fillna(0)
+                missing = group_loadings.columns[~this]
+                warnings.warn(f"in group_max_allocation: loadings in\n{group_loadings.columns} "
+                              f"are missing for {missing}")
+            group_max_allocation = group_max_allocation.reindex(index=group_loadings.columns)
+
+        # assign validated fields via object.__setattr__ (frozen dataclass)
+        object.__setattr__(self, 'group_loadings', group_loadings)
+        object.__setattr__(self, 'group_min_allocation', group_min_allocation)
+        object.__setattr__(self, 'group_max_allocation', group_max_allocation)
 
     def copy(self) -> GroupLowerUpperConstraints:
         """Create a deep copy of the constraint object.
@@ -69,12 +128,11 @@ class GroupLowerUpperConstraints:
         Returns:
             GroupLowerUpperConstraints: Independent copy of the constraints.
         """
-        new_self = GroupLowerUpperConstraints(
+        return GroupLowerUpperConstraints(
             group_loadings=self.group_loadings.copy(),
-            group_min_allocation=self.group_min_allocation.copy() if self.group_min_allocation is not None else None,
-            group_max_allocation=self.group_max_allocation.copy() if self.group_max_allocation is not None else None
+            group_min_allocation=_copy_optional_series(self.group_min_allocation),
+            group_max_allocation=_copy_optional_series(self.group_max_allocation),
         )
-        return new_self
 
     def update(self, valid_tickers: List[str]) -> GroupLowerUpperConstraints:
         """Filter constraints to valid tickers only.
@@ -85,12 +143,11 @@ class GroupLowerUpperConstraints:
         Returns:
             GroupLowerUpperConstraints: Filtered constraint object.
         """
-        new_self = GroupLowerUpperConstraints(
+        return GroupLowerUpperConstraints(
             group_loadings=self.group_loadings.loc[valid_tickers, :],
-            group_min_allocation=self.group_min_allocation,
-            group_max_allocation=self.group_max_allocation
+            group_min_allocation=_copy_optional_series(self.group_min_allocation),
+            group_max_allocation=_copy_optional_series(self.group_max_allocation),
         )
-        return new_self
 
     def drop_constraint(self, name: str) -> GroupLowerUpperConstraints:
         """Remove constraint by group name.
@@ -101,19 +158,11 @@ class GroupLowerUpperConstraints:
         Returns:
             GroupLowerUpperConstraints: Updated constraint object without specified group.
         """
-        group_loadings = self.group_loadings.drop([name], axis=1)
-        if self.group_min_allocation is not None:
-            group_min_allocation = self.group_min_allocation.drop([name], axis=0)
-        else:
-            group_min_allocation = None
-        if self.group_max_allocation is not None:
-            group_max_allocation = self.group_max_allocation.drop([name], axis=0)
-        else:
-            group_max_allocation = None
-        new_self = GroupLowerUpperConstraints(group_loadings=group_loadings,
-                                              group_min_allocation=group_min_allocation,
-                                              group_max_allocation=group_max_allocation)
-        return new_self
+        return GroupLowerUpperConstraints(
+            group_loadings=self.group_loadings.drop([name], axis=1),
+            group_min_allocation=self.group_min_allocation.drop([name], axis=0) if self.group_min_allocation is not None else None,
+            group_max_allocation=self.group_max_allocation.drop([name], axis=0) if self.group_max_allocation is not None else None,
+        )
 
     def set_cvx_group_lower_upper_constraints(self,
                                               w: cvx.Variable,
@@ -133,12 +182,7 @@ class GroupLowerUpperConstraints:
             List of CVXPY inequality constraints.
         """
         constraints = []
-        # Determine constraint multiplier based on exposure scaling
-        if exposure_scaler is None:
-            multiplier = 1.0
-        else:
-            multiplier = exposure_scaler
-        # Generate constraints for each group with non-zero loadings
+        multiplier = 1.0 if exposure_scaler is None else exposure_scaler
         for group in self.group_loadings.columns:
             group_loading = self.group_loadings[group].to_numpy()
             if np.any(np.isclose(group_loading, 0.0) == False):
@@ -183,8 +227,8 @@ def merge_group_lower_upper_constraints(
     Returns:
         Merged GroupLowerUpperConstraints object.
     """
-    # Check for overlapping column names and create rename mappings
-    overlaps = list(set(group_lower_upper_constraints1.group_loadings.columns) & set(group_lower_upper_constraints2.group_loadings.columns))
+    overlaps = list(set(group_lower_upper_constraints1.group_loadings.columns) &
+                    set(group_lower_upper_constraints2.group_loadings.columns))
 
     if len(overlaps) > 0:
         overlaps1 = {x: f"{x}_1" for x in overlaps}
@@ -193,7 +237,6 @@ def merge_group_lower_upper_constraints(
         overlaps1 = {}
         overlaps2 = {}
 
-    # Merge group loadings with duplicate checking
     duplicates = group_lower_upper_constraints1.group_loadings.index.duplicated()
     if duplicates.any():
         warnings.warn(f"Duplicate values in group_lower_upper_constraints1.group_loadings.index:"
@@ -209,18 +252,16 @@ def merge_group_lower_upper_constraints(
         group_lower_upper_constraints2.group_loadings.rename(overlaps2, axis=1)
     ], axis=1).fillna(0.0)
 
-    # Merge minimum allocations with proper handling of None cases
+    # Merge minimum allocations
     if (group_lower_upper_constraints1.group_min_allocation is not None and
             group_lower_upper_constraints2.group_min_allocation is not None):
         group_min_allocation = pd.concat([
             group_lower_upper_constraints1.group_min_allocation.rename(overlaps1),
             group_lower_upper_constraints2.group_min_allocation.rename(overlaps2)
         ])
-    elif (group_lower_upper_constraints1.group_min_allocation is not None and
-          group_lower_upper_constraints2.group_min_allocation is None):
+    elif group_lower_upper_constraints1.group_min_allocation is not None:
         group_min_allocation = group_lower_upper_constraints1.group_min_allocation.rename(overlaps1)
-    elif (group_lower_upper_constraints1.group_min_allocation is None and
-          group_lower_upper_constraints2.group_min_allocation is not None):
+    elif group_lower_upper_constraints2.group_min_allocation is not None:
         group_min_allocation = group_lower_upper_constraints2.group_min_allocation.rename(overlaps2)
     else:
         group_min_allocation = None
@@ -228,18 +269,16 @@ def merge_group_lower_upper_constraints(
     if group_min_allocation is not None:
         group_min_allocation = group_min_allocation.reindex(index=group_loadings.columns)
 
-    # Merge maximum allocations with proper handling of None cases
+    # Merge maximum allocations
     if (group_lower_upper_constraints1.group_max_allocation is not None and
             group_lower_upper_constraints2.group_max_allocation is not None):
         group_max_allocation = pd.concat([
             group_lower_upper_constraints1.group_max_allocation.rename(overlaps1),
             group_lower_upper_constraints2.group_max_allocation.rename(overlaps2)
         ])
-    elif (group_lower_upper_constraints1.group_max_allocation is not None and
-          group_lower_upper_constraints2.group_max_allocation is None):
+    elif group_lower_upper_constraints1.group_max_allocation is not None:
         group_max_allocation = group_lower_upper_constraints1.group_max_allocation.rename(overlaps1)
-    elif (group_lower_upper_constraints1.group_max_allocation is None and
-          group_lower_upper_constraints2.group_max_allocation is not None):
+    elif group_lower_upper_constraints2.group_max_allocation is not None:
         group_max_allocation = group_lower_upper_constraints2.group_max_allocation.rename(overlaps2)
     else:
         group_max_allocation = None
@@ -254,7 +293,7 @@ def merge_group_lower_upper_constraints(
     )
 
 
-@dataclass
+@dataclass(frozen=True)
 class GroupTrackingErrorConstraint:
     """Group-based tracking error constraints.
 
@@ -262,7 +301,7 @@ class GroupTrackingErrorConstraint:
     as hard constraints or as utility penalties.
 
     Attributes:
-        group_loadings: Binary matrix (assets x groups) where 1 indicates membership.
+        group_loadings: Matrix (assets x groups) where positive values indicate membership.
         group_tre_vols: Maximum tracking error volatility per group.
         group_tre_utility_weights: Utility penalty weights for soft constraints.
     """
@@ -273,33 +312,25 @@ class GroupTrackingErrorConstraint:
     def __post_init__(self):
         """Validate that at least one constraint type is specified and aligned."""
         if self.group_tre_vols is not None:
-            this = self.group_tre_vols.index.isin(self.group_loadings.columns)
+            this = self.group_loadings.columns.isin(self.group_tre_vols.index)
             if not this.all():
-                missing = self.group_tre_vols.index[~this]
-                warnings.warn(f"Missing in group_tre_vols.index: {missing}")
+                missing = self.group_loadings.columns[~this]
+                warnings.warn(f"Missing in group_loadings.columns: {missing}")
         elif self.group_tre_utility_weights is not None:
-            this = self.group_tre_utility_weights.index.isin(self.group_loadings.columns)
+            this = self.group_loadings.columns.isin(self.group_tre_utility_weights.index)
             if not this.all():
-                missing = self.group_tre_utility_weights.index[~this]
-                warnings.warn(f"Missing in group_tre_utility_weights.index: {missing}")
+                missing = self.group_loadings.columns[~this]
+                warnings.warn(f"Missing in group_loadings.columns: {missing}")
         else:
             raise ValueError(f"group_tre_vols or group_tre_utility_weights must be given")
 
     def update(self, valid_tickers: List[str]) -> GroupTrackingErrorConstraint:
-        """Filter constraints to valid tickers only.
-
-        Args:
-            valid_tickers: List of tickers to retain.
-
-        Returns:
-            Filtered GroupTrackingErrorConstraint object.
-        """
-        new_self = GroupTrackingErrorConstraint(
+        """Filter constraints to valid tickers only."""
+        return GroupTrackingErrorConstraint(
             group_loadings=self.group_loadings.loc[valid_tickers, :],
-            group_tre_vols=self.group_tre_vols,
-            group_tre_utility_weights=self.group_tre_utility_weights
+            group_tre_vols=_copy_optional_series(self.group_tre_vols),
+            group_tre_utility_weights=_copy_optional_series(self.group_tre_utility_weights),
         )
-        return new_self
 
     def set_cvx_group_tre_constraints(
             self,
@@ -311,20 +342,11 @@ class GroupTrackingErrorConstraint:
 
         Creates quadratic constraints: (group_loading ⊙ (w - bm))' Σ (group_loading ⊙ (w - bm)) ≤ σ²
         where ⊙ denotes element-wise multiplication.
-
-        Args:
-            w: Portfolio weight variable.
-            benchmark_weights: Benchmark portfolio weights.
-            covar: Covariance matrix of asset returns.
-
-        Returns:
-            List of CVXPY inequality constraints.
         """
         constraints = []
         for group in self.group_loadings.columns:
-            group_loading = self.group_loadings[group].copy()
-            group_loading = group_loading.loc[benchmark_weights.index]  # align
-            if np.any(np.isclose(group_loading, 0.0) == False):  # exclude groups with zero loading
+            group_loading = self.group_loadings[group].reindex(benchmark_weights.index, fill_value=0.0)
+            if np.any(np.isclose(group_loading, 0.0) == False):
                 tracking_error_var = cvx.quad_form(
                     cvx.multiply(group_loading.to_numpy(), w - benchmark_weights.to_numpy()),
                     covar
@@ -336,28 +358,13 @@ class GroupTrackingErrorConstraint:
     def set_cvx_group_tre_utility(self, w: cvx.Variable,
                                   benchmark_weights: pd.Series,
                                   covar: np.ndarray) -> AddExpression:
-        """Add group tracking error as utility penalty to objective function.
-
-        Penalizes tracking error with group-specific weights rather than hard constraints.
-
-        Args:
-            w: Portfolio weight variable.
-            benchmark_weights: Benchmark portfolio weights.
-            covar: Covariance matrix of asset returns.
-
-        Returns:
-            CVXPY expression for tracking error penalties.
-
-        Raises:
-            ValueError: If group_tre_utility_weights is not specified.
-        """
+        """Add group tracking error as utility penalty to objective function."""
         if self.group_tre_utility_weights is None:
             raise ValueError(f"supply group_tre_utility_weights for GroupTrackingErrorConstraint")
-        objective_fun = None  # Initialize as None
+        objective_fun = None
         for group in self.group_loadings.columns:
-            group_loading = self.group_loadings[group].copy().loc[benchmark_weights.index]
+            group_loading = self.group_loadings[group].reindex(benchmark_weights.index, fill_value=0.0)
             if np.any(np.isclose(group_loading, 0.0) == False):
-                # First align with benchmark_weights index
                 group_tre_utility_weight = self.group_tre_utility_weights.loc[group]
                 if not np.isnan(group_tre_utility_weight):
                     term = -1.0 * group_tre_utility_weight * cvx.quad_form(
@@ -374,7 +381,7 @@ class GroupTrackingErrorConstraint:
         print(f"group_tre_utility_weights:\n{self.group_tre_utility_weights}")
 
 
-@dataclass
+@dataclass(frozen=True)
 class GroupTurnoverConstraint:
     """Group-based turnover constraints.
 
@@ -382,7 +389,7 @@ class GroupTurnoverConstraint:
     and maintain stable exposures.
 
     Attributes:
-        group_loadings: Binary matrix (assets x groups) where 1 indicates membership.
+        group_loadings: Matrix (assets x groups) where positive values indicate membership.
         group_max_turnover: Maximum L1 turnover per group.
         group_turnover_utility_weights: Utility penalty weights for soft constraints.
     """
@@ -393,33 +400,25 @@ class GroupTurnoverConstraint:
     def __post_init__(self):
         """Validate that at least one constraint type is specified and aligned."""
         if self.group_max_turnover is not None:
-            this = self.group_max_turnover.index.isin(self.group_loadings.columns)
+            this = self.group_loadings.columns.isin(self.group_max_turnover.index)
             if not this.all():
-                missing = self.group_max_turnover.index[~this]
-                warnings.warn(f"Missing in group_max_turnover.index: {missing}")
+                missing = self.group_loadings.columns[~this]
+                warnings.warn(f"Missing in self.group_loadings.columns: {missing}")
         elif self.group_turnover_utility_weights is not None:
-            this = self.group_turnover_utility_weights.index.isin(self.group_loadings.columns)
+            this = self.group_loadings.columns.isin(self.group_turnover_utility_weights.index)
             if not this.all():
-                missing = self.group_turnover_utility_weights.index[~this]
-                warnings.warn(f"Missing in group_turnover_utility_weights.index: {missing}")
+                missing = self.group_loadings.columns[~this]
+                warnings.warn(f"Missing in self.group_loadings.columns: {missing}")
         else:
             raise ValueError(f"group_max_turnover or group_turnover_utility_weights must be given")
 
     def update(self, valid_tickers: List[str]) -> GroupTurnoverConstraint:
-        """Filter constraints to valid tickers only.
-
-        Args:
-            valid_tickers: List of tickers to retain.
-
-        Returns:
-            Filtered GroupTurnoverConstraint object.
-        """
-        new_self = GroupTurnoverConstraint(
+        """Filter constraints to valid tickers only."""
+        return GroupTurnoverConstraint(
             group_loadings=self.group_loadings.loc[valid_tickers, :],
-            group_max_turnover=self.group_max_turnover,
-            group_turnover_utility_weights=self.group_turnover_utility_weights
+            group_max_turnover=_copy_optional_series(self.group_max_turnover),
+            group_turnover_utility_weights=_copy_optional_series(self.group_turnover_utility_weights),
         )
-        return new_self
 
     def set_group_turnover_constraints(
             self,
@@ -429,56 +428,36 @@ class GroupTurnoverConstraint:
         """Generate CVXPY constraints for group turnovers.
 
         Creates L1 norm constraints: ||group_loading ⊙ (w - w₀)||₁ ≤ max_turnover
-
-        Args:
-            w: Target portfolio weight variable.
-            weights_0: Current portfolio weights.
-
-        Returns:
-            List of CVXPY inequality constraints.
         """
         constraints = []
         if weights_0 is None:
             warnings.warn(f"weights_0 must be given for turnover_constraint")
         else:
             for group in self.group_loadings.columns:
-                group_loading = self.group_loadings[group].copy()
-                if np.any(np.isclose(group_loading, 0.0) == False):  # exclude groups with zero loading
-                    group_loading = group_loading.loc[weights_0.index]  # align indices
-                    constraints += [ cvx.norm( cvx.multiply(group_loading.to_numpy(), w - weights_0), 1)
-                                     <= self.group_max_turnover.loc[group]]
+                group_loading = self.group_loadings[group].reindex(weights_0.index, fill_value=0.0)
+                if np.any(np.isclose(group_loading, 0.0) == False):
+                    constraints += [cvx.norm(cvx.multiply(group_loading.to_numpy(), w - weights_0), 1)
+                                    <= self.group_max_turnover.loc[group]]
         return constraints
 
     def set_cvx_group_turnover_utility(self,
                                        w: cvx.Variable,
                                        weights_0: pd.Series
                                        ) -> AddExpression:
-        """Add group turnover as utility penalty to objective function.
-
-        Penalizes turnover with group-specific weights rather than hard constraints.
-
-        Args:
-            w: Target portfolio weight variable.
-            weights_0: Current portfolio weights.
-
-        Returns:
-            CVXPY expression for turnover penalties.
-
-        Raises:
-            ValueError: If group_turnover_utility_weights is not specified.
-        """
+        """Add group turnover as utility penalty to objective function."""
         if self.group_turnover_utility_weights is None:
             raise ValueError(f"group_turnover_utility_weights must be supplied")
-        objective_fun = None  # Initialize as None
+        objective_fun = None
         if weights_0 is None:
             warnings.warn("weights_0 must be given for group turnover constraint")
         else:
             for group in self.group_loadings.columns:
-                group_loading = self.group_loadings[group].loc[weights_0.index]
+                group_loading = self.group_loadings[group].reindex(weights_0.index, fill_value=0.0)
                 if np.any(np.isclose(group_loading, 0.0) == False):
                     turnover_utility_weight = self.group_turnover_utility_weights.loc[group]
                     if not np.isnan(turnover_utility_weight):
-                        term = -1.0 * turnover_utility_weight * cvx.norm(cvx.multiply(group_loading.to_numpy(), w - weights_0), 1)
+                        term = -1.0 * turnover_utility_weight * cvx.norm(
+                            cvx.multiply(group_loading.to_numpy(), w - weights_0), 1)
                         objective_fun = add_term_to_objective_function(objective_fun, term)
         return objective_fun
 
@@ -488,13 +467,15 @@ class GroupTurnoverConstraint:
         print(f"group_max_turnover:\n{self.group_max_turnover}")
 
 
-@dataclass
+@dataclass(frozen=True)
 class Constraints:
     """Comprehensive portfolio optimization constraints.
 
     Unified container for all portfolio constraints including exposure limits,
     tracking error, turnover, group constraints, and target return/volatility.
     Supports multiple optimization backends (CVXPY, SciPy, PyRB).
+
+    Immutable: all mutation methods return new Constraints instances.
 
     Attributes:
         is_long_only: Enforce non-negative weights (no short positions).
@@ -511,6 +492,7 @@ class Constraints:
         asset_returns: Expected returns for each asset.
         max_target_portfolio_vol_an: Maximum annualized portfolio volatility.
         min_target_portfolio_vol_an: Minimum annualized portfolio volatility.
+        constraint_enforcement_type: How tracking error/turnover constraints are enforced.
         tre_utility_weight: Penalty weight for tracking error in utility optimization.
         turnover_utility_weight: Penalty weight for turnover in utility optimization.
         group_lower_upper_constraints: Group-level allocation constraints.
@@ -525,48 +507,137 @@ class Constraints:
     benchmark_weights: pd.Series = None
     tracking_err_vol_constraint: float = None
     weights_0: Optional[pd.Series] = None
-    turnover_constraint: float = None
+    turnover_constraint: Optional[float] = None
     turnover_costs: pd.Series = None
     target_return: float = None
     asset_returns: pd.Series = None
     max_target_portfolio_vol_an: float = None
     min_target_portfolio_vol_an: float = None
     constraint_enforcement_type: ConstraintEnforcementType = ConstraintEnforcementType.FORCED_CONSTRAINTS
-    tre_utility_weight: Optional[float] = 1.0  # penalty weight for tracking error in utility
-    turnover_utility_weight: Optional[float] = 0.40  # penalty weight for turnover in utility
+    tre_utility_weight: Optional[float] = 1.0
+    turnover_utility_weight: Optional[float] = 0.40
     group_lower_upper_constraints: GroupLowerUpperConstraints = None
     group_tracking_error_constraint: GroupTrackingErrorConstraint = None
     group_turnover_constraint: Optional[GroupTurnoverConstraint] = None
 
-    def copy(self) -> Constraints:
-        """Create a deep copy of all constraints.
+    def __post_init__(self):
+        """Validate that individual min/max weights are consistent with group constraints.
+
+        The group constraint is: group_loading @ w >= group_min (and <= group_max),
+        where group_loading can be fractional (not necessarily binary).
+
+        Checks for three infeasibility conditions:
+            * Sum of loading-weighted asset upper bounds < group minimum → can't reach group floor
+            * Sum of loading-weighted asset lower bounds > group maximum → can't stay under group ceiling
+            * Single asset loading-weighted floor > group ceiling → immediate infeasibility
+
+        Raises:
+            ValueError: If any combination of individual and group constraints is infeasible.
+        """
+
+        # validate min/max weight consistency
+        if self.min_weights is not None and self.max_weights is not None:
+            if self.min_weights.index.equals(self.max_weights.index):
+                violations = self.min_weights > self.max_weights + 1e-10
+                if violations.any():
+                    bad = self.min_weights.index[violations].tolist()
+                    raise ValueError(
+                        f"min_weights > max_weights for assets: {bad}"
+                    )
+
+        if self.is_long_only:
+            if self.min_weights is not None:
+                negative = self.min_weights < -1e-10
+                if negative.any():
+                    bad = self.min_weights.index[negative].tolist()
+                    raise ValueError(
+                        f"is_long_only=True but min_weights < 0 for assets: {bad}"
+                    )
+
+        # validate group constraint
+        if self.group_lower_upper_constraints is None:
+            return
+
+        gluc = self.group_lower_upper_constraints
+        loadings = gluc.group_loadings
+        errors = []
+
+        for group in loadings.columns:
+            group_loading = loadings[group]
+            members = group_loading.index[group_loading > 0]
+            if len(members) == 0:
+                continue
+
+            member_loadings = group_loading.loc[members]
+
+            # loading-weighted cumulative max of individual weights in group
+            if self.max_weights is not None:
+                group_max_sum = (self.max_weights.reindex(members, fill_value=1.0) * member_loadings).sum()
+            else:
+                upper = 1.0 if self.is_long_only else self.max_exposure
+                group_max_sum = (member_loadings * upper).sum()
+
+            # loading-weighted cumulative min of individual weights in group
+            if self.min_weights is not None:
+                group_min_sum = (self.min_weights.reindex(members, fill_value=0.0) * member_loadings).sum()
+            else:
+                lower = 0.0 if self.is_long_only else -self.max_exposure
+                group_min_sum = (member_loadings * lower).sum()
+
+            # Check 1: loading-weighted sum of asset max_weights must reach group min_allocation
+            if gluc.group_min_allocation is not None:
+                gmin = gluc.group_min_allocation.get(group, np.nan)
+                if not np.isnan(gmin) and group_max_sum < gmin - 1e-4:
+                    errors.append(
+                        f"Group '{group}': loading-weighted sum of asset max_weights ({group_max_sum:.4f}) "
+                        f"< group_min_allocation ({gmin:.4f}). "
+                        f"Increase max_weights for assets {members.tolist()} or lower group_min_allocation."
+                    )
+
+            # Check 2: loading-weighted sum of asset min_weights must stay under group max_allocation
+            if gluc.group_max_allocation is not None:
+                gmax = gluc.group_max_allocation.get(group, np.nan)
+                if not np.isnan(gmax) and group_min_sum > gmax + 1e-4:
+                    errors.append(
+                        f"Group '{group}': loading-weighted sum of asset min_weights ({group_min_sum:.4f}) "
+                        f"> group_max_allocation ({gmax:.4f}). "
+                        f"Lower min_weights for assets {members.tolist()} or increase group_max_allocation."
+                    )
+
+            # Check 3: single asset loading-weighted floor must not exceed group max
+            if gluc.group_max_allocation is not None and self.min_weights is not None:
+                gmax = gluc.group_max_allocation.get(group, np.nan)
+                if not np.isnan(gmax):
+                    for ticker in members:
+                        wmin = self.min_weights.get(ticker, 0.0)
+                        if not np.isnan(wmin):
+                            weighted_min = wmin * member_loadings.loc[ticker]
+                            if weighted_min > gmax + 1e-4:
+                                errors.append(
+                                    f"Asset '{ticker}': min_weight ({wmin:.4f}) x loading "
+                                    f"({member_loadings.loc[ticker]:.4f}) = {weighted_min:.4f} "
+                                    f"> group '{group}' max_allocation ({gmax:.4f}). "
+                                    f"Lower min_weight for '{ticker}' or increase group_max_allocation "
+                                    f"for '{group}'."
+                                )
+
+        if errors:
+            raise ValueError(
+                f"Infeasible constraints detected ({len(errors)} violation(s)):\n"
+                + "\n".join(f"  [{i + 1}] {e}" for i, e in enumerate(errors))
+            )
+
+    def _to_dict(self) -> dict:
+        """Convert to dict preserving original types (no recursive conversion).
 
         Returns:
-            Independent copy of the Constraints object.
+            Dictionary of field name to field value.
         """
-        this = asdict(self).copy()
-        if self.group_lower_upper_constraints is not None:
-            gluc = self.group_lower_upper_constraints
-            this['group_lower_upper_constraints'] = GroupLowerUpperConstraints(
-                group_loadings=gluc.group_loadings,
-                group_min_allocation=gluc.group_min_allocation,
-                group_max_allocation=gluc.group_max_allocation
-            )
-        if self.group_tracking_error_constraint is not None:
-            gluc = self.group_tracking_error_constraint
-            this['group_tracking_error_constraint'] = GroupTrackingErrorConstraint(
-                group_loadings=gluc.group_loadings,
-                group_tre_vols=gluc.group_tre_vols,
-                group_tre_utility_weights=gluc.group_tre_utility_weights
-            )
-        if self.group_turnover_constraint is not None:
-            gluc = self.group_turnover_constraint
-            this['group_turnover_constraint'] = GroupTurnoverConstraint(
-                group_loadings=gluc.group_loadings,
-                group_turnover_utility_weights=gluc.group_turnover_utility_weights,
-                group_max_turnover=gluc.group_max_turnover
-            )
-        return Constraints(**this)
+        return {f.name: getattr(self, f.name) for f in fields(self)}
+
+    def copy(self) -> Constraints:
+        """Create a deep copy of all constraints."""
+        return _copy.deepcopy(self)
 
     def update(self, valid_tickers: List[str], **kwargs) -> Constraints:
         """Update constraints with valid tickers and additional parameters.
@@ -576,15 +647,14 @@ class Constraints:
             **kwargs: Additional constraint parameters to update.
 
         Returns:
-            Updated Constraints object.
+            New Constraints object with updated fields.
         """
-        self_dict = asdict(self)
+        self_dict = self._to_dict()
         self_dict.update(kwargs)
+
         if self.group_lower_upper_constraints is not None:
-            group_lower_upper_constraints = self.group_lower_upper_constraints.update(
-                valid_tickers=valid_tickers
-            )
-            self_dict['group_lower_upper_constraints'] = group_lower_upper_constraints
+            self_dict['group_lower_upper_constraints'] = \
+                self.group_lower_upper_constraints.update(valid_tickers=valid_tickers)
         if self.group_tracking_error_constraint is not None:
             self_dict['group_tracking_error_constraint'] = \
                 self.group_tracking_error_constraint.update(valid_tickers=valid_tickers)
@@ -601,20 +671,18 @@ class Constraints:
 
         Args:
             group_lower_upper_constraints: New group constraints to add/merge.
-            filling_value_for_missing_lower_bound: Default for missing min allocations.
-            filling_value_for_missing_upper_bound: Default for missing max allocations.
 
         Returns:
-            Constraints object with updated group constraints.
+            New Constraints object with updated group constraints.
         """
-        this = self.copy()
-        if this.group_lower_upper_constraints is not None:
-            this.group_lower_upper_constraints = merge_group_lower_upper_constraints(
-                group_lower_upper_constraints1=this.group_lower_upper_constraints,
+        self_dict = self._to_dict()
+        if self.group_lower_upper_constraints is not None:
+            self_dict['group_lower_upper_constraints'] = merge_group_lower_upper_constraints(
+                group_lower_upper_constraints1=self.group_lower_upper_constraints,
                 group_lower_upper_constraints2=group_lower_upper_constraints)
         else:
-            this.group_lower_upper_constraints = group_lower_upper_constraints
-        return this
+            self_dict['group_lower_upper_constraints'] = group_lower_upper_constraints
+        return Constraints(**self_dict)
 
     def update_with_valid_tickers(
             self,
@@ -627,6 +695,8 @@ class Constraints:
             rebalancing_indicators: pd.Series = None
     ) -> Constraints:
         """Update constraints with valid tickers and rebalancing logic.
+
+        All pd.Series fields are reindexed to valid_tickers to ensure aligned indices.
 
         Assets with rebalancing_indicators == 0 have fixed min/max weights at current weights,
         effectively preventing trading in those positions.
@@ -641,63 +711,68 @@ class Constraints:
             rebalancing_indicators: Binary indicators (1=rebalance, 0=hold fixed).
 
         Returns:
-            Updated Constraints object.
+            New Constraints object with all Series aligned to valid_tickers.
         """
-        this = self.copy()
+        valid_index = pd.Index(valid_tickers)
+        self_dict = self._to_dict()
 
         with pd.option_context('future.no_silent_downcasting', True):
-            # Update individual weight constraints
-            if this.min_weights is not None:
-                this.min_weights = this.min_weights.loc[valid_tickers].fillna(0.0)
-            if this.max_weights is not None:
+            # Update individual weight constraints — aligned to valid_tickers
+            if self.min_weights is not None:
+                self_dict['min_weights'] = self.min_weights.reindex(index=valid_index, fill_value=0.0)
+            if self.max_weights is not None:
+                max_w = self.max_weights.reindex(index=valid_index, fill_value=0.0)
                 if total_to_good_ratio is not None:
-                    max_weight = this.max_weights.loc[valid_tickers]
-                    this.max_weights = max_weight.where(
-                        np.isclose(max_weight, 1.0),
-                        other=total_to_good_ratio * max_weight
-                    ).fillna(0.0)
-                else:
-                    this.max_weights = this.max_weights.loc[valid_tickers].fillna(0.0)
+                    max_w = max_w.where(np.isclose(max_w, 1.0), other=total_to_good_ratio * max_w)
+                self_dict['max_weights'] = max_w
 
             # Update group constraints
-            if this.group_lower_upper_constraints is not None:
-                this.group_lower_upper_constraints = \
-                    this.group_lower_upper_constraints.update(valid_tickers=valid_tickers)
-            if this.group_tracking_error_constraint is not None:
-                this.group_tracking_error_constraint = \
-                    this.group_tracking_error_constraint.update(valid_tickers=valid_tickers)
-            if this.group_turnover_constraint is not None:
-                this.group_turnover_constraint = \
-                    this.group_turnover_constraint.update(valid_tickers=valid_tickers)
+            if self.group_lower_upper_constraints is not None:
+                self_dict['group_lower_upper_constraints'] = \
+                    self.group_lower_upper_constraints.update(valid_tickers=valid_tickers)
+            if self.group_tracking_error_constraint is not None:
+                self_dict['group_tracking_error_constraint'] = \
+                    self.group_tracking_error_constraint.update(valid_tickers=valid_tickers)
+            if self.group_turnover_constraint is not None:
+                self_dict['group_turnover_constraint'] = \
+                    self.group_turnover_constraint.update(valid_tickers=valid_tickers)
 
             # Update turnover constraints with exposure scaling
-            if this.turnover_constraint is not None:
-                if total_to_good_ratio is not None:
-                    this.turnover_constraint *= total_to_good_ratio
-            if this.turnover_costs is not None:
-                this.turnover_costs = this.turnover_costs.reindex(index=valid_tickers).fillna(1.0)
+            if self.turnover_constraint is not None and total_to_good_ratio is not None:
+                self_dict['turnover_constraint'] = self.turnover_constraint * total_to_good_ratio
+            if self.turnover_costs is not None:
+                self_dict['turnover_costs'] = self.turnover_costs.reindex(index=valid_index, fill_value=1.0)
 
-            # Update portfolio data
+            # Update portfolio universe — all aligned to valid_tickers
             if weights_0 is not None:
-                this.weights_0 = weights_0.reindex(index=valid_tickers).fillna(0.0)
+                self_dict['weights_0'] = weights_0.reindex(index=valid_index, fill_value=0.0)
+            elif self.weights_0 is not None:
+                self_dict['weights_0'] = self.weights_0.reindex(index=valid_index, fill_value=0.0)
+
             if asset_returns is not None:
-                this.asset_returns = asset_returns.reindex(index=valid_tickers).fillna(0.0)
+                self_dict['asset_returns'] = asset_returns.reindex(index=valid_index, fill_value=0.0)
+            elif self.asset_returns is not None:
+                self_dict['asset_returns'] = self.asset_returns.reindex(index=valid_index, fill_value=0.0)
+
             if benchmark_weights is not None:
-                benchmark_weights_ = benchmark_weights.reindex(index=valid_tickers).fillna(0.0)
-                this.benchmark_weights = benchmark_weights_
+                self_dict['benchmark_weights'] = benchmark_weights.reindex(index=valid_index, fill_value=0.0)
+            elif self.benchmark_weights is not None:
+                self_dict['benchmark_weights'] = self.benchmark_weights.reindex(index=valid_index, fill_value=0.0)
+
             if target_return is not None:
-                this.target_return = target_return
+                self_dict['target_return'] = target_return
 
             # Apply rebalancing indicators to freeze certain positions
-            if rebalancing_indicators is not None and weights_0 is not None:
-                rebalancing_indicators = rebalancing_indicators[this.weights_0.index].fillna(1.0)
-                is_rebalanced = np.isclose(rebalancing_indicators, 1.0)
-                if this.min_weights is not None:
-                    this.min_weights = this.min_weights.where(is_rebalanced, other=weights_0)
-                if this.max_weights is not None:
-                    this.max_weights = this.max_weights.where(is_rebalanced, other=weights_0)
-        return this
+            resolved_weights_0 = self_dict.get('weights_0')
+            if rebalancing_indicators is not None and resolved_weights_0 is not None:
+                rebal = rebalancing_indicators.reindex(index=valid_index, fill_value=1.0)
+                is_rebalanced = np.isclose(rebal, 1.0)
+                if self_dict['min_weights'] is not None:
+                    self_dict['min_weights'] = self_dict['min_weights'].where(is_rebalanced, other=resolved_weights_0)
+                if self_dict['max_weights'] is not None:
+                    self_dict['max_weights'] = self_dict['max_weights'].where(is_rebalanced, other=resolved_weights_0)
 
+        return Constraints(**self_dict)
 
     def set_cvx_exposure_constraints(self,
                                      w: cvx.Variable,
@@ -715,24 +790,21 @@ class Constraints:
             List of CVXPY inequality constraints.
         """
         constraints = []
-        # Long-only constraint
         if self.is_long_only:
             constraints += [w >= 0]
 
-        # Exposure constraints (sum of weights)
         if exposure_scaler is None:
             if self.max_exposure == self.min_exposure:
                 constraints += [cvx.sum(w) == self.max_exposure]
             else:
                 constraints += [cvx.sum(w) <= self.max_exposure]
                 constraints += [cvx.sum(w) >= self.min_exposure]
-        else:  # for max sharpe optimization
+        else:
             if self.max_exposure == self.min_exposure:
                 constraints += [cvx.sum(w) == exposure_scaler]
             else:
                 constraints += [cvx.sum(w) == exposure_scaler * self.max_exposure]
 
-        # Individual weight constraints
         if self.min_weights is not None:
             min_weights = (self.min_weights.to_numpy()
                            if isinstance(self.min_weights, pd.Series)
@@ -771,18 +843,15 @@ class Constraints:
             List of all CVXPY constraints.
 
         Raises:
-            ValueError: If required data is missing for specified constraints.
+            ValueError: If required universe is missing for specified constraints.
         """
-        # Start with exposure constraints
         constraints = self.set_cvx_exposure_constraints(w=w, exposure_scaler=exposure_scaler)
 
-        # Target return constraint
         if self.target_return is not None:
             if self.asset_returns is None:
                 raise ValueError("asset_returns must be given for target_return constraint")
             constraints += [self.asset_returns.to_numpy() @ w >= self.target_return]
 
-        # Portfolio volatility constraints
         if self.max_target_portfolio_vol_an is not None:
             if covar is None:
                 raise ValueError("covar must be given for portfolio volatility constraint")
@@ -792,38 +861,33 @@ class Constraints:
                 raise ValueError("covar must be given for portfolio volatility constraint")
             constraints += [cvx.quad_form(w, covar) >= self.min_target_portfolio_vol_an ** 2]
 
-        # Group turnover constraints (takes precedence over portfolio-level)
         if self.group_turnover_constraint is not None:
-            constraints += self.group_turnover_constraint.set_group_turnover_constraints(w=w, weights_0=self.weights_0)
-
-        # Portfolio-level turnover constraint
+            constraints += self.group_turnover_constraint.set_group_turnover_constraints(
+                w=w, weights_0=self.weights_0)
         elif self.turnover_constraint is not None:
             if self.weights_0 is None:
                 warnings.warn("weights_0 must be given for turnover constraint")
             else:
                 if self.turnover_costs is not None:
-                    constraints += [cvx.norm(cvx.multiply(self.turnover_costs.to_numpy(), w - self.weights_0), 1)
+                    constraints += [cvx.norm(cvx.multiply(self.turnover_costs.to_numpy(),
+                                                          w - self.weights_0), 1)
                                     <= self.turnover_constraint]
                 else:
                     assert w.size == len(self.weights_0.index)
                     constraints += [cvx.norm(w - self.weights_0, 1) <= self.turnover_constraint]
 
-        # Group tracking error constraints (takes precedence over portfolio-level)
         if self.group_tracking_error_constraint is not None:
-            constraints += self.group_tracking_error_constraint.set_cvx_group_tre_constraints(w=w,
-                                                                                              benchmark_weights=self.benchmark_weights,
-                                                                                              covar=covar)
-        # Portfolio-level tracking error constraint
+            constraints += self.group_tracking_error_constraint.set_cvx_group_tre_constraints(
+                w=w, benchmark_weights=self.benchmark_weights, covar=covar)
         elif self.tracking_err_vol_constraint is not None:
             if self.benchmark_weights is None:
                 raise ValueError("benchmark_weights must be given for tracking error constraint")
             tracking_error_var = cvx.quad_form(w - self.benchmark_weights.to_numpy(), covar)
             constraints += [tracking_error_var <= self.tracking_err_vol_constraint ** 2]
 
-        # Group allocation constraints
         if self.group_lower_upper_constraints is not None:
-            constraints += self.group_lower_upper_constraints .set_cvx_group_lower_upper_constraints(w=w,
-                                                                                                     exposure_scaler=exposure_scaler)
+            constraints += self.group_lower_upper_constraints.set_cvx_group_lower_upper_constraints(
+                w=w, exposure_scaler=exposure_scaler)
 
         return constraints
 
@@ -849,12 +913,11 @@ class Constraints:
             Tuple of (objective function expression, list of hard constraints).
 
         Raises:
-            ValueError: If required data is missing for specified penalties.
+            ValueError: If required universe is missing for specified penalties.
         """
         benchmark_weights: pd.Series = self.benchmark_weights
 
-        # Initialize objective with alpha component
-        if alphas is not None: # alphas are added
+        if alphas is not None:
             objective_fun = alphas.T @ (w - benchmark_weights.to_numpy())
         else:
             objective_fun = None
@@ -864,19 +927,20 @@ class Constraints:
             if self.weights_0 is None:
                 warnings.warn("weights_0 must be given for group turnover constraint")
             else:
-                term = self.group_turnover_constraint.set_cvx_group_turnover_utility(w=w, weights_0=self.weights_0)
+                term = self.group_turnover_constraint.set_cvx_group_turnover_utility(
+                    w=w, weights_0=self.weights_0)
                 objective_fun = add_term_to_objective_function(objective_fun, term)
 
-        # Add portfolio-level turnover penalty
         elif self.turnover_utility_weight is not None:
             if self.weights_0 is None:
                 warnings.warn("weights_0 must be given for turnover constraint")
             else:
                 if self.turnover_costs is not None:
-                    term = -1.0*self.turnover_utility_weight * cvx.norm(cvx.multiply(self.turnover_costs.to_numpy(), w - self.weights_0), 1)
+                    term = -1.0 * self.turnover_utility_weight * cvx.norm(
+                        cvx.multiply(self.turnover_costs.to_numpy(), w - self.weights_0), 1)
                 else:
                     assert w.size == len(self.weights_0.index)
-                    term = -1.0*self.turnover_utility_weight * cvx.norm(w - self.weights_0, 1)
+                    term = -1.0 * self.turnover_utility_weight * cvx.norm(w - self.weights_0, 1)
                 objective_fun = add_term_to_objective_function(objective_fun, term)
 
         # Add group tracking error penalty (takes precedence over portfolio-level)
@@ -888,29 +952,27 @@ class Constraints:
                     w=w, benchmark_weights=benchmark_weights, covar=covar)
                 objective_fun = add_term_to_objective_function(objective_fun, term)
 
-        # Add portfolio-level tracking error penalty
         elif self.tre_utility_weight is not None:
             if benchmark_weights is None:
                 raise ValueError("benchmark_weights must be given for tracking error constraint")
-            term = -1.0*self.tre_utility_weight * cvx.quad_form(w - self.benchmark_weights.to_numpy(), covar)
+            term = -1.0 * self.tre_utility_weight * cvx.quad_form(
+                w - self.benchmark_weights.to_numpy(), covar)
             objective_fun = add_term_to_objective_function(objective_fun, term)
 
         # Generate hard constraints (exposure, bounds, groups)
         constraints = self.set_cvx_exposure_constraints(w=w, exposure_scaler=exposure_scaler)
 
-        # Target return constraint
         if self.target_return is not None:
             if self.asset_returns is None:
                 raise ValueError("asset_returns must be given for target_return constraint")
             constraints += [self.asset_returns.to_numpy() @ w >= self.target_return]
 
-        # Group allocation constraints
         if self.group_lower_upper_constraints is not None:
-            constraints += self.group_lower_upper_constraints.set_cvx_group_lower_upper_constraints(w=w,
-                                                                                                     exposure_scaler=exposure_scaler)
+            constraints += self.group_lower_upper_constraints.set_cvx_group_lower_upper_constraints(
+                w=w, exposure_scaler=exposure_scaler)
         return objective_fun, constraints
 
-    def set_scipy_bounds(self, covar: np.ndarray = None):
+    def set_scipy_bounds(self, covar: np.ndarray):
         """Set up bounds for scipy optimization.
 
         Converts weight constraints into (min, max) bounds for each asset.
@@ -925,30 +987,18 @@ class Constraints:
             n = covar.shape[0]
             bounds = np.array([(0.0, 1.0) for _ in range(n)])
         elif self.min_weights is not None and self.max_weights is not None:
-            bounds = np.array([
-                (x, y) for x, y in zip(
-                    self.min_weights.to_numpy(),
-                    self.max_weights.to_numpy()
-                )
-            ])
+            bounds = np.array(list(zip(self.min_weights.to_numpy(), self.max_weights.to_numpy())))
         elif self.min_weights is not None and self.max_weights is None:
-            bounds = np.array([
-                (x, y) for x, y in zip(
-                    self.min_weights.to_numpy(),
-                    [1.0] * len(self.min_weights.to_numpy())
-                )
-            ])
+            bounds = np.array(list(zip(self.min_weights.to_numpy(),
+                                       [1.0] * len(self.min_weights))))
         elif self.min_weights is None and self.max_weights is not None:
-            bounds = np.array([
-                (x, y) for x, y in zip(
-                    [0.0] * len(self.max_weights.to_numpy()),
-                    self.max_weights.to_numpy())
-            ])
+            bounds = np.array(list(zip([0.0] * len(self.max_weights),
+                                       self.max_weights.to_numpy())))
         else:
             bounds = None
         return bounds
 
-    def set_scipy_constraints(self, covar: np.ndarray = None) -> Tuple[List, np.ndarray]:
+    def set_scipy_constraints(self, covar: np.ndarray) -> Tuple[List, np.ndarray]:
         """Generate SciPy-compatible constraints (inequality form: constraint >= 0).
 
         Converts constraints to format expected by scipy.optimize.minimize.
@@ -961,36 +1011,34 @@ class Constraints:
         """
         constraints = []
 
-        # Long-only constraint
         if self.is_long_only and self.min_weights is None:
             constraints += [{'type': 'ineq', 'fun': long_only_constraint}]
 
-        # Exposure constraints (reformulated as inequality: max - sum(x) >= 0)
         constraints += [{'type': 'ineq', 'fun': lambda x: self.max_exposure - np.sum(x)}]
         constraints += [{'type': 'ineq', 'fun': lambda x: np.sum(x) - self.min_exposure}]
 
-        # Group allocation constraints
         if self.group_lower_upper_constraints is not None:
-            group_lower_upper_constraints = self.group_lower_upper_constraints
-            for group in group_lower_upper_constraints.group_loadings.columns:
-                group_loading = group_lower_upper_constraints.group_loadings[group].to_numpy()
+            gluc = self.group_lower_upper_constraints
+            for group in gluc.group_loadings.columns:
+                group_loading = gluc.group_loadings[group].to_numpy()
                 if np.any(np.isclose(group_loading, 0.0) == False):
-                    if group_lower_upper_constraints.group_min_allocation is not None:
-                        min_weight = group_lower_upper_constraints.group_min_allocation.loc[group]
+                    if gluc.group_min_allocation is not None:
+                        min_weight = gluc.group_min_allocation.loc[group]
                         if not np.isnan(min_weight):
-                            constraints += [{ 'type': 'ineq', 'fun': make_min_constraint(group_loading, min_weight)}]
-
-                    if group_lower_upper_constraints.group_max_allocation is not None:
-                        max_weight = group_lower_upper_constraints.group_max_allocation.loc[group]
+                            constraints += [{'type': 'ineq',
+                                             'fun': make_min_constraint(group_loading, min_weight)}]
+                    if gluc.group_max_allocation is not None:
+                        max_weight = gluc.group_max_allocation.loc[group]
                         if not np.isnan(max_weight):
-                            constraints += [{ 'type': 'ineq', 'fun': make_max_constraint(group_loading, max_weight)}]
+                            constraints += [{'type': 'ineq',
+                                             'fun': make_max_constraint(group_loading, max_weight)}]
 
         bounds = self.set_scipy_bounds(covar=covar)
         return constraints, bounds
 
     def set_pyrb_constraints(
             self,
-            covar: np.ndarray = None
+            covar: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Generate PyRB-compatible constraints in matrix form (C*x <= d).
 
@@ -1002,27 +1050,23 @@ class Constraints:
         Returns:
             Tuple of (bounds array, constraint matrix C, constraint vector d).
         """
-        # Set up bounds
         bounds = self.set_scipy_bounds(covar=covar)
 
-        # Set up group constraints in matrix form (C*x <= d)
         if self.group_lower_upper_constraints is not None:
-            group_lower_upper_constraints = self.group_lower_upper_constraints
+            gluc = self.group_lower_upper_constraints
             c_rows = []
             c_lhs = []
 
-            for group in group_lower_upper_constraints.group_loadings.columns:
-                group_loading = group_lower_upper_constraints.group_loadings[group].to_numpy()
+            for group in gluc.group_loadings.columns:
+                group_loading = gluc.group_loadings[group].to_numpy()
                 if np.any(np.isclose(group_loading, 0.0) == False):
-                    # Minimum allocation: -group_loading * x <= -min_weight
-                    if group_lower_upper_constraints.group_min_allocation is not None:
-                        min_weight = group_lower_upper_constraints.group_min_allocation.loc[group]
+                    if gluc.group_min_allocation is not None:
+                        min_weight = gluc.group_min_allocation.loc[group]
                         if not np.isnan(min_weight):
                             c_rows.append(-1.0 * group_loading)
                             c_lhs.append(-1.0 * min_weight)
-                    # Maximum allocation: group_loading * x <= max_weight
-                    if group_lower_upper_constraints.group_max_allocation is not None:
-                        max_weight = group_lower_upper_constraints.group_max_allocation.loc[group]
+                    if gluc.group_max_allocation is not None:
+                        max_weight = gluc.group_max_allocation.loc[group]
                         if not np.isnan(max_weight):
                             c_rows.append(group_loading)
                             c_lhs.append(max_weight)
@@ -1060,51 +1104,20 @@ def add_term_to_objective_function(objective_fun: AddExpression, term: AddExpres
 
 
 def total_weight_constraint(x: np.ndarray, total: float = 1.0) -> np.ndarray:
-    """Total portfolio weight constraint: total - sum(x) = 0.
-
-    Args:
-        x: Portfolio weights.
-        total: Target total exposure (default 1.0 for fully invested).
-
-    Returns:
-        Constraint value (should equal 0).
-    """
+    """Total portfolio weight constraint: total - sum(x) = 0."""
     return total - np.sum(x)
 
 
 def long_only_constraint(x: np.ndarray) -> np.ndarray:
-    """Long-only constraint: x >= 0.
-
-    Args:
-        x: Portfolio weights.
-
-    Returns:
-        Constraint value (should be non-negative).
-    """
+    """Long-only constraint: x >= 0."""
     return x
 
 
-def make_min_constraint( group_loading: np.ndarray, min_weight: float) -> Callable[[np.ndarray], float]:
-    """Create minimum group allocation constraint: group_loading @ x >= min_weight.
-
-    Args:
-        group_loading: Binary group membership vector.
-        min_weight: Minimum allocation to group.
-
-    Returns:
-        Constraint function for scipy optimizer.
-    """
+def make_min_constraint(group_loading: np.ndarray, min_weight: float) -> Callable[[np.ndarray], float]:
+    """Create minimum group allocation constraint: group_loading @ x >= min_weight."""
     return lambda x: group_loading @ x - min_weight
 
 
 def make_max_constraint(group_loading: np.ndarray, max_weight: float) -> Callable[[np.ndarray], float]:
-    """Create maximum group allocation constraint: group_loading @ x <= max_weight.
-
-    Args:
-        group_loading: Binary group membership vector.
-        max_weight: Maximum allocation to group.
-
-    Returns:
-        Constraint function for scipy optimizer.
-    """
+    """Create maximum group allocation constraint: group_loading @ x <= max_weight."""
     return lambda x: max_weight - group_loading @ x
