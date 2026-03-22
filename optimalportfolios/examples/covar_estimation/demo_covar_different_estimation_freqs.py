@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import qis as qis
 
 from optimalportfolios import LassoModel, LassoModelType
-from optimalportfolios import CovarEstimatorType, FactorCovarEstimator
+from optimalportfolios import FactorCovarEstimator
 from optimalportfolios.examples.covar_estimation.simulate_factor_returns import simulate_factor_model_returns
 
 
@@ -38,18 +38,15 @@ lasso_params = dict(reg_lambda=1e-5, span=120, demean=False, solver='CLARABEL', 
 lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO_CLUSTERS, **lasso_params)
 
 
-estimator_daily = FactorCovarEstimator(covar_estimator_type=CovarEstimatorType.LASSO,
-                                 lasso_model=LassoModel(),
+estimator_daily = FactorCovarEstimator(lasso_model=LassoModel(),
                                  factor_returns_freq='B',
                                  factor_covar_span=252)
 
-estimator_weekly = FactorCovarEstimator(covar_estimator_type=CovarEstimatorType.LASSO,
-                                        lasso_model=LassoModel(),
+estimator_weekly = FactorCovarEstimator(lasso_model=LassoModel(),
                                         factor_returns_freq='W-WED',
                                         factor_covar_span=52)
 
-estimator_monthly = FactorCovarEstimator(covar_estimator_type=CovarEstimatorType.LASSO,
-                                        lasso_model=LassoModel(),
+estimator_monthly = FactorCovarEstimator(lasso_model=LassoModel(),
                                         factor_returns_freq='ME',
                                         factor_covar_span=12)
 

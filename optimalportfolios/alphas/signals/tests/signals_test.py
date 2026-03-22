@@ -10,7 +10,7 @@ import qis as qis
 from optimalportfolios.alphas.signals.momentum import compute_momentum_alpha
 from optimalportfolios.alphas.signals.low_beta import compute_low_beta_alpha
 from optimalportfolios.alphas.signals.managers_alpha import compute_managers_alpha
-from optimalportfolios import LassoModel, LassoModelType, FactorCovarEstimator, CovarEstimatorType
+from optimalportfolios import LassoModel, LassoModelType, FactorCovarEstimator
 
 
 class LocalTests(Enum):
@@ -120,7 +120,6 @@ def run_local_test(local_test: LocalTests):
             model_type=LassoModelType.GROUP_LASSO_CLUSTERS,
             reg_lambda=1e-5, span=36, warmup_period=12)
         estimator = FactorCovarEstimator(
-            covar_estimator_type=CovarEstimatorType.LASSO,
             lasso_model=lasso_model,
             factor_returns_freq='ME', factor_covar_span=12, rebalancing_freq='QE')
 

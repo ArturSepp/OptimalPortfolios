@@ -17,7 +17,7 @@ import qis as qis
 
 # package
 from optimalportfolios import (Constraints, LassoModelType,
-                               LassoModel, FactorCovarEstimator, CovarEstimatorType,
+                               LassoModel, FactorCovarEstimator,
                                rolling_risk_budgeting)
 
 
@@ -54,8 +54,7 @@ lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO_CLUSTERS,
                          warmup_period=12)
 
 # 3. set covar estimator
-covar_estimator = FactorCovarEstimator(covar_estimator_type=CovarEstimatorType.LASSO,
-                                       lasso_model=lasso_model,
+covar_estimator = FactorCovarEstimator(lasso_model=lasso_model,
                                        factor_returns_freq='ME',
                                        rebalancing_freq='QE')
 
@@ -75,7 +74,7 @@ rolling_covar_data = covar_estimator.fit_rolling_factor_covars(
 # 6. set equal risk-budgets and compute rolling weights
 risk_budget = pd.Series({asset: 1.0 / len(universe_prices.columns) for asset in universe_prices.columns})
 saa_rolling_weights = rolling_risk_budgeting(prices=universe_prices,
-                                             covar_dict=rolling_covar_data.y_covars,
+                                             covar_dict=rolling_covar_data.get_y_covars(),
                                              risk_budget=risk_budget,
                                              constraints=Constraints(is_long_only=True))
 
@@ -96,7 +95,7 @@ benchmark_portfolio_data = qis.backtest_model_portfolio(prices=universe_prices,
 # 9. generate factsheet
 multi_portfolio_data = qis.MultiPortfolioData(portfolio_datas=[saa_portfolio_data, benchmark_portfolio_data],
                                               benchmark_prices=risk_factor_prices,
-                                              covar_dict=rolling_covar_data.y_covars)
+                                              covar_dict=rolling_covar_data.get_y_covars())
 [x.set_group_data(group_data=group_data) for x in multi_portfolio_data.portfolio_datas]
 figs = qis.generate_strategy_benchmark_factsheet_plt(multi_portfolio_data=multi_portfolio_data,
                                                      add_strategy_factsheet=True,

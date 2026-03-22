@@ -18,9 +18,8 @@ import qis as qis
 from matplotlib.colors import ListedColormap
 from typing import List, Dict, Tuple, Optional, Union
 
+from factorlasso import CurrentFactorCovarData
 from optimalportfolios.covar_estimation.factor_covar_estimator import FactorCovarEstimator
-from optimalportfolios.covar_estimation.factor_covar_data import CurrentFactorCovarData
-
 
 def plot_current_covar_data(covar_data: CurrentFactorCovarData,
                             **kwargs

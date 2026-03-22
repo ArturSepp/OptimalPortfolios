@@ -14,6 +14,8 @@ return the same type for downstream portfolio optimisation.
 """
 from __future__ import annotations
 
+from enum import Enum
+
 import pandas as pd
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
@@ -62,3 +64,4 @@ class CovarEstimator(ABC):
             Dict mapping rebalancing dates to annualised covariance matrices.
         """
         ...
+

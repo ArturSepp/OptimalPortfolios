@@ -18,9 +18,8 @@ import numpy as np
 import pandas as pd
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Union, List, Tuple
-
+from factorlasso import CurrentFactorCovarData, VarianceColumns
 from optimalportfolios.utils.portfolio_funcs import round_weights_to_pct
-from optimalportfolios.covar_estimation.factor_covar_data import CurrentFactorCovarData, VarianceColumns
 from optimalportfolios.optimization.constraints import Constraints
 
 

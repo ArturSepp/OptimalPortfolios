@@ -168,16 +168,32 @@ optimalportfolios/
 
 [`factorlasso`](https://github.com/ArturSepp/factorlasso) is the **domain-agnostic
 LASSO solver** — it estimates sparse factor loadings β in Y_t = α + β X_t + ε_t with sign
-constraints, prior-centered regularisation, and HCGL clustering. It knows nothing
-about finance, asset returns, or rebalancing schedules.
+constraints, prior-centered regularisation, and HCGL clustering. It provides
+`LassoModel` (scikit-learn compatible estimator), `CurrentFactorCovarData`
+(single-date covariance decomposition Σ_y = β Σ_x β' + D), and
+`RollingFactorCovarData` (time-indexed collection). It knows nothing about
+finance, asset returns, frequencies, or rebalancing schedules.
 
-`optimalportfolios` provides the **finance-specific pipeline** on top:
-`estimate_lasso_factor_covar_data()` takes factor prices, multi-frequency asset
-returns, and a configured `LassoModel`, then calls `factorlasso.LassoModel.fit()`
-internally to produce the full covariance decomposition (Σ_y = β Σ_x β' + D)
-with annualised variances, R² diagnostics, residual time series, and HCGL
-cluster metadata. `FactorCovarEstimator` wraps this in a rolling estimation
-schedule with `qis.TimePeriod` integration.
+`optimalportfolios` adds two finance-specific layers on top:
+
+**`estimate_lasso_factor_covar_data()`** — the core estimation function in
+`covar_estimation/factor_covar_estimator.py`. It handles everything between
+raw market data and the `factorlasso` solver:
+- Computes factor returns from prices at the specified frequency
+- Estimates annualised factor covariance Σ_x via EWMA
+- Calls `factorlasso.LassoModel.fit()` separately per frequency for
+  mixed-frequency universes (e.g., monthly equities + quarterly alternatives)
+- Annualises residual variances, R², and alphas across frequencies
+- Merges multi-frequency betas into a single (N × M) loading matrix
+- Returns a `factorlasso.CurrentFactorCovarData` with the full decomposition
+
+**`FactorCovarEstimator`** — a `CovarEstimator` subclass that wraps
+`estimate_lasso_factor_covar_data()` in a rolling estimation schedule using
+`qis.TimePeriod` and `qis.generate_dates_schedule`. It provides two APIs:
+- `fit_rolling_covars()` → `Dict[Timestamp, DataFrame]` (plain covariance
+  matrices, plug into any solver)
+- `fit_rolling_factor_covars()` → `RollingFactorCovarData` (full
+  decomposition with betas, R², clusters, residuals over time)
 
 
 ## **Alpha signals module** <a name="alphas"></a>
@@ -882,9 +898,7 @@ weights = compute_rolling_optimal_weights(prices=prices, portfolio_objective=obj
 
 # Factor covariance estimator (class rename + prices → asset_returns_dict)
 # Old
-from optimalportfolios import CovarEstimator, CovarEstimatorType
-covar_estimator = CovarEstimator(covar_estimator_type=CovarEstimatorType.LASSO,
-                                  lasso_model=lasso_model, returns_freqs='ME', span=36, ...)
+covar_estimator = CovarEstimator(lasso_model=lasso_model, returns_freqs='ME', span=36, ...)
 rolling_data = covar_estimator.fit_rolling_covars(prices=prices,
                                                    risk_factor_prices=risk_factor_prices,
                                                    time_period=time_period)

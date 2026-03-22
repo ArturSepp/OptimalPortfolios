@@ -102,7 +102,7 @@ rolling_covar_data = covar_estimator.fit_rolling_factor_covars(
 risk_budget = {asset: 1.0 / n_assets for asset in assets}
 saa_weights = rolling_risk_budgeting(
     prices=universe_prices,
-    covar_dict=rolling_covar_data.y_covars,
+    covar_dict=rolling_covar_data.get_y_covars(),
     risk_budget=risk_budget,
     constraints=Constraints(is_long_only=True))
 ```

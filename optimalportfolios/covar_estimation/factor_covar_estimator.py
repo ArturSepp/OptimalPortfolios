@@ -21,11 +21,9 @@ import qis as qis
 from typing import Union, Optional, Dict, Any, List
 from dataclasses import dataclass, asdict
 
-from optimalportfolios import LassoModel
 from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
-from optimalportfolios.covar_estimation.config import CovarEstimatorType
 from optimalportfolios.covar_estimation.ewma_covar_estimator import estimate_current_ewma_covar
-from optimalportfolios.covar_estimation.factor_covar_data import (CurrentFactorCovarData, RollingFactorCovarData, VarianceColumns)
+from factorlasso import LassoModel, CurrentFactorCovarData, RollingFactorCovarData, VarianceColumns
 
 
 @dataclass
@@ -46,7 +44,6 @@ class FactorCovarEstimator(CovarEstimator):
             full decomposition (betas, residuals, clusters, R², etc.).
 
     Args:
-        covar_estimator_type: Estimation method label. Default LASSO.
         lasso_model: Configured LassoModel instance (model_type, reg_lambda, etc.).
         factor_returns_freq: Frequency for computing factor returns (e.g., 'W-WED').
         factor_covar_span: EWMA span for factor covariance estimation.
@@ -70,7 +67,6 @@ class FactorCovarEstimator(CovarEstimator):
         ...     time_period=time_period)
         >>> r2_panel = rolling_data.get_r2()
     """
-    covar_estimator_type: CovarEstimatorType = CovarEstimatorType.LASSO
     lasso_model: Optional[LassoModel] = None
     factor_returns_freq: str = 'W-WED'
     factor_covar_span: int = 52

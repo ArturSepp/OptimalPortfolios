@@ -25,7 +25,7 @@ from optimalportfolios import (Constraints, PortfolioObjective,
                                backtest_rolling_optimal_portfolio,
                                EwmaCovarEstimator,
                                LassoModelType, LassoModel,
-                               FactorCovarEstimator, CovarEstimatorType)
+                               FactorCovarEstimator)
 from optimalportfolios.examples.universe import fetch_benchmark_universe_data
 
 SUPPORTED_SOLVERS = [PortfolioObjective.EQUAL_RISK_CONTRIBUTION,
@@ -75,8 +75,7 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
                              group_data=group_data, reg_lambda=1e-6, span=span,
                              warmup_period=span, solver='CLARABEL')
 
-    lasso_estimator = FactorCovarEstimator(covar_estimator_type=CovarEstimatorType.LASSO,
-                                           lasso_model=lasso_model,
+    lasso_estimator = FactorCovarEstimator(lasso_model=lasso_model,
                                            factor_returns_freq=returns_freq,
                                            rebalancing_freq=rebalancing_freq)
 
@@ -85,7 +84,7 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
         asset_returns_dict=asset_returns_dict,
         time_period=time_period
     )
-    lasso_covars = lasso_covar_data.y_covars
+    lasso_covars = lasso_covar_data.get_y_covars()
 
     # 4. LASSO with vol-normalised returns
     asset_returns_dict_vol_norm = qis.compute_asset_returns_dict(
@@ -97,15 +96,14 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
         asset_returns_dict=asset_returns_dict_vol_norm,
         time_period=time_period,
     )
-    lasso_covars_norm = lasso_covar_data_norm.y_covars
+    lasso_covars_norm = lasso_covar_data_norm.get_y_covars()
 
     # 5. Group LASSO factor model
     group_lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO,
                                    group_data=group_data, reg_lambda=1e-6,
                                    span=span, solver='CLARABEL')
 
-    group_lasso_estimator = FactorCovarEstimator(covar_estimator_type=CovarEstimatorType.LASSO,
-                                                  lasso_model=group_lasso_model,
+    group_lasso_estimator = FactorCovarEstimator(lasso_model=group_lasso_model,
                                                   factor_returns_freq=returns_freq,
                                                   rebalancing_freq=rebalancing_freq)
 
@@ -114,7 +112,7 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
         asset_returns_dict=asset_returns_dict,
         time_period=time_period,
     )
-    group_lasso_covars = group_lasso_covar_data.y_covars
+    group_lasso_covars = group_lasso_covar_data.get_y_covars()
 
     # 6. Group LASSO with vol-normalised returns
     group_lasso_covar_data_norm = group_lasso_estimator.fit_rolling_factor_covars(
@@ -122,7 +120,7 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
         asset_returns_dict=asset_returns_dict_vol_norm,
         time_period=time_period,
     )
-    group_lasso_covars_norm = group_lasso_covar_data_norm.y_covars
+    group_lasso_covars_norm = group_lasso_covar_data_norm.get_y_covars()
 
     # create dict of estimated covars
     covars_dict = {'EWMA': ewma_covars, 'EWMA vol norm': ewma_covars_vol_norm,

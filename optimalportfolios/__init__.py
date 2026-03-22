@@ -5,8 +5,6 @@ from optimalportfolios.config import PortfolioObjective
 
 from optimalportfolios.utils.__init__ import *
 
-from factorlasso import *  # replaces optimalportfolios.lasso
-
 from optimalportfolios.covar_estimation.__init__ import *
 
 from optimalportfolios.optimization.__init__ import *
@@ -17,4 +15,11 @@ from optimalportfolios.reports.__init__ import *
 
 from optimalportfolios.alphas.__init__ import *
 
-
+"""Backward-compatible re-exports from factorlasso."""
+from factorlasso import (  # noqa: F401
+    LassoModel,
+    LassoModelType,
+    CurrentFactorCovarData,
+    RollingFactorCovarData,
+    VarianceColumns,
+)
