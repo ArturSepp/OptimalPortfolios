@@ -103,7 +103,7 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
                                    portfolio_objective: PortfolioObjective = PortfolioObjective.MIN_VARIANCE,
                                    weights_0: pd.Series = None,
                                    carra: float = 1.0,
-                                   solver: str = 'ECOS_BB'
+                                   solver: str = 'CLARABEL'
                                    ) -> pd.Series:
     """
     Single-date quadratic optimisation with NaN/zero-variance filtering.
@@ -156,7 +156,7 @@ def cvx_quadratic_optimisation(portfolio_objective: PortfolioObjective,
                                constraints: Constraints,
                                means: np.ndarray = None,
                                verbose: bool = False,
-                               solver: str = 'ECOS_BB',
+                               solver: str = 'CLARABEL',
                                carra: float = 1.0
                                ) -> np.ndarray:
     """

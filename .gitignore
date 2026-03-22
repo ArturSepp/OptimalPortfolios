@@ -147,3 +147,4 @@ dmypy.json
 /dist/
 *.xml
 *.pyc
+/depreciated/

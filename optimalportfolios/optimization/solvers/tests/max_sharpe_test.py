@@ -86,7 +86,7 @@ def run_local_test(local_test: LocalTests):
         weights = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
                                                     means=means,
                                                     constraints=constraints,
-                                                    solver='ECOS_BB')
+                                                    solver='CLARABEL')
 
         print(f"\nEstimated means:\n{means.to_string(float_format='{:.2%}'.format)}")
         print(f"\nOptimal weights (max Sharpe):\n{weights.to_string(float_format='{:.2%}'.format)}")

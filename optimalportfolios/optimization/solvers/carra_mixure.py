@@ -28,7 +28,6 @@ from typing import List, Optional
 from optimalportfolios.utils.gaussian_mixture import fit_gaussian_mixture
 from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance, compute_portfolio_risk_contributions)
 from optimalportfolios.optimization.constraints import (Constraints, total_weight_constraint, long_only_constraint)
-from optimalportfolios.covar_estimation.utils import squeeze_covariance_matrix
 
 
 def rolling_maximize_cara_mixture(prices: pd.DataFrame,
@@ -38,8 +37,7 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
                                   roll_window: int = 52*6,
                                   returns_freq: str = 'W-WED',
                                   carra: float = 0.5,
-                                  n_components: int = 3,
-                                  squeeze_factor: Optional[float] = None
+                                  n_components: int = 3
                                   ) -> pd.DataFrame:
     """
     Compute rolling CARA-optimal portfolios under a Gaussian mixture model.
@@ -68,8 +66,6 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
         carra: CARA risk aversion parameter γ. Higher values produce more
             conservative portfolios. Typical range: 0.1 to 5.0.
         n_components: Number of Gaussian mixture components K.
-        squeeze_factor: Optional shrinkage factor applied to each mixture
-            covariance matrix toward identity. None disables.
 
     Returns:
         DataFrame of portfolio weights. Index=rebalancing dates,
@@ -92,8 +88,6 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
             constraints1 = constraints.update_with_valid_tickers(valid_tickers=rets_.columns.to_list(),
                                                                  total_to_good_ratio=len(tickers)/len(rets_.columns),
                                                                  weights_0=weights_0)
-            if squeeze_factor is not None and squeeze_factor > 0.0:
-                params.covars = [squeeze_covariance_matrix(covars, squeeze_factor=squeeze_factor) for covars in params.covars]
 
             weights_ = wrapper_maximize_cara_mixture(means=params.means,
                                                      covars=params.covars,

@@ -132,7 +132,7 @@ Naming convention: raw signal → score → alpha.
 
 **`Constraints`** (`optimization/constraints.py`) — Dataclass specifying all portfolio constraints (long-only, weight bounds, tracking error, turnover, group constraints). Backend-agnostic; convert with `.set_cvx_all_constraints()`, `.set_scipy_constraints()`, or `.set_pyrb_constraints()`. Use `.update_with_valid_tickers()` to subset to valid assets.
 
-**`EwmaCovarEstimator`** (`covar_estimation/ewma_covar_estimator.py`) — EWMA covariance estimator inheriting from `CovarEstimator` ABC. Parameters: `returns_freq`, `span`, `rebalancing_freq`, `squeeze_factor`.
+**`EwmaCovarEstimator`** (`covar_estimation/ewma_covar_estimator.py`) — EWMA covariance estimator inheriting from `CovarEstimator` ABC. Parameters: `returns_freq`, `span`, `rebalancing_freq`.
 
 **`FactorCovarEstimator`** (`covar_estimation/factor_covar_estimator.py`) — HCGL factor model covariance estimator inheriting from `CovarEstimator` ABC. Takes `LassoModel` for beta estimation, produces `RollingFactorCovarData` with `.get_y_covars()` and `.get_y_betas()` accessors.
 
@@ -174,7 +174,7 @@ Naming convention: raw signal → score → alpha.
 ### Key External Dependencies
 
 - **`qis`** (QuantInvestStrats) — data loading, `TimePeriod`, performance analytics, backtesting utilities. Most data structures align with `qis` conventions.
-- **`cvxpy`** — primary convex optimization backend (default solver: `ECOS_BB`).
+- **`cvxpy`** — primary convex optimization backend (default solver: `CLARABEL`).
 - **`scipy`** — secondary optimization backend for some solvers (SLSQP).
 - **`pyrb`** — risk budgeting solver backend (forked within this repo). Uses Spinu (2013) convex reformulation via ADMM — preferred over scipy SLSQP for risk budgeting.
 

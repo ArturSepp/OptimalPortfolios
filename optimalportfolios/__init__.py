@@ -5,7 +5,7 @@ from optimalportfolios.config import PortfolioObjective
 
 from optimalportfolios.utils.__init__ import *
 
-from optimalportfolios.lasso.__init__ import *
+from factorlasso import *  # replaces optimalportfolios.lasso
 
 from optimalportfolios.covar_estimation.__init__ import *
 

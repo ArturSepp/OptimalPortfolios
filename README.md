@@ -8,7 +8,8 @@
 |-----------|----------|
 | PyPI Version | ![PyPI](https://img.shields.io/pypi/v/optimalportfolios?style=flat-square) |
 | Python Versions | ![Python](https://img.shields.io/pypi/pyversions/optimalportfolios?style=flat-square) |
-| License | ![License](https://img.shields.io/github/license/ArturSepp/OptimalPortfolios.svg?style=flat-square)|
+| License | [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.txt) |
+| CI Status | [![CI](https://github.com/ArturSepp/OptimalPortfolios/actions/workflows/ci.yml/badge.svg)](https://github.com/ArturSepp/OptimalPortfolios/actions) |
 
 
 ### 📈 Package Statistics
@@ -39,7 +40,8 @@ and illiquid positions.
 
 **Production multi-asset portfolio construction.**
 The package implements the full pipeline from the ROSAA framework: factor model
-covariance estimation → risk-budgeted SAA → alpha signal computation →
+covariance estimation (via [`factorlasso`](https://github.com/ArturSepp/factorlasso))
+→ risk-budgeted SAA → alpha signal computation →
 TE-constrained TAA → rolling backtest. No other open-source package handles
 universes where equities rebalance monthly, alternatives rebalance quarterly,
 and private equity enters the allocation set only when sufficient return history
@@ -50,11 +52,17 @@ positions) matches what real institutional PM teams need.
 **HCGL factor covariance estimation.**
 The Hierarchical Clustering Group LASSO factor model (published in JPM, 2026)
 produces sparse, structured covariance matrices for heterogeneous multi-asset
-universes. Unlike sample EWMA (unstable for 20+ assets) or Ledoit-Wolf
-shrinkage (no factor structure), HCGL estimates a factor model where asset
-betas are regularised via Group LASSO with hierarchical clustering. This yields
-covariance matrices that are stable across rebalancing periods, respect the
-underlying factor structure, and handle mixed return frequencies natively.
+universes. The LASSO/Group LASSO/HCGL solver is implemented in the standalone
+[`factorlasso`](https://github.com/ArturSepp/factorlasso) package — a
+general-purpose sparse factor model estimator with sign constraints,
+prior-centered regularisation, and scikit-learn compatible API.
+`optimalportfolios` builds on top of `factorlasso` with finance-specific
+functionality: `FactorCovarEstimator` handles multi-frequency asset returns,
+rolling estimation schedules, factor covariance assembly
+(Σ_y = β Σ_x β' + D), and integration with `qis` for performance attribution.
+The separation means the LASSO solver can be used independently for any
+multi-output regression problem (genomics, macro-econometrics), while the
+portfolio-specific rolling pipeline stays in `optimalportfolios`.
 
 **NaN-aware rolling backtesting.**
 The three-layer architecture (solver / wrapper / rolling) automatically handles
@@ -114,7 +122,7 @@ rolling backtester via a single dispatch function.
 
 ```
 optimalportfolios/
-├── alphas/                        # Alpha signal computation (NEW in v4.1.1)
+├── alphas/                        # Alpha signal computation
 │   ├── signals/
 │   │   ├── momentum.py            # compute_momentum_alpha()
 │   │   ├── low_beta.py            # compute_low_beta_alpha()
@@ -125,11 +133,10 @@ optimalportfolios/
 │       └── signals_test.py
 ├── covar_estimation/              # Covariance matrix estimation
 │   ├── covar_estimator.py         # CovarEstimator ABC
-│   ├── current_covar.py           # EwmaCovarEstimator, FactorCovarEstimator
-│   ├── rolling_covar.py           # RollingFactorCovarData, CurrentFactorCovarData
+│   ├── ewma_covar_estimator.py    # EwmaCovarEstimator
+│   ├── factor_covar_estimator.py  # FactorCovarEstimator (uses factorlasso)
+│   ├── factor_covar_data.py       # CurrentFactorCovarData, RollingFactorCovarData
 │   └── covar_reporting.py         # Rolling covariance diagnostics
-├── lasso/                         # HCGL factor model
-│   └── lasso_model_estimator.py   # LassoModel, solve_group_lasso_cvx_problem
 ├── optimization/                  # Portfolio optimisation
 │   ├── constraints.py             # Constraints, GroupLowerUpperConstraints
 │   ├── wrapper_rolling_portfolios.py  # compute_rolling_optimal_weights()
@@ -149,11 +156,28 @@ optimalportfolios/
 ├── reports/                       # Performance reporting
 │   └── marginal_backtest.py       # Marginal asset contribution analysis
 └── examples/                      # Worked examples and paper reproductions
-    ├── solvers/                   # All solver examples
-    ├── covar_estimation/          # Covariance estimator examples
-    ├── robust_optimisation_saa_taa/  # ROSAA paper examples
-    └── crypto_allocation/         # Crypto paper examples
+
+# External dependency:
+# factorlasso (pip install factorlasso)
+#   └── LassoModel, solve_lasso_cvx_problem, solve_group_lasso_cvx_problem
+#       Sign-constrained LASSO/Group LASSO/HCGL solver (domain-agnostic)
+#       https://github.com/ArturSepp/factorlasso
 ```
+
+**Architecture: factorlasso vs optimalportfolios**
+
+[`factorlasso`](https://github.com/ArturSepp/factorlasso) is the **domain-agnostic
+LASSO solver** — it estimates sparse factor loadings β in Y_t = α + β X_t + ε_t with sign
+constraints, prior-centered regularisation, and HCGL clustering. It knows nothing
+about finance, asset returns, or rebalancing schedules.
+
+`optimalportfolios` provides the **finance-specific pipeline** on top:
+`estimate_lasso_factor_covar_data()` takes factor prices, multi-frequency asset
+returns, and a configured `LassoModel`, then calls `factorlasso.LassoModel.fit()`
+internally to produce the full covariance decomposition (Σ_y = β Σ_x β' + D)
+with annualised variances, R² diagnostics, residual time series, and HCGL
+cluster metadata. `FactorCovarEstimator` wraps this in a rolling estimation
+schedule with `qis.TimePeriod` integration.
 
 
 ## **Alpha signals module** <a name="alphas"></a>
@@ -315,7 +339,10 @@ For rolling level function, the estimated covariance matrix can be passed as `Di
 with DataFrames containing covariance matrices for the universe and with keys being rebalancing times.
 
 Covariance can be estimated using `EwmaCovarEstimator` (simple EWMA) or
-`FactorCovarEstimator` (HCGL factor model with LASSO betas).
+`FactorCovarEstimator` (HCGL factor model using
+[`factorlasso.LassoModel`](https://github.com/ArturSepp/factorlasso) for sparse
+beta estimation, with finance-specific annualisation, multi-frequency returns,
+and rolling schedule management).
 
 **Important design principle (v4.1.1):** covariance estimation is separated from
 portfolio optimisation. The recommended workflow is to estimate covariance
@@ -729,6 +756,36 @@ Available at https://www.pm-research.com/content/iijpormgmt/52/4/86
 
 ## **Updates** <a name="updates"></a>
 
+#### March 2026, Version 5.0.0 released
+
+**LASSO estimator extracted to [`factorlasso`](https://github.com/ArturSepp/factorlasso) package.**
+The `lasso/` module has been removed from `optimalportfolios`. The LASSO/Group
+LASSO/HCGL solver is now in the standalone `factorlasso` package — a
+domain-agnostic sparse factor model estimator with sign constraints,
+prior-centered regularisation, NaN-aware estimation, and scikit-learn
+compatible API (`fit` / `predict` / `score` / `coef_` / `intercept_`).
+`factorlasso` is a required dependency of `optimalportfolios` v5.0.0.
+All existing imports (`from optimalportfolios import LassoModel`) continue
+to work via re-exports.
+
+**License changed from GPL-3.0 to MIT.**
+
+**Dependencies cleaned:**
+- Removed `easydev`, `pyarrow`, `fsspec`, `statsmodels`, `ecos` (unused)
+- `yfinance`, `pandas-datareader` moved to `[data]` optional
+- `numpy` unpinned from `==2.2.6` to `>=2.0`
+- Build system simplified (removed unused `poetry-core`, `hatchling`)
+- Dev tooling: `black`/`flake8`/`isort`/`mypy` replaced with `ruff`
+
+**CI added:** GitHub Actions test pipeline across Python 3.10–3.12.
+
+**Migration from v4.x:** No code changes required. All existing imports
+(`from optimalportfolios import LassoModel, LassoModelType`) continue to work
+via re-exports from `factorlasso`. The only exception: if your code imports
+directly from the deleted module path
+(`from optimalportfolios.lasso.lasso_estimator import ...`), change to
+`from optimalportfolios import ...`.
+
 #### 8 July 2023,  Version 1.0.1 released
 
 Implementation of optimisation methods and data considered in 
@@ -859,7 +916,7 @@ betas = rolling_data.get_y_betas()
 
 ## **Disclaimer** <a name="disclaimer"></a>
 
-OptimalPortfolios package is distributed FREE & WITHOUT ANY WARRANTY under the GNU GENERAL PUBLIC LICENSE.
+OptimalPortfolios package is distributed FREE & WITHOUT ANY WARRANTY under the MIT License.
 
 See the [LICENSE.txt](https://github.com/ArturSepp/OptimalPortfolios/blob/master/LICENSE.txt) in the release for details.
 
@@ -876,11 +933,11 @@ Available at https://ssrn.com/abstract=4217841
 Sepp A., Ossa I., and Kastenholz M. (2026),
 "Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios",
 *The Journal of Portfolio Management*, 52(4), 86-120.
-Available at https://www.pm-research.com/content/iijpormgmt/52/4/86
+[Paper link](https://eprints.pm-research.com/17511/143431/index.html)
 
 Sepp A., Hansen E., and Kastenholz M. (2026),
 "Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors",
-*Working Paper*.
+*Under revision at the Journal of Portfolio Management*.
 
 
 ## BibTeX Citations for optimalportfolios Package

@@ -19,7 +19,7 @@ def generate_portfolio_report(
         report_name: Report title override.
         fontsize: Base font size for table content.
     """
-    name = name or result.portfolio_names[0]
+    # name = name or result.portfolio_names[0]
 
     date_str = f"{result.optimisation_date:%d%b%Y}" if result.optimisation_date else ''
     report_name = result.portfolio_id or report_name

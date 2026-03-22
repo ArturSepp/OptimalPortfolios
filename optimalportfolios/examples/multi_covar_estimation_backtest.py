@@ -43,7 +43,6 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
                                         rebalancing_freq: str = 'QE',  # portfolio rebalancing
                                         span: int = 52,  # ewma span for covariance matrix estimation
                                         portfolio_objective: PortfolioObjective = PortfolioObjective.MAX_DIVERSIFICATION,
-                                        squeeze_factor: Optional[float] = None
                                         ) -> List[plt.Figure]:
     """
     Backtest multi covar estimation.
@@ -57,16 +56,14 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
     ewma_covar_estimator = EwmaCovarEstimator(rebalancing_freq=rebalancing_freq,
                                               returns_freq=returns_freq,
                                               span=span,
-                                              is_apply_vol_normalised_returns=False,
-                                              squeeze_factor=squeeze_factor)
+                                              is_apply_vol_normalised_returns=False)
     ewma_covars = ewma_covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
 
     # 2. EWMA covar with vol norm returns
     ewma_covar_estimator_norm = EwmaCovarEstimator(rebalancing_freq=rebalancing_freq,
                                               returns_freq=returns_freq,
                                               span=span,
-                                              is_apply_vol_normalised_returns=True,
-                                              squeeze_factor=squeeze_factor)
+                                              is_apply_vol_normalised_returns=True)
     ewma_covars_vol_norm = ewma_covar_estimator_norm.fit_rolling_covars(prices=prices, time_period=time_period)
 
     # precompute asset returns dict for lasso-based estimators
@@ -76,7 +73,7 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
     # 3. LASSO factor model
     lasso_model = LassoModel(model_type=LassoModelType.LASSO,
                              group_data=group_data, reg_lambda=1e-6, span=span,
-                             warmup_period=span, solver='ECOS_BB')
+                             warmup_period=span, solver='CLARABEL')
 
     lasso_estimator = FactorCovarEstimator(covar_estimator_type=CovarEstimatorType.LASSO,
                                            lasso_model=lasso_model,
@@ -105,7 +102,7 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
     # 5. Group LASSO factor model
     group_lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO,
                                    group_data=group_data, reg_lambda=1e-6,
-                                   span=span, solver='ECOS_BB')
+                                   span=span, solver='CLARABEL')
 
     group_lasso_estimator = FactorCovarEstimator(covar_estimator_type=CovarEstimatorType.LASSO,
                                                   lasso_model=group_lasso_model,

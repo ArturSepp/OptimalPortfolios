@@ -16,7 +16,7 @@ def rolling_maximize_portfolio_sharpe(prices: pd.DataFrame,
                                       covar_dict: Dict[pd.Timestamp, pd.DataFrame],
                                       returns_freq: str = 'W-WED',
                                       span: int = 52,
-                                      solver: str = 'ECOS_BB',
+                                      solver: str = 'CLARABEL',
                                       ) -> pd.DataFrame:
     """
     Maximise portfolio Sharpe ratio at each rebalancing date.
@@ -64,7 +64,7 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
                                       means: pd.Series,
                                       constraints: Constraints,
                                       weights_0: pd.Series = None,
-                                      solver: str = 'ECOS_BB'
+                                      solver: str = 'CLARABEL'
                                       ) -> pd.Series:
     """
     Create wrapper accounting for nans or zeros in covar matrix.
@@ -92,7 +92,7 @@ def cvx_maximize_portfolio_sharpe(covar: np.ndarray,
                                   means: np.ndarray,
                                   constraints: Constraints,
                                   verbose: bool = False,
-                                  solver: str = 'ECOS_BB'
+                                  solver: str = 'CLARABEL'
                                   ) -> np.ndarray:
     """
     max means^t*w / sqrt(w^t @ covar @ w)

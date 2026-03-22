@@ -18,7 +18,7 @@ from typing import Optional, Dict
 from dataclasses import dataclass
 
 from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
-from optimalportfolios.covar_estimation.utils import squeeze_covariance_matrix, compute_returns_from_prices
+from optimalportfolios.covar_estimation.utils import compute_returns_from_prices
 
 
 def estimate_current_ewma_covar(prices: pd.DataFrame,
@@ -26,7 +26,6 @@ def estimate_current_ewma_covar(prices: pd.DataFrame,
                                 span: int = 52,
                                 is_apply_vol_normalised_returns: bool = False,
                                 demean: bool = True,
-                                squeeze_factor: Optional[float] = None,
                                 apply_an_factor: bool = True,
                                 **kwargs
                                 ) -> pd.DataFrame:
@@ -42,7 +41,6 @@ def estimate_current_ewma_covar(prices: pd.DataFrame,
         span: EWMA half-life span in periods.
         is_apply_vol_normalised_returns: If True, normalise returns by rolling vol.
         demean: If True, subtract rolling mean before estimation.
-        squeeze_factor: Shrinkage factor toward identity. None disables.
         apply_an_factor: If True, annualise the covariance matrix.
 
     Returns:
@@ -58,8 +56,6 @@ def estimate_current_ewma_covar(prices: pd.DataFrame,
             a=x, span=span, nan_backfill=qis.NanBackfill.ZERO_FILL)
 
     covar_t = covar_tensor_txy[-1]
-    if squeeze_factor is not None:
-        covar_t = squeeze_covariance_matrix(covar=covar_t, squeeze_factor=squeeze_factor)
     if apply_an_factor:
         an_factor = qis.infer_annualisation_factor_from_df(data=returns)
     else:
@@ -82,8 +78,6 @@ class EwmaCovarEstimator(CovarEstimator):
         is_apply_vol_normalised_returns: If True, normalise returns by rolling vol
             before covariance estimation (DCC-like effect).
         demean: If True, subtract EWMA rolling mean before estimation.
-        squeeze_factor: Shrinkage factor toward identity matrix. None disables.
-            covar_squeezed = (1 - s) * covar + s * trace(covar)/N * I
 
     Example:
         >>> estimator = EwmaCovarEstimator(returns_freq='W-WED', span=52, rebalancing_freq='QE')
@@ -94,7 +88,6 @@ class EwmaCovarEstimator(CovarEstimator):
     span: int = 52
     is_apply_vol_normalised_returns: bool = False
     demean: bool = True
-    squeeze_factor: Optional[float] = None
 
     def fit_current_covar(self,
                           prices: pd.DataFrame,
@@ -114,7 +107,6 @@ class EwmaCovarEstimator(CovarEstimator):
             span=self.span,
             is_apply_vol_normalised_returns=self.is_apply_vol_normalised_returns,
             demean=self.demean,
-            squeeze_factor=self.squeeze_factor,
             apply_an_factor=True
         )
 
@@ -168,8 +160,6 @@ class EwmaCovarEstimator(CovarEstimator):
         for idx, (date, is_rebal) in enumerate(rebalancing_schedule.items()):
             if is_rebal and date >= start_date:
                 covar_t = covar_tensor[idx]
-                if self.squeeze_factor is not None:
-                    covar_t = squeeze_covariance_matrix(covar=covar_t, squeeze_factor=self.squeeze_factor)
                 covars[date] = pd.DataFrame(an_factor * covar_t, index=tickers, columns=tickers)
 
         return covars
@@ -182,7 +172,6 @@ def estimate_rolling_ewma_covar(prices: pd.DataFrame,
                                 span: int = 52,
                                 is_apply_vol_normalised_returns: bool = False,
                                 demean: bool = True,
-                                squeeze_factor: Optional[float] = None,
                                 apply_an_factor: bool = True,
                                 **kwargs
                                 ) -> Dict[pd.Timestamp, pd.DataFrame]:
@@ -213,7 +202,5 @@ def estimate_rolling_ewma_covar(prices: pd.DataFrame,
     for idx, (date, value) in enumerate(rebalancing_schedule.items()):
         if value and date >= start_date:
             covar_t = pd.DataFrame(covar_tensor_txy[idx], index=tickers, columns=tickers)
-            if squeeze_factor is not None:
-                covar_t = squeeze_covariance_matrix(covar=covar_t, squeeze_factor=squeeze_factor)
             covars[date] = an_factor*covar_t
     return covars

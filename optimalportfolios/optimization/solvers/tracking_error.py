@@ -252,7 +252,7 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
 def cvx_maximise_alpha_over_tre(covar: np.ndarray,
                                 alphas: np.ndarray,
                                 constraints: Constraints,
-                                solver: str = 'ECOS_BB',
+                                solver: str = 'CLARABEL',
                                 verbose: bool = False
                                 ) -> np.ndarray:
     """
@@ -319,7 +319,7 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
 def cvx_maximise_tre_utility(covar: np.ndarray,
                              constraints: Constraints,
                              alphas: Optional[np.ndarray] = None,
-                             solver: str = 'ECOS_BB',
+                             solver: str = 'CLARABEL',
                              verbose: bool = False
                              ) -> np.ndarray:
     """

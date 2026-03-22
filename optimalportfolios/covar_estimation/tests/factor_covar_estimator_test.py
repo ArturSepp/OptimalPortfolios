@@ -17,9 +17,8 @@ class LocalTests(Enum):
     CURRENT_COVAR = 1
     CURRENT_COVAR_SPAN_SENSITIVITY = 2
     CURRENT_COVAR_VOL_NORM = 3
-    CURRENT_COVAR_SQUEEZE = 4
-    ROLLING_COVARS = 5
-    ROLLING_VS_STANDALONE = 6
+    ROLLING_COVARS = 4
+    ROLLING_VS_STANDALONE = 5
 
 
 def run_local_test(local_test: LocalTests):
@@ -97,26 +96,6 @@ def run_local_test(local_test: LocalTests):
         print(f"\nVols:\n{comparison.to_string(float_format='{:.4%}'.format)}")
         print(f"\nCorrelation difference (VolNorm - Plain):")
         print((corr_norm - corr_plain).to_string(float_format='{:.4f}'.format))
-
-    elif local_test == LocalTests.CURRENT_COVAR_SQUEEZE:
-        # compare shrinkage levels
-        squeeze_factors = [None, 0.01, 0.05, 0.10, 0.25]
-
-        vol_table = {}
-        min_eig_table = {}
-        for sf in squeeze_factors:
-            label = f"s={sf}" if sf is not None else "No shrinkage"
-            estimator = EwmaCovarEstimator(returns_freq='W-WED', span=52, squeeze_factor=sf)
-            covar = estimator.fit_current_covar(prices=prices)
-            vol_table[label] = pd.Series(np.sqrt(np.diag(covar.values)), index=tickers)
-            min_eig_table[label] = np.linalg.eigvalsh(covar.values).min()
-
-        vol_df = pd.DataFrame(vol_table).T
-        print(f"── Shrinkage sensitivity ──")
-        print(f"\nVols:\n{vol_df.to_string(float_format='{:.2%}'.format)}")
-        print(f"\nMin eigenvalue:")
-        for label, eig in min_eig_table.items():
-            print(f"  {label:16s}  {eig:.6e}")
 
     elif local_test == LocalTests.ROLLING_COVARS:
         # rolling estimation with vol time series

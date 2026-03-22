@@ -34,7 +34,7 @@ group_data = pd.Series(instrument_data)
 ac_group_order = ['Equity', 'Bonds', 'Bonds']
 
 # set lasso model
-lasso_params = dict(reg_lambda=1e-5, span=120, demean=False, solver='ECOS_BB', warmup_period=50)
+lasso_params = dict(reg_lambda=1e-5, span=120, demean=False, solver='CLARABEL', warmup_period=50)
 lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO_CLUSTERS, **lasso_params)
 
 

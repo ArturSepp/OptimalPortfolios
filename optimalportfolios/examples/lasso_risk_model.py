@@ -39,7 +39,7 @@ risk_factor_prices = yf.download(risk_factor_tickers, start="2003-12-31", end=No
 
 # estimate asset betas and covar matrix
 time_period=qis.TimePeriod('31Dec2015', '13Dec2024')
-lasso_params = dict(reg_lambda=1e-5, span=120, demean=False, solver='ECOS_BB')
+lasso_params = dict(reg_lambda=1e-5, span=120, demean=False, solver='CLARABEL')
 lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO_CLUSTERS, **lasso_params)
 asset_returns_dict = {'ME': qis.to_returns(prices, freq='ME', is_log_returns=True)}
 covar_estimator = FactorCovarEstimator(covar_estimator_type=CovarEstimatorType.LASSO,

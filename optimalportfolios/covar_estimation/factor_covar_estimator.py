@@ -21,7 +21,7 @@ import qis as qis
 from typing import Union, Optional, Dict, Any, List
 from dataclasses import dataclass, asdict
 
-from optimalportfolios.lasso.lasso_estimator import LassoModel
+from optimalportfolios import LassoModel
 from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
 from optimalportfolios.covar_estimation.config import CovarEstimatorType
 from optimalportfolios.covar_estimation.ewma_covar_estimator import estimate_current_ewma_covar
@@ -52,8 +52,6 @@ class FactorCovarEstimator(CovarEstimator):
         factor_covar_span: EWMA span for factor covariance estimation.
         is_apply_vol_normalised_returns: If True, normalise returns by rolling vol.
         demean: If True, subtract rolling mean before covariance estimation.
-        squeeze_factor: Shrinkage factor for factor EWMA covariance. None disables.
-        num_lags_newey_west_dict: Per-frequency Newey-West lag counts for HAC adjustment.
 
     Example:
         >>> estimator = FactorCovarEstimator(
@@ -78,8 +76,6 @@ class FactorCovarEstimator(CovarEstimator):
     factor_covar_span: int = 52
     is_apply_vol_normalised_returns: bool = False
     demean: bool = True
-    squeeze_factor: Optional[float] = None
-    num_lags_newey_west_dict: Optional[Dict[str, int]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """

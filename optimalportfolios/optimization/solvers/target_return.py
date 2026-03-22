@@ -47,7 +47,7 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
                                               target_returns: pd.Series,
                                               constraints: Constraints,
                                               covar_dict: Dict[pd.Timestamp, pd.DataFrame],
-                                              solver: str = 'ECOS_BB',
+                                              solver: str = 'CLARABEL',
                                               verbose: bool = False
                                               ) -> pd.DataFrame:
     """
@@ -130,7 +130,7 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
                                               target_return: float,
                                               constraints: Constraints,
                                               weights_0: pd.Series = None,
-                                              solver: str = 'ECOS_BB'
+                                              solver: str = 'CLARABEL'
                                               ) -> pd.Series:
     """
     Single-date alpha maximisation with NaN/zero-variance filtering.
@@ -187,7 +187,7 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
                                           alphas: np.ndarray,
                                           constraints: Constraints,
                                           verbose: bool = False,
-                                          solver: str = 'ECOS_BB'
+                                          solver: str = 'CLARABEL'
                                           ) -> np.ndarray:
     """
     Solve alpha-maximising portfolio allocation via CVXPY.

@@ -81,7 +81,7 @@ def run_local_test(local_test: LocalTests):
         reg_lambda=1e-6,
         span=52,
         demean=False,
-        solver='ECOS_BB',
+        solver='CLARABEL',
     )
 
     if local_test == LocalTests.LASSO_BETAS:
