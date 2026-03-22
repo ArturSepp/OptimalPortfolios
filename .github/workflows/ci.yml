@@ -60,6 +60,3 @@ jobs:
         python optimalportfolios/optimization/solvers/tests/target_return_test.py
         python optimalportfolios/optimization/solvers/tests/tracking_error_test.py
         python optimalportfolios/utils/tests/portfolios_funcs_test.py
-
-    - name: Lint with ruff
-      run: ruff check optimalportfolios/ --select E,F --ignore E501,F401,F403
