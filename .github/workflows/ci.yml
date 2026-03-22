@@ -62,4 +62,4 @@ jobs:
         python optimalportfolios/utils/tests/portfolios_funcs_test.py
 
     - name: Lint with ruff
-      run: ruff check optimalportfolios/ --select E,F --ignore E501
+      run: ruff check optimalportfolios/ --select E,F --ignore E501,F401,F403

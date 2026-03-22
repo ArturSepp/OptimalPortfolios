@@ -146,7 +146,7 @@ def run_local_test(local_test: LocalTests):
             msg = str(e)
             assert "4 violation(s)" in msg
             assert "Equities" in msg and "FixedIncome" in msg and "A8" in msg
-            print(f"PASSED: caught expected ValueError with 3 violations:\n  {e}")
+            print(f"PASSED: caught expected ValueError with 4 violations:\n  {e}")
 
 
 if __name__ == '__main__':
