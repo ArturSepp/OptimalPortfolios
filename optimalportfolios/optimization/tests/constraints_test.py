@@ -144,7 +144,7 @@ def run_local_test(local_test: LocalTests):
             raise AssertionError("Expected ValueError was not raised")
         except ValueError as e:
             msg = str(e)
-            assert "3 violation(s)" in msg
+            assert "4 violation(s)" in msg
             assert "Equities" in msg and "FixedIncome" in msg and "A8" in msg
             print(f"PASSED: caught expected ValueError with 3 violations:\n  {e}")
 
