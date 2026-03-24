@@ -476,7 +476,13 @@ class PortfolioOptimisationResult:
         Build ordered list of (label, weights_series) for all weight vectors
         used in group/factor attribution.
 
-        Order: portfolios, current (if any), benchmarks, active, current_active (if any).
+        Order: portfolios, current (if any), benchmarks (deduped), active (non-zero only),
+               current_active (if any).
+
+        Skips:
+          - Benchmark vectors that are self-benchmarked (weights == benchmark).
+          - Benchmark vectors whose weights already appear in the portfolio section.
+          - Active vectors that are all zeros (self-benchmarked portfolios).
         """
         vectors = []
 
@@ -487,30 +493,54 @@ class PortfolioOptimisationResult:
         # Current weights
         if self.has_current_weights:
             if isinstance(self.current_weights, pd.Series):
-                vectors.append(('current', self._current_df.iloc[:, 0]))
+                vectors.append((self.current_weights.name or 'current',
+                                self._current_df.iloc[:, 0]))
             else:
                 for name in self.portfolio_names:
                     vectors.append((f'{name}_current', self.get_current(name)))
 
-        # Benchmarks
+        # Benchmarks — skip self-benchmarked and already-seen weight vectors
+        portfolio_keys = set()
+        for name in self.portfolio_names:
+            portfolio_keys.add(tuple(self.get_weights(name).values.round(10)))
+
         if self._shared_benchmark:
             vectors.append((self._benchmark_name, self._benchmark_df.iloc[:, 0]))
         else:
+            seen_bench_keys = set()
             for name in self.portfolio_names:
-                vectors.append((f'{name}_benchmark', self.get_benchmark(name)))
+                bench_w = self.get_benchmark(name)
+                port_w = self.get_weights(name)
+                # skip self-benchmarked
+                if np.allclose(bench_w.values, port_w.values, atol=1e-10):
+                    continue
+                bench_key = tuple(bench_w.values.round(10))
+                # skip if already in portfolio section
+                if bench_key in portfolio_keys:
+                    continue
+                if bench_key not in seen_bench_keys:
+                    vectors.append((f'{name}_benchmark', bench_w))
+                    seen_bench_keys.add(bench_key)
 
-        # Active weights
+        # Active weights — skip zero (self-benchmarked)
         for name in self.portfolio_names:
-            vectors.append((f'{name}_active', self.get_active_weights(name)))
+            active_w = self.get_active_weights(name)
+            if np.allclose(active_w.values, 0.0, atol=1e-10):
+                continue
+            vectors.append((f'{name}_active', active_w))
 
-        # Current active weights
+        # Current active weights — skip zero
         if self.has_current_weights:
             if isinstance(self.current_weights, pd.Series):
-                vectors.append(('current_active', self._current_df.iloc[:, 0] - self._benchmark_df.iloc[:, 0]))
+                current_active = self._current_df.iloc[:, 0] - self._benchmark_df.iloc[:, 0]
+                if not np.allclose(current_active.values, 0.0, atol=1e-10):
+                    label = f"{self.current_weights.name or 'current'}_active"
+                    vectors.append((label, current_active))
             else:
                 for name in self.portfolio_names:
-                    vectors.append((f'{name}_current_active',
-                                    self.get_current(name) - self.get_benchmark(name)))
+                    current_active = self.get_current(name) - self.get_benchmark(name)
+                    if not np.allclose(current_active.values, 0.0, atol=1e-10):
+                        vectors.append((f'{name}_current_active', current_active))
 
         return vectors
 
@@ -642,19 +672,21 @@ class PortfolioOptimisationResult:
 
         return result
 
-    def compute_factor_exposures_summary(self) -> Dict[str, pd.DataFrame]:
+    def compute_factor_exposures_summary(self, aggregate: bool = False) -> Dict[str, pd.DataFrame]:
         """
         Factor exposures and risk contributions split by weight type
         (portfolio, benchmark, active), each as a plain-index DataFrame.
 
+        Args:
+            aggregate: if True, merge exposure tables into 'factor_exposures' and
+                       risk tables into 'factor_risk_pct' (2 keys instead of 6).
+
         Returns:
-            Dict with keys:
-                'exposure_portfolio': DataFrame (rows=portfolio names, cols=factors, float)
-                'exposure_benchmark': DataFrame (rows=benchmark labels, cols=factors, float)
-                'exposure_active': DataFrame (rows=active labels, cols=factors, float)
-                'risk_pct_portfolio': DataFrame (rows=portfolio names, cols=factors, pct)
-                'risk_pct_benchmark': DataFrame (rows=benchmark labels, cols=factors, pct)
-                'risk_pct_active': DataFrame (rows=active labels, cols=factors, pct)
+            If aggregate=False (default):
+                Dict with 6 keys: exposure_portfolio, exposure_benchmark, exposure_active,
+                risk_pct_portfolio, risk_pct_benchmark, risk_pct_active.
+            If aggregate=True:
+                Dict with 2 keys: factor_exposures, factor_risk_pct.
         """
         # Portfolio exposures
         portfolio_exp = {}
@@ -664,7 +696,7 @@ class PortfolioOptimisationResult:
             portfolio_exp[name] = self._compute_factor_exposures_for_weights(w)
             portfolio_risk[name] = self._compute_factor_risk_contribution(w)
 
-        # Benchmark exposures — use original mandate names
+        # Benchmark exposures — skip self-benchmarked and already-seen weight vectors
         benchmark_exp = {}
         benchmark_risk = {}
         if self._shared_benchmark:
@@ -672,18 +704,48 @@ class PortfolioOptimisationResult:
             benchmark_exp[self._benchmark_name] = self._compute_factor_exposures_for_weights(bench_w)
             benchmark_risk[self._benchmark_name] = self._compute_factor_risk_contribution(bench_w)
         else:
+            portfolio_keys = set()
+            for name in self.portfolio_names:
+                portfolio_keys.add(tuple(self.get_weights(name).values.round(10)))
+            seen_bench_keys = set()
             for name in self.portfolio_names:
                 bench_w = self.get_benchmark(name)
-                benchmark_exp[name] = self._compute_factor_exposures_for_weights(bench_w)
-                benchmark_risk[name] = self._compute_factor_risk_contribution(bench_w)
+                port_w = self.get_weights(name)
+                if np.allclose(bench_w.values, port_w.values, atol=1e-10):
+                    continue
+                bench_key = tuple(bench_w.values.round(10))
+                if bench_key in portfolio_keys:
+                    continue
+                if bench_key not in seen_bench_keys:
+                    benchmark_exp[f'{name}_benchmark'] = self._compute_factor_exposures_for_weights(bench_w)
+                    benchmark_risk[f'{name}_benchmark'] = self._compute_factor_risk_contribution(bench_w)
+                    seen_bench_keys.add(bench_key)
 
-        # Active exposures — use original mandate names
+        # Active exposures — skip self-benchmarked (active weights = 0)
         active_exp = {}
         active_risk = {}
         for name in self.portfolio_names:
             active_w = self.get_active_weights(name)
-            active_exp[name] = self._compute_factor_exposures_for_weights(active_w)
-            active_risk[name] = self._compute_factor_risk_contribution(active_w)
+            if np.allclose(active_w.values, 0.0, atol=1e-10):
+                continue
+            active_exp[f'{name}_active'] = self._compute_factor_exposures_for_weights(active_w)
+            active_risk[f'{name}_active'] = self._compute_factor_risk_contribution(active_w)
+
+        if aggregate:
+            merged_exp = pd.concat([
+                pd.DataFrame(portfolio_exp).T,
+                pd.DataFrame(benchmark_exp).T,
+                pd.DataFrame(active_exp).T,
+            ], axis=0)
+            merged_risk = pd.concat([
+                pd.DataFrame(portfolio_risk).T,
+                pd.DataFrame(benchmark_risk).T,
+                pd.DataFrame(active_risk).T,
+            ], axis=0)
+            return {
+                'factor_exposures': merged_exp,
+                'factor_risk_pct': merged_risk,
+            }
 
         return {
             'exposure_portfolio': pd.DataFrame(portfolio_exp).T,
@@ -694,17 +756,22 @@ class PortfolioOptimisationResult:
             'risk_pct_active': pd.DataFrame(active_risk).T,
         }
 
-    def compute_risk_summary(self) -> Dict[str, pd.DataFrame]:
+    def compute_risk_summary(self, aggregate: bool = False) -> Dict[str, pd.DataFrame]:
         """
         Risk summary split into portfolio and benchmark tables.
 
         Portfolio table includes tracking_error, factor_te, residual_te.
         Benchmark table uses original mandate names (no _benchmark suffix).
 
+        Args:
+            aggregate: if True, concatenate portfolio and benchmark into a single
+                       DataFrame under key 'risk_summary'.
+
         Returns:
-            Dict with keys:
-                'portfolio': DataFrame (rows=portfolio names, cols=risk metrics + TE)
-                'benchmark': DataFrame (rows=mandate names, cols=risk metrics)
+            If aggregate=False (default):
+                Dict with keys 'portfolio', 'benchmark'.
+            If aggregate=True:
+                Dict with single key 'risk_summary' containing merged DataFrame.
         """
         # Portfolio risk with TE
         portfolio_result = {}
@@ -714,22 +781,60 @@ class PortfolioOptimisationResult:
             risk.update(te)
             portfolio_result[name] = risk
 
-        # Benchmark risk — use original mandate names
+        # Benchmark risk — skip self-benchmarked and weight vectors already in portfolio section
         benchmark_result = {}
         if self._shared_benchmark:
             benchmark_result[self._benchmark_name] = self._compute_risk_decomposition(
                 self._benchmark_df.iloc[:, 0]
             )
         else:
+            # collect portfolio weight signatures to avoid duplicate rows
+            portfolio_keys = set()
             for name in self.portfolio_names:
-                benchmark_result[name] = self._compute_risk_decomposition(
-                    self.get_benchmark(name)
-                )
+                portfolio_keys.add(tuple(self.get_weights(name).values.round(10)))
+            seen_bench_keys = set()
+            for name in self.portfolio_names:
+                bench_w = self.get_benchmark(name)
+                port_w = self.get_weights(name)
+                # skip if benchmark == portfolio (self-benchmarked)
+                if np.allclose(bench_w.values, port_w.values, atol=1e-10):
+                    continue
+                bench_key = tuple(bench_w.values.round(10))
+                # skip if this benchmark weight vector already in portfolio section
+                if bench_key in portfolio_keys:
+                    continue
+                if bench_key not in seen_bench_keys:
+                    benchmark_result[f'{name}_benchmark'] = self._compute_risk_decomposition(bench_w)
+                    seen_bench_keys.add(bench_key)
 
-        return {
+        # Current weights risk
+        current_result = {}
+        if self.has_current_weights:
+            seen = set()
+            for name in self.portfolio_names:
+                current_w = self.get_current(name)
+                current_key = tuple(current_w.values.round(10))
+                if current_key not in seen:
+                    label = self.current_weights.name if isinstance(self.current_weights,
+                                                                    pd.Series) and self.current_weights.name \
+                        else f'{name}_current'
+                    current_result[label] = self._compute_risk_decomposition(current_w)
+                    seen.add(current_key)
+
+        if aggregate:
+            dfs = [pd.DataFrame(portfolio_result).T,
+                   pd.DataFrame(current_result).T if current_result else None,
+                   pd.DataFrame(benchmark_result).T]
+            merged = pd.concat([df for df in dfs if df is not None and not df.empty], axis=0)
+            return {'risk_summary': merged}
+
+        result = {
             'portfolio': pd.DataFrame(portfolio_result).T,
             'benchmark': pd.DataFrame(benchmark_result).T,
         }
+        if current_result:
+            result['current'] = pd.DataFrame(current_result).T
+        return result
 
     # === Reporting ===
 
