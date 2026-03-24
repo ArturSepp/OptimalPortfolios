@@ -424,7 +424,6 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
     def objective_function(risk_budgets: np.ndarray) -> float:
         risk_budgets = pd.Series(risk_budgets, index=prices.columns)
         risk_budget_weights = rolling_risk_budgeting(prices=prices,
-                                                     time_period=time_period,
                                                      covar_dict=covar_dict,
                                                      risk_budget=risk_budgets,
                                                      constraints=Constraints(is_long_only=True))
