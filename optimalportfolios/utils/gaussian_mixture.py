@@ -4,16 +4,143 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import scipy.stats as ss
-from sklearn.mixture import GaussianMixture
-from scipy.stats import bernoulli
+from scipy.stats import bernoulli, multivariate_normal
+from scipy.cluster.vq import kmeans2
 from dataclasses import dataclass
 from enum import Enum
 from matplotlib.patches import Ellipse
 from typing import List, Tuple, Union, Dict, Optional
-import qis
+import qis as qis
 
 RANDOM_STATE = 3
 
+
+# --- Custom Gaussian Mixture Model (replaces sklearn.mixture.GaussianMixture) ---
+
+@dataclass
+class GMMResult:
+    """Result container for fitted Gaussian Mixture Model.
+    Mirrors sklearn.mixture.GaussianMixture interface for means_, covariances_, weights_, predict().
+    """
+    means_: np.ndarray       # (n_components, n_features)
+    covariances_: np.ndarray  # (n_components, n_features, n_features)
+    weights_: np.ndarray      # (n_components,)
+
+    def predict(self, x: np.ndarray) -> np.ndarray:
+        resp = _e_step(x, self.means_, self.covariances_, self.weights_)
+        return resp.argmax(axis=1)
+
+
+def _initialize_gmm(x: np.ndarray, n_components: int, random_state: int
+                     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """K-means initialization for GMM parameters."""
+    rng = np.random.RandomState(random_state)
+    centroids, labels = kmeans2(x, n_components, minit='points', seed=rng)
+
+    n_samples, n_features = x.shape
+    means = np.zeros((n_components, n_features))
+    covariances = np.zeros((n_components, n_features, n_features))
+    weights = np.zeros(n_components)
+
+    for k in range(n_components):
+        mask = labels == k
+        count = mask.sum()
+        if count == 0:
+            means[k] = centroids[k]
+            covariances[k] = np.eye(n_features)
+            weights[k] = 1.0 / n_components
+        else:
+            means[k] = x[mask].mean(axis=0)
+            diff = x[mask] - means[k]
+            covariances[k] = (diff.T @ diff) / count + 1e-6 * np.eye(n_features)
+            weights[k] = count / n_samples
+
+    return means, covariances, weights
+
+
+def _e_step(x: np.ndarray, means: np.ndarray, covariances: np.ndarray,
+            weights: np.ndarray) -> np.ndarray:
+    """E-step: compute responsibilities."""
+    n_samples = x.shape[0]
+    n_components = len(weights)
+    resp = np.zeros((n_samples, n_components))
+
+    for k in range(n_components):
+        try:
+            resp[:, k] = weights[k] * multivariate_normal.pdf(
+                x, mean=means[k], cov=covariances[k], allow_singular=True
+            )
+        except np.linalg.LinAlgError:
+            resp[:, k] = 0.0
+
+    resp_sum = resp.sum(axis=1, keepdims=True)
+    resp_sum = np.maximum(resp_sum, 1e-300)
+    resp /= resp_sum
+    return resp
+
+
+def _m_step(x: np.ndarray, resp: np.ndarray, reg_covar: float = 1e-6
+            ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """M-step: update parameters from responsibilities."""
+    n_samples, n_features = x.shape
+    n_components = resp.shape[1]
+
+    nk = resp.sum(axis=0)
+    nk = np.maximum(nk, 1e-10)
+
+    weights = nk / n_samples
+    means = (resp.T @ x) / nk[:, np.newaxis]
+
+    covariances = np.zeros((n_components, n_features, n_features))
+    for k in range(n_components):
+        diff = x - means[k]
+        covariances[k] = (resp[:, k:k + 1] * diff).T @ diff / nk[k]
+        covariances[k] += reg_covar * np.eye(n_features)
+
+    return means, covariances, weights
+
+
+def _compute_log_likelihood(x: np.ndarray, means: np.ndarray,
+                            covariances: np.ndarray, weights: np.ndarray) -> float:
+    """Compute total log-likelihood of data under the mixture."""
+    n_components = len(weights)
+    ll = np.zeros((x.shape[0], n_components))
+    for k in range(n_components):
+        try:
+            ll[:, k] = weights[k] * multivariate_normal.pdf(
+                x, mean=means[k], cov=covariances[k], allow_singular=True
+            )
+        except np.linalg.LinAlgError:
+            ll[:, k] = 0.0
+    return np.log(np.maximum(ll.sum(axis=1), 1e-300)).sum()
+
+
+def fit_gmm(x: np.ndarray,
+            n_components: int = 2,
+            random_state: int = RANDOM_STATE,
+            max_iter: int = 100,
+            tol: float = 1e-6,
+            reg_covar: float = 1e-6
+            ) -> GMMResult:
+    """
+    Fit Gaussian Mixture Model via EM algorithm.
+    Drop-in replacement for sklearn.mixture.GaussianMixture with covariance_type='full'.
+    """
+    means, covariances, weights = _initialize_gmm(x, n_components, random_state)
+
+    prev_ll = -np.inf
+    for _ in range(max_iter):
+        resp = _e_step(x, means, covariances, weights)
+        means, covariances, weights = _m_step(x, resp, reg_covar=reg_covar)
+        ll = _compute_log_likelihood(x, means, covariances, weights)
+        if abs(ll - prev_ll) < tol:
+            break
+        prev_ll = ll
+
+    return GMMResult(means_=means, covariances_=covariances, weights_=weights)
+
+
+# --- Original interface (Params, fit_gaussian_mixture, plotting, etc.) ---
 
 @dataclass
 class Params:
@@ -83,21 +210,17 @@ def fit_gaussian_mixture(x: np.ndarray,
                          n_components: int = 2,
                          an_factor: float = 1.0,
                          idx: int = None
-                         ):
-    gmm = GaussianMixture(n_components=n_components,
-                          covariance_type='full',
-                          random_state=RANDOM_STATE)
-    gmm.fit(x)
+                         ) -> Params:
+    gmm = fit_gmm(x, n_components=n_components, random_state=RANDOM_STATE)
+
     if idx is not None:
         order = gmm.means_.argsort(axis=0)[:, idx]
         gmm.means_ = gmm.means_[order]
         gmm.covariances_ = gmm.covariances_[order]
         gmm.weights_ = gmm.weights_[order]
-        gmm.precisions_ = gmm.precisions_[order]
-        gmm.precisions_cholesky_ = gmm.precisions_cholesky_[order]
 
-    return Params(means=[an_factor * x for x in gmm.means_],  # convert to lists
-                  covars=[an_factor * x for x in gmm.covariances_],
+    return Params(means=[an_factor * m for m in gmm.means_],
+                  covars=[an_factor * c for c in gmm.covariances_],
                   probs=gmm.weights_)
 
 
@@ -132,16 +255,11 @@ def plot_mixure1(x: np.ndarray,
                  ) -> None:
     ax = ax or plt.gca()
 
-    gmm = GaussianMixture(n_components=n_components, covariance_type='full', random_state=RANDOM_STATE)
-    gmm.fit(x)
+    gmm = fit_gmm(x, n_components=n_components, random_state=RANDOM_STATE)
 
-    x_ = np.linspace(np.min(x), np.max(x), 100)
-
-    # find useful parameters
-    fitted_model = gmm.fit(x)
-    mean = fitted_model.means_
-    covs = fitted_model.covariances_
-    weights = fitted_model.weights_
+    mean = gmm.means_
+    covs = gmm.covariances_
+    weights = gmm.weights_
 
     # create necessary things to plot
     x_axis = np.linspace(1.25*np.min(x), 1.25*np.max(x), 100)
@@ -169,14 +287,13 @@ def plot_mixure2(x: np.ndarray,
     if ax is None:
         ax = plt.subplots(1, 1)
 
-    gmm = GaussianMixture(n_components=n_components, covariance_type='full', random_state=RANDOM_STATE).fit(x)
+    gmm = fit_gmm(x, n_components=n_components, random_state=RANDOM_STATE)
+
     if idx is not None:
         order = gmm.means_.argsort(axis=0)[:, idx]
         gmm.means_ = gmm.means_[order]
         gmm.covariances_ = gmm.covariances_[order]
         gmm.weights_ = gmm.weights_[order]
-        gmm.precisions_ = gmm.precisions_[order]
-        gmm.precisions_cholesky_ = gmm.precisions_cholesky_[order]
 
     labels = gmm.predict(x)
 
@@ -186,22 +303,20 @@ def plot_mixure2(x: np.ndarray,
     data[label] = labels
 
     if n_components == 3:
-        # colors = ['red', 'orange', 'green']
         colors = ['red', 'slategray', 'green']
     else:
         colors = qis.get_n_colors(n=n_components, last_color_fixed=False)
 
-    x = columns[0]
-    y = columns[1]
+    x_col = columns[0]
+    y_col = columns[1]
 
     sns.scatterplot(data=data,
-                    x=x,
-                    y=y,
+                    x=x_col,
+                    y=y_col,
                     hue=label,
                     palette=colors,
                     ax=ax)
 
-    # w_factor = 0.2 / gmm.weights_.max() using for alpha
     for pos, covar, w, color in zip(gmm.means_, gmm.covariances_, gmm.weights_, colors):
         draw_ellipse(pos[:2], covar[:2, :2], ax=ax, alpha=0.1, color=color)
 
@@ -242,7 +357,6 @@ def estimate_rolling_mixture(prices: Union[pd.Series, pd.DataFrame],
     for idx, end in enumerate(dates_schedule[1:]):
         if idx >= roll_window-1:
             period = qis.TimePeriod(dates_schedule[idx - roll_window+1], end)
-            # period.print()
             rets_ = period.locate(rets).to_numpy()
             params = fit_gaussian_mixture(x=rets_, n_components=n_components, an_factor=scaler)
             mean = np.stack(params.means, axis=0).T[0]
@@ -258,105 +372,3 @@ def estimate_rolling_mixture(prices: Union[pd.Series, pd.DataFrame],
     probs = pd.concat(probs)
 
     return means, sigmas, probs
-
-
-class LocalTests(Enum):
-    FIT1 = 1
-    FIT2 = 2
-    ROLLING_FIT = 3
-    PLOT_MIXURE = 4
-
-
-def run_local_test(local_test: LocalTests):
-    """Run local tests for development and debugging purposes.
-
-    These are integration tests that download real universe and generate reports.
-    Use for quick verification during development.
-    """
-
-    if local_test == LocalTests.FIT1:
-        size = 1000
-        p1 = 0.8
-        mu1, sigma1 = 0.0, 0.2
-        mu2, sigma2 = -1, 0.3
-        w = bernoulli.rvs(p1, size=size)
-
-        x1 = np.random.normal(mu1, sigma1, size=size)
-        x2 = np.random.normal(mu2, sigma2, size=size)
-        x = np.zeros(size)
-        for n_ in range(size):
-            x[n_] = x1[n_] if w[n_] == 1 else x2[n_]
-        x = x.reshape(-1, 1)
-
-        print(np.square(np.std(x1, axis=0)))
-        print(np.square(np.std(x2, axis=0)))
-
-        params = fit_gaussian_mixture(x=x)
-        print(params)
-        plot_mixure1(x=x)
-
-    elif local_test == LocalTests.FIT2:
-        size = 1000
-        p1 = 0.8
-        mu1, sigma1 = np.array([0, 0]), np.array([[0.2, 0.0], [0.0, 0.2]])
-        mu2, sigma2 = np.array([-1.0, 1.00]), np.array([[0.1, 0.0], [0.0, 0.1]])
-        w = bernoulli.rvs(p1, size=size)
-
-        x1 = np.random.multivariate_normal(mu1, sigma1, size=size)
-        x2 = np.random.multivariate_normal(mu2, sigma2, size=size)
-        x = np.zeros((size, 2))
-        for n_ in range(size):
-            x[n_] = x1[n_] if w[n_] == 1 else x2[n_]
-
-        print(np.square(np.std(x1, axis=0)))
-        print(np.square(np.std(x2, axis=0)))
-
-        params = fit_gaussian_mixture(x=x)
-        print(params)
-        plot_mixure2(x)
-
-    elif local_test == LocalTests.ROLLING_FIT:
-        from optimalportfolios.test_data import load_test_data
-        prices = load_test_data()
-        prices = prices.loc['2000':, :]  # have at least 3 assets
-        prices = prices['SPY'].dropna()
-        means, sigmas, probs = estimate_rolling_mixture(prices=prices)
-        print(means)
-
-    elif local_test == LocalTests.PLOT_MIXURE:
-        import yfinance as yf
-        prices = yf.download(tickers=['SPY', 'TLT'], start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].dropna()
-        perf_params = qis.PerfParams(freq='W-WED')
-        kwargs = dict(fontsize=12, digits_to_show=1, sharpe_digits=2,
-                      alpha_format='{0:+0.0%}',
-                      beta_format='{:0.1f}')
-
-        time_periods = [qis.TimePeriod('31Aug2002', '31Dec2019'), qis.TimePeriod('31Dec2019', '16Dec2022')]
-
-        n_components = 3
-
-        with sns.axes_style('white'):
-            fig1, axs = plt.subplots(1, len(time_periods), figsize=(15, 5), constrained_layout=True)
-
-        for idx, time_period in enumerate(time_periods):
-            prices_ = time_period.locate(prices)
-            rets = qis.to_returns(prices=prices_, is_log_returns=True, drop_first=True, freq=perf_params.freq)
-            params = fit_gaussian_mixture(x=rets.to_numpy(), n_components=n_components, idx=1)
-            plot_mixure2(x=rets.to_numpy(),
-                            n_components=n_components,
-                            columns=prices.columns,
-                            title=f"({idx+1}) Returns and ellipsoids of Gaussian clusters for period {time_period.to_str()}",
-                            ax=axs[idx],
-                            **kwargs)
-
-            means, vols, corrs = params.get_all_params(columns=prices.columns, vol_scaler=12.0)
-            print(f"means=\n{means}")
-            print(f"vols=\n{vols}")
-            print(f"corrs=\n{corrs}")
-
-    plt.show()
-
-
-if __name__ == '__main__':
-
-    run_local_test(local_test=LocalTests.PLOT_MIXURE)

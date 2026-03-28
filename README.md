@@ -151,7 +151,7 @@ optimalportfolios/
 ├── utils/                         # Auxiliary analytics
 │   ├── filter_nans.py             # NaN-aware covariance/vector filtering
 │   ├── portfolio_funcs.py         # Risk contributions, diversification ratio
-│   ├── gaussian_mixture.py        # Gaussian mixture fitting
+│   ├── gaussian_mixture.py        # Gaussian mixture fitting (pure numpy/scipy EM)
 │   └── returns_unsmoother.py      # AR(1) return unsmoothing for PE/PD
 ├── reports/                       # Performance reporting
 │   └── marginal_backtest.py       # Marginal asset contribution analysis
@@ -314,19 +314,19 @@ git clone https://github.com/ArturSepp/OptimalPortfolios.git
 
 Core dependencies:
     python = ">=3.9",
-    numba = ">=0.56.4",
-    numpy = ">=1.22.4",
-    scipy = ">=1.9.0",
-    pandas = ">=2.2.2",
-    matplotlib = ">=3.2.2",
-    seaborn = ">=0.12.2",
-    scikit_learn = ">=1.3.0",
-    cvxpy = ">=1.3.2",
-    qis = ">=2.1.33",
-    quadprog = ">=0.1.13"
+    numba = ">=0.60.0",
+    numpy = ">=2.0",
+    scipy = ">=1.12.0",
+    pandas = ">=2.2.0",
+    matplotlib = ">=3.8.0",
+    seaborn = ">=0.13.0",
+    cvxpy = ">=1.3.0",
+    quadprog = ">=0.1.11",
+    qis = ">=3.5.7",
+    factorlasso = ">=0.1.0"
 
 Optional dependencies:
-    yfinance ">=0.2.3" (for getting test price data),
+    yfinance ">=0.2.40" (for getting test price data),
     pybloqs ">=1.2.13" (for producing html and pdf factsheets)
 
 
@@ -751,26 +751,56 @@ See example script in ```optimalportfolios.examples.multi_covar_estimation_backt
 ### 6. Optimal allocation to cryptocurrencies <a name="crypto"></a>
 
 Computations and visualisations for 
-paper "Optimal Allocation to Cryptocurrencies in Diversified Portfolios" [https://ssrn.com/abstract=4217841](https://ssrn.com/abstract=4217841)
-   are implemented in module ```optimalportfolios.examples.crypto_allocation```,
-see [README in this module](https://github.com/ArturSepp/OptimalPortfolios/blob/master/optimalportfolios/examples/crypto_allocation/README.md)
+paper "Optimal Allocation to Cryptocurrencies in Diversified Portfolios"
+are implemented in module ```optimalportfolios.examples.crypto_allocation```,
+see [README in this module](https://github.com/ArturSepp/OptimalPortfolios/blob/master/optimalportfolios/examples/crypto_allocation/README.md).
+
+Published reference:
+Sepp A. (2023),
+"Optimal Allocation to Cryptocurrencies in Diversified Portfolios",
+*Risk Magazine*, October 2023, 1-6.
+Available at [SSRN](https://ssrn.com/abstract=4217841).
 
 
 ### 7. Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios <a name="hcgl"></a>
 
 Computations and visualisations for 
 paper "Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios"
-   are implemented in module ```optimalportfolios.examples.robust_optimisation_saa_taa```,
-see [README in this module](https://github.com/ArturSepp/OptimalPortfolios/blob/master/optimalportfolios/examples/robust_optimisation_saa_taa/README.md)
+are implemented in module ```optimalportfolios.examples.robust_optimisation_saa_taa```,
+see [README in this module](https://github.com/ArturSepp/OptimalPortfolios/blob/master/optimalportfolios/examples/robust_optimisation_saa_taa/README.md).
+
+The paper presents the ROSAA framework — a unified approach to strategic and
+tactical asset allocation for multi-asset portfolios. Key contributions include:
+the HCGL (Hierarchical Clustering Group LASSO) factor covariance estimator for
+heterogeneous multi-asset universes, constrained risk budgeting for SAA with
+group allocation limits, and alpha-over-tracking-error optimisation for TAA.
+The framework handles real-world challenges including mixed-frequency assets,
+incomplete return histories, and illiquid positions requiring rebalancing
+indicators. The `optimalportfolios` package is the reference implementation
+of the full ROSAA pipeline.
 
 Published reference:
 Sepp A., Ossa I., and Kastenholz M. (2026),
 "Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios",
 *The Journal of Portfolio Management*, 52(4), 86-120.
-Available at https://www.pm-research.com/content/iijpormgmt/52/4/86
+[Paper link](https://eprints.pm-research.com/17511/143431/index.html).
 
 
 ## **Updates** <a name="updates"></a>
+
+#### March 2026, Version 5.0.4 released
+
+**Removed `scikit-learn` dependency.**
+The Gaussian mixture model in `utils/gaussian_mixture.py` previously used
+`sklearn.mixture.GaussianMixture`. This has been replaced with a pure
+numpy/scipy EM implementation (`fit_gmm`) using `scipy.stats.multivariate_normal`
+for the E-step and `scipy.cluster.vq.kmeans2` for K-means initialisation.
+The public API (`fit_gaussian_mixture`, `Params`, `plot_mixure1`, `plot_mixure2`,
+`estimate_rolling_mixture`) is unchanged.
+
+This removes the last `scikit-learn` import from `optimalportfolios`, eliminating
+the transitive dependency on `joblib`, `threadpoolctl`, and the scikit-learn
+binary itself — a meaningful reduction in install footprint.
 
 #### March 2026, Version 5.0.0 released
 
@@ -802,36 +832,7 @@ directly from the deleted module path
 (`from optimalportfolios.lasso.lasso_estimator import ...`), change to
 `from optimalportfolios import ...`.
 
-#### 8 July 2023,  Version 1.0.1 released
-
-Implementation of optimisation methods and data considered in 
-"Optimal Allocation to Cryptocurrencies in
-Diversified Portfolios"  by A. Sepp published in Risk Magazine, October 2023, 1-6. The draft is available at SSRN: https://ssrn.com/abstract=4217841
-
-
-#### 2 September 2023,  Version 1.0.8 released
-Added subpackage ```optimisation.rolling_engine``` with optimisers grouped by the type of inputs and
-data they require.
-
-#### 18 August 2024,  Version 2.1.1 released
-Refactor the implementation of solvers with the 3 layers.
-
-Add new solvers for tracking error and target return optimisations.
-
-Add examples of running all solvers.
-
-#### 05 January 2025,  Version 3.1.1 released
-
-Added Lasso estimator and Group Lasso estimator using cvxpy quadratic problems.
-
-Added covariance estimator using factor model with Lasso betas.
-
-Estimated covariance matrices can be passed to rolling solvers, CovarEstimator type is added for different covariance estimators.
-
-Risk budgeting is implemented using pyrb package with pyrb forked for optimalportfolios package.
-
-
-#### March 2026,  Version 4.1.1 released
+#### March 2026, Version 4.1.1 released
 
 **Alpha signals module** (`optimalportfolios.alphas`):
 - New `alphas/` package with three standalone signal functions: `compute_momentum_alpha`, `compute_low_beta_alpha`, `compute_managers_alpha`
@@ -926,6 +927,35 @@ betas = rolling_data.asset_last_betas_t
 # New
 betas = rolling_data.get_y_betas()
 ```
+
+#### 05 January 2025, Version 3.1.1 released
+
+Added Lasso estimator and Group Lasso estimator using cvxpy quadratic problems.
+
+Added covariance estimator using factor model with Lasso betas.
+
+Estimated covariance matrices can be passed to rolling solvers, CovarEstimator type is added for different covariance estimators.
+
+Risk budgeting is implemented using pyrb package with pyrb forked for optimalportfolios package.
+
+#### 18 August 2024, Version 2.1.1 released
+
+Refactor the implementation of solvers with the 3 layers.
+
+Add new solvers for tracking error and target return optimisations.
+
+Add examples of running all solvers.
+
+#### 2 September 2023, Version 1.0.8 released
+
+Added subpackage ```optimisation.rolling_engine``` with optimisers grouped by the type of inputs and
+data they require.
+
+#### 8 July 2023, Version 1.0.1 released
+
+Implementation of optimisation methods and data considered in 
+"Optimal Allocation to Cryptocurrencies in
+Diversified Portfolios" by A. Sepp published in Risk Magazine, October 2023, 1-6. The draft is available at SSRN: https://ssrn.com/abstract=4217841
 
 
 ## **Disclaimer** <a name="disclaimer"></a>
