@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from enum import Enum
 
 from optimalportfolios.optimization.constraints import Constraints
-from optimalportfolios.optimization.solvers.target_return import  wrapper_maximise_alpha_with_target_return
+from optimalportfolios.optimization.taa.maximise_alpha_with_target_yield import  wrapper_maximise_alpha_with_target_return
 
 
 class LocalTests(Enum):

@@ -7,9 +7,8 @@ import matplotlib.pyplot as plt
 from enum import Enum
 
 from optimalportfolios.optimization.constraints import Constraints
-from optimalportfolios.optimization.solvers.max_diversification import (
+from optimalportfolios.optimization.general.max_diversification import (
     wrapper_maximise_diversification,
-    opt_maximise_diversification,
     rolling_maximise_diversification
 )
 from optimalportfolios.utils.portfolio_funcs import calculate_diversification_ratio

@@ -44,6 +44,7 @@ from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance,
                                                      compute_portfolio_risk_contribution_outputs)
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.optimization.config import OptimiserConfig
 from pyrb import ConstrainedRiskBudgeting
 
 
@@ -52,7 +53,7 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
                            risk_budget: pd.Series,
                            covar_dict: Dict[pd.Timestamp, pd.DataFrame],
                            rebalancing_indicators: pd.DataFrame = None,
-                           apply_total_to_good_ratio: bool = True
+                           optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
                            ) -> pd.DataFrame:
     """
     Compute rolling risk-budgeted portfolios at each rebalancing date.
@@ -61,33 +62,17 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
     problem using the pre-computed covariance matrix. The risk budget
     specifies the target fraction of portfolio risk contributed by each asset.
 
-    The covariance matrices are produced externally by any CovarEstimator
-    (EwmaCovarEstimator, FactorCovarEstimator, etc.), decoupling the
-    estimation step from the optimisation step.
-
     Args:
-        prices: Asset price panel. Index=dates, columns=tickers. Used only
-            for column alignment of the output weights DataFrame.
-        constraints: Portfolio constraints (long-only, weight bounds, group
-            exposures, etc.).
+        prices: Asset price panel. Used for column alignment.
+        constraints: Portfolio constraints.
         risk_budget: Target risk budgets per asset. Index=tickers, values=budgets.
-            Budgets are relative (need not sum to 1 — they are rescaled internally).
             Assets with budget 0 are excluded from optimisation.
         covar_dict: Pre-computed covariance matrices keyed by rebalancing date.
-            Typically produced by ``estimator.fit_rolling_covars()``.
-            The dict keys define the rebalancing schedule.
-        rebalancing_indicators: Optional binary DataFrame (index=dates, columns=tickers)
-            indicating whether each asset is eligible for rebalancing at each date.
-            Assets with value 0 are frozen at their previous weights (from weights_0).
-            Frozen assets still contribute to portfolio risk via the covariance matrix.
-            If None, all assets are rebalanced at every date.
-        apply_total_to_good_ratio: If True, rescale risk budgets and constraints
-            proportionally when some assets are excluded due to NaN or zero variance.
-            This preserves the intended risk allocation across the valid subset.
+        rebalancing_indicators: Optional binary DataFrame for position freezing.
+        optimiser_config: Solver configuration.
 
     Returns:
-        DataFrame of portfolio weights. Index=rebalancing dates from covar_dict,
-        columns=tickers aligned to ``prices.columns``.
+        DataFrame of portfolio weights.
     """
     if rebalancing_indicators is not None:
         rebalancing_dates = list(covar_dict.keys())
@@ -107,11 +92,11 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
                                           weights_0=weights_0,
                                           risk_budget=risk_budget,
                                           rebalancing_indicators=rebalancing_indicators_t,
-                                          apply_total_to_good_ratio=apply_total_to_good_ratio)
+                                          optimiser_config=optimiser_config)
         weights_0 = weights_  # warm-start next period
         weights[date] = weights_
     weights = pd.DataFrame.from_dict(weights, orient='index')
-    weights = weights.reindex(columns=prices.columns.to_list())
+    weights = weights.reindex(columns=prices.columns.to_list()).fillna(0.0)
     return weights
 
 
@@ -120,7 +105,7 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
                            weights_0: pd.Series = None,
                            risk_budget: Union[pd.Series, Dict[str, float]] = None,
                            rebalancing_indicators: pd.Series = None,
-                           apply_total_to_good_ratio: bool = True,
+                           optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True),
                            detailed_output: bool = False
                            ) -> Union[pd.Series, pd.DataFrame]:
     """
@@ -128,35 +113,21 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
 
     Handles three layers of asset filtering:
 
-    1. **Zero risk budgets** (b_i = 0): asset excluded from optimisation,
-       receives zero weight. Does not contribute to portfolio risk.
-    2. **Rebalancing indicators** (rebal_i = 0): asset frozen at previous
-       weight (weights_0). Still contributes to portfolio risk via Σ, but
-       its weight is not optimised. The remaining allocation (1 - Σ frozen)
-       is distributed among rebalanced assets.
-    3. **NaN/zero variance**: asset excluded from optimisation (via
-       ``filter_covar_and_vectors_for_nans``), receives zero weight.
-
-    When ``apply_total_to_good_ratio=True``, risk budgets are rescaled by
-    N_eligible / N_valid (where N_eligible is the number of assets with
-    positive risk budget and N_valid is the subset of those with valid
-    covariance data) so that the valid assets absorb the full risk allocation.
+    1. **Zero risk budgets** (b_i = 0): asset excluded, receives zero weight.
+    2. **Rebalancing indicators** (rebal_i = 0): asset frozen at previous weight.
+    3. **NaN/zero variance**: asset excluded via covariance filtering.
 
     Args:
         pd_covar: Covariance matrix (N x N) as DataFrame.
         constraints: Portfolio constraints.
         weights_0: Previous-period weights for warm-start / fallback / freezing.
-        risk_budget: Target risk budgets. Dict or pd.Series. Assets with budget 0
-            are excluded. If None, equal risk budgets are used.
-        rebalancing_indicators: Binary series. Assets with value 0 are frozen
-            at weights_0. If None, all assets are rebalanced.
-        apply_total_to_good_ratio: If True, rescale budgets for excluded assets.
-        detailed_output: If True, return a DataFrame with risk contribution
-            diagnostics instead of just weights.
+        risk_budget: Target risk budgets. Dict or pd.Series.
+        rebalancing_indicators: Binary series for position freezing.
+        optimiser_config: Solver configuration.
+        detailed_output: If True, return DataFrame with risk contribution diagnostics.
 
     Returns:
-        Portfolio weights as pd.Series (or DataFrame if detailed_output=True),
-        aligned to pd_covar.index.
+        Portfolio weights as pd.Series (or DataFrame if detailed_output=True).
     """
     # assets with zero risk budgets are excluded from optimisation
     if risk_budget is not None:
@@ -189,12 +160,9 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
         return pd.Series(0.0, index=pd_covar.index)
 
     # rescale risk budgets for reduced universe
-    # n_eligible counts assets with positive risk budget (before NaN filtering)
-    # n_valid counts eligible assets that also have valid covariance
-    # the ratio rescales budgets so valid assets absorb the full allocation
-    if apply_total_to_good_ratio:
-        n_eligible = int(inclusion_indicators.sum())  # assets with positive risk budget
-        n_valid = len(clean_covar.columns)             # eligible minus NaN/zero-variance
+    if optimiser_config.apply_total_to_good_ratio:
+        n_eligible = int(inclusion_indicators.sum())
+        n_valid = len(clean_covar.columns)
         total_to_good_ratio1 = n_eligible / n_valid if n_valid > 0 else 1.0
         total_to_good_ratio = total_to_good_ratio1
     else:
@@ -215,7 +183,8 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
 
     weights0 = opt_risk_budgeting(covar=clean_covar.to_numpy(),
                                   constraints=constraints1,
-                                  risk_budget=risk_budget_np)
+                                  risk_budget=risk_budget_np,
+                                  verbose=optimiser_config.verbose)
     weights0[np.isinf(weights0)] = 0.0
     weights = pd.Series(weights0, index=clean_covar.index)
     weights = weights.reindex(index=pd_covar.index).fillna(0.0)
@@ -244,27 +213,14 @@ def opt_risk_budgeting(covar: np.ndarray,
     """
     Solve constrained risk budgeting using pyrb's ConstrainedRiskBudgeting.
 
-    Finds weights w such that each asset's marginal risk contribution matches
-    the prescribed budget:
-
-        RC_i(w) = w_i (Σw)_i / sqrt(w'Σw) = b_i * sqrt(w'Σw)
-
-    subject to linear inequality constraints C @ w >= d and box bounds on w.
-
-    Uses the ADMM-based solver from the pyrb package, which handles linear
-    constraints natively without reformulating as a penalty.
-
     Args:
-        covar: Covariance matrix (N x N) as numpy array.
-        constraints: Portfolio constraints providing bounds and linear constraints
-            via ``set_pyrb_constraints()``.
-        risk_budget: Target risk budgets (N,). Must be positive for included assets.
-            If None, equal budgets (1/N) are used.
+        covar: Covariance matrix (N x N).
+        constraints: Portfolio constraints.
+        risk_budget: Target risk budgets (N,). If None, equal budgets used.
         verbose: If True, print constraint slack diagnostics after solving.
 
     Returns:
-        Optimal weights (N,). Falls back to weights_0 or zeros if the solver
-        fails or returns NaN.
+        Optimal weights (N,). Falls back to weights_0 or zeros on failure.
     """
     n = covar.shape[0]
     if risk_budget is None:
@@ -301,17 +257,6 @@ def opt_risk_budgeting_scipy(covar: np.ndarray,
     """
     Risk budgeting via scipy SLSQP (fallback solver, not recommended).
 
-    Minimises the sum of squared deviations between actual and target
-    risk contributions:
-
-        min_w  Σ_i (RC_i(w) - b_i * σ_p(w))²
-
-    This formulation is non-convex and sensitive to initialisation. The pyrb
-    solver (``opt_risk_budgeting``) is preferred for production use.
-
-    Assets with zero risk budget are set to NaN internally to exclude them
-    from the objective without affecting the constraint structure.
-
     Args:
         covar: Covariance matrix (N x N).
         constraints: Portfolio constraints.
@@ -333,7 +278,6 @@ def opt_risk_budgeting_scipy(covar: np.ndarray,
 
     constraints_, bounds = constraints.set_scipy_constraints(covar=covar)
 
-    # set zero risk budget to NaN to exclude from objective computation
     risk_budget = np.where(np.isclose(risk_budget, 0.0), np.nan, risk_budget)
     options = {'ftol': 1e-8, 'maxiter': 200}
 
@@ -355,29 +299,11 @@ def opt_risk_budgeting_scipy(covar: np.ndarray,
 
 
 def risk_budget_objective(x, pars) -> float:
-    """
-    Risk budget deviation objective for scipy minimisation.
-
-    Computes mean squared error between actual risk contributions and
-    target budgets:
-
-        f(w) = (1/N) Σ_i (RC_i - b_i σ_p)²
-
-    where RC_i = w_i (Σw)_i / σ_p is the risk contribution and b_i σ_p
-    is the target. Assets with NaN budgets are excluded from the sum.
-
-    Args:
-        x: Portfolio weights (N,).
-        pars: [covar, budget] — covariance matrix and risk budgets.
-
-    Returns:
-        Mean squared deviation (scalar).
-    """
+    """Risk budget deviation objective for scipy minimisation."""
     covar, budget = pars[0], pars[1]
     asset_rc = compute_portfolio_risk_contributions(x, covar)
     sig_p = np.sqrt(compute_portfolio_variance(x, covar))
     if budget is not None:
-        # NaN budgets are preserved: their RC matches itself, contributing 0 to SSE
         risk_target = np.where(np.isnan(budget), asset_rc, np.multiply(sig_p, budget))
     else:
         risk_target = np.multiply(sig_p, np.ones_like(asset_rc) / asset_rc.shape[0])
@@ -395,29 +321,16 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
     """
     Inverse risk budgeting: find budgets that reproduce given target weights.
 
-    Solves for risk budgets b such that ``rolling_risk_budgeting(b)`` produces
-    weights matching ``given_weights`` as closely as possible, measured by
-    mean absolute deviation of average rolling weights from the target.
-
-    This is useful for reverse-engineering the implicit risk allocation of
-    an existing portfolio (e.g., a strategic benchmark) into risk budget form,
-    enabling risk-budgeted rebalancing that maintains the intended allocation.
-
-    Initialisation uses the average realised risk contributions of the target
-    weights across all dates in covar_dict, which is typically close to the
-    solution for stationary covariance structures.
-
     Args:
-        prices: Asset price panel. Index=dates, columns=tickers.
-        given_weights: Target portfolio weights to reproduce. Index=tickers.
+        prices: Asset price panel.
+        given_weights: Target portfolio weights to reproduce.
         time_period: Period for rolling backtest within the objective function.
         covar_dict: Pre-computed covariance matrices.
         min_risk_budget: Lower bound on each non-zero risk budget.
         max_risk_budget: Upper bound on each risk budget.
 
     Returns:
-        Optimal risk budgets as pd.Series. Index=tickers. Budgets sum to 1.
-        Assets with zero target weight receive zero budget.
+        Optimal risk budgets as pd.Series. Budgets sum to 1.
     """
     given_weights_np = given_weights.to_numpy()
 
@@ -430,7 +343,6 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
         sse = np.nanmean(np.abs(np.nanmean(risk_budget_weights, axis=0) - given_weights_np))
         return sse
 
-    # initialise from average realised risk contributions of target weights
     is_use_avg_rc = True
     if is_use_avg_rc:
         portfolio_rc = {}
@@ -442,7 +354,6 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
     else:
         x0 = given_weights.to_numpy()
 
-    # enforce zero budget for zero-weight assets
     enforce_min_max = np.where(np.greater(given_weights_np, 0.0), 1.0, 0.0)
     min_rbs = min_risk_budget * enforce_min_max
     max_rbs = max_risk_budget * enforce_min_max

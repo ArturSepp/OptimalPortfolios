@@ -9,10 +9,10 @@ import pandas as pd
 import qis as qis
 import matplotlib.pyplot as plt
 import yfinance as yf
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from enum import Enum
 from optimalportfolios import estimate_rolling_ewma_covar, rolling_risk_budgeting, Constraints
-from optimalportfolios.optimization.solvers.risk_budgeting import solve_for_risk_budgets_from_given_weights
+from optimalportfolios.optimization.general.risk_budgeting import solve_for_risk_budgets_from_given_weights
 
 
 def plot_static_risk_budgets_vs_weights(prices: pd.DataFrame,
@@ -20,7 +20,7 @@ def plot_static_risk_budgets_vs_weights(prices: pd.DataFrame,
                                         given_static_weights: pd.Series,
                                         covar_dict: Dict[pd.Timestamp, pd.DataFrame],
                                         time_period: qis.TimePeriod = None,
-                                        figsize=(16, 10),
+                                        figsize: Tuple[float, float] = (16, 10),
                                         add_titles: bool = True,
                                         var_format: str = '{:.1%}',
                                         strategy_ticker: str = 'Risk-budgeted portfolio',
@@ -140,7 +140,6 @@ def run_local_test(local_test: LocalTests):
                                                                  time_period=time_period,
                                                                  covar_dict=covar_dict)
         risk_budgets_weights = rolling_risk_budgeting(prices=prices,
-                                                      time_period=time_period,
                                                       covar_dict=covar_dict,
                                                       risk_budget=risk_budgets,
                                                       constraints=Constraints(is_long_only=True))

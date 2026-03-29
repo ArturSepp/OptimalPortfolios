@@ -16,7 +16,7 @@ Reference:
 # imports
 import pandas as pd
 import matplotlib.pyplot as plt
-from typing import List, Optional
+from typing import List
 from enum import Enum
 import qis as qis
 
@@ -100,7 +100,8 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
 
     # 5. Group LASSO factor model
     group_lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO,
-                                   group_data=group_data, reg_lambda=1e-6,
+                                   group_data=group_data,
+                                   reg_lambda=1e-5,
                                    span=span, solver='CLARABEL')
 
     group_lasso_estimator = FactorCovarEstimator(lasso_model=group_lasso_model,
@@ -164,7 +165,7 @@ def run_local_test(local_test: LocalTests):
 
     if local_test == LocalTests.MULTI_COVAR_ESTIMATORS_BACKTEST:
         portfolio_objective = PortfolioObjective.MIN_VARIANCE
-        params = dict(returns_freq='ME', rebalancing_freq='QE', span=36)
+        params = dict(returns_freq='ME', rebalancing_freq='QE', span=18)
 
         prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
         time_period = qis.TimePeriod(start='31Dec2006', end='15Mar2026')

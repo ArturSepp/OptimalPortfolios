@@ -12,7 +12,8 @@ from typing import Tuple
 
 from optimalportfolios import (Constraints, compute_portfolio_vol,
                                wrapper_maximise_alpha_with_target_return,
-                               rolling_maximise_alpha_with_target_return)
+                               rolling_maximise_alpha_with_target_return,
+                               EwmaCovarEstimator)
 
 
 def run_bonds_etf_optimal_portfolio(prices: pd.DataFrame,
@@ -23,29 +24,31 @@ def run_bonds_etf_optimal_portfolio(prices: pd.DataFrame,
     """
     run the optimal portfolio
     """
-    momentum = qis.compute_ewm_long_short_filtered_ra_returns(returns=qis.to_returns(prices, freq='W-WED'), vol_span=13,
-                                                              long_span=13, short_span=None, weight_lag=0)
-    # momentum = qis.map_signal_to_weight(signals=momentum, loc=0.0, slope_right=0.5, slope_left=0.5, tail_level=3.0)
+    momentum = qis.compute_ewm_long_short_filtered_ra_returns(returns=qis.to_returns(prices, freq='W-WED'), vol_span=52,
+                                                              long_span=52, short_span=None, weight_lag=0)
     alphas = qis.df_to_cross_sectional_score(df=momentum)
 
     constraints = Constraints(is_long_only=True,
                                min_weights=pd.Series(0.0, index=prices.columns),
-                               max_weights=pd.Series(0.2, index=prices.columns),
-                               max_target_portfolio_vol_an=0.065,
+                               max_weights=pd.Series(0.20, index=prices.columns),
+                               #max_target_portfolio_vol_an=0.065,
                                max_exposure=1.0,
                                min_exposure=0.5,
-                               turnover_constraint=0.30  # 25% per month
+                               turnover_constraint=0.50  # 25% per month
                                )
+
+    ewma_covar_estimator = EwmaCovarEstimator(rebalancing_freq='ME',
+                                              returns_freq='W-WED',
+                                              span=52,
+                                              is_apply_vol_normalised_returns=False)
+    covar_dict = ewma_covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
 
     weights = rolling_maximise_alpha_with_target_return(prices=prices,
                                                         alphas=alphas,
                                                         yields=yields,
                                                         target_returns=target_returns,
                                                         constraints=constraints,
-                                                        time_period=time_period,
-                                                        span=52,
-                                                        rebalancing_freq='ME',
-                                                        verbose=False)
+                                                        covar_dict=covar_dict)
     return weights
 
 
@@ -96,11 +99,10 @@ def fetch_benchmark_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Data
             rolling_1y = yield_deflators[ticker] * rolling_1y
         yields[ticker] = rolling_1y.divide(prices[ticker].reindex(index=rolling_1y.index, method='ffill'))
     dividends = pd.DataFrame.from_dict(dividends, orient='columns')
-    yields = pd.DataFrame.from_dict(yields, orient='columns')
+    yields = pd.DataFrame.from_dict(yields, orient='columns').fillna(0.0)
 
     benchmarks = ['AGG']
     benchmark_prices = yf.download(tickers=benchmarks, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close']
-    print(benchmark_prices)
     target_returns = yf.download('^IRX', start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].dropna() / 100.0
     target_returns = target_returns.iloc[:, 0].reindex(index=prices.index).ffill().rename('Target return')
     return prices, benchmark_prices, dividends, yields, target_returns, group_data
@@ -169,10 +171,10 @@ def run_local_test(local_test: LocalTests):
 
     elif local_test == LocalTests.ROLLING_OPTIMISATION:
         # optimise using last available universe as inputs
-        time_period = qis.TimePeriod('31Dec2012', '17Apr2025')
+        time_period = qis.TimePeriod('31Dec2016', '31Dec2025')
         weights = run_bonds_etf_optimal_portfolio(prices=prices,
                                                   yields=yields,
-                                                  target_returns=target_returns + 0.005,
+                                                  target_returns=target_returns+0.005,
                                                   time_period=time_period)
         print(f"weights={weights}")
         print(f"exposure={weights.sum(1)}")

@@ -52,7 +52,7 @@ constraints = Constraints(is_long_only=True,
                            min_weights=pd.Series(0.0, index=prices.columns),
                            max_weights=pd.Series(0.5, index=prices.columns))
 
-# 3.b. compute solvers portfolio weights rebalanced every quarter
+# 3.b. compute taa portfolio weights rebalanced every quarter
 ewma_estimator = EwmaCovarEstimator(returns_freq=returns_freq, span=span, rebalancing_freq=rebalancing_freq)
 covar_dict = ewma_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
 weights = compute_rolling_optimal_weights(prices=prices,

@@ -5,7 +5,7 @@ Solves the tactical asset allocation (TAA) problem:
 
     max_w  α'w
 
-    s.t.   y'w >= r_target        (return constraint)
+    s.t.   y'w >= r_target        (return constraint, optional)
            w'Σw <= σ²_max         (risk constraint, optional)
            1'w = 1                (full investment)
            w >= 0                 (long-only, optional)
@@ -16,14 +16,7 @@ y is the vector of asset yields or expected returns, r_target is the minimum
 portfolio return, and Σ is the covariance matrix.
 
 This formulation separates the alpha signal (what we want to maximise) from
-the return constraint (what we need to deliver). This is typical in
-multi-asset TAA where the portfolio must meet a minimum yield or income
-target while the alpha overlay tilts toward the best risk-adjusted
-opportunities within the feasible set.
-
-The covariance matrices are produced externally by any CovarEstimator
-(EwmaCovarEstimator, FactorCovarEstimator, etc.), and the alphas and yields
-are provided as time-indexed DataFrames aligned to the rebalancing schedule.
+the return constraint (what we need to deliver).
 
 Reference:
     Sepp A., Ossa I., and Kastenholz M. (2026),
@@ -32,13 +25,15 @@ Reference:
     The Journal of Portfolio Management, 52(4), 86-120.
     Available at https://www.pm-research.com/content/iijpormgmt/52/4/86
 """
+import warnings
 import numpy as np
 import pandas as pd
 import cvxpy as cvx
 from typing import Dict
 
-from optimalportfolios import filter_covar_and_vectors_for_nans, estimate_rolling_ewma_covar
+from optimalportfolios import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.optimization.config import OptimiserConfig
 
 
 def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
@@ -47,8 +42,7 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
                                               target_returns: pd.Series,
                                               constraints: Constraints,
                                               covar_dict: Dict[pd.Timestamp, pd.DataFrame],
-                                              solver: str = 'CLARABEL',
-                                              verbose: bool = False
+                                              optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
                                               ) -> pd.DataFrame:
     """
     Compute rolling alpha-maximising portfolios with a target return constraint.
@@ -57,39 +51,21 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
 
         max_w  α_t'w   s.t.  y_t'w >= r_t,  constraints
 
-    where α_t, y_t, and r_t are the alpha signal, asset yields, and target
-    return at date t. Previous-period weights are passed as warm-start to
-    stabilise turnover.
-
     Alphas, yields, and target returns are forward-filled to the rebalancing
-    schedule, so they can be provided at any frequency (e.g., monthly signals
-    with quarterly rebalancing).
+    schedule.
 
     Args:
-        prices: Asset price panel. Index=dates, columns=tickers. Used only
-            for column alignment of the output weights DataFrame.
-        alphas: Alpha signals per asset. Index=dates, columns=tickers.
-            Forward-filled to rebalancing dates. Represents the expected
-            excess return from active views (e.g., from a CMA model).
-        yields: Expected asset returns or yields. Index=dates, columns=tickers.
-            Forward-filled to rebalancing dates. Used in the return constraint
-            y'w >= r_target (e.g., carry, yield-to-worst, expected income).
-        target_returns: Minimum portfolio return at each date. Index=dates.
-            Forward-filled to rebalancing dates. The constraint y'w >= r_t
-            ensures the portfolio delivers at least this return level.
-        constraints: Portfolio constraints (long-only, weight bounds, group
-            exposures, vol budget, etc.).
+        prices: Asset price panel. Used for column alignment.
+        alphas: Alpha signals per asset. Forward-filled to rebalancing dates.
+        yields: Expected asset returns or yields. Forward-filled.
+        target_returns: Minimum portfolio return at each date. Forward-filled.
+        constraints: Portfolio constraints.
         covar_dict: Pre-computed covariance matrices keyed by rebalancing date.
-            Typically produced by ``estimator.fit_rolling_covars()``.
-            The dict keys define the rebalancing schedule.
-        solver: CVXPY solver name.
-        verbose: If True, print inputs at each rebalancing date for debugging.
+        optimiser_config: Solver configuration.
 
     Returns:
-        DataFrame of portfolio weights. Index=rebalancing dates from covar_dict,
-        columns=tickers aligned to ``prices.columns``.
+        DataFrame of portfolio weights.
     """
-    # align signals to the rebalancing schedule via forward-fill
     rebalancing_schedule = list(covar_dict.keys())
     alphas = alphas.reindex(index=rebalancing_schedule, method='ffill')
     yields = yields.reindex(index=rebalancing_schedule, method='ffill')
@@ -99,7 +75,7 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
     weights_0 = None
     for date, pd_covar in covar_dict.items():
 
-        if verbose:
+        if optimiser_config.verbose:
             print(f"date={date}")
             print(f"pd_covar=\n{pd_covar}")
             print(f"alphas=\n{alphas.loc[date, :]}")
@@ -113,7 +89,7 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
             target_return=target_returns[date],
             constraints=constraints,
             weights_0=weights_0,
-            solver=solver
+            optimiser_config=optimiser_config
         )
 
         weights_0 = weights_  # warm-start next period
@@ -130,43 +106,45 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
                                               target_return: float,
                                               constraints: Constraints,
                                               weights_0: pd.Series = None,
-                                              solver: str = 'CLARABEL'
+                                              optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
                                               ) -> pd.Series:
     """
     Single-date alpha maximisation with NaN/zero-variance filtering.
 
-    Removes assets with NaN or zero diagonal entries in the covariance
-    matrix, updates the constraint set for the reduced universe (including
-    the return constraint y'w >= r_target), solves, and maps weights back
-    to the full asset universe.
-
-    The return constraint is passed to the constraint object via
-    ``update_with_valid_tickers(asset_returns=yields, target_return=...)``,
-    which adds it as a linear inequality in the CVXPY problem.
-
     Args:
         pd_covar: Covariance matrix (N x N) as DataFrame.
-        alphas: Alpha signal per asset. Index=tickers.
+        alphas: Alpha signal per asset.
         yields: Expected returns per asset for the return constraint.
         target_return: Minimum portfolio return level (y'w >= target_return).
         constraints: Portfolio constraints.
         weights_0: Previous-period weights for warm-start / fallback.
-        solver: CVXPY solver name.
+        optimiser_config: Solver configuration.
 
     Returns:
         Portfolio weights as pd.Series aligned to pd_covar.index.
     """
-    # filter out assets with zero variance or NaN alphas
     vectors = dict(alphas=alphas)
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar, vectors=vectors)
 
-    # update constraints for the valid subset: rescale weight bounds and
-    # inject the return constraint y'w >= r_target
+    if optimiser_config.apply_total_to_good_ratio:
+        total_to_good_ratio = len(pd_covar.columns) / len(clean_covar.columns)
+    else:
+        total_to_good_ratio = None
+
+    # yields: fill NaN with 0 so they don't break the return constraint
+    # assets with NaN yield contribute zero to portfolio yield — conservative
+    valid_tickers = clean_covar.columns.to_list()
+    yields_clean = yields.reindex(index=valid_tickers)
+    nan_yields = yields_clean.index[yields_clean.isna()].tolist()
+    if nan_yields:
+        warnings.warn(f"NaN yields for {nan_yields}, setting to 0 in return constraint")
+        yields_clean = yields_clean.fillna(0.0)
+
     constraints1 = constraints.update_with_valid_tickers(
-        valid_tickers=clean_covar.columns.to_list(),
-        total_to_good_ratio=len(pd_covar.columns) / len(clean_covar.columns),
+        valid_tickers=valid_tickers,
+        total_to_good_ratio=total_to_good_ratio,
         weights_0=weights_0,
-        asset_returns=yields,
+        asset_returns=yields_clean,
         target_return=target_return
     )
 
@@ -174,7 +152,8 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
         covar=clean_covar.to_numpy(),
         alphas=good_vectors['alphas'].to_numpy(),
         constraints=constraints1,
-        solver=solver
+        solver=optimiser_config.solver,
+        verbose=optimiser_config.verbose
     )
     weights[np.isinf(weights)] = 0.0
     weights = pd.Series(weights, index=clean_covar.index)
@@ -192,38 +171,23 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
     """
     Solve alpha-maximising portfolio allocation via CVXPY.
 
-    Solves the linear-objective convex programme:
+    Solves:
 
         max_w  α'w
 
         s.t.   y'w >= r_target    (encoded in constraints)
                w'Σw <= σ²_max     (encoded in constraints, optional)
-               1'w = 1            (full investment)
-               w >= 0             (long-only, if enabled)
-               w_min <= w <= w_max
-
-    The objective is linear in w (maximise alpha exposure), while risk
-    and return constraints define the feasible set. This is a second-order
-    cone programme (SOCP) when the vol constraint is active, and a linear
-    programme (LP) when only the return and weight constraints bind.
-
-    Note: the covariance matrix enters only through the constraints
-    (vol budget), not through the objective. This separates the alpha
-    signal from the risk model — the optimizer tilts toward high-alpha
-    assets subject to risk and return feasibility.
+               1'w = 1,  w >= 0,  bounds
 
     Args:
-        covar: Covariance matrix (N x N) as numpy array. Used by constraints
-            for vol budget enforcement.
-        alphas: Alpha signal vector (N,). The objective maximises α'w.
-        constraints: Portfolio constraints including return target and
-            optional vol budget. Generated by ``update_with_valid_tickers``.
+        covar: Covariance matrix (N x N).
+        alphas: Alpha signal vector (N,).
+        constraints: Portfolio constraints including return target.
         verbose: If True, print CVXPY solver diagnostics.
         solver: CVXPY solver name.
 
     Returns:
-        Optimal weights (N,). Falls back to weights_0 or zeros if the
-        solver fails (e.g., infeasible return target given risk constraints).
+        Optimal weights (N,). Falls back to weights_0 or zeros on failure.
     """
     n = covar.shape[0]
     if constraints.is_long_only:
@@ -232,24 +196,20 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
         nonneg = False
     w = cvx.Variable(n, nonneg=nonneg)
 
-    # linear objective: maximise alpha exposure
     objective_fun = alphas.T @ w
     objective = cvx.Maximize(objective_fun)
 
-    # all constraints (weight bounds, full investment, return target, vol budget)
-    # are assembled by the Constraints object
-    constraints_ = constraints.set_cvx_all_constraints(w=w, covar=covar)
+    constraints_ = constraints.set_cvx_all_constraints(w=w, covar=cvx.psd_wrap(covar))
+
     problem = cvx.Problem(objective, constraints_)
     problem.solve(verbose=verbose, solver=solver)
 
     optimal_weights = w.value
     if optimal_weights is None:
-        print(f"not solved")
+        warnings.warn(f"cvx_maximise_alpha_with_target_return: solver did not converge")
         if constraints.weights_0 is not None:
             optimal_weights = constraints.weights_0.to_numpy()
-            print(f"using weights_0")
         else:
             optimal_weights = np.zeros(n)
-            print(f"using zero weights")
 
     return optimal_weights

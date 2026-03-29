@@ -55,7 +55,7 @@ import numpy as np
 import pandas as pd
 
 from optimalportfolios.optimization.constraints import Constraints
-from optimalportfolios.optimization.solvers.risk_budgeting import (
+from optimalportfolios.optimization.general.risk_budgeting import (
     opt_risk_budgeting,
     opt_risk_budgeting_scipy,
 )

@@ -3,7 +3,6 @@ example of minimization of tracking error
 """
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 import qis as qis
 from enum import Enum
 

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from enum import Enum
 
 from optimalportfolios.optimization.constraints import Constraints
-from optimalportfolios.optimization.solvers.risk_budgeting import (
+from optimalportfolios.optimization.general.risk_budgeting import (
     opt_risk_budgeting,
     opt_risk_budgeting_scipy,
     wrapper_risk_budgeting,

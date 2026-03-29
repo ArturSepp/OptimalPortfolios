@@ -144,16 +144,23 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
                                                             covar_dict=covar_dict)
 
     elif optimisation_type == OptimisationType.MAX_SHARPE:
+        rebalancing_dates = list(covar_dict.keys())
+        means_wo = opt.estimate_rolling_ewma_means(prices=prices_without_asset,
+                                                rebalancing_dates=rebalancing_dates,
+                                                returns_freq=returns_freq,
+                                                span=span, annualize=True)
         weights_wo = opt.rolling_maximize_portfolio_sharpe(prices=prices_without_asset,
+                                                           expected_returns=means_wo,
                                                            constraints=opt.Constraints(min_weights=weight_min_wo, max_weights=weight_max_wo),
-                                                           covar_dict=covar_dict,
-                                                           returns_freq=returns_freq,
-                                                           span=span)
+                                                           covar_dict=covar_dict)
+        means_with = opt.estimate_rolling_ewma_means(prices=prices_with_asset,
+                                                rebalancing_dates=rebalancing_dates,
+                                                returns_freq=returns_freq,
+                                                span=span, annualize=True)
         weights_with = opt.rolling_maximize_portfolio_sharpe(prices=prices_with_asset,
+                                                             expected_returns=means_with,
                                                              constraints=opt.Constraints(min_weights=weight_min_with, max_weights=weight_max_with),
-                                                             covar_dict=covar_dict,
-                                                             returns_freq=returns_freq,
-                                                             span=span)
+                                                             covar_dict=covar_dict)
 
     elif optimisation_type == OptimisationType.MIXTURE:
         weights_wo = opt.rolling_maximize_cara_mixture(prices=prices_without_asset,
