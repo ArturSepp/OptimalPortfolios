@@ -485,10 +485,16 @@ class BenchmarkDeviationConstraints:
         if self.factor_max_deviation is not None:
             this = self.factor_max_deviation.index.isin(self.factor_loading_mat.columns)
             if not this.all():
-                missing = self.factor_loading_mat.columns[~this]
-                warnings.warn(f"Missing in self.factor_loading_mat.columns: {missing}")
+                missing = self.factor_max_deviation.index[~this]
+                warnings.warn(f"factor_max_deviation entries not in factor_loading_mat.columns: {missing.tolist()}")
         else:
-            raise ValueError(f"factor_max_deviation or group_turnover_utility_weights must be given")
+            raise ValueError(f"factor_max_deviation must be given")
+
+    def copy(self) -> BenchmarkDeviationConstraints:
+        return BenchmarkDeviationConstraints(
+            factor_loading_mat=self.factor_loading_mat.copy(),
+            factor_max_deviation=self.factor_max_deviation.copy(),
+        )
 
     def update(self, valid_tickers: List[str]) -> BenchmarkDeviationConstraints:
         """Filter to valid tickers only."""
@@ -505,7 +511,7 @@ class BenchmarkDeviationConstraints:
     ) -> List[Inequality]:
         constraints = []
         for group in self.factor_max_deviation.index:
-            group_loading = self.factor_loading_mat[group].copy()
+            group_loading = self.factor_loading_mat[group]
             if np.any(np.isclose(group_loading, 0.0) == False):  # exclude groups with zero loading
                 # Align indices
                 group_loading = group_loading.loc[benchmark_weights.index]
@@ -550,6 +556,8 @@ class Constraints:
         group_lower_upper_constraints: Group-level allocation constraints.
         group_tracking_error_constraint: Group-level tracking error constraints.
         group_turnover_constraint: Group-level turnover constraints.
+        sector_deviation_constraints: Sector deviation constraints relative to benchmark.
+        style_deviation_constraints: Style deviation constraints relative to benchmark.
     """
     is_long_only: bool = True
     min_weights: pd.Series = None
@@ -715,6 +723,12 @@ class Constraints:
         if self.group_turnover_constraint is not None:
             self_dict['group_turnover_constraint'] = \
                 self.group_turnover_constraint.update(valid_tickers=valid_tickers)
+        if self.sector_deviation_constraints is not None:
+            self_dict['sector_deviation_constraints'] = \
+                self.sector_deviation_constraints.update(valid_tickers=valid_tickers)
+        if self.style_deviation_constraints is not None:
+            self_dict['style_deviation_constraints'] = \
+                self.style_deviation_constraints.update(valid_tickers=valid_tickers)
         return Constraints(**self_dict)
 
     def update_group_lower_upper_constraints(
@@ -1173,10 +1187,10 @@ class Constraints:
         """
         print("=== CVXPY constraints ===")
         for i, c in enumerate(constraints_list):
-            print("\nConstraint #%s:", i)
-            print("  as str:    %s", c)             # most readable
-            print("  type:      %s", type(c))
-            print("  shape:     %s", c.shape)
+            print(f"\nConstraint {i}")
+            print(f"  as str:    {c}")             # most readable
+            print(f"  type:      {type(c)}")
+            print(f"  shape:     {c.shape}")
             print("---------------------------")
 
     def check_constraints_violation(
@@ -1193,7 +1207,7 @@ class Constraints:
         for i, c in enumerate(constraints_list):
             v = c.violation()   # numpy array of nonnegative violations
             max_v = v.max() if v.size > 0 else 0.0
-            print("Constraint %s: max violation = %s", i, max_v)
+            print(f"Constraint {i}: max violation = {max_v}")
 
 
 def add_term_to_objective_function(objective_fun: AddExpression, term: AddExpression) -> AddExpression:
