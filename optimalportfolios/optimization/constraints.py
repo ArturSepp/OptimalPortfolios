@@ -1,4 +1,4 @@
-"""Portfolio optimization constraints for CVXPY, SciPy, and PyRB solvers.
+"""Portfolio optimization constraints for CVXPY, SciPy, and PyRB taa.
 
 This module provides a comprehensive framework for defining and enforcing portfolio
 constraints across multiple optimization backends. It supports individual asset
@@ -863,9 +863,11 @@ class Constraints:
                 constraints += [cvx.sum(w) >= self.min_exposure]
         else:
             if self.max_exposure == self.min_exposure:
-                constraints += [cvx.sum(w) == exposure_scaler]
-            else:
                 constraints += [cvx.sum(w) == exposure_scaler * self.max_exposure]
+            else:
+                # preserve both bounds in Charnes-Cooper space: k*min ≤ sum(y) ≤ k*max
+                constraints += [cvx.sum(w) <= exposure_scaler * self.max_exposure]
+                constraints += [cvx.sum(w) >= exposure_scaler * self.min_exposure]
 
         if self.min_weights is not None:
             min_weights = (self.min_weights.to_numpy()
@@ -1043,29 +1045,36 @@ class Constraints:
         return objective_fun, constraints
 
     def set_scipy_bounds(self, covar: np.ndarray):
-        """Set up bounds for scipy optimization.
+        """Convert weight constraints into (min, max) bounds for scipy solvers.
 
-        Converts weight constraints into (min, max) bounds for each asset.
+        Handles all combinations of min_weights, max_weights, and is_long_only.
+        When neither bound is provided, returns (0, 1) for long-only or None
+        for unconstrained. When either bound is provided, the missing side
+        defaults to 0 (long-only) or -inf (unconstrained) for lows, and 1 for highs.
 
         Args:
-            covar: Covariance matrix (used to infer number of assets if needed).
+            covar: Covariance matrix (N x N), used to infer number of assets.
 
         Returns:
-            Array of (min, max) tuples for each asset.
+            Array of (min, max) tuples per asset, or None if unconstrained.
         """
-        if self.is_long_only and self.min_weights is None:
-            n = covar.shape[0]
-            bounds = np.array([(0.0, 1.0) for _ in range(n)])
-        elif self.min_weights is not None and self.max_weights is not None:
-            bounds = np.array(list(zip(self.min_weights.to_numpy(), self.max_weights.to_numpy())))
-        elif self.min_weights is not None and self.max_weights is None:
-            bounds = np.array(list(zip(self.min_weights.to_numpy(),
-                                       [1.0] * len(self.min_weights))))
-        elif self.min_weights is None and self.max_weights is not None:
-            bounds = np.array(list(zip([0.0] * len(self.max_weights),
-                                       self.max_weights.to_numpy())))
+        min_w = self.min_weights
+        max_w = self.max_weights
+
+        # no explicit bounds: use long-only defaults or fully unconstrained
+        if min_w is None and max_w is None:
+            if self.is_long_only:
+                n = covar.shape[0]
+                bounds = np.array([(0.0, 1.0) for _ in range(n)])
+            else:
+                bounds = None
         else:
-            bounds = None
+            # at least one bound is provided: fill the missing side with defaults
+            n = covar.shape[0]
+            lows = min_w.to_numpy() if min_w is not None else np.full(n, 0.0 if self.is_long_only else -np.inf)
+            highs = max_w.to_numpy() if max_w is not None else np.ones(n)
+            bounds = np.array(list(zip(lows, highs)))
+
         return bounds
 
     def set_scipy_constraints(self, covar: np.ndarray) -> Tuple[List, np.ndarray]:
@@ -1112,7 +1121,7 @@ class Constraints:
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Generate PyRB-compatible constraints in matrix form (C*x <= d).
 
-        Converts group constraints to matrix inequality form for risk budgeting solvers.
+        Converts group constraints to matrix inequality form for risk budgeting taa.
 
         Args:
             covar: Covariance matrix (used for bounds inference if needed).

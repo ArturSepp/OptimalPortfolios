@@ -11,7 +11,8 @@ from optimalportfolios import (Constraints, GroupLowerUpperConstraints,
                                compute_tre_turnover_stats,
                                rolling_maximize_portfolio_sharpe,
                                wrapper_maximize_portfolio_sharpe,
-                               EwmaCovarEstimator)
+                               EwmaCovarEstimator,
+                               estimate_rolling_ewma_means)
 
 from optimalportfolios.examples.universe import fetch_benchmark_universe_data
 
@@ -76,7 +77,12 @@ def run_local_test(local_test: LocalTests):
 
         covar_estimator = EwmaCovarEstimator(returns_freq='ME', span=60, rebalancing_freq='YE')
         covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+        expected_returns = estimate_rolling_ewma_means(prices=prices,
+                                                rebalancing_dates=list(covar_dict.keys()),
+                                                returns_freq=covar_estimator.returns_freq,
+                                                span=covar_estimator.span, annualize=True)
         weights = rolling_maximize_portfolio_sharpe(prices=prices,
+                                                    expected_returns=expected_returns,
                                                     constraints=constraints,
                                                     covar_dict=covar_dict)
 

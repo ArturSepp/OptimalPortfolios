@@ -9,8 +9,8 @@ from enum import Enum
 # optimalportfolios
 from optimalportfolios.config import PortfolioObjective
 from optimalportfolios.optimization.constraints import Constraints
-from optimalportfolios.optimization.solvers.max_sharpe import cvx_maximize_portfolio_sharpe
-from optimalportfolios.optimization.solvers.quadratic import (cvx_quadratic_optimisation,
+from optimalportfolios.optimization.general.max_sharpe import cvx_maximize_portfolio_sharpe
+from optimalportfolios.optimization.general.quadratic import (cvx_quadratic_optimisation,
                                                               print_portfolio_outputs,
                                                               solve_analytic_log_opt,
                                                               max_qp_portfolio_vol_target)
@@ -215,4 +215,4 @@ def run_local_test(local_test: LocalTests):
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.SHARPE)
+    run_local_test(local_test=LocalTests.MIN_VAR)

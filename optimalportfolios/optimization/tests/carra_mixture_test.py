@@ -2,7 +2,7 @@ import numpy as np
 from enum import Enum
 
 from optimalportfolios.optimization.constraints import Constraints
-from optimalportfolios.optimization.solvers.carra_mixure import opt_maximize_cara, opt_maximize_cara_mixture
+from optimalportfolios.optimization.general.carra_mixture import opt_maximize_cara, opt_maximize_cara_mixture
 
 
 class LocalTests(Enum):

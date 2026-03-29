@@ -6,14 +6,7 @@ Maximises the diversification ratio:
     DR(w) = w'σ / sqrt(w'Σw)
 
 where σ is the vector of asset volatilities (sqrt of diagonal of Σ) and
-w'Σw is the portfolio variance. The diversification ratio measures the
-ratio of the weighted-average asset volatility to the portfolio volatility,
-quantifying the benefit of diversification. DR = 1 implies no diversification
-(perfect correlation or single asset); DR > 1 implies diversification gains.
-
-The maximum diversification portfolio (MDP) maximises this ratio subject to
-portfolio constraints. It can be interpreted as the tangency portfolio on
-the efficient frontier when Sharpe ratios are proportional to volatilities.
+w'Σw is the portfolio variance.
 
 Uses scipy SLSQP for the non-convex ratio objective.
 
@@ -38,65 +31,54 @@ from typing import List, Dict
 from optimalportfolios.utils.portfolio_funcs import calculate_diversification_ratio
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.optimization.config import OptimiserConfig
 
 
 def rolling_maximise_diversification(prices: pd.DataFrame,
                                      constraints: Constraints,
-                                     covar_dict: Dict[pd.Timestamp, pd.DataFrame]
+                                     covar_dict: Dict[pd.Timestamp, pd.DataFrame],
+                                     optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
                                      ) -> pd.DataFrame:
     """
     Compute rolling maximum diversification portfolios.
 
-    At each rebalancing date (defined by the keys of ``covar_dict``),
-    solves the maximum diversification problem using the pre-computed
-    covariance matrix. Previous-period weights are passed as warm-start
-    to stabilise turnover.
-
-    The covariance matrices are produced externally by any CovarEstimator
-    (EwmaCovarEstimator, FactorCovarEstimator, etc.), decoupling the
-    estimation step from the optimisation step.
-
     Args:
-        prices: Asset price panel. Index=dates, columns=tickers. Used only
-            for column alignment of the output weights DataFrame.
-        constraints: Portfolio constraints (long-only, weight bounds, group
-            exposures, etc.).
+        prices: Asset price panel. Used for column alignment.
+        constraints: Portfolio constraints.
         covar_dict: Pre-computed covariance matrices keyed by rebalancing date.
-            Typically produced by ``estimator.fit_rolling_covars()``.
+        optimiser_config: Solver configuration.
 
     Returns:
-        DataFrame of portfolio weights. Index=rebalancing dates,
-        columns=tickers aligned to ``prices.columns``.
+        DataFrame of portfolio weights.
     """
     weights = {}
     weights_0 = None
     for date, pd_covar in covar_dict.items():
         weights_ = wrapper_maximise_diversification(pd_covar=pd_covar,
                                                     constraints=constraints,
-                                                    weights_0=weights_0)
+                                                    weights_0=weights_0,
+                                                    optimiser_config=optimiser_config)
         weights_0 = weights_
         weights[date] = weights_
 
     weights = pd.DataFrame.from_dict(weights, orient='index')
-    weights = weights.reindex(columns=prices.columns.to_list())
+    weights = weights.reindex(columns=prices.columns).fillna(0.0)
     return weights
 
 
 def wrapper_maximise_diversification(pd_covar: pd.DataFrame,
                                      constraints: Constraints,
-                                     weights_0: pd.Series = None
+                                     weights_0: pd.Series = None,
+                                     optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
                                      ) -> pd.Series:
     """
     Single-date maximum diversification with NaN/zero-variance filtering.
-
-    Removes assets with NaN or zero diagonal entries in the covariance matrix,
-    solves the reduced problem, and maps weights back to the full asset universe
-    (excluded assets receive zero weight).
 
     Args:
         pd_covar: Covariance matrix (N x N) as DataFrame.
         constraints: Portfolio constraints.
         weights_0: Previous-period weights for warm-start / fallback.
+        optimiser_config: Solver configuration.
 
     Returns:
         Portfolio weights as pd.Series aligned to pd_covar.index.
@@ -104,12 +86,18 @@ def wrapper_maximise_diversification(pd_covar: pd.DataFrame,
     vectors = None
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar, vectors=vectors)
 
+    if optimiser_config.apply_total_to_good_ratio:
+        total_to_good_ratio = len(pd_covar.columns) / len(clean_covar.columns)
+    else:
+        total_to_good_ratio = None
+
     constraints1 = constraints.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
-                                                         total_to_good_ratio=len(pd_covar.columns) / len(clean_covar.columns),
+                                                         total_to_good_ratio=total_to_good_ratio,
                                                          weights_0=weights_0)
 
     weights = opt_maximise_diversification(covar=clean_covar.to_numpy(),
-                                           constraints=constraints1)
+                                           constraints=constraints1,
+                                           verbose=optimiser_config.verbose)
     weights = pd.Series(weights, index=clean_covar.columns)
     weights = weights.reindex(index=pd_covar.columns).fillna(0.0)
     return weights
@@ -128,21 +116,15 @@ def opt_maximise_diversification(covar: np.ndarray,
 
         f(w) = -DR(w) = -w'σ / sqrt(w'Σw)
 
-    Starting from equal weights. The objective is non-convex due to the
-    ratio form, so the solution depends on the starting point; equal weights
-    is a natural initialisation for diversified portfolios.
-
     Args:
-        covar: Covariance matrix (N x N) as numpy array.
-        constraints: Portfolio constraints (bounds, exposures, turnover).
+        covar: Covariance matrix (N x N).
+        constraints: Portfolio constraints.
         verbose: If True, print SLSQP solver diagnostics.
         ftol: Function tolerance for convergence.
         maxiter: Maximum number of SLSQP iterations.
 
     Returns:
-        Optimal weights (N,). Falls back to weights_0 or zeros if the
-        solver fails. Long-only constraint violations are clipped to zero
-        when ``constraints.is_long_only`` is True.
+        Optimal weights (N,). Falls back to weights_0 or zeros on failure.
     """
     n = covar.shape[0]
     x0 = np.ones(n) / n
@@ -165,7 +147,6 @@ def opt_maximise_diversification(covar: np.ndarray,
         warnings.warn(f"opt_maximise_diversification(): problem is not solved, {mes}")
 
     else:
-        # clip numerical noise for long-only portfolios
         if constraints.is_long_only:
             optimal_weights = np.where(optimal_weights > 0.0, optimal_weights, 0.0)
 
@@ -173,17 +154,6 @@ def opt_maximise_diversification(covar: np.ndarray,
 
 
 def max_diversification_objective(w: np.ndarray, pars: List[np.ndarray]) -> float:
-    """
-    Negative diversification ratio (for minimisation).
-
-    f(w) = -w'σ / sqrt(w'Σw)
-
-    Args:
-        w: Portfolio weights (N,).
-        pars: [covar] — covariance matrix (N x N).
-
-    Returns:
-        Negative diversification ratio (scalar).
-    """
+    """Negative diversification ratio (for minimisation)."""
     covar = pars[0]
     return -calculate_diversification_ratio(w=w, covar=covar)

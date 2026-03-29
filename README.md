@@ -114,8 +114,9 @@ tracking error, Sharpe ratio, diversification ratio, CARA utility). The package
 does not implement non-quadratic risk measures (CVaR, MAD, drawdown constraints).
 For these, use Riskfolio-Lib or skfolio. The solver architecture (three-layer:
 mathematical / wrapper / rolling) makes it straightforward to add new solvers —
-each solver lives in its own module in `optimization/solvers/` and plugs into the
-rolling backtester via a single dispatch function.
+each solver lives in its own module under `optimization/` (grouped into
+`general/`, `saa/`, and `taa/` submodules) and plugs into the rolling
+backtester via a single dispatch function.
 
 
 ## **Package overview** <a name="overview"></a>
@@ -139,15 +140,21 @@ optimalportfolios/
 │   └── covar_reporting.py         # Rolling covariance diagnostics
 ├── optimization/                  # Portfolio optimisation
 │   ├── constraints.py             # Constraints, GroupLowerUpperConstraints
+│   ├── config.py                  # OptimiserConfig dataclass
 │   ├── wrapper_rolling_portfolios.py  # compute_rolling_optimal_weights()
-│   └── solvers/
-│       ├── quadratic.py           # min variance, max quadratic utility
-│       ├── risk_budgeting.py      # constrained risk budgeting (pyrb)
-│       ├── max_diversification.py # maximum diversification ratio
-│       ├── max_sharpe.py          # maximum Sharpe ratio
-│       ├── tracking_error.py      # alpha-over-tracking-error
-│       ├── target_return.py       # alpha with target return constraint
-│       └── carra_mixure.py        # CARA utility under Gaussian mixture
+│   ├── general/                   # Objective-driven solvers (no benchmark semantics)
+│   │   ├── quadratic.py           # min variance, max quadratic utility
+│   │   ├── max_sharpe.py          # maximum Sharpe ratio (Charnes-Cooper)
+│   │   ├── max_diversification.py # maximum diversification ratio
+│   │   ├── risk_budgeting.py      # constrained risk budgeting (pyrb)
+│   │   └── carra_mixture.py       # CARA utility under Gaussian mixture
+│   ├── saa/                       # Strategic solvers (CMA inputs, return/vol targets)
+│   │   ├── min_variance_target_return.py
+│   │   └── max_return_target_vol.py
+│   ├── taa/                       # Tactical solvers (alphas, TE constraints, benchmarks)
+│   │   ├── maximise_alpha_over_tre.py
+│   │   └── maximise_alpha_with_target_yield.py
+│   └── tests/                     # One test file per solver
 ├── utils/                         # Auxiliary analytics
 │   ├── filter_nans.py             # NaN-aware covariance/vector filtering
 │   ├── portfolio_funcs.py         # Risk contributions, diversification ratio
@@ -322,8 +329,8 @@ Core dependencies:
     seaborn = ">=0.13.0",
     cvxpy = ">=1.3.0",
     quadprog = ">=0.1.11",
-    qis = ">=3.5.7",
-    factorlasso = ">=0.1.0"
+    qis = ">=4.0.1",
+    factorlasso = ">=0.1.5"
 
 Optional dependencies:
     yfinance ">=0.2.40" (for getting test price data),
@@ -332,6 +339,39 @@ Optional dependencies:
 
 
 ## **Portfolio optimisers** <a name="optimisers"></a>
+
+The optimisation module provides 10 solvers organised into three submodules.
+For architecture details, three-layer pattern, `OptimiserConfig`, constraint
+system internals, and contributor guide, see
+[`optimization/README.md`](optimalportfolios/optimization/README.md).
+
+#### General solvers
+
+| Solver | Objective | Backend |
+|--------|-----------|---------|
+| Minimum variance | min w'Σw | CVXPY |
+| Quadratic utility | max μ'w − (γ/2)w'Σw | CVXPY |
+| Maximum Sharpe ratio | max μ'w / √(w'Σw) via Charnes-Cooper | CVXPY |
+| Maximum diversification | max w'σ / √(w'Σw) | scipy SLSQP |
+| Risk budgeting | RC_i(w) = b_i · σ_p with constraints | pyrb (ADMM) |
+| CARA mixture utility | max E[U] under Gaussian mixture | scipy SLSQP |
+
+#### SAA solvers (strategic asset allocation)
+
+| Solver | Objective | Backend |
+|--------|-----------|---------|
+| Min variance + return floor | min w'Σw s.t. α'w ≥ r_target | CVXPY |
+| Max return + vol budget | max α'w s.t. w'Σw ≤ σ²_max | CVXPY |
+
+#### TAA solvers (tactical asset allocation)
+
+| Solver | Objective | Backend |
+|--------|-----------|---------|
+| Alpha over tracking error | max α'(w−w_b) s.t. TE ≤ TE_max | CVXPY |
+| Alpha with target yield | max α'w s.t. y'w ≥ r_target | CVXPY |
+
+SAA and TAA solvers support both hard constraints and utility penalty
+formulations via `ConstraintEnforcementType`.
 
 ### 1. Implementation structure <a name="structure"></a>
 
@@ -371,7 +411,7 @@ from optimalportfolios import EwmaCovarEstimator, FactorCovarEstimator
 estimator = EwmaCovarEstimator(returns_freq='W-WED', span=52, rebalancing_freq='QE')
 covar_dict = estimator.fit_rolling_covars(prices=prices, time_period=time_period)
 
-# reuse across multiple solvers
+# reuse across multiple taa
 weights_rb = rolling_risk_budgeting(prices=prices, covar_dict=covar_dict, ...)
 weights_md = rolling_maximise_diversification(prices=prices, covar_dict=covar_dict, ...)
 weights_te = rolling_maximise_alpha_over_tre(prices=prices, covar_dict=covar_dict, ...)
@@ -396,7 +436,7 @@ using roll forward analysis.
 
 ### 2. Example of implementation for Maximum Diversification Solver <a name="example_structure"></a>
 
-Using example of ```optimization.solvers.max_diversification.py```
+Using example of ```optimization.general.max_diversification.py```
 
 1. Scipy solver ```opt_maximise_diversification()``` which takes "clean" inputs of the 
 covariance matrix of type ```np.ndarray``` without NaNs and
@@ -430,7 +470,7 @@ The logic of this layer is to facilitate the backtest of portfolio optimisation 
 time series of portfolio weights using a Markovian setup. These weights are applied for the backtest 
 of the optimal portfolio and the underlying strategy.
 
-Each module in ```optimization.solvers``` implements specific optimisers and estimators for their inputs.
+Each module in ```optimization.general```, ```optimization.saa```, and ```optimization.taa``` implements specific optimisers and estimators for their inputs.
 
 
 
@@ -517,7 +557,10 @@ See examples for [Parameters sensitivity backtest](#sensitivity) and
 ### 5. Adding an optimiser <a name="adding"></a>
 
 1. Add analytics for computing rolling weights using a new estimator in
-subpackage ```optimization.solvers```. Any third-party packages can be used
+the appropriate subpackage: ```optimization.general``` for objective-driven solvers,
+```optimization.saa``` for strategic solvers with CMA/return/vol targets, or
+```optimization.taa``` for tactical solvers with alpha signals and benchmarks.
+Any third-party packages can be used
 
 2. For cross-sectional analysis, add new optimiser type 
 to ```config.py``` and link implemented
@@ -788,7 +831,15 @@ Sepp A., Ossa I., and Kastenholz M. (2026),
 
 ## **Updates** <a name="updates"></a>
 
-#### March 2026, Version 5.0.4 released
+#### 29 March 2026, Version 5.1.1 released
+
+**Optimisation module restructured.** The flat `optimization/solvers/` directory is replaced by three submodules: `general/` (min-variance, max Sharpe, max diversification, risk budgeting, CARA mixture), `saa/` (strategic solvers with return floors and vol budgets), and `taa/` (tactical solvers with alpha signals and tracking error constraints). All existing imports continue to work via re-exports.
+
+**`OptimiserConfig` standardised across all solvers.** The `OptimiserConfig` dataclass (solver name, verbosity, constraint rescaling) is now accepted consistently by all rolling and wrapper functions, replacing ad-hoc `solver`/`verbose`/`apply_total_to_good_ratio` parameters. Backward compatible — all arguments default to `OptimiserConfig()`.
+
+**Dependencies:** bumped `qis` to `>=4.0.1`, `factorlasso` to `>=0.1.5`.
+
+#### 22 March 2026, Version 5.0.4 released
 
 **Removed `scikit-learn` dependency.**
 The Gaussian mixture model in `utils/gaussian_mixture.py` previously used
@@ -802,7 +853,7 @@ This removes the last `scikit-learn` import from `optimalportfolios`, eliminatin
 the transitive dependency on `joblib`, `threadpoolctl`, and the scikit-learn
 binary itself — a meaningful reduction in install footprint.
 
-#### March 2026, Version 5.0.0 released
+#### 15 March 2026, Version 5.0.0 released
 
 **LASSO estimator extracted to [`factorlasso`](https://github.com/ArturSepp/factorlasso) package.**
 The `lasso/` module has been removed from `optimalportfolios`. The LASSO/Group
@@ -832,7 +883,7 @@ directly from the deleted module path
 (`from optimalportfolios.lasso.lasso_estimator import ...`), change to
 `from optimalportfolios import ...`.
 
-#### March 2026, Version 4.1.1 released
+#### 8 March 2026, Version 4.1.1 released
 
 **Alpha signals module** (`optimalportfolios.alphas`):
 - New `alphas/` package with three standalone signal functions: `compute_momentum_alpha`, `compute_low_beta_alpha`, `compute_managers_alpha`
@@ -912,7 +963,7 @@ rolling_data = covar_estimator.fit_rolling_factor_covars(risk_factor_prices=risk
                                                           asset_returns_dict=asset_returns_dict,
                                                           time_period=time_period)
 
-# Rolling solvers (covar_dict now required, no internal estimation)
+# Rolling taa (covar_dict now required, no internal estimation)
 # Old
 weights = rolling_risk_budgeting(prices=prices, time_period=time_period,
                                   covar_estimator=CovarEstimator(), risk_budget=budget,
@@ -928,7 +979,7 @@ betas = rolling_data.asset_last_betas_t
 betas = rolling_data.get_y_betas()
 ```
 
-#### 05 January 2025, Version 3.1.1 released
+#### 5 January 2025, Version 3.1.1 released
 
 Added Lasso estimator and Group Lasso estimator using cvxpy quadratic problems.
 

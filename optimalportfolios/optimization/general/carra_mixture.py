@@ -19,15 +19,17 @@ Reference:
     Available at https://ssrn.com/abstract=4217841
 """
 
+import warnings
 import numpy as np
 import pandas as pd
 import qis as qis
 from scipy.optimize import minimize
-from typing import List, Optional
+from typing import List
 
 from optimalportfolios.utils.gaussian_mixture import fit_gaussian_mixture
 from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance, compute_portfolio_risk_contributions)
 from optimalportfolios.optimization.constraints import (Constraints, total_weight_constraint, long_only_constraint)
+from optimalportfolios.optimization.config import OptimiserConfig
 
 
 def rolling_maximize_cara_mixture(prices: pd.DataFrame,
@@ -37,39 +39,25 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
                                   roll_window: int = 52*6,
                                   returns_freq: str = 'W-WED',
                                   carra: float = 0.5,
-                                  n_components: int = 3
+                                  n_components: int = 3,
+                                  optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
                                   ) -> pd.DataFrame:
     """
     Compute rolling CARA-optimal portfolios under a Gaussian mixture model.
 
-    At each rebalancing date, fits a K-component Gaussian Mixture Model to
-    the trailing ``roll_window`` of returns, then maximises the expected CARA
-    utility across mixture components:
-
-        max_w  -Σ_k p_k exp(-γ μ_k'w + (γ²/2) w'Σ_k w)
-
-    where p_k, μ_k, Σ_k are the mixture probabilities, means, and covariances,
-    and γ is the CARA risk aversion parameter.
-
-    This captures regime-dependent return distributions (e.g., crisis vs. normal
-    correlations) and heavy tails without assuming a single Gaussian.
-
     Args:
-        prices: Asset price panel. Index=dates, columns=tickers.
-        constraints: Portfolio constraints (long-only, weight bounds, etc.).
-        time_period: Reporting period for output weights. Weights outside
-            this period are trimmed.
-        rebalancing_freq: Portfolio rebalancing frequency (e.g., 'QE', 'ME').
+        prices: Asset price panel.
+        constraints: Portfolio constraints.
+        time_period: Reporting period for output weights.
+        rebalancing_freq: Rebalancing frequency (e.g., 'QE', 'ME').
         roll_window: Number of return observations for GMM estimation.
-            Default 52*6 = 6 years of weekly returns.
-        returns_freq: Frequency for return computation (e.g., 'W-WED').
-        carra: CARA risk aversion parameter γ. Higher values produce more
-            conservative portfolios. Typical range: 0.1 to 5.0.
+        returns_freq: Frequency for return computation.
+        carra: CARA risk aversion parameter γ.
         n_components: Number of Gaussian mixture components K.
+        optimiser_config: Solver configuration.
 
     Returns:
-        DataFrame of portfolio weights. Index=rebalancing dates,
-        columns=tickers. Assets with insufficient history receive zero weight.
+        DataFrame of portfolio weights.
     """
     returns = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=returns_freq)
     rebalancing_schedule = qis.generate_rebalancing_indicators(df=returns, freq=rebalancing_freq)
@@ -82,7 +70,6 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
     for idx, (date, value) in enumerate(rebalancing_schedule.items()):
         if idx >= roll_window-1 and value:
             period = qis.TimePeriod(rebalancing_schedule.index[idx - roll_window+1], date)
-            # drop assets with any NaN in the rolling window
             rets_ = period.locate(returns).dropna(axis=1, how='any')
             params = fit_gaussian_mixture(x=rets_.to_numpy(), n_components=n_components, an_factor=scaler)
             constraints1 = constraints.update_with_valid_tickers(valid_tickers=rets_.columns.to_list(),
@@ -94,10 +81,13 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
                                                      probs=params.probs,
                                                      constraints=constraints1,
                                                      tickers=rets_.columns.to_list(),
-                                                     carra=carra)
+                                                     carra=carra,
+                                                     optimiser_config=optimiser_config)
+            weights_ = weights_.reindex(index=tickers).fillna(0.0)
             weights_0 = weights_
-            weights[date] = weights_.reindex(index=tickers).fillna(0.0)
-    weights = pd.DataFrame.from_dict(weights, orient='index', columns=prices.columns)
+            weights[date] = weights_
+    weights = pd.DataFrame.from_dict(weights, orient='index')
+    weights = weights.reindex(columns=tickers).fillna(0.0)
     if time_period is not None:
         weights = time_period.locate(weights)
 
@@ -109,21 +99,20 @@ def wrapper_maximize_cara_mixture(means: List[np.ndarray],
                                   probs: np.ndarray,
                                   constraints: Constraints,
                                   tickers: List[str],
-                                  carra: float = 0.5
+                                  carra: float = 0.5,
+                                  optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
                                   ) -> pd.Series:
     """
     Solve CARA mixture optimisation and return labelled weights.
-
-    Thin wrapper around ``opt_maximize_cara_mixture`` that attaches
-    ticker labels to the resulting weight vector.
 
     Args:
         means: List of K mean vectors, each (N,).
         covars: List of K covariance matrices, each (N x N).
         probs: Mixture probabilities (K,), summing to 1.
         constraints: Portfolio constraints.
-        tickers: Asset ticker labels for the output Series.
+        tickers: Asset ticker labels.
         carra: CARA risk aversion parameter γ.
+        optimiser_config: Solver configuration.
 
     Returns:
         Portfolio weights as pd.Series with index=tickers.
@@ -132,7 +121,8 @@ def wrapper_maximize_cara_mixture(means: List[np.ndarray],
                                         covars=covars,
                                         probs=probs,
                                         constraints=constraints,
-                                        carra=carra)
+                                        carra=carra,
+                                        verbose=optimiser_config.verbose)
     weights = pd.Series(weights, index=tickers)
     return weights
 
@@ -151,11 +141,6 @@ def opt_maximize_cara_mixture(means: List[np.ndarray],
 
         f(w) = Σ_k p_k exp(-γ μ_k'w + (γ²/2) w'Σ_k w)
 
-    which is the negative expected CARA utility across K mixture components.
-    The exponential form preserves the non-linear interaction between regimes,
-    unlike the quadratic approximation which would collapse to a single-Gaussian
-    equivalent.
-
     Args:
         means: List of K mean vectors, each (N,). Annualised.
         covars: List of K covariance matrices, each (N x N). Annualised.
@@ -169,8 +154,8 @@ def opt_maximize_cara_mixture(means: List[np.ndarray],
         if the solver fails.
     """
     n = covars[0].shape[0]
-    if Constraints.weights_0 is not None:
-        x0 = Constraints.weights_0.to_numpy()
+    if constraints.weights_0 is not None:
+        x0 = constraints.weights_0.to_numpy()
     else:
         x0 = np.ones(n) / n
 
@@ -182,13 +167,11 @@ def opt_maximize_cara_mixture(means: List[np.ndarray],
     optimal_weights = res.x
 
     if optimal_weights is None:
-        print(f"not solved")
+        warnings.warn(f"opt_maximize_cara_mixture: solver did not converge")
         if constraints.weights_0 is not None:
             optimal_weights = constraints.weights_0
-            print(f"using weights_0")
         else:
             optimal_weights = np.zeros(n)
-            print(f"using zero weights")
 
     return optimal_weights
 
@@ -213,15 +196,12 @@ def opt_maximize_cara(means: np.ndarray,
         Exponential (is_exp=True):
             min  exp(-γ μ'w + (γ²/2) w'Σw)
 
-    Both are equivalent at the optimum under Gaussian returns; the exponential
-    form has better numerical properties for large γ.
-
     Args:
         means: Expected returns (N,). Annualised.
         covar: Covariance matrix (N x N). Annualised.
         carra: CARA risk aversion parameter γ.
-        min_weights: Lower bounds per asset (N,). None for no lower bound.
-        max_weights: Upper bounds per asset (N,). None for no upper bound.
+        min_weights: Lower bounds per asset (N,).
+        max_weights: Upper bounds per asset (N,).
         disp: If True, print SLSQP solver diagnostics.
         is_exp: If True, use the exponential objective; otherwise quadratic.
         is_print_log: If True, print portfolio diagnostics after solving.
@@ -255,62 +235,21 @@ def opt_maximize_cara(means: np.ndarray,
 
 
 def carra_objective(w: np.ndarray, pars: List[np.ndarray]) -> float:
-    """
-    Quadratic CARA objective (single Gaussian, negated for minimisation).
-
-    f(w) = -(μ'w - (γ/2) w'Σw)
-
-    Args:
-        w: Portfolio weights (N,).
-        pars: [means, covar, carra] — expected returns, covariance, risk aversion.
-
-    Returns:
-        Negative certainty equivalent (scalar).
-    """
+    """Quadratic CARA objective (single Gaussian, negated for minimisation)."""
     means, covar, carra = pars[0], pars[1], pars[2]
     v = means.T @ w - 0.5*carra*w.T @ covar @ w
     return -v
 
 
 def carra_objective_exp(w: np.ndarray, pars: List[np.ndarray]) -> float:
-    """
-    Exponential CARA objective (single Gaussian).
-
-    f(w) = exp(-γ μ'w + (γ²/2) w'Σw)
-
-    Equivalent to the quadratic form at the optimum but better conditioned
-    for large risk aversion γ.
-
-    Args:
-        w: Portfolio weights (N,).
-        pars: [means, covar, carra] — expected returns, covariance, risk aversion.
-
-    Returns:
-        Exponential disutility (scalar).
-    """
+    """Exponential CARA objective (single Gaussian)."""
     means, covar, carra = pars[0], pars[1], pars[2]
     v = np.exp(-carra*means.T @ w + 0.5*carra*carra*w.T @ covar @ w)
     return v
 
 
 def carra_objective_mixture(w: np.ndarray, pars: List[np.ndarray]) -> float:
-    """
-    Expected CARA disutility under a K-component Gaussian mixture.
-
-    f(w) = Σ_k p_k exp(-γ μ_k'w + (γ²/2) w'Σ_k w)
-
-    Each component contributes its own exponential disutility weighted by
-    the mixture probability. This preserves regime-dependent risk structure
-    that would be lost under a single-Gaussian approximation.
-
-    Args:
-        w: Portfolio weights (N,).
-        pars: [means, covars, probs, carra] where means is List[ndarray],
-            covars is List[ndarray], probs is ndarray, carra is float.
-
-    Returns:
-        Expected exponential disutility (scalar).
-    """
+    """Expected CARA disutility under a K-component Gaussian mixture."""
     means, covars, probs, carra = pars[0], pars[1], pars[2], pars[3]
     v = 0.0
     for idx, prob in enumerate(probs):

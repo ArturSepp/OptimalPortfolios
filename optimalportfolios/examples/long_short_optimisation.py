@@ -40,7 +40,7 @@ def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
 
 # 2. get universe universe
 prices, benchmark_prices, group_data = fetch_universe_data()
-time_period = qis.TimePeriod('31Dec2004', '17Apr2025')   # period for computing weights backtest
+time_period = qis.TimePeriod('31Dec2007', '17Apr2025')   # period for computing weights backtest
 
 # 3.a. define optimisation setup
 # currently cannot work for MAX_DIVERSIFICATION and MAXIMUM_SHARPE_RATIO
@@ -57,7 +57,7 @@ constraints = Constraints(is_long_only=False,   # negative weights are allowed
                            max_weights=pd.Series(0.25, index=prices.columns)
                            )
 
-# 3.b. compute solvers portfolio weights rebalanced every quarter
+# 3.b. compute taa portfolio weights rebalanced every quarter
 ewma_estimator = EwmaCovarEstimator(returns_freq='W-WED', span=52, rebalancing_freq='QE')
 covar_dict = ewma_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
 weights = compute_rolling_optimal_weights(prices=prices,

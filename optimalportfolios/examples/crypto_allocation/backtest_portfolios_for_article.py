@@ -17,14 +17,14 @@ PERF_PARAMS = PerfParams(freq_vol='ME', freq_reg='ME', freq_drawdown='ME', rates
 REGIME_CLASSIFIER = BenchmarkReturnsQuantilesRegime(freq='QE')
 
 LOCAL_PATH = "C://Users//artur//OneDrive//analytics//outputs//"
-FIGURE_SAVE_PATH = "C://Users//artur//OneDrive//My Papers//Published Papers//CryptoAllocation. Zurich. Jan 2022//UpdatedFigures//"
+FIGURE_SAVE_PATH = LOCAL_PATH # "C://Users//artur//OneDrive//My Papers//Published Papers//CryptoAllocation. Zurich. Jan 2022//UpdatedFigures//"
 
 SAVE_FIGS = False
 
 
 OPTIMISATION_PARAMS = OptimisationParams(first_asset_target_weight=0.75,  # first asset is the benchmark
                                          rebalancing_freq='QE',  # when portfolio weigths are aupdate
-                                         roll_window=60,  # number of monthly returns for solvers estimation of mv returns and mixure = 5 years
+                                         roll_window=60,  # number of monthly returns for taa estimation of mv returns and mixure = 5 years
                                          returns_freq='ME',  # frequency of returns
                                          span=30,  # for window of ewma covariance for monthly return = 2.5 years
                                          carra=0.5,  # carra parameter

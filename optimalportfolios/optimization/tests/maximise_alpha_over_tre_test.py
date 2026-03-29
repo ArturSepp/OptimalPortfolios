@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from enum import Enum
 
 from optimalportfolios.optimization.constraints import Constraints, ConstraintEnforcementType
-from optimalportfolios.optimization.solvers.tracking_error import (
+from optimalportfolios.optimization.taa.maximise_alpha_over_tre import (
     wrapper_maximise_alpha_over_tre,
     cvx_maximise_alpha_over_tre,
     cvx_maximise_tre_utility,

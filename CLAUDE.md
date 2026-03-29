@@ -81,7 +81,7 @@ Covariance estimation is separated from portfolio optimisation. Estimate first, 
 estimator = EwmaCovarEstimator(returns_freq='W-WED', span=52, rebalancing_freq='QE')
 covar_dict = estimator.fit_rolling_covars(prices=prices, time_period=time_period)
 
-# reuse across multiple solvers
+# reuse across multiple taa
 weights_rb = rolling_risk_budgeting(prices=prices, covar_dict=covar_dict, ...)
 weights_md = rolling_maximise_diversification(prices=prices, covar_dict=covar_dict, ...)
 ```

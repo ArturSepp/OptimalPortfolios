@@ -3,3 +3,4 @@ from optimalportfolios.alphas.signals.momentum import compute_momentum_alpha
 from optimalportfolios.alphas.signals.low_beta import compute_low_beta_alpha
 from optimalportfolios.alphas.signals.carry import compute_ra_carry_alphas
 from optimalportfolios.alphas.signals.managers_alpha import compute_managers_alpha
+from optimalportfolios.alphas.signals.rolling_ewma_mean import estimate_rolling_ewma_means
