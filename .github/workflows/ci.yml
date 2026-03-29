@@ -52,8 +52,8 @@ jobs:
     - name: Run solver tests (no external data)
       run: |
         python optimalportfolios/optimization/tests/constraints_test.py
-        python optimalportfolios/optimization/solvers/tests/carra_mixture_test.py
-        python optimalportfolios/optimization/solvers/tests/quadratic_test.py
-        python optimalportfolios/optimization/solvers/tests/target_return_test.py
-        python optimalportfolios/optimization/solvers/tests/tracking_error_test.py
+        python optimalportfolios/optimization/tests/carra_mixture_test.py
+        python optimalportfolios/optimization/tests/quadratic_test.py
+        python optimalportfolios/optimization/tests/maximise_alpha_with_target_yield_test.py
+        python optimalportfolios/optimization/tests/maximise_alpha_over_tre_test.py
         python optimalportfolios/utils/tests/portfolios_funcs_test.py
