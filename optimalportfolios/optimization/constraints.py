@@ -468,6 +468,64 @@ class GroupTurnoverConstraint:
 
 
 @dataclass(frozen=True)
+class BenchmarkDeviationConstraints:
+    """Benchmark Deviation Constraints: can be used for factor-style deviation constraints, industry deviation constraints
+
+    Creates constraints (elementwise): factor_loading_mat ⊙ (w - w₀) ≤ factor_max_deviation    
+
+    Attributes:
+        factor_loading_mat: matrix of factor loadings (instruments x groups). E.g. in terms of Sector constraints, it would be matrix of binary values
+        factor_max_deviation: Maximum deviation of the factor aggregated by all names
+    """
+    factor_loading_mat: pd.DataFrame
+    factor_max_deviation: pd.Series
+
+    def __post_init__(self):
+        """Validate that at least one constraint type is specified and aligned."""
+        if self.factor_max_deviation is not None:
+            this = self.factor_max_deviation.index.isin(self.factor_loading_mat.columns)
+            if not this.all():
+                missing = self.factor_max_deviation.index[~this]
+                warnings.warn(f"factor_max_deviation entries not in factor_loading_mat.columns: {missing.tolist()}")
+        else:
+            raise ValueError(f"factor_max_deviation must be given")
+
+    def copy(self) -> BenchmarkDeviationConstraints:
+        return BenchmarkDeviationConstraints(
+            factor_loading_mat=self.factor_loading_mat.copy(),
+            factor_max_deviation=self.factor_max_deviation.copy(),
+        )
+
+    def update(self, valid_tickers: List[str]) -> BenchmarkDeviationConstraints:
+        """Filter to valid tickers only."""
+        new_self = BenchmarkDeviationConstraints(
+            factor_loading_mat=self.factor_loading_mat.loc[valid_tickers, :],
+            factor_max_deviation=self.factor_max_deviation
+        )
+        return new_self
+
+    def set_cvx_constraints(
+            self,
+            w: cvx.Variable,
+            benchmark_weights: pd.Series,
+    ) -> List[Inequality]:
+        constraints = []
+        for group in self.factor_max_deviation.index:
+            group_loading = self.factor_loading_mat[group]
+            if np.any(np.isclose(group_loading, 0.0) == False):  # exclude groups with zero loading
+                # Align indices
+                group_loading = group_loading.loc[benchmark_weights.index]
+                active_deviation = cvx.sum(cvx.multiply(group_loading.to_numpy(), w - benchmark_weights.to_numpy()))
+                constraints += [cvx.abs(active_deviation) <= self.factor_max_deviation.loc[group]]
+        return constraints
+
+    def print(self):
+        """Print constraint details."""
+        print(f"factor_loading_mat:\n{self.factor_loading_mat}")
+        print(f"factor_max_deviation:\n{self.factor_max_deviation}")
+
+
+@dataclass(frozen=True)
 class Constraints:
     """Comprehensive portfolio optimization constraints.
 
@@ -498,6 +556,8 @@ class Constraints:
         group_lower_upper_constraints: Group-level allocation constraints.
         group_tracking_error_constraint: Group-level tracking error constraints.
         group_turnover_constraint: Group-level turnover constraints.
+        sector_deviation_constraints: Sector deviation constraints relative to benchmark.
+        style_deviation_constraints: Style deviation constraints relative to benchmark.
     """
     is_long_only: bool = True
     min_weights: pd.Series = None
@@ -519,6 +579,8 @@ class Constraints:
     group_lower_upper_constraints: GroupLowerUpperConstraints = None
     group_tracking_error_constraint: GroupTrackingErrorConstraint = None
     group_turnover_constraint: Optional[GroupTurnoverConstraint] = None
+    sector_deviation_constraints: BenchmarkDeviationConstraints = None
+    style_deviation_constraints: BenchmarkDeviationConstraints = None
 
     def __post_init__(self):
         """Validate that individual min/max weights are consistent with group constraints.
@@ -661,6 +723,12 @@ class Constraints:
         if self.group_turnover_constraint is not None:
             self_dict['group_turnover_constraint'] = \
                 self.group_turnover_constraint.update(valid_tickers=valid_tickers)
+        if self.sector_deviation_constraints is not None:
+            self_dict['sector_deviation_constraints'] = \
+                self.sector_deviation_constraints.update(valid_tickers=valid_tickers)
+        if self.style_deviation_constraints is not None:
+            self_dict['style_deviation_constraints'] = \
+                self.style_deviation_constraints.update(valid_tickers=valid_tickers)
         return Constraints(**self_dict)
 
     def update_group_lower_upper_constraints(
@@ -772,6 +840,14 @@ class Constraints:
                 if self_dict['max_weights'] is not None:
                     self_dict['max_weights'] = self_dict['max_weights'].where(is_rebalanced, other=resolved_weights_0)
 
+            # Update sector and style deviation constraints
+            if self.sector_deviation_constraints is not None:
+                self_dict["sector_deviation_constraints"] = \
+                    self.sector_deviation_constraints.update(valid_tickers=valid_tickers)         
+            if self.style_deviation_constraints is not None:
+                self_dict["style_deviation_constraints"] = \
+                    self.style_deviation_constraints.update(valid_tickers=valid_tickers) 
+                
         return Constraints(**self_dict)
 
     def set_cvx_exposure_constraints(self,
@@ -890,6 +966,14 @@ class Constraints:
         if self.group_lower_upper_constraints is not None:
             constraints += self.group_lower_upper_constraints.set_cvx_group_lower_upper_constraints(
                 w=w, exposure_scaler=exposure_scaler)
+
+        # add sector and style deviation constraints
+        if self.sector_deviation_constraints is not None:
+            constraints += self.sector_deviation_constraints.set_cvx_constraints(
+                w=w, benchmark_weights=self.benchmark_weights)
+        if self.style_deviation_constraints is not None:
+            constraints += self.style_deviation_constraints.set_cvx_constraints(
+                w=w, benchmark_weights=self.benchmark_weights)
 
         return constraints
 
@@ -1091,6 +1175,39 @@ class Constraints:
             c_lhs = None
 
         return bounds, c_rows, c_lhs
+    
+    def print_constraints(
+            self,
+            constraints_list:  List[Inequality],
+    ) -> None:
+        """
+            Print CVXPY constraints in a readable format for debugging and verification.
+
+            constraints_list: List of CVXPY constraints to print e.g. outputs of set_cvx_exposure_constraints
+        """
+        print("=== CVXPY constraints ===")
+        for i, c in enumerate(constraints_list):
+            print(f"\nConstraint {i}")
+            print(f"  as str:    {c}")             # most readable
+            print(f"  type:      {type(c)}")
+            print(f"  shape:     {c.shape}")
+            print("---------------------------")
+
+    def check_constraints_violation(
+            self,
+            constraints_list: List[Inequality],
+    ) -> None:  
+        """
+            Check the violations of CVXPY constraints after optimization 
+            after getting the optimal weights. This can help identify which constraints are binding and if there are any numerical issues.
+
+            constraints_list: List of CVXPY constraints to print e.g. outputs of set_cvx_exposure_constraints
+        """
+        print("=== Check the Violations of CVXPY constraints ===")
+        for i, c in enumerate(constraints_list):
+            v = c.violation()   # numpy array of nonnegative violations
+            max_v = v.max() if v.size > 0 else 0.0
+            print(f"Constraint {i}: max violation = {max_v}")
 
 
 def add_term_to_objective_function(objective_fun: AddExpression, term: AddExpression) -> AddExpression:
