@@ -88,3 +88,33 @@ def round_weights_to_pct(weights: pd.Series, decimals: int = 2) -> pd.Series:
     bump_idx = remainders.nlargest(n_bumps).index
     floored.loc[bump_idx] += 10**(-decimals)
     return floored.round(decimals)
+
+
+def compute_risk_contributions(weights: pd.Series, covar: pd.DataFrame) -> pd.Series:
+    """Compute per-asset risk contribution as fraction of portfolio variance.
+
+    RC_i = w_i * (Sigma @ w)_i / (w' Sigma w)
+
+    The covariance matrix's index defines the asset universe. Weights are
+    reindexed to this universe (0-fill for missing assets, extra assets
+    in weights are ignored). This handles the case where model_backtest
+    weights are on the joint universe but covar is TAA-only.
+
+    Args:
+        weights: Asset weights (may be on a superset of covar's assets).
+        covar: Covariance matrix, indexed and columned by asset names.
+
+    Returns:
+        Series of risk contributions (fraction of portfolio variance,
+        sums to 1.0), indexed by covar's assets.
+    """
+    assets = covar.index
+    w = weights.reindex(assets).fillna(0.0).values
+    cov = covar.values
+    port_var = float(w @ cov @ w)
+    if port_var <= 0:
+        return pd.Series(0.0, index=assets)
+    mctr = cov @ w  # marginal contribution to risk
+    rc = w * mctr   # risk contribution (sums to port_var)
+    rc_ratio = rc / port_var  # fraction of variance (sums to 1.0)
+    return pd.Series(rc_ratio, index=assets)

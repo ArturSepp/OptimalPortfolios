@@ -37,11 +37,11 @@ universes with different required attributes).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import Optional, Type, List
 import pandas as pd
 import qis as qis
+from dataclasses import dataclass, field
+from typing import Optional, Type, List, Dict
+from enum import Enum
 
 
 class MetadataField(str, Enum):
@@ -274,3 +274,16 @@ class UniverseData:
     def get_hedge_ratio(self, hedged_acs: List[str]) -> pd.Series:
         """ get hedge ratio for given asset classes"""
         return self.asset_class.isin(hedged_acs).astype(float)
+
+    def get_asset_returns_dict(self,
+                               returns_freqs: str = 'ME',
+                               is_log_returns: bool = False
+                               ) -> Dict[str, pd.DataFrame]:
+        asset_returns_dict = qis.compute_asset_returns_dict(
+            prices=self.prices,
+            returns_freqs=returns_freqs,
+            drop_first=False,
+            is_first_zero=True,
+            is_log_returns=is_log_returns
+        )
+        return asset_returns_dict

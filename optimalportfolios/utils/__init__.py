@@ -8,7 +8,8 @@ from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_vol,
 from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance,
                                                      calculate_diversification_ratio,
                                                      compute_portfolio_risk_contribution_outputs,
-                                                     round_weights_to_pct)
+                                                     round_weights_to_pct,
+                                                     compute_risk_contributions)
 
 from optimalportfolios.utils.gaussian_mixture import fit_gaussian_mixture
 

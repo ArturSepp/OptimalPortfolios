@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optimalportfolios"
-version = "5.1.2"
+version = "5.1.3"
 description = "Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python"
 readme = "README.md"
 license = {text = "MIT"}
@@ -54,8 +54,8 @@ dependencies = [
     "PyYAML>=6.0",
     "cvxpy>=1.3.0",
     "quadprog>=0.1.11",
-    "qis>=4.0.1",
-    "factorlasso>=0.1.5",
+    "qis>=4.0.3",
+    "factorlasso>=0.1.7",
 ]
 
 [project.optional-dependencies]
