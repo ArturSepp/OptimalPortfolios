@@ -65,7 +65,7 @@ benchmark_weights = qis.df_to_weight_allocation_sum1(df=prices.iloc[-1, :])
 
 # prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
 time_period = qis.TimePeriod(start='31Dec2009', end=prices.index[-1])
-perf_time_period = qis.TimePeriod(start='31Dec2004', end=prices.index[-1])  # backtest reporting
+perf_time_period = qis.TimePeriod(start='31Dec2004', end=prices.index[-1])  # backtest report
 
 covar_matrix = estimate_current_ewma_covar(prices=prices, span=3*52)
 print(covar_matrix)

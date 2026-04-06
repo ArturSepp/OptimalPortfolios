@@ -697,9 +697,43 @@ class Constraints:
         """
         return {f.name: getattr(self, f.name) for f in fields(self)}
 
-    def copy(self) -> Constraints:
-        """Create a deep copy of all constraints."""
-        return _copy.deepcopy(self)
+    def copy(self, **overrides) -> Constraints:
+        """Create a deep copy of all constraints, optionally overriding specific fields.
+
+        Args:
+            **overrides: Field names and new values to replace.
+
+        Returns:
+            New Constraints instance (deep-copied, then overridden).
+        """
+        self_dict = _copy.deepcopy(self)._to_dict()
+        self_dict.update(overrides)
+        return Constraints(**self_dict)
+
+    def update_min_max_weights(
+            self,
+            min_weights: Optional[pd.Series] = None,
+            max_weights: Optional[pd.Series] = None,
+    ) -> Constraints:
+        """Return a new Constraints with updated min/max weights, all other fields intact.
+
+        Args:
+            min_weights: New minimum weights (None keeps existing). Reindexed to existing index.
+            max_weights: New maximum weights (None keeps existing). Reindexed to existing index.
+
+        Returns:
+            New Constraints instance with updated bounds.
+        """
+        self_dict = self._to_dict()
+        if min_weights is not None:
+            if self.min_weights is not None:
+                min_weights = min_weights.reindex(index=self.min_weights.index).fillna(0.0)
+            self_dict['min_weights'] = min_weights
+        if max_weights is not None:
+            if self.max_weights is not None:
+                max_weights = max_weights.reindex(index=self.max_weights.index).fillna(0.0)
+            self_dict['max_weights'] = max_weights
+        return Constraints(**self_dict)
 
     def update(self, valid_tickers: List[str], **kwargs) -> Constraints:
         """Update constraints with valid tickers and additional parameters.

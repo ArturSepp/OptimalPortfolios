@@ -75,7 +75,7 @@ def _compute_momentum_alpha_single_freq(prices: pd.DataFrame,
                                         long_span: int = 12,
                                         short_span: Optional[int] = None,
                                         vol_span: Optional[int] = 13,
-                                        mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.NONE
+                                        mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA
                                         ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Single-frequency momentum computation."""
     returns = qis.to_returns(prices, freq=returns_freq, is_log_returns=True)
@@ -88,7 +88,8 @@ def _compute_momentum_alpha_single_freq(prices: pd.DataFrame,
 
     raw_momentum = qis.compute_ewm_long_short_filtered_ra_returns(
         returns=returns, vol_span=vol_span, long_span=long_span,
-        short_span=short_span, weight_lag=0, mean_adj_type=mean_adj_type)
+        short_span=short_span, weight_lag=0, mean_adj_type=mean_adj_type,
+        warmup_period=long_span)
 
     if group_data is not None:
         grouped_prices = qis.split_df_by_groups(df=prices, group_data=group_data)

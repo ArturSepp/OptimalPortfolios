@@ -71,7 +71,7 @@ def _compute_low_beta_alpha_single_freq(prices: pd.DataFrame,
         benchmark_returns = qis.to_returns(benchmark_price, freq=returns_freq, is_log_returns=True)
 
     ewm_linear_model = qis.EwmLinearModel(x=benchmark_returns.to_frame('benchmark'), y=returns)
-    ewm_linear_model.fit(span=beta_span, mean_adj_type=mean_adj_type, is_x_correlated=True)
+    ewm_linear_model.fit(span=beta_span, mean_adj_type=mean_adj_type, is_x_correlated=True, warmup_period=beta_span)
     raw_beta = ewm_linear_model.loadings['benchmark']
     raw_beta = raw_beta.replace({0.0: np.nan})
 

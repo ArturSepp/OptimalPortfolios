@@ -32,7 +32,7 @@ def fetch_benchmark_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Data
                          GLD='Commodts',
                          GSG='Commodts',
                          COMT='Commodts')
-    group_data = pd.Series(universe_data)  # for portfolio reporting
+    group_data = pd.Series(universe_data)  # for portfolio report
     equal_weight = 1.0 / len(universe_data.keys())
     benchmark_weights = {x: equal_weight for x in universe_data.keys()}
 

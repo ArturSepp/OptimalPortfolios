@@ -24,7 +24,8 @@ def run_etf_tracking_portfolio(prices: pd.DataFrame,
     run the optimal portfolio
     """
     momentum = qis.compute_ewm_long_short_filtered_ra_returns(returns=qis.to_returns(prices, freq='W-WED'), vol_span=13,
-                                                              long_span=13, short_span=None, weight_lag=0)
+                                                              long_span=13, short_span=None, weight_lag=0,
+                                                              warmup_period=13)
     # momentum = qis.map_signal_to_weight(signals=momentum, loc=0.0, slope_right=0.5, slope_left=0.5, tail_level=3.0)
     alphas = qis.df_to_cross_sectional_score(df=momentum)
 

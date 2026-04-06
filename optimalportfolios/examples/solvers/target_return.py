@@ -25,7 +25,8 @@ def run_bonds_etf_optimal_portfolio(prices: pd.DataFrame,
     run the optimal portfolio
     """
     momentum = qis.compute_ewm_long_short_filtered_ra_returns(returns=qis.to_returns(prices, freq='W-WED'), vol_span=52,
-                                                              long_span=52, short_span=None, weight_lag=0)
+                                                              long_span=52, short_span=None, weight_lag=0,
+                                                              warmup_period=52)
     alphas = qis.df_to_cross_sectional_score(df=momentum)
 
     constraints = Constraints(is_long_only=True,
@@ -84,7 +85,7 @@ def fetch_benchmark_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Data
     yield_deflators = dict(TIP=0.75, STIP=0.75)  # tips pay income distribution
 
     tickers = list(universe_data.keys())
-    group_data = pd.Series(universe_data)  # for portfolio reporting
+    group_data = pd.Series(universe_data)  # for portfolio report
     prices = yf.download(tickers=tickers, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'][tickers]
     prices = prices.asfreq('B', method='ffill')
 

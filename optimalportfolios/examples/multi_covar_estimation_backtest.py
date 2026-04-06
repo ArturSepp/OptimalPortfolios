@@ -38,7 +38,7 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
                                         ac_benchmark_prices: pd.DataFrame,
                                         group_data: pd.Series,
                                         time_period: qis.TimePeriod,  # for weights
-                                        perf_time_period: qis.TimePeriod,  # for reporting
+                                        perf_time_period: qis.TimePeriod,  # for report
                                         returns_freq: str = 'ME',  # covar matrix estimation on weekly returns
                                         rebalancing_freq: str = 'QE',  # portfolio rebalancing
                                         span: int = 52,  # ewma span for covariance matrix estimation

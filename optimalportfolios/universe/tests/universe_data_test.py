@@ -29,7 +29,7 @@ def fetch_universe_data(start_date: str = "2003-12-31") -> UniverseData:
                          GLD='Commodts',
                          GSG='Commodts',
                          COMT='Commodts')
-    group_data = pd.Series(universe_data, name=MetadataField.ASSET_CLASS)  # for portfolio reporting
+    group_data = pd.Series(universe_data, name=MetadataField.ASSET_CLASS)  # for portfolio report
     names = pd.Series([f"{ticker}_{ac}" for ticker, ac in group_data.to_dict().items()], index=group_data.index, name=MetadataField.NAME)
     group_loadings_level1 = qis.set_group_loadings(group_data=group_data)
     tickers = list(universe_data.keys())

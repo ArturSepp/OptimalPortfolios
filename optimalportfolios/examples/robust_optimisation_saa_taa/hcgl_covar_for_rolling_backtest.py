@@ -26,8 +26,8 @@ def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
     """
     Fetch universe data for portfolio construction:
     1. dividend and split adjusted end of day prices
-    2. benchmark prices for portfolio reporting and benchmarking
-    3. group data for portfolio reporting and risk attribution
+    2. benchmark prices for portfolio report and benchmarking
+    3. group data for portfolio report and risk attribution
     """
     universe_data = dict(SPY='Equities',
                          EZU='Equities',

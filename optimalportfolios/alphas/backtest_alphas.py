@@ -16,13 +16,16 @@ from typing import List, Optional
 
 from optimalportfolios.alphas.signals.momentum import compute_momentum_alpha
 from optimalportfolios.alphas.signals.low_beta import compute_low_beta_alpha
+from optimalportfolios.alphas.signals.residual_momentum import compute_residual_momentum_alpha
 
 
 class AlphaSignal(Enum):
     """Enumeration of alpha signals available for backtesting."""
     MOMENTUM = 'Momentum'
     LOW_BETA = 'LowBeta'
+    RESIDUAL_MOMENTUM = 'ResidualMomentum'
     MOMENTUM_AND_BETA = 'MomentumAndBeta'
+    RESIDUAL_MOM_AND_BETA = 'ResidualMomAndBeta'
 
 
 def compute_signal_scores(prices: pd.DataFrame,
@@ -34,12 +37,13 @@ def compute_signal_scores(prices: pd.DataFrame,
                           mom_short_span: Optional[int] = 1,
                           beta_span: int = 24,
                           vol_span: Optional[int] = 13,
+                          momentum_span: int = 12,
                           ) -> pd.DataFrame:
     """
     Compute cross-sectional alpha scores for a given signal type.
 
     Dispatches to the appropriate signal function(s) and combines
-    if MOMENTUM_AND_BETA is selected.
+    if a composite signal is selected.
 
     Args:
         prices: Asset price panel.
@@ -51,6 +55,7 @@ def compute_signal_scores(prices: pd.DataFrame,
         mom_short_span: Momentum short EWMA span (reversal).
         beta_span: Beta estimation EWMA span.
         vol_span: Vol normalisation span for momentum.
+        momentum_span: EWMA span for residual momentum smoothing.
 
     Returns:
         Cross-sectional scores (T × N).
@@ -73,6 +78,15 @@ def compute_signal_scores(prices: pd.DataFrame,
             group_data=group_data,
             beta_span=beta_span)
 
+    elif alpha_signal == AlphaSignal.RESIDUAL_MOMENTUM:
+        scores, _ = compute_residual_momentum_alpha(
+            prices=prices,
+            benchmark_price=benchmark_price,
+            returns_freq=returns_freq or 'ME',
+            group_data=group_data,
+            beta_span=beta_span,
+            momentum_span=momentum_span)
+
     elif alpha_signal == AlphaSignal.MOMENTUM_AND_BETA:
         mom_scores, _ = compute_momentum_alpha(
             prices=prices,
@@ -93,6 +107,25 @@ def compute_signal_scores(prices: pd.DataFrame,
         beta_scores = beta_scores.reindex(index=mom_scores.index, method='ffill')
         scores = (mom_scores + beta_scores) / np.sqrt(2.0)
 
+    elif alpha_signal == AlphaSignal.RESIDUAL_MOM_AND_BETA:
+        res_scores, _ = compute_residual_momentum_alpha(
+            prices=prices,
+            benchmark_price=benchmark_price,
+            returns_freq=returns_freq or 'ME',
+            group_data=group_data,
+            beta_span=beta_span,
+            momentum_span=momentum_span)
+
+        beta_scores, _ = compute_low_beta_alpha(
+            prices=prices,
+            benchmark_price=benchmark_price,
+            returns_freq=returns_freq or 'ME',
+            group_data=group_data,
+            beta_span=beta_span)
+
+        beta_scores = beta_scores.reindex(index=res_scores.index, method='ffill')
+        scores = (res_scores + beta_scores) / np.sqrt(2.0)
+
     else:
         raise NotImplementedError(f"alpha_signal={alpha_signal}")
 
@@ -109,6 +142,7 @@ def backtest_alpha_signals(prices: pd.DataFrame,
                            mom_long_span: int = 12,
                            mom_short_span: Optional[int] = 1,
                            beta_span: int = 24,
+                           momentum_span: int = 12,
                            rebalancing_freq: str = 'QE',
                            returns_freq: Optional[str] = None
                            ) -> List[plt.Figure]:
@@ -120,15 +154,16 @@ def backtest_alpha_signals(prices: pd.DataFrame,
 
     Args:
         prices: Asset price panel.
-        group_data: Group labels for within-group scoring and reporting.
+        group_data: Group labels for within-group scoring and report.
         group_order: Display order for groups.
         rebalancing_costs: Per-asset rebalancing cost.
         benchmark_prices: Benchmark prices for performance attribution.
-        time_period: Backtest reporting period.
+        time_period: Backtest report period.
         alpha_signal: Which signal to backtest.
         mom_long_span: Momentum long span.
         mom_short_span: Momentum short span.
         beta_span: Beta estimation span.
+        momentum_span: Residual momentum EWMA span.
         rebalancing_freq: Portfolio rebalancing frequency.
         returns_freq: Return frequency for signal computation.
 
@@ -139,7 +174,7 @@ def backtest_alpha_signals(prices: pd.DataFrame,
         prices=prices, alpha_signal=alpha_signal,
         group_data=group_data, returns_freq=returns_freq,
         mom_long_span=mom_long_span, mom_short_span=mom_short_span,
-        beta_span=beta_span)
+        beta_span=beta_span, momentum_span=momentum_span)
     signal_weights = qis.df_to_long_only_allocation_sum1(df=scores)
 
     equal_weights = qis.df_to_equal_weight_allocation(df=prices)
@@ -184,6 +219,7 @@ def multi_backtest_alpha_signals(prices: pd.DataFrame,
                                  mom_long_span: int = 12,
                                  mom_short_span: Optional[int] = 1,
                                  beta_span: int = 24,
+                                 momentum_span: int = 12,
                                  rebalancing_freq: str = 'QE',
                                  returns_freq: Optional[str] = None
                                  ) -> List[plt.Figure]:
@@ -203,6 +239,7 @@ def multi_backtest_alpha_signals(prices: pd.DataFrame,
         mom_long_span: Momentum long span.
         mom_short_span: Momentum short span.
         beta_span: Beta estimation span.
+        momentum_span: Residual momentum EWMA span.
         rebalancing_freq: Portfolio rebalancing frequency.
         returns_freq: Return frequency for signal computation.
 
@@ -217,7 +254,7 @@ def multi_backtest_alpha_signals(prices: pd.DataFrame,
             prices=prices, alpha_signal=alpha_signal,
             group_data=group_data, returns_freq=returns_freq,
             mom_long_span=mom_long_span, mom_short_span=mom_short_span,
-            beta_span=beta_span)
+            beta_span=beta_span, momentum_span=momentum_span)
         weights[alpha_signal.value] = qis.df_to_long_only_allocation_sum1(df=scores)
 
     portfolio_datas = []
@@ -255,6 +292,7 @@ class CrossBacktestParam(Enum):
     MOM_SPAN = 'MOM_SPAN'
     BETA_SPAN = 'BETA_SPAN'
     MOM_BETA_SPAN = 'MOM_BETA_SPAN'
+    RESIDUAL_MOM_SPAN = 'RESIDUAL_MOM_SPAN'
 
 
 def cross_backtest_alpha_signals(prices: pd.DataFrame,
@@ -267,14 +305,16 @@ def cross_backtest_alpha_signals(prices: pd.DataFrame,
                                  mom_long_span: int = 12,
                                  mom_short_span: Optional[int] = 1,
                                  beta_span: int = 24,
+                                 momentum_span: int = 12,
                                  rebalancing_freq: str = 'ME',
                                  returns_freq: Optional[str] = None
                                  ) -> List[plt.Figure]:
     """
     Parameter sensitivity sweep for alpha signals.
 
-    Sweeps a single parameter (momentum span, beta span, or both)
-    across a range of values and compares resulting portfolios.
+    Sweeps a single parameter (momentum span, beta span, residual
+    momentum span, or both momentum+beta) across a range of values
+    and compares resulting portfolios.
 
     Args:
         prices: Asset price panel.
@@ -287,6 +327,7 @@ def cross_backtest_alpha_signals(prices: pd.DataFrame,
         mom_long_span: Default momentum span (used when not sweeping).
         mom_short_span: Momentum short span.
         beta_span: Default beta span (used when not sweeping).
+        momentum_span: Default residual momentum span (used when not sweeping).
         rebalancing_freq: Portfolio rebalancing frequency.
         returns_freq: Return frequency for signal computation.
 
@@ -297,15 +338,19 @@ def cross_backtest_alpha_signals(prices: pd.DataFrame,
 
     if cross_backtest_param == CrossBacktestParam.MOM_SPAN:
         alpha_signal = AlphaSignal.MOMENTUM
-        configs = [(s, beta_span, f"long_span={s:0.0f}") for s in span_values]
+        configs = [(s, beta_span, momentum_span, f"long_span={s:0.0f}") for s in span_values]
 
     elif cross_backtest_param == CrossBacktestParam.BETA_SPAN:
         alpha_signal = AlphaSignal.LOW_BETA
-        configs = [(mom_long_span, s, f"beta_span={s:0.0f}") for s in span_values]
+        configs = [(mom_long_span, s, momentum_span, f"beta_span={s:0.0f}") for s in span_values]
 
     elif cross_backtest_param == CrossBacktestParam.MOM_BETA_SPAN:
         alpha_signal = AlphaSignal.MOMENTUM_AND_BETA
-        configs = [(s, s, f"spans={s:0.0f}") for s in span_values]
+        configs = [(s, s, momentum_span, f"spans={s:0.0f}") for s in span_values]
+
+    elif cross_backtest_param == CrossBacktestParam.RESIDUAL_MOM_SPAN:
+        alpha_signal = AlphaSignal.RESIDUAL_MOMENTUM
+        configs = [(mom_long_span, beta_span, s, f"res_mom_span={s:0.0f}") for s in span_values]
 
     else:
         raise NotImplementedError(f"{cross_backtest_param}")
@@ -313,12 +358,12 @@ def cross_backtest_alpha_signals(prices: pd.DataFrame,
     weights = dict()
     weights['Equal Weight'] = qis.df_to_equal_weight_allocation(df=prices)
 
-    for mom_span, b_span, label in configs:
+    for mom_span, b_span, m_span, label in configs:
         scores = compute_signal_scores(
             prices=prices, alpha_signal=alpha_signal,
             group_data=group_data, returns_freq=returns_freq,
             mom_long_span=mom_span, mom_short_span=mom_short_span,
-            beta_span=b_span)
+            beta_span=b_span, momentum_span=m_span)
         weights[label] = qis.df_to_long_only_allocation_sum1(df=scores)
 
     portfolio_datas = []

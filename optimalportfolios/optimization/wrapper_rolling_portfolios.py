@@ -176,7 +176,7 @@ def backtest_rolling_optimal_portfolio(prices: pd.DataFrame,
         roll_window: Rolling window for mixture estimation.
         carra: CARA risk aversion parameter γ.
         n_mixures: Number of mixture components K.
-        ticker: Portfolio identifier string for reporting.
+        ticker: Portfolio identifier string for report.
         rebalancing_costs: Proportional transaction cost per unit traded.
         weight_implementation_lag: Number of periods to delay weight
             implementation. None for no lag.

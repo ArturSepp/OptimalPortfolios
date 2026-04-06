@@ -449,7 +449,7 @@ def run_local_test(local_test: LocalTests):
 
     end_date = '16Aug2024'
     time_period = TimePeriod('19Jul2010', end_date)  # for weight calculations
-    perf_time_period = TimePeriod('31Mar2016', end_date)  # for reporting
+    perf_time_period = TimePeriod('31Mar2016', end_date)  # for report
 
     if local_test == LocalTests.ALL_OPTIMISATION_TYPES:
 

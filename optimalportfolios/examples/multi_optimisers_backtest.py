@@ -17,7 +17,7 @@ def run_multi_optimisers_backtest(prices: pd.DataFrame,
                                   benchmark_prices: pd.DataFrame,
                                   group_data: pd.Series,
                                   time_period: qis.TimePeriod,  # for weights
-                                  perf_time_period: qis.TimePeriod  # for reporting
+                                  perf_time_period: qis.TimePeriod  # for report
                                   ) -> List[plt.Figure]:
     """
     backtest multi optimisers
@@ -91,7 +91,7 @@ def run_local_test(local_test: LocalTests):
     if local_test == LocalTests.MULTI_OPTIMISERS_BACKTEST:
         prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
         time_period = qis.TimePeriod(start='31Dec1999', end=prices.index[-1])  # backtest start: need 6y of universe for rolling Sharpe and max mixure portfolios
-        perf_time_period = qis.TimePeriod(start='31Dec2007', end=prices.index[-1])  # backtest reporting
+        perf_time_period = qis.TimePeriod(start='31Dec2007', end=prices.index[-1])  # backtest report
         figs = run_multi_optimisers_backtest(prices=prices,
                                              benchmark_prices=benchmark_prices,
                                              group_data=group_data,

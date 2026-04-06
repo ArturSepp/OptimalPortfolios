@@ -19,7 +19,7 @@ def run_max_diversification_sensitivity_to_span(prices: pd.DataFrame,
                                                 benchmark_prices: pd.DataFrame,
                                                 group_data: pd.Series,
                                                 time_period: qis.TimePeriod,  # weight computations
-                                                perf_time_period: qis.TimePeriod,  # for reporting
+                                                perf_time_period: qis.TimePeriod,  # for report
                                                 constraints: Constraints
                                                 ) -> List[plt.Figure]:
     """
@@ -89,7 +89,7 @@ def run_local_test(local_test: LocalTests):
     if local_test == LocalTests.MAX_DIVERSIFICATION_SPAN:
 
         time_period = qis.TimePeriod(start='31Dec1998', end='15Mar2026')  # backtest start for weights computation
-        perf_time_period = qis.TimePeriod(start='31Dec2004', end='15Mar2026')  # backtest reporting
+        perf_time_period = qis.TimePeriod(start='31Dec2004', end='15Mar2026')  # backtest report
         figs = run_max_diversification_sensitivity_to_span(prices=prices,
                                                            benchmark_prices=benchmark_prices,
                                                            constraints=constraints,

@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 import qis as qis
 from typing import Union, Optional, Dict, Any, List
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, fields
 
 from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
 from optimalportfolios.covar_estimation.ewma_covar_estimator import estimate_current_ewma_covar
@@ -72,6 +72,19 @@ class FactorCovarEstimator(CovarEstimator):
     factor_covar_span: int = 52
     is_apply_vol_normalised_returns: bool = False
     demean: bool = True
+
+    def copy(self, **overrides) -> FactorCovarEstimator:
+        """Create a copy, optionally overriding specific fields.
+
+        Args:
+            **overrides: Field names and new values to replace.
+
+        Returns:
+            New ProductConfig instance.
+        """
+        self_dict = {f.name: getattr(self, f.name) for f in fields(self)}
+        self_dict.update(overrides)
+        return FactorCovarEstimator(**self_dict)
 
     def to_dict(self) -> Dict[str, Any]:
         """

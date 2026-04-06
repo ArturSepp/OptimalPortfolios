@@ -42,7 +42,7 @@ class OptimisationParams(NamedTuple):
 def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion to backtest portfolio
                                          marginal_asset: str,  # this is asset we test for inclusion
                                          time_period: TimePeriod = None,  # for computing portfolio weights
-                                         perf_time_period: TimePeriod = None,  # for reporting portfolio weights
+                                         perf_time_period: TimePeriod = None,  # for report portfolio weights
                                          is_alternatives: bool = True,  #
                                          optimisation_type: OptimisationType = OptimisationType.MIXTURE,
                                          marginal_asset_ew_weight: float = 0.02,  # allocation for equal weight

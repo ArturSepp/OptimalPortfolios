@@ -654,8 +654,8 @@ def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
     """
     fetch universe data for the portfolio construction:
     1. dividend and split adjusted end of day prices: price data may start / end at different dates
-    2. benchmark prices which is used for portfolio reporting and benchmarking
-    3. universe group data for portfolio reporting and risk attribution for large universes
+    2. benchmark prices which is used for portfolio report and benchmarking
+    3. universe group data for portfolio report and risk attribution for large universes
     this function is using yfinance to fetch the price data
     """
     universe_data = dict(SPY='Equities',
@@ -709,10 +709,10 @@ portfolio_data = qis.backtest_model_portfolio(prices=prices.loc[weights.index[0]
                                               weight_implementation_lag=weight_implementation_lag,
                                               rebalancing_costs=rebalancing_costs)
 
-# 5. using portfolio_data run the reporting with strategy factsheet
-# for group-based reporting set_group_data
+# 5. using portfolio_data run the report with strategy factsheet
+# for group-based report set_group_data
 portfolio_data.set_group_data(group_data=group_data, group_order=list(group_data.unique()))
-# set time period for portfolio reporting
+# set time period for portfolio report
 figs = qis.generate_strategy_factsheet(portfolio_data=portfolio_data,
                                        benchmark_prices=benchmark_prices,
                                        time_period=time_period,
@@ -733,7 +733,7 @@ qis.save_figs_to_pdf(figs=figs,
 Portfolio data class ```PortfolioData``` is implemented in [QIS package](https://github.com/ArturSepp/QuantInvestStrats)
 
 ```python
-# 6. can create customised reporting using portfolio_data custom reporting
+# 6. can create customised report using portfolio_data custom report
 def run_customised_reporting(portfolio_data) -> plt.Figure:
     with sns.axes_style("darkgrid"):
         fig, axs = plt.subplots(3, 1, figsize=(12, 12), tight_layout=True)
