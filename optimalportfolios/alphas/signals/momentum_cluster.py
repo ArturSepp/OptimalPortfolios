@@ -27,7 +27,8 @@ def compute_momentum_cluster_alpha(
         long_span: int = 12,
         short_span: Optional[int] = None,
         vol_span: Optional[int] = 13,
-        mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.NONE
+        mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.NONE,
+        min_cluster_size: int = 3,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Compute momentum scores with time-varying cluster-based scoring.
@@ -48,6 +49,8 @@ def compute_momentum_cluster_alpha(
         short_span: Optional EWMA span for short-term reversal subtraction.
         vol_span: EWMA span for volatility normalisation. None disables.
         mean_adj_type: Mean adjustment type for EWMA computation.
+        min_cluster_size: Minimum cluster size for within-cluster scoring.
+            Clusters with size <= min_cluster_size use global statistics.
 
     Returns:
         Tuple of (momentum_cluster_score, raw_momentum).
@@ -71,7 +74,8 @@ def compute_momentum_cluster_alpha(
     # score within time-varying clusters
     momentum_cluster_score = score_within_clusters(
         raw_signal=raw_momentum,
-        rolling_clusters=rolling_clusters)
+        rolling_clusters=rolling_clusters,
+        min_cluster_size=min_cluster_size)
 
     return momentum_cluster_score, raw_momentum
 

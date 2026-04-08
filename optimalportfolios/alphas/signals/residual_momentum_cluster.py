@@ -75,7 +75,8 @@ def compute_residual_momentum_cluster_alpha(
         long_span: int = 12,
         short_span: Optional[int] = None,
         vol_span: Optional[int] = 13,
-        mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA
+        mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA,
+        min_cluster_size: int = 3,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Compute residual momentum with time-varying cluster-based scoring.
@@ -95,6 +96,8 @@ def compute_residual_momentum_cluster_alpha(
         short_span: Optional EWMA span for short-term reversal subtraction.
         vol_span: EWMA span for volatility normalisation. None disables.
         mean_adj_type: Mean adjustment type for EWMA beta regression.
+        min_cluster_size: Minimum cluster size for within-cluster scoring.
+            Clusters with size <= min_cluster_size use global statistics.
 
     Returns:
         Tuple of (residual_momentum_cluster_score, raw_residual_momentum).
@@ -118,7 +121,8 @@ def compute_residual_momentum_cluster_alpha(
     # score within time-varying clusters
     residual_momentum_score = score_within_clusters(
         raw_signal=raw_residual_momentum,
-        rolling_clusters=rolling_clusters)
+        rolling_clusters=rolling_clusters,
+        min_cluster_size=min_cluster_size)
 
     return residual_momentum_score, raw_residual_momentum
 

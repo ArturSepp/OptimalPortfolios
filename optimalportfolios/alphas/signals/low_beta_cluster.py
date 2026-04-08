@@ -24,7 +24,8 @@ def compute_low_beta_cluster_alpha(
         rolling_clusters: Dict[pd.Timestamp, pd.Series] = None,
         returns_freq: Union[str, pd.Series] = 'ME',
         beta_span: int = 12,
-        mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA
+        mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA,
+        min_cluster_size: int = 3,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Compute low-beta scores with time-varying cluster-based scoring.
@@ -41,6 +42,8 @@ def compute_low_beta_cluster_alpha(
         returns_freq: Return frequency. String or pd.Series for mixed-freq.
         beta_span: EWMA span for beta estimation.
         mean_adj_type: Mean adjustment type for EWMA regression.
+        min_cluster_size: Minimum cluster size for within-cluster scoring.
+            Clusters with size <= min_cluster_size use global statistics.
 
     Returns:
         Tuple of (beta_cluster_score, raw_beta).
@@ -65,7 +68,8 @@ def compute_low_beta_cluster_alpha(
     # score within time-varying clusters
     beta_cluster_score = score_within_clusters(
         raw_signal=negated_beta,
-        rolling_clusters=rolling_clusters)
+        rolling_clusters=rolling_clusters,
+        min_cluster_size=min_cluster_size)
 
     return beta_cluster_score, raw_beta
 
