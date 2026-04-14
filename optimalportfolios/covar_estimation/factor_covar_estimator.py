@@ -385,14 +385,27 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
     last_residual_vars = pd.concat(last_residual_vars, axis=0).fillna(0.0)
     last_alphas = pd.concat(last_alphas, axis=0).fillna(0.0)
     last_r2 = pd.concat(last_r2, axis=0).fillna(0.0).clip(0.0, None)
-    residuals = pd.concat(residuals, axis=1).fillna(0.0)
+    # Preserve structural NaN from frequency mismatch.
+    # When ME and QE residual frames are concat'd on axis=1, QE columns
+    # naturally get NaN on non-quarter-end months. That NaN is meaningful
+    # ("no observation"), not zero ("zero return"). Downstream pandas
+    # EWMA in CurrentFactorCovarData.estimate_alpha handles NaN correctly
+    # by carrying the previous value forward.
+    residuals = pd.concat(residuals, axis=1)
     if assets is not None:
         asset_last_betas = asset_last_betas.reindex(index=assets).fillna(0.0)
         last_ewma_vars = last_ewma_vars.reindex(index=assets).fillna(0.0)
         last_residual_vars = last_residual_vars.reindex(index=assets).fillna(0.0)
         last_alphas = last_alphas.reindex(index=assets).fillna(0.0)
         last_r2 = last_r2.reindex(index=assets).fillna(0.0)
-        residuals = residuals.reindex(columns=assets).fillna(0.0)
+        # Reindex preserves existing NaN from frequency mismatch.
+        # Only fill columns that are *entirely* missing (assets with no
+        # fitted history at all) with zeros so downstream consumers
+        # don't see surprise all-NaN columns.
+        residuals = residuals.reindex(columns=assets)
+        _missing_cols = residuals.columns[residuals.isna().all(axis=0)]
+        if len(_missing_cols) > 0:
+            residuals.loc[:, _missing_cols] = 0.0
 
     y_variances = pd.concat([last_ewma_vars.rename(VarianceColumns.EWMA_VARIANCE.value),
                              last_residual_vars.rename(VarianceColumns.RESIDUAL_VARS.value),
