@@ -965,7 +965,7 @@ rolling_data = covar_estimator.fit_rolling_factor_covars(risk_factor_prices=risk
 
 # Rolling taa (covar_dict now required, no internal estimation)
 # Old
-weights = rolling_risk_budgeting(prices=prices, time_period=time_period,
+weights = rolling_risk_budgeting(prices=prices,
                                   covar_estimator=CovarEstimator(), risk_budget=budget,
                                   constraints=constraints)
 # New
