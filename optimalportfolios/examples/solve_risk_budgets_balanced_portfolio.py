@@ -130,14 +130,12 @@ def run_local_test(local_test: LocalTests):
     if local_test == LocalTests.SOLVE_FOR_RISK_BUDGETS:
         risk_budgets = solve_for_risk_budgets_from_given_weights(prices=prices,
                                                                  given_weights=given_static_weights,
-                                                                 time_period=time_period,
                                                                  covar_dict=covar_dict)
         print(risk_budgets)
 
     elif local_test == LocalTests.ILLUSTRATE_WEIGHTS:
         risk_budgets = solve_for_risk_budgets_from_given_weights(prices=prices,
                                                                  given_weights=given_static_weights,
-                                                                 time_period=time_period,
                                                                  covar_dict=covar_dict)
         risk_budgets_weights = rolling_risk_budgeting(prices=prices,
                                                       covar_dict=covar_dict,

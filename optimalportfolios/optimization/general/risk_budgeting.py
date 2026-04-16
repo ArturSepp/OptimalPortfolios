@@ -74,6 +74,14 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
     Returns:
         DataFrame of portfolio weights.
     """
+    # Single-asset universe: trivial 100% allocation at every rebalancing date.
+    if len(risk_budget) == 1:
+        asset = risk_budget.index[0]
+        weights = pd.DataFrame(1.0,
+                               index=pd.DatetimeIndex(list(covar_dict.keys())),
+                               columns=[asset])
+        return weights.reindex(columns=prices.columns.to_list()).fillna(0.0)
+
     if rebalancing_indicators is not None:
         rebalancing_dates = list(covar_dict.keys())
         rebalancing_indicators = rebalancing_indicators.reindex(index=rebalancing_dates).fillna(0.0)
@@ -313,7 +321,6 @@ def risk_budget_objective(x, pars) -> float:
 
 def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
                                               given_weights: pd.Series,
-                                              time_period: qis.TimePeriod,
                                               covar_dict: Dict[pd.Timestamp, pd.DataFrame],
                                               min_risk_budget: float = 1e-4,
                                               max_risk_budget: float = 0.99
@@ -324,7 +331,6 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
     Args:
         prices: Asset price panel.
         given_weights: Target portfolio weights to reproduce.
-        time_period: Period for rolling backtest within the objective function.
         covar_dict: Pre-computed covariance matrices.
         min_risk_budget: Lower bound on each non-zero risk budget.
         max_risk_budget: Upper bound on each risk budget.
@@ -332,6 +338,12 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
     Returns:
         Optimal risk budgets as pd.Series. Budgets sum to 1.
     """
+    # Single-asset universe: the only budget consistent with sum=1 is 1.0
+    # on the lone asset. Skip the solver — it would be infeasible under the
+    # max_risk_budget=0.99 cap anyway.
+    if prices.shape[1] == 1:
+        return pd.Series(1.0, index=prices.columns)
+
     given_weights_np = given_weights.to_numpy()
 
     def objective_function(risk_budgets: np.ndarray) -> float:
