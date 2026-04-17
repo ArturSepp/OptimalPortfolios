@@ -28,42 +28,18 @@ import pandas as pd
 import qis as qis
 from typing import Optional, Tuple, Union, Dict, List
 
-from optimalportfolios.alphas.signals.utils import score_within_clusters
+from optimalportfolios.alphas.signals.utils import (
+    extract_rolling_clusters,  # re-exported for back-compat (used to live here)
+    score_within_clusters,
+)
 
-
-def extract_rolling_clusters(
-        rolling_covar_data,
-        assets: List[str] = None,
-) -> Dict[pd.Timestamp, pd.Series]:
-    """Extract time-varying cluster assignments from RollingFactorCovarData.
-
-    Merges per-frequency cluster dicts into a single pd.Series per date,
-    filtered to the requested asset universe.
-
-    Args:
-        rolling_covar_data: RollingFactorCovarData from FactorCovarEstimator.
-        assets: Asset tickers to include. If None, includes all.
-
-    Returns:
-        Dict mapping estimation dates to pd.Series (ticker → cluster_id).
-        Dates where clusters are None or empty are skipped.
-    """
-    rolling_clusters = {}
-    for date, current_data in rolling_covar_data.data.items():
-        if current_data.clusters is None:
-            continue
-        # clusters is Dict[str, pd.Series] keyed by frequency
-        # merge all frequencies into one Series
-        parts = [s for s in current_data.clusters.values() if s is not None and len(s) > 0]
-        if not parts:
-            continue
-        merged = pd.concat(parts)
-        merged = merged[~merged.index.duplicated(keep='last')]
-        if assets is not None:
-            merged = merged.reindex(assets).dropna()
-        if len(merged) > 0:
-            rolling_clusters[date] = merged
-    return rolling_clusters
+# keep the public symbol importable from this module even though it now
+# lives in utils — guards against external callers that did
+# ``from ...residual_momentum_cluster import extract_rolling_clusters``
+__all__ = [
+    'compute_residual_momentum_cluster_alpha',
+    'extract_rolling_clusters',
+]
 
 
 def compute_residual_momentum_cluster_alpha(

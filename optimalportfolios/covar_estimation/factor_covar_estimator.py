@@ -286,6 +286,18 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
         estimated_betas from LassoModel is (N x M) with index=assets, columns=factors.
         y_betas in CurrentFactorCovarData follows the same (N x M) convention.
 
+        Clusters, linkages and cutoffs are fitted per-frequency (one clustering
+        step per freq block of assets) but flattened into persistable pandas
+        objects before construction:
+          - clusters: pd.Series indexed by asset (each asset appears in
+            exactly one freq bucket), values are freq-prefixed cluster IDs.
+          - linkages: pd.DataFrame of scipy linkage rows, stacked across
+            freqs with a freq-prefixed merge-step index, columns
+            ['left', 'right', 'distance', 'n_samples']. Use
+            ``factor_covar.get_linkage_array(linkages, freq)`` to recover
+            a scipy-compatible ndarray for a given frequency.
+          - cutoffs: pd.Series indexed by freq code.
+
     Args:
         risk_factor_prices: Factor price series. Index=dates, columns=factor names.
         asset_returns_dict: Dict[freq_str, DataFrame] of asset returns at different
@@ -323,9 +335,9 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
     residual_vars_freqs: Dict[str, pd.Series] = {}
     alphas_freqs: Dict[str, pd.Series] = {}
     r2_freqs: Dict[str, pd.Series] = {}
-    clusters: Dict[str, pd.Series] = {}
-    linkages: Dict[str, np.ndarray] = {}
-    cutoffs: Dict[str, float] = {}
+    clusters_freqs: Dict[str, pd.Series] = {}       # per-freq cluster assignment
+    linkages_freqs: Dict[str, np.ndarray] = {}      # per-freq scipy linkage matrix
+    cutoffs_freqs: Dict[str, float] = {}            # per-freq dendrogram cutoff
     residuals_freqs: Dict[str, pd.DataFrame] = {}
 
     for freq in asset_returns_dict.keys():
@@ -354,9 +366,9 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
         alphas_freqs[freq] = pd.Series(result.alpha, index=y.columns)
         r2_freqs[freq] = pd.Series(result.r2, index=y.columns)
 
-        clusters[freq] = lasso_model.clusters
-        linkages[freq] = lasso_model.linkage
-        cutoffs[freq] = lasso_model.cutoff
+        clusters_freqs[freq] = lasso_model.clusters
+        linkages_freqs[freq] = lasso_model.linkage
+        cutoffs_freqs[freq] = lasso_model.cutoff
 
         # in-sample residuals: y - x @ beta' where beta is (N x M)
         # x is (T x M), beta.T is (M x N), result is (T x N)
@@ -385,6 +397,51 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
     last_residual_vars = pd.concat(last_residual_vars, axis=0).fillna(0.0)
     last_alphas = pd.concat(last_alphas, axis=0).fillna(0.0)
     last_r2 = pd.concat(last_r2, axis=0).fillna(0.0).clip(0.0, None)
+
+    # Flatten per-freq clustering outputs into persistable pandas objects.
+    # Each asset appears in exactly one frequency bucket (freqs partition
+    # the universe), so concat along axis=0 is safe for clusters and for
+    # linkages — no overlap, no conflict. Per-freq identifiers are prefixed
+    # with the freq code so the merged objects can be split back per freq
+    # downstream (e.g. factor_covar.get_linkage_array).
+    cluster_series_list = []
+    linkage_frames = []
+    cutoff_values: Dict[str, float] = {}
+    for freq in asset_returns_dict.keys():
+        s = clusters_freqs.get(freq)
+        if s is not None:
+            cluster_series_list.append(s.astype(str).radd(f"{freq}:"))
+
+        L = linkages_freqs.get(freq)
+        if L is not None:
+            linkage_frames.append(pd.DataFrame(
+                L,
+                columns=['left', 'right', 'distance', 'n_samples'],
+                index=pd.Index(
+                    [f"{freq}:step_{i}" for i in range(L.shape[0])],
+                    name='merge_step',
+                ),
+            ))
+
+        c = cutoffs_freqs.get(freq)
+        if c is not None:
+            cutoff_values[freq] = float(c)
+
+    clusters_flat: Optional[pd.Series]
+    if cluster_series_list:
+        clusters_flat = pd.concat(cluster_series_list, axis=0)
+        clusters_flat.name = VarianceColumns.CLUSTER.value
+    else:
+        clusters_flat = None
+
+    linkages_flat: Optional[pd.DataFrame] = (
+        pd.concat(linkage_frames, axis=0) if linkage_frames else None
+    )
+
+    cutoffs_flat: Optional[pd.Series] = (
+        pd.Series(cutoff_values, name='cluster_cutoff') if cutoff_values else None
+    )
+
     # Preserve structural NaN from frequency mismatch.
     # When ME and QE residual frames are concat'd on axis=1, QE columns
     # naturally get NaN on non-quarter-end months. That NaN is meaningful
@@ -398,6 +455,10 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
         last_residual_vars = last_residual_vars.reindex(index=assets).fillna(0.0)
         last_alphas = last_alphas.reindex(index=assets).fillna(0.0)
         last_r2 = last_r2.reindex(index=assets).fillna(0.0)
+        if clusters_flat is not None:
+            # Reindex cluster assignment to the target asset universe.
+            # Missing assets (no fit) get NaN — distinct from any valid cluster ID.
+            clusters_flat = clusters_flat.reindex(index=assets)
         # Reindex preserves existing NaN from frequency mismatch.
         # Only fill columns that are *entirely* missing (assets with no
         # fitted history at all) with zeros so downstream consumers
@@ -417,9 +478,9 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
     covar_data = CurrentFactorCovarData(x_covar=x_covar,
                                         y_betas=asset_last_betas,
                                         y_variances=y_variances,
-                                        clusters=clusters,
-                                        linkages=linkages,
-                                        cutoffs=cutoffs,
+                                        clusters=clusters_flat,
+                                        linkages=linkages_flat,
+                                        cutoffs=cutoffs_flat,
                                         residuals=residuals,
                                         estimation_date=estimation_date)
     return covar_data
