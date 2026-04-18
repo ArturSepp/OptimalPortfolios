@@ -23,7 +23,7 @@ from dataclasses import dataclass, asdict, fields
 
 from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
 from optimalportfolios.covar_estimation.ewma_covar_estimator import estimate_current_ewma_covar
-from factorlasso import LassoModel, CurrentFactorCovarData, RollingFactorCovarData, VarianceColumns
+from factorlasso import LassoModel, LassoModelType, CurrentFactorCovarData, RollingFactorCovarData, VarianceColumns
 
 
 @dataclass
@@ -178,6 +178,9 @@ class FactorCovarEstimator(CovarEstimator):
             assets: Union[List[str], pd.Index] = None,
             x_covar: Optional[pd.DataFrame] = None,
             estimation_date: Optional[pd.Timestamp] = None,
+            precomputed_clusters: Optional[Dict[str, pd.Series]] = None,
+            precomputed_linkages: Optional[Dict[str, np.ndarray]] = None,
+            precomputed_cutoffs: Optional[Dict[str, float]] = None,
     ) -> CurrentFactorCovarData:
         """
         Fit factor covariance model at a single estimation date.
@@ -194,6 +197,17 @@ class FactorCovarEstimator(CovarEstimator):
             x_covar: Pre-computed factor covariance matrix. If None, estimated from
                 ``risk_factor_prices``.
             estimation_date: Reference date for the estimation.
+            precomputed_clusters: Optional per-frequency cluster assignments
+                (keys matching ``asset_returns_dict``). When supplied, the
+                per-frequency LassoModel is switched from GROUP_LASSO_CLUSTERS
+                to GROUP_LASSO with these groups. Use case: USD-anchored
+                clustering for non-USD CMA runs.
+            precomputed_linkages: Per-frequency scipy linkage matrices
+                corresponding to ``precomputed_clusters``. Stored on the
+                returned CurrentFactorCovarData so dendrogram plots still
+                render with the reference-run linkage structure.
+            precomputed_cutoffs: Per-frequency dendrogram cut distances
+                corresponding to ``precomputed_clusters``.
 
         Returns:
             Factor covariance decomposition at the estimation date.
@@ -207,7 +221,10 @@ class FactorCovarEstimator(CovarEstimator):
             factor_returns_freq=self.factor_returns_freq,
             factor_covar_span=self.factor_covar_span,
             is_apply_vol_normalised_returns=self.is_apply_vol_normalised_returns,
-            estimation_date=estimation_date
+            estimation_date=estimation_date,
+            precomputed_clusters=precomputed_clusters,
+            precomputed_linkages=precomputed_linkages,
+            precomputed_cutoffs=precomputed_cutoffs,
         )
         return factor_covar_data
 
@@ -273,7 +290,10 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
                                      factor_covar_span: int = 52,
                                      is_apply_vol_normalised_returns: bool = False,
                                      estimation_date: pd.Timestamp = None,
-                                     verbose: bool = False
+                                     verbose: bool = False,
+                                     precomputed_clusters: Optional[Dict[str, pd.Series]] = None,
+                                     precomputed_linkages: Optional[Dict[str, np.ndarray]] = None,
+                                     precomputed_cutoffs: Optional[Dict[str, float]] = None,
                                      ) -> CurrentFactorCovarData:
     """
     Compute factor covariance data at last valuation date.
@@ -313,11 +333,39 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
         estimation_date: Override estimation date. Defaults to last date in first
             frequency's returns.
         verbose: If True, print solver diagnostics.
+        precomputed_clusters: Optional per-frequency cluster assignments to use
+            instead of deriving clusters from the y correlation matrix. Keys are
+            frequency codes matching ``asset_returns_dict`` (e.g., 'ME', 'QE').
+            When provided, the per-freq LassoModel is switched from
+            GROUP_LASSO_CLUSTERS to GROUP_LASSO with these groups. Primary use
+            case: USD-anchored clustering for non-USD CMA estimation to avoid
+            FX/hedging-induced cluster artefacts. Must be supplied together
+            with ``precomputed_linkages`` and ``precomputed_cutoffs``.
+        precomputed_linkages: Per-frequency scipy linkage matrices corresponding
+            to ``precomputed_clusters``. Stored on the returned
+            CurrentFactorCovarData so dendrogram plots still render with the
+            reference-run linkage structure.
+        precomputed_cutoffs: Per-frequency dendrogram cut distances corresponding
+            to ``precomputed_clusters``.
 
     Returns:
         CurrentFactorCovarData with factor covariance, betas (N x M), variances,
         clusters, and residuals.
     """
+    # Validate precomputed cluster inputs: either all three or none.
+    # Partial supply would produce inconsistent CurrentFactorCovarData
+    # (e.g. clusters without linkage/cutoff for dendrogram rendering).
+    _pc_provided = [p is not None for p in
+                    (precomputed_clusters, precomputed_linkages, precomputed_cutoffs)]
+    if any(_pc_provided) and not all(_pc_provided):
+        raise ValueError(
+            "precomputed_clusters, precomputed_linkages, and precomputed_cutoffs "
+            "must all be provided together, or all be None. Received: "
+            f"clusters={'yes' if _pc_provided[0] else 'no'}, "
+            f"linkages={'yes' if _pc_provided[1] else 'no'}, "
+            f"cutoffs={'yes' if _pc_provided[2] else 'no'}."
+        )
+
     # 1. compute x-factors ewm covar at rebalancing freq
     if x_covar is None:
         x_covar = estimate_current_ewma_covar(prices=risk_factor_prices,
@@ -353,22 +401,57 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
         else:
             span_f = lasso_model.span
 
+        # Decide whether to run native clustering or swap in external groups.
+        use_precomputed = (
+            precomputed_clusters is not None
+            and freq in precomputed_clusters
+        )
+        if use_precomputed:
+            # Reindex external clusters to the current fit universe. Any
+            # asset without an assignment is a hard error — silently
+            # dropping would shrink the fit universe unexpectedly.
+            external_clusters = precomputed_clusters[freq].reindex(y.columns)
+            if external_clusters.isna().any():
+                missing = external_clusters[external_clusters.isna()].index.tolist()
+                raise ValueError(
+                    f"precomputed_clusters[{freq!r}] is missing assignments "
+                    f"for {len(missing)} assets: {missing}"
+                )
+            # Switch model to GROUP_LASSO with external groups. copy() goes
+            # through asdict→__init__, re-running the __post_init__ guard
+            # (group_data required for GROUP_LASSO).
+            fit_model = lasso_model.copy(kwargs={
+                'model_type': LassoModelType.GROUP_LASSO,
+                'group_data': external_clusters,
+            })
+        else:
+            fit_model = lasso_model
+
         # fit() returns self; estimated_betas is (N x M) DataFrame
-        lasso_model.fit(x=x, y=y, verbose=verbose, span=span_f)
+        fit_model.fit(x=x, y=y, verbose=verbose, span=span_f)
 
         # estimated_betas: index=assets, columns=factors (N x M)
-        betas_freqs[freq] = lasso_model.estimated_betas
+        betas_freqs[freq] = fit_model.estimated_betas
 
         # Diagnostics from LassoEstimationResult stored on model
-        result = lasso_model.estimation_result_
+        result = fit_model.estimation_result_
         ewma_vars_freqs[freq] = pd.Series(result.ss_total, index=y.columns)
         residual_vars_freqs[freq] = pd.Series(result.ss_res, index=y.columns)
         alphas_freqs[freq] = pd.Series(result.alpha, index=y.columns)
         r2_freqs[freq] = pd.Series(result.r2, index=y.columns)
 
-        clusters_freqs[freq] = lasso_model.clusters
-        linkages_freqs[freq] = lasso_model.linkage
-        cutoffs_freqs[freq] = lasso_model.cutoff
+        # Clusters are populated uniformly by LassoModel.fit() for both
+        # HCGL and GROUP_LASSO modes (see patch to lasso_estimator.py).
+        # For precomputed mode, apply the caller-supplied linkage/cutoff
+        # so the saved CurrentFactorCovarData carries consistent dendrogram
+        # metadata from the reference run.
+        clusters_freqs[freq] = fit_model.clusters
+        if use_precomputed:
+            linkages_freqs[freq] = precomputed_linkages[freq]
+            cutoffs_freqs[freq] = precomputed_cutoffs[freq]
+        else:
+            linkages_freqs[freq] = fit_model.linkage
+            cutoffs_freqs[freq] = fit_model.cutoff
 
         # in-sample residuals: y - x @ beta' where beta is (N x M)
         # x is (T x M), beta.T is (M x N), result is (T x N)
