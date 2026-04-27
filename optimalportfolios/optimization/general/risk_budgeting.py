@@ -361,7 +361,7 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
         for date, pd_covar in covar_dict.items():
             rc = qis.compute_portfolio_risk_contributions(w=given_weights, covar=pd_covar)
             portfolio_rc[date] = rc / np.nansum(rc)
-        avg_portfolio_rc = pd.DataFrame.from_dict(portfolio_rc, orient='index').mean(0)
+        avg_portfolio_rc = pd.DataFrame.from_dict(portfolio_rc, orient='index').mean(axis=0)
         x0 = avg_portfolio_rc.to_numpy()
     else:
         x0 = given_weights.to_numpy()

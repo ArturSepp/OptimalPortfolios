@@ -178,7 +178,7 @@ def run_local_test(local_test: LocalTests):
                                                   target_returns=target_returns+0.005,
                                                   time_period=time_period)
         print(f"weights={weights}")
-        print(f"exposure={weights.sum(1)}")
+        print(f"exposure={weights.sum(axis=1)}")
         portfolio_data = qis.backtest_model_portfolio(prices=prices,
                                                       weights=weights,
                                                       rebalancing_costs=0.0000,
