@@ -9,7 +9,7 @@ import pybloqs as p
 import qis as qis
 from qis import TimePeriod, PerfParams, BenchmarkReturnsQuantilesRegime, PerfStat, PortfolioData
 
-from optimalportfolios.examples.crypto_allocation.load_prices import Assets, load_prices, load_risk_free_rate
+from paper_code.crypto_allocation_risk_2023.load_prices import Assets, load_prices, load_risk_free_rate
 from optimalportfolios.reports.marginal_backtest import OptimisationParams, OptimisationType, backtest_marginal_optimal_portfolios
 from optimalportfolios.reports.config import KWARGS_SUPTITLE, KWARGS_TITLE, KWARGS_FIG, KWARGS_TEXT
 

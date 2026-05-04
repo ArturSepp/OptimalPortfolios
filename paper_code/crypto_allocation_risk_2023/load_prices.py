@@ -4,16 +4,20 @@ update_prices_with_bloomberg() must used with  Bloomberg open
 update_prices_with_yf() uses yfinance + some universe uploaded manually
 NB: CmcScraper stopped working so now only option is to use bloomberg
 """
+from pathlib import Path
 import pandas as pd
 import yfinance as yf
 import matplotlib.pyplot as plt
 from typing import List, Literal, Union, Optional
 from enum import Enum
-# from cryptocmd import CmcScraper  its stopped working
-import qis
+
+# from cryptocmd import CmcScraper  its stopped working: todo - remove
+import qis as qis
 
 # add the local path to universe files
-LOCAL_PATH = 'C://Users//artur//OneDrive//analytics//my_github//OptimalPortfolios//optimalportfolios//examples//crypto_allocation//data//'
+LOCAL_PATH = Path(__file__).parent.joinpath('/paper_code/crypto_allocation_risk_2023/data//')
+print(LOCAL_PATH)
+
 
 # universe sources
 BTC_PRICES_FROM_2010 = 'BTC_from_2010'  # csv universe with static BTC from2010 upto 31Jul2022

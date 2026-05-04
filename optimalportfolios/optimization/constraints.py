@@ -576,11 +576,11 @@ class Constraints:
     constraint_enforcement_type: ConstraintEnforcementType = ConstraintEnforcementType.FORCED_CONSTRAINTS
     tre_utility_weight: Optional[float] = 1.0
     turnover_utility_weight: Optional[float] = 0.40
-    group_lower_upper_constraints: GroupLowerUpperConstraints = None
-    group_tracking_error_constraint: GroupTrackingErrorConstraint = None
+    group_lower_upper_constraints: Optional[GroupLowerUpperConstraints] = None
+    group_tracking_error_constraint: Optional[GroupTrackingErrorConstraint] = None
     group_turnover_constraint: Optional[GroupTurnoverConstraint] = None
-    sector_deviation_constraints: BenchmarkDeviationConstraints = None
-    style_deviation_constraints: BenchmarkDeviationConstraints = None
+    sector_deviation_constraints: Optional[BenchmarkDeviationConstraints] = None
+    style_deviation_constraints: Optional[BenchmarkDeviationConstraints] = None
 
     def __post_init__(self):
         """Validate that individual min/max weights are consistent with group constraints.

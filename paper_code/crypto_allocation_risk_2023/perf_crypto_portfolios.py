@@ -19,10 +19,10 @@ import pybloqs as p
 import qis as qis
 from qis import TimePeriod, PerfParams, BenchmarkReturnsQuantilesRegime, PerfStat
 
-from optimalportfolios.examples.crypto_allocation.load_prices import Assets, load_prices, load_risk_free_rate
+from paper_code.crypto_allocation_risk_2023.load_prices import Assets, load_prices, load_risk_free_rate
 from optimalportfolios.reports.marginal_backtest import OptimisationType
 from optimalportfolios.reports.config import KWARGS_SUPTITLE, KWARGS_TITLE, KWARGS_FIG, KWARGS_TEXT
-from optimalportfolios.examples.crypto_allocation.backtest_portfolios_for_article import run_joint_backtest
+from paper_code.crypto_allocation_risk_2023.backtest_portfolios_for_article import run_joint_backtest
 
 PERF_PARAMS = PerfParams(freq_vol='ME', freq_reg='ME', freq_drawdown='ME', rates_data=load_risk_free_rate())
 REGIME_CLASSIFIER = BenchmarkReturnsQuantilesRegime(freq='QE')

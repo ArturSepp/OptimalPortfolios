@@ -1,0 +1,22 @@
+# Reproducibility pins for the MATF-CMA paper code.
+# - Bootstrap exhibit (Exhibits 1, 2) requires only the numpy/pandas/scipy/cvxpy stack.
+# - Figures and run_optimisation.py additionally require qis and optimalportfolios.
+# - build_paper_inputs.py with use_rosaa=True requires the LGT internal `rosaa`
+#   install — replicators don't run that step; they consume paper_inputs.xlsx.
+
+numpy>=1.26,<3.0
+pandas>=2.2,<3.0
+scipy>=1.12,<2.0
+matplotlib>=3.8,<4.0
+seaborn>=0.13,<1.0
+openpyxl>=3.1,<4.0
+cvxpy>=1.5,<2.0
+clarabel>=0.6,<1.0
+
+# For figures.py and run_optimisation.py
+qis>=4.0,<5.0
+optimalportfolios>=5.0,<6.0
+factorlasso>=0.3,<1.0
+
+# For the test suite (optional)
+pytest>=7.0

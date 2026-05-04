@@ -11,7 +11,7 @@ import qis
 from qis import TimePeriod, PerfParams, BenchmarkReturnsQuantilesRegime, PerfStat
 
 import optimalportfolios.utils.gaussian_mixture as gm
-from optimalportfolios.examples.crypto_allocation.load_prices import Assets, load_prices, load_risk_free_rate
+from paper_code.crypto_allocation_risk_2023.load_prices import Assets, load_prices, load_risk_free_rate
 
 PERF_PARAMS = PerfParams(freq_vol='ME', freq_reg='ME', freq_drawdown='ME', rates_data=load_risk_free_rate())
 REGIME_CLASSIFIER = BenchmarkReturnsQuantilesRegime(freq='QE')
