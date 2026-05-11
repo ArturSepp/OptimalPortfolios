@@ -63,17 +63,15 @@ from bootstrap_frontier_analytics import (
 # ═══════════════════════════════════════════════════════════════════
 # 1. Universe and benchmark mandates — paper §5 illustrative universe
 #    Universe matches `universe weight` tab of universe_snapshot.xlsx
-#    (snapshot universe_20260503_1152), 17 assets, USD investor, 2026-Q1.
+#    (snapshot 2026-Q1), 15 assets, USD investor.
 # ═══════════════════════════════════════════════════════════════════
 PAPER_TICKERS: List[Tuple[str, str]] = [
-    # Fixed income (7)
+    # Fixed income (5)
     ("LGTRTRUH Index",         "Global Government"),
     ("LGCPTRUH Index",         "Global IG Bonds"),
     ("H23059US Index",         "Global HY Bonds"),
     ("EMUSTRUU Index",         "EM HC Bonds"),
-    ("LGT_OTHERFI Index",      "Other Fixed Income"),
     ("LF94TRUH Index",         "Global Inflation-Linked"),
-    ("H24641US Index",         "Global Convertibles"),
     # Equities (5)
     ("NDDUUS Index",           "MSCI US"),
     ("MSDEE15N Index",         "MSCI Europe"),
@@ -91,16 +89,17 @@ PAPER_TICKERS: List[Tuple[str, str]] = [
 # Eight policy benchmark mandates: 4 risk levels × {without alts, with alts}.
 # Order: Income, Low, Balanced, Growth, then with-alts versions.
 # Source: 'universe weight' tab of universe_snapshot.xlsx (May 2026 update).
-# Rows align with PAPER_TICKERS above.
+# Rows align with PAPER_TICKERS above. Within-class decomposition weights:
+#   Bonds:       Govt 54.30 / IG 32.10 / HY 4.00 / EM 4.00 / IL 5.60
+#   Equities:    US 68.27 / Europe 14.01 / Japan 4.86 / AxJ 10.76 / EM 2.10
+#   Alternatives: PE 50.00 / PC 10.00 / ILS 10.00 / HF 10.00 / RA 20.00
 BENCHMARK_WEIGHTS = np.array([
     # Income w/o, Low w/o, Bal w/o, Growth w/o,  Income w/, Low w/, Bal w/, Growth w/
-    [0.4770, 0.3339, 0.1908, 0.0000,  0.4293, 0.2671, 0.1336, 0.0000],  # Global Government
-    [0.2056, 0.1439, 0.0822, 0.0000,  0.1850, 0.1151, 0.0576, 0.0000],  # Global IG Bonds
-    [0.0266, 0.0186, 0.0106, 0.0000,  0.0239, 0.0149, 0.0074, 0.0000],  # Global HY Bonds
-    [0.1848, 0.1294, 0.0739, 0.0000,  0.1663, 0.1035, 0.0517, 0.0000],  # EM HC Bonds
-    [0.0360, 0.0252, 0.0144, 0.0000,  0.0324, 0.0202, 0.0101, 0.0000],  # Other Fixed Income
-    [0.0500, 0.0350, 0.0200, 0.0000,  0.0450, 0.0280, 0.0140, 0.0000],  # Global Inflation-Linked
-    [0.0200, 0.0140, 0.0080, 0.0000,  0.0180, 0.0112, 0.0056, 0.0000],  # Global Convertibles
+    [0.5430, 0.3801, 0.2172, 0.0000,  0.4887, 0.3041, 0.1520, 0.0000],  # Global Government
+    [0.3210, 0.2247, 0.1284, 0.0000,  0.2889, 0.1798, 0.0899, 0.0000],  # Global IG Bonds
+    [0.0400, 0.0280, 0.0160, 0.0000,  0.0360, 0.0224, 0.0112, 0.0000],  # Global HY Bonds
+    [0.0400, 0.0280, 0.0160, 0.0000,  0.0360, 0.0224, 0.0112, 0.0000],  # EM HC Bonds
+    [0.0560, 0.0392, 0.0224, 0.0000,  0.0504, 0.0314, 0.0157, 0.0000],  # Global Inflation-Linked
     [0.0000, 0.2048, 0.4096, 0.6827,  0.0000, 0.1638, 0.2867, 0.4096],  # MSCI US
     [0.0000, 0.0420, 0.0841, 0.1401,  0.0000, 0.0336, 0.0588, 0.0841],  # MSCI Europe
     [0.0000, 0.0146, 0.0292, 0.0486,  0.0000, 0.0117, 0.0204, 0.0292],  # MSCI Japan
@@ -223,25 +222,17 @@ class RealData:
 # ═══════════════════════════════════════════════════════════════════
 # Late-start asset backfill rules
 # ────────────────────────────────────────────────────────────────────
-# Two assets in the 17-asset universe begin after the bootstrap window
-# start (April 2001) and require backfill via proxy series:
+# One asset in the 15-asset universe begins after the bootstrap window
+# start (April 2001) and requires backfill via a proxy series:
 #
-#   1. Global Convertibles (H24641US)  starts Jan 2009.
-#      Backfill rule: 1.3 × H23059US (Global HY) at native monthly freq.
-#      Justification: vol-scaling on the post-2009 sample where both
-#      observed (Convertibles ann vol 10.1% / HY ann vol 7.9% ≈ 1.28).
-#      Reproduces the actual 2008 Bloomberg US Convertibles drawdown
-#      of ≈ −36% within historical bounds (1.3×HY 2008 = −34%).
-#
-#   2. Insurance-Linked (LGT_ILS)  starts Dec 2002.
-#      Backfill rule: HFRXGL resampled to quarterly compounded returns,
-#      1× scaling, applied at QE-grid dates only (ME months stay NaN
-#      by convention). Apr 2001 – Sep 2002 window only (6 QE prints).
-#      The 2008-stress concern does not apply: HFRXGL during
-#      Apr 2001 – Sep 2002 had max DD only −1.7%, comparable to ILS.
+#   Insurance-Linked (LGT_ILS)  starts Dec 2002.
+#   Backfill rule: HFRXGL resampled to quarterly compounded returns,
+#   1× scaling, applied at QE-grid dates only (ME months stay NaN
+#   by convention). Apr 2001 – Sep 2002 window only (6 QE prints).
+#   The 2008-stress concern does not apply: HFRXGL during
+#   Apr 2001 – Sep 2002 had max DD only −1.7%, comparable to ILS.
 BACKFILL_RULES = [
     # (target_ticker, proxy_ticker, scale, end_date) — end_date inclusive
-    ("H24641US Index",  "H23059US Index", 1.30, "2008-12-31"),
     ("LGT_ILS Index",   "HFRXGL Index",   1.00, "2002-09-30"),
 ]
 # Bootstrap window starts at the first valid index of H23059US (April 2001).
@@ -506,7 +497,7 @@ def load_real_data(xlsx_path: str,
     res_native[me_all] = res[me_all] / 12.0
     res_native[qe_all] = res[qe_all] / 4.0
 
-    # Backfill late-start assets (H24641US, LGT_ILS) per BACKFILL_RULES.
+    # Backfill late-start asset (LGT_ILS) per BACKFILL_RULES.
     # Both panels (asset_returns, residuals_native) get the same treatment.
     ar, res_native = _apply_backfill(ar, res_native, meta, verbose=verbose)
 
@@ -521,7 +512,7 @@ def load_real_data(xlsx_path: str,
     # range typical of raw appraisal-based series.
 
     # Trim panels to the bootstrap window. Start = first valid index of HY
-    # (Apr 2001). After the trim and backfill, all 17 columns are either fully
+    # (Apr 2001). After the trim and backfill, all 15 columns are either fully
     # observed (ME assets) or QE-pattern by design (PE / PC; ILS is now
     # fully QE-observed within the window thanks to the backfill).
     window_start = pd.Timestamp(BOOTSTRAP_WINDOW_START)

@@ -194,7 +194,7 @@ def _cvx_maximize_sharpe_charnes_cooper(covar: np.ndarray,
     else:
         warnings.warn(f"cvx_maximize_portfolio_sharpe: solver did not converge")
         if constraints.weights_0 is not None:
-            optimal_weights = constraints.weights_0.to_numpy()
+            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
         else:
             optimal_weights = np.zeros(n)
 
@@ -230,7 +230,7 @@ def _scipy_maximize_sharpe(covar: np.ndarray,
     if not res.success or optimal_weights is None:
         warnings.warn(f"_scipy_maximize_sharpe: solver did not converge: {res.message}")
         if constraints.weights_0 is not None:
-            optimal_weights = constraints.weights_0.to_numpy()
+            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
         else:
             optimal_weights = np.zeros(n)
 

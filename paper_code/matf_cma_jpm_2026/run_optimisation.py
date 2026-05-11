@@ -57,7 +57,7 @@ def solve_optimal_portfolio(benchmark_weights: pd.Series,
     benchmark_weights : pd.Series
         Mandate benchmark weights, indexed by ticker.
     pd_covar : pd.DataFrame
-        17 × 17 asset covariance (annualised).
+        15 × 15 asset covariance (annualised).
     cmas : pd.Series
         Total CMAs (alphas) per asset.
     band : float

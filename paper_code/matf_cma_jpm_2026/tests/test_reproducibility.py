@@ -2,7 +2,7 @@
 Reproducibility test for the MATF-CMA bootstrap exhibit.
 
 Confirms that with seed=42, the published numbers reproduce within tolerance.
-Tolerances are wide pending the 17-asset universe re-run (May 2026 update);
+Tolerances are wide pending the 15-asset universe re-run (May 2026 update);
 narrow once the new headline numbers stabilise.
 
 Skipped automatically if the production data files are not present.
@@ -39,7 +39,7 @@ def result():
 
 def test_reduction_ratio_at_balanced_vol(result):
     """Reduction ratio at the Balanced-mandate vol target (~5.8%) should be
-    around 2.1× on the 17-asset production data with backfill (seed=42)."""
+    around 2.1× on the 15-asset production data with backfill (seed=42)."""
     k = int(np.argmin(np.abs(result.vol_grid - 0.058)))
     raw = result.raw_returns[:, k]
     fac = result.factor_returns[:, k]
@@ -52,7 +52,7 @@ def test_reduction_ratio_at_balanced_vol(result):
 
 
 def test_gk_consistency_median(result):
-    """GK median ‖Δ‖₂ ≈ 2.67% on the 17-asset production data with backfill (seed=42)."""
+    """GK median ‖Δ‖₂ ≈ 2.67% on the 15-asset production data with backfill (seed=42)."""
     median_norm = np.nanmedian(result.delta_norm_gk) * 100
     assert 2.2 <= median_norm <= 3.2, f"GK median ‖Δ‖₂ = {median_norm:.2f}% (expected ≈ 2.67%)"
 

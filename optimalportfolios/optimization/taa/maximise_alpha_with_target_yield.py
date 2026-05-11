@@ -92,11 +92,15 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
             optimiser_config=optimiser_config
         )
 
-        weights_0 = weights_  # warm-start next period
+        if np.all(np.equal(weights_, 0.0)):
+            weights_0 = None
+        else:
+            weights_0 = weights_
         weights[date] = weights_
 
     weights = pd.DataFrame.from_dict(weights, orient='index')
-    weights = weights.reindex(columns=prices.columns).fillna(0.0)
+    weights = weights.reindex(columns=prices.columns.to_list()).fillna(0.0)
+
     return weights
 
 
@@ -155,8 +159,9 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
         solver=optimiser_config.solver,
         verbose=optimiser_config.verbose
     )
+
     weights[np.isinf(weights)] = 0.0
-    weights = pd.Series(weights, index=clean_covar.index)
+    weights = pd.Series(weights, index=valid_tickers)
     weights = weights.reindex(index=pd_covar.index).fillna(0.0)
 
     return weights
@@ -206,9 +211,9 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
 
     optimal_weights = w.value
     if optimal_weights is None:
-        warnings.warn(f"cvx_maximise_alpha_with_target_return: solver did not converge")
+        warnings.warn(f"cvx_maximise_alpha_over_tre: solver did not converge")
         if constraints.weights_0 is not None:
-            optimal_weights = constraints.weights_0.to_numpy()
+            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
         else:
             optimal_weights = np.zeros(n)
 

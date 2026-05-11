@@ -16,7 +16,7 @@ Usage
     inputs.get_factor_cmas()         # 9-vector of factor excess CMAs
     inputs.get_universe_snapshot()   # per-asset metadata + CMAs + betas
     inputs.factors_prices            # daily factor NAV panel
-    inputs.benchmark_weights         # 17 × 8 mandate weights
+    inputs.benchmark_weights         # 15 × 8 mandate weights
 """
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ class PaperInputs:
     Attributes
     ----------
     cma_metadata : pd.DataFrame
-        17 rows × per-asset metadata. Columns include name, asset_class,
+        15 rows × per-asset metadata. Columns include name, asset_class,
         base_total_cma, stress_total_cma, upside_total_cma, base_excess_cma,
         the 9 factor betas, equity_regional_addon, rates_regional_addon,
         alpha, rf_rate, r2, stat_alpha, total_vol, sys_vol, resid_vol,
@@ -54,18 +54,18 @@ class PaperInputs:
         Indexed by region; columns stack into a regional rates total.
         Empty if the parser ran with `use_rosaa=False`.
     factor_attribution : pd.DataFrame
-        17 × 13: 9 factor contributions + equity_regional_addon +
+        15 × 13: 9 factor contributions + equity_regional_addon +
         rates_regional_addon + alpha + rf_rate (raw, pre-merge).
     x_covar : pd.DataFrame
         9 × 9 factor covariance matrix (annualised).
     y_betas : pd.DataFrame
-        17 × 9 asset factor loadings.
+        15 × 9 asset factor loadings.
     y_variances : pd.DataFrame
-        17 × {ewma_var, residual_var, insample_alpha, r2, cluster}.
+        15 × {ewma_var, residual_var, insample_alpha, r2, cluster}.
     y_covar : pd.DataFrame
-        17 × 17 asset covariance assembled as β·Σ_F·βᵀ + diag(D).
+        15 × 15 asset covariance assembled as β·Σ_F·βᵀ + diag(D).
     benchmark_weights : pd.DataFrame
-        17 × 8 mandate weights (Income/Low/Balanced/Growth × {without, with} Alts).
+        15 × 8 mandate weights (Income/Low/Balanced/Growth × {without, with} Alts).
     factors_prices : pd.DataFrame
         Daily factor NAVs × 9 factors. NAV_0 = 100.
     """
@@ -195,7 +195,7 @@ class PaperInputs:
         return self.rates_total_cmas.copy()
 
     def get_factor_attribution(self) -> pd.DataFrame:
-        """17 × 13 raw factor attribution table.
+        """15 × 13 raw factor attribution table.
 
         Use ``compose_displayed_attribution`` to fold regional addons into
         the corresponding factor columns and produce the display version.

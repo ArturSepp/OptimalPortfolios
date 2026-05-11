@@ -123,8 +123,8 @@ def plot_factor_attribution(inputs: PaperInputs,
     df_attrib = inputs.compose_displayed_attribution(assets=assets)
 
     # Vertical-line column positions correspond to group boundaries
-    # (Bonds=7, +Equities=12, +Alts=17 in the canonical 17-asset order)
-    vline_columns = [7, 12, 17]
+    # (Bonds=5, +Equities=10, +Alts=15 in the canonical 15-asset order)
+    vline_columns = [5, 10, 15]
     fig = plot_bar_cma(df=df_attrib,
                        stacked=True,
                        legend_loc='upper left',

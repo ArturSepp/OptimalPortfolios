@@ -23,16 +23,16 @@ Output
 ------
 - ``paper_inputs.xlsx`` with the following sheets:
 
-    cma_metadata          17 rows × per-asset metadata + CMAs + betas + diagnostics
+    cma_metadata          15 rows × per-asset metadata + CMAs + betas + diagnostics
     factor_excess_cma     9 × 1 (factor → excess CMA)
     equity_excess_cmas    Series indexed by region (Global, US, Europe, ...)
     rates_total_cmas      regions × {Real, Inflation Premium, Term Premium, Default}
-    factor_attribution    17 × 12 (raw factor contributions + addons + alpha + rf_rate)
+    factor_attribution    15 × 12 (raw factor contributions + addons + alpha + rf_rate)
     x_covar               9 × 9 factor covariance (annualised)
-    y_betas               17 × 9 asset factor loadings
-    y_variances           17 × {ewma_var, residual_var, r2, ...}
-    y_covar               17 × 17 asset covariance assembled as β·Σ_F·βᵀ + diag(D)
-    benchmark_weights     17 × 8 mandate weights
+    y_betas               15 × 9 asset factor loadings
+    y_variances           15 × {ewma_var, residual_var, r2, ...}
+    y_covar               15 × 15 asset covariance assembled as β·Σ_F·βᵀ + diag(D)
+    benchmark_weights     15 × 8 mandate weights
     factors_prices        daily NAVs × 9 factors (price index, NAV_0 = 100)
 
 Reference currency
@@ -58,7 +58,7 @@ def _read_production_xlsx(production_xlsx: Path,
                           tickers: list[str]
                           ) -> dict[str, pd.DataFrame]:
     """Read the per-asset and factor-level sheets from the production xlsx,
-    sliced to the 17 paper tickers where applicable.
+    sliced to the 15 paper tickers where applicable.
     """
     out = {}
 
@@ -128,7 +128,7 @@ def _assemble_y_covar(y_betas: pd.DataFrame,
 
 def _read_benchmark_weights(universe_xlsx: Path,
                             tickers: list[str]) -> pd.DataFrame:
-    """Read the 17 × 8 benchmark weights matrix from the 'universe weight'
+    """Read the 15 × 8 benchmark weights matrix from the 'universe weight'
     tab of the universe-snapshot xlsx.
     """
     df = pd.read_excel(universe_xlsx, sheet_name='universe weight')

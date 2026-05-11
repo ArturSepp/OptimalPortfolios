@@ -249,7 +249,7 @@ def opt_risk_budgeting(covar: np.ndarray,
     if optimal_weights is None or np.any(np.isnan(optimal_weights)):
         warnings.warn(f"opt_risk_budgeting: pyrb solver failed or returned NaN")
         if constraints.weights_0 is not None:
-            optimal_weights = constraints.weights_0
+            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
             warnings.warn(f"opt_risk_budgeting: falling back to weights_0")
         else:
             optimal_weights = np.zeros(n)
@@ -297,7 +297,7 @@ def opt_risk_budgeting_scipy(covar: np.ndarray,
     if optimal_weights is None:
         warnings.warn(f"opt_risk_budgeting_scipy: SLSQP solver failed")
         if constraints.weights_0 is not None:
-            optimal_weights = constraints.weights_0
+            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
             warnings.warn(f"opt_risk_budgeting_scipy: falling back to weights_0")
         else:
             optimal_weights = np.zeros(n)

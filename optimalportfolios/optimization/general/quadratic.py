@@ -191,7 +191,7 @@ def cvx_quadratic_optimisation(portfolio_objective: PortfolioObjective,
     if optimal_weights is None:
         warnings.warn(f"cvx_quadratic_optimisation: solver did not converge")
         if constraints.weights_0 is not None:
-            optimal_weights = constraints.weights_0.to_numpy()
+            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
         else:
             optimal_weights = np.zeros(n)
 

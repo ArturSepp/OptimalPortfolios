@@ -139,7 +139,7 @@ def opt_maximise_diversification(covar: np.ndarray,
 
     if res.success == False or optimal_weights is None:
         if constraints.weights_0 is not None:
-            optimal_weights = constraints.weights_0
+            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
             mes = f"using weights_0"
         else:
             optimal_weights = np.zeros(n)

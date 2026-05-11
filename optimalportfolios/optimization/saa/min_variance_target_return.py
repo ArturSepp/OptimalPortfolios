@@ -245,7 +245,7 @@ def cvx_min_variance_target_return(covar: np.ndarray,
     if optimal_weights is None:
         warnings.warn(f"cvx_min_variance_target_return: solver did not converge")
         if constraints.weights_0 is not None:
-            optimal_weights = constraints.weights_0.to_numpy()
+            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
         else:
             optimal_weights = np.zeros(n)
 
@@ -320,7 +320,7 @@ def cvx_min_variance_target_return_utility(covar: np.ndarray,
     if optimal_weights is None:
         warnings.warn(f"cvx_min_variance_target_return_utility: solver did not converge")
         if constraints.weights_0 is not None:
-            optimal_weights = constraints.weights_0.to_numpy()
+            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
         else:
             optimal_weights = np.zeros(n)
 

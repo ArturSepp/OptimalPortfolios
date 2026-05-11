@@ -245,7 +245,7 @@ def cvx_max_return_target_vol(covar: np.ndarray,
     if optimal_weights is None:
         warnings.warn(f"cvx_max_return_target_vol: solver did not converge")
         if constraints.weights_0 is not None:
-            optimal_weights = constraints.weights_0.to_numpy()
+            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
         else:
             optimal_weights = np.zeros(n)
 
@@ -310,7 +310,7 @@ def cvx_max_return_target_vol_utility(covar: np.ndarray,
     if optimal_weights is None:
         warnings.warn(f"cvx_max_return_target_vol_utility: solver did not converge")
         if constraints.weights_0 is not None:
-            optimal_weights = constraints.weights_0.to_numpy()
+            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
         else:
             optimal_weights = np.zeros(n)
 

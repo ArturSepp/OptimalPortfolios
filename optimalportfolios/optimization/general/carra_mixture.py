@@ -155,7 +155,7 @@ def opt_maximize_cara_mixture(means: List[np.ndarray],
     """
     n = covars[0].shape[0]
     if constraints.weights_0 is not None:
-        x0 = constraints.weights_0.to_numpy()
+        x0 = np.array(constraints.weights_0.to_numpy(), dtype=float)
     else:
         x0 = np.ones(n) / n
 
@@ -169,7 +169,7 @@ def opt_maximize_cara_mixture(means: List[np.ndarray],
     if optimal_weights is None:
         warnings.warn(f"opt_maximize_cara_mixture: solver did not converge")
         if constraints.weights_0 is not None:
-            optimal_weights = constraints.weights_0
+            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
         else:
             optimal_weights = np.zeros(n)
 
