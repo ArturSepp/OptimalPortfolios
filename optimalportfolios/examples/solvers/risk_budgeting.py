@@ -1,5 +1,5 @@
 """
-example of minimization of tracking error
+example of constrained risk-budgeting portfolio (equal or specified risk contributions) solved via pyrb ADMM
 """
 import numpy as np
 import pandas as pd
@@ -12,7 +12,7 @@ from optimalportfolios import (Constraints, GroupLowerUpperConstraints, EwmaCova
                                wrapper_risk_budgeting,
                                rolling_risk_budgeting)
 
-from optimalportfolios.examples.universe import fetch_benchmark_universe_data
+from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
 
 
 class LocalTests(Enum):

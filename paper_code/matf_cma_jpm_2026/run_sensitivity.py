@@ -25,6 +25,7 @@ fully independent.
 from __future__ import annotations
 
 from pathlib import Path
+import csv
 
 import numpy as np
 
@@ -122,6 +123,39 @@ def main() -> None:
     print("1/σ_SR (linear) and the variance-equivalent T_eff multiplier as")
     print("1/σ_SR². The qualitative claim — factor structure tightens the")
     print("frontier fan — survives across the whole σ_SR ∈ [0.05, 0.15] range.")
+
+    # ----------------------------------------------------------------------
+    # Persist the table reported in the paper (Appendix B, Table sr_sensitivity)
+    # so the published numbers are reproducible from the package.
+    # ----------------------------------------------------------------------
+    out_csv = Path("figures") / "sr_sensitivity.csv"
+    out_csv.parent.mkdir(exist_ok=True)
+    with out_csv.open("w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow([
+            "sigma_SR",
+            "reduction_ratio_v6.2pct",
+            "T_eff_equivalent",
+            "regime",
+        ])
+        regimes = {
+            0.050: "Aggressive prior",
+            0.075: "Moderate-aggressive",
+            0.100: "Paper baseline",
+            0.125: "Moderate-loose",
+            0.150: "Loose",
+            0.200: "Prior equals data noise scale",
+        }
+        for sr_std, ratios, _, _ in rows:
+            balanced_ratio = ratios[1]
+            var_ratio = balanced_ratio ** 2 if np.isfinite(balanced_ratio) else np.nan
+            w.writerow([
+                f"{sr_std:.3f}",
+                f"{balanced_ratio:.2f}" if np.isfinite(balanced_ratio) else "nan",
+                f"{var_ratio:.1f}" if np.isfinite(var_ratio) else "nan",
+                regimes.get(round(sr_std, 3), ""),
+            ])
+    print(f"\nWrote {out_csv} ({len(rows)} rows) — mirrors Appendix B Table sr_sensitivity.")
 
 
 if __name__ == "__main__":

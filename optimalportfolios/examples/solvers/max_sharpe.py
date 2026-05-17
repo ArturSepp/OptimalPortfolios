@@ -1,5 +1,5 @@
 """
-example of minimization of tracking error
+example of maximum-Sharpe-ratio portfolio via the Charnes-Cooper transformation; rolling EWMA estimates for both mean and covariance
 """
 import numpy as np
 import pandas as pd
@@ -14,7 +14,7 @@ from optimalportfolios import (Constraints, GroupLowerUpperConstraints,
                                EwmaCovarEstimator,
                                estimate_rolling_ewma_means)
 
-from optimalportfolios.examples.universe import fetch_benchmark_universe_data
+from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
 
 
 class LocalTests(Enum):

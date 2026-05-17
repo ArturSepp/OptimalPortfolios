@@ -1,5 +1,5 @@
 """
-example of minimization of tracking error
+example of maximum-diversification portfolio: maximise the diversification ratio DR(w) = w′σ / sqrt(w′Σw)
 """
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -11,7 +11,7 @@ from optimalportfolios import (Constraints, GroupLowerUpperConstraints, EwmaCova
                                rolling_maximise_diversification,
                                wrapper_maximise_diversification)
 
-from optimalportfolios.examples.universe import fetch_benchmark_universe_data
+from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
 
 
 class LocalTests(Enum):

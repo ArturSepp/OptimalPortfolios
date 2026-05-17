@@ -2,7 +2,7 @@
 
 Developer documentation for the portfolio optimisation solvers in
 `optimalportfolios`. For user-facing overview and quick start, see the
-[project README](../README.md).
+[project README](../examples/README.md).
 
 ## Architecture
 

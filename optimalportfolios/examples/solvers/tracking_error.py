@@ -1,5 +1,5 @@
 """
-example of minimization of tracking error
+example of alpha maximisation under a tracking-error constraint; EWMA momentum signal vs an ETF benchmark
 """
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,7 +12,7 @@ from optimalportfolios import (Constraints, GroupLowerUpperConstraints,
                                rolling_maximise_alpha_over_tre,
                                wrapper_maximise_alpha_over_tre)
 
-from optimalportfolios.examples.universe import fetch_benchmark_universe_data
+from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
 
 
 def run_etf_tracking_portfolio(prices: pd.DataFrame,

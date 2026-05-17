@@ -1,5 +1,5 @@
 """
-example of minimization of tracking error
+example of minimum-variance portfolio via quadratic optimisation; one-step and rolling backtest variants
 """
 import numpy as np
 import pandas as pd
@@ -12,7 +12,7 @@ from optimalportfolios import (Constraints, GroupLowerUpperConstraints, EwmaCova
                                wrapper_quadratic_optimisation,
                                rolling_quadratic_optimisation)
 
-from optimalportfolios.examples.universe import fetch_benchmark_universe_data
+from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
 
 
 class LocalTests(Enum):

@@ -399,6 +399,8 @@ python run_sensitivity.py
 
 The script monkey-patches `run_bootstrap.SR_STD` for each grid value and re-runs the bootstrap with `seed = 42`. Total runtime is approximately 3 minutes for six σ_SR values × 500 draws each.
 
+The exact numbers reported in the paper (Appendix B, Table `tab:sr_sensitivity`) are persisted to `figures/sr_sensitivity.csv` after the script runs; a pre-generated copy ships with the package so reviewers can inspect the table without re-running the sweep.
+
 ---
 
 ## Result: Exhibit 2 (alpha-beta consistency violation)

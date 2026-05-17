@@ -1,5 +1,5 @@
 """
-example of minimization of tracking error
+example of expected CARA utility maximisation under a K-component Gaussian mixture model of returns
 """
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,7 +12,7 @@ from optimalportfolios import (Constraints, GroupLowerUpperConstraints,
                                wrapper_maximize_cara_mixture,
                                fit_gaussian_mixture)
 
-from optimalportfolios.examples.universe import fetch_benchmark_universe_data
+from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
 
 
 class LocalTests(Enum):

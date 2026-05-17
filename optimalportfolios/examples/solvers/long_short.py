@@ -4,42 +4,16 @@ example of backtester with long-short weights
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import yfinance as yf
-from typing import Tuple
 import qis as qis
 
 # package
 from optimalportfolios import compute_rolling_optimal_weights, PortfolioObjective, Constraints, EwmaCovarEstimator
+from optimalportfolios.examples.data.universe import fetch_minimal_universe_data
+import optimalportfolios.local_path as lp
 
 
-# 1. we define the investment universe and allocation by asset classes
-def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
-    """
-    fetch universe universe for the portfolio construction:
-    1. dividend and split adjusted end of day prices: price universe may start / end at different dates
-    2. benchmark prices which is used for portfolio report and benchmarking
-    3. universe group universe for portfolio report and risk attribution for large universes
-    this function is using yfinance to fetch the price universe
-    """
-    universe_data = dict(SPY='Equities',
-                         QQQ='Equities',
-                         EEM='Equities',
-                         TLT='Bonds',
-                         IEF='Bonds',
-                         LQD='Credit',
-                         HYG='HighYield',
-                         GLD='Gold')
-    tickers = list(universe_data.keys())
-    group_data = pd.Series(universe_data)
-    prices = yf.download(tickers, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close']
-    prices = prices[tickers]  # arrange as given
-    prices = prices.asfreq('B', method='ffill')  # refill at B frequency
-    benchmark_prices = prices[['SPY', 'TLT']]
-    return prices, benchmark_prices, group_data
-
-
-# 2. get universe universe
-prices, benchmark_prices, group_data = fetch_universe_data()
+# 1. fetch universe (8 ETFs, 6 asset-class groups; same universe as minimal_backtest)
+prices, benchmark_prices, group_data = fetch_minimal_universe_data()
 time_period = qis.TimePeriod('31Dec2007', '17Apr2025')   # period for computing weights backtest
 
 # 3.a. define optimisation setup
@@ -92,6 +66,6 @@ figs = qis.generate_strategy_factsheet(portfolio_data=portfolio_data,
 qis.save_figs_to_pdf(figs=figs,
                      file_name=f"{portfolio_data.nav.name}_portfolio_factsheet",
                      orientation='landscape',
-                     local_path="C://Users//Artur//OneDrive//analytics//outputs")
+                     local_path=lp.get_output_path())
 
 plt.show()

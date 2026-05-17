@@ -52,6 +52,41 @@ def fetch_benchmark_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Data
     return prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices
 
 
+def fetch_minimal_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
+    """
+    Fetch a small 8-ETF universe across 6 asset-class groups.
+
+    Used by examples that need a compact universe and a 3-tuple return
+    signature (no asset-class loadings, no benchmark weights). The group
+    naming here is intentionally simpler than ``fetch_benchmark_universe_data``
+    (e.g. 'Credit' rather than 'IG') because the universe is smaller and
+    coarser; screenshots and example outputs in ``figures/`` were generated
+    against this naming.
+
+    Returns:
+        Tuple of (prices, benchmark_prices, group_data):
+        - prices: business-daily price panel of 8 ETFs.
+        - benchmark_prices: SPY + TLT for factsheet benchmarking.
+        - group_data: ticker → asset-class label (Series).
+    """
+    universe_data = dict(SPY='Equities',
+                         QQQ='Equities',
+                         EEM='Equities',
+                         TLT='Bonds',
+                         IEF='Bonds',
+                         LQD='Credit',
+                         HYG='HighYield',
+                         GLD='Gold')
+    tickers = list(universe_data.keys())
+    group_data = pd.Series(universe_data)
+    prices = yf.download(tickers, start="2003-12-31", end=None,
+                         ignore_tz=True, auto_adjust=True)['Close']
+    prices = prices[tickers]  # preserve dict order
+    prices = prices.asfreq('B', method='ffill')
+    benchmark_prices = prices[['SPY', 'TLT']]
+    return prices, benchmark_prices, group_data
+
+
 class LocalTests(Enum):
     ILLUSTRATE_INPUT_DATA = 1
 

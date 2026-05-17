@@ -30,6 +30,7 @@ from optimalportfolios.utils.gaussian_mixture import fit_gaussian_mixture
 from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance, compute_portfolio_risk_contributions)
 from optimalportfolios.optimization.constraints import (Constraints, total_weight_constraint, long_only_constraint)
 from optimalportfolios.optimization.config import OptimiserConfig
+from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
 
 
 def rolling_maximize_cara_mixture(prices: pd.DataFrame,
@@ -67,11 +68,19 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
     tickers = prices.columns.to_list()
     weights = {}
     weights_0 = None
+    prev_date = None
     for idx, (date, value) in enumerate(rebalancing_schedule.items()):
         if idx >= roll_window-1 and value:
             period = qis.TimePeriod(rebalancing_schedule.index[idx - roll_window+1], date)
             rets_ = period.locate(returns).dropna(axis=1, how='any')
             params = fit_gaussian_mixture(x=rets_.to_numpy(), n_components=n_components, an_factor=scaler)
+            # drift weights_0 from the last actual rebalance date (not from
+            # every schedule tick) to ``date`` before passing to the wrapper.
+            weights_0 = apply_drift_to_weights_0(
+                weights_0=weights_0, prices=prices,
+                prev_date=prev_date, date=date,
+                use_drifted_weights_0=optimiser_config.use_drifted_weights_0,
+            )
             constraints1 = constraints.update_with_valid_tickers(valid_tickers=rets_.columns.to_list(),
                                                                  total_to_good_ratio=len(tickers)/len(rets_.columns),
                                                                  weights_0=weights_0)
@@ -85,6 +94,7 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
                                                      optimiser_config=optimiser_config)
             weights_ = weights_.reindex(index=tickers).fillna(0.0)
             weights_0 = weights_
+            prev_date = date
             weights[date] = weights_
     weights = pd.DataFrame.from_dict(weights, orient='index')
     weights = weights.reindex(columns=tickers).fillna(0.0)

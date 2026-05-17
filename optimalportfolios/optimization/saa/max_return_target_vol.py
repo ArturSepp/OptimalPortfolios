@@ -38,6 +38,7 @@ from typing import Optional, Union, Dict
 from optimalportfolios.optimization.constraints import Constraints, ConstraintEnforcementType
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.config import OptimiserConfig
+from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
 
 
 def rolling_max_return_target_vol(prices: pd.DataFrame,
@@ -86,11 +87,17 @@ def rolling_max_return_target_vol(prices: pd.DataFrame,
 
     weights = {}
     weights_0 = None
+    prev_date = None
 
     for date, pd_covar in covar_dict.items():
         bw_t = benchmark_weights.loc[date, :] if benchmark_weights is not None else None
         ri_t = rebalancing_indicators.loc[date, :] if rebalancing_indicators is not None else None
 
+        weights_0 = apply_drift_to_weights_0(
+            weights_0=weights_0, prices=prices,
+            prev_date=prev_date, date=date,
+            use_drifted_weights_0=optimiser_config.use_drifted_weights_0,
+        )
         weights_ = wrapper_max_return_target_vol(
             pd_covar=pd_covar,
             expected_returns=expected_returns.loc[date, :],
@@ -103,8 +110,10 @@ def rolling_max_return_target_vol(prices: pd.DataFrame,
 
         if np.all(np.equal(weights_, 0.0)):
             weights_0 = None
+            prev_date = None
         else:
             weights_0 = weights_
+            prev_date = date
         weights[date] = weights_
 
     weights = pd.DataFrame.from_dict(weights, orient='index')

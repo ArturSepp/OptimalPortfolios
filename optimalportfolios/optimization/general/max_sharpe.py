@@ -41,6 +41,7 @@ from typing import Dict
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.optimization.config import OptimiserConfig
+from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
 
 
 def rolling_maximize_portfolio_sharpe(prices: pd.DataFrame,
@@ -69,13 +70,20 @@ def rolling_maximize_portfolio_sharpe(prices: pd.DataFrame,
     tickers = prices.columns.to_list()
     weights = {}
     weights_0 = None
+    prev_date = None
     for date, pd_covar in covar_dict.items():
+        weights_0 = apply_drift_to_weights_0(
+            weights_0=weights_0, prices=prices,
+            prev_date=prev_date, date=date,
+            use_drifted_weights_0=optimiser_config.use_drifted_weights_0,
+        )
         weights_ = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
                                                      means=expected_returns.loc[date, :],
                                                      constraints=constraints,
                                                      weights_0=weights_0,
                                                      optimiser_config=optimiser_config)
         weights_0 = weights_
+        prev_date = date
         weights[date] = weights_
 
     weights = pd.DataFrame.from_dict(weights, orient='index')

@@ -40,6 +40,7 @@ from optimalportfolios.optimization.constraints import Constraints, ConstraintEn
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.utils.portfolio_funcs import compute_portfolio_risk_contribution_outputs
 from optimalportfolios.optimization.config import OptimiserConfig
+from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
 
 
 def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
@@ -81,6 +82,7 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
 
     weights = {}
     weights_0 = None
+    prev_date = None
 
     for date, pd_covar in covar_dict.items():
         rebalancing_indicators_t = (
@@ -88,6 +90,11 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
         )
         alphas_t = alphas.loc[date, :] if alphas is not None else None
 
+        weights_0 = apply_drift_to_weights_0(
+            weights_0=weights_0, prices=prices,
+            prev_date=prev_date, date=date,
+            use_drifted_weights_0=optimiser_config.use_drifted_weights_0,
+        )
         weights_ = wrapper_maximise_alpha_over_tre(
             pd_covar=pd_covar,
             alphas=alphas_t,
@@ -100,8 +107,10 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
 
         if np.all(np.equal(weights_, 0.0)):
             weights_0 = None
+            prev_date = None
         else:
             weights_0 = weights_
+            prev_date = date
         weights[date] = weights_
 
     weights = pd.DataFrame.from_dict(weights, orient='index')

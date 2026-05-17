@@ -43,6 +43,7 @@ from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance,
                                                      compute_portfolio_risk_contributions,
                                                      compute_portfolio_risk_contribution_outputs)
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
+from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.optimization.config import OptimiserConfig
 from pyrb import ConstrainedRiskBudgeting
@@ -88,6 +89,7 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
 
     weights = {}
     weights_0 = None
+    prev_date = None
     for date, pd_covar in covar_dict.items():
         if rebalancing_indicators is not None and weights_0 is not None:
             rebalancing_indicators_t = rebalancing_indicators.loc[date, :]
@@ -95,6 +97,12 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
             rebalancing_indicators_t = None
         # align covariance to risk budget ordering
         pd_covar = pd_covar.reindex(index=risk_budget.index).reindex(columns=risk_budget.index)
+        # drift weights_0 to current date (no-op when prices/prev_date missing)
+        weights_0 = apply_drift_to_weights_0(
+            weights_0=weights_0, prices=prices,
+            prev_date=prev_date, date=date,
+            use_drifted_weights_0=optimiser_config.use_drifted_weights_0,
+        )
         weights_ = wrapper_risk_budgeting(pd_covar=pd_covar,
                                           constraints=constraints,
                                           weights_0=weights_0,
@@ -102,6 +110,7 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
                                           rebalancing_indicators=rebalancing_indicators_t,
                                           optimiser_config=optimiser_config)
         weights_0 = weights_  # warm-start next period
+        prev_date = date
         weights[date] = weights_
     weights = pd.DataFrame.from_dict(weights, orient='index')
     weights = weights.reindex(columns=prices.columns.to_list()).fillna(0.0)

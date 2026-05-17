@@ -148,3 +148,5 @@ dmypy.json
 *.xml
 *.pyc
 /depreciated/
+paper_code/matf_cma_jpm_2026/data/futures_risk_factors.csv
+*.xlsx

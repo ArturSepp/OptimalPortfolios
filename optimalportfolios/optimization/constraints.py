@@ -874,14 +874,87 @@ class Constraints:
                 if self_dict['max_weights'] is not None:
                     self_dict['max_weights'] = self_dict['max_weights'].where(is_rebalanced, other=resolved_weights_0)
 
+            # Relax group bounds to accommodate the frozen-position overhang.
+            #
+            # The freeze step above pins min/max for non-rebalanced assets to
+            # ``weights_0``. When ``weights_0`` comes from a drift step (as in
+            # the rolling backtest after the use_drifted_weights_0 patch) or
+            # from a live portfolio-management system that is slightly out of
+            # compliance, the frozen positions can push a group's loading-
+            # weighted min above its group_max_allocation (or, symmetrically,
+            # push frozen max below group_min_allocation). The optimiser
+            # cannot trade frozen assets, so the only feasible resolution is
+            # to relax the group bound for this rebalance.
+            #
+            # We grant a one-period waiver: raise group_max_allocation to the
+            # frozen-min sum (or lower group_min_allocation to the frozen-max
+            # sum), with a small tolerance. A warning is emitted so the
+            # relaxation is visible in logs. The drift-induced overshoot is
+            # typically a few tens of basis points; for live-PMS-induced
+            # overshoots this is the equivalent of a compliance waiver.
+            gluc = self_dict.get('group_lower_upper_constraints')
+            min_w = self_dict.get('min_weights')
+            max_w = self_dict.get('max_weights')
+            if gluc is not None and (min_w is not None or max_w is not None):
+                loadings = gluc.group_loadings
+                gmin = gluc.group_min_allocation
+                gmax = gluc.group_max_allocation
+                new_gmin = _copy_optional_series(gmin)
+                new_gmax = _copy_optional_series(gmax)
+                tol = 1e-4
+                relax_msgs = []
+                for group in loadings.columns:
+                    group_loading = loadings[group]
+                    members = group_loading.index[group_loading > 0]
+                    if len(members) == 0:
+                        continue
+                    member_loadings = group_loading.loc[members]
+                    # cap overshoot from frozen min
+                    if gmax is not None and min_w is not None:
+                        gmax_val = gmax.get(group, np.nan)
+                        if not np.isnan(gmax_val):
+                            group_min_sum = float(
+                                (min_w.reindex(members, fill_value=0.0)
+                                 * member_loadings).sum())
+                            if group_min_sum > gmax_val + tol:
+                                new_gmax.loc[group] = group_min_sum + tol
+                                relax_msgs.append(
+                                    f"  group '{group}': group_max_allocation "
+                                    f"{gmax_val:.4f} → {group_min_sum + tol:.4f} "
+                                    f"(frozen-min overshoot)")
+                    # floor undershoot from frozen max
+                    if gmin is not None and max_w is not None:
+                        gmin_val = gmin.get(group, np.nan)
+                        if not np.isnan(gmin_val):
+                            group_max_sum = float(
+                                (max_w.reindex(members, fill_value=1.0)
+                                 * member_loadings).sum())
+                            if group_max_sum < gmin_val - tol:
+                                new_gmin.loc[group] = group_max_sum - tol
+                                relax_msgs.append(
+                                    f"  group '{group}': group_min_allocation "
+                                    f"{gmin_val:.4f} → {group_max_sum - tol:.4f} "
+                                    f"(frozen-max undershoot)")
+                if relax_msgs:
+                    warnings.warn(
+                        "Constraints.update_with_valid_tickers: relaxing group "
+                        "bounds for frozen-position overhang (drift or live "
+                        "PMS state):\n" + "\n".join(relax_msgs))
+                    self_dict['group_lower_upper_constraints'] = \
+                        GroupLowerUpperConstraints(
+                            group_loadings=loadings,
+                            group_min_allocation=new_gmin,
+                            group_max_allocation=new_gmax,
+                        )
+
             # Update sector and style deviation constraints
             if self.sector_deviation_constraints is not None:
                 self_dict["sector_deviation_constraints"] = \
-                    self.sector_deviation_constraints.update(valid_tickers=valid_tickers)         
+                    self.sector_deviation_constraints.update(valid_tickers=valid_tickers)
             if self.style_deviation_constraints is not None:
                 self_dict["style_deviation_constraints"] = \
-                    self.style_deviation_constraints.update(valid_tickers=valid_tickers) 
-                
+                    self.style_deviation_constraints.update(valid_tickers=valid_tickers)
+
         return Constraints(**self_dict)
 
     def set_cvx_exposure_constraints(self,
@@ -1209,7 +1282,7 @@ class Constraints:
             c_lhs = None
 
         return bounds, c_rows, c_lhs
-    
+
     def print_constraints(
             self,
             constraints_list:  List[Inequality],
@@ -1230,9 +1303,9 @@ class Constraints:
     def check_constraints_violation(
             self,
             constraints_list: List[Inequality],
-    ) -> None:  
+    ) -> None:
         """
-            Check the violations of CVXPY constraints after optimization 
+            Check the violations of CVXPY constraints after optimization
             after getting the optimal weights. This can help identify which constraints are binding and if there are any numerical issues.
 
             constraints_list: List of CVXPY constraints to print e.g. outputs of set_cvx_exposure_constraints

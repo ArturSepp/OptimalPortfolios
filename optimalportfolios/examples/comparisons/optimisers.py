@@ -2,6 +2,8 @@
 backtest several optimisers
 """
 # imports
+from pathlib import Path
+
 import pandas as pd
 import matplotlib.pyplot as plt
 from typing import List
@@ -10,7 +12,13 @@ import qis as qis
 
 # package
 from optimalportfolios import Constraints, backtest_rolling_optimal_portfolio, PortfolioObjective, EwmaCovarEstimator
-from optimalportfolios.examples.universe import fetch_benchmark_universe_data
+from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
+
+
+# Resolve the figures directory relative to this file, not the current working
+# directory, so the script can be launched from anywhere.
+FIGURES_PATH = str(Path(__file__).resolve().parent.parent / 'figures') + '/'
+Path(FIGURES_PATH).mkdir(parents=True, exist_ok=True)
 
 
 def run_multi_optimisers_backtest(prices: pd.DataFrame,
@@ -99,7 +107,7 @@ def run_local_test(local_test: LocalTests):
                                              perf_time_period=perf_time_period)
 
         # save png and pdf
-        qis.save_fig(fig=figs[0], file_name=f"multi_optimisers_backtest", local_path=f"figures/")
+        qis.save_fig(fig=figs[0], file_name=f"multi_optimisers_backtest", local_path=FIGURES_PATH)
         qis.save_figs_to_pdf(figs=figs,
                              file_name=f"multi_optimisers_backtest",
                              orientation='landscape',

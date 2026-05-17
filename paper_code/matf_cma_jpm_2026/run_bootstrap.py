@@ -12,9 +12,9 @@ Pipeline summary
 
   2. Resample three paired panels with a stationary block bootstrap
      (mean L = 12 months, minimum L_min = 3 months for QE-safe sampling):
-       - asset returns Y    (T x 15, mixed ME/QE frequency)
+       - asset returns Y    (T x 17, mixed ME/QE frequency)
        - factor returns X   (T x 9,  monthly log returns from production NAVs)
-       - residuals  ε        (T x 15, native-frequency residuals)
+       - residuals  ε        (T x 17, native-frequency residuals)
 
   3. Two estimators per draw, both producing long-only efficient frontiers:
        - Raw asset-level: NaN-aware sample mean and pairwise sample covariance
@@ -63,7 +63,7 @@ from bootstrap_frontier_analytics import (
 # ═══════════════════════════════════════════════════════════════════
 # 1. Universe and benchmark mandates — paper §5 illustrative universe
 #    Universe matches `universe weight` tab of universe_snapshot.xlsx
-#    (snapshot 2026-Q1), 15 assets, USD investor.
+#    (snapshot 2026-Q1), 17 assets, USD investor.
 # ═══════════════════════════════════════════════════════════════════
 PAPER_TICKERS: List[Tuple[str, str]] = [
     # Fixed income (5)
@@ -72,9 +72,11 @@ PAPER_TICKERS: List[Tuple[str, str]] = [
     ("H23059US Index",         "Global HY Bonds"),
     ("EMUSTRUU Index",         "EM HC Bonds"),
     ("LF94TRUH Index",         "Global Inflation-Linked"),
-    # Equities (5)
+    # Equities (7)
     ("NDDUUS Index",           "MSCI US"),
     ("MSDEE15N Index",         "MSCI Europe"),
+    ("NDDLUK Index",           "MSCI UK"),
+    ("SLIC Index",             "Swiss SLI"),
     ("NDDLJN Index",           "MSCI Japan"),
     ("M1APJ Index",            "MSCI Asia Ex-Japan"),
     ("M1EFZ Index",            "MSCI EM ex-Asia"),
@@ -92,6 +94,9 @@ PAPER_TICKERS: List[Tuple[str, str]] = [
 # Rows align with PAPER_TICKERS above. Within-class decomposition weights:
 #   Bonds:       Govt 54.30 / IG 32.10 / HY 4.00 / EM 4.00 / IL 5.60
 #   Equities:    US 68.27 / Europe 14.01 / Japan 4.86 / AxJ 10.76 / EM 2.10
+#                (MSCI UK and Swiss SLI are available in the optimisation
+#                 universe but carry zero weight in current policy mandates —
+#                 they are sub-regional add-ons rather than core sleeves.)
 #   Alternatives: PE 50.00 / PC 10.00 / ILS 10.00 / HF 10.00 / RA 20.00
 BENCHMARK_WEIGHTS = np.array([
     # Income w/o, Low w/o, Bal w/o, Growth w/o,  Income w/, Low w/, Bal w/, Growth w/
@@ -102,6 +107,8 @@ BENCHMARK_WEIGHTS = np.array([
     [0.0560, 0.0392, 0.0224, 0.0000,  0.0504, 0.0314, 0.0157, 0.0000],  # Global Inflation-Linked
     [0.0000, 0.2048, 0.4096, 0.6827,  0.0000, 0.1638, 0.2867, 0.4096],  # MSCI US
     [0.0000, 0.0420, 0.0841, 0.1401,  0.0000, 0.0336, 0.0588, 0.0841],  # MSCI Europe
+    [0.0000, 0.0000, 0.0000, 0.0000,  0.0000, 0.0000, 0.0000, 0.0000],  # MSCI UK
+    [0.0000, 0.0000, 0.0000, 0.0000,  0.0000, 0.0000, 0.0000, 0.0000],  # Swiss SLI
     [0.0000, 0.0146, 0.0292, 0.0486,  0.0000, 0.0117, 0.0204, 0.0292],  # MSCI Japan
     [0.0000, 0.0323, 0.0646, 0.1076,  0.0000, 0.0258, 0.0452, 0.0646],  # MSCI Asia Ex-Japan
     [0.0000, 0.0063, 0.0126, 0.0210,  0.0000, 0.0050, 0.0088, 0.0126],  # MSCI EM ex-Asia
@@ -178,18 +185,18 @@ def lambda_baseline_from_sr(Sigma_F: np.ndarray) -> np.ndarray:
 # ═══════════════════════════════════════════════════════════════════
 @dataclass
 class RealData:
-    # Frontier universe (15 assets)
+    # Frontier universe (17 assets)
     frontier_tickers: List[str]
     frontier_names:   List[str]
     frontier_freq:    List[str]               # 'ME' / 'QE'
-    fpy_per_asset:    np.ndarray              # frequency-per-year, (15,)
-    beta_frontier:    np.ndarray              # (15, M) loadings on M factors
+    fpy_per_asset:    np.ndarray              # frequency-per-year, (17,)
+    beta_frontier:    np.ndarray              # (17, M) loadings on M factors
     rf_rate:          float
     lambda_:          np.ndarray              # (M,) baseline λ
 
     # Paired bootstrap panels
     factor_returns:   np.ndarray              # (T, M)  monthly log returns
-    residuals_native: np.ndarray              # (T, 15) native-freq residuals
+    residuals_native: np.ndarray              # (T, 17) native-freq residuals
 
     # Pipeline prior — used as fallback for any unobserved factor blocks
     Sigma_F_prior:    np.ndarray              # (M, M)
@@ -202,7 +209,7 @@ class RealData:
     Sigma_SR:         np.ndarray              # (M, M)
 
     # Asset panel (centered) for the raw-bootstrap comparator
-    asset_returns:    np.ndarray              # (T, 15)
+    asset_returns:    np.ndarray              # (T, 17)
     asset_index:      pd.DatetimeIndex
 
     bmk_weights:      np.ndarray
@@ -222,7 +229,7 @@ class RealData:
 # ═══════════════════════════════════════════════════════════════════
 # Late-start asset backfill rules
 # ────────────────────────────────────────────────────────────────────
-# One asset in the 15-asset universe begins after the bootstrap window
+# One asset in the 17-asset universe begins after the bootstrap window
 # start (April 2001) and requires backfill via a proxy series:
 #
 #   Insurance-Linked (LGT_ILS)  starts Dec 2002.
@@ -512,7 +519,7 @@ def load_real_data(xlsx_path: str,
     # range typical of raw appraisal-based series.
 
     # Trim panels to the bootstrap window. Start = first valid index of HY
-    # (Apr 2001). After the trim and backfill, all 15 columns are either fully
+    # (Apr 2001). After the trim and backfill, all 17 columns are either fully
     # observed (ME assets) or QE-pattern by design (PE / PC; ILS is now
     # fully QE-observed within the window thanks to the backfill).
     window_start = pd.Timestamp(BOOTSTRAP_WINDOW_START)
@@ -605,7 +612,7 @@ def load_real_data(xlsx_path: str,
         rmse = np.sqrt(np.mean(
             (beta_front @ lambda_baseline -
              meta.loc[front_tickers, 'base_excess_cma'].to_numpy()) ** 2)) * 100
-        print(f"[load] β·λ vs base_excess_cma RMSE (15 frontier): {rmse:.2f}%")
+        print(f"[load] β·λ vs base_excess_cma RMSE (17 frontier): {rmse:.2f}%")
 
     Sigma_F_prior_arr = xcov.loc[factor_names, factor_names].to_numpy(dtype=float)
     rho_F = _correlation_from_covariance(Sigma_F_prior_arr)

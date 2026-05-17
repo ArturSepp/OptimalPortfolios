@@ -2,6 +2,8 @@
 backtest parameter sensitivity of one method
 """
 # imports
+from pathlib import Path
+
 import pandas as pd
 import matplotlib.pyplot as plt
 from typing import List
@@ -12,7 +14,13 @@ import qis as qis
 from optimalportfolios import (PortfolioObjective, backtest_rolling_optimal_portfolio,
                                Constraints, GroupLowerUpperConstraints,
                                EwmaCovarEstimator)
-from optimalportfolios.examples.universe import fetch_benchmark_universe_data
+from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
+
+
+# Resolve the figures directory relative to this file, not the current working
+# directory, so the script can be launched from anywhere.
+FIGURES_PATH = str(Path(__file__).resolve().parent.parent / 'figures') + '/'
+Path(FIGURES_PATH).mkdir(parents=True, exist_ok=True)
 
 
 def run_max_diversification_sensitivity_to_span(prices: pd.DataFrame,
@@ -98,7 +106,7 @@ def run_local_test(local_test: LocalTests):
                                                            perf_time_period=perf_time_period)
 
         # save png and pdf
-        qis.save_fig(fig=figs[0], file_name=f"max_diversification_span", local_path=f"figures/")
+        qis.save_fig(fig=figs[0], file_name=f"max_diversification_span", local_path=FIGURES_PATH)
         qis.save_figs_to_pdf(figs=figs,
                              file_name=f"max_diversification_span",
                              orientation='landscape',

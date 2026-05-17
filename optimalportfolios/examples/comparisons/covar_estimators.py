@@ -14,6 +14,8 @@ Reference:
     The Journal of Portfolio Management, 52(4), 86-120.
 """
 # imports
+from pathlib import Path
+
 import pandas as pd
 import matplotlib.pyplot as plt
 from typing import List
@@ -26,7 +28,14 @@ from optimalportfolios import (Constraints, PortfolioObjective,
                                EwmaCovarEstimator,
                                LassoModelType, LassoModel,
                                FactorCovarEstimator)
-from optimalportfolios.examples.universe import fetch_benchmark_universe_data
+from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
+import optimalportfolios.local_path as lp
+
+
+# Resolve the figures directory relative to this file, not the current working
+# directory, so the script can be launched from anywhere.
+FIGURES_PATH = str(Path(__file__).resolve().parent.parent / 'figures') + '/'
+Path(FIGURES_PATH).mkdir(parents=True, exist_ok=True)
 
 SUPPORTED_SOLVERS = [PortfolioObjective.EQUAL_RISK_CONTRIBUTION,
                      PortfolioObjective.MIN_VARIANCE,
@@ -179,10 +188,14 @@ def run_local_test(local_test: LocalTests):
                                                    portfolio_objective=portfolio_objective,
                                                    **params)
 
+        # save png and pdf
+        qis.save_fig(fig=figs[0],
+                     file_name=f"{portfolio_objective.value}_multi_covar_estimator_backtest",
+                     local_path=FIGURES_PATH)
         qis.save_figs_to_pdf(figs=figs,
                              file_name=f"{portfolio_objective.value} multi_covar_estimator_backtest",
                              orientation='landscape',
-                             local_path=f"figures/")
+                             local_path=lp.get_output_path())
     plt.show()
 
 
