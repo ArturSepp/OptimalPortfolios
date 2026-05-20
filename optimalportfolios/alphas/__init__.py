@@ -12,3 +12,12 @@ from optimalportfolios.alphas.signals.low_beta_cluster import compute_low_beta_c
 from optimalportfolios.alphas.signals.momentum_cluster import compute_momentum_cluster_alpha
 from optimalportfolios.alphas.signals.rolling_ewma_mean import estimate_rolling_ewma_means
 from optimalportfolios.alphas.signals.utils import score_within_clusters
+
+from optimalportfolios.alphas.signal_diagnostics import (
+    run_signal_diagnostics,
+    run_signal_diagnostics_per_component,
+    compare_signal_diagnostics,
+    plot_signal_diagnostics,
+    plot_signal_diagnostics_per_component,
+    plot_signal_diagnostics_beta_boxplot
+)
