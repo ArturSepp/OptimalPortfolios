@@ -26,6 +26,16 @@ from optimalportfolios.covar_estimation.ewma_covar_estimator import estimate_cur
 from factorlasso import LassoModel, LassoModelType, CurrentFactorCovarData, RollingFactorCovarData, VarianceColumns
 
 
+# Backward compatibility shim — older factorlasso releases predate the
+# ``derived_signs`` field on CurrentFactorCovarData. Detect support once
+# at import time and skip the kwarg at construction sites when absent.
+# This lets the LASSO sign-constraint matrix flow into Excel output on
+# upgraded factorlasso without forcing a hard version pin from this side.
+_CFCD_SUPPORTS_DERIVED_SIGNS = (
+    'derived_signs' in {f.name for f in fields(CurrentFactorCovarData)}
+)
+
+
 @dataclass
 class FactorCovarEstimator(CovarEstimator):
     """
@@ -387,6 +397,11 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
     linkages_freqs: Dict[str, np.ndarray] = {}      # per-freq scipy linkage matrix
     cutoffs_freqs: Dict[str, float] = {}            # per-freq dendrogram cutoff
     residuals_freqs: Dict[str, pd.DataFrame] = {}
+    # Solver-facing sign-constraint matrix (N_freq x M) for each freq —
+    # only populated when the fitted LASSO actually applied a sign layer
+    # (auto-derived, explicit, or both). Otherwise the freq's entry stays
+    # absent and the post-loop merge drops to None if no freq populated.
+    derived_signs_freqs: Dict[str, pd.DataFrame] = {}
 
     for freq in asset_returns_dict.keys():
         y = asset_returns_dict[freq]
@@ -453,6 +468,15 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
             linkages_freqs[freq] = fit_model.linkage
             cutoffs_freqs[freq] = fit_model.cutoff
 
+        # Solver-facing sign matrix that was actually applied during this
+        # freq's fit. LassoModel.derived_signs_ is set whenever
+        # auto_sign_constraints=True and/or factors_beta_loading_signs is
+        # supplied; it's None when no sign layer was active. Capture per
+        # freq so the merge later mirrors the same (N_freq x M) → (N x M)
+        # concat+reindex pattern used for betas.
+        if fit_model.derived_signs_ is not None:
+            derived_signs_freqs[freq] = fit_model.derived_signs_
+
         # in-sample residuals: y - x @ beta' where beta is (N x M)
         # x is (T x M), beta.T is (M x N), result is (T x N)
         residuals_freqs[freq] = y - x @ betas_freqs[freq].T
@@ -464,6 +488,7 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
     last_alphas = []
     last_r2 = []
     residuals = []
+    derived_signs_list: List[pd.DataFrame] = []
     for freq in asset_returns_dict.keys():
         asset_last_betas.append(betas_freqs[freq])  # (N_freq x M)
         idio_var_scaler = qis.get_annualisation_conversion_factor(from_freq=freq, to_freq='YE')
@@ -472,6 +497,13 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
         last_alphas.append(idio_var_scaler * alphas_freqs[freq])
         last_r2.append(r2_freqs[freq])
         residuals.append(idio_var_scaler * residuals_freqs[freq])
+        # derived_signs: only freqs that actually got a sign layer contribute.
+        # Unlike betas (always emitted by every freq), signs may be absent
+        # entirely if auto_sign_constraints=False and no explicit
+        # factors_beta_loading_signs was passed.
+        sub = derived_signs_freqs.get(freq)
+        if sub is not None:
+            derived_signs_list.append(sub)
 
     # align to target asset universe
     # betas: concat along axis=0 (rows=assets), reindex rows to target assets, columns to factors
@@ -480,6 +512,16 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
     last_residual_vars = pd.concat(last_residual_vars, axis=0).fillna(0.0)
     last_alphas = pd.concat(last_alphas, axis=0).fillna(0.0)
     last_r2 = pd.concat(last_r2, axis=0).fillna(0.0).clip(0.0, None)
+    # derived_signs: same concat+reindex pattern as betas but DO NOT
+    # fillna — NaN here means "unconstrained" (no sign requirement on
+    # this asset/factor cell), which is semantically distinct from 0
+    # ("forced zero"). Filling with 0 would silently introduce a hard
+    # constraint that was never specified. Reindex columns to the full
+    # factor universe so factor-naming stays consistent with y_betas.
+    if derived_signs_list:
+        derived_signs = pd.concat(derived_signs_list, axis=0).reindex(columns=x_covar.index)
+    else:
+        derived_signs = None
 
     # Flatten per-freq clustering outputs into persistable pandas objects.
     # Each asset appears in exactly one frequency bucket (freqs partition
@@ -542,6 +584,12 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
             # Reindex cluster assignment to the target asset universe.
             # Missing assets (no fit) get NaN — distinct from any valid cluster ID.
             clusters_flat = clusters_flat.reindex(index=assets)
+        if derived_signs is not None:
+            # NO fillna — leave NaN for assets that didn't get a fit;
+            # downstream consumers distinguish "unconstrained" from
+            # "no fit" by the absence vs presence of an asset row anyway,
+            # but keeping NaN here preserves the original semantics.
+            derived_signs = derived_signs.reindex(index=assets)
         # Reindex preserves existing NaN from frequency mismatch.
         # Only fill columns that are *entirely* missing (assets with no
         # fitted history at all) with zeros so downstream consumers
@@ -558,12 +606,19 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
                             axis=1)
 
     estimation_date = estimation_date or asset_returns_dict[list(asset_returns_dict.keys())[0]].index[-1]
-    covar_data = CurrentFactorCovarData(x_covar=x_covar,
-                                        y_betas=asset_last_betas,
-                                        y_variances=y_variances,
-                                        clusters=clusters_flat,
-                                        linkages=linkages_flat,
-                                        cutoffs=cutoffs_flat,
-                                        residuals=residuals,
-                                        estimation_date=estimation_date)
+    cfcd_kwargs: Dict[str, Any] = dict(
+        x_covar=x_covar,
+        y_betas=asset_last_betas,
+        y_variances=y_variances,
+        clusters=clusters_flat,
+        linkages=linkages_flat,
+        cutoffs=cutoffs_flat,
+        residuals=residuals,
+        estimation_date=estimation_date,
+    )
+    # Only attach derived_signs when factorlasso supports the field — see
+    # _CFCD_SUPPORTS_DERIVED_SIGNS at module top.
+    if _CFCD_SUPPORTS_DERIVED_SIGNS and derived_signs is not None:
+        cfcd_kwargs['derived_signs'] = derived_signs
+    covar_data = CurrentFactorCovarData(**cfcd_kwargs)
     return covar_data
