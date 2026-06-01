@@ -11,7 +11,7 @@ import qis as qis
 from typing import Union, Optional
 
 from optimalportfolios.universe.universe_data import UniverseData
-from optimalportfolios.utils.returns_unsmoother import compute_ar1_unsmoothed_prices
+from qis import compute_ar_unsmoothed_prices
 
 
 def copy_universe_data_with_unsmoothed_prices(
@@ -74,7 +74,7 @@ def copy_universe_data_with_unsmoothed_prices(
 
     # --- apply AR(1) unsmoothing to selected columns -----------------------------
     prices = universe_data.prices.copy()
-    un_prices, _, _, _ = compute_ar1_unsmoothed_prices(
+    un_prices, _, _, _ = compute_ar_unsmoothed_prices(
         prices=prices.reindex(columns=un_assets),
         freq=freq,
         span=unsmooth_span,

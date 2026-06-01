@@ -14,10 +14,8 @@ from optimalportfolios.alphas.signals.rolling_ewma_mean import estimate_rolling_
 from optimalportfolios.alphas.signals.utils import score_within_clusters
 
 from optimalportfolios.alphas.signal_diagnostics import (
+    signal_diagnostics_panel,
     run_signal_diagnostics,
     run_signal_diagnostics_per_component,
     compare_signal_diagnostics,
-    plot_signal_diagnostics,
-    plot_signal_diagnostics_per_component,
-    plot_signal_diagnostics_beta_boxplot
 )

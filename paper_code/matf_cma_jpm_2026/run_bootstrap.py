@@ -336,7 +336,6 @@ def _apply_unsmoothing(ar: pd.DataFrame,
               f"{flagged_str}")
 
     try:
-        from optimalportfolios import compute_ar1_unsmoothed_prices
         import qis
     except ImportError as exc:
         raise ImportError(
@@ -363,10 +362,10 @@ def _apply_unsmoothing(ar: pd.DataFrame,
         prices = prices.where(~log_panel.isna(), other=np.nan)
         # Forward-fill QE prices to ME grid for the regression's
         # rebalancing logic; production does this internally via
-        # `compute_ar1_unsmoothed_prices` when the freq argument is QE.
+        # `compute_ar_unsmoothed_prices` when the freq argument is QE.
         prices = prices.ffill()
 
-        un_prices, _, _, _ = compute_ar1_unsmoothed_prices(
+        un_prices, _, _, _ = qis.compute_ar_unsmoothed_prices(
             prices=prices,
             freq=freq_per_asset,
             span=UNSMOOTH_SPAN,

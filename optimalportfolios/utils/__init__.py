@@ -13,8 +13,4 @@ from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance,
 
 from optimalportfolios.utils.gaussian_mixture import fit_gaussian_mixture
 
-from optimalportfolios.utils.returns_unsmoother import (adjust_returns_with_ar1,
-                                                        compute_ar1_unsmoothed_prices)
-
 from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
-
