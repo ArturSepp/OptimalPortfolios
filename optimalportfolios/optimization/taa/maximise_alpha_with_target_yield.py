@@ -29,7 +29,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import cvxpy as cvx
-from typing import Dict
+from typing import Dict, Optional, Union
 
 from optimalportfolios import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
@@ -43,6 +43,7 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
                                               target_returns: pd.Series,
                                               constraints: Constraints,
                                               covar_dict: Dict[pd.Timestamp, pd.DataFrame],
+                                              benchmark_weights: Optional[Union[pd.Series, pd.DataFrame]] = None,
                                               optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
                                               ) -> pd.DataFrame:
     """
@@ -50,7 +51,7 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
 
     At each rebalancing date (defined by the keys of ``covar_dict``), solves:
 
-        max_w  α_t'w   s.t.  y_t'w >= r_t,  constraints
+        max_w  α_t'(w - w_b)   s.t.  y_t'w >= r_t,  TE(w, w_b) <= budget,  constraints
 
     Alphas, yields, and target returns are forward-filled to the rebalancing
     schedule.
@@ -62,6 +63,13 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
         target_returns: Minimum portfolio return at each date. Forward-filled.
         constraints: Portfolio constraints.
         covar_dict: Pre-computed covariance matrices keyed by rebalancing date.
+        benchmark_weights: Optional TAA benchmark, against which tracking error
+            and active alpha are measured. Series (static) or DataFrame
+            (time-varying), forward-filled to the rebalancing schedule. When
+            None the problem stays absolute (objective α'w, no TE term) — the
+            original behaviour. When provided, the objective becomes active
+            (α'(w - w_b)) and any TE budget on ``constraints`` is enforced
+            relative to these weights — mirroring ``maximise_alpha_over_tre``.
         optimiser_config: Solver configuration.
 
     Returns:
@@ -71,6 +79,17 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
     alphas = alphas.reindex(index=rebalancing_schedule, method='ffill')
     yields = yields.reindex(index=rebalancing_schedule, method='ffill')
     target_returns = target_returns.reindex(index=rebalancing_schedule, method='ffill')
+
+    # align benchmark to the rebalancing schedule, mirroring
+    # rolling_maximise_alpha_over_tre: Series -> broadcast, DataFrame -> ffill.
+    if benchmark_weights is not None:
+        if isinstance(benchmark_weights, pd.DataFrame):
+            benchmark_weights = benchmark_weights.reindex(
+                index=rebalancing_schedule, method='ffill').fillna(0.0)
+        else:
+            benchmark_weights = benchmark_weights.to_frame(
+                name=rebalancing_schedule[0]).T.reindex(
+                index=rebalancing_schedule, method='ffill').fillna(0.0)
 
     weights = {}
     weights_0 = None
@@ -89,12 +108,16 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
             prev_date=prev_date, date=date,
             use_drifted_weights_0=optimiser_config.use_drifted_weights_0,
         )
+        benchmark_weights_t = (
+            benchmark_weights.loc[date, :] if benchmark_weights is not None else None
+        )
         weights_ = wrapper_maximise_alpha_with_target_return(
             pd_covar=pd_covar,
             alphas=alphas.loc[date, :],
             yields=yields.loc[date, :],
             target_return=target_returns[date],
             constraints=constraints,
+            benchmark_weights=benchmark_weights_t,
             weights_0=weights_0,
             optimiser_config=optimiser_config
         )
@@ -118,6 +141,7 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
                                               yields: pd.Series,
                                               target_return: float,
                                               constraints: Constraints,
+                                              benchmark_weights: Optional[pd.Series] = None,
                                               weights_0: pd.Series = None,
                                               optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
                                               ) -> pd.Series:
@@ -130,6 +154,11 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
         yields: Expected returns per asset for the return constraint.
         target_return: Minimum portfolio return level (y'w >= target_return).
         constraints: Portfolio constraints.
+        benchmark_weights: Optional TAA benchmark weights. When provided they
+            are injected into the constraints (``update_with_valid_tickers``),
+            which makes the active objective α'(w - w_b) and enforces any TE
+            budget on ``constraints`` relative to these weights. When None the
+            problem is absolute (α'w, no TE term) — the original behaviour.
         weights_0: Previous-period weights for warm-start / fallback.
         optimiser_config: Solver configuration.
 
@@ -158,7 +187,8 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
         total_to_good_ratio=total_to_good_ratio,
         weights_0=weights_0,
         asset_returns=yields_clean,
-        target_return=target_return
+        target_return=target_return,
+        benchmark_weights=benchmark_weights,
     )
 
     weights = cvx_maximise_alpha_with_target_return(
@@ -210,7 +240,15 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
         nonneg = False
     w = cvx.Variable(n, nonneg=nonneg)
 
-    objective_fun = alphas.T @ w
+    # active objective α'(w - w_b) when a benchmark is injected, else absolute
+    # α'w. The constant -α'w_b does not change the argmax, but using the active
+    # form keeps semantics consistent with maximise_alpha_over_tre and pairs
+    # naturally with the TE-vs-benchmark constraint built by set_cvx_all_constraints.
+    if constraints.benchmark_weights is not None:
+        benchmark_weights = constraints.benchmark_weights.to_numpy()
+        objective_fun = alphas.T @ (w - benchmark_weights)
+    else:
+        objective_fun = alphas.T @ w
     objective = cvx.Maximize(objective_fun)
 
     constraints_ = constraints.set_cvx_all_constraints(w=w, covar=cvx.psd_wrap(covar))
@@ -220,7 +258,7 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
 
     optimal_weights = w.value
     if optimal_weights is None:
-        warnings.warn(f"cvx_maximise_alpha_over_tre: solver did not converge")
+        warnings.warn(f"cvx_maximise_alpha_with_target_return: solver did not converge")
         if constraints.weights_0 is not None:
             optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
         else:
