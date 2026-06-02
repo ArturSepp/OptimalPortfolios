@@ -26,6 +26,7 @@ Reference:
     Available at https://www.pm-research.com/content/iijpormgmt/52/4/86
 """
 import warnings
+import dataclasses
 import numpy as np
 import pandas as pd
 import cvxpy as cvx
@@ -44,6 +45,7 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
                                               constraints: Constraints,
                                               covar_dict: Dict[pd.Timestamp, pd.DataFrame],
                                               benchmark_weights: Optional[Union[pd.Series, pd.DataFrame]] = None,
+                                              soft_tracking_error: bool = False,
                                               optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
                                               ) -> pd.DataFrame:
     """
@@ -70,6 +72,12 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
             original behaviour. When provided, the objective becomes active
             (α'(w - w_b)) and any TE budget on ``constraints`` is enforced
             relative to these weights — mirroring ``maximise_alpha_over_tre``.
+        soft_tracking_error: When True (requires benchmark_weights), the return
+            target stays hard but TE is enforced as a utility penalty
+            (``tre_utility_weight``) rather than a hard constraint, so the yield
+            target always takes priority and the solve never goes infeasible on
+            a tight TE budget. When False, TE is a hard constraint if a budget
+            is set on ``constraints``.
         optimiser_config: Solver configuration.
 
     Returns:
@@ -118,6 +126,7 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
             target_return=target_returns[date],
             constraints=constraints,
             benchmark_weights=benchmark_weights_t,
+            soft_tracking_error=soft_tracking_error,
             weights_0=weights_0,
             optimiser_config=optimiser_config
         )
@@ -142,6 +151,7 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
                                               target_return: float,
                                               constraints: Constraints,
                                               benchmark_weights: Optional[pd.Series] = None,
+                                              soft_tracking_error: bool = False,
                                               weights_0: pd.Series = None,
                                               optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
                                               ) -> pd.Series:
@@ -156,9 +166,14 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
         constraints: Portfolio constraints.
         benchmark_weights: Optional TAA benchmark weights. When provided they
             are injected into the constraints (``update_with_valid_tickers``),
-            which makes the active objective α'(w - w_b) and enforces any TE
-            budget on ``constraints`` relative to these weights. When None the
-            problem is absolute (α'w, no TE term) — the original behaviour.
+            which makes the active objective α'(w - w_b) and enables the TE
+            term relative to these weights. When None the problem is absolute
+            (α'w, no TE term) — the original behaviour.
+        soft_tracking_error: When True, the return target stays hard but TE is
+            enforced as a utility penalty (``tre_utility_weight``) rather than a
+            hard constraint — so yield always takes priority and the solve
+            never goes infeasible on a tight TE budget. Requires
+            benchmark_weights. When False, TE is hard (if a budget is set).
         weights_0: Previous-period weights for warm-start / fallback.
         optimiser_config: Solver configuration.
 
@@ -195,6 +210,7 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
         covar=clean_covar.to_numpy(),
         alphas=good_vectors['alphas'].to_numpy(),
         constraints=constraints1,
+        soft_tracking_error=soft_tracking_error,
         solver=optimiser_config.solver,
         verbose=optimiser_config.verbose
     )
@@ -209,24 +225,42 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
 def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
                                           alphas: np.ndarray,
                                           constraints: Constraints,
+                                          soft_tracking_error: bool = False,
                                           verbose: bool = False,
                                           solver: str = 'CLARABEL'
                                           ) -> np.ndarray:
     """
     Solve alpha-maximising portfolio allocation via CVXPY.
 
-    Solves:
+    Two formulations, selected by ``soft_tracking_error``:
 
-        max_w  α'w
+    Hard tracking error (default, soft_tracking_error=False):
 
-        s.t.   y'w >= r_target    (encoded in constraints)
-               w'Σw <= σ²_max     (encoded in constraints, optional)
+        max_w  α'(w - w_b)
+        s.t.   y'w >= r_target                      (hard return target)
+               (w - w_b)'Σ(w - w_b) <= TE²_max      (hard TE, if set on constraints)
                1'w = 1,  w >= 0,  bounds
+
+    Soft tracking error (soft_tracking_error=True) — TE drops from a hard
+    constraint to a penalty so the return target always takes priority:
+
+        max_w  α'(w - w_b) - λ_TE (w - w_b)'Σ(w - w_b) - λ_TO ||w - w_0||_1
+        s.t.   y'w >= r_target                      (hard return target)
+               1'w = 1,  w >= 0,  bounds
+
+    The soft path reuses Constraints.set_cvx_utility_objective_constraints, so
+    the penalty weights are the calibrated ``tre_utility_weight`` /
+    ``turnover_utility_weight`` already on the constraints object, and the
+    return target (asset_returns @ w >= target_return) is still enforced as a
+    hard constraint by that builder. The caller should NOT set a hard
+    ``tracking_err_vol_constraint`` in the soft case (it would be ignored here).
 
     Args:
         covar: Covariance matrix (N x N).
         alphas: Alpha signal vector (N,).
         constraints: Portfolio constraints including return target.
+        soft_tracking_error: If True, enforce TE as a utility penalty and keep
+            only the return target hard. If False, use the hard-constraint form.
         verbose: If True, print CVXPY solver diagnostics.
         solver: CVXPY solver name.
 
@@ -239,19 +273,45 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
     else:
         nonneg = False
     w = cvx.Variable(n, nonneg=nonneg)
+    covar_psd = cvx.psd_wrap(covar)
 
-    # active objective α'(w - w_b) when a benchmark is injected, else absolute
-    # α'w. The constant -α'w_b does not change the argmax, but using the active
-    # form keeps semantics consistent with maximise_alpha_over_tre and pairs
-    # naturally with the TE-vs-benchmark constraint built by set_cvx_all_constraints.
-    if constraints.benchmark_weights is not None:
-        benchmark_weights = constraints.benchmark_weights.to_numpy()
-        objective_fun = alphas.T @ (w - benchmark_weights)
+    if soft_tracking_error and constraints.benchmark_weights is not None:
+        # Soft TE only: TE becomes a utility penalty (tre_utility_weight) while
+        # the return target and turnover stay HARD. The utility builder would
+        # otherwise also penalise turnover (turnover_utility_weight) — we null
+        # that out so turnover isn't double-counted, then add the hard turnover
+        # constraint explicitly below. Yield target is added hard by the builder.
+        constraints_soft = dataclasses.replace(
+            constraints,
+            turnover_utility_weight=None,
+            group_turnover_constraint=None,
+        )
+        objective_fun, constraints_ = constraints_soft.set_cvx_utility_objective_constraints(
+            w=w, alphas=alphas, covar=covar_psd,
+        )
+        objective = cvx.Maximize(objective_fun)
+        # keep turnover HARD if a budget is set, mirroring set_cvx_all_constraints
+        if constraints.group_turnover_constraint is None and constraints.turnover_constraint is not None:
+            if constraints.weights_0 is None:
+                warnings.warn("weights_0 must be given for turnover constraint")
+            elif constraints.turnover_costs is not None:
+                constraints_ += [cvx.norm(cvx.multiply(
+                    constraints.turnover_costs.to_numpy(), w - constraints.weights_0.to_numpy()), 1)
+                    <= constraints.turnover_constraint]
+            else:
+                constraints_ += [cvx.norm(w - constraints.weights_0.to_numpy(), 1)
+                                 <= constraints.turnover_constraint]
     else:
-        objective_fun = alphas.T @ w
-    objective = cvx.Maximize(objective_fun)
-
-    constraints_ = constraints.set_cvx_all_constraints(w=w, covar=cvx.psd_wrap(covar))
+        # Hard path: active objective α'(w - w_b) when a benchmark is injected,
+        # else absolute α'w. set_cvx_all_constraints enforces the hard TE
+        # (if set), the return target, and the box/turnover/group constraints.
+        if constraints.benchmark_weights is not None:
+            benchmark_weights = constraints.benchmark_weights.to_numpy()
+            objective_fun = alphas.T @ (w - benchmark_weights)
+        else:
+            objective_fun = alphas.T @ w
+        objective = cvx.Maximize(objective_fun)
+        constraints_ = constraints.set_cvx_all_constraints(w=w, covar=covar_psd)
 
     problem = cvx.Problem(objective, constraints_)
     problem.solve(verbose=verbose, solver=solver)
