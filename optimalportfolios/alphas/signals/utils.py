@@ -91,18 +91,31 @@ def score_within_clusters(
         return qis.df_to_cross_sectional_score(df=raw_signal)
 
     cluster_dates = sorted(rolling_clusters.keys())
+    first_cluster_date = cluster_dates[0]
     all_cols = raw_signal.columns.tolist()
     scores = []
 
     for date in raw_signal.index:
         row_values = raw_signal.loc[date, :]
 
+        # rows before the first cluster estimation have no assignment yet: score
+        # 0.0 and skip the lookup (calling find_upto on them returns None and
+        # emits a warning per row, which floods backtest logs).
+        if date < first_cluster_date:
+            scores.append(pd.Series(0.0, index=all_cols, name=date))
+            continue
+
         # find most recent cluster assignment
         try:
             cluster_date = qis.find_upto_date_from_datetime_index(
                 index=cluster_dates, date=date)
         except Exception:
-            # date is before first cluster estimation
+            cluster_date = None
+
+        if cluster_date is None:
+            # backstop: find_upto_date_from_datetime_index raises in some qis
+            # builds and returns None in others; the date < first_cluster_date
+            # guard above already covers this, but keep the None check too.
             scores.append(pd.Series(0.0, index=all_cols, name=date))
             continue
 

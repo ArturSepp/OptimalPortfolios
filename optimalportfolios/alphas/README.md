@@ -233,7 +233,7 @@ The clusters are stored in `RollingFactorCovarData` and extracted via
 `extract_rolling_clusters()`:
 
 ```python
-from optimalportfolios.alphas.signals.residual_momentum_cluster import extract_rolling_clusters
+from optimalportfolios.alphas.signals import extract_rolling_clusters
 
 rolling_clusters = extract_rolling_clusters(
     rolling_covar_data=taa_covar_data,
