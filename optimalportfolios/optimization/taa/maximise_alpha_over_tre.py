@@ -37,6 +37,8 @@ from typing import Optional, Union, Dict
 
 # optimalportfolios
 from optimalportfolios.optimization.constraints import Constraints, ConstraintEnforcementType
+from optimalportfolios.optimization.solver_diagnostics import (
+    validate_solution, diagnose_solver_failure, validate_solver_inputs)
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.utils.portfolio_funcs import compute_portfolio_risk_contribution_outputs
 from optimalportfolios.optimization.config import OptimiserConfig
@@ -102,7 +104,8 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
             constraints=constraints,
             rebalancing_indicators=rebalancing_indicators_t,
             weights_0=weights_0,
-            optimiser_config=optimiser_config
+            optimiser_config=optimiser_config,
+            context=str(pd.Timestamp(date).date())
         )
 
         if np.all(np.equal(weights_, 0.0)):
@@ -125,7 +128,8 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
                                     weights_0: pd.Series = None,
                                     rebalancing_indicators: pd.Series = None,
                                     detailed_output: bool = False,
-                                    optimiser_config: OptimiserConfig = OptimiserConfig()
+                                    optimiser_config: OptimiserConfig = OptimiserConfig(),
+                                    context: str = ''
                                     ) -> Union[pd.Series, pd.DataFrame]:
     """
     Single-date alpha-over-TE optimisation with NaN filtering and routing.
@@ -159,13 +163,20 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
         total_to_good_ratio = None
 
     valid_tickers = clean_covar.columns.to_list()
-    constraints1 = constraints.update_with_valid_tickers(
+    constraints1 = constraints.update_with_valid_tickers(context=context, 
         valid_tickers=valid_tickers,
         total_to_good_ratio=total_to_good_ratio,
         weights_0=weights_0,
         benchmark_weights=benchmark_weights,
-        rebalancing_indicators=rebalancing_indicators
+        rebalancing_indicators=rebalancing_indicators,
+        max_relaxation_tol=optimiser_config.max_constraint_relaxation
     )
+
+    if optimiser_config.validate_inputs:
+        validate_solver_inputs(
+            clean_covar, constraints1, context=context,
+            n_dropped=len(pd_covar.columns) - len(clean_covar.columns),
+            solver=optimiser_config.solver)
 
     alphas_np = good_vectors['alphas'].to_numpy() if alphas is not None else None
 
@@ -175,7 +186,9 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
             alphas=alphas_np,
             constraints=constraints1,
             solver=optimiser_config.solver,
-            verbose=optimiser_config.verbose
+            verbose=optimiser_config.verbose,
+            context=context,
+            diagnose=optimiser_config.diagnose_infeasibility
         )
     else:
         weights = cvx_maximise_alpha_over_tre(
@@ -183,7 +196,9 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
             alphas=alphas_np,
             constraints=constraints1,
             solver=optimiser_config.solver,
-            verbose=optimiser_config.verbose
+            verbose=optimiser_config.verbose,
+            context=context,
+            diagnose=optimiser_config.diagnose_infeasibility
         )
 
     weights[np.isinf(weights)] = 0.0
@@ -201,7 +216,9 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
                                 alphas: np.ndarray,
                                 constraints: Constraints,
                                 solver: str = 'CLARABEL',
-                                verbose: bool = False
+                                verbose: bool = False,
+                                context: str = '',
+                                diagnose: bool = False
                                 ) -> np.ndarray:
     """
     Maximise active alpha subject to a hard tracking error constraint.
@@ -220,6 +237,9 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
         constraints: Constraints with benchmark_weights and TE budget injected.
         solver: CVXPY solver name.
         verbose: If True, print CVXPY solver diagnostics.
+        context: free-form label (e.g. rebalance date) used in diagnostic logs.
+        diagnose: if True, a rejected solve triggers the elastic infeasibility
+            / conditioning diagnosis (see OptimiserConfig.diagnose_infeasibility).
 
     Returns:
         Optimal weights (N,). Falls back to weights_0 or zeros on failure.
@@ -227,6 +247,7 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
     n = covar.shape[0]
     nonneg = constraints.is_long_only
     w = cvx.Variable(n, nonneg=nonneg)
+    raw_covar = covar  # keep unwrapped Σ for the conditioning diagnostic
     covar = cvx.psd_wrap(covar)
 
     benchmark_weights = constraints.benchmark_weights.to_numpy()
@@ -238,13 +259,11 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
     problem = cvx.Problem(objective, constraints_)
     problem.solve(verbose=verbose, solver=solver)
 
-    optimal_weights = w.value
-    if optimal_weights is None:
-        warnings.warn(f"cvx_maximise_alpha_over_tre: solver did not converge")
-        if constraints.weights_0 is not None:
-            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
-        else:
-            optimal_weights = np.zeros(n)
+    optimal_weights, _is_valid = validate_solution(
+        w.value, problem.status, constraints, n, solver=solver, context=context)
+    if (not _is_valid) and diagnose:
+        diagnose_solver_failure(problem.status, constraints, raw_covar,
+                                solver=solver, context=context)
 
     return optimal_weights
 
@@ -253,7 +272,9 @@ def cvx_maximise_tre_utility(covar: np.ndarray,
                              constraints: Constraints,
                              alphas: Optional[np.ndarray] = None,
                              solver: str = 'CLARABEL',
-                             verbose: bool = False
+                             verbose: bool = False,
+                             context: str = '',
+                             diagnose: bool = False
                              ) -> np.ndarray:
     """
     Maximise utility with tracking error and turnover penalties.
@@ -270,6 +291,9 @@ def cvx_maximise_tre_utility(covar: np.ndarray,
         alphas: Alpha signal vector (N,). None for pure benchmark tracking.
         solver: CVXPY solver name.
         verbose: If True, print CVXPY solver diagnostics.
+        context: free-form label (e.g. rebalance date) used in diagnostic logs.
+        diagnose: if True, a rejected solve triggers the elastic infeasibility
+            / conditioning diagnosis (see OptimiserConfig.diagnose_infeasibility).
 
     Returns:
         Optimal weights (N,). Falls back to weights_0 or zeros on failure.
@@ -277,6 +301,7 @@ def cvx_maximise_tre_utility(covar: np.ndarray,
     n = covar.shape[0]
     nonneg = constraints.is_long_only
     w = cvx.Variable(n, nonneg=nonneg)
+    raw_covar = covar  # keep unwrapped Σ for the conditioning diagnostic
     covar = cvx.psd_wrap(covar)
 
     constraints1 = constraints.copy()
@@ -289,12 +314,10 @@ def cvx_maximise_tre_utility(covar: np.ndarray,
     problem = cvx.Problem(cvx.Maximize(objective_fun), constraints_)
     problem.solve(verbose=verbose, solver=solver)
 
-    optimal_weights = w.value
-    if optimal_weights is None:
-        warnings.warn(f"cvx_maximise_tre_utility: solver did not converge")
-        if constraints.weights_0 is not None:
-            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
-        else:
-            optimal_weights = np.zeros(n)
+    optimal_weights, _is_valid = validate_solution(
+        w.value, problem.status, constraints, n, solver=solver, context=context)
+    if (not _is_valid) and diagnose:
+        diagnose_solver_failure(problem.status, constraints, raw_covar,
+                                solver=solver, context=context)
 
     return optimal_weights

@@ -20,6 +20,7 @@ Reference:
 """
 
 import warnings
+import logging
 import numpy as np
 import pandas as pd
 import qis as qis
@@ -29,8 +30,11 @@ from typing import List
 from optimalportfolios.utils.gaussian_mixture import fit_gaussian_mixture
 from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance, compute_portfolio_risk_contributions)
 from optimalportfolios.optimization.constraints import (Constraints, total_weight_constraint, long_only_constraint)
+from optimalportfolios.optimization.solver_diagnostics import validate_scipy_solution
 from optimalportfolios.optimization.config import OptimiserConfig
 from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
+
+logger = logging.getLogger(__name__)
 
 
 def rolling_maximize_cara_mixture(prices: pd.DataFrame,
@@ -81,7 +85,7 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
                 prev_date=prev_date, date=date,
                 use_drifted_weights_0=optimiser_config.use_drifted_weights_0,
             )
-            constraints1 = constraints.update_with_valid_tickers(valid_tickers=rets_.columns.to_list(),
+            constraints1 = constraints.update_with_valid_tickers(context=str(pd.Timestamp(date).date()), valid_tickers=rets_.columns.to_list(),
                                                                  total_to_good_ratio=len(tickers)/len(rets_.columns),
                                                                  weights_0=weights_0)
 
@@ -91,7 +95,8 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
                                                      constraints=constraints1,
                                                      tickers=rets_.columns.to_list(),
                                                      carra=carra,
-                                                     optimiser_config=optimiser_config)
+                                                     optimiser_config=optimiser_config,
+                                                     context=str(pd.Timestamp(date).date()))
             weights_ = weights_.reindex(index=tickers).fillna(0.0)
             weights_0 = weights_
             prev_date = date
@@ -110,7 +115,8 @@ def wrapper_maximize_cara_mixture(means: List[np.ndarray],
                                   constraints: Constraints,
                                   tickers: List[str],
                                   carra: float = 0.5,
-                                  optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
+                                  optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True),
+                                  context: str = ''
                                   ) -> pd.Series:
     """
     Solve CARA mixture optimisation and return labelled weights.
@@ -132,7 +138,8 @@ def wrapper_maximize_cara_mixture(means: List[np.ndarray],
                                         probs=probs,
                                         constraints=constraints,
                                         carra=carra,
-                                        verbose=optimiser_config.verbose)
+                                        verbose=optimiser_config.verbose,
+                                        context=context)
     weights = pd.Series(weights, index=tickers)
     return weights
 
@@ -142,7 +149,8 @@ def opt_maximize_cara_mixture(means: List[np.ndarray],
                               probs: np.ndarray,
                               constraints: Constraints,
                               carra: float = 0.5,
-                              verbose: bool = False
+                              verbose: bool = False,
+                              context: str = ''
                               ) -> np.ndarray:
     """
     Maximise expected CARA utility under a Gaussian mixture model via SLSQP.
@@ -174,14 +182,8 @@ def opt_maximize_cara_mixture(means: List[np.ndarray],
                    constraints=constraints_,
                    bounds=bounds,
                    options={'disp': verbose, 'ftol': 1e-8})
-    optimal_weights = res.x
-
-    if optimal_weights is None:
-        warnings.warn(f"opt_maximize_cara_mixture: solver did not converge")
-        if constraints.weights_0 is not None:
-            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
-        else:
-            optimal_weights = np.zeros(n)
+    optimal_weights, _is_valid = validate_scipy_solution(
+        res.x, res, constraints, n, solver='SLSQP', context=context)
 
     return optimal_weights
 
@@ -235,6 +237,11 @@ def opt_maximize_cara(means: np.ndarray,
     res = minimize(func, x0, args=[means, covar, carra], method='SLSQP', constraints=cons,
                    options={'disp': disp, 'ftol': 1e-12})
     w_rb = res.x
+
+    if (not res.success) or w_rb is None or not np.all(np.isfinite(w_rb)):
+        logger.warning("opt_maximize_cara: SLSQP did not converge (status=%s: %s); "
+                       "returning initial guess", res.status, res.message)
+        w_rb = x0
 
     if is_print_log:
         print(f'return_p = {w_rb@means}, '

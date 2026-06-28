@@ -12,6 +12,7 @@ optimisation proceed.
 """
 from __future__ import annotations
 
+import logging
 import warnings
 
 import numpy as np
@@ -50,7 +51,7 @@ def _simple_alts_setup():
 # tests
 # -----------------------------------------------------------------------------
 
-def test_frozen_overshoot_raises_group_max():
+def test_frozen_overshoot_raises_group_max(caplog):
     """Drifted frozen PE pushes Alts above 0.60 → group_max relaxed, no error."""
     tickers, gluc = _simple_alts_setup()
     constraints = Constraints(
@@ -71,20 +72,17 @@ def test_frozen_overshoot_raises_group_max():
     # all 3 Alts assets frozen; equity legs rebalance.
     rebal = pd.Series({'PE': 0, 'HF': 0, 'REIT': 0, 'EQ_US': 1, 'EQ_EU': 1})
 
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
+    with caplog.at_level(logging.INFO,
+                         logger="optimalportfolios.optimization.constraints"):
         new_constraints = constraints.update_with_valid_tickers(
             valid_tickers=tickers,
             weights_0=drifted_w0,
             rebalancing_indicators=rebal,
         )
 
-    # the relaxation message must surface
-    relax_msgs = [w for w in caught
-                  if 'frozen-min overshoot' in str(w.message)]
-    assert len(relax_msgs) == 1, \
-        f"expected one relaxation warning, got {[str(w.message) for w in caught]}"
-    assert "group 'Alts'" in str(relax_msgs[0].message)
+    # the relaxation message must surface (now on the logger, not warnings)
+    assert "frozen-min overshoot" in caplog.text
+    assert "group 'Alts'" in caplog.text
 
     # group_max_allocation for Alts was raised; Equity untouched.
     # Frozen-min-sum within Alts = 0.20 + 0.21 + 0.20 = 0.61, so new cap ≈ 0.61 + tol.
@@ -93,7 +91,7 @@ def test_frozen_overshoot_raises_group_max():
     assert new_gmax['Equity'] == pytest.approx(0.70)
 
 
-def test_frozen_undershoot_lowers_group_min():
+def test_frozen_undershoot_lowers_group_min(caplog):
     """Drifted frozen assets undershoot Equity floor → group_min lowered."""
     tickers, gluc = _simple_alts_setup()
     constraints = Constraints(
@@ -112,18 +110,16 @@ def test_frozen_undershoot_lowers_group_min():
     })
     rebal = pd.Series({'PE': 1, 'HF': 1, 'REIT': 1, 'EQ_US': 0, 'EQ_EU': 0})
 
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
+    with caplog.at_level(logging.INFO,
+                         logger="optimalportfolios.optimization.constraints"):
         new_constraints = constraints.update_with_valid_tickers(
             valid_tickers=tickers,
             weights_0=drifted_w0,
             rebalancing_indicators=rebal,
         )
 
-    undershoot_msgs = [w for w in caught
-                       if 'frozen-max undershoot' in str(w.message)]
-    assert len(undershoot_msgs) == 1
-    assert "group 'Equity'" in str(undershoot_msgs[0].message)
+    assert "frozen-max undershoot" in caplog.text
+    assert "group 'Equity'" in caplog.text
 
     # group_min_allocation for Equity was lowered;
     # Equity max-sum from frozen assets = 0.10 + 0.05 = 0.15 (frozen max == frozen min == w0)
@@ -237,3 +233,82 @@ def test_pre_patch_failure_mode_now_passes():
         )
     new_gmax = new_constraints.group_lower_upper_constraints.group_max_allocation
     assert new_gmax['Alts'] > 0.6048
+
+
+def test_relaxation_message_includes_context_date(caplog):
+    """When the caller passes context (the rebalance date), the relaxation
+    message is prefixed with [date] — mirroring the solver-rejection messages."""
+    tickers, gluc = _simple_alts_setup()
+    constraints = Constraints(
+        is_long_only=True,
+        min_weights=pd.Series(0.0, index=tickers),
+        max_weights=pd.Series(1.0, index=tickers),
+        group_lower_upper_constraints=gluc,
+    )
+    drifted_w0 = pd.Series({'PE': 0.20, 'HF': 0.21, 'REIT': 0.20,
+                            'EQ_US': 0.20, 'EQ_EU': 0.19})
+    rebal = pd.Series({'PE': 0, 'HF': 0, 'REIT': 0, 'EQ_US': 1, 'EQ_EU': 1})
+
+    def _relax_msgs():
+        return [r.getMessage() for r in caplog.records
+                if 'overshoot' in r.getMessage() or 'undershoot' in r.getMessage()]
+
+    # with context -> [date] prefix
+    with caplog.at_level(logging.INFO,
+                         logger="optimalportfolios.optimization.constraints"):
+        constraints.update_with_valid_tickers(
+            valid_tickers=tickers, weights_0=drifted_w0,
+            rebalancing_indicators=rebal, context="2024-01-31")
+    relax = _relax_msgs()
+    assert relax, "expected a relaxation log record"
+    assert relax[0].startswith("[2024-01-31] ")
+
+    caplog.clear()
+    # without context -> unchanged (no prefix); backward compatible
+    with caplog.at_level(logging.INFO,
+                         logger="optimalportfolios.optimization.constraints"):
+        constraints.update_with_valid_tickers(
+            valid_tickers=tickers, weights_0=drifted_w0,
+            rebalancing_indicators=rebal)
+    relax = _relax_msgs()
+    assert relax and relax[0].startswith("Constraints.")
+
+
+def test_relaxation_magnitude_bound_escalates(caplog):
+    """A relaxation larger than max_relaxation_tol escalates the log to ERROR and
+    the RelaxationRecord marks breached_tol; a generous tolerance does not."""
+    from optimalportfolios.optimization.constraints import RelaxationRecord
+    tickers, gluc = _simple_alts_setup()
+    constraints = Constraints(
+        is_long_only=True,
+        min_weights=pd.Series(0.0, index=tickers),
+        max_weights=pd.Series(1.0, index=tickers),
+        group_lower_upper_constraints=gluc,
+    )
+    # Alts frozen sum 0.61 vs cap 0.60 -> relaxation magnitude ~0.0101.
+    drifted_w0 = pd.Series({'PE': 0.20, 'HF': 0.21, 'REIT': 0.20,
+                            'EQ_US': 0.20, 'EQ_EU': 0.19})
+    rebal = pd.Series({'PE': 0, 'HF': 0, 'REIT': 0, 'EQ_US': 1, 'EQ_EU': 1})
+
+    def _records():
+        return [r for r in (getattr(rec, "relaxation", None) for rec in caplog.records)
+                if isinstance(r, RelaxationRecord)]
+
+    with caplog.at_level(logging.INFO,
+                         logger="optimalportfolios.optimization.constraints"):
+        constraints.update_with_valid_tickers(
+            valid_tickers=tickers, weights_0=drifted_w0,
+            rebalancing_indicators=rebal, max_relaxation_tol=0.005)   # 0.0101 > 0.005
+    recs = _records()
+    assert recs and recs[0].breached_tol is True
+    assert any(r.levelno == logging.ERROR for r in caplog.records)
+
+    caplog.clear()
+    with caplog.at_level(logging.INFO,
+                         logger="optimalportfolios.optimization.constraints"):
+        constraints.update_with_valid_tickers(
+            valid_tickers=tickers, weights_0=drifted_w0,
+            rebalancing_indicators=rebal, max_relaxation_tol=0.05)     # 0.0101 < 0.05
+    recs = _records()
+    assert recs and recs[0].breached_tol is False
+    assert not any(r.levelno == logging.ERROR for r in caplog.records)

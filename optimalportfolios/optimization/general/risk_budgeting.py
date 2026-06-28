@@ -33,6 +33,7 @@ Reference:
 from __future__ import division
 
 import warnings
+import logging
 import numpy as np
 import pandas as pd
 import qis as qis
@@ -47,6 +48,10 @@ from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.optimization.config import OptimiserConfig
 from pyrb import ConstrainedRiskBudgeting
+from optimalportfolios.optimization.solver_diagnostics import (
+    validate_scipy_solution, validate_pyrb_solution)
+
+logger = logging.getLogger(__name__)
 
 
 def rolling_risk_budgeting(prices: pd.DataFrame,
@@ -108,7 +113,8 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
                                           weights_0=weights_0,
                                           risk_budget=risk_budget,
                                           rebalancing_indicators=rebalancing_indicators_t,
-                                          optimiser_config=optimiser_config)
+                                          optimiser_config=optimiser_config,
+                                          context=str(pd.Timestamp(date).date()))
         weights_0 = weights_  # warm-start next period
         prev_date = date
         weights[date] = weights_
@@ -123,7 +129,8 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
                            risk_budget: Union[pd.Series, Dict[str, float]] = None,
                            rebalancing_indicators: pd.Series = None,
                            optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True),
-                           detailed_output: bool = False
+                           detailed_output: bool = False,
+                           context: str = ''
                            ) -> Union[pd.Series, pd.DataFrame]:
     """
     Single-date risk budgeting with NaN filtering and rebalancing controls.
@@ -193,7 +200,7 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
     else:
         risk_budget_np = None
 
-    constraints1 = constraints.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
+    constraints1 = constraints.update_with_valid_tickers(context=context, valid_tickers=clean_covar.columns.to_list(),
                                                          total_to_good_ratio=total_to_good_ratio,
                                                          weights_0=weights_0,
                                                          rebalancing_indicators=None)
@@ -201,7 +208,8 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
     weights0 = opt_risk_budgeting(covar=clean_covar.to_numpy(),
                                   constraints=constraints1,
                                   risk_budget=risk_budget_np,
-                                  verbose=optimiser_config.verbose)
+                                  verbose=optimiser_config.verbose,
+                                  context=context)
     weights0[np.isinf(weights0)] = 0.0
     weights = pd.Series(weights0, index=clean_covar.index)
     weights = weights.reindex(index=pd_covar.index).fillna(0.0)
@@ -225,7 +233,8 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
 def opt_risk_budgeting(covar: np.ndarray,
                        constraints: Constraints,
                        risk_budget: np.ndarray = None,
-                       verbose: bool = False
+                       verbose: bool = False,
+                       context: str = ''
                        ) -> np.ndarray:
     """
     Solve constrained risk budgeting using pyrb's ConstrainedRiskBudgeting.
@@ -255,21 +264,17 @@ def opt_risk_budgeting(covar: np.ndarray,
             slack = qqq - c_lhs
             print(f"slack={slack}")
 
-    if optimal_weights is None or np.any(np.isnan(optimal_weights)):
-        warnings.warn(f"opt_risk_budgeting: pyrb solver failed or returned NaN")
-        if constraints.weights_0 is not None:
-            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
-            warnings.warn(f"opt_risk_budgeting: falling back to weights_0")
-        else:
-            optimal_weights = np.zeros(n)
-            warnings.warn(f"opt_risk_budgeting: falling back to zero weights")
+    optimal_weights, _is_valid = validate_pyrb_solution(
+        optimal_weights, constraints, n,
+        converged=getattr(this, 'success', None), context=context)
 
     return optimal_weights
 
 
 def opt_risk_budgeting_scipy(covar: np.ndarray,
                              constraints: Constraints,
-                             risk_budget: np.ndarray = None
+                             risk_budget: np.ndarray = None,
+                             context: str = ''
                              ) -> np.ndarray:
     """
     Risk budgeting via scipy SLSQP (fallback solver, not recommended).
@@ -301,16 +306,8 @@ def opt_risk_budgeting_scipy(covar: np.ndarray,
     res = minimize(risk_budget_objective, x0, args=[covar, risk_budget], method='SLSQP',
                   constraints=constraints_, bounds=bounds, options=options)
 
-    optimal_weights = res.x
-
-    if optimal_weights is None:
-        warnings.warn(f"opt_risk_budgeting_scipy: SLSQP solver failed")
-        if constraints.weights_0 is not None:
-            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
-            warnings.warn(f"opt_risk_budgeting_scipy: falling back to weights_0")
-        else:
-            optimal_weights = np.zeros(n)
-            warnings.warn(f"opt_risk_budgeting_scipy: falling back to zero weights")
+    optimal_weights, _is_valid = validate_scipy_solution(
+        res.x, res, constraints, n, solver='SLSQP', context=context)
 
     return optimal_weights
 
@@ -388,8 +385,10 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
 
     risk_budgets = res.x
 
-    if risk_budgets is None:
-        warnings.warn(f"solve_for_risk_budgets_from_given_weights: solver failed, using zero budgets")
+    if (not res.success) or risk_budgets is None or not np.all(np.isfinite(risk_budgets)):
+        logger.warning(
+            "solve_for_risk_budgets_from_given_weights: SLSQP did not converge "
+            "(status=%s: %s); using zero budgets", res.status, res.message)
         risk_budgets = np.zeros_like(x0)
     risk_budgets = pd.Series(risk_budgets, index=prices.columns)
     return risk_budgets

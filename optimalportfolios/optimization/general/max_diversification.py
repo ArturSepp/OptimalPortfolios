@@ -31,6 +31,7 @@ from typing import List, Dict
 from optimalportfolios.utils.portfolio_funcs import calculate_diversification_ratio
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.optimization.solver_diagnostics import validate_scipy_solution
 from optimalportfolios.optimization.config import OptimiserConfig
 from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
 
@@ -64,7 +65,8 @@ def rolling_maximise_diversification(prices: pd.DataFrame,
         weights_ = wrapper_maximise_diversification(pd_covar=pd_covar,
                                                     constraints=constraints,
                                                     weights_0=weights_0,
-                                                    optimiser_config=optimiser_config)
+                                                    optimiser_config=optimiser_config,
+                                                    context=str(pd.Timestamp(date).date()))
         weights_0 = weights_
         prev_date = date
         weights[date] = weights_
@@ -77,7 +79,8 @@ def rolling_maximise_diversification(prices: pd.DataFrame,
 def wrapper_maximise_diversification(pd_covar: pd.DataFrame,
                                      constraints: Constraints,
                                      weights_0: pd.Series = None,
-                                     optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
+                                     optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True),
+                                     context: str = ''
                                      ) -> pd.Series:
     """
     Single-date maximum diversification with NaN/zero-variance filtering.
@@ -99,13 +102,14 @@ def wrapper_maximise_diversification(pd_covar: pd.DataFrame,
     else:
         total_to_good_ratio = None
 
-    constraints1 = constraints.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
+    constraints1 = constraints.update_with_valid_tickers(context=context, valid_tickers=clean_covar.columns.to_list(),
                                                          total_to_good_ratio=total_to_good_ratio,
                                                          weights_0=weights_0)
 
     weights = opt_maximise_diversification(covar=clean_covar.to_numpy(),
                                            constraints=constraints1,
-                                           verbose=optimiser_config.verbose)
+                                           verbose=optimiser_config.verbose,
+                                           context=context)
     weights = pd.Series(weights, index=clean_covar.columns)
     weights = weights.reindex(index=pd_covar.columns).fillna(0.0)
     return weights
@@ -115,7 +119,8 @@ def opt_maximise_diversification(covar: np.ndarray,
                                  constraints: Constraints,
                                  verbose: bool = False,
                                  ftol: float = 1e-8,
-                                 maxiter: int = 500
+                                 maxiter: int = 500,
+                                 context: str = ''
                                  ) -> np.ndarray:
     """
     Maximise the diversification ratio via scipy SLSQP.
@@ -144,19 +149,11 @@ def opt_maximise_diversification(covar: np.ndarray,
                    options={'disp': verbose, 'ftol': ftol, 'maxiter': maxiter})
 
     optimal_weights = res.x
-
-    if res.success == False or optimal_weights is None:
-        if constraints.weights_0 is not None:
-            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
-            mes = f"using weights_0"
-        else:
-            optimal_weights = np.zeros(n)
-            mes = f"using zero weights"
-        warnings.warn(f"opt_maximise_diversification(): problem is not solved, {mes}")
-
-    else:
-        if constraints.is_long_only:
-            optimal_weights = np.where(optimal_weights > 0.0, optimal_weights, 0.0)
+    if res.success and optimal_weights is not None and constraints.is_long_only:
+        # SLSQP can leave tiny negative weights; clip before validating
+        optimal_weights = np.where(optimal_weights > 0.0, optimal_weights, 0.0)
+    optimal_weights, _is_valid = validate_scipy_solution(
+        optimal_weights, res, constraints, n, solver='SLSQP', context=context)
 
     return optimal_weights
 

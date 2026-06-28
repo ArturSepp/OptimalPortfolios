@@ -23,6 +23,7 @@ from typing import Tuple, Optional, Dict
 # optimalportfolios
 from optimalportfolios.config import PortfolioObjective
 from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.optimization.solver_diagnostics import validate_solution
 from optimalportfolios.optimization.config import OptimiserConfig
 from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
@@ -76,7 +77,8 @@ def rolling_quadratic_optimisation(prices: pd.DataFrame,
             portfolio_objective=portfolio_objective,
             carra=carra,
             inclusion_indicators=inclusion_indicators1.loc[date, :],
-            optimiser_config=optimiser_config
+            optimiser_config=optimiser_config,
+            context=str(pd.Timestamp(date).date())
         )
         weights_0 = weights_
         prev_date = date
@@ -93,7 +95,8 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
                                    portfolio_objective: PortfolioObjective = PortfolioObjective.MIN_VARIANCE,
                                    weights_0: pd.Series = None,
                                    carra: float = 1.0,
-                                   optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
+                                   optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True),
+                                   context: str = ''
                                    ) -> pd.Series:
     """
     Single-date quadratic optimisation with NaN/zero-variance filtering.
@@ -120,7 +123,7 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
     else:
         total_to_good_ratio = None
 
-    constraints1 = constraints.update_with_valid_tickers(
+    constraints1 = constraints.update_with_valid_tickers(context=context, 
         valid_tickers=clean_covar.columns.to_list(),
         total_to_good_ratio=total_to_good_ratio,
         weights_0=weights_0
@@ -132,7 +135,8 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
         constraints=constraints1,
         carra=carra,
         solver=optimiser_config.solver,
-        verbose=optimiser_config.verbose
+        verbose=optimiser_config.verbose,
+        context=context
     )
     weights[np.isinf(weights)] = 0.0
     weights = pd.Series(weights, index=clean_covar.index)
@@ -146,7 +150,8 @@ def cvx_quadratic_optimisation(portfolio_objective: PortfolioObjective,
                                means: np.ndarray = None,
                                verbose: bool = False,
                                solver: str = 'CLARABEL',
-                               carra: float = 1.0
+                               carra: float = 1.0,
+                               context: str = ''
                                ) -> np.ndarray:
     """
     Solve quadratic portfolio optimisation via CVXPY.
@@ -195,13 +200,8 @@ def cvx_quadratic_optimisation(portfolio_objective: PortfolioObjective,
     problem = cvx.Problem(objective, constraints_)
     problem.solve(verbose=verbose, solver=solver)
 
-    optimal_weights = w.value
-    if optimal_weights is None:
-        warnings.warn(f"cvx_quadratic_optimisation: solver did not converge")
-        if constraints.weights_0 is not None:
-            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
-        else:
-            optimal_weights = np.zeros(n)
+    optimal_weights, _is_valid = validate_solution(
+        w.value, problem.status, constraints, n, solver=solver, context=context)
 
     return optimal_weights
 

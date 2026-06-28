@@ -8,6 +8,7 @@ All dataclass containers are immutable (frozen=True). Mutation methods return ne
 """
 from __future__ import annotations, division
 import warnings
+import logging
 import copy as _copy
 import pandas as pd
 import numpy as np
@@ -18,6 +19,26 @@ from cvxpy.atoms.affine.wraps import psd_wrap
 from cvxpy.atoms.affine.add_expr import AddExpression
 from cvxpy.constraints.nonpos import Inequality
 from enum import Enum
+
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class RelaxationRecord:
+    """Structured record of a frozen-overhang group-bound relaxation.
+
+    Attached to the log record under ``extra={"relaxation": ...}`` so a handler
+    can aggregate the per-rebalance relaxations into one run-level tally instead
+    of flooding the console. ``items`` is a tuple of (group, kind, old, new)
+    where ``kind`` is ``"group_max"`` or ``"group_min"``.
+    """
+    context: str
+    items: Tuple[Tuple[str, str, float, float], ...]
+    total_relaxation: float
+    max_relaxation: float
+    breached_budget: bool
+    breached_tol: bool
 
 
 class ConstraintEnforcementType(Enum):
@@ -794,7 +815,9 @@ class Constraints:
             asset_returns: pd.Series = None,
             benchmark_weights: pd.Series = None,
             target_return: float = None,
-            rebalancing_indicators: pd.Series = None
+            rebalancing_indicators: pd.Series = None,
+            context: str = '',
+            max_relaxation_tol: Optional[float] = None
     ) -> Constraints:
         """Update constraints with valid tickers and rebalancing logic.
 
@@ -818,142 +841,187 @@ class Constraints:
         valid_index = pd.Index(valid_tickers)
         self_dict = self._to_dict()
 
-        with pd.option_context('future.no_silent_downcasting', True):
-            # Update individual weight constraints — aligned to valid_tickers
-            if self.min_weights is not None:
-                self_dict['min_weights'] = self.min_weights.reindex(index=valid_index, fill_value=0.0)
-            if self.max_weights is not None:
-                max_w = self.max_weights.reindex(index=valid_index, fill_value=0.0)
-                if total_to_good_ratio is not None:
-                    max_w = max_w.where(np.isclose(max_w, 1.0), other=total_to_good_ratio * max_w)
-                self_dict['max_weights'] = max_w
+        # Update individual weight constraints — aligned to valid_tickers
+        if self.min_weights is not None:
+            self_dict['min_weights'] = self.min_weights.reindex(index=valid_index, fill_value=0.0)
+        if self.max_weights is not None:
+            max_w = self.max_weights.reindex(index=valid_index, fill_value=0.0)
+            if total_to_good_ratio is not None:
+                max_w = max_w.where(np.isclose(max_w, 1.0), other=total_to_good_ratio * max_w)
+            self_dict['max_weights'] = max_w
 
-            # Update group constraints
-            if self.group_lower_upper_constraints is not None:
+        # Update group constraints
+        if self.group_lower_upper_constraints is not None:
+            self_dict['group_lower_upper_constraints'] = \
+                self.group_lower_upper_constraints.update(valid_tickers=valid_tickers)
+        if self.group_tracking_error_constraint is not None:
+            self_dict['group_tracking_error_constraint'] = \
+                self.group_tracking_error_constraint.update(valid_tickers=valid_tickers)
+        if self.group_turnover_constraint is not None:
+            self_dict['group_turnover_constraint'] = \
+                self.group_turnover_constraint.update(valid_tickers=valid_tickers)
+
+        # Update turnover constraints with exposure scaling
+        if self.turnover_constraint is not None and total_to_good_ratio is not None:
+            self_dict['turnover_constraint'] = self.turnover_constraint * total_to_good_ratio
+        if self.turnover_costs is not None:
+            self_dict['turnover_costs'] = self.turnover_costs.reindex(index=valid_index, fill_value=1.0)
+
+        # Update portfolio universe — all aligned to valid_tickers
+        if weights_0 is not None:
+            self_dict['weights_0'] = weights_0.reindex(index=valid_index, fill_value=0.0)
+        elif self.weights_0 is not None:
+            self_dict['weights_0'] = self.weights_0.reindex(index=valid_index, fill_value=0.0)
+
+        if asset_returns is not None:
+            self_dict['asset_returns'] = asset_returns.reindex(index=valid_index, fill_value=0.0)
+        elif self.asset_returns is not None:
+            self_dict['asset_returns'] = self.asset_returns.reindex(index=valid_index, fill_value=0.0)
+
+        if benchmark_weights is not None:
+            self_dict['benchmark_weights'] = benchmark_weights.reindex(index=valid_index, fill_value=0.0)
+        elif self.benchmark_weights is not None:
+            self_dict['benchmark_weights'] = self.benchmark_weights.reindex(index=valid_index, fill_value=0.0)
+
+        if target_return is not None:
+            self_dict['target_return'] = target_return
+
+        # Apply rebalancing indicators to freeze certain positions
+        resolved_weights_0 = self_dict.get('weights_0')
+        if rebalancing_indicators is not None and resolved_weights_0 is not None:
+            rebal = rebalancing_indicators.reindex(index=valid_index, fill_value=1.0)
+            is_rebalanced = np.isclose(rebal, 1.0)
+            # Frozen (non-rebalanced) assets inherit weights_0 as both their
+            # lower and upper bound. For a long-only book that bound cannot be
+            # negative, but a drifted weights_0 can carry a tiny negative from a
+            # prior solve (cvx honours the >= 0 constraint only to ~1e-8), which
+            # would set min_weights < 0 here and trip the long-only validation in
+            # __post_init__. Floor the frozen bound at 0 for long-only so a lone
+            # asset frozen at a numerically-negative weight is pinned to 0.
+            frozen_weights_0 = (resolved_weights_0.clip(lower=0.0)
+                                if self.is_long_only else resolved_weights_0)
+            if self_dict['min_weights'] is not None:
+                self_dict['min_weights'] = self_dict['min_weights'].where(is_rebalanced, other=frozen_weights_0)
+            if self_dict['max_weights'] is not None:
+                self_dict['max_weights'] = self_dict['max_weights'].where(is_rebalanced, other=frozen_weights_0)
+
+        # Relax group bounds to accommodate the frozen-position overhang.
+        #
+        # The freeze step above pins min/max for non-rebalanced assets to
+        # ``weights_0``. When ``weights_0`` comes from a drift step (as in
+        # the rolling backtest after the use_drifted_weights_0 patch) or
+        # from a live portfolio-management system that is slightly out of
+        # compliance, the frozen positions can push a group's loading-
+        # weighted min above its group_max_allocation (or, symmetrically,
+        # push frozen max below group_min_allocation). The optimiser
+        # cannot trade frozen assets, so the only feasible resolution is
+        # to relax the group bound for this rebalance.
+        #
+        # We grant a one-period waiver: raise group_max_allocation to the
+        # frozen-min sum (or lower group_min_allocation to the frozen-max
+        # sum), with a small tolerance. A warning is emitted so the
+        # relaxation is visible in logs. The drift-induced overshoot is
+        # typically a few tens of basis points; for live-PMS-induced
+        # overshoots this is the equivalent of a compliance waiver.
+        gluc = self_dict.get('group_lower_upper_constraints')
+        min_w = self_dict.get('min_weights')
+        max_w = self_dict.get('max_weights')
+        if gluc is not None and (min_w is not None or max_w is not None):
+            loadings = gluc.group_loadings
+            gmin = gluc.group_min_allocation
+            gmax = gluc.group_max_allocation
+            new_gmin = _copy_optional_series(gmin)
+            new_gmax = _copy_optional_series(gmax)
+            tol = 1e-4
+            relax_msgs = []
+            relax_items = []
+            for group in loadings.columns:
+                group_loading = loadings[group]
+                members = group_loading.index[group_loading > 0]
+                if len(members) == 0:
+                    continue
+                member_loadings = group_loading.loc[members]
+                # cap overshoot from frozen min
+                if gmax is not None and min_w is not None:
+                    gmax_val = gmax.get(group, np.nan)
+                    if not np.isnan(gmax_val):
+                        group_min_sum = float(
+                            (min_w.reindex(members, fill_value=0.0)
+                             * member_loadings).sum())
+                        if group_min_sum > gmax_val + tol:
+                            new_gmax.loc[group] = group_min_sum + tol
+                            relax_msgs.append(
+                                f"  group '{group}': group_max_allocation "
+                                f"{gmax_val:.4f} → {group_min_sum + tol:.4f} "
+                                f"(frozen-min overshoot)")
+                            relax_items.append(
+                                (str(group), "group_max", float(gmax_val),
+                                 float(group_min_sum + tol)))
+                # floor undershoot from frozen max
+                if gmin is not None and max_w is not None:
+                    gmin_val = gmin.get(group, np.nan)
+                    if not np.isnan(gmin_val):
+                        group_max_sum = float(
+                            (max_w.reindex(members, fill_value=1.0)
+                             * member_loadings).sum())
+                        if group_max_sum < gmin_val - tol:
+                            new_gmin.loc[group] = group_max_sum - tol
+                            relax_msgs.append(
+                                f"  group '{group}': group_min_allocation "
+                                f"{gmin_val:.4f} → {group_max_sum - tol:.4f} "
+                                f"(frozen-max undershoot)")
+                            relax_items.append(
+                                (str(group), "group_min", float(gmin_val),
+                                 float(group_max_sum - tol)))
+            if relax_msgs:
+                _tag = f"[{context}] " if context else ""
+                _msg = (
+                    _tag + "Constraints.update_with_valid_tickers: relaxing group "
+                    "bounds for frozen-position overhang (drift or live "
+                    "PMS state):\n" + "\n".join(relax_msgs))
+                max_exposure = self_dict.get('max_exposure', 1.0)
+                deltas = [abs(new - old) for _, _, old, new in relax_items]
+                total_relaxation = float(sum(deltas))
+                max_relax = float(max(deltas)) if deltas else 0.0
+                breached_budget = bool(
+                    new_gmax is not None
+                    and len(new_gmax[new_gmax > max_exposure + tol]) > 0)
+                breached_tol = bool(
+                    max_relaxation_tol is not None and max_relax > max_relaxation_tol)
+                record = RelaxationRecord(
+                    context=context, items=tuple(relax_items),
+                    total_relaxation=total_relaxation, max_relaxation=max_relax,
+                    breached_budget=breached_budget, breached_tol=breached_tol)
+                if breached_tol:
+                    _msg += (f"\n  max single relaxation {max_relax:.4f} exceeds "
+                             f"tolerance {max_relaxation_tol:.4f}")
+                # Per-rebalance detail at INFO (file); escalate to ERROR when the
+                # relaxation magnitude breaches the tolerance or the budget. A
+                # run-level RelaxationSummary aggregates these into one line.
+                _level = logging.ERROR if (breached_tol or breached_budget) else logging.INFO
+                logger.log(_level, _msg, extra={"relaxation": record})
+                if breached_budget:
+                    breached = new_gmax[new_gmax > max_exposure + tol]
+                    logger.error(
+                        _tag + "Constraints.update_with_valid_tickers: frozen "
+                        "overhang relaxed group_max above max_exposure "
+                        "(%s) for %s; constraints are effectively "
+                        "infeasible \u2014 the solve output must be "
+                        "validated.", max_exposure, breached.to_dict())
                 self_dict['group_lower_upper_constraints'] = \
-                    self.group_lower_upper_constraints.update(valid_tickers=valid_tickers)
-            if self.group_tracking_error_constraint is not None:
-                self_dict['group_tracking_error_constraint'] = \
-                    self.group_tracking_error_constraint.update(valid_tickers=valid_tickers)
-            if self.group_turnover_constraint is not None:
-                self_dict['group_turnover_constraint'] = \
-                    self.group_turnover_constraint.update(valid_tickers=valid_tickers)
+                    GroupLowerUpperConstraints(
+                        group_loadings=loadings,
+                        group_min_allocation=new_gmin,
+                        group_max_allocation=new_gmax,
+                    )
 
-            # Update turnover constraints with exposure scaling
-            if self.turnover_constraint is not None and total_to_good_ratio is not None:
-                self_dict['turnover_constraint'] = self.turnover_constraint * total_to_good_ratio
-            if self.turnover_costs is not None:
-                self_dict['turnover_costs'] = self.turnover_costs.reindex(index=valid_index, fill_value=1.0)
-
-            # Update portfolio universe — all aligned to valid_tickers
-            if weights_0 is not None:
-                self_dict['weights_0'] = weights_0.reindex(index=valid_index, fill_value=0.0)
-            elif self.weights_0 is not None:
-                self_dict['weights_0'] = self.weights_0.reindex(index=valid_index, fill_value=0.0)
-
-            if asset_returns is not None:
-                self_dict['asset_returns'] = asset_returns.reindex(index=valid_index, fill_value=0.0)
-            elif self.asset_returns is not None:
-                self_dict['asset_returns'] = self.asset_returns.reindex(index=valid_index, fill_value=0.0)
-
-            if benchmark_weights is not None:
-                self_dict['benchmark_weights'] = benchmark_weights.reindex(index=valid_index, fill_value=0.0)
-            elif self.benchmark_weights is not None:
-                self_dict['benchmark_weights'] = self.benchmark_weights.reindex(index=valid_index, fill_value=0.0)
-
-            if target_return is not None:
-                self_dict['target_return'] = target_return
-
-            # Apply rebalancing indicators to freeze certain positions
-            resolved_weights_0 = self_dict.get('weights_0')
-            if rebalancing_indicators is not None and resolved_weights_0 is not None:
-                rebal = rebalancing_indicators.reindex(index=valid_index, fill_value=1.0)
-                is_rebalanced = np.isclose(rebal, 1.0)
-                if self_dict['min_weights'] is not None:
-                    self_dict['min_weights'] = self_dict['min_weights'].where(is_rebalanced, other=resolved_weights_0)
-                if self_dict['max_weights'] is not None:
-                    self_dict['max_weights'] = self_dict['max_weights'].where(is_rebalanced, other=resolved_weights_0)
-
-            # Relax group bounds to accommodate the frozen-position overhang.
-            #
-            # The freeze step above pins min/max for non-rebalanced assets to
-            # ``weights_0``. When ``weights_0`` comes from a drift step (as in
-            # the rolling backtest after the use_drifted_weights_0 patch) or
-            # from a live portfolio-management system that is slightly out of
-            # compliance, the frozen positions can push a group's loading-
-            # weighted min above its group_max_allocation (or, symmetrically,
-            # push frozen max below group_min_allocation). The optimiser
-            # cannot trade frozen assets, so the only feasible resolution is
-            # to relax the group bound for this rebalance.
-            #
-            # We grant a one-period waiver: raise group_max_allocation to the
-            # frozen-min sum (or lower group_min_allocation to the frozen-max
-            # sum), with a small tolerance. A warning is emitted so the
-            # relaxation is visible in logs. The drift-induced overshoot is
-            # typically a few tens of basis points; for live-PMS-induced
-            # overshoots this is the equivalent of a compliance waiver.
-            gluc = self_dict.get('group_lower_upper_constraints')
-            min_w = self_dict.get('min_weights')
-            max_w = self_dict.get('max_weights')
-            if gluc is not None and (min_w is not None or max_w is not None):
-                loadings = gluc.group_loadings
-                gmin = gluc.group_min_allocation
-                gmax = gluc.group_max_allocation
-                new_gmin = _copy_optional_series(gmin)
-                new_gmax = _copy_optional_series(gmax)
-                tol = 1e-4
-                relax_msgs = []
-                for group in loadings.columns:
-                    group_loading = loadings[group]
-                    members = group_loading.index[group_loading > 0]
-                    if len(members) == 0:
-                        continue
-                    member_loadings = group_loading.loc[members]
-                    # cap overshoot from frozen min
-                    if gmax is not None and min_w is not None:
-                        gmax_val = gmax.get(group, np.nan)
-                        if not np.isnan(gmax_val):
-                            group_min_sum = float(
-                                (min_w.reindex(members, fill_value=0.0)
-                                 * member_loadings).sum())
-                            if group_min_sum > gmax_val + tol:
-                                new_gmax.loc[group] = group_min_sum + tol
-                                relax_msgs.append(
-                                    f"  group '{group}': group_max_allocation "
-                                    f"{gmax_val:.4f} → {group_min_sum + tol:.4f} "
-                                    f"(frozen-min overshoot)")
-                    # floor undershoot from frozen max
-                    if gmin is not None and max_w is not None:
-                        gmin_val = gmin.get(group, np.nan)
-                        if not np.isnan(gmin_val):
-                            group_max_sum = float(
-                                (max_w.reindex(members, fill_value=1.0)
-                                 * member_loadings).sum())
-                            if group_max_sum < gmin_val - tol:
-                                new_gmin.loc[group] = group_max_sum - tol
-                                relax_msgs.append(
-                                    f"  group '{group}': group_min_allocation "
-                                    f"{gmin_val:.4f} → {group_max_sum - tol:.4f} "
-                                    f"(frozen-max undershoot)")
-                if relax_msgs:
-                    warnings.warn(
-                        "Constraints.update_with_valid_tickers: relaxing group "
-                        "bounds for frozen-position overhang (drift or live "
-                        "PMS state):\n" + "\n".join(relax_msgs))
-                    self_dict['group_lower_upper_constraints'] = \
-                        GroupLowerUpperConstraints(
-                            group_loadings=loadings,
-                            group_min_allocation=new_gmin,
-                            group_max_allocation=new_gmax,
-                        )
-
-            # Update sector and style deviation constraints
-            if self.sector_deviation_constraints is not None:
-                self_dict["sector_deviation_constraints"] = \
-                    self.sector_deviation_constraints.update(valid_tickers=valid_tickers)
-            if self.style_deviation_constraints is not None:
-                self_dict["style_deviation_constraints"] = \
-                    self.style_deviation_constraints.update(valid_tickers=valid_tickers)
+        # Update sector and style deviation constraints
+        if self.sector_deviation_constraints is not None:
+            self_dict["sector_deviation_constraints"] = \
+                self.sector_deviation_constraints.update(valid_tickers=valid_tickers)
+        if self.style_deviation_constraints is not None:
+            self_dict["style_deviation_constraints"] = \
+                self.style_deviation_constraints.update(valid_tickers=valid_tickers)
 
         return Constraints(**self_dict)
 

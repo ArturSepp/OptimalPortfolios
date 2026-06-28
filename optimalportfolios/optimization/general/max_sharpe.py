@@ -40,6 +40,7 @@ from typing import Dict
 
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.optimization.solver_diagnostics import validate_solution
 from optimalportfolios.optimization.config import OptimiserConfig
 from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
 
@@ -81,7 +82,8 @@ def rolling_maximize_portfolio_sharpe(prices: pd.DataFrame,
                                                      means=expected_returns.loc[date, :],
                                                      constraints=constraints,
                                                      weights_0=weights_0,
-                                                     optimiser_config=optimiser_config)
+                                                     optimiser_config=optimiser_config,
+                                                     context=str(pd.Timestamp(date).date()))
         weights_0 = weights_
         prev_date = date
         weights[date] = weights_
@@ -95,7 +97,8 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
                                       means: pd.Series,
                                       constraints: Constraints,
                                       weights_0: pd.Series = None,
-                                      optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
+                                      optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True),
+                                      context: str = ''
                                       ) -> pd.Series:
     """
     Single-date maximum Sharpe with NaN/zero-variance filtering.
@@ -118,7 +121,7 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
     else:
         total_to_good_ratio = None
 
-    constraints1 = constraints.update_with_valid_tickers(valid_tickers=clean_covar.columns.to_list(),
+    constraints1 = constraints.update_with_valid_tickers(context=context, valid_tickers=clean_covar.columns.to_list(),
                                                          total_to_good_ratio=total_to_good_ratio,
                                                          weights_0=weights_0)
 
@@ -126,7 +129,8 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
                                             means=good_vectors['means'].to_numpy(),
                                             constraints=constraints1,
                                             solver=optimiser_config.solver,
-                                            verbose=optimiser_config.verbose)
+                                            verbose=optimiser_config.verbose,
+                                            context=context)
     weights[np.isinf(weights)] = 0.0
     weights = pd.Series(weights, index=clean_covar.index)
     weights = weights.reindex(index=pd_covar.index).fillna(0.0)
@@ -137,7 +141,8 @@ def cvx_maximize_portfolio_sharpe(covar: np.ndarray,
                                   means: np.ndarray,
                                   constraints: Constraints,
                                   verbose: bool = False,
-                                  solver: str = 'CLARABEL'
+                                  solver: str = 'CLARABEL',
+                                  context: str = ''
                                   ) -> np.ndarray:
     """
     Maximise the Sharpe ratio via the Charnes-Cooper transformation.
@@ -168,18 +173,21 @@ def cvx_maximize_portfolio_sharpe(covar: np.ndarray,
     if constraints.max_exposure != constraints.min_exposure:
         # long-short: Charnes-Cooper requires equality sum constraint
         return _scipy_maximize_sharpe(covar=covar, means=means,
-                                      constraints=constraints, verbose=verbose)
+                                      constraints=constraints, verbose=verbose,
+                                      context=context)
     else:
         return _cvx_maximize_sharpe_charnes_cooper(covar=covar, means=means,
                                                     constraints=constraints,
-                                                    verbose=verbose, solver=solver)
+                                                    verbose=verbose, solver=solver,
+                                                    context=context)
 
 
 def _cvx_maximize_sharpe_charnes_cooper(covar: np.ndarray,
                                          means: np.ndarray,
                                          constraints: Constraints,
                                          verbose: bool = False,
-                                         solver: str = 'CLARABEL'
+                                         solver: str = 'CLARABEL',
+                                         context: str = ''
                                          ) -> np.ndarray:
     """Charnes-Cooper SOCP for fixed-sum (long-only) case."""
     n = covar.shape[0]
@@ -199,12 +207,8 @@ def _cvx_maximize_sharpe_charnes_cooper(covar: np.ndarray,
     optimal_weights = z.value
     if optimal_weights is not None:
         optimal_weights = optimal_weights[:n] / optimal_weights[n]
-    else:
-        warnings.warn(f"cvx_maximize_portfolio_sharpe: solver did not converge")
-        if constraints.weights_0 is not None:
-            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
-        else:
-            optimal_weights = np.zeros(n)
+    optimal_weights, _is_valid = validate_solution(
+        optimal_weights, problem.status, constraints, n, solver=solver, context=context)
 
     return optimal_weights
 
@@ -212,7 +216,8 @@ def _cvx_maximize_sharpe_charnes_cooper(covar: np.ndarray,
 def _scipy_maximize_sharpe(covar: np.ndarray,
                             means: np.ndarray,
                             constraints: Constraints,
-                            verbose: bool = False
+                            verbose: bool = False,
+                            context: str = ''
                             ) -> np.ndarray:
     """Direct Sharpe ratio maximisation via scipy SLSQP for long-short."""
     from scipy.optimize import minimize
@@ -234,12 +239,8 @@ def _scipy_maximize_sharpe(covar: np.ndarray,
                    options={'disp': verbose, 'ftol': 1e-10, 'maxiter': 500})
 
     optimal_weights = res.x
-
-    if not res.success or optimal_weights is None:
-        warnings.warn(f"_scipy_maximize_sharpe: solver did not converge: {res.message}")
-        if constraints.weights_0 is not None:
-            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
-        else:
-            optimal_weights = np.zeros(n)
+    status = 'optimal' if res.success else 'solver_error'
+    optimal_weights, _is_valid = validate_solution(
+        optimal_weights, status, constraints, n, solver='SLSQP', context=context)
 
     return optimal_weights

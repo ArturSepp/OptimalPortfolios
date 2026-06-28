@@ -34,6 +34,7 @@ from typing import Dict, Optional, Union
 
 from optimalportfolios import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.optimization.solver_diagnostics import validate_solution
 from optimalportfolios.optimization.config import OptimiserConfig
 from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
 
@@ -128,7 +129,8 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
             benchmark_weights=benchmark_weights_t,
             soft_tracking_error=soft_tracking_error,
             weights_0=weights_0,
-            optimiser_config=optimiser_config
+            optimiser_config=optimiser_config,
+            context=str(pd.Timestamp(date).date())
         )
 
         if np.all(np.equal(weights_, 0.0)):
@@ -153,7 +155,8 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
                                               benchmark_weights: Optional[pd.Series] = None,
                                               soft_tracking_error: bool = False,
                                               weights_0: pd.Series = None,
-                                              optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
+                                              optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True),
+                                              context: str = ''
                                               ) -> pd.Series:
     """
     Single-date alpha maximisation with NaN/zero-variance filtering.
@@ -197,7 +200,7 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
         warnings.warn(f"NaN yields for {nan_yields}, setting to 0 in return constraint")
         yields_clean = yields_clean.fillna(0.0)
 
-    constraints1 = constraints.update_with_valid_tickers(
+    constraints1 = constraints.update_with_valid_tickers(context=context, 
         valid_tickers=valid_tickers,
         total_to_good_ratio=total_to_good_ratio,
         weights_0=weights_0,
@@ -212,7 +215,8 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
         constraints=constraints1,
         soft_tracking_error=soft_tracking_error,
         solver=optimiser_config.solver,
-        verbose=optimiser_config.verbose
+        verbose=optimiser_config.verbose,
+        context=context
     )
 
     weights[np.isinf(weights)] = 0.0
@@ -227,7 +231,8 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
                                           constraints: Constraints,
                                           soft_tracking_error: bool = False,
                                           verbose: bool = False,
-                                          solver: str = 'CLARABEL'
+                                          solver: str = 'CLARABEL',
+                                          context: str = ''
                                           ) -> np.ndarray:
     """
     Solve alpha-maximising portfolio allocation via CVXPY.
@@ -316,12 +321,7 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
     problem = cvx.Problem(objective, constraints_)
     problem.solve(verbose=verbose, solver=solver)
 
-    optimal_weights = w.value
-    if optimal_weights is None:
-        warnings.warn(f"cvx_maximise_alpha_with_target_return: solver did not converge")
-        if constraints.weights_0 is not None:
-            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
-        else:
-            optimal_weights = np.zeros(n)
+    optimal_weights, _is_valid = validate_solution(
+        w.value, problem.status, constraints, n, solver=solver, context=context)
 
     return optimal_weights

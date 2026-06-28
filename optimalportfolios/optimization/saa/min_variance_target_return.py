@@ -40,6 +40,7 @@ import cvxpy as cvx
 from typing import Union, Dict
 
 from optimalportfolios.optimization.constraints import Constraints, ConstraintEnforcementType
+from optimalportfolios.optimization.solver_diagnostics import validate_solution
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.config import OptimiserConfig
 from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
@@ -111,7 +112,8 @@ def rolling_min_variance_target_return(prices: pd.DataFrame,
             constraints=constraints,
             weights_0=weights_0,
             rebalancing_indicators=ri_t,
-            optimiser_config=optimiser_config)
+            optimiser_config=optimiser_config,
+            context=str(pd.Timestamp(date).date()))
 
         if np.all(np.equal(weights_, 0.0)):
             weights_0 = None
@@ -133,7 +135,8 @@ def wrapper_min_variance_target_return(pd_covar: pd.DataFrame,
                                        benchmark_weights: pd.Series = None,
                                        weights_0: pd.Series = None,
                                        rebalancing_indicators: pd.Series = None,
-                                       optimiser_config: OptimiserConfig = OptimiserConfig()
+                                       optimiser_config: OptimiserConfig = OptimiserConfig(),
+                                       context: str = ''
                                        ) -> pd.Series:
     """
     Single-date minimum-variance optimisation with return floor.
@@ -176,7 +179,7 @@ def wrapper_min_variance_target_return(pd_covar: pd.DataFrame,
         warnings.warn(f"NaN expected returns for {nan_er}, setting to 0 in return constraint")
         er_clean = er_clean.fillna(0.0)
 
-    constraints1 = constraints.update_with_valid_tickers(
+    constraints1 = constraints.update_with_valid_tickers(context=context, 
         valid_tickers=valid_tickers,
         total_to_good_ratio=total_to_good_ratio,
         weights_0=weights_0,
@@ -191,14 +194,16 @@ def wrapper_min_variance_target_return(pd_covar: pd.DataFrame,
             constraints=constraints1,
             has_benchmark=benchmark_weights is not None,
             solver=optimiser_config.solver,
-            verbose=optimiser_config.verbose)
+            verbose=optimiser_config.verbose,
+            context=context)
     else:
         weights = cvx_min_variance_target_return(
             covar=clean_covar.to_numpy(),
             constraints=constraints1,
             has_benchmark=benchmark_weights is not None,
             solver=optimiser_config.solver,
-            verbose=optimiser_config.verbose)
+            verbose=optimiser_config.verbose,
+            context=context)
 
     weights[np.isinf(weights)] = 0.0
     weights = pd.Series(weights, index=valid_tickers)
@@ -210,7 +215,8 @@ def cvx_min_variance_target_return(covar: np.ndarray,
                                     constraints: Constraints,
                                     has_benchmark: bool = False,
                                     solver: str = 'CLARABEL',
-                                    verbose: bool = False
+                                    verbose: bool = False,
+                                    context: str = ''
                                     ) -> np.ndarray:
     """
     Minimise portfolio variance subject to a hard return floor.
@@ -250,13 +256,8 @@ def cvx_min_variance_target_return(covar: np.ndarray,
     problem = cvx.Problem(objective, constraints_)
     problem.solve(verbose=verbose, solver=solver)
 
-    optimal_weights = w.value
-    if optimal_weights is None:
-        warnings.warn(f"cvx_min_variance_target_return: solver did not converge")
-        if constraints.weights_0 is not None:
-            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
-        else:
-            optimal_weights = np.zeros(n)
+    optimal_weights, _is_valid = validate_solution(
+        w.value, problem.status, constraints, n, solver=solver, context=context)
 
     return optimal_weights
 
@@ -265,7 +266,8 @@ def cvx_min_variance_target_return_utility(covar: np.ndarray,
                                             constraints: Constraints,
                                             has_benchmark: bool = False,
                                             solver: str = 'CLARABEL',
-                                            verbose: bool = False
+                                            verbose: bool = False,
+                                            context: str = ''
                                             ) -> np.ndarray:
     """
     Minimise portfolio variance with turnover penalty and hard return floor.
@@ -325,12 +327,7 @@ def cvx_min_variance_target_return_utility(covar: np.ndarray,
     problem = cvx.Problem(objective, constraints_)
     problem.solve(verbose=verbose, solver=solver)
 
-    optimal_weights = w.value
-    if optimal_weights is None:
-        warnings.warn(f"cvx_min_variance_target_return_utility: solver did not converge")
-        if constraints.weights_0 is not None:
-            optimal_weights = np.array(constraints.weights_0.to_numpy(), dtype=float)
-        else:
-            optimal_weights = np.zeros(n)
+    optimal_weights, _is_valid = validate_solution(
+        w.value, problem.status, constraints, n, solver=solver, context=context)
 
     return optimal_weights
