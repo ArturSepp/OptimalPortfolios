@@ -19,10 +19,10 @@ class LocalTests(Enum):
 
 
 def run_local_test(local_test: LocalTests):
-    """Run local tests for development and debugging purposes.
+    """Run local tests for product_development and debugging purposes.
 
     These are integration tests that download real universe and generate reports.
-    Use for quick verification during development.
+    Use for quick verification during product_development.
     """
 
     if local_test == LocalTests.FIT1:
@@ -67,7 +67,7 @@ def run_local_test(local_test: LocalTests):
         plot_mixure2(x)
 
     elif local_test == LocalTests.ROLLING_FIT:
-        from optimalportfolios.test_data import load_test_data
+        from optimalportfolios.examples.data.test_data import load_test_data
         prices = load_test_data()
         prices = prices.loc['2000':, :]  # have at least 3 assets
         prices = prices['SPY'].dropna()

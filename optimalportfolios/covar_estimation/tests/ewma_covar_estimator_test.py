@@ -20,13 +20,13 @@ class LocalTests(Enum):
 
 
 def run_local_test(local_test: LocalTests):
-    """Run local tests for development and debugging purposes."""
+    """Run local tests for product_development and debugging purposes."""
 
     pd.set_option('display.max_rows', 500)
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
 
-    from optimalportfolios.test_data import load_test_data
+    from optimalportfolios.examples.data.test_data import load_test_data
     prices = load_test_data()
     prices = prices.loc['2000':, :]
     tickers = prices.columns.to_list()

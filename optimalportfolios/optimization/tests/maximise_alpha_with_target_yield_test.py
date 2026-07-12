@@ -16,7 +16,7 @@ class LocalTests(Enum):
 
 
 def run_local_test(local_test: LocalTests):
-    """Run local tests for development and debugging purposes."""
+    """Run local tests for product_development and debugging purposes."""
 
     tickers = ['Equity', 'Bonds', 'Gold', 'HighYield']
     vols = np.array([0.20, 0.05, 0.15, 0.10])

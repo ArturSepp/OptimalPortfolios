@@ -152,3 +152,4 @@ paper_code/matf_cma_jpm_2026/data/futures_risk_factors.csv
 *.xlsx
 
 paper_code/achievable_sharpe_faj_2026/
+/paper_code/convexity_premium/

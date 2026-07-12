@@ -257,3 +257,115 @@ def compare_signal_diagnostics(
     else:
         out.index.name = 'signal'
     return out
+def compare_signal_ic_ir(
+        results: Dict[str, qis.SignalDiagnosticsResult],
+        horizon: Optional[str] = None,
+        method: str = 'spearman',
+        return_col: str = 'r_norm_univ',
+        periods_per_year: Optional[float] = None,
+) -> pd.DataFrame:
+    """Aggregate IC-IR rows from multiple signals into one table.
+
+    The IC-IR sibling of ``compare_signal_diagnostics``: calls
+    ``qis.estimate_ic_ir`` on each result and stacks the per-horizon rows
+    in the same (signal[, horizon]) index shape, so the time-series IC-IR
+    table sits next to the pooled-regression table on the signal-
+    diagnostics page. The numerics live in ``qis.estimate_ic_ir``; this
+    only does the multi-signal assembly.
+
+    Args:
+        results: ``{signal_name: SignalDiagnosticsResult}`` (e.g. from
+            ``run_signal_diagnostics_per_component``).
+        horizon: Restrict to this single horizon label. When None, the
+            output keeps the (signal, horizon) MultiIndex.
+        method: 'spearman' (rank IC, default) or 'pearson' for the
+            per-date IC.
+        return_col: 'r_norm_univ' (universe cross-section, default) or
+            'r_norm_group' (within-group — requires ``group_data`` to have
+            been passed to the diagnostic).
+        periods_per_year: Annualisation factor forwarded to
+            ``qis.estimate_ic_ir`` (inferred from IC-date spacing when
+            None).
+
+    Returns:
+        DataFrame indexed by signal (and horizon if not restricted), with
+        the IC-IR columns from ``qis.estimate_ic_ir``.
+    """
+    if not results:
+        return pd.DataFrame()
+
+    rows = []
+    for name, res in results.items():
+        ic_ir = qis.estimate_ic_ir(
+            res, method=method, return_col=return_col,
+            periods_per_year=periods_per_year,
+        )
+        if horizon is not None:
+            if horizon not in ic_ir.index:
+                logger.warning(
+                    "Signal '%s' has no horizon %r; skipping", name, horizon,
+                )
+                continue
+            row = ic_ir.loc[horizon].copy()
+            row.name = name
+            rows.append(row)
+        else:
+            for h in ic_ir.index:
+                row = ic_ir.loc[h].copy()
+                row.name = (name, h)
+                rows.append(row)
+
+    if not rows:
+        return pd.DataFrame()
+
+    out = pd.DataFrame(rows)
+    if horizon is None:
+        out.index = pd.MultiIndex.from_tuples(
+            out.index.tolist(), names=['signal', 'horizon'],
+        )
+    else:
+        out.index.name = 'signal'
+    return out
+
+
+def build_signal_diagnostics_table(
+        results: Dict[str, qis.SignalDiagnosticsResult],
+        horizon: Optional[str] = None,
+        method: str = 'spearman',
+        return_col: str = 'r_norm_univ',
+        periods_per_year: Optional[float] = None,
+) -> pd.DataFrame:
+    """One wide table for the signal-diagnostics report page.
+
+    Joins the pooled-regression stats (``n, beta, se, t_stat, IC_pearson,
+    IC_spearman`` from ``compare_signal_diagnostics``) with the IC-IR stats
+    (``n_dates, mean_IC, std_IC, IC_IR, IC_IR_an, hit_rate`` and the IC-IR
+    significance, renamed ``IC_t_stat`` to avoid colliding with the
+    regression ``t_stat``). Rows are (signal[, horizon]).
+
+    This is the table the separate report page renders — the pooled β/IC
+    on the left, the time-series IC-IR on the right.
+
+    Args:
+        results: ``{signal_name: SignalDiagnosticsResult}``.
+        horizon: Restrict to this single horizon label. When None, the
+            output keeps the (signal, horizon) MultiIndex.
+        method: 'spearman' (default) or 'pearson' for the per-date IC.
+        return_col: 'r_norm_univ' (default) or 'r_norm_group'.
+        periods_per_year: Forwarded to ``qis.estimate_ic_ir``.
+
+    Returns:
+        DataFrame indexed by signal (and horizon if not restricted) with
+        the pooled-regression and IC-IR columns side by side.
+    """
+    pooled = compare_signal_diagnostics(results, horizon=horizon)
+    ic_ir = compare_signal_ic_ir(
+        results, horizon=horizon, method=method,
+        return_col=return_col, periods_per_year=periods_per_year,
+    )
+    if pooled.empty:
+        return ic_ir
+    if ic_ir.empty:
+        return pooled
+    ic_ir = ic_ir.rename(columns={'t_stat': 'IC_t_stat'})
+    return pooled.join(ic_ir, how='left')

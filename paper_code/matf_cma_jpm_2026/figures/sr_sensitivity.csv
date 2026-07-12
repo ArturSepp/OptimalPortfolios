@@ -1,7 +1,0 @@
-sigma_SR,reduction_ratio_v6.2pct,T_eff_equivalent,regime
-0.050,3.69,13.6,Aggressive prior
-0.075,2.69,7.2,Moderate-aggressive
-0.100,2.07,4.3,Paper baseline
-0.125,1.69,2.9,Moderate-loose
-0.150,1.44,2.1,Loose
-0.200,1.10,1.2,Prior equals data noise scale

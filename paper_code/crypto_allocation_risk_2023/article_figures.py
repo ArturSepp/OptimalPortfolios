@@ -258,10 +258,10 @@ class LocalTests(Enum):
 
 
 def run_local_test(local_test: LocalTests):
-    """Run local tests for development and debugging purposes.
+    """Run local tests for product_development and debugging purposes.
 
     These are integration tests that download real universe and generate reports.
-    Use for quick verification during development.
+    Use for quick verification during product_development.
     """
     FIGURE_SAVE_PATH = "C://Users//artur//OneDrive//My Papers//Published Papers//CryptoAllocation. Zurich. Jan 2022//UpdatedFigures//"
     SAVE_FIGS = True

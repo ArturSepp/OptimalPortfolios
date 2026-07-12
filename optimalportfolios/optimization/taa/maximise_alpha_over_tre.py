@@ -51,7 +51,8 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
                                     benchmark_weights: Union[pd.Series, pd.DataFrame],
                                     covar_dict: Dict[pd.Timestamp, pd.DataFrame],
                                     rebalancing_indicators: pd.DataFrame = None,
-                                    optimiser_config: OptimiserConfig = OptimiserConfig()
+                                    optimiser_config: OptimiserConfig = OptimiserConfig(),
+                                    benchmark_beta_loadings: Optional[pd.DataFrame] = None
                                     ) -> pd.DataFrame:
     """
     Compute rolling alpha-maximising portfolios with tracking error control.
@@ -64,6 +65,10 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
         covar_dict: Pre-computed covariance matrices keyed by rebalancing date.
         rebalancing_indicators: Optional binary DataFrame for position freezing.
         optimiser_config: Solver configuration.
+        benchmark_beta_loadings: Per-date beta loadings (T x N) for the
+            ``constraints.benchmark_beta_constraint`` — beta(w) = loadings @ w
+            at each date. Required when that constraint is set; aligned to
+            ``covar_dict`` dates with as-of lookback.
 
     Returns:
         DataFrame of portfolio weights.
@@ -82,6 +87,15 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
     if rebalancing_indicators is not None:
         rebalancing_indicators = rebalancing_indicators.reindex(index=rebalancing_dates).fillna(0.0)
 
+    # benchmark-beta loadings ride the same per-date injection path as
+    # weights_0: the constraint spec is static, the loadings roll with covar.
+    if constraints.benchmark_beta_constraint is not None:
+        if benchmark_beta_loadings is None:
+            raise ValueError('benchmark_beta_loadings must be given when '
+                             'constraints.benchmark_beta_constraint is set')
+        benchmark_beta_loadings = benchmark_beta_loadings.reindex(
+            index=rebalancing_dates, method='ffill')
+
     weights = {}
     weights_0 = None
     prev_date = None
@@ -97,11 +111,17 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
             prev_date=prev_date, date=date,
             use_drifted_weights_0=optimiser_config.use_drifted_weights_0,
         )
+        if constraints.benchmark_beta_constraint is not None:
+            constraints_t = constraints.copy(
+                benchmark_beta_constraint=constraints.benchmark_beta_constraint
+                .with_loadings(benchmark_beta_loadings.loc[date, :].dropna()))
+        else:
+            constraints_t = constraints
         weights_ = wrapper_maximise_alpha_over_tre(
             pd_covar=pd_covar,
             alphas=alphas_t,
             benchmark_weights=benchmark_weights.loc[date, :],
-            constraints=constraints,
+            constraints=constraints_t,
             rebalancing_indicators=rebalancing_indicators_t,
             weights_0=weights_0,
             optimiser_config=optimiser_config,

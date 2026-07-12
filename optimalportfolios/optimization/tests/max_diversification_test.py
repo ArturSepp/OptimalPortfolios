@@ -22,7 +22,7 @@ class LocalTests(Enum):
 
 
 def run_local_test(local_test: LocalTests):
-    """Run local tests for development and debugging purposes."""
+    """Run local tests for product_development and debugging purposes."""
 
     if local_test == LocalTests.MAX_DIVERSIFICATION_SIMPLE:
         # two-asset case: negative correlation should yield high DR
@@ -82,7 +82,7 @@ def run_local_test(local_test: LocalTests):
 
     elif local_test == LocalTests.MAX_DIVERSIFICATION_ROLLING:
         import qis as qis
-        from optimalportfolios.test_data import load_test_data
+        from optimalportfolios.examples.data.test_data import load_test_data
         prices = load_test_data()
         prices = prices.loc['2000':, :]
 

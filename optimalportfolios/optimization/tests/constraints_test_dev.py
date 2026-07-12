@@ -1,6 +1,6 @@
-"""Interactive development tests for the Constraints module.
+"""Interactive product_development tests for the Constraints module.
 
-Enum-driven test runner for hands-on development and debugging.
+Enum-driven test runner for hands-on product_development and debugging.
 Each test prints detailed output so you can see exactly what the
 constraint objects look like and how the solver responds.
 

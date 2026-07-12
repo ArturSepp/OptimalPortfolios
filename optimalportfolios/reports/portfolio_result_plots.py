@@ -15,7 +15,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import qis as qis
-
+from qis.plots.utils import get_n_sns_colors
 from optimalportfolios.optimization.portfolio_result import PortfolioOptimisationResult
 
 
@@ -68,7 +68,7 @@ def plot_efficient_frontier(
 
     # Colors: one per unique curve (profile × portfolio/benchmark)
     unique_curves = dfs['hue'].unique()
-    colors = qis.get_n_sns_colors(n=len(unique_curves))
+    colors = get_n_sns_colors(n=len(unique_curves))
     mandate_color_map = dict(zip(unique_curves, colors))
     annotation_colors = dfs['hue'].map(mandate_color_map).to_list()
 

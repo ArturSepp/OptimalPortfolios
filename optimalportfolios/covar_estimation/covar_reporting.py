@@ -15,6 +15,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.cluster.hierarchy as spc
 import qis as qis
+from qis.plots.utils import get_table_lines_for_group_data, set_title, set_suptitle
 from matplotlib.colors import ListedColormap
 from typing import List, Dict, Tuple, Optional, Union
 
@@ -83,7 +84,7 @@ def plot_hcgl_covar_data(x_covar: pd.DataFrame,
 
     # Plot factor correlations
     fig, ax = plt.subplots(1, 1, figsize=figsize, tight_layout=True)
-    qis.set_suptitle(fig, title=f"{date.strftime('%d%b%Y')}: Factor correlations / vols")
+    set_suptitle(fig, title=f"{date.strftime('%d%b%Y')}: Factor correlations / vols")
     figs.append(fig)
     qis.plot_corr_matrix_from_covar(covar=x_covar,
                                     corr_format='{:.2f}',
@@ -92,7 +93,7 @@ def plot_hcgl_covar_data(x_covar: pd.DataFrame,
 
     # Plot asset correlations
     fig, ax = plt.subplots(1, 1, figsize=figsize, tight_layout=True)
-    qis.set_suptitle(fig, title=f"{date.strftime('%d%b%Y')}: Asset correlations / vols")
+    set_suptitle(fig, title=f"{date.strftime('%d%b%Y')}: Asset correlations / vols")
     figs.append(fig)
     qis.plot_corr_matrix_from_covar(covar=y_covar,
                                     corr_format='{:.1f}',
@@ -100,17 +101,17 @@ def plot_hcgl_covar_data(x_covar: pd.DataFrame,
                                     **kwargs)
 
     # Add clusters figure
-    qis.set_suptitle(fig_clusters, title=f"{date.strftime('%d%b%Y')}: Clusters")
+    set_suptitle(fig_clusters, title=f"{date.strftime('%d%b%Y')}: Clusters")
     figs.append(fig_clusters)
 
     # Plot betas and R²
     fig = plt.figure(figsize=figsize, constrained_layout=True)
     gs = fig.add_gridspec(nrows=1, ncols=4, wspace=0.0, hspace=0.0)
     axs = [fig.add_subplot(gs[0, :3]), fig.add_subplot(gs[0, 3:])]
-    qis.set_suptitle(fig, title=f"{date.strftime('%d%b%Y')}: Universe betas")
+    set_suptitle(fig, title=f"{date.strftime('%d%b%Y')}: Universe betas")
     figs.append(fig)
 
-    hline_rows = qis.get_table_lines_for_group_data(agg_clusters)
+    hline_rows = get_table_lines_for_group_data(agg_clusters)
     if is_align_to_clusters_index:
         betas = betas.loc[agg_clusters.index, :]
         df = df.loc[agg_clusters.index, :]
@@ -152,7 +153,7 @@ def plot_clusters(clusters: Dict[str, pd.Series],
         spc.dendrogram(linkage, labels=clusters[freq].index.to_list(), orientation="right",
                        color_threshold=cutoffs[freq],
                        ax=ax)
-        qis.set_title(ax, title=titles[idx])
+        set_title(ax, title=titles[idx])
         ax.axvline(cutoffs[freq], color='k')
         ax.tick_params(axis='x', labelbottom=False)
         ax.tick_params(axis='y', which='major', labelsize=10)
@@ -169,7 +170,7 @@ def plot_clusters(clusters: Dict[str, pd.Series],
                       index_column_name='Instrument',
                       fontsize=10,
                       title='(C) Cluster IDs',
-                      rows_edge_lines=qis.get_table_lines_for_group_data(agg_clusters),
+                      rows_edge_lines=get_table_lines_for_group_data(agg_clusters),
                       ax=ax)
 
     return agg_clusters, fig

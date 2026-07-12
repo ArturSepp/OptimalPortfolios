@@ -546,6 +546,157 @@ class BenchmarkDeviationConstraints:
         print(f"factor_max_deviation:\n{self.factor_max_deviation}")
 
 
+def compute_benchmark_beta_loadings(asset_betas: pd.DataFrame,
+                                    benchmark_betas: pd.Series,
+                                    factor_covar: pd.DataFrame,
+                                    benchmark_idio_var: float = 0.0,
+                                    ) -> pd.Series:
+    """Per-asset loadings of portfolio beta to a benchmark under a factor model.
+
+    With joint factor covariance F, asset loadings B_a (assets x factors),
+    benchmark loadings b (factors,) and benchmark idiosyncratic variance
+    d_idio, the ex-ante beta of portfolio w to the benchmark is linear:
+
+        beta(w) = w' @ beta_loadings,
+        beta_loadings = (B_a @ F @ b) / (b' @ F @ b + d_idio)
+
+    The cross-covariance carries no idiosyncratic term (factor-model
+    residuals are independent across instruments), so only the benchmark
+    variance in the denominator picks up its idio component.
+
+    Args:
+        asset_betas: Factor loadings of assets (assets x factors).
+        benchmark_betas: Factor loadings of the benchmark (indexed by factor).
+        factor_covar: Factor covariance F (factors x factors).
+        benchmark_idio_var: Benchmark idiosyncratic variance (same
+            periodicity as factor_covar).
+
+    Returns:
+        pd.Series of loadings indexed by asset; beta(w) = loadings @ w.
+    """
+    factors = factor_covar.index
+    b = benchmark_betas.reindex(factors).fillna(0.0).to_numpy()
+    ba = asset_betas.reindex(columns=factors).fillna(0.0).to_numpy()
+    f = factor_covar.to_numpy()
+    fb = f @ b
+    denom = float(b @ fb) + float(benchmark_idio_var)
+    if denom <= 0.0:
+        raise ValueError(f"benchmark variance must be positive, got {denom}")
+    return pd.Series(ba @ fb / denom, index=asset_betas.index)
+
+
+def compute_benchmark_beta_loadings_from_covar(covar: pd.DataFrame,
+                                               benchmark_weights: pd.Series,
+                                               asset_tickers: List[str],
+                                               ) -> pd.Series:
+    """Per-asset beta loadings sliced from ONE joint covariance matrix.
+
+    The fully consistent variant of ``compute_benchmark_beta_loadings``:
+    when the benchmark constituents are members of the same estimated
+    covariance as the assets (one joint fit), the loadings are a pure
+    slice — the beta the optimiser enforces then derives from the exact
+    matrix its TRE terms use:
+
+        c = Sigma[assets, cons] @ b / (b' Sigma[cons, cons] b),
+        beta(w) = c' w
+
+    Args:
+        covar: Joint covariance (labelled DataFrame) covering assets AND
+            benchmark constituents — e.g. one date of the extended-universe
+            ``get_y_covars`` dict.
+        benchmark_weights: Static benchmark composition indexed by
+            constituent ticker (need not sum to 1; the ratio normalises).
+        asset_tickers: Portfolio asset order of w.
+
+    Returns:
+        pd.Series of loadings indexed by ``asset_tickers``.
+    """
+    cons = list(benchmark_weights.index)
+    missing = [t for t in cons if t not in covar.index]
+    if missing:
+        raise KeyError(
+            f"benchmark constituents missing from joint covariance: {missing} — "
+            f"estimate the covariance with include_static_benchmark_assets=True")
+    b = benchmark_weights.to_numpy()
+    sig_ab = covar.loc[asset_tickers, cons].to_numpy()
+    sig_bb = covar.loc[cons, cons].to_numpy()
+    denom = float(b @ sig_bb @ b)
+    if denom <= 0.0:
+        raise ValueError(f"benchmark variance must be positive, got {denom}")
+    return pd.Series(sig_ab @ b / denom, index=asset_tickers)
+
+
+@dataclass(frozen=True)
+class BenchmarkBetaConstraint:
+    """Range constraint on ex-ante portfolio beta to a (static) benchmark.
+
+    Given per-asset ``beta_loadings`` c with beta(w) = c'w (see
+    ``compute_benchmark_beta_loadings``), creates linear constraints:
+
+        beta_min <= c' @ w <= beta_max
+
+    Follows the ``weights_0`` convention for per-rebalance state: the
+    (beta_min, beta_max) spec is static, while ``beta_loadings`` depend on
+    the rolling covariance and are injected per rebalancing date via
+    ``with_loadings`` before ``set_cvx_all_constraints`` is called.
+
+    Attributes:
+        beta_min: Lower bound on ex-ante beta (None = unbounded below).
+        beta_max: Upper bound on ex-ante beta (None = unbounded above).
+        beta_loadings: Per-asset loadings c (indexed by asset). None until
+            injected for the current rebalancing date.
+    """
+    beta_min: Optional[float] = None
+    beta_max: Optional[float] = None
+    beta_loadings: Optional[pd.Series] = None
+
+    def __post_init__(self):
+        if self.beta_min is None and self.beta_max is None:
+            raise ValueError("at least one of beta_min / beta_max must be given")
+        if (self.beta_min is not None and self.beta_max is not None
+                and self.beta_min > self.beta_max):
+            raise ValueError(f"beta_min={self.beta_min} > beta_max={self.beta_max}")
+
+    def copy(self) -> BenchmarkBetaConstraint:
+        return BenchmarkBetaConstraint(
+            beta_min=self.beta_min,
+            beta_max=self.beta_max,
+            beta_loadings=self.beta_loadings.copy() if self.beta_loadings is not None else None,
+        )
+
+    def with_loadings(self, beta_loadings: pd.Series) -> BenchmarkBetaConstraint:
+        """New instance carrying this rebalancing date's beta loadings."""
+        return BenchmarkBetaConstraint(
+            beta_min=self.beta_min, beta_max=self.beta_max,
+            beta_loadings=beta_loadings)
+
+    def update(self, valid_tickers: List[str]) -> BenchmarkBetaConstraint:
+        """Filter loadings to valid tickers (dropped names carry zero weight)."""
+        if self.beta_loadings is None:
+            return self
+        return BenchmarkBetaConstraint(
+            beta_min=self.beta_min, beta_max=self.beta_max,
+            beta_loadings=self.beta_loadings.reindex(valid_tickers).fillna(0.0))
+
+    def set_cvx_beta_constraints(self, w: cvx.Variable) -> List[Inequality]:
+        """Two linear inequalities beta_min <= c'w <= beta_max."""
+        if self.beta_loadings is None:
+            raise ValueError(
+                "beta_loadings not set — inject per-rebalance loadings via "
+                "with_loadings() before building cvx constraints")
+        c = self.beta_loadings.to_numpy()
+        constraints = []
+        if self.beta_min is not None:
+            constraints += [c @ w >= self.beta_min]
+        if self.beta_max is not None:
+            constraints += [c @ w <= self.beta_max]
+        return constraints
+
+    def print(self):
+        print(f"beta range: [{self.beta_min}, {self.beta_max}]")
+        print(f"beta_loadings:\n{self.beta_loadings}")
+
+
 @dataclass(frozen=True)
 class Constraints:
     """Comprehensive portfolio optimization constraints.
@@ -602,6 +753,7 @@ class Constraints:
     group_turnover_constraint: Optional[GroupTurnoverConstraint] = None
     sector_deviation_constraints: Optional[BenchmarkDeviationConstraints] = None
     style_deviation_constraints: Optional[BenchmarkDeviationConstraints] = None
+    benchmark_beta_constraint: Optional[BenchmarkBetaConstraint] = None
 
     def __post_init__(self):
         """Validate that individual min/max weights are consistent with group constraints.
@@ -784,6 +936,9 @@ class Constraints:
         if self.style_deviation_constraints is not None:
             self_dict['style_deviation_constraints'] = \
                 self.style_deviation_constraints.update(valid_tickers=valid_tickers)
+        if self.benchmark_beta_constraint is not None:
+            self_dict['benchmark_beta_constraint'] = \
+                self.benchmark_beta_constraint.update(valid_tickers=valid_tickers)
         return Constraints(**self_dict)
 
     def update_group_lower_upper_constraints(
@@ -1150,6 +1305,10 @@ class Constraints:
             constraints += self.style_deviation_constraints.set_cvx_constraints(
                 w=w, benchmark_weights=self.benchmark_weights)
 
+        # benchmark beta range: linear in w given per-date beta_loadings
+        if self.benchmark_beta_constraint is not None:
+            constraints += self.benchmark_beta_constraint.set_cvx_beta_constraints(w=w)
+
         return constraints
 
     def set_cvx_utility_objective_constraints(
@@ -1231,6 +1390,12 @@ class Constraints:
         if self.group_lower_upper_constraints is not None:
             constraints += self.group_lower_upper_constraints.set_cvx_group_lower_upper_constraints(
                 w=w, exposure_scaler=exposure_scaler)
+
+        # benchmark beta range stays a HARD bound under utility enforcement:
+        # it is a policy limit, linear in w given the per-date beta_loadings
+        # (the TRE/turnover terms above remain soft penalties)
+        if self.benchmark_beta_constraint is not None:
+            constraints += self.benchmark_beta_constraint.set_cvx_beta_constraints(w=w)
         return objective_fun, constraints
 
     def set_scipy_bounds(self, covar: np.ndarray):

@@ -284,7 +284,7 @@ data = AlphasData(alpha_scores=combined, momentum_score=mom, beta_score=beta, ..
 snapshot = data.get_alphas_snapshot(date=pd.Timestamp('2024-12-31'))
 ```
 
-See the [alphas module README](optimalportfolios/alphas/README.md) for full documentation.
+See the [alphas module README](optimalportfolios/docs/alphas_module_readme.md) for full documentation.
 
 # Table of contents
 
@@ -531,7 +531,7 @@ class PortfolioObjective(Enum):
 ```
 
 See examples in the [examples folder](#examples) and the
-[`examples/README.md`](optimalportfolios/examples/README.md) for the full
+[`examples/README.md`](optimalportfolios/docs/examples_readme.md) for the full
 demo index.
 
 ### 5. Adding an optimiser
@@ -675,7 +675,7 @@ weights = rolling_quadratic_optimisation(prices=prices, covar_dict=covar_dict,
 ## **Examples**
 
 The `examples/` folder is organised into five purpose-folders. The
-[examples README](optimalportfolios/examples/README.md) maps every demo to its
+[examples README](optimalportfolios/docs/examples_readme.md) maps every demo to its
 role; the headlines are:
 
 ```
@@ -919,7 +919,7 @@ The flat `examples/` layout has been replaced with five purpose-folders:
 | `examples.long_short_optimisation` | `examples.solvers.long_short` |
 | `examples.sp500_universe` | unchanged (kept at top level) |
 
-The new layout adds an [`examples/README.md`](optimalportfolios/examples/README.md)
+The new layout adds an [`examples/README.md`](optimalportfolios/docs/examples_readme.md)
 indexing every demo. Six wrong docstrings in `solvers/` corrected
 (carra_mixture, max_diversification, max_sharpe, min_variance, risk_budgeting,
 tracking_error — all were boilerplate copies of "example of minimization of

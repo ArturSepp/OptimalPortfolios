@@ -7,10 +7,10 @@ import scipy.stats as ss
 from scipy.stats import bernoulli, multivariate_normal
 from scipy.cluster.vq import kmeans2
 from dataclasses import dataclass
-from enum import Enum
 from matplotlib.patches import Ellipse
 from typing import List, Tuple, Union, Dict, Optional
 import qis as qis
+from qis.plots.utils import get_n_colors, set_ax_ticks_format, set_ax_xy_labels, set_title
 
 RANDOM_STATE = 3
 
@@ -305,7 +305,7 @@ def plot_mixure2(x: np.ndarray,
     if n_components == 3:
         colors = ['red', 'slategray', 'green']
     else:
-        colors = qis.get_n_colors(n=n_components, last_color_fixed=False)
+        colors = get_n_colors(n=n_components, last_color_fixed=False)
 
     x_col = columns[0]
     y_col = columns[1]
@@ -320,9 +320,9 @@ def plot_mixure2(x: np.ndarray,
     for pos, covar, w, color in zip(gmm.means_, gmm.covariances_, gmm.weights_, colors):
         draw_ellipse(pos[:2], covar[:2, :2], ax=ax, alpha=0.1, color=color)
 
-    qis.set_title(ax=ax, title=title, **kwargs)
-    qis.set_ax_ticks_format(ax=ax, xvar_format=var_format, yvar_format=var_format, **kwargs)
-    qis.set_ax_xy_labels(ax=ax, xlabel=columns[0], ylabel=columns[1], **kwargs)
+    set_title(ax=ax, title=title, **kwargs)
+    set_ax_ticks_format(ax=ax, xvar_format=var_format, yvar_format=var_format, **kwargs)
+    set_ax_xy_labels(ax=ax, xlabel=columns[0], ylabel=columns[1], **kwargs)
     for label_, color in zip(ax.legend().get_texts(), colors):
         label_.set_color(color)
         label_.set_size(12)

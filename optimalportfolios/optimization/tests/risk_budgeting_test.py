@@ -15,7 +15,6 @@ from optimalportfolios.optimization.general.risk_budgeting import (
     compute_portfolio_risk_contributions,
     compute_portfolio_variance,
 )
-from pyrb import ConstrainedRiskBudgeting
 
 
 class LocalTests(Enum):
@@ -26,7 +25,7 @@ class LocalTests(Enum):
 
 
 def run_local_test(local_test: LocalTests):
-    """Run local tests for development and debugging purposes."""
+    """Run local tests for product_development and debugging purposes."""
 
     if local_test == LocalTests.RISK_PARITY_COMPARE:
         # three-asset case with negative correlations: compare scipy vs pyrb vs pyrb-with-bounds
@@ -191,7 +190,7 @@ def run_local_test(local_test: LocalTests):
 
     elif local_test == LocalTests.ROLLING_RISK_BUDGETING:
         import qis as qis
-        from optimalportfolios.test_data import load_test_data
+        from optimalportfolios.examples.data.test_data import load_test_data
         from optimalportfolios.covar_estimation.ewma_covar_estimator import EwmaCovarEstimator
 
         prices = load_test_data()

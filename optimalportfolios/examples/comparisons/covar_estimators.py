@@ -170,7 +170,7 @@ class LocalTests(Enum):
 
 
 def run_local_test(local_test: LocalTests):
-    """Run local tests for development and debugging purposes."""
+    """Run local tests for product_development and debugging purposes."""
 
     if local_test == LocalTests.MULTI_COVAR_ESTIMATORS_BACKTEST:
         portfolio_objective = PortfolioObjective.MIN_VARIANCE
