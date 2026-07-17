@@ -31,7 +31,7 @@ from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.optimization.solver_diagnostics import (
     validate_solution,
     validate_scipy_solution,
-    validate_pyrb_solution,
+    validate_rb_solution,
     check_covar_conditioning,
 )
 from types import SimpleNamespace
@@ -343,37 +343,61 @@ def test_scipy_rejects_nonfinite():
 
 
 # -----------------------------------------------------------------------------
-# validate_pyrb_solution — pyrb ConstrainedRiskBudgeting (exposes .x, NaN on fail)
+# validate_rb_solution — internal CCD/ADMM risk-budgeting solver (caller passes
+# None on solver failure; group inequality rows checked at group_atol)
 # -----------------------------------------------------------------------------
 
-def test_pyrb_accepts_feasible_solution():
+def test_rb_accepts_feasible_solution():
     c = _constraints()
-    w_out, ok = validate_pyrb_solution(_feasible_w(), c, n=5)
+    w_out, ok = validate_rb_solution(_feasible_w(), c, n=5)
     assert ok is True
     np.testing.assert_allclose(w_out, _feasible_w())
 
 
-def test_pyrb_rejects_nan_solution(caplog):
-    """pyrb returns NaN on failure — the validator catches it and falls back."""
+def test_rb_rejects_nan_solution(caplog):
+    """NaN weights — the validator catches them and falls back."""
     c = _constraints()
     bad = _feasible_w().copy()
     bad[3] = np.nan
     with caplog.at_level(logging.ERROR):
-        w_out, ok = validate_pyrb_solution(bad, c, n=5)
+        w_out, ok = validate_rb_solution(bad, c, n=5)
     assert ok is False
     np.testing.assert_allclose(w_out, c.weights_0.to_numpy())
 
 
-def test_pyrb_rejects_none_solution():
+def test_rb_rejects_none_solution():
     c = _constraints()
-    _, ok = validate_pyrb_solution(None, c, n=5)
+    _, ok = validate_rb_solution(None, c, n=5)
     assert ok is False
 
 
-def test_pyrb_rejects_nonconvergence_flag():
+def test_rb_rejects_nonconvergence_flag():
     c = _constraints()
-    _, ok = validate_pyrb_solution(_feasible_w(), c, n=5, converged=False)
+    _, ok = validate_rb_solution(_feasible_w(), c, n=5, converged=False)
     assert ok is False
+
+
+def test_rb_accepts_group_rows_within_atol():
+    """ADMM-level group breach (~1e-5) is within group_atol=1e-4 → accepted."""
+    c = _constraints()
+    w = _feasible_w()
+    c_rows = np.ones((1, 5))          # sum(w) <= 1, satisfied with equality
+    c_lhs = np.array([float(np.sum(w)) - 1e-5])   # breach by 1e-5 < 1e-4
+    w_out, ok = validate_rb_solution(w, c, n=5, c_rows=c_rows, c_lhs=c_lhs)
+    assert ok is True
+    np.testing.assert_allclose(w_out, w)
+
+
+def test_rb_rejects_group_row_violation(caplog):
+    """A material group-row breach (> group_atol) is rejected with fallback."""
+    c = _constraints()
+    w = _feasible_w()
+    c_rows = np.array([[1.0, 1.0, 0.0, 0.0, 0.0]])
+    c_lhs = np.array([float(w[0] + w[1]) - 1e-3])  # breach by 1e-3 > 1e-4
+    with caplog.at_level(logging.ERROR):
+        w_out, ok = validate_rb_solution(w, c, n=5, c_rows=c_rows, c_lhs=c_lhs)
+    assert ok is False
+    np.testing.assert_allclose(w_out, c.weights_0.to_numpy())
 
 
 # -----------------------------------------------------------------------------
@@ -410,9 +434,9 @@ def test_scipy_fallback_is_writable():
     _assert_writable_and_assignable(w)
 
 
-def test_pyrb_fallback_is_writable():
+def test_rb_fallback_is_writable():
     c = _constraints()
-    w, ok = validate_pyrb_solution(None, c, n=5)
+    w, ok = validate_rb_solution(None, c, n=5)
     assert ok is False
     _assert_writable_and_assignable(w)
 

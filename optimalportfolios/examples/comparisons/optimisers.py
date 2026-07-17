@@ -36,6 +36,7 @@ def run_multi_optimisers_backtest(prices: pd.DataFrame,
     """
     portfolio_objectives = {'EqualRisk': PortfolioObjective.EQUAL_RISK_CONTRIBUTION,
                             'MinVariance': PortfolioObjective.MIN_VARIANCE,
+                            'QuadraticUtility': PortfolioObjective.QUADRATIC_UTILITY,
                             'MaxDiversification': PortfolioObjective.MAX_DIVERSIFICATION,
                             'MaxSharpe': PortfolioObjective.MAXIMUM_SHARPE_RATIO,
                             'MaxCarraMixture': PortfolioObjective.MAX_CARA_MIXTURE}

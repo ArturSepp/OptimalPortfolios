@@ -254,10 +254,19 @@ def cvx_max_return_target_vol(covar: np.ndarray,
     constraints_ = constraints.set_cvx_all_constraints(w=w, covar=covar_psd)
 
     problem = cvx.Problem(objective, constraints_)
-    problem.solve(verbose=verbose, solver=solver)
+    try:
+        problem.solve(verbose=verbose, solver=solver)
+        solved_status = problem.status
+    except cvx.error.SolverError:
+        # CLARABEL (and other backends) can raise rather than return a status when the
+        # constraint geometry is numerically degenerate -- e.g. a tight volatility target on a
+        # difficult covariance. Route this into the same fallback path as an honestly-reported
+        # infeasibility instead of propagating and killing the run.
+        w.value = None
+        solved_status = 'solver_error'
 
     optimal_weights, _is_valid = validate_solution(
-        w.value, problem.status, constraints, n, solver=solver, context=context)
+        w.value, solved_status, constraints, n, solver=solver, context=context)
 
     return optimal_weights
 
@@ -315,9 +324,17 @@ def cvx_max_return_target_vol_utility(covar: np.ndarray,
     objective = cvx.Maximize(objective_fun)
 
     problem = cvx.Problem(objective, constraints_)
-    problem.solve(verbose=verbose, solver=solver)
+    try:
+        problem.solve(verbose=verbose, solver=solver)
+        solved_status = problem.status
+    except cvx.error.SolverError:
+        # CLARABEL (and other backends) can raise rather than return a status when the
+        # constraint geometry is numerically degenerate. Route this into the same fallback path
+        # as an honestly-reported infeasibility instead of propagating and killing the run.
+        w.value = None
+        solved_status = 'solver_error'
 
     optimal_weights, _is_valid = validate_solution(
-        w.value, problem.status, constraints, n, solver=solver, context=context)
+        w.value, solved_status, constraints, n, solver=solver, context=context)
 
     return optimal_weights

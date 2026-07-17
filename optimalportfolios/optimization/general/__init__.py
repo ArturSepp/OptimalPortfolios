@@ -7,9 +7,7 @@ from optimalportfolios.optimization.general.quadratic import (
     rolling_quadratic_optimisation,
     wrapper_quadratic_optimisation,
     cvx_quadratic_optimisation,
-    max_qp_portfolio_vol_target,
     solve_analytic_log_opt,
-    print_portfolio_outputs,
 )
 
 from optimalportfolios.optimization.general.max_sharpe import (

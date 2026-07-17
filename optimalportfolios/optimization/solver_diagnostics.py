@@ -111,8 +111,8 @@ def _validate_weight_vector(w: np.ndarray, constraints: Constraints, n: int,
 
     Checks, in order: finiteness/shape, budget (full-investment or exposure
     band), long-only, per-asset max_weights, per-asset min_weights. Shared by
-    the CVXPY, scipy and pyrb validators so the accept/reject logic is identical
-    across backends.
+    the CVXPY, scipy and risk-budgeting validators so the accept/reject logic
+    is identical across backends.
     """
     if w.shape != (n,) or not np.all(np.isfinite(w)):
         return False, (f"non-finite or wrong-shape weights (shape={w.shape}, "
@@ -407,33 +407,43 @@ def validate_scipy_solution(
     return w, True
 
 
-def validate_pyrb_solution(
+def validate_rb_solution(
     optimal_weights: Optional[np.ndarray],
     constraints: Constraints,
     n: int,
-    solver: str = "pyrb",
+    solver: str = "risk_budgeting",
     context: str = "",
     converged: Optional[bool] = None,
     budget_atol: float = 1e-4,
     bound_atol: float = 1e-6,
+    c_rows: Optional[np.ndarray] = None,
+    c_lhs: Optional[np.ndarray] = None,
+    group_atol: float = 1e-4,
 ) -> Tuple[np.ndarray, bool]:
-    """Validate a pyrb ``ConstrainedRiskBudgeting`` result.
+    """Validate a risk-budgeting solver result (internal CCD / ADMM-CCD).
 
-    pyrb exposes the solution as ``.x`` and provides no standard success flag,
-    so a ``None`` / NaN / infeasible ``.x`` is treated as failure; an optional
+    The solver raises on failure, so the caller passes ``None`` for a failed
+    solve; ``None`` / NaN / infeasible weights are rejected; an optional
     ``converged`` flag is honoured when the caller can derive one. Budget and
     box feasibility are checked against ``constraints`` (risk-budgeting solves
-    are fully invested, ``sum(w)=max_exposure``). Falls back drifted weights_0 →
-    benchmark → zeros on rejection.
+    are fully invested, ``sum(w)=max_exposure``); the group inequality rows
+    ``c_rows @ w <= c_lhs`` are checked at ``group_atol`` when provided —
+    ``group_atol`` is set to the ADMM primal-residual scale (~1e-4), not
+    ``bound_atol``, because the ADMM z-projection enforces group rows only up
+    to its primal residual while the box is enforced exactly inside CCD.
+    Falls back drifted weights_0 → benchmark → zeros on rejection.
 
     Args:
-        optimal_weights: ``ConstrainedRiskBudgeting.x``.
+        optimal_weights: solver weights, or ``None`` on solver failure.
         constraints: the ticker-aligned Constraints used for the solve.
         n: number of assets.
         solver: solver label for logging.
         context: free-form label (rebalance date / mandate).
         converged: optional convergence flag; ``False`` forces a reject.
         budget_atol, bound_atol: feasibility tolerances.
+        c_rows, c_lhs: optional group inequality rows ``C w <= d`` as produced
+            by ``Constraints.set_pyrb_constraints``.
+        group_atol: absolute tolerance on the group inequality rows.
 
     Returns:
         (weights, is_valid) — ``weights`` is always finite and length ``n``.
@@ -451,14 +461,21 @@ def validate_pyrb_solution(
         return fallback, False
 
     if optimal_weights is None:
-        return _reject("pyrb returned no solution (.x is None)", logging.WARNING)
+        return _reject("risk-budgeting solver returned no solution", logging.WARNING)
     w = np.array(optimal_weights, dtype=float).ravel()  # copy -> writable (pandas 3.0 / downstream in-place edits)
     if converged is False:
-        return _reject("pyrb reported non-convergence", logging.WARNING, w)
+        return _reject("risk-budgeting solver reported non-convergence", logging.WARNING, w)
     ok, reason = _validate_weight_vector(
         w, constraints, n, tickers, budget_atol=budget_atol, bound_atol=bound_atol)
     if not ok:
         return _reject(reason, w=w)
+    if c_rows is not None and c_lhs is not None:
+        group_residuals = np.asarray(c_rows, dtype=float) @ w - np.asarray(c_lhs, dtype=float)
+        breach = float(np.max(group_residuals))
+        if breach > group_atol:
+            j = int(np.argmax(group_residuals))
+            return _reject(f"group constraint row {j} violated by {breach:.6g} "
+                           f"(atol={group_atol:g})", w=w)
     _emit_diag(logging.DEBUG,
                f"{tag}solver={solver}: accepted (sum(w)={float(np.sum(w)):.6g}).",
                context, solver, None, "accepted", True,

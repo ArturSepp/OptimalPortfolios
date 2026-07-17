@@ -155,10 +155,14 @@ class EwmaCovarEstimator(CovarEstimator):
         tickers = prices.columns.to_list()
         an_factor = qis.infer_annualisation_factor_from_df(data=returns)
         start_date = time_period.start.tz_localize(tz=returns.index.tz)
+        if time_period.end is not None:
+            end_date = time_period.end.tz_localize(tz=returns.index.tz)
+        else:
+            end_date = None
 
         covars: Dict[pd.Timestamp, pd.DataFrame] = {}
         for idx, (date, is_rebal) in enumerate(rebalancing_schedule.items()):
-            if is_rebal and date >= start_date:
+            if is_rebal and date >= start_date and (end_date is None or date <= end_date):
                 covar_t = covar_tensor[idx]
                 covars[date] = pd.DataFrame(an_factor * covar_t, index=tickers, columns=tickers)
 
@@ -166,7 +170,7 @@ class EwmaCovarEstimator(CovarEstimator):
 
 
 def estimate_rolling_ewma_covar(prices: pd.DataFrame,
-                                time_period: qis.TimePeriod,  # when we start building portfolios
+                                time_period: qis.TimePeriod,  # rebalancing schedule bounds
                                 returns_freq: str = 'W-WED',
                                 rebalancing_freq: str = 'QE',
                                 span: int = 52,
@@ -199,8 +203,12 @@ def estimate_rolling_ewma_covar(prices: pd.DataFrame,
     else:
         an_factor = 1.0
     start_date = time_period.start.tz_localize(tz=returns.index.tz)  # make sure tz is alined with rebalancing_schedule
+    if time_period.end is not None:
+        end_date = time_period.end.tz_localize(tz=returns.index.tz)
+    else:
+        end_date = None
     for idx, (date, value) in enumerate(rebalancing_schedule.items()):
-        if value and date >= start_date:
+        if value and date >= start_date and (end_date is None or date <= end_date):
             covar_t = pd.DataFrame(covar_tensor_txy[idx], index=tickers, columns=tickers)
             covars[date] = an_factor*covar_t
     return covars

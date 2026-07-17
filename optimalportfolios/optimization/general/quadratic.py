@@ -17,7 +17,6 @@ import warnings
 import numpy as np
 import pandas as pd
 import cvxpy as cvx
-from numba import jit
 from typing import Tuple, Optional, Dict
 
 # optimalportfolios
@@ -34,6 +33,7 @@ def rolling_quadratic_optimisation(prices: pd.DataFrame,
                                    covar_dict: Dict[pd.Timestamp, pd.DataFrame],
                                    inclusion_indicators: Optional[pd.DataFrame] = None,
                                    portfolio_objective: PortfolioObjective = PortfolioObjective.MIN_VARIANCE,
+                                   expected_returns: pd.DataFrame = None,  # QUADRATIC_UTILITY only
                                    carra: float = 1.0,
                                    optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
                                    ) -> pd.DataFrame:
@@ -46,14 +46,22 @@ def rolling_quadratic_optimisation(prices: pd.DataFrame,
         covar_dict: Pre-computed covariance matrices keyed by rebalancing date.
         inclusion_indicators: Optional binary DataFrame for asset eligibility.
         portfolio_objective: MIN_VARIANCE or QUADRATIC_UTILITY.
+        expected_returns: Expected returns per asset. Required for
+            QUADRATIC_UTILITY; forward-filled to rebalancing dates.
         carra: Risk aversion coefficient γ for QUADRATIC_UTILITY.
         optimiser_config: Solver configuration.
 
     Returns:
         DataFrame of portfolio weights.
     """
+    if portfolio_objective == PortfolioObjective.QUADRATIC_UTILITY and expected_returns is None:
+        raise ValueError("expected_returns must be given for QUADRATIC_UTILITY objective")
+
     rebalancing_schedule = list(covar_dict.keys())
     tickers = prices.columns.to_list()
+
+    if expected_returns is not None:
+        expected_returns = expected_returns.reindex(index=rebalancing_schedule, method='ffill')
 
     if inclusion_indicators is not None:
         inclusion_indicators1 = inclusion_indicators.reindex(columns=tickers)
@@ -70,11 +78,16 @@ def rolling_quadratic_optimisation(prices: pd.DataFrame,
             prev_date=prev_date, date=date,
             use_drifted_weights_0=optimiser_config.use_drifted_weights_0,
         )
+        if expected_returns is not None:
+            means = expected_returns.loc[date, :]
+        else:
+            means = None
         weights_ = wrapper_quadratic_optimisation(
             pd_covar=pd_covar,
             constraints=constraints,
             weights_0=weights_0,
             portfolio_objective=portfolio_objective,
+            means=means,
             carra=carra,
             inclusion_indicators=inclusion_indicators1.loc[date, :],
             optimiser_config=optimiser_config,
@@ -93,6 +106,7 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
                                    constraints: Constraints,
                                    inclusion_indicators: pd.Series = None,
                                    portfolio_objective: PortfolioObjective = PortfolioObjective.MIN_VARIANCE,
+                                   means: pd.Series = None,  # required for QUADRATIC_UTILITY
                                    weights_0: pd.Series = None,
                                    carra: float = 1.0,
                                    optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True),
@@ -106,6 +120,8 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
         constraints: Portfolio constraints.
         inclusion_indicators: Binary series for asset eligibility.
         portfolio_objective: MIN_VARIANCE or QUADRATIC_UTILITY.
+        means: Expected returns per asset. Required for QUADRATIC_UTILITY;
+            filtered alongside the covariance for NaN/excluded assets.
         weights_0: Previous-period weights for warm-start / fallback.
         carra: Risk aversion coefficient for QUADRATIC_UTILITY.
         optimiser_config: Solver configuration.
@@ -113,17 +129,23 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
     Returns:
         Portfolio weights as pd.Series aligned to pd_covar.index.
     """
+    vectors = dict(means=means) if means is not None else None
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(
         pd_covar=pd_covar,
+        vectors=vectors,
         inclusion_indicators=inclusion_indicators
     )
+    if means is not None:
+        means_np = good_vectors['means'].to_numpy()
+    else:
+        means_np = None
 
     if optimiser_config.apply_total_to_good_ratio:
         total_to_good_ratio = len(pd_covar.columns) / len(clean_covar.columns)
     else:
         total_to_good_ratio = None
 
-    constraints1 = constraints.update_with_valid_tickers(context=context, 
+    constraints1 = constraints.update_with_valid_tickers(context=context,
         valid_tickers=clean_covar.columns.to_list(),
         total_to_good_ratio=total_to_good_ratio,
         weights_0=weights_0
@@ -133,6 +155,7 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
         portfolio_objective=portfolio_objective,
         covar=clean_covar.to_numpy(),
         constraints=constraints1,
+        means=means_np,
         carra=carra,
         solver=optimiser_config.solver,
         verbose=optimiser_config.verbose,
@@ -198,92 +221,22 @@ def cvx_quadratic_optimisation(portfolio_objective: PortfolioObjective,
     objective = cvx.Maximize(objective_fun)
     constraints_ = constraints.set_cvx_all_constraints(w=w, covar=covar)
     problem = cvx.Problem(objective, constraints_)
-    problem.solve(verbose=verbose, solver=solver)
+    try:
+        problem.solve(verbose=verbose, solver=solver)
+        solved_status = problem.status
+    except cvx.error.SolverError:
+        # CLARABEL (and other backends) can raise rather than return a status when the
+        # constraint geometry is numerically degenerate. Route this into the same fallback path
+        # as an honestly-reported infeasibility instead of propagating and killing the run.
+        w.value = None
+        solved_status = 'solver_error'
 
     optimal_weights, _is_valid = validate_solution(
-        w.value, problem.status, constraints, n, solver=solver, context=context)
+        w.value, solved_status, constraints, n, solver=solver, context=context)
 
     return optimal_weights
 
 
-def max_qp_portfolio_vol_target(portfolio_objective: PortfolioObjective,
-                                covar: np.ndarray,
-                                constraints: Constraints,
-                                means: np.ndarray = None,
-                                vol_target: float = 0.12
-                                ) -> np.ndarray:
-    """
-    Solve quadratic optimisation with a portfolio volatility target via bisection.
-
-    Args:
-        portfolio_objective: MIN_VARIANCE or QUADRATIC_UTILITY.
-        covar: Covariance matrix (N x N).
-        constraints: Portfolio constraints.
-        means: Expected returns (N,). Required for QUADRATIC_UTILITY.
-        vol_target: Target portfolio volatility (annualised).
-
-    Returns:
-        Optimal weights (N,) achieving the target volatility.
-    """
-    max_iter = 20
-    sol_tol = 10e-6
-
-    def f(lambda_n: float) -> float:
-        w_n = cvx_quadratic_optimisation(
-            portfolio_objective=portfolio_objective,
-            covar=covar,
-            means=means,
-            constraints=constraints,
-            carra=lambda_n
-        )
-        print('lambda_n='+str(lambda_n))
-        print_portfolio_outputs(optimal_weights=w_n, covar=covar, means=means)
-        target = w_n.T @ covar @ w_n - vol_target**2
-        return target
-
-    cov_inv = np.linalg.inv(covar)
-    e = np.ones(covar.shape[0])
-
-    if means is not None:
-        a = np.sqrt(e.T @ cov_inv @ e / (2 * vol_target**2))
-        b = np.sqrt(means.T @ cov_inv @ means / (2 * vol_target**2))
-    else:
-        a = np.sqrt(e.T @ cov_inv @ e / (2 * vol_target**2))
-        b = 100
-
-    f_a = f(a)
-    f_b = f(b)
-
-    print(f"initial: {[f_a, f_b]}")
-    if np.sign(f_a) == np.sign(f_b):
-        raise ValueError(f"the same signs: {[f_a, f_b]}")
-
-    lambda_n = 0.5 * (a + b)
-    for it in range(max_iter):
-        lambda_n = 0.5 * (a + b)
-        f_n = f(lambda_n)
-
-        if (np.abs(f_n) <= sol_tol) or (np.abs((b - a) / 2.0) < sol_tol):
-            break
-        if np.sign(f_n) == np.sign(f_a):
-            a = lambda_n
-            f_a = f_n
-        else:
-            b = lambda_n
-        print('it=' + str(it))
-
-    w_n = cvx_quadratic_optimisation(
-        portfolio_objective=portfolio_objective,
-        covar=covar,
-        means=means,
-        constraints=constraints,
-        carra=lambda_n
-    )
-    print_portfolio_outputs(optimal_weights=w_n, covar=covar, means=means)
-    return w_n
-
-
-@jit(nopython=True)
 def solve_analytic_log_opt(covar: np.ndarray,
                            means: np.ndarray,
                            exposure_budget_eq: Tuple[np.ndarray, float] = None,
@@ -316,23 +269,3 @@ def solve_analytic_log_opt(covar: np.ndarray,
         optimal_weights = (1.0 / gamma) * sigma_i @ means
 
     return optimal_weights
-
-
-def print_portfolio_outputs(optimal_weights: np.ndarray,
-                            covar: np.ndarray,
-                            means: np.ndarray) -> None:
-    """Print portfolio diagnostics: expected return, vol, Sharpe, and weights."""
-    mean = means.T @ optimal_weights
-    vol = np.sqrt(optimal_weights.T @ covar @ optimal_weights)
-    sharpe = mean / vol
-    inst_sharpes = means / np.sqrt(np.diag(covar))
-    sharpe_weighted = inst_sharpes.T @ (optimal_weights / np.sum(optimal_weights))
-
-    line_str = (f"expected={mean: 0.2%}, "
-                f"vol={vol: 0.2%}, "
-                f"Sharpe={sharpe: 0.2f}, "
-                f"weighted Sharpe={sharpe_weighted: 0.2f}, "
-                f"inst Sharpes={np.array2string(inst_sharpes, precision=2)}, "
-                f"weights={np.array2string(optimal_weights, precision=2)}")
-
-    print(line_str)

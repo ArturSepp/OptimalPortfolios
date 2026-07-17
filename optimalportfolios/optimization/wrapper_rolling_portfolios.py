@@ -9,7 +9,7 @@ the appropriate solver based on ``PortfolioObjective``.
 Supported objectives and their solvers:
 
     EQUAL_RISK_CONTRIBUTION
-        Constrained risk budgeting via pyrb (ADMM).
+        Constrained risk budgeting via the internal CCD/ADMM solver.
         → ``rolling_risk_budgeting``
 
     MAX_DIVERSIFICATION
@@ -85,7 +85,8 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
         risk_budget: Target risk budgets (EQUAL_RISK_CONTRIBUTION only).
         returns_freq: Return frequency for mean-dependent objectives.
         rebalancing_freq: Rebalancing frequency (MAX_CARA_MIXTURE only).
-        span: EWMA span for mean estimation (MAXIMUM_SHARPE_RATIO).
+        span: EWMA span for mean estimation (MAXIMUM_SHARPE_RATIO,
+            QUADRATIC_UTILITY).
         roll_window: Rolling window for mixture estimation (MAX_CARA_MIXTURE).
         carra: CARA risk aversion parameter γ.
         n_mixures: Number of mixture components K.
@@ -107,11 +108,24 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
                                                        covar_dict=covar_dict,
                                                        optimiser_config=optimiser_config)
 
-    elif portfolio_objective in [PortfolioObjective.MIN_VARIANCE, PortfolioObjective.QUADRATIC_UTILITY]:
+    elif portfolio_objective == PortfolioObjective.MIN_VARIANCE:
         weights = opt.rolling_quadratic_optimisation(prices=prices,
                                                      constraints=constraints,
                                                      portfolio_objective=portfolio_objective,
                                                      covar_dict=covar_dict,
+                                                     carra=carra,
+                                                     optimiser_config=optimiser_config)
+
+    elif portfolio_objective == PortfolioObjective.QUADRATIC_UTILITY:
+        expected_returns = opt.estimate_rolling_ewma_means(prices=prices,
+                                                rebalancing_dates=list(covar_dict.keys()),
+                                                returns_freq=returns_freq,
+                                                span=span, annualize=True)
+        weights = opt.rolling_quadratic_optimisation(prices=prices,
+                                                     constraints=constraints,
+                                                     portfolio_objective=portfolio_objective,
+                                                     covar_dict=covar_dict,
+                                                     expected_returns=expected_returns,
                                                      carra=carra,
                                                      optimiser_config=optimiser_config)
 

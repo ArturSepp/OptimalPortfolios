@@ -28,7 +28,7 @@ def run_local_test(local_test: LocalTests):
     """Run local tests for product_development and debugging purposes."""
 
     if local_test == LocalTests.RISK_PARITY_COMPARE:
-        # three-asset case with negative correlations: compare scipy vs pyrb vs pyrb-with-bounds
+        # three-asset case with negative correlations: compare scipy vs CCD/ADMM vs CCD/ADMM-with-bounds
         risk_budget = np.array([0.45, 0.45, 0.1])
         covar = np.array([[0.2 ** 2,       0.5*0.15*0.2, -0.01],
                           [0.5*0.15*0.2,  0.15 ** 2,     -0.005],
@@ -50,21 +50,21 @@ def run_local_test(local_test: LocalTests):
         rc_scipy = compute_portfolio_risk_contributions(w_scipy, covar)
         vol_scipy = np.sqrt(compute_portfolio_variance(w_scipy, covar))
 
-        # 2. pyrb solver (unconstrained beyond long-only)
-        w_pyrb = opt_risk_budgeting(covar=covar,
+        # 2. CCD/ADMM solver (unconstrained beyond long-only)
+        w_rb = opt_risk_budgeting(covar=covar,
                                     constraints=constraints,
                                     risk_budget=risk_budget)
-        rc_pyrb = compute_portfolio_risk_contributions(w_pyrb, covar)
-        vol_pyrb = np.sqrt(compute_portfolio_variance(w_pyrb, covar))
+        rc_rb = compute_portfolio_risk_contributions(w_rb, covar)
+        vol_rb = np.sqrt(compute_portfolio_variance(w_rb, covar))
 
-        # 3. pyrb solver with explicit box bounds (max 40% per asset)
+        # 3. CCD/ADMM solver with explicit box bounds (max 40% per asset)
         constraints_bounded = Constraints(is_long_only=True,
                                           max_weights=pd.Series(0.4, index=['A', 'B', 'C']))
-        w_pyrb_bounded = opt_risk_budgeting(covar=covar,
+        w_rb_bounded = opt_risk_budgeting(covar=covar,
                                             constraints=constraints_bounded,
                                             risk_budget=risk_budget)
-        rc_pyrb_bounded = compute_portfolio_risk_contributions(w_pyrb_bounded, covar)
-        vol_pyrb_bounded = np.sqrt(compute_portfolio_variance(w_pyrb_bounded, covar))
+        rc_rb_bounded = compute_portfolio_risk_contributions(w_rb_bounded, covar)
+        vol_rb_bounded = np.sqrt(compute_portfolio_variance(w_rb_bounded, covar))
 
         # print comparison
         print(f"\n── Scipy SLSQP ──")
@@ -72,21 +72,21 @@ def run_local_test(local_test: LocalTests):
         print(f"RC (norm):  {np.array2string(rc_scipy / np.nansum(rc_scipy), precision=4)}")
         print(f"Port vol:   {vol_scipy:.4%}")
 
-        print(f"\n── pyrb (unconstrained) ──")
-        print(f"Weights:    {np.array2string(w_pyrb, precision=4)}")
-        print(f"RC (norm):  {np.array2string(rc_pyrb / np.nansum(rc_pyrb), precision=4)}")
-        print(f"Port vol:   {vol_pyrb:.4%}")
+        print(f"\n── CCD/ADMM (unconstrained) ──")
+        print(f"Weights:    {np.array2string(w_rb, precision=4)}")
+        print(f"RC (norm):  {np.array2string(rc_rb / np.nansum(rc_rb), precision=4)}")
+        print(f"Port vol:   {vol_rb:.4%}")
 
-        print(f"\n── pyrb (max 40% per asset) ──")
-        print(f"Weights:    {np.array2string(w_pyrb_bounded, precision=4)}")
-        print(f"RC (norm):  {np.array2string(rc_pyrb_bounded / np.nansum(rc_pyrb_bounded), precision=4)}")
-        print(f"Port vol:   {vol_pyrb_bounded:.4%}")
+        print(f"\n── CCD/ADMM (max 40% per asset) ──")
+        print(f"Weights:    {np.array2string(w_rb_bounded, precision=4)}")
+        print(f"RC (norm):  {np.array2string(rc_rb_bounded / np.nansum(rc_rb_bounded), precision=4)}")
+        print(f"Port vol:   {vol_rb_bounded:.4%}")
 
         # budget tracking error: |realised RC - target budget|
         print(f"\n── Budget tracking ──")
         print(f"Scipy MAE:        {np.mean(np.abs(rc_scipy / np.nansum(rc_scipy) - risk_budget)):.6f}")
-        print(f"pyrb MAE:         {np.mean(np.abs(rc_pyrb / np.nansum(rc_pyrb) - risk_budget)):.6f}")
-        print(f"pyrb bounded MAE: {np.mean(np.abs(rc_pyrb_bounded / np.nansum(rc_pyrb_bounded) - risk_budget)):.6f}")
+        print(f"CCD/ADMM MAE:         {np.mean(np.abs(rc_rb / np.nansum(rc_rb) - risk_budget)):.6f}")
+        print(f"CCD/ADMM bounded MAE: {np.mean(np.abs(rc_rb_bounded / np.nansum(rc_rb_bounded) - risk_budget)):.6f}")
 
     elif local_test == LocalTests.RISK_BUDGETING_WITH_BOUNDS:
         # four-asset case: equal risk vs tilted budget, with and without weight caps

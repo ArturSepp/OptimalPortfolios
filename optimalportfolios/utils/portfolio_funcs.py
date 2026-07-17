@@ -6,15 +6,12 @@ from __future__ import division
 import numpy as np
 import pandas as pd
 from typing import Tuple, Union, Optional
-from numba import njit
 
 
-@njit
 def compute_portfolio_variance(w: np.ndarray, covar: np.ndarray) -> float:
     return w.T @ covar @ w
 
 
-@njit
 def compute_portfolio_risk_contributions(w: np.ndarray, covar: np.ndarray) -> np.ndarray:
     portfolio_vol = np.sqrt(w.T @ covar @ w)
     marginal_risk_contribution = covar @ w.T

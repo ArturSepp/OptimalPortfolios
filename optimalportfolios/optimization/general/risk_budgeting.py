@@ -11,8 +11,9 @@ where RC_i is asset i's risk contribution, b_i is the risk budget, and
 the risk contribution of each asset is proportional to its budget, subject
 to portfolio constraints (long-only, weight bounds, group exposures).
 
-The primary solver uses ``ConstrainedRiskBudgeting`` from the pyrb package,
-which supports linear inequality constraints on the weights. A scipy SLSQP
+The primary solver is the internal CCD / ADMM-CCD implementation of
+Richard & Roncalli (2019) in ``risk_budgeting_solver.py``, which supports
+box bounds and linear inequality constraints on the weights. A scipy SLSQP
 fallback is also provided but not recommended for production use.
 
 Special features:
@@ -47,9 +48,10 @@ from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nan
 from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.optimization.config import OptimiserConfig
-from pyrb import ConstrainedRiskBudgeting
+from optimalportfolios.optimization.general.risk_budgeting_solver import (
+    solve_constrained_risk_budgeting)
 from optimalportfolios.optimization.solver_diagnostics import (
-    validate_scipy_solution, validate_pyrb_solution)
+    validate_scipy_solution, validate_rb_solution)
 
 logger = logging.getLogger(__name__)
 
@@ -80,8 +82,10 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
     Returns:
         DataFrame of portfolio weights.
     """
-    # Single-asset universe: trivial 100% allocation at every rebalancing date.
-    if len(risk_budget) == 1:
+    # Single-asset explicit budget: trivial 100% allocation at every rebalancing
+    # date. With risk_budget=None (equal budgets) the full path handles any
+    # universe size, including a single asset.
+    if risk_budget is not None and len(risk_budget) == 1:
         asset = risk_budget.index[0]
         weights = pd.DataFrame(1.0,
                                index=pd.DatetimeIndex(list(covar_dict.keys())),
@@ -100,8 +104,9 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
             rebalancing_indicators_t = rebalancing_indicators.loc[date, :]
         else:
             rebalancing_indicators_t = None
-        # align covariance to risk budget ordering
-        pd_covar = pd_covar.reindex(index=risk_budget.index).reindex(columns=risk_budget.index)
+        # align covariance to risk budget ordering (no-op with equal budgets)
+        if risk_budget is not None:
+            pd_covar = pd_covar.reindex(index=risk_budget.index).reindex(columns=risk_budget.index)
         # drift weights_0 to current date (no-op when prices/prev_date missing)
         weights_0 = apply_drift_to_weights_0(
             weights_0=weights_0, prices=prices,
@@ -237,7 +242,7 @@ def opt_risk_budgeting(covar: np.ndarray,
                        context: str = ''
                        ) -> np.ndarray:
     """
-    Solve constrained risk budgeting using pyrb's ConstrainedRiskBudgeting.
+    Solve constrained risk budgeting using the internal CCD / ADMM-CCD solver.
 
     Args:
         covar: Covariance matrix (N x N).
@@ -254,19 +259,24 @@ def opt_risk_budgeting(covar: np.ndarray,
 
     bounds, c_rows, c_lhs = constraints.set_pyrb_constraints(covar=covar)
 
-    this = ConstrainedRiskBudgeting(covar, budgets=risk_budget, bounds=bounds, C=c_rows, d=c_lhs)
-    this.solve()
-    optimal_weights = this.x
+    try:
+        optimal_weights, _lambda_star = solve_constrained_risk_budgeting(covar=covar,
+                                                                         budgets=risk_budget,
+                                                                         bounds=bounds,
+                                                                         c_rows=c_rows,
+                                                                         c_lhs=c_lhs)
+    except ValueError as exc:
+        tag = f"[{context}] " if context else ""
+        logger.warning(f"{tag}opt_risk_budgeting: solver failed ({exc})")
+        optimal_weights = None
 
-    if verbose:
-        if c_rows is not None:
-            qqq = c_rows @ optimal_weights
-            slack = qqq - c_lhs
-            print(f"slack={slack}")
+    if verbose and optimal_weights is not None and c_rows is not None:
+        slack = c_rows @ optimal_weights - c_lhs
+        print(f"slack={slack}")
 
-    optimal_weights, _is_valid = validate_pyrb_solution(
+    optimal_weights, _is_valid = validate_rb_solution(
         optimal_weights, constraints, n,
-        converged=getattr(this, 'success', None), context=context)
+        c_rows=c_rows, c_lhs=c_lhs, context=context)
 
     return optimal_weights
 

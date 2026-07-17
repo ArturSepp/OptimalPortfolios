@@ -7,7 +7,11 @@ from optimalportfolios.alphas.signals.low_beta import (
     compute_low_beta_alpha,
     compute_low_beta_cluster_alpha,
 )
-from optimalportfolios.alphas.signals.carry import compute_ra_carry_alphas
+from optimalportfolios.alphas.signals.carry import (
+    compute_ra_carry_alpha,
+    compute_ra_carry_cluster_alpha,
+    compute_ra_carry_alphas,
+)
 from optimalportfolios.alphas.signals.managers_alpha import compute_managers_alpha
 from optimalportfolios.alphas.signals.residual_momentum import (
     compute_residual_momentum_alpha,
@@ -22,3 +26,4 @@ from optimalportfolios.alphas.signals.utils import (
     extract_rolling_clusters,
     score_within_clusters,
 )
+

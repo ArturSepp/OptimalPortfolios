@@ -7,6 +7,63 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.2.0] - 2026-07-17
+
+### Added
+- `rolling_quadratic_optimisation` gains `expected_returns` and
+  `wrapper_quadratic_optimisation` gains `means` (both keyword, default `None`):
+  the expected-return panel / vector for `PortfolioObjective.QUADRATIC_UTILITY`,
+  filtered alongside the covariance for NaN / excluded assets. Both are additive
+  keyword arguments; existing callers are unaffected.
+- Repo-root `tests/` headless suite (69 tests) collected by bare `pytest`,
+  covering the public API surface, general / SAA / TAA solvers against
+  closed-form optima, the rolling dispatcher contract, EWMA and factor
+  covariance estimation, and the utility layer.
+- Offline multi-asset universe fixture `examples/data/multiasset_returns.csv`
+  (19 instruments across Fixed Income / Equity / Alternatives / Liquidity,
+  monthly, with Asset Class and Sub Asset Class metadata) and loader
+  `examples.data.multiasset.load_multiasset_data` returning a frozen
+  `MultiAssetData(returns, prices, group_data, sub_group_data)`. No network
+  access, unlike the yfinance-based loaders. The `examples.data` package data
+  now ships in the wheel (`*.csv`), which also fixes the previously unshipped
+  `dow30_prices.csv`.
+
+### Changed
+- `opt_risk_budgeting` backend switched from the vendored `pyrb` fork to an
+  internal solver, `optimization.general.risk_budgeting_solver`
+  (`solve_constrained_risk_budgeting`): a pure-NumPy CCD / ADMM-CCD
+  implementation of the log-barrier formulation of Richard & Roncalli (2019).
+  Weights match `pyrb` to within ADMM tolerance (~5e-5 in weight space); parity
+  against frozen `pyrb` baselines and the paper's published tables is pinned in
+  `optimization/tests/risk_budgeting_solver_test.py`. `set_pyrb_constraints`
+  keeps its name and `(bounds, C, d)` contract; `validate_pyrb_solution` is
+  renamed `validate_rb_solution` (internal) and adds a group-inequality-row
+  check at the ADMM primal-residual scale.
+- `compute_rolling_optimal_weights` estimates rolling EWMA means for
+  `QUADRATIC_UTILITY` as it already does for `MAXIMUM_SHARPE_RATIO`.
+
+### Fixed
+- `QUADRATIC_UTILITY` through the rolling dispatcher raised `ValueError` at the
+  first rebalance because `means` were never forwarded to the solver.
+- `rolling_risk_budgeting(risk_budget=None)` crashed on the single-asset guard
+  (`len(None)`) and on the covariance-to-budget reindex; the equal-budget
+  default now works for any universe size.
+- `EwmaCovarEstimator.fit_rolling_covars` and `estimate_rolling_ewma_covar`
+  ignored `time_period.end`, running the schedule to the end of the price panel;
+  both bounds now apply (`end=None` is unbounded). No change when `end` equals
+  the last price date.
+- `solve_constrained_risk_budgeting` validated inputs after normalising budgets
+  and slicing bounds, so a zero-sum budget emitted a NumPy `RuntimeWarning` and
+  malformed bounds raised `IndexError` instead of `ValueError`; validation now
+  runs on raw inputs, so every invalid input raises `ValueError` (the caller's
+  fallback contract) cleanly.
+
+### Removed
+- The vendored `pyrb` package (`optimalportfolios/pyrb/`) and its `numba`
+  dependency. `quadprog` is retained for the ADMM Euclidean-projection QP. The
+  `examples/comparisons/pyrb_vs_scipy.py` demo is renamed
+  `risk_budgeting_ccd_vs_scipy.py`.
+
 ## [5.4.3] - 2026-06-28
 
 ### Added

@@ -1,4 +1,16 @@
 from optimalportfolios.alphas.alpha_data import AlphasData
+from optimalportfolios.alphas.profile import (
+    backtest_alpha_rank_portfolio,
+    compute_top_quantile_equal_weights,
+    compute_alpha_rank_analysis_table,
+    generate_alpha_profile_report,
+    ProfileSignal,
+    profile_momentum,
+    profile_low_beta,
+    profile_residual_momentum,
+    profile_carry,
+    profile_alpha_signals,
+)
 from optimalportfolios.alphas.signals.momentum import (
     compute_momentum_alpha,
     compute_momentum_cluster_alpha,

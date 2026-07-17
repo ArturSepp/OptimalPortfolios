@@ -123,56 +123,62 @@ tracking error, Sharpe ratio, diversification ratio, CARA utility). The package
 does not implement non-quadratic risk measures (CVaR, MAD, drawdown constraints).
 For these, use Riskfolio-Lib or skfolio. The solver architecture (three-layer:
 mathematical / wrapper / rolling) makes it straightforward to add new solvers —
-each solver lives in its own module in `optimization/solvers/` and plugs into the
-rolling backtester via a single dispatch function.
+each solver lives in its own module in `optimization/general`, `optimization/saa`,
+or `optimization/taa` and plugs into the rolling backtester via a single dispatch
+function.
 
 ## **Package overview**
 
 ```
 optimalportfolios/
+├── config.py                      # PortfolioObjective enum
 ├── alphas/                        # Alpha signal computation
-│   ├── signals/
-│   │   ├── momentum.py            # compute_momentum_alpha()
-│   │   ├── low_beta.py            # compute_low_beta_alpha()
-│   │   └── managers_alpha.py      # compute_managers_alpha()
+│   ├── signals/                   # momentum, carry, low_beta, residual momentum/reversal,
+│   │                              #   managers_alpha, rolling_ewma_mean
+│   ├── profile/                   # Signal profiling
 │   ├── alpha_data.py              # AlphasData container
 │   ├── backtest_alphas.py         # Signal backtesting tool
-│   └── tests/
-│       └── signals_test.py
+│   └── signal_diagnostics.py      # Signal IC-IR and risk-contribution diagnostics
 ├── covar_estimation/              # Covariance matrix estimation
 │   ├── covar_estimator.py         # CovarEstimator ABC
 │   ├── ewma_covar_estimator.py    # EwmaCovarEstimator
 │   ├── factor_covar_estimator.py  # FactorCovarEstimator (uses factorlasso)
-│   ├── factor_covar_data.py       # CurrentFactorCovarData, RollingFactorCovarData
+│   ├── risk_labelling.py          # Cluster and factor risk labelling
 │   └── covar_reporting.py         # Rolling covariance diagnostics
 ├── optimization/                  # Portfolio optimisation
 │   ├── constraints.py             # Constraints, GroupLowerUpperConstraints
 │   ├── config.py                  # OptimiserConfig (incl. use_drifted_weights_0)
+│   ├── solver_diagnostics.py      # Post-solve validation, conditioning warnings
+│   ├── portfolio_result.py        # PortfolioOptimisationResult
 │   ├── wrapper_rolling_portfolios.py  # compute_rolling_optimal_weights()
-│   └── solvers/
-│       ├── quadratic.py           # min variance, max quadratic utility
-│       ├── risk_budgeting.py      # constrained risk budgeting (pyrb)
-│       ├── max_diversification.py # maximum diversification ratio
-│       ├── max_sharpe.py          # maximum Sharpe ratio
-│       ├── tracking_error.py      # alpha-over-tracking-error
-│       ├── target_return.py       # alpha with target return constraint
-│       └── carra_mixure.py        # CARA utility under Gaussian mixture
+│   ├── general/                   # Objective-driven solvers
+│   │   ├── quadratic.py           # min variance, max quadratic utility
+│   │   ├── max_sharpe.py          # maximum Sharpe ratio
+│   │   ├── max_diversification.py # maximum diversification ratio
+│   │   ├── carra_mixture.py       # CARA utility under Gaussian mixture
+│   │   ├── risk_budgeting.py      # constrained risk budgeting
+│   │   └── risk_budgeting_solver.py  # internal CCD/ADMM solver (Richard-Roncalli 2019)
+│   ├── saa/                       # Strategic solvers with return/vol targets
+│   │   ├── min_variance_target_return.py
+│   │   └── max_return_target_vol.py
+│   └── taa/                       # Tactical solvers with alpha and TE constraints
+│       ├── maximise_alpha_over_tre.py
+│       └── maximise_alpha_with_target_yield.py
+├── universe/                      # Universe data containers and transforms
 ├── utils/                         # Auxiliary analytics
 │   ├── filter_nans.py             # NaN-aware covariance/vector filtering
 │   ├── portfolio_funcs.py         # Risk contributions, diversification ratio
-│   ├── weights_drift.py           # apply_drift_to_weights_0 (new in v5.3.1)
-│   ├── gaussian_mixture.py        # Gaussian mixture fitting (pure numpy/scipy EM)
-│   └── returns_unsmoother.py      # AR(1) return unsmoothing for PE/PD
+│   ├── weights_drift.py           # apply_drift_to_weights_0
+│   └── gaussian_mixture.py        # Gaussian mixture fitting (numpy/scipy EM)
 ├── reports/                       # Performance reporting
-│   └── marginal_backtest.py       # Marginal asset contribution analysis
+│   ├── marginal_backtest.py       # Marginal asset contribution analysis
+│   └── portfolio_result_plots.py  # Optimisation result plots
 └── examples/                      # Worked examples — see examples/README.md
     ├── data/                      # Shared universe fixtures
     ├── solvers/                   # One demo per single-objective solver
     ├── backtests/                 # End-to-end rolling workflows
     ├── comparisons/               # A-vs-B sweeps (incl. drift_policy)
     └── covar_estimation/          # Covariance estimator demos
-
-# External dependency:
 # factorlasso (pip install factorlasso)
 #   └── LassoModel, solve_lasso_cvx_problem, solve_group_lasso_cvx_problem
 #       Sign-constrained LASSO/Group LASSO/HCGL solver (domain-agnostic)
@@ -326,17 +332,18 @@ git clone https://github.com/ArturSepp/OptimalPortfolios.git
 ```
 
 Core dependencies:
-python = ">=3.9",
-numba = ">=0.60.0",
+python = ">=3.10",
 numpy = ">=2.0",
 scipy = ">=1.12.0",
 pandas = ">=2.2.0",
 matplotlib = ">=3.8.0",
 seaborn = ">=0.13.0",
+openpyxl = ">=3.1.0",
+PyYAML = ">=6.0",
 cvxpy = ">=1.3.0",
 quadprog = ">=0.1.11",
-qis = ">=3.5.7",
-factorlasso = ">=0.1.0"
+qis = ">=5.0.5,<6",
+factorlasso = ">=0.8.0,<0.9"
 
 Optional dependencies:
 yfinance ">=0.2.40" (for getting test price data),
@@ -914,7 +921,7 @@ The flat `examples/` layout has been replaced with five purpose-folders:
 | `examples.multi_optimisers_backtest` | `examples.comparisons.optimisers` |
 | `examples.multi_covar_estimation_backtest` | `examples.comparisons.covar_estimators` |
 | `examples.parameter_sensitivity_backtest` | `examples.comparisons.parameter_sensitivity` |
-| `examples.risk_budgeting_pyrb_vs_scipy` | `examples.comparisons.pyrb_vs_scipy` |
+| `examples.risk_budgeting_pyrb_vs_scipy` | `examples.comparisons.risk_budgeting_ccd_vs_scipy` |
 | `examples.sp500_minvar` | `examples.comparisons.sp500_minvar_spans` |
 | `examples.long_short_optimisation` | `examples.solvers.long_short` |
 | `examples.sp500_universe` | unchanged (kept at top level) |

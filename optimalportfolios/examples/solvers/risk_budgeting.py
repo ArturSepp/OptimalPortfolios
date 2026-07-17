@@ -1,5 +1,5 @@
 """
-example of constrained risk-budgeting portfolio (equal or specified risk contributions) solved via pyrb ADMM
+example of constrained risk-budgeting portfolio (equal or specified risk contributions) solved via CCD/ADMM
 """
 import numpy as np
 import pandas as pd

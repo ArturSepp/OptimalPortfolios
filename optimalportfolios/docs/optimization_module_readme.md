@@ -9,7 +9,7 @@ Developer documentation for the portfolio optimisation solvers in
 ```
 optimization/
 ├── config.py                       # OptimiserConfig dataclass
-├── constraints.py                  # Constraint specification and CVXPY/scipy/pyrb translation
+├── constraints.py                  # Constraint specification and CVXPY/scipy/risk-budgeting translation
 ├── portfolio_result.py             # Result container
 ├── wrapper_rolling_portfolios.py   # Dispatcher: PortfolioObjective → solver routing
 ├── general/                        # Objective-driven solvers, no benchmark semantics
@@ -88,7 +88,7 @@ Every solver file follows the same three-layer structure:
 |-------|----------------|-------|--------|---------------|
 | **Rolling** | `rolling_*` | `prices`, `covar_dict`, `optimiser_config` | `pd.DataFrame` (weights) | Loop over rebalancing dates, forward-fill signals, warm-start |
 | **Wrapper** | `wrapper_*` | `pd.DataFrame` (covar), `optimiser_config` | `pd.Series` (weights) | NaN/zero-variance filtering, constraint update, reindex to full universe |
-| **Solver** | `cvx_*` / `opt_*` | `np.ndarray` (covar), `solver`, `verbose` | `np.ndarray` (weights) | Pure numerical optimisation via CVXPY, scipy, or pyrb |
+| **Solver** | `cvx_*` / `opt_*` | `np.ndarray` (covar), `solver`, `verbose` | `np.ndarray` (weights) | Pure numerical optimisation via CVXPY, scipy, or the internal CCD/ADMM solver |
 
 The rolling and wrapper layers accept `OptimiserConfig`; the lowest-level
 solver functions take raw `solver: str` and `verbose: bool` parameters,
@@ -119,7 +119,7 @@ Solver configuration shared across all solvers, defined in `config.py`:
 ```python
 @dataclass(frozen=True)
 class OptimiserConfig:
-    solver: str = 'CLARABEL'            # CVXPY solver name (ignored by scipy/pyrb)
+    solver: str = 'CLARABEL'            # CVXPY solver name (ignored by scipy and risk-budgeting solvers)
     verbose: bool = False               # print solver diagnostics
     apply_total_to_good_ratio: bool = False  # rescale constraints for excluded assets
 ```
@@ -136,7 +136,7 @@ argument, ensuring backward compatibility.
 | `QUADRATIC_UTILITY` | general | `quadratic.py` | CVXPY | μ, γ | Convex QP |
 | `MAXIMUM_SHARPE_RATIO` | general | `max_sharpe.py` | CVXPY | μ | SOCP (Charnes-Cooper) |
 | `MAX_DIVERSIFICATION` | general | `max_diversification.py` | scipy SLSQP | — | Non-convex (ratio) |
-| `EQUAL_RISK_CONTRIBUTION` | general | `risk_budgeting.py` | pyrb (ADMM) | b (risk budgets) | Convex (Spinu) |
+| `EQUAL_RISK_CONTRIBUTION` | general | `risk_budgeting.py` | internal CCD/ADMM | b (risk budgets) | Convex (Spinu) |
 | `MAX_CARA_MIXTURE` | general | `carra_mixture.py` | scipy SLSQP | GMM params, γ | Non-convex |
 | Min var + return floor | saa | `min_variance_target_return.py` | CVXPY | μ, r_target, [w_b] | Convex QP |
 | Max return + vol budget | saa | `max_return_target_vol.py` | CVXPY | μ, σ_max, [w_b] | SOCP |
@@ -208,7 +208,7 @@ The `Constraints` class generates constraints for three backends:
 ```python
 constraints.set_cvx_all_constraints(w, covar)     # → list of cvxpy constraints
 constraints.set_scipy_constraints(covar)           # → (list of dicts, bounds) for scipy
-constraints.set_pyrb_constraints(covar)            # → (bounds, C, d) for pyrb
+constraints.set_pyrb_constraints(covar)            # → (bounds, C, d) for the risk-budgeting solver
 ```
 
 The CVXPY backend supports the full constraint set. SciPy and PyRB support
@@ -277,7 +277,7 @@ SAA and TAA solvers support two modes via `ConstraintEnforcementType`:
 | Long-only | `is_long_only` | All solvers |
 | Weight bounds | `min_weights`, `max_weights` | All solvers |
 | Full investment | Automatic (1'w = 1) | All solvers |
-| Group exposure | `group_lower_upper_constraints` | CVXPY, scipy, pyrb |
+| Group exposure | `group_lower_upper_constraints` | CVXPY, scipy, risk budgeting |
 | Sector deviation | `sector_deviation_constraints` | CVXPY solvers |
 | Style deviation | `style_deviation_constraints` | CVXPY solvers |
 | Tracking error | `tracking_err_vol_constraint` | SAA, TAA solvers |

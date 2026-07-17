@@ -1,4 +1,3 @@
-
 # packages
 import numpy as np
 import pandas as pd
@@ -11,17 +10,24 @@ from optimalportfolios.config import PortfolioObjective
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.optimization.general.max_sharpe import cvx_maximize_portfolio_sharpe
 from optimalportfolios.optimization.general.quadratic import (cvx_quadratic_optimisation,
-                                                              print_portfolio_outputs,
-                                                              solve_analytic_log_opt,
-                                                              max_qp_portfolio_vol_target)
+                                                              solve_analytic_log_opt)
 
+
+def _print_portfolio_outputs(optimal_weights: np.ndarray,
+                             covar: np.ndarray,
+                             means: np.ndarray) -> None:
+    """local test diagnostic: print expected return, vol, Sharpe, and weights."""
+    mean = means.T @ optimal_weights
+    vol = np.sqrt(optimal_weights.T @ covar @ optimal_weights)
+    sharpe = mean / vol
+    print(f"expected={mean: 0.2%}, vol={vol: 0.2%}, sharpe={sharpe: 0.2f}, "
+          f"weights={np.array2string(optimal_weights, precision=2)}")
 
 
 class LocalTests(Enum):
     MIN_VAR = 1
     MAX_UTILITY = 2
     EFFICIENT_FRONTIER = 3
-    MAX_UTILITY_VOL_TARGET = 4
     SHARPE = 5
     REGIME_SHARPE = 6
 
@@ -49,7 +55,7 @@ def run_local_test(local_test: LocalTests):
                                                      means=means,
                                                      constraints=constraints)
 
-        print_portfolio_outputs(optimal_weights=optimal_weights,
+        _print_portfolio_outputs(optimal_weights=optimal_weights,
                                 covar=covar,
                                 means=means)
 
@@ -62,7 +68,7 @@ def run_local_test(local_test: LocalTests):
                                                      constraints=constraints,
                                                      carra=gamma)
 
-        print_portfolio_outputs(optimal_weights=optimal_weights,
+        _print_portfolio_outputs(optimal_weights=optimal_weights,
                                 covar=covar,
                                 means=means)
 
@@ -106,16 +112,6 @@ def run_local_test(local_test: LocalTests):
         sns.lineplot(x='vol', y='mean', data=protfolio_data, ax=axs[0])
         sns.lineplot(data=protfolio_data[['mean', 'vol']], ax=axs[1])
 
-    elif local_test == LocalTests.MAX_UTILITY_VOL_TARGET:
-        optimal_weights = max_qp_portfolio_vol_target(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
-                                                      covar=covar,
-                                                      means=means,
-                                                      vol_target=0.08)
-
-        print_portfolio_outputs(optimal_weights=optimal_weights,
-                                covar=covar,
-                                means=means)
-
     elif local_test == LocalTests.SHARPE:
 
         portfolio_mus = []
@@ -139,7 +135,7 @@ def run_local_test(local_test: LocalTests):
                                                       carra=lang_lambda)
 
             print(f"portfolio with lambda = {lang_lambda}")
-            print_portfolio_outputs(optimal_weights=w_lambda,
+            _print_portfolio_outputs(optimal_weights=w_lambda,
                                     covar=covar,
                                     means=means)
 
@@ -160,7 +156,7 @@ def run_local_test(local_test: LocalTests):
                                                      constraints=constraints)
 
         print(f"exact solution")
-        print_portfolio_outputs(optimal_weights=opt_sharpe_w,
+        _print_portfolio_outputs(optimal_weights=opt_sharpe_w,
                                 covar=covar,
                                 means=means)
 
@@ -206,7 +202,7 @@ def run_local_test(local_test: LocalTests):
                                                         means=means,
                                                         constraints=constraints)
 
-        print_portfolio_outputs(optimal_weights=optimal_weights,
+        _print_portfolio_outputs(optimal_weights=optimal_weights,
                                 covar=covar,
                                 means=means)
 

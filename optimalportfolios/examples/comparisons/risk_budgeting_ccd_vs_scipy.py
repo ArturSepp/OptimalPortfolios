@@ -2,7 +2,7 @@
 Why scipy SLSQP fails for risk budgeting with negative correlations.
 
 This example demonstrates the fundamental difference between the naive
-scipy-based risk budgeting formulation and the pyrb convex reformulation.
+scipy-based risk budgeting formulation and the CCD convex reformulation.
 
 Problem setup:
     Three assets with negative correlations and risk budget [45%, 45%, 10%].
@@ -21,7 +21,7 @@ to a local minimum where asset 3 (the hedging asset with negative
 correlations) is dropped entirely. It never explores the region where
 asset 3 gets ~48% weight — which is the global optimum.
 
-The pyrb package uses the Spinu (2013) convex reformulation. Instead of
+The CCD solver uses the Spinu (2013) convex reformulation. Instead of
 minimising RC deviations directly, it applies a change of variables
 y = log(w) that transforms the risk budgeting equations into:
 
@@ -32,7 +32,7 @@ correlation structure or starting point.
 
 The result is striking:
     - scipy:  vol ≈ 14.8%, drops the hedging asset, budget MAE ≈ 0.067
-    - pyrb:   vol ≈  6.9%, exploits negative correlations, budget MAE ≈ 0.000
+    - CCD:    vol ≈  6.9%, exploits negative correlations, budget MAE ≈ 0.000
 
 This is not a numerical precision issue — it is a fundamental difference
 between solving a non-convex problem with a local solver vs solving a
@@ -102,7 +102,7 @@ def run_example():
     risk_budget = np.array([0.45, 0.45, 0.10])
 
     print("=" * 50)
-    print("  Risk Budgeting: scipy vs pyrb comparison")
+    print("  Risk Budgeting: scipy vs CCD comparison")
     print("=" * 50)
     print(f"\nAsset vols:    {dict(zip(tickers, [f'{v:.1%}' for v in vols]))}")
     print(f"Correlations:\n{np.array2string(corr, precision=3)}")
@@ -132,9 +132,9 @@ def run_example():
     print_solution("Scipy SLSQP (local solver, non-convex formulation)",
                    w_scipy, covar, risk_budget, tickers)
 
-    # ── Solver 2: pyrb (convex reformulation, global optimum) ──────────
+    # ── Solver 2: CCD (convex reformulation, global optimum) ───────────
     #
-    # pyrb uses the Spinu (2013) change of variables y = log(w):
+    # the CCD solver uses the Spinu (2013) change of variables y = log(w):
     #
     #     min_y  (1/2) exp(y)' Σ exp(y)  -  Σ_i b_i y_i
     #
@@ -146,15 +146,15 @@ def run_example():
     # The unique global minimum satisfies the risk budgeting conditions
     # exactly: RC_i(w*) = b_i σ_p(w*) for all i.
     #
-    w_pyrb = opt_risk_budgeting(covar=covar,
+    w_ccd = opt_risk_budgeting(covar=covar,
                                 constraints=constraints,
                                 risk_budget=risk_budget)
-    print_solution("pyrb (convex reformulation, global optimum)",
-                   w_pyrb, covar, risk_budget, tickers)
+    print_solution("CCD (convex reformulation, global optimum)",
+                   w_ccd, covar, risk_budget, tickers)
 
-    # ── Solver 3: pyrb with weight cap ─────────────────────────────────
+    # ── Solver 3: CCD with weight cap ──────────────────────────────────
     #
-    # Adding a 40% max weight constraint. pyrb handles linear constraints
+    # Adding a 40% max weight constraint. The ADMM-CCD path handles linear constraints
     # natively via ADMM. Note that the unconstrained solution already
     # satisfies the 40% cap for assets 1 and 2, but the hedge gets ~48%.
     # With the cap, the hedge is reduced to 40% and the remaining risk
@@ -165,28 +165,28 @@ def run_example():
         is_long_only=True,
         max_weights=pd.Series(0.4, index=tickers)
     )
-    w_pyrb_bounded = opt_risk_budgeting(covar=covar,
+    w_ccd_bounded = opt_risk_budgeting(covar=covar,
                                         constraints=constraints_bounded,
                                         risk_budget=risk_budget)
-    print_solution("pyrb with max 40% per asset",
-                   w_pyrb_bounded, covar, risk_budget, tickers)
+    print_solution("CCD with max 40% per asset",
+                   w_ccd_bounded, covar, risk_budget, tickers)
 
     # ── Summary ─────────────────────────────────────────────────────────
     vol_scipy = np.sqrt(compute_portfolio_variance(w_scipy, covar))
-    vol_pyrb = np.sqrt(compute_portfolio_variance(w_pyrb, covar))
+    vol_ccd = np.sqrt(compute_portfolio_variance(w_ccd, covar))
     print(f"\n{'=' * 50}")
     print(f"  Summary")
     print(f"{'=' * 50}")
     print(f"  scipy portfolio vol:  {vol_scipy:.4%}")
-    print(f"  pyrb portfolio vol:   {vol_pyrb:.4%}")
-    print(f"  Vol reduction:        {1 - vol_pyrb / vol_scipy:.1%}")
+    print(f"  CCD portfolio vol:    {vol_ccd:.4%}")
+    print(f"  Vol reduction:        {1 - vol_ccd / vol_scipy:.1%}")
     print(f"")
-    print(f"  The {1 - vol_pyrb / vol_scipy:.0%} vol reduction comes entirely from")
+    print(f"  The {1 - vol_ccd / vol_scipy:.0%} vol reduction comes entirely from")
     print(f"  exploiting the negative correlations via the hedge asset.")
     print(f"  scipy misses this because its non-convex objective has")
     print(f"  a local minimum at hedge weight ≈ 0.")
     print(f"")
-    print(f"  Lesson: always use a convex reformulation (pyrb) for risk")
+    print(f"  Lesson: always use a convex reformulation (CCD) for risk")
     print(f"  budgeting. The naive SSE formulation is unreliable whenever")
     print(f"  the correlation structure creates multiple local minima —")
     print(f"  which is common in multi-asset portfolios with hedging assets.")

@@ -55,7 +55,7 @@ Each file shows both a single-date solve via `wrapper_*` and a rolling backtest 
 | `min_variance.py` | `rolling_quadratic_optimisation` (MIN_VARIANCE) | CVXPY QP. Minimise `w′Σw`. |
 | `max_sharpe.py` | `rolling_maximize_portfolio_sharpe` | CVXPY SOCP via Charnes–Cooper transformation. Rolling EWMA mean + covar. |
 | `max_diversification.py` | `rolling_maximise_diversification` | SciPy SLSQP. Maximise `DR(w) = w′σ / sqrt(w′Σw)`. |
-| `risk_budgeting.py` | `rolling_risk_budgeting` | pyrb ADMM. Equal or specified risk contributions. |
+| `risk_budgeting.py` | `rolling_risk_budgeting` | Internal CCD/ADMM. Equal or specified risk contributions. |
 | `carra_mixture.py` | `rolling_maximize_cara_mixture` | SciPy SLSQP. Expected CARA utility under K-component Gaussian mixture. |
 | `tracking_error.py` | `rolling_maximise_alpha_over_tre` | CVXPY QCQP. Maximise α′(w − w_b) subject to TE budget. EWMA momentum signal vs ETF benchmark. |
 | `target_return.py` | `rolling_maximise_alpha_with_target_return` | CVXPY. Maximise alpha subject to a target portfolio return (yield + price-return). |
@@ -90,7 +90,7 @@ calibrating production parameters.
 | `optimisers.py` | Several `PortfolioObjective` values on the same universe and covariance estimator. Compares NAV, turnover, group exposure across objectives. |
 | `covar_estimators.py` | EWMA vs LASSO vs Group LASSO factor covariance, with and without vol-normalisation. Same optimiser throughout. |
 | `parameter_sensitivity.py` | One-method, multiple parameter values (e.g. carra grid, span grid). Backtester sensitivity panel. |
-| `pyrb_vs_scipy.py` | Two implementations of constrained risk budgeting: the ADMM (pyrb) and a naive SciPy SLSQP. Demonstrates why pyrb is the production backend. |
+| `risk_budgeting_ccd_vs_scipy.py` | Two implementations of constrained risk budgeting: the internal CCD/ADMM and a naive SciPy SLSQP. Demonstrates why the convex reformulation is the production backend. |
 | `sp500_minvar_spans.py` | Min-variance on S&P 500 across EWMA spans of 26 / 52 / 104 / 208 weeks (half-lives 6m / 1y / 2y / 4y). Imports `load_sp500_universe_yahoo` from the top-level `sp500_universe.py`. |
 | `drift_policy.py` | Compares `OptimiserConfig.use_drifted_weights_0 = True` (production default, B) vs `False` (legacy, A) using `rolling_quadratic_optimisation` with a binding L1 turnover budget. Shows that under (A) the realised turnover exceeds the optimiser's apparent turnover by ~20%; under (B) the two agree. |
 
@@ -145,7 +145,7 @@ scripts referencing the old paths, update as follows:
 | `examples.multi_optimisers_backtest` | `examples.comparisons.optimisers` |
 | `examples.multi_covar_estimation_backtest` | `examples.comparisons.covar_estimators` |
 | `examples.parameter_sensitivity_backtest` | `examples.comparisons.parameter_sensitivity` |
-| `examples.risk_budgeting_pyrb_vs_scipy` | `examples.comparisons.pyrb_vs_scipy` |
+| `examples.risk_budgeting_pyrb_vs_scipy` | `examples.comparisons.risk_budgeting_ccd_vs_scipy` |
 | `examples.sp500_minvar` | `examples.comparisons.sp500_minvar_spans` |
 | `examples.long_short_optimisation` | `examples.solvers.long_short` |
 | `examples.sp500_universe` | unchanged (deliberately kept at top level) |
