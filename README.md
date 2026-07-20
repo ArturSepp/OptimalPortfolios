@@ -1,29 +1,19 @@
-# 🚀 **Optimal Portfolios Construction and Backtesting: optimalportfolios**
+# OptimalPortfolios (`optimalportfolios`)
 
-> Production-grade multi-asset portfolio construction and backtesting in Python — from covariance estimation to rolling optimisation to factsheet reporting, in a single pipeline that handles real-world data
+**Production-grade multi-asset portfolio construction and backtesting in Python — from covariance estimation to rolling optimisation to factsheet reporting, in a single pipeline that handles real-world data**
 
----
+[![PyPI](https://img.shields.io/pypi/v/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/)
+[![Python](https://img.shields.io/pypi/pyversions/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
+[![CI](https://github.com/ArturSepp/OptimalPortfolios/actions/workflows/test.yml/badge.svg)](https://github.com/ArturSepp/OptimalPortfolios/actions)
+[![Downloads](https://static.pepy.tech/badge/optimalportfolios)](https://pepy.tech/project/optimalportfolios)
+[![Monthly](https://static.pepy.tech/badge/optimalportfolios/month)](https://pepy.tech/project/optimalportfolios)
 
-| 📊 Metric | 🔢 Value |
-| --- | --- |
-| PyPI Version | [![PyPI](https://img.shields.io/pypi/v/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/) |
-| Python Versions | [![Python](https://img.shields.io/pypi/pyversions/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/) |
-| License | [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt) |
-| CI Status | [![CI](https://github.com/ArturSepp/OptimalPortfolios/actions/workflows/test.yml/badge.svg)](https://github.com/ArturSepp/OptimalPortfolios/actions) |
-
-### 📈 Package Statistics
-
-| 📊 Metric | 🔢 Value |
-| --- | --- |
-| Total Downloads | [![Total](https://pepy.tech/badge/optimalportfolios)](https://pepy.tech/project/optimalportfolios) |
-| Monthly | [![Monthly](https://pepy.tech/badge/optimalportfolios/month)](https://pepy.tech/project/optimalportfolios) |
-| Weekly | [![Weekly](https://pepy.tech/badge/optimalportfolios/week)](https://pepy.tech/project/optimalportfolios) |
-| GitHub Stars | [![GitHub stars](https://img.shields.io/github/stars/ArturSepp/OptimalPortfolios?style=flat-square&logo=github)](https://github.com/ArturSepp/OptimalPortfolios/stargazers) |
-| GitHub Forks | [![GitHub forks](https://img.shields.io/github/forks/ArturSepp/OptimalPortfolios?style=flat-square&logo=github)](https://github.com/ArturSepp/OptimalPortfolios/network/members) |
+**Papers:** Sepp, A. (2023), *Optimal Allocation to Cryptocurrencies in Diversified Portfolios*, Risk Magazine — [SSRN 4217841](https://ssrn.com/abstract=4217841) · Sepp, A., Ossa, I. and Kastenholz, M. (2026), *Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios*, [The Journal of Portfolio Management, 52(4), 86–120](https://www.pm-research.com/content/iijpormgmt/52/4/86) · Sepp, A., Hansen, E. and Kastenholz, M. (2026), *Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors* — [SSRN 6785958](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6785958). See [References](#references).
 
 ---
 
-## **Why optimalportfolios**
+## Why optimalportfolios
 
 Most Python portfolio optimisation packages (PyPortfolioOpt, Riskfolio-Lib, skfolio)
 solve single-period allocation problems: given a covariance matrix and expected
@@ -127,7 +117,7 @@ each solver lives in its own module in `optimization/general`, `optimization/saa
 or `optimization/taa` and plugs into the rolling backtester via a single dispatch
 function.
 
-## **Package overview**
+## Package overview
 
 ```
 optimalportfolios/
@@ -218,7 +208,7 @@ raw market data and the `factorlasso` solver:
 * `fit_rolling_factor_covars()` → `RollingFactorCovarData` (full
   decomposition with betas, R², clusters, residuals over time)
 
-## **Alpha signals module**
+## Alpha signals module
 
 **New in v4.1.1.** The `alphas` module provides standalone alpha signal
 computation functions with a consistent interface. Each function handles
@@ -311,7 +301,7 @@ See the [alphas module README](optimalportfolios/docs/alphas_module_readme.md) f
 7. [Updates](#updates)
 8. [Disclaimer](#disclaimer)
 
-## **Installation**
+## Installation
 
 install using
 
@@ -349,7 +339,7 @@ Optional dependencies:
 yfinance ">=0.2.40" (for getting test price data),
 pybloqs ">=1.2.13" (for producing html and pdf factsheets)
 
-## **Portfolio optimisers**
+## Portfolio optimisers
 
 ### 1. Implementation structure
 
@@ -679,7 +669,7 @@ weights = rolling_quadratic_optimisation(prices=prices, covar_dict=covar_dict,
                                           optimiser_config=cfg)
 ```
 
-## **Examples**
+## Examples
 
 The `examples/` folder is organised into five purpose-folders. The
 [examples README](optimalportfolios/docs/examples_readme.md) maps every demo to its
@@ -857,7 +847,7 @@ Optimization of Strategic and Tactical Asset Allocation for Multi-Asset
 Portfolios", *The Journal of Portfolio Management*, 52(4), 86-120.
 [Paper link](https://eprints.pm-research.com/17511/143431/index.html).
 
-## **Updates**
+## Updates
 
 #### May 2026, Version 5.3.1 released
 
@@ -1056,7 +1046,28 @@ Implementation of optimisation methods and data considered in
 "Optimal Allocation to Cryptocurrencies in
 Diversified Portfolios" by A. Sepp published in Risk Magazine, October 2023, 1-6. The draft is available at SSRN: <https://ssrn.com/abstract=4217841>
 
-## **Disclaimer**
+## Ecosystem
+
+This package is part of an open-source Python stack for quantitative finance — full catalogue at [github.com/ArturSepp](https://github.com/ArturSepp):
+
+| Package | Purpose |
+|---|---|
+| [`qis`](https://github.com/ArturSepp/QuantInvestStrats) | Performance analytics, factsheets, and visualisation |
+| [`optimalportfolios`](https://github.com/ArturSepp/OptimalPortfolios) *(this package)* | Portfolio construction and backtesting |
+| [`factorlasso`](https://github.com/ArturSepp/factorlasso) | Sparse factor models and factor covariance estimation |
+| [`bbg-fetch`](https://github.com/ArturSepp/BloombergFetch) | Bloomberg data fetching |
+| [`trendfollowing`](https://github.com/ArturSepp/TrendFollowingSystems) | Trend-following systems: closed-form theory and replication |
+| [`goal-based-allocation`](https://github.com/ArturSepp/GoalBasedAllocation) | Dynamic MV allocation under regime-switching jump-diffusions |
+| [`stochvolmodels`](https://github.com/ArturSepp/StochVolModels) | Stochastic volatility pricing analytics |
+| [`vanilla-option-pricers`](https://github.com/ArturSepp/VanillaOptionPricers) | Vectorised vanilla option pricers and implied volatility fitters |
+
+Dependency links within the stack: `optimalportfolios` builds on `qis` and `factorlasso`; `trendfollowing` builds on `qis`.
+
+## License
+
+MIT — see [LICENSE.txt](LICENSE.txt).
+
+## Disclaimer
 
 OptimalPortfolios package is distributed FREE & WITHOUT ANY WARRANTY under the MIT License.
 
@@ -1064,7 +1075,7 @@ See the [LICENSE.txt](LICENSE.txt) in the release for details.
 
 Please report any bugs or suggestions by opening an [issue](https://github.com/ArturSepp/OptimalPortfolios/issues).
 
-## **References**
+## References
 
 Sepp A. (2023),
 "Optimal Allocation to Cryptocurrencies in Diversified Portfolios",
@@ -1079,8 +1090,9 @@ Sepp A., Ossa I., and Kastenholz M. (2026),
 Sepp A., Hansen E., and Kastenholz M. (2026),
 "Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors",
 *Under revision at the Journal of Portfolio Management*.
+Available at <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6785958>
 
-## BibTeX Citations for optimalportfolios Package
+## Citation
 
 If you use optimalportfolios in your research, please cite it as:
 
