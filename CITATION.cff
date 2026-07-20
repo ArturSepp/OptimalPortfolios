@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+title: "OptimalPortfolios: Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python"
+authors:
+  - family-names: Sepp
+    given-names: Artur
+repository-code: "https://github.com/ArturSepp/OptimalPortfolios"
+url: "https://pypi.org/project/optimalportfolios/"
+license: MIT
+version: 6.2.0
+date-released: "2026-07-17"
+keywords:
+  - portfolio-optimization
+  - backtesting
+  - asset-allocation
+  - covariance-estimation
+  - cvxpy
+  - quantitative-finance
+  - python
+preferred-citation:
+  type: article
+  title: "Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios"
+  authors:
+  - family-names: Sepp
+    given-names: Artur
+  - family-names: Ossa
+    given-names: Ivan
+  - family-names: Kastenholz
+    given-names: Mika
+  journal: "The Journal of Portfolio Management"
+  volume: 52
+  issue: 4
+  start: 86
+  end: 120
+  year: 2026
+  url: "https://www.pm-research.com/content/iijpormgmt/52/4/86"
