@@ -90,10 +90,10 @@ all = [
 
 [project.urls]
 Homepage = "https://github.com/ArturSepp/OptimalPortfolios"
-Documentation = "https://github.com/ArturSepp/OptimalPortfolios/blob/master/README.md"
+Documentation = "https://github.com/ArturSepp/OptimalPortfolios/blob/main/README.md"
 Repository = "https://github.com/ArturSepp/OptimalPortfolios.git"
 Issues = "https://github.com/ArturSepp/OptimalPortfolios/issues"
-Changelog = "https://github.com/ArturSepp/OptimalPortfolios/blob/master/CHANGELOG.md"
+Changelog = "https://github.com/ArturSepp/OptimalPortfolios/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 include = ["optimalportfolios*"]
