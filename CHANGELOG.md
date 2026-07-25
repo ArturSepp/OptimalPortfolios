@@ -7,6 +7,37 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.4.0] - 2026-07-24
+
+### Added
+- `DependenceMeasure`, `compute_dependence_matrix` and
+  `compute_gerber_matrix` re-exported from factorlasso (>= 0.10.0):
+  the dependence measure that builds the clustering correlation matrix
+  (`pearson` default, `spearman`, `gerber`). No behavioural change —
+  the `LassoModel` fields `dependence_measure`, `gerber_threshold` and
+  `n_clusters` flow through `FactorCovarEstimator` and `LassoModel.copy`
+  generically, and the defaults reproduce the pre-0.10.0 clustering
+  exactly.
+
+### Changed
+- factorlasso dependency floor raised to `>=0.10.0,<0.11` (was
+  `>=0.9.0,<0.10`) to admit the dependence-measure parameters.
+
+## [6.3.0] - 2026-07-22
+
+### Added
+- `DistanceTransform` re-exported from factorlasso (>= 0.9.0) alongside
+  `LassoModel` / `LassoModelType`: the correlation-to-distance transform
+  for the clustering step of the factor covariance estimation
+  (`one_minus_rho` default, `chord`, `arccos`). No behavioural change:
+  the `LassoModel.distance_transform` field flows through
+  `FactorCovarEstimator` and `LassoModel.copy` generically, and the
+  default reproduces the pre-0.9.0 clustering exactly.
+
+### Changed
+- factorlasso dependency floor raised to `>=0.9.0,<0.10` (was
+  `>=0.8.0,<0.9`) to admit the `distance_transform` parameter.
+
 ## [6.2.0] - 2026-07-17
 
 ### Added
