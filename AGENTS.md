@@ -60,7 +60,7 @@ there is no top-level `tests/` directory.
 pip install -e ".[dev]"                                  # editable install with dev tools
 pytest optimalportfolios/                                # run the test suite
 pytest optimalportfolios/optimization/tests/constraints_test.py -v
-ruff check optimalportfolios/                            # lint (paper_code is excluded)
+ruff check optimalportfolios/                            # lint (papers is excluded)
 ```
 
 Optional extras: `data`, `reports`, `visualization`, `jupyter`, `dev`, `all`.

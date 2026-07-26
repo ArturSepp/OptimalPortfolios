@@ -15,7 +15,7 @@ from enum import Enum
 import qis as qis
 
 # add the local path to universe files
-LOCAL_PATH = Path(__file__).parent.joinpath('/paper_code/crypto_allocation_risk_2023/data//')
+LOCAL_PATH = Path(__file__).parent.joinpath('/papers/crypto_allocation_risk_2023/data//')
 print(LOCAL_PATH)
 
 

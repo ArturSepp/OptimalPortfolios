@@ -148,8 +148,8 @@ dmypy.json
 *.xml
 *.pyc
 /depreciated/
-paper_code/matf_cma_jpm_2026/data/futures_risk_factors.csv
+papers/matf_cma_jpm_2026/data/futures_risk_factors.csv
 *.xlsx
 
-paper_code/achievable_sharpe_faj_2026/
-/paper_code/convexity_premium/
+papers/achievable_sharpe_faj_2026/
+/papers/convexity_premium/
