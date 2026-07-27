@@ -153,3 +153,43 @@ papers/matf_cma_jpm_2026/data/futures_risk_factors.csv
 
 papers/achievable_sharpe_faj_2026/
 /papers/convexity_premium/
+
+# MATF-CMA paper folder (papers/matf_cma_jpm_2026)
+# The manuscript is under review at JPM and stays out of the public domain.
+papers/matf_cma_jpm_2026/private/
+papers/matf_cma_jpm_2026/presentations/
+papers/matf_cma_jpm_2026/_to_delete/
+
+# Compiled manuscripts: the source and its figures are tracked, the PDF is not.
+papers/**/*.pdf
+
+# LaTeX build artifacts under papers/
+papers/**/*.aux
+papers/**/*.out
+papers/**/*.toc
+papers/**/*.bbl
+papers/**/*.blg
+papers/**/*.nav
+papers/**/*.snm
+papers/**/*.bcf
+papers/**/*.synctex.gz
+papers/**/*.run.xml
+
+# local helper scripts
+/commit_paper.sh
+/push_paper.sh
+/untrack_pdf.sh
+/fix_placeholders.sh
+
+# Placeholder exhibits from the 2026-Q2 build, not fit to publish.
+# Remove a line here once the real figure replaces the stub.
+papers/matf_cma_jpm_2026/paper/figures/benchmark_table.png
+papers/matf_cma_jpm_2026/paper/figures/cma_snapshot.png
+papers/matf_cma_jpm_2026/paper/figures/efficient_frontier.PNG
+papers/matf_cma_jpm_2026/paper/figures/equity_factor_cmas.PNG
+papers/matf_cma_jpm_2026/paper/figures/factor_attribution.png
+papers/matf_cma_jpm_2026/paper/figures/factor_exposures.png
+papers/matf_cma_jpm_2026/paper/figures/rates_factor_cmas.PNG
+papers/matf_cma_jpm_2026/paper/figures/risk_factors_annual.PNG
+papers/matf_cma_jpm_2026/paper/figures/risk_factors_corr.PNG
+papers/matf_cma_jpm_2026/paper/figures/risk_factors_perf.PNG
