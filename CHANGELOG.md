@@ -115,6 +115,17 @@ backtest paths are unchanged from the 6.4.0 tree.
   covering the public API surface, general / SAA / TAA solvers against
   closed-form optima, the rolling dispatcher contract, EWMA and factor
   covariance estimation, and the utility layer.
+  **Correction, 2026-07-28: this suite was never committed.**
+  `git log --all --diff-filter=A -- "tests/*"` returns nothing — no `tests/`
+  directory has existed at any point in this repository's history, and the
+  `[tool.pytest.ini_options] testpaths = ["tests"]` that 6.5.0 replaced was
+  pointing at it. The fixture and loader described in the bullet below did land
+  and are in the wheel. The five areas named here are genuinely uncovered: at
+  6.5.0 they hold 1,443 statements at 31% line coverage. They are being rebuilt
+  in the package's own `<subpackage>/tests/` directories rather than at the
+  repository root; this entry is left in place rather than rewritten, because a
+  published release note that quietly changes is worth less than one that
+  carries its own correction.
 - Offline multi-asset universe fixture `examples/data/multiasset_returns.csv`
   (19 instruments across Fixed Income / Equity / Alternatives / Liquidity,
   monthly, with Asset Class and Sub Asset Class metadata) and loader
