@@ -20,7 +20,7 @@ writing code:
   belongs in [`factorlasso`](https://github.com/ArturSepp/factorlasso) — both are
   declared dependencies
 - Silent changes to optimiser defaults, constraint semantics, or rebalancing conventions
-- Changes to `paper_code/`, which accompanies the published papers
+- Changes to `papers/`, which accompanies the published papers
 - Examples that require a paid data subscription to run
 
 ## Reporting a bug
@@ -65,7 +65,7 @@ to human contributors.
 
 ## Replication
 
-`paper_code/` reproduces results from the published papers. If your change alters
+`papers/` reproduces results from the published papers. If your change alters
 optimiser behaviour, covariance estimation, or backtest mechanics, please re-run the
 relevant scripts and confirm the published tables still reproduce. If they do not,
 report the difference in the PR rather than updating the expected values.

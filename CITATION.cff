@@ -5,11 +5,12 @@ title: "OptimalPortfolios: Implementation of optimisation analytics for construc
 authors:
   - family-names: Sepp
     given-names: Artur
+    orcid: "https://orcid.org/0000-0002-7038-1748"
 repository-code: "https://github.com/ArturSepp/OptimalPortfolios"
 url: "https://pypi.org/project/optimalportfolios/"
 license: MIT
-version: 6.2.0
-date-released: "2026-07-17"
+version: 6.5.0
+date-released: "2026-07-28"
 keywords:
   - portfolio-optimization
   - backtesting

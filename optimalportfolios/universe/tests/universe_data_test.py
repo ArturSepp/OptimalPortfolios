@@ -2,7 +2,6 @@
 import pandas as pd
 import qis as qis
 from enum import Enum
-import yfinance as yf
 
 import optimalportfolios.local_path as lp
 from optimalportfolios.universe import UniverseData, MetadataField
@@ -14,6 +13,11 @@ def fetch_universe_data(start_date: str = "2003-12-31") -> UniverseData:
     define custom universe with asset class grouping
     5 asset groups with 3 etfs in each
     """
+    try:
+        import yfinance as yf
+    except ImportError as e:
+        raise ImportError("fetch_universe_data needs yfinance: "
+                          "pip install optimalportfolios[data]") from e
     universe_data = dict(SPY='Equities',
                          QQQ='Equities',
                          EEM='Equities',
@@ -47,6 +51,11 @@ def fetch_universe_data(start_date: str = "2003-12-31") -> UniverseData:
 
 
 def fetch_risk_factor_prices(start_date: str = "2003-12-31") -> pd.DataFrame:
+    try:
+        import yfinance as yf
+    except ImportError as e:
+        raise ImportError("fetch_risk_factor_prices needs yfinance: "
+                          "pip install optimalportfolios[data]") from e
     tickers = {'SPY': 'Equity', 'TLT': 'Rate'}
     risk_factor_prices = yf.download(tickers=list(tickers.keys()), start=start_date, end=None, ignore_tz=True, auto_adjust=True)['Close']
     risk_factor_prices = risk_factor_prices.rename(tickers)

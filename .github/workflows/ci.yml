@@ -8,6 +8,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  MPLBACKEND: Agg
 
 jobs:
   test:
@@ -49,11 +50,38 @@ jobs:
         print('factorlasso integration OK')
         "
 
-    - name: Run solver tests (no external data)
+    - name: Run the test suite
+      run: pytest
+
+  core-install:
+    # The suite must stay green without the optional extras: no test may need
+    # data, network or a Bloomberg terminal. Without this job the constraint is
+    # a convention, and it has already been broken twice by a module-scope
+    # yfinance import.
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install the core package only
       run: |
-        python optimalportfolios/optimization/tests/constraints_test.py
-        python optimalportfolios/optimization/tests/carra_mixture_test.py
-        python optimalportfolios/optimization/tests/quadratic_test.py
-        python optimalportfolios/optimization/tests/maximise_alpha_with_target_yield_test.py
-        python optimalportfolios/optimization/tests/maximise_alpha_over_tre_test.py
-        python optimalportfolios/utils/tests/portfolios_funcs_test.py
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install pytest
+
+    - name: Assert the optional extras are absent
+      run: |
+        python -c "
+        import importlib.util
+        for name in ('yfinance', 'pandas_datareader', 'pybloqs'):
+            assert importlib.util.find_spec(name) is None, f'{name} leaked into the core install'
+        print('core install confirmed')
+        "
+
+    - name: Run the test suite on a core install
+      run: pytest

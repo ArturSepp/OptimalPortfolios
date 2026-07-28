@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optimalportfolios"
-version = "6.3.0"
+version = "6.5.0"
 description = "Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python"
 readme = "README.md"
 license = {text = "MIT"}
@@ -97,23 +97,23 @@ Changelog = "https://github.com/ArturSepp/OptimalPortfolios/blob/main/CHANGELOG.
 
 [tool.setuptools.packages.find]
 include = ["optimalportfolios*"]
-exclude = ["tests*", "docs*", "paper_code*"]
+exclude = ["tests*", "docs*", "papers*"]
 
 [tool.setuptools.package-data]
 optimalportfolios = ["*.yaml"]
 "optimalportfolios.examples.data" = ["*.csv"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["optimalportfolios"]
 addopts = "-ra -q --tb=short"
 
 [tool.ruff]
 line-length = 100
-exclude = ["paper_code"]
+exclude = ["papers"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I"]
+select = ["E", "F", "W"]
 
 [tool.coverage.run]
 source = ["optimalportfolios"]
-omit = ["*/tests/*", "*/examples/*", "paper_code/*"]
+omit = ["*/tests/*", "*/examples/*", "papers/*"]

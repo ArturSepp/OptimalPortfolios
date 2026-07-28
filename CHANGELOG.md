@@ -7,6 +7,67 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.5.0] - 2026-07-28
+
+**6.3.0 and 6.4.0 were written up below but never published.** No tag and no
+PyPI release was cut for either, so the last version installable from PyPI is
+6.2.0 (2026-07-17) and everything documented under 6.3.0 and 6.4.0 — the
+`DistanceTransform`, `DependenceMeasure`, `compute_dependence_matrix` and
+`compute_gerber_matrix` re-exports from factorlasso — first reaches users here.
+**No library behaviour changes in 6.5.0 itself**: the solver, covariance and
+backtest paths are unchanged from the 6.4.0 tree.
+
+### Fixed
+- `alphas/tests/test_signal_diagnostics.py` imported `plot_signal_diagnostics`
+  and `plot_signal_diagnostics_per_component`, which 6.3.0 removed from
+  `alphas/signal_diagnostics.py` when the compute-and-plot wrappers moved to
+  qis. The module has raised `ImportError` on collection since then; nothing
+  reported it because `testpaths` pointed at a directory that is not in the
+  repository and CI ran six files by hand. The nine tests covering the moved
+  wrappers are dropped — they belong to qis now — and the seventeen covering the
+  `AlphasData` adapter, the per-component sweep and the comparison aggregation
+  are collected again.
+- `yfinance` is no longer imported at module scope in
+  `examples/data/test_data.py` and `universe/tests/universe_data_test.py`. Both
+  imports are function-local and raise `ImportError` naming the `[data]` extra,
+  so a core install collects the suite instead of erroring. `yfinance` remains a
+  test-and-example dependency; no library module imports it.
+- `[tool.ruff] exclude`, `[tool.coverage.run] omit` and
+  `[tool.setuptools.packages.find] exclude` still named `paper_code`, which
+  6.2.0 renamed to `papers`. ruff was linting the replication code the
+  configuration intends to skip.
+- The 6.4.0 entry below recorded the factorlasso floor as `>=0.10.0,<0.11` and
+  the 6.3.0 entry as `>=0.9.0,<0.10`. Neither bound was ever in
+  `pyproject.toml`, which went from `>=0.8.0,<0.9` to `>=0.10.1` in one step.
+  Both lines are corrected in place. The floor is and remains `>=0.10.1`, which
+  is where `compute_clusters_from_corr_matrix` stopped raising when
+  `n_clusters` exceeds the universe size — the failure mode of a rolling
+  factor-covariance fit over a growing universe. No upper bound is declared,
+  matching the `qis` floor, whose `<6` cap was dropped in 6.2.0.
+
+### Added
+- `optimalportfolios/tests/version_metadata_test.py`: `pyproject.toml`,
+  `CITATION.cff` and the `@software` BibTeX entry in `README.md` must carry the
+  same version, and `date-released` must be an ISO date. At 6.4.0 the three read
+  6.3.0, 6.2.0 and versionless.
+- `CITATION.cff` carries the author ORCID iD 0000-0002-7038-1748; the
+  `@software` entry in `README.md` carries `version` and a current year.
+
+### Changed
+- `[tool.pytest.ini_options] testpaths` is `["optimalportfolios"]`, replacing a
+  pointer at a top-level `tests/` directory that is not in the repository. A
+  bare `pytest` at the repository root collects 180 tests across seven modules
+  and passes on a core install with no data, network or terminal access. The
+  other sixteen `*_test.py` files are `run_local_test` diagnostic scripts and
+  contribute no collected tests; they are imported during collection and must
+  stay importable without the optional extras.
+- CI runs `pytest` instead of six hand-picked `python <file>.py` invocations.
+  The import-verification and factorlasso re-export checks stay as separate
+  steps, and the suite runs on a core install as well as on `[dev]`.
+- ruff no longer selects `I`. Import order in this stack groups the scientific
+  stack before project packages, which isort's ordering contradicts; the rule
+  was selected here and in no other repository of the stack.
+
 ## [6.4.0] - 2026-07-24
 
 ### Added
@@ -20,8 +81,10 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   exactly.
 
 ### Changed
-- factorlasso dependency floor raised to `>=0.10.0,<0.11` (was
-  `>=0.9.0,<0.10`) to admit the dependence-measure parameters.
+- factorlasso dependency floor raised to `>=0.10.1` (was `>=0.8.0,<0.9`) to
+  admit the dependence-measure parameters. Corrected in 6.5.0: this line read
+  `>=0.10.0,<0.11` (was `>=0.9.0,<0.10`), a bound `pyproject.toml` never
+  carried.
 
 ## [6.3.0] - 2026-07-22
 
@@ -35,8 +98,10 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   default reproduces the pre-0.9.0 clustering exactly.
 
 ### Changed
-- factorlasso dependency floor raised to `>=0.9.0,<0.10` (was
-  `>=0.8.0,<0.9`) to admit the `distance_transform` parameter.
+- `distance_transform` requires factorlasso >= 0.9.0. Corrected in 6.5.0: this
+  line read "floor raised to `>=0.9.0,<0.10` (was `>=0.8.0,<0.9`)", but
+  `pyproject.toml` still declared `>=0.8.0,<0.9` at this point and moved
+  straight to `>=0.10.1` in 6.4.0.
 
 ## [6.2.0] - 2026-07-17
 

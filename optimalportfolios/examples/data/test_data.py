@@ -5,7 +5,6 @@ use update and save universe for speed-up of test cases
 
 # imports
 import pandas as pd
-import yfinance as yf
 import qis
 import optimalportfolios.local_path as local_path
 from enum import Enum
@@ -23,6 +22,11 @@ UNIVERSE_DATA = dict(SPY='Equities',
 
 
 def update_test_prices() -> pd.DataFrame:
+    try:
+        import yfinance as yf
+    except ImportError as e:
+        raise ImportError("update_test_prices needs yfinance: "
+                          "pip install optimalportfolios[data]") from e
     tickers = list(UNIVERSE_DATA.keys())
     prices = yf.download(tickers=tickers, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)
     prices = prices['Close']

@@ -47,31 +47,41 @@ optimalportfolios/
   optimization/      optimisers, constraints, solvers
   universe/          instrument universes
   reports/           reporting built on qis
+  tests/             cross-cutting tests (release metadata agreement)
   utils/, examples/, docs/, config.py, local_path.py, settings.yaml
-paper_code/          code accompanying the published papers (excluded from ruff)
+papers/              code accompanying the published papers (excluded from ruff)
 ```
 
 Tests live inside the package as `optimalportfolios/<subpackage>/tests/*_test.py`;
-there is no top-level `tests/` directory.
+there is no top-level `tests/` directory. Not every `*_test.py` is a pytest
+module: sixteen of them are `run_local_test` diagnostic scripts that print and
+plot, contribute no collected tests, and need the author's local price data.
+They are still imported during collection, so they must stay importable on a
+core install — put an optional import inside the function that needs it and
+raise `ImportError` naming the extra.
 
 ## Commands
 
 ```bash
 pip install -e ".[dev]"                                  # editable install with dev tools
-pytest optimalportfolios/                                # run the test suite
+pytest                                                   # run the test suite (180 tests, ~9 s)
 pytest optimalportfolios/optimization/tests/constraints_test.py -v
-ruff check optimalportfolios/                            # lint (papers is excluded)
+ruff check optimalportfolios/                            # lint (papers/ is excluded)
 ```
 
 Optional extras: `data`, `reports`, `visualization`, `jupyter`, `dev`, `all`.
-Supported Python is >= 3.10; CI runs 3.10 – 3.12.
+Supported Python is >= 3.10; CI runs 3.10 – 3.12 on a `[dev]` install and 3.12
+again on a core install, which must be green: no test may need data, network or
+a Bloomberg terminal.
 
 ## Conventions
 
 - Test files are named `*_test.py` and live in a `tests/` directory inside the
   subpackage under test.
-- Line length 100 (`ruff`, rules `E`, `F`, `W`, `I`); `paper_code/` is excluded from
-  linting on purpose.
+- Line length 100 (`ruff`, rules `E`, `F`, `W`); `papers/` is excluded from
+  linting on purpose. `I` is deliberately not selected anywhere in the stack:
+  imports group the scientific stack before project packages, which isort's
+  ordering contradicts.
 - Optimisation problems are expressed with `cvxpy`; `quadprog` is used where a
   dedicated QP solver is faster. Do not introduce a third optimisation backend.
 - Enums and dataclasses carry configuration (optimiser type, constraint sets,
@@ -86,24 +96,25 @@ Supported Python is >= 3.10; CI runs 3.10 – 3.12.
   and factsheets that belong in `qis`. Both are declared dependencies — import them.
 - Do not silently change optimiser defaults, constraint semantics, or rebalancing
   conventions: published results depend on them.
-- Do not edit `paper_code/` to make linting pass; it is excluded deliberately.
+- Do not edit `papers/` to make linting pass; it is excluded deliberately.
 - Do not add a hard dependency on Bloomberg data. Examples run on free data.
 - Do not commit backtest output, factsheets, or figures.
 
 ## Replication contract
 
-`paper_code/` reproduces results from the published papers. If a change alters
+`papers/` reproduces results from the published papers. If a change alters
 optimiser behaviour, covariance estimation, or backtest mechanics, re-run the relevant
-scripts in `paper_code/` and confirm the outputs still match the published tables
+scripts in `papers/` and confirm the outputs still match the published tables
 before proposing the change.
 
 ## Release checklist
 
-A release touches three version locations. All three must agree:
+A release touches three version locations. All three must agree, and
+`optimalportfolios/tests/version_metadata_test.py` fails when they do not:
 
 1. `version` in `pyproject.toml`
 2. `version` and `date-released` in `CITATION.cff`
-3. the software BibTeX entry in `README.md` (if it pins a version)
+3. the `@software` BibTeX entry in `README.md`
 
 Then: commit, tag `v<version>`, build and publish to PyPI, and cut a GitHub Release
 with the same tag. Do not bump versions as part of an unrelated change, and do not
@@ -111,8 +122,15 @@ publish without the maintainer explicitly asking for a release.
 
 ## Known issues
 
-Two stale artefacts in this repository, safe to fix if asked:
-`[tool.pytest.ini_options] testpaths = ["tests"]` points at a non-existent directory,
-so a bare `pytest` collects nothing — always pass an explicit path. The previous
-`CLAUDE.md` described version 4.1.1 and a black/isort/flake8/mypy toolchain; the
-project has since moved to `ruff` and this file supersedes it.
+The previous `CLAUDE.md` described version 4.1.1 and a black/isort/flake8/mypy
+toolchain; the project has since moved to `ruff` and this file supersedes it.
+
+`ruff check optimalportfolios/` reports around 780 findings, almost all `E501`
+line-length in the older modules. CI does not gate on lint. Fix the lines a
+change touches; a repository-wide reflow is not wanted.
+
+The 6.2.0 changelog entry describes a repo-root `tests/` suite of 69 headless
+tests. No such directory exists in the git history, and the offline fixture that
+entry also describes (`examples/data/multiasset_returns.csv` with
+`examples.data.multiasset.load_multiasset_data`) is committed but unused by any
+collected test. Bare `pytest` collects 180 tests from seven in-package modules.

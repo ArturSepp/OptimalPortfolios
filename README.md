@@ -1100,7 +1100,8 @@ If you use optimalportfolios in your research, please cite it as:
 @software{sepp2024optimalportfolios,
   author={Sepp, Artur},
   title={OptimalPortfolios: Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python},
-  year={2024},
+  year={2026},
+  version={6.5.0},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

@@ -1,15 +1,13 @@
 """
 Tests for optimalportfolios.alphas.signal_diagnostics.
 
-Exercises the AlphasData integration, the per-component sweep, the
-comparison aggregation, and the plotting functions. Numerical
-correctness of the underlying regression is covered in
-qis.perfstats.tests.test_signal_diagnostics.
+Exercises the AlphasData integration, the per-component sweep and the
+comparison aggregation. Numerical correctness of the underlying
+regression is covered in qis.perfstats.tests.test_signal_diagnostics;
+the compute-and-plot wrappers moved to qis in 6.3.0 and are tested
+there.
 """
 # built-in
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
@@ -20,8 +18,6 @@ from optimalportfolios.alphas.alpha_data import AlphasData
 from optimalportfolios.alphas.signal_diagnostics import (
     run_signal_diagnostics,
     run_signal_diagnostics_per_component,
-    plot_signal_diagnostics,
-    plot_signal_diagnostics_per_component,
     compare_signal_diagnostics,
 )
 
@@ -182,113 +178,6 @@ class TestCompareSignalDiagnostics:
         assert out.index.name == 'signal'
         assert len(out) == 3
         assert 'beta' in out.columns
-
-
-# ───────────────────────────────────────────────────────────────────────────────
-# Plot
-# ───────────────────────────────────────────────────────────────────────────────
-
-
-class TestPlotSignalDiagnostics:
-    """plot_signal_diagnostics — returns a Figure, no I/O."""
-
-    def test_returns_figure_for_alphas_data(self):
-        ard, ad, gd = _make_synthetic_alphas_data()
-        fig = plot_signal_diagnostics(asset_returns_dict=ard, signal=ad,
-                                      group_data=gd, horizons=[1, 3])
-        assert isinstance(fig, plt.Figure)
-        plt.close(fig)
-
-    def test_returns_figure_for_dataframe(self):
-        ard, ad, _ = _make_synthetic_alphas_data()
-        fig = plot_signal_diagnostics(asset_returns_dict=ard,
-                                      signal=ad.alpha_scores, horizons=[1])
-        assert isinstance(fig, plt.Figure)
-        plt.close(fig)
-
-    def test_custom_title_is_respected(self):
-        ard, ad, gd = _make_synthetic_alphas_data()
-        fig = plot_signal_diagnostics(asset_returns_dict=ard, signal=ad,
-                                      group_data=gd, horizons=[1],
-                                      title='Custom title for this test')
-        assert fig._suptitle.get_text() == 'Custom title for this test'
-        plt.close(fig)
-
-    def test_auto_title_includes_signal_label(self):
-        ard, ad, gd = _make_synthetic_alphas_data()
-        fig = plot_signal_diagnostics(asset_returns_dict=ard, signal=ad,
-                                      group_data=gd, horizons=[1])
-        assert "'alpha_scores'" in fig._suptitle.get_text()
-        plt.close(fig)
-
-
-class TestPlotSignalDiagnosticsPerComponent:
-    """plot_signal_diagnostics_per_component — dict of Figures."""
-
-    def test_returns_dict_of_figures(self):
-        ard, ad, gd = _make_synthetic_alphas_data()
-        figs = plot_signal_diagnostics_per_component(
-            asset_returns_dict=ard, alphas_data=ad,
-            group_data=gd, horizons=[1, 3],
-        )
-        assert set(figs.keys()) == {'alpha_scores', 'momentum_score',
-                                    'beta_score'}
-        for fig in figs.values():
-            assert isinstance(fig, plt.Figure)
-            plt.close(fig)
-
-    def test_components_filter_propagates(self):
-        ard, ad, gd = _make_synthetic_alphas_data()
-        figs = plot_signal_diagnostics_per_component(
-            asset_returns_dict=ard, alphas_data=ad, group_data=gd,
-            horizons=[1], components=['alpha_scores'],
-        )
-        assert list(figs.keys()) == ['alpha_scores']
-        plt.close(figs['alpha_scores'])
-
-
-class TestPlotSignalDiagnosticsBetaBoxplot:
-    """plot_signal_diagnostics_beta_boxplot — per-asset β distribution."""
-
-    def test_returns_figure(self):
-        from optimalportfolios.alphas.signal_diagnostics import (
-            plot_signal_diagnostics_beta_boxplot,
-        )
-        ard, ad, gd = _make_synthetic_alphas_data(n_years=10)
-        fig = plot_signal_diagnostics_beta_boxplot(
-            asset_returns_dict=ard, signal=ad, group_data=gd,
-            horizons=[1, 2, 3, 6], min_obs_per_asset=12,
-        )
-        assert isinstance(fig, plt.Figure)
-        plt.close(fig)
-
-    def test_handles_no_qualifying_assets(self):
-        from optimalportfolios.alphas.signal_diagnostics import (
-            plot_signal_diagnostics_beta_boxplot,
-        )
-        ard, ad, gd = _make_synthetic_alphas_data(n_years=10)
-        # Absurd min_obs filter → no assets survive, function should still
-        # produce a Figure with an info message rather than raising.
-        fig = plot_signal_diagnostics_beta_boxplot(
-            asset_returns_dict=ard, signal=ad, group_data=gd,
-            horizons=[1], min_obs_per_asset=999_999,
-        )
-        assert isinstance(fig, plt.Figure)
-        plt.close(fig)
-
-    def test_custom_title_respected(self):
-        from optimalportfolios.alphas.signal_diagnostics import (
-            plot_signal_diagnostics_beta_boxplot,
-        )
-        ard, ad, gd = _make_synthetic_alphas_data(n_years=10)
-        fig = plot_signal_diagnostics_beta_boxplot(
-            asset_returns_dict=ard, signal=ad, group_data=gd,
-            horizons=[1, 2], title='Custom boxplot title',
-        )
-        # Title is on the axes, not the figure suptitle (single-panel).
-        ax = fig.axes[0]
-        assert ax.get_title() == 'Custom boxplot title'
-        plt.close(fig)
 
 
 if __name__ == '__main__':
