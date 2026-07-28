@@ -155,7 +155,6 @@ papers/achievable_sharpe_faj_2026/
 /papers/convexity_premium/
 
 # MATF-CMA paper folder (papers/matf_cma_jpm_2026)
-# The manuscript is under review at JPM and stays out of the public domain.
 papers/matf_cma_jpm_2026/private/
 papers/matf_cma_jpm_2026/presentations/
 papers/matf_cma_jpm_2026/_to_delete/
@@ -193,3 +192,5 @@ papers/matf_cma_jpm_2026/paper/figures/rates_factor_cmas.PNG
 papers/matf_cma_jpm_2026/paper/figures/risk_factors_annual.PNG
 papers/matf_cma_jpm_2026/paper/figures/risk_factors_corr.PNG
 papers/matf_cma_jpm_2026/paper/figures/risk_factors_perf.PNG
+
+papers/matf_cma_jpm_2026/references/
