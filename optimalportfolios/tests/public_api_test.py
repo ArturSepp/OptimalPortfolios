@@ -66,21 +66,15 @@ FACTORLASSO_REEXPORTS: List[str] = [
 # Names exported by both optimalportfolios and qis that are NOT the same object. Each entry is a
 # deliberate collision with a reason; anything not listed here must be identical in both packages.
 #
-# The two callables are recorded, not endorsed. `estimate_rolling_ewma_covar` in particular is an
-# independent implementation of a symbol qis documents in its CORE_API, with a near-identical
-# signature — the shape that lets the same nominal estimator drift between packages. Reported as a
-# finding; resolving it is a numerical-path change and not this suite's business.
+# `estimate_rolling_ewma_covar` was here until 6.6.0, when the local reimplementation was deleted
+# in favour of the qis function. This test is what found it, and the entry's removal is what the
+# staleness check below forced once the two names became one object.
 QIS_COLLISION_ALLOWLIST: Dict[str, str] = {
     'local_path': 'each package has its own path resolution module; module binding, not a symbol',
     'utils': 'each package has its own utils subpackage; module binding, not a symbol',
     'compute_portfolio_vol': (
         'different functions sharing a name: optimalportfolios takes (covar, weights) and returns '
         'a scalar, qis takes (returns, weights, span) and returns a series'
-    ),
-    'estimate_rolling_ewma_covar': (
-        'optimalportfolios reimplements the rolling assembly around qis primitives rather than '
-        'calling qis.estimate_rolling_ewma_covar, which has a near-identical signature. Recorded '
-        'so a third copy cannot appear silently'
     ),
 }
 

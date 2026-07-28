@@ -7,6 +7,52 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.6.0] - 2026-07-28
+
+**`estimate_rolling_ewma_covar` is now `qis.estimate_rolling_ewma_covar`.** This package carried
+its own implementation of a function `qis` already exports and documents in its core API, with a
+near-identical signature — two same-named estimators, in two packages, one depending on the other,
+free to drift apart with nothing failing. The local copy is deleted and the name is re-exported
+from `qis`, so `from optimalportfolios import estimate_rolling_ewma_covar` keeps working and now
+resolves to one implementation instead of two.
+
+Measured before the swap, on the committed `multiasset` fixture over 2007-02 to 2026-05, 77
+rebalancing dates:
+
+| configuration | max abs difference |
+|---|---|
+| `returns_freq='ME'`, `rebalancing_freq='QE'`, `span=24` | **0.0** — bit-identical |
+| `returns_freq='ME'`, `rebalancing_freq='YE'`, `span=36` | **0.0** — bit-identical |
+| as above with `demean=False` | **0.0** — bit-identical |
+| as above with `is_apply_vol_normalised_returns=True` | 5.1e-05 (3.1e-04 relative) |
+
+The one difference is an EWM warm-up artefact and its cause is known: this package's
+`compute_returns_from_prices` drops one extra leading row, because after demeaning the first row
+is structurally zero, while `qis` keeps it. The demeaned series are bit-identical over their
+common tail. The plain covariance path has forgotten the extra observation long before the first
+rebalancing date, which is why three of the four configurations agree exactly; the vol-normalised
+path divides by a rolling volatility that carries the warm-up in a ratio, so a residual survives.
+
+**A result computed with `is_apply_vol_normalised_returns=True` will move in the fourth decimal.**
+Nothing in this package took that path: every internal call site passes the default `False`, and
+`EwmaCovarEstimator` and `FactorCovarEstimator` have their own vol-normalisation code that this
+change does not touch. Two examples pass `True` and are diagnostic scripts.
+
+Two smaller behaviour changes come with the swap. The local version accepted `**kwargs` and
+silently ignored unknown keywords; the `qis` function does not, so a misspelled argument now
+raises instead of being dropped. The local version raised `ValueError` when the rebalancing
+schedule came out empty; `qis` returns an empty dict instead, so a caller relying on that message
+gets a quieter failure.
+
+### Removed
+- `optimalportfolios.covar_estimation.ewma_covar_estimator.estimate_rolling_ewma_covar`, the
+  local implementation. The name still resolves — it is `qis`'s function now.
+
+### Changed
+- `optimalportfolios/tests/public_api_test.py` drops its `estimate_rolling_ewma_covar` entry from
+  `QIS_COLLISION_ALLOWLIST`. That test is what found the duplicate, and its staleness check is
+  what forced the entry out once the two names became one object.
+
 ## [6.5.0] - 2026-07-28
 
 **6.3.0 and 6.4.0 were written up below but never published.** No tag and no

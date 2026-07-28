@@ -167,48 +167,9 @@ class EwmaCovarEstimator(CovarEstimator):
                 covars[date] = pd.DataFrame(an_factor * covar_t, index=tickers, columns=tickers)
 
         return covars
-
-
-def estimate_rolling_ewma_covar(prices: pd.DataFrame,
-                                time_period: qis.TimePeriod,  # rebalancing schedule bounds
-                                returns_freq: str = 'W-WED',
-                                rebalancing_freq: str = 'QE',
-                                span: int = 52,
-                                is_apply_vol_normalised_returns: bool = False,
-                                demean: bool = True,
-                                apply_an_factor: bool = True,
-                                **kwargs
-                                ) -> Dict[pd.Timestamp, pd.DataFrame]:
-    """
-    compute ewma covar matrix: supporting for nans in prices
-    output is dict[estimation timestamp, pd.Dataframe(estimated_covar)
-    """
-    returns = compute_returns_from_prices(prices=prices, returns_freq=returns_freq, demean=demean, span=span)
-    x = returns.to_numpy()
-    if is_apply_vol_normalised_returns:
-        covar_tensor_txy, _, _ = qis.compute_ewm_covar_tensor_vol_norm_returns(a=x, span=span, nan_backfill=qis.NanBackfill.ZERO_FILL)
-    else:
-        covar_tensor_txy = qis.compute_ewm_covar_tensor(a=x, span=span, nan_backfill=qis.NanBackfill.ZERO_FILL)
-
-    # create rebalancing schedule
-    rebalancing_schedule = qis.generate_rebalancing_indicators(df=returns, freq=rebalancing_freq)
-    if np.all(rebalancing_schedule == False):
-        raise ValueError(f"rebalancing shedule is empty for return period {qis.get_time_period(df=returns).to_str()} "
-                         f"and rebalancing_freq={rebalancing_freq}")
-
-    tickers = prices.columns.to_list()
-    covars = {}
-    if apply_an_factor:
-        an_factor = qis.infer_annualisation_factor_from_df(data=returns)
-    else:
-        an_factor = 1.0
-    start_date = time_period.start.tz_localize(tz=returns.index.tz)  # make sure tz is alined with rebalancing_schedule
-    if time_period.end is not None:
-        end_date = time_period.end.tz_localize(tz=returns.index.tz)
-    else:
-        end_date = None
-    for idx, (date, value) in enumerate(rebalancing_schedule.items()):
-        if value and date >= start_date and (end_date is None or date <= end_date):
-            covar_t = pd.DataFrame(covar_tensor_txy[idx], index=tickers, columns=tickers)
-            covars[date] = an_factor*covar_t
-    return covars
+# `estimate_rolling_ewma_covar` used to be defined here. It was an independent reimplementation of
+# `qis.estimate_rolling_ewma_covar`, which this package already depends on and which qis documents
+# in its core API: two same-named estimators with near-identical signatures, one package depending
+# on the other, free to drift apart without anything failing. The name is re-exported from qis so
+# that callers are unaffected. See CHANGELOG 6.6.0 for the measured difference between the two.
+from qis import estimate_rolling_ewma_covar  # noqa: F401,E402
