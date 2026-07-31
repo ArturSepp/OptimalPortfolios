@@ -148,7 +148,9 @@ dmypy.json
 *.xml
 *.pyc
 /depreciated/
-papers/matf_cma_jpm_2026/data/futures_risk_factors.csv
+# Retired: papers/matf_cma_jpm_2026/data/ no longer exists. The same factor-NAV
+# content now lives at papers/cma_data/snapshots/<tag>/factor_navs.csv and is
+# ignored by papers/cma_data/.gitignore together with the two asset return panels.
 *.xlsx
 
 papers/achievable_sharpe_faj_2026/
@@ -180,17 +182,21 @@ papers/**/*.run.xml
 /untrack_pdf.sh
 /fix_placeholders.sh
 
-# Placeholder exhibits from the 2026-Q2 build, not fit to publish.
-# Remove a line here once the real figure replaces the stub.
-papers/matf_cma_jpm_2026/paper/figures/benchmark_table.png
-papers/matf_cma_jpm_2026/paper/figures/cma_snapshot.png
-papers/matf_cma_jpm_2026/paper/figures/efficient_frontier.PNG
+# Placeholder exhibits, not fit to publish. Remove a line once the real figure
+# replaces the stub.
+#
+# Eight of the original ten were regenerated on the cma_data 2026q2 snapshot
+# (roadmap stages J2-J4b) and are now real exhibits, so they came off this list:
+#   benchmark_table.png  cma_snapshot.png  efficient_frontier.PNG
+#   factor_attribution.png  factor_exposures.png  risk_factors_annual.PNG
+#   risk_factors_corr.PNG  risk_factors_perf.PNG
+#
+# These two remain 6 KB stubs: both are BLOCKED on a production extract that
+# does not exist yet (regional P-CAEY levels; per-country term premium and
+# roll-down), and both are still \pendingexhibit boxes in the manuscript, which
+# prints a framed placeholder and never loads the file.
 papers/matf_cma_jpm_2026/paper/figures/equity_factor_cmas.PNG
-papers/matf_cma_jpm_2026/paper/figures/factor_attribution.png
-papers/matf_cma_jpm_2026/paper/figures/factor_exposures.png
 papers/matf_cma_jpm_2026/paper/figures/rates_factor_cmas.PNG
-papers/matf_cma_jpm_2026/paper/figures/risk_factors_annual.PNG
-papers/matf_cma_jpm_2026/paper/figures/risk_factors_corr.PNG
-papers/matf_cma_jpm_2026/paper/figures/risk_factors_perf.PNG
 
-papers/matf_cma_jpm_2026/references/
+# reference source documents (books, survey PDFs) - not redistributable
+papers/references/
