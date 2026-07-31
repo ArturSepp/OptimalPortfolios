@@ -1,0 +1,18 @@
+# rosaa-dependent extraction scripts stay untracked: they read the proprietary
+# production workbook. The public pipeline consumes only the committed
+# ../../cma_data snapshot files.
+_local_*.py
+__pycache__/
+.pytest_cache/
+
+# Working reports for a manuscript still under review: the defect register
+# D1-D8, the owner decision log, the review outcomes, and every R3 number that
+# moved before acceptance. Kept on disk, not published at this stage.
+# Remove this line once the paper is accepted — the reports are the number
+# traceability a reader will want, and they are written to be published.
+notes/
+
+# Derived side outputs of the exhibit build. The tex fragments in figures/ ARE
+# tracked (they are the drop-in exhibit bodies); these two are regenerated
+# artifacts with no independent value.
+figures/*.xlsx

@@ -1,0 +1,17 @@
+% ===== Caption notes for the Stage J4d consistency exhibits =====
+% Source: replication/run_consistency_exhibits.py on cma_data snapshot 2026q2.
+%
+% Historical-mean CMAs: sample mean of the native-frequency excess LOG returns,
+%   annualized by the observation frequency (12 monthly / 4 quarterly), plus the
+%   arithmetic lift of one half the annualized variance. Moments are NaN-aware; the
+%   snapshot carries no pre-inception backfill, so Insurance-Linked (from Sep 2006)
+%   and Europe ex-UK (from Nov 2007) contribute on shorter histories than the
+%   Appendix B text describes. See the completion report deviations list.
+%
+% fig:declared_delta — median |Delta|: historical 0.39%, MATF 0.33%; maximum historical 6.44%.
+%   MATF reconciliation to the declared channels: 5.8e-17. The R2 text's machine-zero claim of
+%   order 1e-17 re-asserts on this cut at the printed magnitude.
+%
+% fig:unintended_exposures — both books solved long-only at the Balanced benchmark
+%   volatility 9.37%. Idiosyncratic share of
+%   active variance: MATF 75%, historical mean 57%.

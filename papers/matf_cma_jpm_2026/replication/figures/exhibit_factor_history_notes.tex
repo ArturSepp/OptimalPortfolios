@@ -1,0 +1,18 @@
+% ===== Caption notes for the three restored factor-history exhibits =====
+% Source: replication/run_factor_history_exhibits.py on cma_data snapshot 2026q2.
+% Window: 2004-12-31 to 2026-06-30 (calendar 2005 onward).
+%
+% tb:risk_factors_perf — the NAVs are excess-return NAVs, so the Sharpe column
+%   carries rf = 0 by construction and the regression is against the Equity factor.
+%
+% tb:risk_factors_corr — DEFECT D7, caption change required. The exhibit is EWMA on
+%   WEEKLY W-WED returns with span 260, the production covariance spec of the
+%   manifest, NOT "monthly, span 36" as the R2 caption states. Replace:
+%     old: exponentially weighted correlations of monthly factor returns, span 36
+%     new: exponentially weighted correlations of weekly (W-WED) factor returns,
+%          span 260 weeks, with annualized volatilities on the diagonal
+%   Credit-Equity reads 0.86 under the production spec against the 0.9 the
+%   R2 text quotes (0.88 under the legacy spec), so the
+%   sentence quoting 0.9 moves with the caption.
+%
+% tb:risk_factors_annual — final column is 2026 year-to-date through 30 June 2026.

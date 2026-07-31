@@ -1,0 +1,33 @@
+% ===== EXHIBITS: Cap 3 governed-set projection =====
+% Source: replication/exhibit_cap3_projection.py on cma_data snapshot 2026q2
+%   (manifest-verified; the retired data/ workbook is superseded 2026-07-30).
+% Homes per owner decision O-J3: tab:cap3_grid main text, fig:cap3_implied_premia Appendix E.
+
+\begin{figure}[H]
+	\captionof{figure}{Admitted Alpha Reads as Premium Revisions in the Directions the Universe Cannot Identify}\label{fig:cap3_implied_premia}\vspace*{-0.5\baselineskip}
+	\begin{center}
+		\includegraphics[width=0.95\linewidth]{figures/cap3_implied_premia.PNG}
+	\end{center}
+	\vspace*{-1.0\baselineskip}
+	{\footnotesize Notes: 2026-Q2 production cut, 18 assets, USD. Panel A: the generalized-least-squares implied factor premia of the published excess CMAs minus the calibrated premia, in basis points, with the identification scale $\sqrt{[(\hat{\boldsymbol\beta}^{\intercal}\boldsymbol D^{-1}\hat{\boldsymbol\beta})^{-1}]_{jj}}$ as the whisker. Panel B: the same deviations divided by the identification scale. Every deviation stays inside one identification unit, so the production admissions are statistically indistinguishable from premium revisions on the poorly spanned factors. Method in \citep{SeppKastenholzFAJ2026}.}
+\end{figure}
+
+\begin{table}[H]
+	\captionof{table}{Cap 3 Prices the Diversification Preference: Admission Recuts per Skill-Share Budget}\label{tab:cap3_grid}\vspace*{-0.5\baselineskip}
+	\begin{center}
+		\footnotesize
+		\begin{tabular}{l rrr rrrrr r}
+			\toprule
+			\textbf{Policy} & \textbf{Budget} & $\theta$ & \textbf{Skill share} & \multicolumn{5}{c}{\textbf{Admission weights $w_i$}} & \textbf{Largest cut} \\
+			& & & & PE & PC & ILS & HF & Gold & (bp) \\
+			\midrule
+			production & -- & 1.00 & 85\% & 0.50 & 0.50 & 1.00 & 1.00 & 0.25 & -- \\
+			$\kappa$ = 1.00 & 0.24 & 0.41 & 50\% & 0.21 & 0.21 & 0.41 & 0.41 & 0.10 & $-210$ \\
+			$\kappa$ = 0.50 & 0.12 & 0.29 & 33\% & 0.15 & 0.15 & 0.29 & 0.29 & 0.07 & $-254$ \\
+			$\kappa$ = 0.25 & 0.06 & 0.21 & 20\% & 0.10 & 0.10 & 0.21 & 0.21 & 0.05 & $-284$ \\
+			\bottomrule
+		\end{tabular}
+	\end{center}
+	\vspace*{-0.5\baselineskip}
+	{\footnotesize Notes: 2026-Q2 production cut, 18 assets, USD. Cap 3 bounds the admitted idiosyncratic squared Sharpe ratio at $\kappa$ times the attainable systematic content $SR^2_{MATFCMA}$, enforced by scaling every admission weight by $\theta = \min(1, \sqrt{\kappa \cdot SR^2_{MATFCMA} / \boldsymbol\alpha_{adm}^{\intercal}\boldsymbol D^{-1}\boldsymbol\alpha_{adm}})$. The skill share is the fraction of the claimed ex-ante squared Sharpe ratio carried by admitted alpha. The largest cut reports the biggest single-sleeve reduction of the excess CMA under the recut, on Insurance-Linked in every row. At every budget shown, the recut admissions also pass Cap~1, so the portfolio-level cap subsumes the sleeve-level failures of Exhibit~\ref{tab:admission_audit}.}
+\end{table}

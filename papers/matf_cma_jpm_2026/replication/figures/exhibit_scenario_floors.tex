@@ -1,0 +1,27 @@
+% ===== Section 5.3 scenario floors, B13 one-sigma rule =====
+% Source: replication/run_admission_exhibits.py on cma_data snapshot 2026q2.
+% Rule: stress-repriced expected TOTAL return >= mu_bm - 1.0 * sigma_bm per mandate,
+%   with mu_bm the benchmark expected total return under the base CMAs and sigma_bm
+%   the benchmark volatility from the risk model. Anchor-invariant: r_f cancels on
+%   both sides, so the rule is computed in excess space and r_f added for display.
+%   No floor value is hand-set; n = FLOOR_SIGMA_MULTIPLE is one constant in one place.
+% Headroom is reported under BOTH admission policies: the PRODUCTION policy
+%   w_paper (PE recut to 0.5) and the PRE-RECUT WORKBOOK policy w_workbook
+%   (PE at 1.0). Naming per owner ruling O-J11 / B6: w_paper is the production
+%   policy, w_workbook is never labelled production.
+
+			\toprule
+			\textbf{Mandate} & $\mu_{bm}$ & $\sigma_{bm}$ & \textbf{Floor} & \multicolumn{2}{c}{\textbf{Stress total}} & \multicolumn{2}{c}{\textbf{Headroom}} \\
+			& (\%) & (\%) & (\%) & production & pre-recut & production & pre-recut \\
+			\midrule
+			Income w/o Alts      & 5.15 & 3.91 & 1.25 & 2.85 & 2.85 & +1.61 & +1.61 \\
+			Low w/o Alts         & 6.12 & 6.58 & -0.46 & 3.19 & 3.19 & +3.65 & +3.65 \\
+			Balanced w/o Alts    & 7.09 & 10.28 & -3.19 & 3.56 & 3.56 & +6.75 & +6.75 \\
+			Growth w/o Alts      & 8.38 & 15.57 & -7.19 & 3.98 & 3.98 & +11.16 & +11.16 \\
+			Income with Alts     & 5.49 & 4.02 & 1.48 & 3.37 & 3.47 & +1.89 & +2.00 \\
+			Low with Alts        & 6.61 & 6.67 & -0.06 & 4.07 & 4.28 & +4.13 & +4.34 \\
+			Balanced with Alts   & 7.53 & 9.37 & -1.83 & 4.63 & 4.94 & +6.46 & +6.78 \\
+			Growth with Alts     & 8.46 & 12.22 & -3.77 & 4.92 & 5.34 & +8.69 & +9.11 \\
+			\bottomrule
+%
+% Finding: the floor is slack on all eight mandates at n = 1.0. Headroom is identical in excess and total space.
