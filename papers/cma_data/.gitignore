@@ -1,0 +1,38 @@
+# The extractor touches production data and stays untracked; the snapshots
+# it writes are tracked SELECTIVELY — see the redistribution rule below.
+_local_*.py
+__pycache__/
+.pytest_cache/
+
+# session notes and executor instructions for both papers — untracked
+claude/
+
+# ---------------------------------------------------------------------------
+# Redistribution rule for snapshots/<tag>/
+# ---------------------------------------------------------------------------
+# TRACKED — the numbers the papers publish, and what a reader needs to verify
+# them: assets.csv, betas.csv, factor_covar.csv, factor_premia.csv,
+# MANIFEST.json. Small, derived, and quoted in the manuscripts.
+#
+# NOT TRACKED — the three return panels. They carry ~25 years of licensed index
+# and factor histories (MSCI, Bloomberg, ICE BofA, HFRI, Eurekahedge) rather
+# than published results, so they are not redistributed. This also restores the
+# decision already taken on the identical factor-NAV content under its former
+# path papers/matf_cma_jpm_2026/data/futures_risk_factors.csv, which the move
+# to cma_data had silently undone.
+#
+# loaders.py treats every panel as OPTIONAL: it loads when present, is None when
+# absent, and PaperInputs.require_panel() raises a message naming the file and
+# the scripts that need it. Manifest verification hashes every file that IS
+# present and reports the absent ones, so tampering is still caught on
+# everything shipped. See cma_data/README.md for which scripts need which panel.
+snapshots/**/asset_excess_logreturns.csv
+snapshots/**/asset_total_returns.csv
+snapshots/**/factor_navs.csv
+
+# Provider CMA vectors: licensed/anonymised inputs, gated on the per-provider
+# provenance confirmation (roadmap O-J7b). Pre-emptive — the file does not exist
+# yet, and it must never be committed by accident when it lands.
+snapshots/**/providers.csv
+# the provider name map lives with the extractor and is never committed
+*name_map*

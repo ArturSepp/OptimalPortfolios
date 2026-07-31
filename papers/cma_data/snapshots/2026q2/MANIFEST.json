@@ -1,0 +1,446 @@
+{
+  "tag": "2026q2",
+  "extracted": "2026-07-30",
+  "universe": "18-asset MATF-CMA paper universe (shared, see universe.py)",
+  "admission_policy": "paper policy, PE recut to 0.5; workbook column kept as w_workbook",
+  "bootstrap_window": [
+    "2001-07-31",
+    "2026-06-30"
+  ],
+  "units": "decimal per annum; factor NAVs base 100 daily",
+  "source_workbook": "global_saa_universe_data_cmas_usd_2026q2.xlsx",
+  "source_workbook_sha256": "82f0f01523fd12e0e82b2bc9161e0748d725da2c0fcbe81a86923ab834183271",
+  "source_factor_navs": "futures_risk_factors.csv",
+  "source_factor_navs_sha256": "714d5d37e30fbb3ceba9c11f6e2fc7820fa248cc97cce1df191012b1c9c36662",
+  "prod_config_snapshot": [
+    {
+      "Unnamed: 0": "sharpe_ratio.Equity",
+      "group": "matf_sharpe_ratios",
+      "value": "0.4"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Rates",
+      "group": "matf_sharpe_ratios",
+      "value": "0.25"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Credit",
+      "group": "matf_sharpe_ratios",
+      "value": "0.4"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Carry",
+      "group": "matf_sharpe_ratios",
+      "value": "0.25"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Inflation",
+      "group": "matf_sharpe_ratios",
+      "value": "0.15"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Commodities",
+      "group": "matf_sharpe_ratios",
+      "value": "0.15"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Private Equity",
+      "group": "matf_sharpe_ratios",
+      "value": "0.6"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Rates Vol",
+      "group": "matf_sharpe_ratios",
+      "value": "0.25"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Fx",
+      "group": "matf_sharpe_ratios",
+      "value": "0.0"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Equity",
+      "group": "factor_vols",
+      "value": "0.15"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Rates",
+      "group": "factor_vols",
+      "value": "0.06"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Credit",
+      "group": "factor_vols",
+      "value": "0.05"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Carry",
+      "group": "factor_vols",
+      "value": "0.05"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Inflation",
+      "group": "factor_vols",
+      "value": "0.05"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Commodities",
+      "group": "factor_vols",
+      "value": "0.15"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Private Equity",
+      "group": "factor_vols",
+      "value": "0.07"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Rates Vol",
+      "group": "factor_vols",
+      "value": "0.05"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Fx",
+      "group": "factor_vols",
+      "value": "0.07"
+    },
+    {
+      "Unnamed: 0": "blend_weight_current",
+      "group": "blending",
+      "value": "0.5"
+    },
+    {
+      "Unnamed: 0": "regional_equity_pcaey_add_on.EM",
+      "group": "regional_equity_pcaey_add_ons",
+      "value": "-0.02"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.model_type",
+      "group": "covar_estimation_spec",
+      "value": "FACTOR_CLUSTER_GROUP_LASSO"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.cluster_cutoff_fraction",
+      "group": "covar_estimation_spec",
+      "value": "0.6"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.linkage_method",
+      "group": "covar_estimation_spec",
+      "value": "ward"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.distance_transform",
+      "group": "covar_estimation_spec",
+      "value": "one_minus_rho"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.dependence_measure",
+      "group": "covar_estimation_spec",
+      "value": "pearson"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.gerber_threshold",
+      "group": "covar_estimation_spec",
+      "value": "0.5"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.n_clusters",
+      "group": "covar_estimation_spec",
+      "value": NaN
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.l1_weight",
+      "group": "covar_estimation_spec",
+      "value": "0.0"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.reg_lambda",
+      "group": "covar_estimation_spec",
+      "value": "1e-05"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.solver",
+      "group": "covar_estimation_spec",
+      "value": "CLARABEL"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.demean",
+      "group": "covar_estimation_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.warmup_period",
+      "group": "covar_estimation_spec",
+      "value": "12"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.span_freq_dict",
+      "group": "covar_estimation_spec",
+      "value": "{'ME': 60, 'QE': 40}"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.alpha_span",
+      "group": "covar_estimation_spec",
+      "value": "{'ME': 60, 'QE': 40}"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.factor_returns_freq",
+      "group": "covar_estimation_spec",
+      "value": "W-WED"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.factor_covar_span",
+      "group": "covar_estimation_spec",
+      "value": "260"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.rebalancing_freq",
+      "group": "covar_estimation_spec",
+      "value": "QE"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.auto_sign_constraints",
+      "group": "covar_estimation_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.auto_sign_adaptive_weights",
+      "group": "covar_estimation_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.auto_sign_threshold_t",
+      "group": "covar_estimation_spec",
+      "value": "1.0"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.auto_sign_adaptive_floor",
+      "group": "covar_estimation_spec",
+      "value": "0.5"
+    },
+    {
+      "Unnamed: 0": "returns_spec.is_log_returns",
+      "group": "returns_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "returns_spec.is_excess_returns",
+      "group": "returns_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "returns_spec.apply_unsmoothing_for_pe",
+      "group": "returns_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "returns_spec.unsmoothing_type",
+      "group": "returns_spec",
+      "value": "beta_lag"
+    },
+    {
+      "Unnamed: 0": "returns_spec.unsmoothing_factor",
+      "group": "returns_spec",
+      "value": "Equity"
+    },
+    {
+      "Unnamed: 0": "returns_spec.unsmooth_span",
+      "group": "returns_spec",
+      "value": "40"
+    },
+    {
+      "Unnamed: 0": "returns_spec.max_ar_coeff",
+      "group": "returns_spec",
+      "value": "0.75"
+    },
+    {
+      "Unnamed: 0": "returns_spec.min_ar_coeff",
+      "group": "returns_spec",
+      "value": NaN
+    },
+    {
+      "Unnamed: 0": "returns_spec.max_factor_beta",
+      "group": "returns_spec",
+      "value": NaN
+    },
+    {
+      "Unnamed: 0": "returns_spec.min_factor_beta",
+      "group": "returns_spec",
+      "value": "0.0"
+    },
+    {
+      "Unnamed: 0": "returns_spec.ar_order",
+      "group": "returns_spec",
+      "value": "1"
+    },
+    {
+      "Unnamed: 0": "returns_spec.ar_max_value_for_beta",
+      "group": "returns_spec",
+      "value": "0.75"
+    },
+    {
+      "Unnamed: 0": "returns_spec.ar_min_value_for_beta",
+      "group": "returns_spec",
+      "value": "-0.25"
+    },
+    {
+      "Unnamed: 0": "returns_spec.ar_non_negative",
+      "group": "returns_spec",
+      "value": "False"
+    },
+    {
+      "Unnamed: 0": "returns_spec.ar_non_negative_tol",
+      "group": "returns_spec",
+      "value": "0.0"
+    },
+    {
+      "Unnamed: 0": "returns_spec.warmup_period",
+      "group": "returns_spec",
+      "value": "16"
+    },
+    {
+      "Unnamed: 0": "returns_spec.mean_adj_type",
+      "group": "returns_spec",
+      "value": "EWMA"
+    },
+    {
+      "Unnamed: 0": "returns_spec.apply_ewma_mean_smoother",
+      "group": "returns_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.is_log_returns",
+      "group": "reporting_returns_spec",
+      "value": "False"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.is_excess_returns",
+      "group": "reporting_returns_spec",
+      "value": "False"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.apply_unsmoothing_for_pe",
+      "group": "reporting_returns_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.unsmoothing_type",
+      "group": "reporting_returns_spec",
+      "value": "beta_lag"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.unsmoothing_factor",
+      "group": "reporting_returns_spec",
+      "value": "Equity"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.unsmooth_span",
+      "group": "reporting_returns_spec",
+      "value": "40"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.max_ar_coeff",
+      "group": "reporting_returns_spec",
+      "value": "0.75"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.min_ar_coeff",
+      "group": "reporting_returns_spec",
+      "value": NaN
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.max_factor_beta",
+      "group": "reporting_returns_spec",
+      "value": NaN
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.min_factor_beta",
+      "group": "reporting_returns_spec",
+      "value": "0.0"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.ar_order",
+      "group": "reporting_returns_spec",
+      "value": "1"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.ar_max_value_for_beta",
+      "group": "reporting_returns_spec",
+      "value": "0.75"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.ar_min_value_for_beta",
+      "group": "reporting_returns_spec",
+      "value": "-0.25"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.ar_non_negative",
+      "group": "reporting_returns_spec",
+      "value": "False"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.ar_non_negative_tol",
+      "group": "reporting_returns_spec",
+      "value": "0.0"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.warmup_period",
+      "group": "reporting_returns_spec",
+      "value": "16"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.mean_adj_type",
+      "group": "reporting_returns_spec",
+      "value": "EWMA"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.apply_ewma_mean_smoother",
+      "group": "reporting_returns_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "version.qis",
+      "group": "versions",
+      "value": "5.0.5"
+    },
+    {
+      "Unnamed: 0": "version.optimalportfolios",
+      "group": "versions",
+      "value": "6.6.0"
+    },
+    {
+      "Unnamed: 0": "version.factorlasso",
+      "group": "versions",
+      "value": "0.10.1"
+    },
+    {
+      "Unnamed: 0": "git_commit",
+      "group": "versions",
+      "value": "76173ad1904f94da1f74139d8e3d84d3dd656a7c"
+    },
+    {
+      "Unnamed: 0": "run.reference_ccy",
+      "group": "run",
+      "value": "USD"
+    },
+    {
+      "Unnamed: 0": "run.date",
+      "group": "run",
+      "value": "2026-06-30 00:00:00"
+    },
+    {
+      "Unnamed: 0": "run.pipeline",
+      "group": "run",
+      "value": "run_global_saa_cma_estimation"
+    }
+  ],
+  "file_sha256": {
+    "assets.csv": "4e5760cb3b8a191a0eadb523debf3e9a14eb16c4ab56099a4f54a67a8cc6cf67",
+    "betas.csv": "ee952c45c3b24c3c3f8a2ce89dc0176aafd1b0f9cf3cbe95e3cc22ecd5862e06",
+    "factor_covar.csv": "d477f9dc412a1f8a6ae73f34046fdc7b87a460ead5cebd9da34eeaeba0ec6777",
+    "factor_premia.csv": "485a3826d0ac4a2551f28acca5d68279e66a1cee5bba35f8a26a637ad44073df",
+    "asset_excess_logreturns.csv": "75a5a35a775c49e1fe4cac7f2a80dc925c08255b9c5a6b48cb7c9b16042cedd1",
+    "asset_total_returns.csv": "dc46b2f9b78693f6259a25e9152c24c9fd7e84710138412c099de72a6171e48e",
+    "factor_navs.csv": "a56a6b550ede0e9915768f29c8f2ceea4d4dc8bf8063ae01ed5c5e7a751e0546"
+  }
+}
