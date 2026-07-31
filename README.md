@@ -168,7 +168,8 @@ optimalportfolios/
     ├── solvers/                   # One demo per single-objective solver
     ├── backtests/                 # End-to-end rolling workflows
     ├── comparisons/               # A-vs-B sweeps (incl. drift_policy)
-    └── covar_estimation/          # Covariance estimator demos
+    ├── covar_estimation/          # Covariance estimator demos
+    └── alphas/                    # Alpha signal profiling demos
 # factorlasso (pip install factorlasso)
 #   └── LassoModel, solve_lasso_cvx_problem, solve_group_lasso_cvx_problem
 #       Sign-constrained LASSO/Group LASSO/HCGL solver (domain-agnostic)
@@ -671,7 +672,7 @@ weights = rolling_quadratic_optimisation(prices=prices, covar_dict=covar_dict,
 
 ## Examples
 
-The `examples/` folder is organised into five purpose-folders. The
+The `examples/` folder is organised into six purpose-folders. The
 [examples README](optimalportfolios/docs/examples_readme.md) maps every demo to its
 role; the headlines are:
 
@@ -682,6 +683,7 @@ examples/
 ├── backtests/             End-to-end rolling backtest workflows
 ├── comparisons/           A-vs-B sweeps (covar / optimiser / parameter / drift policy)
 ├── covar_estimation/      Covariance estimator demos
+├── alphas/                Alpha signal profiling demos (rank-based profiler)
 └── sp500_universe.py      S&P 500 universe loader (top level)
 ```
 

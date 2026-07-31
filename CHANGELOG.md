@@ -7,6 +7,18 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- `optimalportfolios/alphas/profile/profile_alpha_signals.py` moved to
+  `optimalportfolios/examples/alphas/profile_alpha_signals.py`. It was an example — its own
+  docstring said so — living inside a library package directory, with a module-level `yfinance`
+  import in a tree that must import on a core install. Nothing imported it, so no public name
+  changes; `optimalportfolios.alphas.profile_alpha_signals` now unambiguously resolves to the
+  exported function rather than being shadowed by a same-named module.
+- Ruff now enforces three stack invariants that were previously prose: `TID251` bans an import of
+  a subject package, `TID253` bans a module-level import of an optional extra, and `ICN` pins the
+  `numpy`/`pandas` aliases. Green on the repository as it stands; see `AGENTS.md`.
+
 ## [6.6.0] - 2026-07-28
 
 **`estimate_rolling_ewma_covar` is now `qis.estimate_rolling_ewma_covar`.** This package carried

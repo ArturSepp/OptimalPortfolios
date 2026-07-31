@@ -82,6 +82,22 @@ a Bloomberg terminal.
   linting on purpose. `I` is deliberately not selected anywhere in the stack:
   imports group the scientific stack before project packages, which isort's
   ordering contradicts.
+- **Three stack invariants are enforced by ruff rather than written down.** Unlike `E`/`F`/`W`,
+  which report ~780 legacy findings, these are green on the whole package, so a violation is
+  always something you just introduced:
+  - `TID251` fails an import of `trendfollowing`, `privateassets`, `stochvolmodels`,
+    `goal_based_allocation` or `vanilla_option_pricers`. This package depends on `qis` and
+    `factorlasso` and on nothing else in the stack; subject packages never import each other.
+    `qis` and `factorlasso` are of course not banned — they are declared dependencies, and
+    importing them is the point.
+  - `TID253` fails a **module-level** import of an optional extra (`yfinance`,
+    `pandas_datareader`, `pybloqs`, `plotly`, `pyarrow`, `psycopg2`, `sqlalchemy`); the same
+    import inside a function passes, which is the pattern the collection note above requires.
+    `optimalportfolios/examples/**` and `reports/portfolio_result_pybloqs.py` are named in
+    `per-file-ignores` — add to that list only for a module `optimalportfolios/__init__.py`
+    cannot reach.
+  - `ICN` pins `import numpy as np` and `import pandas as pd`. Ruff's default alias map is
+    replaced rather than extended, so `matplotlib` stays free to be both `mpl` and `plt`.
 - Optimisation problems are expressed with `cvxpy`; `quadprog` is used where a
   dedicated QP solver is faster. Do not introduce a third optimisation backend.
 - Enums and dataclasses carry configuration (optimiser type, constraint sets,

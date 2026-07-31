@@ -111,5 +111,7 @@ yourself and call `backtest_alpha_rank_portfolio` directly.
 
 ## Example
 
-`examples/alphas/profile_alpha_signals.py` fetches a bond-ETF universe, profiles carry, low-beta and
-momentum jointly, and sweeps carry across top-quantiles. Run it top to bottom.
+[`examples/alphas/profile_alpha_signals.py`](../examples/alphas/profile_alpha_signals.py) fetches a
+bond-ETF universe, profiles carry, low-beta and momentum jointly, and sweeps carry across
+top-quantiles. Run it top to bottom. The [examples README](../docs/examples_readme.md) lists it
+under `alphas/`.

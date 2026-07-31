@@ -13,6 +13,7 @@ examples/
 ├── backtests/             end-to-end rolling backtest workflows
 ├── comparisons/           A-vs-B examples (covar / optimiser / parameter / config)
 ├── covar_estimation/      covariance estimator demos (EWMA, LASSO, GLASSO, factor model)
+├── alphas/                alpha signal profiling demos (rank-based profiler)
 └── sp500_universe.py      S&P 500 universe loader (kept at top level for assignment refs)
 ```
 
@@ -109,6 +110,19 @@ Useful as inputs / diagnostics for the backtest examples above.
 
 ---
 
+## `alphas/` — signal profiling demos
+
+Demos of the rank-based alpha profiler in `optimalportfolios/alphas/profile/`. The profiler holds
+the top quantile of assets ranked by a signal, equal-weighted, against an equal-weight-all
+benchmark — no optimiser and no covariance — so what it reports is the selection power of the
+signal on its own. The [alphas module README](../alphas/README.md) documents the API.
+
+| File | What it shows |
+|---|---|
+| `profile_alpha_signals.py` | Carry, low-beta and momentum on a 12-ETF bond universe: all three jointly via `profile_alpha_signals`, carry alone via `profile_carry`, and carry swept across top-quantiles 0.25 / 1/3 / 0.5. The carry panel is a real trailing-12m distribution yield built from `yfinance` dividend history rather than a static yield, so it also shows how to assemble a carry input. Writes a multi-strategy factsheet PDF through `generate_alpha_profile_report`. |
+
+---
+
 ## Recommended reading order for newcomers
 
 1. `data/universe.py` — understand the test fixture everything builds on.
@@ -149,3 +163,6 @@ scripts referencing the old paths, update as follows:
 | `examples.sp500_minvar` | `examples.comparisons.sp500_minvar_spans` |
 | `examples.long_short_optimisation` | `examples.solvers.long_short` |
 | `examples.sp500_universe` | unchanged (deliberately kept at top level) |
+| `alphas.profile.profile_alpha_signals` | `examples.alphas.profile_alpha_signals` |
+
+The last row is a different kind of move: that file was never library code, only an example that happened to sit inside the `alphas` package. It also shadowed the exported function of the same name.
