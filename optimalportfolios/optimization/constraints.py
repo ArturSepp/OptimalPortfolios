@@ -271,7 +271,7 @@ def merge_group_lower_upper_constraints(
     group_loadings = pd.concat([
         group_lower_upper_constraints1.group_loadings.rename(overlaps1, axis=1),
         group_lower_upper_constraints2.group_loadings.rename(overlaps2, axis=1)
-    ], axis=1).fillna(0.0)
+    ], axis=1, sort=False).fillna(0.0)
 
     # Merge minimum allocations
     if (group_lower_upper_constraints1.group_min_allocation is not None and

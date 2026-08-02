@@ -68,9 +68,9 @@ def plot_hcgl_covar_data(x_covar: pd.DataFrame,
     # Prepare betas and stats
     betas = betas.where(np.abs(betas) > 1e-4, other=np.nan)
     if alpha is not None:
-        df = pd.concat([r2.clip(0.0, None), total_vol, residual_vol, alpha], axis=1)
+        df = pd.concat([r2.clip(0.0, None), total_vol, residual_vol, alpha], axis=1, sort=False)
     else:
-        df = pd.concat([r2.clip(0.0, None), total_vol, residual_vol], axis=1)
+        df = pd.concat([r2.clip(0.0, None), total_vol, residual_vol], axis=1, sort=False)
 
     agg_clusters, fig_clusters = plot_clusters(
         clusters=clusters,

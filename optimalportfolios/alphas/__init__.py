@@ -31,6 +31,7 @@ from optimalportfolios.alphas.signals.residual_reversal import (
 )
 from optimalportfolios.alphas.signals.rolling_ewma_mean import estimate_rolling_ewma_means
 from optimalportfolios.alphas.signals.utils import (
+    align_rolling_clusters,
     extract_rolling_clusters,
     score_within_clusters,
 )

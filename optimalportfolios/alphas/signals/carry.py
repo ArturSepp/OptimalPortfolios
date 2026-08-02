@@ -25,9 +25,9 @@ from __future__ import annotations
 
 import pandas as pd
 import qis as qis
-from typing import Optional, Tuple, Union, Dict
+from typing import Dict, Mapping, Optional, Tuple, Union
 
-from optimalportfolios.alphas.signals.utils import score_within_clusters
+from optimalportfolios.alphas.signals.utils import resolve_span, score_within_clusters
 
 
 # ---------------------------------------------------------------------------
@@ -52,7 +52,7 @@ def _compute_raw_ra_carry_single_freq(prices: pd.DataFrame,
 def _compute_raw_ra_carry_mixed_freq(prices: pd.DataFrame,
                                      carry: pd.DataFrame,
                                      returns_freqs: pd.Series = None,
-                                     vol_span: Optional[int] = 13,
+                                     vol_span: Optional[Union[int, Mapping[str, int]]] = 13,
                                      mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.NONE
                                      ) -> pd.DataFrame:
     """Mixed-frequency: compute raw risk-adjusted carry per frequency group, merge."""
@@ -62,13 +62,16 @@ def _compute_raw_ra_carry_mixed_freq(prices: pd.DataFrame,
     all_raw = []
     for freq, asset_tickers in group_freqs.items():
         freq_prices = prices[asset_tickers]
+        # one horizon per cadence, resolved where the bucket is chosen;
+        # _compute_raw_ra_carry_single_freq takes resolved ints
+        bucket_vol_span = resolve_span(vol_span, freq=freq, name='vol_span')
         raw = _compute_raw_ra_carry_single_freq(
             prices=freq_prices, carry=carry[asset_tickers],
-            returns_freq=freq, vol_span=vol_span,
+            returns_freq=freq, vol_span=bucket_vol_span,
             mean_adj_type=mean_adj_type)
         all_raw.append(raw)
 
-    return pd.concat(all_raw, axis=1)[prices.columns].ffill()
+    return pd.concat(all_raw, axis=1, sort=True)[prices.columns].ffill()
 
 
 # ---------------------------------------------------------------------------
@@ -78,7 +81,7 @@ def compute_ra_carry_alpha(prices: pd.DataFrame,
                            carry: pd.DataFrame,
                            returns_freq: Union[str, pd.Series] = 'W-WED',
                            group_data: Optional[pd.Series] = None,
-                           vol_span: Optional[int] = 13,
+                           vol_span: Optional[Union[int, Mapping[str, int]]] = 13,
                            mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.NONE
                            ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -103,6 +106,8 @@ def compute_ra_carry_alpha(prices: pd.DataFrame,
             mapping tickers to frequencies for mixed-frequency computation.
         group_data: Optional group labels per asset for within-group scoring.
         vol_span: EWMA span for volatility normalisation.
+            Either a scalar applied at every reporting cadence, or a per-cadence mapping
+            such as ``{'ME': 13, 'QE': 4}`` giving each cadence the same calendar horizon.
         mean_adj_type: Mean adjustment type for EWMA vol computation.
 
     Returns:
@@ -124,10 +129,13 @@ def _compute_ra_carry_alpha_single_freq(prices: pd.DataFrame,
                                         carry: pd.DataFrame,
                                         returns_freq: str = 'W-WED',
                                         group_data: Optional[pd.Series] = None,
-                                        vol_span: Optional[int] = 13,
+                                        vol_span: Optional[Union[int, Mapping[str, int]]] = 13,
                                         mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.NONE
                                         ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Single-frequency carry: raw risk-adjusted carry, then cross-sectional scoring."""
+    # one horizon per cadence, resolved where the bucket is chosen;
+    # _compute_raw_ra_carry_single_freq takes resolved ints
+    vol_span = resolve_span(vol_span, freq=returns_freq, name='vol_span')
     raw_ra_carry = _compute_raw_ra_carry_single_freq(
         prices=prices, carry=carry,
         returns_freq=returns_freq, vol_span=vol_span, mean_adj_type=mean_adj_type)
@@ -137,7 +145,7 @@ def _compute_ra_carry_alpha_single_freq(prices: pd.DataFrame,
         group_scores = []
         for group, gcarry in grouped_carry.items():
             group_scores.append(qis.df_to_cross_sectional_score(df=gcarry))
-        carry_score = pd.concat(group_scores, axis=1)[raw_ra_carry.columns]
+        carry_score = pd.concat(group_scores, axis=1, sort=True)[raw_ra_carry.columns]
     else:
         carry_score = qis.df_to_cross_sectional_score(df=raw_ra_carry)
 
@@ -148,7 +156,7 @@ def _compute_ra_carry_alpha_mixed_freq(prices: pd.DataFrame,
                                        carry: pd.DataFrame,
                                        returns_freqs: pd.Series = None,
                                        group_data: Optional[pd.Series] = None,
-                                       vol_span: Optional[int] = 13,
+                                       vol_span: Optional[Union[int, Mapping[str, int]]] = 13,
                                        mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.NONE
                                        ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Mixed-frequency carry: compute per (frequency × group), merge."""
@@ -174,8 +182,8 @@ def _compute_ra_carry_alpha_mixed_freq(prices: pd.DataFrame,
             all_scores.append(score)
             all_raw.append(raw)
 
-    carry_score = pd.concat(all_scores, axis=1)[prices.columns].ffill()
-    raw_ra_carry = pd.concat(all_raw, axis=1)[prices.columns].ffill()
+    carry_score = pd.concat(all_scores, axis=1, sort=True)[prices.columns].ffill()
+    raw_ra_carry = pd.concat(all_raw, axis=1, sort=True)[prices.columns].ffill()
     return carry_score, raw_ra_carry
 
 
@@ -187,7 +195,7 @@ def compute_ra_carry_cluster_alpha(
         carry: pd.DataFrame,
         rolling_clusters: Dict[pd.Timestamp, pd.Series] = None,
         returns_freq: Union[str, pd.Series] = 'W-WED',
-        vol_span: Optional[int] = 13,
+        vol_span: Optional[Union[int, Mapping[str, int]]] = 13,
         mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.NONE,
         min_cluster_size: int = 3,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -208,6 +216,8 @@ def compute_ra_carry_cluster_alpha(
         returns_freq: Return frequency for the vol estimate. String or pd.Series
             for mixed-freq.
         vol_span: EWMA span for volatility normalisation.
+            Either a scalar applied at every reporting cadence, or a per-cadence mapping
+            such as ``{'ME': 13, 'QE': 4}`` giving each cadence the same calendar horizon.
         mean_adj_type: Mean adjustment type for EWMA vol computation.
         min_cluster_size: Minimum cluster size for within-cluster scoring.
             Clusters with size <= min_cluster_size use global statistics.
@@ -224,6 +234,9 @@ def compute_ra_carry_cluster_alpha(
             returns_freqs=returns_freq, vol_span=vol_span,
             mean_adj_type=mean_adj_type)
     else:
+        # one horizon per cadence, resolved where the bucket is chosen;
+        # _compute_raw_ra_carry_single_freq takes resolved ints
+        vol_span = resolve_span(vol_span, freq=returns_freq, name='vol_span')
         raw_ra_carry = _compute_raw_ra_carry_single_freq(
             prices=prices, carry=carry,
             returns_freq=returns_freq, vol_span=vol_span,
@@ -244,7 +257,7 @@ def compute_ra_carry_cluster_alpha(
 def compute_ra_carry_alphas(prices: pd.DataFrame,
                             carry: pd.DataFrame,
                             returns_freq: str = 'W-WED',
-                            vol_span: Optional[int] = 13,
+                            vol_span: Optional[Union[int, Mapping[str, int]]] = 13,
                             mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.NONE
                             ) -> pd.DataFrame:
     """global cross-sectional risk-adjusted carry score (legacy single-return entry point).

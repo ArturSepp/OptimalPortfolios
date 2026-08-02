@@ -20,9 +20,9 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import qis as qis
-from typing import Optional, Tuple, Union, Dict
+from typing import Dict, Mapping, Optional, Tuple, Union
 
-from optimalportfolios.alphas.signals.utils import score_within_clusters
+from optimalportfolios.alphas.signals.utils import resolve_span, score_within_clusters
 
 
 # ---------------------------------------------------------------------------
@@ -54,7 +54,7 @@ def _compute_raw_beta_single_freq(prices: pd.DataFrame,
 def _compute_raw_beta_mixed_freq(prices: pd.DataFrame,
                                  benchmark_price: pd.Series = None,
                                  returns_freqs: pd.Series = None,
-                                 beta_span: int = 12,
+                                 beta_span: Union[int, Mapping[str, int]] = 12,
                                  mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA
                                  ) -> pd.DataFrame:
     """Mixed-frequency: compute raw beta per frequency group, merge."""
@@ -64,13 +64,16 @@ def _compute_raw_beta_mixed_freq(prices: pd.DataFrame,
     all_betas = []
     for freq, asset_tickers in group_freqs.items():
         freq_prices = prices[asset_tickers]
+        # one horizon per cadence, resolved where the bucket is chosen;
+        # _compute_raw_beta_single_freq takes resolved ints
+        bucket_beta_span = resolve_span(beta_span, freq=freq, name='beta_span')
         raw_beta = _compute_raw_beta_single_freq(
             prices=freq_prices, benchmark_price=benchmark_price,
-            returns_freq=freq, beta_span=beta_span,
+            returns_freq=freq, beta_span=bucket_beta_span,
             mean_adj_type=mean_adj_type)
         all_betas.append(raw_beta)
 
-    return pd.concat(all_betas, axis=1)[prices.columns].ffill()
+    return pd.concat(all_betas, axis=1, sort=True)[prices.columns].ffill()
 
 
 # ---------------------------------------------------------------------------
@@ -80,7 +83,7 @@ def compute_low_beta_alpha(prices: pd.DataFrame,
                            benchmark_price: pd.Series = None,
                            returns_freq: Union[str, pd.Series] = 'ME',
                            group_data: Optional[pd.Series] = None,
-                           beta_span: int = 12,
+                           beta_span: Union[int, Mapping[str, int]] = 12,
                            mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA
                            ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -97,6 +100,8 @@ def compute_low_beta_alpha(prices: pd.DataFrame,
         returns_freq: Return frequency. String or pd.Series.
         group_data: Optional group labels for within-group scoring.
         beta_span: EWMA span for beta estimation.
+            Either a scalar applied at every reporting cadence, or a per-cadence mapping
+            such as ``{'ME': 12, 'QE': 4}`` giving each cadence the same calendar horizon.
         mean_adj_type: Mean adjustment type for EWMA regression.
 
     Returns:
@@ -118,10 +123,13 @@ def _compute_low_beta_alpha_single_freq(prices: pd.DataFrame,
                                         benchmark_price: pd.Series = None,
                                         returns_freq: str = 'ME',
                                         group_data: Optional[pd.Series] = None,
-                                        beta_span: int = 12,
+                                        beta_span: Union[int, Mapping[str, int]] = 12,
                                         mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA
                                         ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Single-frequency low-beta: raw beta, then negated cross-sectional scoring."""
+    # one horizon per cadence, resolved where the bucket is chosen;
+    # _compute_raw_beta_single_freq takes resolved ints
+    beta_span = resolve_span(beta_span, freq=returns_freq, name='beta_span')
     raw_beta = _compute_raw_beta_single_freq(
         prices=prices, benchmark_price=benchmark_price,
         returns_freq=returns_freq, beta_span=beta_span, mean_adj_type=mean_adj_type)
@@ -131,7 +139,7 @@ def _compute_low_beta_alpha_single_freq(prices: pd.DataFrame,
         group_scores = []
         for group, gprice in grouped_prices.items():
             group_scores.append(qis.df_to_cross_sectional_score(df=-1.0 * raw_beta[gprice.columns]))
-        beta_score = pd.concat(group_scores, axis=1)[prices.columns]
+        beta_score = pd.concat(group_scores, axis=1, sort=True)[prices.columns]
     else:
         beta_score = qis.df_to_cross_sectional_score(df=-1.0 * raw_beta)
 
@@ -142,7 +150,7 @@ def _compute_low_beta_alpha_mixed_freq(prices: pd.DataFrame,
                                        benchmark_price: pd.Series = None,
                                        returns_freqs: pd.Series = None,
                                        group_data: Optional[pd.Series] = None,
-                                       beta_span: int = 12,
+                                       beta_span: Union[int, Mapping[str, int]] = 12,
                                        mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA
                                        ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Mixed-frequency low-beta: compute per (frequency × group), merge."""
@@ -167,8 +175,8 @@ def _compute_low_beta_alpha_mixed_freq(prices: pd.DataFrame,
             all_scores.append(score)
             all_betas.append(beta)
 
-    beta_score = pd.concat(all_scores, axis=1)[prices.columns].ffill()
-    raw_beta = pd.concat(all_betas, axis=1)[prices.columns].ffill()
+    beta_score = pd.concat(all_scores, axis=1, sort=True)[prices.columns].ffill()
+    raw_beta = pd.concat(all_betas, axis=1, sort=True)[prices.columns].ffill()
     return beta_score, raw_beta
 
 
@@ -180,7 +188,7 @@ def compute_low_beta_cluster_alpha(
         benchmark_price: pd.Series = None,
         rolling_clusters: Dict[pd.Timestamp, pd.Series] = None,
         returns_freq: Union[str, pd.Series] = 'ME',
-        beta_span: int = 12,
+        beta_span: Union[int, Mapping[str, int]] = 12,
         mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA,
         min_cluster_size: int = 3,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -198,6 +206,8 @@ def compute_low_beta_cluster_alpha(
             Extracted from RollingFactorCovarData via extract_rolling_clusters().
         returns_freq: Return frequency. String or pd.Series for mixed-freq.
         beta_span: EWMA span for beta estimation.
+            Either a scalar applied at every reporting cadence, or a per-cadence mapping
+            such as ``{'ME': 12, 'QE': 4}`` giving each cadence the same calendar horizon.
         mean_adj_type: Mean adjustment type for EWMA regression.
         min_cluster_size: Minimum cluster size for within-cluster scoring.
             Clusters with size <= min_cluster_size use global statistics.
@@ -214,6 +224,9 @@ def compute_low_beta_cluster_alpha(
             returns_freqs=returns_freq, beta_span=beta_span,
             mean_adj_type=mean_adj_type)
     else:
+        # one horizon per cadence, resolved where the bucket is chosen;
+        # _compute_raw_beta_single_freq takes resolved ints
+        beta_span = resolve_span(beta_span, freq=returns_freq, name='beta_span')
         raw_beta = _compute_raw_beta_single_freq(
             prices=prices, benchmark_price=benchmark_price,
             returns_freq=returns_freq, beta_span=beta_span,

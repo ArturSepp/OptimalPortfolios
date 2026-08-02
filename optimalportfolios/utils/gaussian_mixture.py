@@ -182,7 +182,7 @@ class Params:
         probs = pd.Series(self.probs, name='Prob')
         means = pd.Series(means, name='Mean')
         std = pd.Series(std, name='Std')
-        return pd.concat([probs, means, std], axis=1)
+        return pd.concat([probs, means, std], axis=1, sort=False)
 
     def get_all_params(self, columns: List[str], vol_scaler: float = 1.0
                        ) -> Tuple[pd.DataFrame, pd.DataFrame, Union[pd.Series, Dict[str, pd.DataFrame]]]:
@@ -192,9 +192,9 @@ class Params:
         for idx, column in enumerate(columns):
             means.append(pd.Series([vol_scaler*mean[idx] for mean in self.means], name=column))
             vols.append(pd.Series([np.sqrt(vol_scaler)*np.sqrt(covar[idx][idx]) for covar in self.covars], name=column))
-        means = pd.concat(means, axis=1)
+        means = pd.concat(means, axis=1, sort=False)
         means.index.name = 'cluster'
-        vols = pd.concat(vols, axis=1)
+        vols = pd.concat(vols, axis=1, sort=False)
         vols.index.name = 'cluster'
         if len(columns) == 2:
             corrs = pd.Series([covar[0][1] / np.sqrt(covar[0][0]*covar[1][1]) for covar in self.covars])

@@ -67,7 +67,7 @@ def compute_portfolio_risk_contribution_outputs(weights: pd.Series,
                     pd.Series(asset_rc, index=clean_covar.columns, name='risk contribution'),
                     risk_budget.rename('Risk Budget'),
                     pd.Series(asset_rc_ratio, index=clean_covar.columns, name='asset_rc_ratio')
-                    ], axis=1)
+                    ], axis=1, sort=False)
     return df
 
 

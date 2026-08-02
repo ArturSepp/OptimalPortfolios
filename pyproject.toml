@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optimalportfolios"
-version = "6.6.0"
+version = "6.8.0"
 description = "Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python"
 readme = "README.md"
 license = {text = "MIT"}
@@ -147,6 +147,10 @@ pandas = "pd"
 "optimalportfolios/examples/**" = ["TID253"]
 # module dedicated to the pybloqs backend; not reachable from optimalportfolios/__init__.py
 "optimalportfolios/reports/portfolio_result_pybloqs.py" = ["TID253"]
+# module dedicated to the plotly backend in the private rosaa tree. The layer is a leaf that
+# nothing above it imports at module level, so a core install never reaches this import.
+"rosaa/universe_profiler/figures.py" = ["TID253"]
+"rosaa/universe_profiler/report_html.py" = ["TID253"]
 
 [tool.coverage.run]
 source = ["optimalportfolios"]

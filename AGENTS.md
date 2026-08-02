@@ -38,6 +38,23 @@ optional `research` extra that pulls in `qis`. The others are independent.
 Do not vendor or copy code between these packages. If functionality belongs in a
 sibling package, say so rather than reimplementing it here.
 
+### `rosaa` dependency floors
+
+`rosaa/` is gitignored and carries no `pyproject.toml`, so its floors have nowhere
+else to live and are recorded here. They are not advisory: each names a symbol or
+keyword `rosaa` calls that does not exist below the floor.
+
+| Package | Floor | What `rosaa` needs at it |
+|---|---|---|
+| `qis` | **>= 5.5.0** | `load_df_from_csv` / `load_df_dict_from_csv` take `float_precision`; the inputs store cannot round-trip a float exactly without it |
+| `factorlasso` | **>= 0.11.0** | `RollingFactorCovarData.get_alphas` forwards `asset_frequencies` / `default_freq`; below it a per-frequency `alpha_span` silently applies the `'ME'` entry to every quarterly asset |
+| `optimalportfolios` | **>= 6.8.0** | signal spans accept a per-cadence `Mapping[str, int]`; below it `product_config.SIGNALS` raises, since it passes dicts |
+
+`optimalportfolios 6.7.0` was tagged in `CITATION.cff` but never published — its
+`pyproject.toml` stayed at 6.6.0 — so a fresh `pip install optimalportfolios`
+before 6.8.0 gives a package `rosaa` cannot run on. Verified with
+`pip index versions optimalportfolios`, not from the changelog.
+
 ## Repository layout
 
 ```

@@ -573,7 +573,7 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
     # ("no observation"), not zero ("zero return"). Downstream pandas
     # EWMA in CurrentFactorCovarData.estimate_alpha handles NaN correctly
     # by carrying the previous value forward.
-    residuals = pd.concat(residuals, axis=1)
+    residuals = pd.concat(residuals, axis=1, sort=True)
     if assets is not None:
         asset_last_betas = asset_last_betas.reindex(index=assets).fillna(0.0)
         last_ewma_vars = last_ewma_vars.reindex(index=assets).fillna(0.0)
@@ -603,7 +603,7 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
                              last_residual_vars.rename(VarianceColumns.RESIDUAL_VARS.value),
                              last_alphas.rename(VarianceColumns.INSAMPLE_ALPHA.value),
                              last_r2.rename(VarianceColumns.R2.value)],
-                            axis=1)
+                            axis=1, sort=False)
 
     estimation_date = estimation_date or asset_returns_dict[list(asset_returns_dict.keys())[0]].index[-1]
     cfcd_kwargs: Dict[str, Any] = dict(

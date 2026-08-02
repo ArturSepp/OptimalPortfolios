@@ -95,9 +95,11 @@ class AlphasData:
             data = getattr(self, attr)
             if data is not None:
                 if date in data.index:
-                    snapshot = pd.concat([snapshot, data.loc[date, :].to_frame(label)], axis=1)
+                    snapshot = pd.concat([snapshot, data.loc[date, :].to_frame(label)],
+                                         axis=1, sort=False)
                 else:
-                    snapshot = pd.concat([snapshot, data.iloc[-1, :].to_frame(label)], axis=1)
+                    snapshot = pd.concat([snapshot, data.iloc[-1, :].to_frame(label)],
+                                         axis=1, sort=False)
 
         return snapshot
 

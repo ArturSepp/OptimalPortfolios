@@ -128,7 +128,7 @@ def _estimate_rolling_regression_alphas(prices: pd.DataFrame,
         excess_parts = [_compute_excess_for_freq(asset_prices=prices[asset_tickers], freq=freq)
                         for freq, asset_tickers in group_freqs.items()]
         excess_parts = [p for p in excess_parts if not p.empty]
-        excess_returns = (pd.concat(excess_parts, axis=1) if excess_parts
+        excess_returns = (pd.concat(excess_parts, axis=1, sort=True) if excess_parts
                           else pd.DataFrame(index=prices.index))
         # reindex (not [..]) so a frequency block that produced nothing degrades
         # to NaN columns rather than raising an opaque KeyError

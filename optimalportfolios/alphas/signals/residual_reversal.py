@@ -32,9 +32,9 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import qis as qis
-from typing import Optional, Tuple, Union, Dict
+from typing import Dict, Mapping, Optional, Tuple, Union
 
-from optimalportfolios.alphas.signals.utils import score_within_clusters
+from optimalportfolios.alphas.signals.utils import resolve_span, score_within_clusters
 
 
 # ---------------------------------------------------------------------------
@@ -86,10 +86,10 @@ def _compute_raw_residual_reversal_mixed_freq(
         prices: pd.DataFrame,
         benchmark_price: pd.Series = None,
         returns_freqs: pd.Series = None,
-        beta_span: int = 12,
-        long_span: int = 1,
-        short_span: Optional[int] = None,
-        vol_span: Optional[int] = 13,
+        beta_span: Union[int, Mapping[str, int]] = 12,
+        long_span: Union[int, Mapping[str, int]] = 1,
+        short_span: Optional[Union[int, Mapping[str, int]]] = None,
+        vol_span: Optional[Union[int, Mapping[str, int]]] = 13,
         mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA
 ) -> pd.DataFrame:
     """Mixed-frequency: compute raw (negated) residuals per frequency group, merge."""
@@ -99,14 +99,20 @@ def _compute_raw_residual_reversal_mixed_freq(
     all_raw = []
     for freq, asset_tickers in group_freqs.items():
         freq_prices = prices[asset_tickers]
+        # one horizon per cadence, resolved where the bucket is chosen;
+        # _compute_raw_residual_reversal_single_freq takes resolved ints
+        bucket_beta_span = resolve_span(beta_span, freq=freq, name='beta_span')
+        bucket_long_span = resolve_span(long_span, freq=freq, name='long_span')
+        bucket_short_span = resolve_span(short_span, freq=freq, name='short_span')
+        bucket_vol_span = resolve_span(vol_span, freq=freq, name='vol_span')
         raw = _compute_raw_residual_reversal_single_freq(
             prices=freq_prices, benchmark_price=benchmark_price,
-            returns_freq=freq, beta_span=beta_span,
-            long_span=long_span, short_span=short_span,
-            vol_span=vol_span, mean_adj_type=mean_adj_type)
+            returns_freq=freq, beta_span=bucket_beta_span,
+            long_span=bucket_long_span, short_span=bucket_short_span,
+            vol_span=bucket_vol_span, mean_adj_type=mean_adj_type)
         all_raw.append(raw)
 
-    return pd.concat(all_raw, axis=1)[prices.columns].ffill()
+    return pd.concat(all_raw, axis=1, sort=True)[prices.columns].ffill()
 
 
 # ---------------------------------------------------------------------------
@@ -117,10 +123,10 @@ def compute_residual_reversal_alpha(
         benchmark_price: pd.Series = None,
         returns_freq: Union[str, pd.Series] = 'ME',
         group_data: Optional[pd.Series] = None,
-        beta_span: int = 12,
-        long_span: int = 1,
-        short_span: Optional[int] = None,
-        vol_span: Optional[int] = 13,
+        beta_span: Union[int, Mapping[str, int]] = 12,
+        long_span: Union[int, Mapping[str, int]] = 1,
+        short_span: Optional[Union[int, Mapping[str, int]]] = None,
+        vol_span: Optional[Union[int, Mapping[str, int]]] = 13,
         mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -142,9 +148,17 @@ def compute_residual_reversal_alpha(
         returns_freq: Return frequency. String or pd.Series.
         group_data: Optional group labels for within-group scoring.
         beta_span: EWMA span for benchmark beta estimation.
+            Either a scalar applied at every reporting cadence, or a per-cadence mapping
+            such as ``{'ME': 12, 'QE': 4}`` giving each cadence the same calendar horizon.
         long_span: EWMA span for the residual reversal lookback (short).
+            Either a scalar applied at every reporting cadence, or a per-cadence mapping
+            such as ``{'ME': 12, 'QE': 4}`` giving each cadence the same calendar horizon.
         short_span: Optional EWMA span for short-term subtraction.
+            Either a scalar applied at every reporting cadence, or a per-cadence mapping
+            such as ``{'ME': 12, 'QE': 4}`` giving each cadence the same calendar horizon.
         vol_span: EWMA span for volatility normalisation. None disables.
+            Either a scalar applied at every reporting cadence, or a per-cadence mapping
+            such as ``{'ME': 13, 'QE': 4}`` giving each cadence the same calendar horizon.
         mean_adj_type: Mean adjustment type for EWMA beta regression.
 
     Returns:
@@ -171,13 +185,19 @@ def _compute_residual_reversal_single_freq(
         benchmark_price: pd.Series = None,
         returns_freq: str = 'ME',
         group_data: Optional[pd.Series] = None,
-        beta_span: int = 12,
-        long_span: int = 1,
-        short_span: Optional[int] = None,
-        vol_span: Optional[int] = 13,
+        beta_span: Union[int, Mapping[str, int]] = 12,
+        long_span: Union[int, Mapping[str, int]] = 1,
+        short_span: Optional[Union[int, Mapping[str, int]]] = None,
+        vol_span: Optional[Union[int, Mapping[str, int]]] = 13,
         mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Single-frequency residual reversal: raw signal, then cross-sectional scoring."""
+    # one horizon per cadence, resolved where the bucket is chosen;
+    # _compute_raw_residual_reversal_single_freq takes resolved ints
+    beta_span = resolve_span(beta_span, freq=returns_freq, name='beta_span')
+    long_span = resolve_span(long_span, freq=returns_freq, name='long_span')
+    short_span = resolve_span(short_span, freq=returns_freq, name='short_span')
+    vol_span = resolve_span(vol_span, freq=returns_freq, name='vol_span')
     raw_residual_reversal = _compute_raw_residual_reversal_single_freq(
         prices=prices, benchmark_price=benchmark_price,
         returns_freq=returns_freq, beta_span=beta_span,
@@ -192,7 +212,7 @@ def _compute_residual_reversal_single_freq(
             group_cols = [c for c in gprice.columns if c in raw_residual_reversal.columns]
             group_scores.append(
                 qis.df_to_cross_sectional_score(df=raw_residual_reversal[group_cols]))
-        residual_reversal_score = pd.concat(group_scores, axis=1)[prices.columns]
+        residual_reversal_score = pd.concat(group_scores, axis=1, sort=True)[prices.columns]
     else:
         residual_reversal_score = qis.df_to_cross_sectional_score(
             df=raw_residual_reversal)
@@ -205,10 +225,10 @@ def _compute_residual_reversal_mixed_freq(
         benchmark_price: pd.Series = None,
         returns_freqs: pd.Series = None,
         group_data: Optional[pd.Series] = None,
-        beta_span: int = 12,
-        long_span: int = 1,
-        short_span: Optional[int] = None,
-        vol_span: Optional[int] = 13,
+        beta_span: Union[int, Mapping[str, int]] = 12,
+        long_span: Union[int, Mapping[str, int]] = 1,
+        short_span: Optional[Union[int, Mapping[str, int]]] = None,
+        vol_span: Optional[Union[int, Mapping[str, int]]] = 13,
         mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Mixed-frequency residual reversal: compute per (frequency × group), merge."""
@@ -237,8 +257,8 @@ def _compute_residual_reversal_mixed_freq(
             all_scores.append(score)
             all_raw.append(raw)
 
-    residual_reversal_score = pd.concat(all_scores, axis=1)[prices.columns].ffill()
-    raw_residual_reversal = pd.concat(all_raw, axis=1)[prices.columns].ffill()
+    residual_reversal_score = pd.concat(all_scores, axis=1, sort=True)[prices.columns].ffill()
+    raw_residual_reversal = pd.concat(all_raw, axis=1, sort=True)[prices.columns].ffill()
     return residual_reversal_score, raw_residual_reversal
 
 
@@ -250,10 +270,10 @@ def compute_residual_reversal_cluster_alpha(
         benchmark_price: pd.Series = None,
         rolling_clusters: Dict[pd.Timestamp, pd.Series] = None,
         returns_freq: Union[str, pd.Series] = 'ME',
-        beta_span: int = 12,
-        long_span: int = 1,
-        short_span: Optional[int] = None,
-        vol_span: Optional[int] = 13,
+        beta_span: Union[int, Mapping[str, int]] = 12,
+        long_span: Union[int, Mapping[str, int]] = 1,
+        short_span: Optional[Union[int, Mapping[str, int]]] = None,
+        vol_span: Optional[Union[int, Mapping[str, int]]] = 13,
         mean_adj_type: qis.MeanAdjType = qis.MeanAdjType.EWMA,
         min_cluster_size: int = 3,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -276,9 +296,17 @@ def compute_residual_reversal_cluster_alpha(
             Extracted from RollingFactorCovarData via extract_rolling_clusters().
         returns_freq: Return frequency. String or pd.Series for mixed-freq.
         beta_span: EWMA span for benchmark beta estimation.
+            Either a scalar applied at every reporting cadence, or a per-cadence mapping
+            such as ``{'ME': 12, 'QE': 4}`` giving each cadence the same calendar horizon.
         long_span: EWMA span for the residual reversal lookback (short).
+            Either a scalar applied at every reporting cadence, or a per-cadence mapping
+            such as ``{'ME': 12, 'QE': 4}`` giving each cadence the same calendar horizon.
         short_span: Optional EWMA span for short-term subtraction.
+            Either a scalar applied at every reporting cadence, or a per-cadence mapping
+            such as ``{'ME': 12, 'QE': 4}`` giving each cadence the same calendar horizon.
         vol_span: EWMA span for volatility normalisation. None disables.
+            Either a scalar applied at every reporting cadence, or a per-cadence mapping
+            such as ``{'ME': 13, 'QE': 4}`` giving each cadence the same calendar horizon.
         mean_adj_type: Mean adjustment type for EWMA beta regression.
         min_cluster_size: Minimum cluster size for within-cluster scoring.
             Clusters with size <= min_cluster_size use global statistics.
@@ -296,6 +324,12 @@ def compute_residual_reversal_cluster_alpha(
             long_span=long_span, short_span=short_span,
             vol_span=vol_span, mean_adj_type=mean_adj_type)
     else:
+        # one horizon per cadence, resolved where the bucket is chosen;
+        # _compute_raw_residual_reversal_single_freq takes resolved ints
+        beta_span = resolve_span(beta_span, freq=returns_freq, name='beta_span')
+        long_span = resolve_span(long_span, freq=returns_freq, name='long_span')
+        short_span = resolve_span(short_span, freq=returns_freq, name='short_span')
+        vol_span = resolve_span(vol_span, freq=returns_freq, name='vol_span')
         raw_residual_reversal = _compute_raw_residual_reversal_single_freq(
             prices=prices, benchmark_price=benchmark_price,
             returns_freq=returns_freq, beta_span=beta_span,

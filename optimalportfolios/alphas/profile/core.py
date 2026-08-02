@@ -160,7 +160,8 @@ def compute_alpha_rank_analysis_table(multi_portfolio_data: qis.MultiPortfolioDa
         perf_params = qis.PerfParams(freq='ME')
 
     navs = pd.concat([portfolio_data.get_portfolio_nav()
-                      for portfolio_data in multi_portfolio_data.portfolio_datas], axis=1)
+                      for portfolio_data in multi_portfolio_data.portfolio_datas],
+                     axis=1, sort=True)
     tickers = [portfolio_data.ticker for portfolio_data in multi_portfolio_data.portfolio_datas]
     navs.columns = tickers
     perf = qis.compute_ra_perf_table(prices=navs, perf_params=perf_params)

@@ -204,19 +204,22 @@ class PortfolioOptimisationResult:
     def get_assets_metadata(self, return_name: Optional[str] = 'CMA') -> pd.DataFrame:
         asset_table = self.metadata
         if self.expected_return is not None and return_name is not None:
-            asset_table = pd.concat([asset_table, self.expected_return.rename(return_name)], axis=1)
+            asset_table = pd.concat([asset_table, self.expected_return.rename(return_name)],
+                                    axis=1, sort=False)
         return asset_table
 
     def get_asset_betas_table(self, return_name: Optional[str] = 'CMA') -> pd.DataFrame:
         asset_risk_table = self.covar_data.get_snapshot()
         if self.expected_return is not None and return_name is not None:
-            asset_risk_table = pd.concat([self.expected_return.rename(return_name), asset_risk_table], axis=1)
+            asset_risk_table = pd.concat([self.expected_return.rename(return_name),
+                                          asset_risk_table],
+                                         axis=1, sort=False)
         return asset_risk_table
 
     def get_combined_asset_weight_table(self, weights_to_pct: bool = False) -> pd.DataFrame:
         weights_df = self.compute_weight_summary(weights_to_pct=weights_to_pct)
         metadata = self.get_assets_metadata()
-        weights = pd.concat([metadata, weights_df], axis=1)
+        weights = pd.concat([metadata, weights_df], axis=1, sort=False)
         return weights
 
     # === Risk metrics (single weight vector) ===
@@ -617,7 +620,7 @@ class PortfolioOptimisationResult:
                 trade.rename('trade')
             ])
 
-        weights_df = pd.concat(weight_components, axis=1)
+        weights_df = pd.concat(weight_components, axis=1, sort=False)
 
         if weights_to_pct:
             level_cols = [c for c in weights_df.columns if c not in ('active', 'trade')]
@@ -853,7 +856,7 @@ class PortfolioOptimisationResult:
 
         weights_df = self.compute_weight_summary(name=name)
         if add_asset_details:
-            weights_df = pd.concat([self.metadata, weights_df], axis=1)
+            weights_df = pd.concat([self.metadata, weights_df], axis=1, sort=False)
 
         risk_summary = self.compute_risk_summary()
         factor_exp_dict = self.compute_factor_exposures_summary()
@@ -876,7 +879,7 @@ class PortfolioOptimisationResult:
             asset_snapshot['current_weight'] = self.get_current(name)
             asset_snapshot['trade'] = self.get_trade_weights(name)
 
-        asset_snapshot = pd.concat([asset_snapshot, self.metadata, vol_port], axis=1)
+        asset_snapshot = pd.concat([asset_snapshot, self.metadata, vol_port], axis=1, sort=False)
 
         result = {
             'weights': weights_df,
@@ -911,7 +914,7 @@ class PortfolioOptimisationResult:
                 current.rename('current'),
                 (w - current).rename('trade')
             ])
-        return pd.concat(cols, axis=1)
+        return pd.concat(cols, axis=1, sort=False)
 
     def summary(self, name: str = None) -> pd.Series:
         """One-line summary metrics for a specific portfolio."""

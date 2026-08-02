@@ -7,6 +7,71 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.8.0] - 2026-08-02
+
+**No number moves for any existing caller.** Every span parameter still accepts the scalar it
+took before and applies it unchanged at every reporting cadence; the per-cadence mapping is
+opt-in and additive.
+
+### Added
+- Signal spans accept a per-cadence mapping. `long_span`, `short_span`, `vol_span` and
+  `beta_span` on `compute_momentum_alpha`, `compute_low_beta_alpha`,
+  `compute_residual_momentum_alpha`, `compute_residual_reversal_alpha`,
+  `compute_ra_carry_alpha` and their `*_cluster_alpha` siblings now take either an `int` or a
+  `Mapping[str, int]` keyed by reporting cadence. A span is a number of PERIODS and every one
+  of these signals estimates one frequency bucket at a time
+  (`_compute_raw_*_mixed_freq` loops `qis.get_group_dict`), so a single scalar meant different
+  calendar time in each bucket: `long_span=12` is one year of monthly returns and three years
+  of quarterly ones, with nothing in the signature saying the unit changed between calls.
+  A mapping such as `{'ME': 12, 'QE': 4}` gives every cadence the same calendar horizon.
+  Resolution happens at each site that has a scalar cadence in scope and is about to call a
+  `_compute_raw_*_single_freq`: inside the mixed-frequency bucket loop, and on the
+  single-frequency branch of each entry point. Those raw functions keep an `int` signature and
+  never see a mapping. The cross-sectional score is unaffected - it is still computed across the
+  whole universe after the buckets are merged.
+- `resolve_span(span, freq, name)` in `optimalportfolios.alphas.signals.utils`, the one place
+  that decides. `None` passes through, so an optional span stays disableable; a cadence absent
+  from the mapping raises rather than inheriting another cadence's entry, which is the scalar
+  behaviour being removed.
+- `optimalportfolios/alphas/signals/tests/per_cadence_spans_test.py`: 50 checks. Two of them
+  are the contract - a scalar is bit-identical to a flat mapping, and a mapping whose `'ME'`
+  entry equals the old scalar leaves every monthly column bit-identical while moving the
+  quarterly ones. Both are asserted across all five signals and across BOTH dispatch branches:
+  `compute_*_alpha` reaches `_compute_*_alpha_mixed_freq`, while `compute_*_cluster_alpha` is
+  the only caller of `_compute_raw_*_mixed_freq`, so the cluster entry points are the only
+  coverage its bucket loop has. `warmup_period` is derived from the span inside each signal, so
+  a per-cadence span carries a per-cadence warmup with it and no second table is needed.
+- `optimalportfolios/tests/concat_sort_convention_test.py`: an `axis=1` `pd.concat` in library
+  code without an explicit `sort=` fails the suite. What the union of two DatetimeIndexes does
+  when the argument is absent has changed twice in two major pandas versions, and the difference
+  is a scrambled time axis rather than an error.
+
+### Fixed
+- Every `axis=1` `pd.concat` in library code states `sort=` explicitly - 40 call sites in 14
+  modules. `sort=True` where the joined index is dates - navs, signal scores, residuals -
+  and `sort=False` where it is assets, groups or mixture clusters. pandas 2.2 sorted the union
+  of two DatetimeIndexes whatever the argument said; pandas 3.0 honours an explicit
+  `sort=False` and leaves the union in appearance order, and pandas 4 drops the implicit sort
+  too. Two sites join date indexes that differ by construction - the per-frequency residual
+  blocks in `estimate_lasso_factor_covar_data` and the per-frequency excess returns in
+  `managers_alpha` - and would have handed an unsorted panel downstream with nothing raising.
+  No number moves: the suite is unchanged.
+
+## [6.7.0] - 2026-07-31
+
+### Added
+- `align_rolling_clusters(rolling_clusters)` in `optimalportfolios.alphas.signals.utils`, exported
+  from the package. `compute_clusters_from_corr_matrix` returns `scipy.cluster.hierarchy.fcluster`
+  labels, whose numbering follows the dendrogram traversal and is re-derived independently at
+  every estimation date — so `'QE:4'` at one date and `'QE:4'` at the next are unrelated, and a
+  time series of the raw labels shows migrations that never happened. This walks the dates forward
+  and relabels each partition to the previous one by maximum overlap
+  (`scipy.optimize.linear_sum_assignment` on the contingency matrix), returning the aligned
+  assignments plus a per-date count of instruments whose cluster genuinely changed. Alignment runs
+  within each frequency prefix, because the estimator partitions each frequency bucket separately.
+  Measured on the MAC universe (185 responses, 283 monthly estimation dates): the raw labels imply
+  140.5 moves per date, the aligned ones 20.5 — 85% of the apparent churn is renumbering.
+
 ### Changed
 
 - `optimalportfolios/alphas/profile/profile_alpha_signals.py` moved to

@@ -8,6 +8,9 @@ signal needs:
       assignments from a ``RollingFactorCovarData``.
     * :func:`score_within_clusters` — apply cross-sectional scoring
       within those time-varying clusters.
+    * :func:`align_rolling_clusters` — relabel those assignments so one
+      cluster keeps one id through time, which is what makes them
+      readable as a series rather than only as a cross-section.
 
 Used by :mod:`momentum_cluster`, :mod:`low_beta_cluster`, and
 :mod:`residual_momentum_cluster`.
@@ -17,7 +20,58 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import qis as qis
-from typing import Dict, List, Optional
+from scipy.optimize import linear_sum_assignment
+from typing import Dict, List, Mapping, Optional, Tuple, Union
+
+
+def resolve_span(span: Optional[Union[int, Mapping[str, int]]],
+                 freq: str,
+                 name: str = 'span',
+                 ) -> Optional[int]:
+    """resolve an EWMA span for one asset reporting cadence.
+
+    A span is a number of PERIODS, so one scalar means different calendar time
+    on each cadence: ``long_span=12`` is a year of monthly returns and three
+    years of quarterly ones. Every signal estimates one frequency bucket at a
+    time, so it can take a per-cadence mapping and give each bucket the same
+    calendar horizon instead.
+
+    Called at each site that has a scalar cadence in scope and is about to call
+    a ``_compute_raw_*_single_freq``: inside the mixed-frequency bucket loop,
+    and on the single-frequency branch of each entry point. Those raw functions
+    therefore take a plain ``int`` and never see a mapping.
+
+    A scalar remains valid and is applied unchanged at every cadence, so
+    existing callers are bit-identical.
+
+    Args:
+        span: A scalar number of periods, a mapping of cadence code (``'ME'``,
+            ``'QE'``, ...) to periods, or None where the span is optional.
+        freq: The reporting cadence being estimated.
+        name: Parameter name, quoted back in the error.
+
+    Returns:
+        The number of periods for ``freq``, or None when ``span`` is None.
+
+    Raises:
+        ValueError: If a mapping does not cover ``freq``, or the resolved value
+            is not a positive integer. Falling back to another cadence's entry
+            would silently reintroduce the scalar's behaviour.
+    """
+    if span is None:
+        return None
+    if isinstance(span, Mapping) and str(freq) not in span:
+        raise ValueError(f"{name} covers {sorted(span)} but an asset reports at "
+                         f"{str(freq)!r}; add the cadence rather than letting it inherit "
+                         f"another cadence's horizon")
+    if isinstance(span, Mapping):
+        span = span[str(freq)]
+    if isinstance(span, bool) or not isinstance(span, (int, np.integer)):
+        raise ValueError(f"{name} must be an int number of periods, or a per-cadence "
+                         f"mapping of them, got {span!r}")
+    if span <= 0:
+        raise ValueError(f"{name} must be > 0, got {span!r}")
+    return int(span)
 
 
 def extract_rolling_clusters(
@@ -176,3 +230,138 @@ def _global_zscore(row_values: pd.Series, cols: list) -> pd.Series:
     if len(vals) < 2 or vals.std() == 0:
         return pd.Series(0.0, index=cols)
     return (row_values[cols] - vals.mean()) / vals.std()
+
+# Cluster labels carry the estimation frequency as a prefix, e.g. 'QE:4'. A
+# response belongs to exactly one frequency bucket and the estimator partitions
+# each bucket separately, so alignment runs per prefix and the prefix is
+# re-emitted unchanged.
+CLUSTER_LABEL_SEPARATOR: str = ':'
+
+
+def _split_cluster_label(label: str) -> Tuple[str, str]:
+    """the frequency prefix and the raw id of a cluster label.
+
+    Args:
+        label: A cluster label, ``'<freq>:<id>'`` or a bare id.
+
+    Returns:
+        ``(prefix, raw_id)``; the prefix is the empty string for a bare id.
+    """
+    text = str(label)
+    if CLUSTER_LABEL_SEPARATOR in text:
+        prefix, raw = text.split(CLUSTER_LABEL_SEPARATOR, 1)
+        return prefix, raw
+    return '', text
+
+
+def _align_one_partition(current: pd.Series,
+                         previous: Optional[pd.Series],
+                         next_id: int,
+                         ) -> Tuple[pd.Series, int]:
+    """relabel one date's partition to agree with the previous date's.
+
+    Maximum-overlap assignment: the contingency matrix of current raw labels
+    against previous aligned ids is solved with ``linear_sum_assignment``, so
+    each current cluster inherits the id of the previous cluster it shares most
+    members with, and no two clusters can claim the same id. A current cluster
+    that matches nothing takes a fresh id.
+
+    Args:
+        current: Ticker to raw label, one frequency bucket, one date.
+        previous: Ticker to aligned id at the previous date, same bucket.
+            None for the first date.
+        next_id: The next unused aligned id.
+
+    Returns:
+        ``(aligned, next_id)`` — ticker to aligned id, and the next unused id.
+    """
+    raw_labels = list(dict.fromkeys(current.tolist()))
+    if previous is None or previous.empty:
+        mapping = {label: next_id + n for n, label in enumerate(raw_labels)}
+        return current.map(mapping), next_id + len(raw_labels)
+
+    shared = current.index.intersection(previous.index)
+    previous_ids = sorted(set(previous.loc[shared].tolist())) if len(shared) > 0 else []
+    mapping: Dict[str, int] = {}
+    if previous_ids:
+        overlap = np.zeros((len(raw_labels), len(previous_ids)), dtype=float)
+        for ticker in shared:
+            row = raw_labels.index(current.loc[ticker])
+            column = previous_ids.index(previous.loc[ticker])
+            overlap[row, column] += 1.0
+        rows, columns = linear_sum_assignment(-overlap)
+        for row, column in zip(rows, columns):
+            if overlap[row, column] > 0.0:
+                mapping[raw_labels[row]] = previous_ids[column]
+    for label in raw_labels:
+        if label not in mapping:
+            mapping[label] = next_id
+            next_id += 1
+    return current.map(mapping), next_id
+
+
+def align_rolling_clusters(
+        rolling_clusters: Dict[pd.Timestamp, pd.Series],
+) -> Tuple[Dict[pd.Timestamp, pd.Series], pd.Series]:
+    """give one cluster one id through time, so the labels can be read as a series.
+
+    ``compute_clusters_from_corr_matrix`` returns ``scipy.cluster.hierarchy.
+    fcluster`` output, whose numbering follows the dendrogram traversal and is
+    re-derived independently at every estimation date. Cluster ``'QE:4'`` at one
+    date and ``'QE:4'`` at the next are therefore unrelated, and a time series
+    of the raw labels shows migrations that never happened. This walks the dates
+    forward and relabels each partition to the one before it by maximum overlap,
+    so a stable group keeps a stable id and a genuine migration shows as one.
+
+    The output labels keep the ``'<freq>:<id>'`` shape, alignment running within
+    each frequency prefix because the estimator partitions each frequency bucket
+    separately.
+
+    Args:
+        rolling_clusters: Estimation date to (ticker -> raw label), from
+            :func:`extract_rolling_clusters`.
+
+    Returns:
+        ``(aligned, n_reassigned)``. ``aligned`` mirrors the input with stable
+        labels. ``n_reassigned`` is indexed by date and counts the tickers whose
+        aligned id differs from their own previous one, among those present at
+        both dates — zero when only the numbering moved, positive when
+        membership actually changed. The first date is 0 by construction.
+
+    Raises:
+        ValueError: If any date's assignment is not a ``pd.Series``.
+    """
+    aligned: Dict[pd.Timestamp, pd.Series] = {}
+    reassigned: Dict[pd.Timestamp, int] = {}
+    previous_by_prefix: Dict[str, pd.Series] = {}
+    next_id_by_prefix: Dict[str, int] = {}
+
+    for date in sorted(rolling_clusters):
+        clusters = rolling_clusters[date]
+        if not isinstance(clusters, pd.Series):
+            raise ValueError(f"cluster assignment at {date} must be a pd.Series, "
+                             f"got {type(clusters).__name__}")
+        split = {ticker: _split_cluster_label(label) for ticker, label in clusters.items()}
+        prefixes = sorted({prefix for prefix, _ in split.values()})
+        date_labels: Dict[str, str] = {}
+        n_changed = 0
+        for prefix in prefixes:
+            tickers = [t for t, (p, _) in split.items() if p == prefix]
+            bucket = pd.Series({t: split[t][1] for t in tickers})
+            previous = previous_by_prefix.get(prefix)
+            bucket_aligned, next_id = _align_one_partition(
+                current=bucket,
+                previous=previous,
+                next_id=next_id_by_prefix.get(prefix, 1))
+            next_id_by_prefix[prefix] = next_id
+            if previous is not None and not previous.empty:
+                shared = bucket_aligned.index.intersection(previous.index)
+                n_changed += int((bucket_aligned.loc[shared] != previous.loc[shared]).sum())
+            previous_by_prefix[prefix] = bucket_aligned
+            for ticker, cluster_id in bucket_aligned.items():
+                date_labels[ticker] = (f"{prefix}{CLUSTER_LABEL_SEPARATOR}{cluster_id}"
+                                       if prefix else str(cluster_id))
+        aligned[date] = pd.Series(date_labels).reindex(clusters.index)
+        reassigned[date] = n_changed
+
+    return aligned, pd.Series(reassigned, name='n_reassigned').sort_index()
