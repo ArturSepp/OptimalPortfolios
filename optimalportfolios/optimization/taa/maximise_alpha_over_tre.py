@@ -13,7 +13,7 @@ Solves the tactical asset allocation (TAA) problem relative to a benchmark:
 
 Two formulations are supported:
 
-1. **Hard constraints** (``ConstraintEnforcementType.HARD_CONSTRAINTS``):
+1. **Hard constraints** (``ConstraintEnforcementType.FORCED_CONSTRAINTS``):
    The tracking error and turnover limits are enforced as explicit CVXPY
    constraints.
 
@@ -22,6 +22,10 @@ Two formulations are supported:
 
        max_w  α'(w - w_b) - λ_TE (w - w_b)'Σ(w - w_b) - λ_TO ||w - w_0||_1
 
+The filtered covariance is factorized once by default and reused in objectives,
+hard constraints, input diagnostics, validation, and the optional structured
+``OptimizationOutcome`` returned to production callers.
+
 Reference:
     Sepp A., Ossa I., and Kastenholz M. (2026),
     "Robust Optimization of Strategic and Tactical Asset Allocation
@@ -29,16 +33,24 @@ Reference:
     The Journal of Portfolio Management, 52(4), 86-120.
     Available at https://www.pm-research.com/content/iijpormgmt/52/4/86
 """
-import warnings
 import numpy as np
 import pandas as pd
 import cvxpy as cvx
-from typing import Optional, Union, Dict
+from typing import Dict, Optional, Tuple, Union
 
 # optimalportfolios
 from optimalportfolios.optimization.constraints import Constraints, ConstraintEnforcementType
+from optimalportfolios.optimization.covar_factorization import (
+    CovarianceFactorization,
+    factorize_covariance,
+    resolve_covariance_factorization,
+)
 from optimalportfolios.optimization.solver_diagnostics import (
-    validate_solution, diagnose_solver_failure, validate_solver_inputs)
+    OptimizationOutcome,
+    diagnose_solver_failure,
+    validate_solution,
+    validate_solver_inputs,
+)
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.utils.portfolio_funcs import compute_portfolio_risk_contribution_outputs
 from optimalportfolios.optimization.config import OptimiserConfig
@@ -64,7 +76,8 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
         benchmark_weights: SAA benchmark. Series (static) or DataFrame (time-varying).
         covar_dict: Pre-computed covariance matrices keyed by rebalancing date.
         rebalancing_indicators: Optional binary DataFrame for position freezing.
-        optimiser_config: Solver configuration.
+        optimiser_config: Solver configuration, including covariance
+            factorization and input-validation policy per rebalance.
         benchmark_beta_loadings: Per-date beta loadings (T x N) for the
             ``constraints.benchmark_beta_constraint`` — beta(w) = loadings @ w
             at each date. Required when that constraint is set; aligned to
@@ -148,9 +161,15 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
                                     weights_0: pd.Series = None,
                                     rebalancing_indicators: pd.Series = None,
                                     detailed_output: bool = False,
+                                    return_outcome: bool = False,
                                     optimiser_config: OptimiserConfig = OptimiserConfig(),
                                     context: str = ''
-                                    ) -> Union[pd.Series, pd.DataFrame]:
+                                    ) -> Union[
+                                        pd.Series,
+                                        pd.DataFrame,
+                                        Tuple[Union[pd.Series, pd.DataFrame],
+                                              OptimizationOutcome],
+                                    ]:
     """
     Single-date alpha-over-TE optimisation with NaN filtering and routing.
 
@@ -166,10 +185,14 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
         weights_0: Previous-period weights for warm-start / turnover.
         rebalancing_indicators: Binary series for position freezing.
         detailed_output: If True, return DataFrame with risk contribution diagnostics.
+        return_outcome: If True, also return the structured solver outcome,
+            aligned constraints, residuals, and covariance factorization.
         optimiser_config: Solver configuration.
+        context: Rebalance label included in solver diagnostics.
 
     Returns:
-        Portfolio weights as pd.Series (or DataFrame if detailed_output=True).
+        Portfolio weights as pd.Series (or DataFrame if detailed_output=True),
+        optionally paired with an ``OptimizationOutcome``.
     """
     if alphas is None:
         vectors = None
@@ -183,7 +206,7 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
         total_to_good_ratio = None
 
     valid_tickers = clean_covar.columns.to_list()
-    constraints1 = constraints.update_with_valid_tickers(context=context, 
+    constraints1 = constraints.update_with_valid_tickers(context=context,
         valid_tickers=valid_tickers,
         total_to_good_ratio=total_to_good_ratio,
         weights_0=weights_0,
@@ -192,34 +215,48 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
         max_relaxation_tol=optimiser_config.max_constraint_relaxation
     )
 
+    covar_factorization = (
+        factorize_covariance(clean_covar.to_numpy())
+        if optimiser_config.factorize_covar else None
+    )
     if optimiser_config.validate_inputs:
         validate_solver_inputs(
             clean_covar, constraints1, context=context,
             n_dropped=len(pd_covar.columns) - len(clean_covar.columns),
-            solver=optimiser_config.solver)
+            solver=optimiser_config.solver,
+            covar_factorization=covar_factorization)
 
     alphas_np = good_vectors['alphas'].to_numpy() if alphas is not None else None
 
     if constraints.constraint_enforcement_type == ConstraintEnforcementType.UTILITY_CONSTRAINTS:
-        weights = cvx_maximise_tre_utility(
+        solve_result = cvx_maximise_tre_utility(
             covar=clean_covar.to_numpy(),
             alphas=alphas_np,
             constraints=constraints1,
             solver=optimiser_config.solver,
             verbose=optimiser_config.verbose,
             context=context,
-            diagnose=optimiser_config.diagnose_infeasibility
+            diagnose=optimiser_config.diagnose_infeasibility,
+            factorize_covar=optimiser_config.factorize_covar,
+            covar_factorization=covar_factorization,
+            return_outcome=return_outcome,
         )
     else:
-        weights = cvx_maximise_alpha_over_tre(
+        solve_result = cvx_maximise_alpha_over_tre(
             covar=clean_covar.to_numpy(),
             alphas=alphas_np,
             constraints=constraints1,
             solver=optimiser_config.solver,
             verbose=optimiser_config.verbose,
             context=context,
-            diagnose=optimiser_config.diagnose_infeasibility
+            diagnose=optimiser_config.diagnose_infeasibility,
+            factorize_covar=optimiser_config.factorize_covar,
+            covar_factorization=covar_factorization,
+            return_outcome=return_outcome,
         )
+
+    outcome = solve_result if return_outcome else None
+    weights = outcome.weights if outcome is not None else solve_result
 
     weights[np.isinf(weights)] = 0.0
     weights = pd.Series(weights, index=valid_tickers)
@@ -229,6 +266,8 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
         out = compute_portfolio_risk_contribution_outputs(weights=weights, clean_covar=clean_covar)
     else:
         out = weights
+    if return_outcome:
+        return out, outcome
     return out
 
 
@@ -238,8 +277,12 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
                                 solver: str = 'CLARABEL',
                                 verbose: bool = False,
                                 context: str = '',
-                                diagnose: bool = False
-                                ) -> np.ndarray:
+                                diagnose: bool = False,
+                                factorize_covar: bool = True,
+                                covar_factorization: Optional[
+                                    CovarianceFactorization] = None,
+                                return_outcome: bool = False,
+                                ) -> Union[np.ndarray, OptimizationOutcome]:
     """
     Maximise active alpha subject to a hard tracking error constraint.
 
@@ -260,21 +303,40 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
         context: free-form label (e.g. rebalance date) used in diagnostic logs.
         diagnose: if True, a rejected solve triggers the elastic infeasibility
             / conditioning diagnosis (see OptimiserConfig.diagnose_infeasibility).
+        factorize_covar: Use an explicit covariance square root for risk terms.
+        covar_factorization: Optional precomputed factorization. When supplied,
+            it is reused and no eigendecomposition is performed in this call.
+        return_outcome: Return a structured ``OptimizationOutcome`` instead of
+            only the safe weight vector.
 
     Returns:
-        Optimal weights (N,). Falls back to weights_0 or zeros on failure.
+        Safe weights by default; an ``OptimizationOutcome`` when requested.
+        Rejected solutions carry their finite fallback weights and reason.
     """
-    n = covar.shape[0]
+    raw_covar = np.asarray(covar, dtype=float)
+    covar_factorization = resolve_covariance_factorization(
+        covar=raw_covar,
+        factorize_covar=factorize_covar,
+        covar_factorization=covar_factorization,
+    )
+    solver_covar = (
+        covar_factorization.covar
+        if covar_factorization is not None else raw_covar
+    )
+    n = raw_covar.shape[0]
     nonneg = constraints.is_long_only
     w = cvx.Variable(n, nonneg=nonneg)
-    raw_covar = covar  # keep unwrapped Σ for the conditioning diagnostic
-    covar = cvx.psd_wrap(covar)
+    covar_psd = cvx.psd_wrap(solver_covar)
 
     benchmark_weights = constraints.benchmark_weights.to_numpy()
     objective_fun = alphas.T @ (w - benchmark_weights)
     objective = cvx.Maximize(objective_fun)
 
-    constraints_ = constraints.set_cvx_all_constraints(w=w, covar=covar)
+    constraints_ = constraints.set_cvx_all_constraints(
+        w=w,
+        covar=covar_psd,
+        covar_factorization=covar_factorization,
+    )
 
     problem = cvx.Problem(objective, constraints_)
     try:
@@ -288,13 +350,20 @@ def cvx_maximise_alpha_over_tre(covar: np.ndarray,
         w.value = None
         solved_status = 'solver_error'
 
-    optimal_weights, _is_valid = validate_solution(
-        w.value, solved_status, constraints, n, solver=solver, context=context)
+    validation = validate_solution(
+        w.value, solved_status, constraints, n, solver=solver, context=context,
+        covar=solver_covar, covar_factorization=covar_factorization,
+        return_outcome=return_outcome)
+    if return_outcome:
+        optimal_weights = validation.weights
+        _is_valid = validation.accepted
+    else:
+        optimal_weights, _is_valid = validation
     if (not _is_valid) and diagnose:
         diagnose_solver_failure(solved_status, constraints, raw_covar,
                                 solver=solver, context=context)
 
-    return optimal_weights
+    return validation if return_outcome else optimal_weights
 
 
 def cvx_maximise_tre_utility(covar: np.ndarray,
@@ -303,8 +372,12 @@ def cvx_maximise_tre_utility(covar: np.ndarray,
                              solver: str = 'CLARABEL',
                              verbose: bool = False,
                              context: str = '',
-                             diagnose: bool = False
-                             ) -> np.ndarray:
+                             diagnose: bool = False,
+                             factorize_covar: bool = True,
+                             covar_factorization: Optional[
+                                 CovarianceFactorization] = None,
+                             return_outcome: bool = False,
+                             ) -> Union[np.ndarray, OptimizationOutcome]:
     """
     Maximise utility with tracking error and turnover penalties.
 
@@ -323,21 +396,37 @@ def cvx_maximise_tre_utility(covar: np.ndarray,
         context: free-form label (e.g. rebalance date) used in diagnostic logs.
         diagnose: if True, a rejected solve triggers the elastic infeasibility
             / conditioning diagnosis (see OptimiserConfig.diagnose_infeasibility).
+        factorize_covar: Use an explicit covariance square root for risk terms.
+        covar_factorization: Optional precomputed factorization. When supplied,
+            it is reused and no eigendecomposition is performed in this call.
+        return_outcome: Return a structured ``OptimizationOutcome`` instead of
+            only the safe weight vector.
 
     Returns:
-        Optimal weights (N,). Falls back to weights_0 or zeros on failure.
+        Safe weights by default; an ``OptimizationOutcome`` when requested.
+        Rejected solutions carry their finite fallback weights and reason.
     """
-    n = covar.shape[0]
+    raw_covar = np.asarray(covar, dtype=float)
+    covar_factorization = resolve_covariance_factorization(
+        covar=raw_covar,
+        factorize_covar=factorize_covar,
+        covar_factorization=covar_factorization,
+    )
+    solver_covar = (
+        covar_factorization.covar
+        if covar_factorization is not None else raw_covar
+    )
+    n = raw_covar.shape[0]
     nonneg = constraints.is_long_only
     w = cvx.Variable(n, nonneg=nonneg)
-    raw_covar = covar  # keep unwrapped Σ for the conditioning diagnostic
-    covar = cvx.psd_wrap(covar)
+    covar_psd = cvx.psd_wrap(solver_covar)
 
     constraints1 = constraints.copy()
     objective_fun, constraints_ = constraints1.set_cvx_utility_objective_constraints(
         w=w,
         alphas=alphas,
-        covar=covar
+        covar=covar_psd,
+        covar_factorization=covar_factorization,
     )
 
     problem = cvx.Problem(cvx.Maximize(objective_fun), constraints_)
@@ -351,10 +440,17 @@ def cvx_maximise_tre_utility(covar: np.ndarray,
         w.value = None
         solved_status = 'solver_error'
 
-    optimal_weights, _is_valid = validate_solution(
-        w.value, solved_status, constraints, n, solver=solver, context=context)
+    validation = validate_solution(
+        w.value, solved_status, constraints, n, solver=solver, context=context,
+        covar=solver_covar, covar_factorization=covar_factorization,
+        return_outcome=return_outcome)
+    if return_outcome:
+        optimal_weights = validation.weights
+        _is_valid = validation.accepted
+    else:
+        optimal_weights, _is_valid = validation
     if (not _is_valid) and diagnose:
         diagnose_solver_failure(solved_status, constraints, raw_covar,
                                 solver=solver, context=context)
 
-    return optimal_weights
+    return validation if return_outcome else optimal_weights

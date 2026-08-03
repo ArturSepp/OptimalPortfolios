@@ -23,6 +23,7 @@ Usage:
     python test_constraints.py <section>    # run one section (e.g. 1, 2, ...)
 """
 from __future__ import annotations
+import logging
 import sys
 import warnings
 import traceback
@@ -128,19 +129,26 @@ def test_gluc_construction_basic():
     assert len(gluc.group_max_allocation) == 3
 
 
-def test_gluc_drops_zero_loading_columns():
-    """Columns where all loadings are zero should be dropped with a warning."""
+def test_gluc_drops_zero_loading_columns(caplog):
+    """All-zero columns are dropped and exposed through structured diagnostics."""
     loadings = GROUP_LOADINGS.copy()
     loadings["EmptyGroup"] = 0.0
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
+    with caplog.at_level(
+            logging.DEBUG,
+            logger="optimalportfolios.optimization.constraints",
+    ):
         gluc = GroupLowerUpperConstraints(
             group_loadings=loadings,
             group_min_allocation=pd.Series({"Equities": 0.2, "EmptyGroup": 0.1}, dtype=float),
             group_max_allocation=None,
         )
     assert "EmptyGroup" not in gluc.group_loadings.columns
-    assert any("zero loadings" in str(warning.message) for warning in w)
+    dropped_records = [
+        record.dropped_groups
+        for record in caplog.records
+        if hasattr(record, "dropped_groups")
+    ]
+    assert any(record.groups == ("EmptyGroup",) for record in dropped_records)
 
 
 def test_gluc_all_zero_loadings_nullifies_constraints():

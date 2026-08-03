@@ -10,7 +10,9 @@ Supported objectives:
     - QUADRATIC_UTILITY: max μ'w - (γ/2) w' Σ w  s.t. constraints
 
 The rolling wrapper accepts pre-computed covariance matrices (from any
-CovarEstimator) and rebalances at each date in the covar dict.
+CovarEstimator) and rebalances at each date in the covar dict. Compatible
+CVXPY risk expressions reuse one controlled covariance factorization per
+filtered single-date solve.
 """
 # packages
 import warnings
@@ -21,7 +23,12 @@ from typing import Tuple, Optional, Dict
 
 # optimalportfolios
 from optimalportfolios.config import PortfolioObjective
-from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.optimization.constraints import Constraints, cvx_covar_variance
+from optimalportfolios.optimization.covar_factorization import (
+    CovarianceFactorization,
+    factorize_covariance,
+    resolve_covariance_factorization,
+)
 from optimalportfolios.optimization.solver_diagnostics import validate_solution
 from optimalportfolios.optimization.config import OptimiserConfig
 from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
@@ -49,7 +56,8 @@ def rolling_quadratic_optimisation(prices: pd.DataFrame,
         expected_returns: Expected returns per asset. Required for
             QUADRATIC_UTILITY; forward-filled to rebalancing dates.
         carra: Risk aversion coefficient γ for QUADRATIC_UTILITY.
-        optimiser_config: Solver configuration.
+        optimiser_config: Solver configuration, including covariance
+            factorization policy for each single-date solve.
 
     Returns:
         DataFrame of portfolio weights.
@@ -125,6 +133,7 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
         weights_0: Previous-period weights for warm-start / fallback.
         carra: Risk aversion coefficient for QUADRATIC_UTILITY.
         optimiser_config: Solver configuration.
+        context: Rebalance label included in solver diagnostics.
 
     Returns:
         Portfolio weights as pd.Series aligned to pd_covar.index.
@@ -151,6 +160,10 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
         weights_0=weights_0
     )
 
+    covar_factorization = (
+        factorize_covariance(clean_covar.to_numpy())
+        if optimiser_config.factorize_covar else None
+    )
     weights = cvx_quadratic_optimisation(
         portfolio_objective=portfolio_objective,
         covar=clean_covar.to_numpy(),
@@ -159,7 +172,9 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
         carra=carra,
         solver=optimiser_config.solver,
         verbose=optimiser_config.verbose,
-        context=context
+        context=context,
+        factorize_covar=optimiser_config.factorize_covar,
+        covar_factorization=covar_factorization,
     )
     weights[np.isinf(weights)] = 0.0
     weights = pd.Series(weights, index=clean_covar.index)
@@ -174,7 +189,10 @@ def cvx_quadratic_optimisation(portfolio_objective: PortfolioObjective,
                                verbose: bool = False,
                                solver: str = 'CLARABEL',
                                carra: float = 1.0,
-                               context: str = ''
+                               context: str = '',
+                               factorize_covar: bool = True,
+                               covar_factorization: Optional[
+                                   CovarianceFactorization] = None,
                                ) -> np.ndarray:
     """
     Solve quadratic portfolio optimisation via CVXPY.
@@ -192,20 +210,39 @@ def cvx_quadratic_optimisation(portfolio_objective: PortfolioObjective,
         means: Expected returns (N,). Required for QUADRATIC_UTILITY.
         verbose: If True, print CVXPY solver diagnostics.
         solver: CVXPY solver name.
+        context: Rebalance label included in solver diagnostics.
+        factorize_covar: Compute and use an explicit covariance square root
+            when no precomputed factorization is supplied.
+        covar_factorization: Optional wrapper-computed factorization reused in
+            the objective, constraints, and validation.
         carra: Risk aversion coefficient γ.
 
     Returns:
         Optimal weights (N,). Falls back to weights_0 or zeros on failure.
     """
-    covar = cvx.psd_wrap(covar)
-    n = covar.shape[0]
+    raw_covar = np.asarray(covar, dtype=float)
+    covar_factorization = resolve_covariance_factorization(
+        covar=raw_covar,
+        factorize_covar=factorize_covar,
+        covar_factorization=covar_factorization,
+    )
+    solver_covar = (
+        covar_factorization.covar
+        if covar_factorization is not None else raw_covar
+    )
+    covar_psd = cvx.psd_wrap(solver_covar)
+    n = raw_covar.shape[0]
     if constraints.is_long_only:
         nonneg = True
     else:
         nonneg = False
     w = cvx.Variable(n, nonneg=nonneg)
 
-    portfolio_var = cvx.quad_form(w, covar)
+    portfolio_var = cvx_covar_variance(
+        active_weights=w,
+        covar=covar_psd,
+        covar_factorization=covar_factorization,
+    )
 
     if portfolio_objective == PortfolioObjective.MIN_VARIANCE:
         objective_fun = -portfolio_var
@@ -219,7 +256,11 @@ def cvx_quadratic_optimisation(portfolio_objective: PortfolioObjective,
         raise ValueError(f"unsupported portfolio_objective: {portfolio_objective}")
 
     objective = cvx.Maximize(objective_fun)
-    constraints_ = constraints.set_cvx_all_constraints(w=w, covar=covar)
+    constraints_ = constraints.set_cvx_all_constraints(
+        w=w,
+        covar=covar_psd,
+        covar_factorization=covar_factorization,
+    )
     problem = cvx.Problem(objective, constraints_)
     try:
         problem.solve(verbose=verbose, solver=solver)
@@ -232,7 +273,8 @@ def cvx_quadratic_optimisation(portfolio_objective: PortfolioObjective,
         solved_status = 'solver_error'
 
     optimal_weights, _is_valid = validate_solution(
-        w.value, solved_status, constraints, n, solver=solver, context=context)
+        w.value, solved_status, constraints, n, solver=solver, context=context,
+        covar=solver_covar, covar_factorization=covar_factorization)
 
     return optimal_weights
 

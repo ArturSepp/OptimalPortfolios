@@ -1,7 +1,12 @@
 """Portfolio optimisation module.
 
-Re-exports all public symbols from constraints, config, solver submodules
-(general, saa, taa), the rolling portfolio dispatcher, and portfolio result.
+Re-exports public symbols from constraints, config, covariance factorization,
+structured solver outcomes, solver submodules (general, saa, taa), the rolling
+portfolio dispatcher, and portfolio result.
+
+Compatible CVXPY solvers factor covariance once per solve by default through
+``OptimiserConfig.factorize_covar``. Production callers can request an
+``OptimizationOutcome`` and its report-ready ``ConstraintResidual`` records.
 
 Submodule structure:
     general/    — objective-driven solvers (min-var, max Sharpe, max div, CARA, risk budgeting)
@@ -10,6 +15,16 @@ Submodule structure:
 """
 # config
 from optimalportfolios.optimization.config import OptimiserConfig
+from optimalportfolios.optimization.covar_factorization import (
+    CovarianceFactorization as CovarianceFactorization,
+    factorize_covariance as factorize_covariance,
+    resolve_covariance_factorization as resolve_covariance_factorization,
+)
+from optimalportfolios.optimization.solver_diagnostics import (
+    ConstraintResidual,
+    OptimizationOutcome,
+    evaluate_constraint_residuals,
+)
 
 # constraints
 from optimalportfolios.optimization.constraints import (

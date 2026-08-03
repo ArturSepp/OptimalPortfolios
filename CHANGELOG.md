@@ -7,6 +7,43 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.9.0] - 2026-08-03
+
+### Added
+- `CovarianceFactorization`, `factorize_covariance` and
+  `resolve_covariance_factorization` provide one reusable covariance eigendecomposition per
+  optimisation solve. The result contains the symmetric positive-semidefinite covariance and its
+  square-root factor, together with the raw and stabilised minimum eigenvalues, condition numbers,
+  eigenvalue floor and maximum adjustment for audit reporting.
+- Structured solver diagnostics through `ConstraintResidual`, `OptimizationOutcome` and
+  `evaluate_constraint_residuals`. Callers can request the complete optimisation outcome while
+  existing callers continue to receive the original weight output by default.
+- `RunDiagnostics` aggregates rejected solver attempts, relaxed group constraints, covariance and
+  input-contract diagnostics, zero-loading groups and deduplicated Python warnings for production
+  reporting.
+- Focused covariance-factorisation tests cover positive-definite, singular and slightly indefinite
+  covariance inputs, factor reuse, and equivalence with the legacy quadratic-form geometry.
+
+### Changed
+- `OptimiserConfig.factorize_covar` defaults to `True`. Supported CVXPY optimisers now factorise
+  the covariance once and reuse that exact factor in their objective, risk constraints and
+  post-solve validation: quadratic utility, maximum Sharpe, maximum return at target volatility,
+  minimum variance at target return, maximum alpha at target yield, and maximum alpha over
+  tracking error. Set the flag to `False` to retain legacy `quad_form` construction.
+- Covariance-based constraints accept an optional precomputed factorisation. Volatility, tracking
+  error and group tracking-error limits use second-order-cone norms when it is supplied; utility
+  tracking-error penalties use the same factorised sum-of-squares representation.
+- Input validation reports both the raw covariance condition and the matrix actually supplied to
+  the optimiser. Run logging is idempotent, writes UTF-8 output and summarises repeated warnings.
+
+### Fixed
+- Singular and numerically indefinite covariance matrices are stabilised with a controlled
+  eigenvalue floor before CVXPY canonicalisation. This keeps optimisation and compliance checks on
+  identical risk geometry and avoids discrepancies caused by independently refactorising the same
+  covariance matrix.
+- Solver failure messages now identify the rejected solver attempts and exact residuals instead of
+  losing the useful diagnostics behind a generic validation error.
+
 ## [6.8.0] - 2026-08-02
 
 **No number moves for any existing caller.** Every span parameter still accepts the scalar it

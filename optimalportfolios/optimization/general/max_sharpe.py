@@ -20,6 +20,9 @@ then recover w* = y / k. This yields the global optimum without the
 initialisation sensitivity of direct ratio optimisation.
 
 Uses CVXPY with pre-computed covariance matrices from any CovarEstimator.
+For the fixed-exposure CVXPY path, the filtered covariance is factorized once
+and reused in the objective, compatible constraints, and validation. Variable
+exposure continues to use the SciPy ratio formulation and ignores this option.
 Expected returns are provided externally (e.g., from a CMA model) and
 forward-filled to the rebalancing schedule.
 
@@ -36,10 +39,15 @@ import warnings
 import numpy as np
 import pandas as pd
 import cvxpy as cvx
-from typing import Dict
+from typing import Dict, Optional
 
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
-from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.optimization.constraints import Constraints, cvx_covar_variance
+from optimalportfolios.optimization.covar_factorization import (
+    CovarianceFactorization,
+    factorize_covariance,
+    resolve_covariance_factorization,
+)
 from optimalportfolios.optimization.solver_diagnostics import validate_solution
 from optimalportfolios.optimization.config import OptimiserConfig
 from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
@@ -109,6 +117,7 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
         constraints: Portfolio constraints.
         weights_0: Previous-period weights for warm-start / fallback.
         optimiser_config: Solver configuration.
+        context: Rebalance label included in solver diagnostics.
 
     Returns:
         Portfolio weights as pd.Series aligned to pd_covar.index.
@@ -125,12 +134,20 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
                                                          total_to_good_ratio=total_to_good_ratio,
                                                          weights_0=weights_0)
 
+    covar_factorization = (
+        factorize_covariance(clean_covar.to_numpy())
+        if (optimiser_config.factorize_covar
+            and constraints1.max_exposure == constraints1.min_exposure)
+        else None
+    )
     weights = cvx_maximize_portfolio_sharpe(covar=clean_covar.to_numpy(),
                                             means=good_vectors['means'].to_numpy(),
                                             constraints=constraints1,
                                             solver=optimiser_config.solver,
                                             verbose=optimiser_config.verbose,
-                                            context=context)
+                                            context=context,
+                                            factorize_covar=optimiser_config.factorize_covar,
+                                            covar_factorization=covar_factorization)
     weights[np.isinf(weights)] = 0.0
     weights = pd.Series(weights, index=clean_covar.index)
     weights = weights.reindex(index=pd_covar.index).fillna(0.0)
@@ -142,7 +159,10 @@ def cvx_maximize_portfolio_sharpe(covar: np.ndarray,
                                   constraints: Constraints,
                                   verbose: bool = False,
                                   solver: str = 'CLARABEL',
-                                  context: str = ''
+                                  context: str = '',
+                                  factorize_covar: bool = True,
+                                  covar_factorization: Optional[
+                                      CovarianceFactorization] = None,
                                   ) -> np.ndarray:
     """
     Maximise the Sharpe ratio via the Charnes-Cooper transformation.
@@ -166,6 +186,11 @@ def cvx_maximize_portfolio_sharpe(covar: np.ndarray,
         constraints: Portfolio constraints.
         verbose: If True, print CVXPY solver diagnostics.
         solver: CVXPY solver name (used only for Charnes-Cooper path).
+        context: Rebalance label included in solver diagnostics.
+        factorize_covar: Use one controlled covariance square root on the
+            fixed-exposure CVXPY path. Ignored by the SciPy fallback.
+        covar_factorization: Optional precomputed factorization from the
+            wrapper; reused without another eigendecomposition.
 
     Returns:
         Optimal weights (N,). Falls back to weights_0 or zeros on failure.
@@ -179,7 +204,9 @@ def cvx_maximize_portfolio_sharpe(covar: np.ndarray,
         return _cvx_maximize_sharpe_charnes_cooper(covar=covar, means=means,
                                                     constraints=constraints,
                                                     verbose=verbose, solver=solver,
-                                                    context=context)
+                                                    context=context,
+                                                    factorize_covar=factorize_covar,
+                                                    covar_factorization=covar_factorization)
 
 
 def _cvx_maximize_sharpe_charnes_cooper(covar: np.ndarray,
@@ -187,17 +214,54 @@ def _cvx_maximize_sharpe_charnes_cooper(covar: np.ndarray,
                                          constraints: Constraints,
                                          verbose: bool = False,
                                          solver: str = 'CLARABEL',
-                                         context: str = ''
+                                         context: str = '',
+                                         factorize_covar: bool = True,
+                                         covar_factorization: Optional[
+                                             CovarianceFactorization] = None,
                                          ) -> np.ndarray:
-    """Charnes-Cooper SOCP for fixed-sum (long-only) case."""
-    n = covar.shape[0]
+    """Solve the fixed-exposure Charnes-Cooper formulation.
+
+    Args:
+        covar: Raw covariance matrix.
+        means: Expected-return vector.
+        constraints: Ticker-aligned fixed-exposure constraints.
+        verbose: Forward solver output when True.
+        solver: CVXPY solver name.
+        context: Rebalance label included in solver diagnostics.
+        factorize_covar: Compute an explicit covariance square root when a
+            precomputed factorization is not supplied.
+        covar_factorization: Optional wrapper-computed factorization.
+
+    Returns:
+        Validated normalized weights, or the configured safe fallback.
+    """
+    raw_covar = np.asarray(covar, dtype=float)
+    covar_factorization = resolve_covariance_factorization(
+        covar=raw_covar,
+        factorize_covar=factorize_covar,
+        covar_factorization=covar_factorization,
+    )
+    solver_covar = (
+        covar_factorization.covar
+        if covar_factorization is not None else raw_covar
+    )
+    covar_psd = cvx.psd_wrap(solver_covar)
+    n = raw_covar.shape[0]
     z = cvx.Variable(n+1)
     w = z[:n]
     k = z[n]
 
-    objective = cvx.Minimize(cvx.quad_form(w, cvx.psd_wrap(covar)))
+    objective = cvx.Minimize(cvx_covar_variance(
+        active_weights=w,
+        covar=covar_psd,
+        covar_factorization=covar_factorization,
+    ))
     constraints_ = constraints.set_cvx_all_constraints(
-        w=w, covar=cvx.psd_wrap(covar), exposure_scaler=k)
+        w=w,
+        covar=covar_psd,
+        exposure_scaler=k,
+        covar_factorization=covar_factorization,
+    )
     constraints_ += [means.T @ w == constraints.max_exposure]
     constraints_ += [k >= 0]
 
@@ -216,7 +280,8 @@ def _cvx_maximize_sharpe_charnes_cooper(covar: np.ndarray,
     if optimal_weights is not None:
         optimal_weights = optimal_weights[:n] / optimal_weights[n]
     optimal_weights, _is_valid = validate_solution(
-        optimal_weights, solved_status, constraints, n, solver=solver, context=context)
+        optimal_weights, solved_status, constraints, n, solver=solver, context=context,
+        covar=solver_covar, covar_factorization=covar_factorization)
 
     return optimal_weights
 
@@ -227,7 +292,18 @@ def _scipy_maximize_sharpe(covar: np.ndarray,
                             verbose: bool = False,
                             context: str = ''
                             ) -> np.ndarray:
-    """Direct Sharpe ratio maximisation via scipy SLSQP for long-short."""
+    """Direct Sharpe-ratio maximisation via SciPy SLSQP for long-short.
+
+    Args:
+        covar: Asset covariance matrix.
+        means: Expected asset returns.
+        constraints: Portfolio constraints translated to SciPy form.
+        verbose: Display SLSQP iteration output when True.
+        context: Rebalance label included in solution diagnostics.
+
+    Returns:
+        Validated optimal weights, or the configured safe fallback.
+    """
     from scipy.optimize import minimize
 
     n = covar.shape[0]

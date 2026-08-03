@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest *)",
+      "Bash(python -m ruff check *)",
+      "Bash(python -m mypy *)",
+      "Bash(python -m build --version)",
+      "Bash(python -m twine check *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git stash *)",
+      "Bash(git tag *)",
+      "Bash(git fetch *)",
+      "Bash(git rev-list *)",
+      "Bash(git config --get *)",
+      "Bash(pip show *)",
+      "Bash(pip list *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(Get-Item *)",
+      "PowerShell(Get-ItemProperty *)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(Select-Object *)",
+      "PowerShell(Measure-Object *)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(Get-Command *)",
+      "PowerShell(Compare-Object *)",
+      "PowerShell(Resolve-Path *)",
+      "PowerShell(Get-Location)"
+    ]
+  }
+}

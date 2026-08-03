@@ -1,9 +1,10 @@
 """Solver configuration shared across all optimisation solvers.
 
-Encapsulates backend-agnostic solver parameters: solver name (for CVXPY
-solvers), verbosity, and constraint rescaling. Solver-specific parameters
-(e.g., scipy ftol/maxiter) remain as direct arguments on the lowest-level
-solver functions.
+Encapsulates backend-agnostic solver parameters: solver name, verbosity,
+constraint rescaling, weights drift, input/failed-solve diagnostics, bounded
+constraint relaxation, and covariance factorization. Solver-specific
+parameters (for example SciPy ftol/maxiter) remain direct arguments on the
+lowest-level solver functions.
 """
 from dataclasses import dataclass
 from typing import Optional
@@ -57,6 +58,11 @@ class OptimiserConfig:
             this magnitude (e.g. 0.02), surfacing a large silent widening that a
             small drift would not cause. None (default) applies no magnitude
             bound; the relaxation is still logged (at INFO) and tallied.
+        factorize_covar: If True (default), compatible CVXPY solvers use one
+            controlled eigendecomposition per solve and reuse the resulting
+            covariance factor in objective and constraint risk expressions.
+            Set False to use the legacy ``quad_form`` formulation. Scipy and
+            dedicated risk-budgeting backends ignore this setting.
     """
     solver: str = 'CLARABEL'
     verbose: bool = False
@@ -65,3 +71,4 @@ class OptimiserConfig:
     diagnose_infeasibility: bool = True
     validate_inputs: bool = True
     max_constraint_relaxation: Optional[float] = None
+    factorize_covar: bool = True

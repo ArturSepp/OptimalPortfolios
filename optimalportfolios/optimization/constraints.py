@@ -4,6 +4,11 @@ This module provides a comprehensive framework for defining and enforcing portfo
 constraints across multiple optimization backends. It supports individual asset
 constraints, group-based constraints, tracking error limits, and turnover controls.
 
+Compatible CVXPY risk expressions accept a precomputed
+``CovarianceFactorization``. When supplied, variance is expressed as a squared
+factor norm and hard upper-risk limits as second-order-cone constraints, so one
+controlled covariance decomposition is reused throughout a solve.
+
 All dataclass containers are immutable (frozen=True). Mutation methods return new instances.
 """
 from __future__ import annotations, division
@@ -20,8 +25,65 @@ from cvxpy.atoms.affine.add_expr import AddExpression
 from cvxpy.constraints.nonpos import Inequality
 from enum import Enum
 
+from optimalportfolios.optimization.covar_factorization import CovarianceFactorization
+
 
 logger = logging.getLogger(__name__)
+
+
+def _cvx_factor_risk(
+        active_weights,
+        covar_factorization: CovarianceFactorization,
+):
+    """Map an affine weight vector into covariance-factor risk coordinates.
+
+    Args:
+        active_weights: CVXPY affine weight or active-weight vector.
+        covar_factorization: Precomputed covariance square root.
+
+    Returns:
+        ``factor.T @ active_weights`` in Euclidean risk coordinates.
+
+    Raises:
+        ValueError: If the factor and weight-vector dimensions differ.
+    """
+    n_assets = int(active_weights.shape[0])
+    if covar_factorization.factor.shape[0] != n_assets:
+        raise ValueError(
+            "covar_factorization dimension does not match the weight vector: "
+            f"factor={covar_factorization.factor.shape}, assets={n_assets}")
+    return covar_factorization.factor.T @ active_weights
+
+
+def cvx_covar_variance(
+        active_weights,
+        covar: Union[np.ndarray, psd_wrap],
+        covar_factorization: Optional[CovarianceFactorization] = None,
+):
+    """Return ``active_weights.T @ covar @ active_weights`` as a CVXPY atom.
+
+    When an explicit covariance factor is supplied, the mathematically
+    equivalent sum-of-squares form avoids repeated factorization of an
+    ill-conditioned matrix inside CVXPY's ``quad_form`` canonicalizer.
+
+    Args:
+        active_weights: CVXPY affine vector of portfolio or active weights.
+        covar: Covariance matrix or ``psd_wrap`` used when no factorization is
+            supplied.
+        covar_factorization: Optional precomputed covariance square root.
+
+    Returns:
+        A scalar convex CVXPY variance expression.
+
+    Raises:
+        ValueError: If neither covariance representation is supplied.
+    """
+    if covar_factorization is not None:
+        return cvx.sum_squares(
+            _cvx_factor_risk(active_weights, covar_factorization))
+    if covar is None:
+        raise ValueError("covar must be supplied when covar_factorization is None")
+    return cvx.quad_form(active_weights, covar)
 
 
 @dataclass(frozen=True)
@@ -39,6 +101,14 @@ class RelaxationRecord:
     max_relaxation: float
     breached_budget: bool
     breached_tol: bool
+
+
+@dataclass(frozen=True)
+class DroppedGroupRecord:
+    """Zero-loading group columns removed from one aligned constraint set."""
+
+    groups: Tuple[str, ...]
+    no_groups_remain: bool = False
 
 
 class ConstraintEnforcementType(Enum):
@@ -103,10 +173,10 @@ class GroupLowerUpperConstraints:
         zero_cols = group_loadings.columns[
             (group_loadings == 0).all(axis=0) | group_loadings.isna().all(axis=0)]
         if len(zero_cols) > 0:
-            warnings.warn(
-                f"GroupLowerUpperConstraints: group_loadings columns {zero_cols.tolist()} "
-                f"have all zero loadings and dropped"
-            )
+            dropped = DroppedGroupRecord(groups=tuple(map(str, zero_cols)))
+            logger.debug(
+                "GroupLowerUpperConstraints dropped all-zero loading columns: %s",
+                list(dropped.groups), extra={'dropped_groups': dropped})
             group_loadings = group_loadings.drop(columns=zero_cols)
             if group_min_allocation is not None:
                 group_min_allocation = group_min_allocation.drop(index=zero_cols, errors='ignore')
@@ -115,10 +185,11 @@ class GroupLowerUpperConstraints:
 
         # if no groups remain, nullify all constraints
         if group_loadings.empty or len(group_loadings.columns) == 0:
-            warnings.warn(
-                "GroupLowerUpperConstraints: no valid group_loadings remain after dropping "
-                "zero-loading columns; setting all group constraints to None"
-            )
+            dropped = DroppedGroupRecord(
+                groups=tuple(map(str, zero_cols)), no_groups_remain=True)
+            logger.debug(
+                "GroupLowerUpperConstraints has no non-zero group loadings; "
+                "group constraints disabled", extra={'dropped_groups': dropped})
             group_min_allocation = None
             group_max_allocation = None
 
@@ -346,7 +417,14 @@ class GroupTrackingErrorConstraint:
             raise ValueError(f"group_tre_vols or group_tre_utility_weights must be given")
 
     def update(self, valid_tickers: List[str]) -> GroupTrackingErrorConstraint:
-        """Filter constraints to valid tickers only."""
+        """Filter group TRE loadings to ``valid_tickers``.
+
+        Args:
+            valid_tickers: Asset labels retained by the solver wrapper.
+
+        Returns:
+            A new aligned group tracking-error constraint.
+        """
         return GroupTrackingErrorConstraint(
             group_loadings=self.group_loadings.loc[valid_tickers, :],
             group_tre_vols=_copy_optional_series(self.group_tre_vols),
@@ -357,39 +435,85 @@ class GroupTrackingErrorConstraint:
             self,
             w: cvx.Variable,
             benchmark_weights: pd.Series,
-            covar: np.ndarray
+            covar: Union[np.ndarray, psd_wrap],
+            covar_factorization: Optional[CovarianceFactorization] = None,
     ) -> List[Inequality]:
         """Generate CVXPY constraints for group tracking errors.
 
-        Creates quadratic constraints: (group_loading ⊙ (w - bm))' Σ (group_loading ⊙ (w - bm)) ≤ σ²
-        where ⊙ denotes element-wise multiplication.
+        With a covariance factor ``B``, creates the SOC constraint
+        ``||B.T @ (group_loading ⊙ (w - bm))||₂ <= σ``. Without one,
+        preserves the legacy quadratic-form constraint.
+
+        Args:
+            w: CVXPY portfolio-weight variable.
+            benchmark_weights: Ticker-aligned benchmark weights.
+            covar: Covariance representation used by the legacy path.
+            covar_factorization: Optional precomputed covariance square root.
+
+        Returns:
+            One hard upper-TRE constraint per non-empty group.
         """
         constraints = []
         for group in self.group_loadings.columns:
-            group_loading = self.group_loadings[group].reindex(benchmark_weights.index, fill_value=0.0)
-            if np.any(np.isclose(group_loading, 0.0) == False):
-                tracking_error_var = cvx.quad_form(
-                    cvx.multiply(group_loading.to_numpy(), w - benchmark_weights.to_numpy()),
-                    covar
+            group_loading = self.group_loadings[group].reindex(
+                benchmark_weights.index, fill_value=0.0)
+            if np.any(~np.isclose(group_loading, 0.0)):
+                group_active_weights = cvx.multiply(
+                    group_loading.to_numpy(), w - benchmark_weights.to_numpy()
                 )
                 group_tre_vol = self.group_tre_vols.loc[group]
-                constraints += [tracking_error_var <= group_tre_vol ** 2]
+                if covar_factorization is not None:
+                    group_risk = _cvx_factor_risk(
+                        group_active_weights, covar_factorization)
+                    constraints += [cvx.norm(group_risk, 2) <= group_tre_vol]
+                else:
+                    tracking_error_var = cvx_covar_variance(
+                        active_weights=group_active_weights,
+                        covar=covar,
+                    )
+                    constraints += [tracking_error_var <= group_tre_vol ** 2]
         return constraints
 
-    def set_cvx_group_tre_utility(self, w: cvx.Variable,
-                                  benchmark_weights: pd.Series,
-                                  covar: np.ndarray) -> AddExpression:
-        """Add group tracking error as utility penalty to objective function."""
+    def set_cvx_group_tre_utility(
+            self,
+            w: cvx.Variable,
+            benchmark_weights: pd.Series,
+            covar: Union[np.ndarray, psd_wrap],
+            covar_factorization: Optional[CovarianceFactorization] = None,
+    ) -> AddExpression:
+        """Build the sum of group tracking-error utility penalties.
+
+        Args:
+            w: CVXPY portfolio-weight variable.
+            benchmark_weights: Ticker-aligned benchmark weights.
+            covar: Covariance representation used by the legacy path.
+            covar_factorization: Optional precomputed covariance square root.
+
+        Returns:
+            A negative scalar utility expression, or None when no group has a
+            usable loading/penalty.
+
+        Raises:
+            ValueError: If group utility weights were not configured.
+        """
         if self.group_tre_utility_weights is None:
-            raise ValueError(f"supply group_tre_utility_weights for GroupTrackingErrorConstraint")
+            raise ValueError(
+                "supply group_tre_utility_weights for GroupTrackingErrorConstraint")
         objective_fun = None
         for group in self.group_loadings.columns:
-            group_loading = self.group_loadings[group].reindex(benchmark_weights.index, fill_value=0.0)
-            if np.any(np.isclose(group_loading, 0.0) == False):
+            group_loading = self.group_loadings[group].reindex(
+                benchmark_weights.index, fill_value=0.0)
+            if np.any(~np.isclose(group_loading, 0.0)):
                 group_tre_utility_weight = self.group_tre_utility_weights.loc[group]
                 if not np.isnan(group_tre_utility_weight):
-                    term = -1.0 * group_tre_utility_weight * cvx.quad_form(
-                        cvx.multiply(group_loading.to_numpy(), w - benchmark_weights.to_numpy()), covar)
+                    group_active_weights = cvx.multiply(
+                        group_loading.to_numpy(), w - benchmark_weights.to_numpy())
+                    group_tre_variance = cvx_covar_variance(
+                        active_weights=group_active_weights,
+                        covar=covar,
+                        covar_factorization=covar_factorization,
+                    )
+                    term = -1.0 * group_tre_utility_weight * group_tre_variance
                     objective_fun = add_term_to_objective_function(objective_fun, term)
         if objective_fun is None:
             warnings.warn(f"objective_fun is None in set_cvx_group_tre_utility()")
@@ -434,7 +558,14 @@ class GroupTurnoverConstraint:
             raise ValueError(f"group_max_turnover or group_turnover_utility_weights must be given")
 
     def update(self, valid_tickers: List[str]) -> GroupTurnoverConstraint:
-        """Filter constraints to valid tickers only."""
+        """Filter group turnover loadings to ``valid_tickers``.
+
+        Args:
+            valid_tickers: Asset labels retained by the solver wrapper.
+
+        Returns:
+            A new aligned group turnover constraint.
+        """
         return GroupTurnoverConstraint(
             group_loadings=self.group_loadings.loc[valid_tickers, :],
             group_max_turnover=_copy_optional_series(self.group_max_turnover),
@@ -446,13 +577,19 @@ class GroupTurnoverConstraint:
             w: cvx.Variable,
             weights_0: pd.Series = None
     ) -> List[Inequality]:
-        """Generate CVXPY constraints for group turnovers.
+        """Generate hard CVXPY constraints for group turnovers.
 
-        Creates L1 norm constraints: ||group_loading ⊙ (w - w₀)||₁ ≤ max_turnover
+        Args:
+            w: CVXPY portfolio-weight variable.
+            weights_0: Ticker-aligned starting weights. When None, no group
+                turnover constraints are emitted.
+
+        Returns:
+            One L1 turnover constraint per configured group.
         """
         constraints = []
         if weights_0 is None:
-            warnings.warn(f"weights_0 must be given for turnover_constraint")
+            logger.debug("turnover constraint skipped because weights_0 is absent")
         else:
             for group in self.group_loadings.columns:
                 group_loading = self.group_loadings[group].reindex(weights_0.index, fill_value=0.0)
@@ -465,12 +602,24 @@ class GroupTurnoverConstraint:
                                        w: cvx.Variable,
                                        weights_0: pd.Series
                                        ) -> AddExpression:
-        """Add group turnover as utility penalty to objective function."""
+        """Build the sum of group-turnover utility penalties.
+
+        Args:
+            w: CVXPY portfolio-weight variable.
+            weights_0: Ticker-aligned starting weights.
+
+        Returns:
+            Negative scalar utility expression, or None when no usable group
+            penalty is available.
+
+        Raises:
+            ValueError: If group turnover utility weights were not configured.
+        """
         if self.group_turnover_utility_weights is None:
             raise ValueError(f"group_turnover_utility_weights must be supplied")
         objective_fun = None
         if weights_0 is None:
-            warnings.warn("weights_0 must be given for group turnover constraint")
+            logger.debug("group turnover constraint skipped because weights_0 is absent")
         else:
             for group in self.group_loadings.columns:
                 group_loading = self.group_loadings[group].reindex(weights_0.index, fill_value=0.0)
@@ -518,7 +667,14 @@ class BenchmarkDeviationConstraints:
         )
 
     def update(self, valid_tickers: List[str]) -> BenchmarkDeviationConstraints:
-        """Filter to valid tickers only."""
+        """Filter benchmark-deviation loadings to valid tickers.
+
+        Args:
+            valid_tickers: Asset labels retained by the solver wrapper.
+
+        Returns:
+            A new aligned benchmark-deviation constraint.
+        """
         new_self = BenchmarkDeviationConstraints(
             factor_loading_mat=self.factor_loading_mat.loc[valid_tickers, :],
             factor_max_deviation=self.factor_max_deviation
@@ -665,13 +821,27 @@ class BenchmarkBetaConstraint:
         )
 
     def with_loadings(self, beta_loadings: pd.Series) -> BenchmarkBetaConstraint:
-        """New instance carrying this rebalancing date's beta loadings."""
+        """Create an instance carrying this rebalance's beta loadings.
+
+        Args:
+            beta_loadings: Ticker-indexed linear benchmark-beta loadings.
+
+        Returns:
+            A new constraint with the same bounds and supplied loadings.
+        """
         return BenchmarkBetaConstraint(
             beta_min=self.beta_min, beta_max=self.beta_max,
             beta_loadings=beta_loadings)
 
     def update(self, valid_tickers: List[str]) -> BenchmarkBetaConstraint:
-        """Filter loadings to valid tickers (dropped names carry zero weight)."""
+        """Filter loadings to valid tickers (dropped names carry zero weight).
+
+        Args:
+            valid_tickers: Asset labels retained by the solver wrapper.
+
+        Returns:
+            A new aligned constraint, or this instance if loadings are absent.
+        """
         if self.beta_loadings is None:
             return self
         return BenchmarkBetaConstraint(
@@ -989,6 +1159,9 @@ class Constraints:
             benchmark_weights: Benchmark portfolio weights.
             target_return: Target portfolio return.
             rebalancing_indicators: Binary indicators (1=rebalance, 0=hold fixed).
+            context: Rebalance label used in any constraint-relaxation logs.
+            max_relaxation_tol: Optional maximum permitted relative relaxation
+                when fixed-position constraints must be reconciled.
 
         Returns:
             New Constraints object with all Series aligned to valid_tickers.
@@ -1236,7 +1409,8 @@ class Constraints:
             self,
             w: cvx.Variable,
             covar: Union[np.ndarray, psd_wrap] = None,
-            exposure_scaler: cvx.Variable = None
+            exposure_scaler: cvx.Variable = None,
+            covar_factorization: Optional[CovarianceFactorization] = None,
     ) -> List:
         """Generate all CVXPY constraints for portfolio optimization.
 
@@ -1246,6 +1420,9 @@ class Constraints:
             w: Portfolio weight variable.
             covar: Covariance matrix (required for volatility/tracking error constraints).
             exposure_scaler: Optional exposure scaling for levered portfolios.
+            covar_factorization: Optional precomputed covariance square root.
+                When supplied, volatility and tracking-error upper bounds use
+                norm constraints instead of quadratic forms.
 
         Returns:
             List of all CVXPY constraints.
@@ -1261,9 +1438,16 @@ class Constraints:
             constraints += [self.asset_returns.to_numpy() @ w >= self.target_return]
 
         if self.max_target_portfolio_vol_an is not None:
-            if covar is None:
-                raise ValueError("covar must be given for portfolio volatility constraint")
-            constraints += [cvx.quad_form(w, covar) <= self.max_target_portfolio_vol_an ** 2]
+            if covar_factorization is not None:
+                portfolio_risk = _cvx_factor_risk(w, covar_factorization)
+                constraints += [
+                    cvx.norm(portfolio_risk, 2) <= self.max_target_portfolio_vol_an]
+            else:
+                if covar is None:
+                    raise ValueError(
+                        "covar must be given for portfolio volatility constraint")
+                constraints += [
+                    cvx.quad_form(w, covar) <= self.max_target_portfolio_vol_an ** 2]
         if self.min_target_portfolio_vol_an is not None:
             if covar is None:
                 raise ValueError("covar must be given for portfolio volatility constraint")
@@ -1274,7 +1458,7 @@ class Constraints:
                 w=w, weights_0=self.weights_0)
         elif self.turnover_constraint is not None:
             if self.weights_0 is None:
-                warnings.warn("weights_0 must be given for turnover constraint")
+                logger.debug("turnover constraint skipped because weights_0 is absent")
             else:
                 if self.turnover_costs is not None:
                     constraints += [cvx.norm(cvx.multiply(self.turnover_costs.to_numpy(),
@@ -1286,12 +1470,25 @@ class Constraints:
 
         if self.group_tracking_error_constraint is not None:
             constraints += self.group_tracking_error_constraint.set_cvx_group_tre_constraints(
-                w=w, benchmark_weights=self.benchmark_weights, covar=covar)
+                w=w,
+                benchmark_weights=self.benchmark_weights,
+                covar=covar,
+                covar_factorization=covar_factorization,
+            )
         elif self.tracking_err_vol_constraint is not None:
             if self.benchmark_weights is None:
                 raise ValueError("benchmark_weights must be given for tracking error constraint")
-            tracking_error_var = cvx.quad_form(w - self.benchmark_weights.to_numpy(), covar)
-            constraints += [tracking_error_var <= self.tracking_err_vol_constraint ** 2]
+            active_weights = w - self.benchmark_weights.to_numpy()
+            if covar_factorization is not None:
+                active_risk = _cvx_factor_risk(
+                    active_weights, covar_factorization)
+                constraints += [
+                    cvx.norm(active_risk, 2) <= self.tracking_err_vol_constraint]
+            else:
+                tracking_error_var = cvx_covar_variance(
+                    active_weights=active_weights, covar=covar)
+                constraints += [
+                    tracking_error_var <= self.tracking_err_vol_constraint ** 2]
 
         if self.group_lower_upper_constraints is not None:
             constraints += self.group_lower_upper_constraints.set_cvx_group_lower_upper_constraints(
@@ -1316,7 +1513,8 @@ class Constraints:
             w: cvx.Variable,
             alphas: Optional[np.ndarray] = None,
             covar: Union[np.ndarray, psd_wrap] = None,
-            exposure_scaler: cvx.Variable = None
+            exposure_scaler: cvx.Variable = None,
+            covar_factorization: Optional[CovarianceFactorization] = None,
     ) -> Tuple[AddExpression, List[Inequality]]:
         """Generate CVXPY utility objective with constraints added as utility penalties.
 
@@ -1328,6 +1526,9 @@ class Constraints:
             alphas: Expected excess returns (alpha signals).
             covar: Covariance matrix (required for tracking error penalties).
             exposure_scaler: Optional exposure scaling for levered portfolios.
+            covar_factorization: Optional precomputed covariance square root.
+                When supplied, tracking-error variance is expressed as a
+                factorized sum of squares.
 
         Returns:
             Tuple of (objective function expression, list of hard constraints).
@@ -1345,7 +1546,7 @@ class Constraints:
         # Add group turnover penalty (takes precedence over portfolio-level)
         if self.group_turnover_constraint is not None:
             if self.weights_0 is None:
-                warnings.warn("weights_0 must be given for group turnover constraint")
+                logger.debug("group turnover utility skipped because weights_0 is absent")
             else:
                 term = self.group_turnover_constraint.set_cvx_group_turnover_utility(
                     w=w, weights_0=self.weights_0)
@@ -1353,7 +1554,7 @@ class Constraints:
 
         elif self.turnover_utility_weight is not None:
             if self.weights_0 is None:
-                warnings.warn("weights_0 must be given for turnover constraint")
+                logger.debug("turnover utility skipped because weights_0 is absent")
             else:
                 if self.turnover_costs is not None:
                     term = -1.0 * self.turnover_utility_weight * cvx.norm(
@@ -1369,14 +1570,22 @@ class Constraints:
                 raise ValueError("benchmark_weights must be given for group tracking error constraint")
             else:
                 term = self.group_tracking_error_constraint.set_cvx_group_tre_utility(
-                    w=w, benchmark_weights=benchmark_weights, covar=covar)
+                    w=w,
+                    benchmark_weights=benchmark_weights,
+                    covar=covar,
+                    covar_factorization=covar_factorization,
+                )
                 objective_fun = add_term_to_objective_function(objective_fun, term)
 
         elif self.tre_utility_weight is not None:
             if benchmark_weights is None:
                 raise ValueError("benchmark_weights must be given for tracking error constraint")
-            term = -1.0 * self.tre_utility_weight * cvx.quad_form(
-                w - self.benchmark_weights.to_numpy(), covar)
+            tracking_error_variance = cvx_covar_variance(
+                active_weights=w - self.benchmark_weights.to_numpy(),
+                covar=covar,
+                covar_factorization=covar_factorization,
+            )
+            term = -1.0 * self.tre_utility_weight * tracking_error_variance
             objective_fun = add_term_to_objective_function(objective_fun, term)
 
         # Generate hard constraints (exposure, bounds, groups)

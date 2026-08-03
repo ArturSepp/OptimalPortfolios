@@ -1,5 +1,4 @@
-"""Solver diagnostics: post-solve feasibility validation and pre-solve
-covariance conditioning warnings for the CVXPY optimisers.
+"""Production solver validation, covariance telemetry, and run diagnostics.
 
 Motivation
 ----------
@@ -27,24 +26,36 @@ second-moment backtest statistic.
 The failure cannot be reliably pre-empted by provoking the solver (modern
 CLARABEL stays feasible even at cond ~6e14 on small problems) nor by checking
 convexity (psd_wrap defeats the DCP check). The robust defence is to validate
-the *output* unconditionally, on every solve. That is ``validate_solution``.
+the *output* unconditionally, on every solve. ``validate_solution`` checks the
+weight vector plus every applicable hard policy constraint and can return an
+``OptimizationOutcome`` carrying the aligned constraints, residuals, fallback
+state, and covariance factorization used by the solver.
 
 ``check_covar_conditioning`` is a *diagnostic-only* early warning: it logs when
 Σ is near-singular or indefinite (which is what would have flagged 2021-04
 before the solve) and never modifies the matrix — its thresholds are logging
 knobs, not optimisation parameters, so they introduce no estimation/objective
-parameter and cannot change any result.
+parameter and cannot change any result. ``validate_solver_inputs`` reuses the
+wrapper's factorization telemetry, while ``RunDiagnostics`` aggregates solver
+outcomes, relaxations, dropped zero-loading groups, input-contract findings,
+and captured warnings for persistent logs and workbook reporting.
 """
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
-from optimalportfolios.optimization.constraints import Constraints, RelaxationRecord
+from optimalportfolios.optimization.constraints import (
+    ConstraintEnforcementType,
+    Constraints,
+    DroppedGroupRecord,
+    RelaxationRecord,
+)
+from optimalportfolios.optimization.covar_factorization import CovarianceFactorization
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +89,15 @@ def _compute_fallback(constraints: Constraints, tickers: Sequence[str], n: int) 
     Order: drifted ``weights_0`` → ``benchmark_weights`` → zeros. The rolling
     loop already treats an all-zero vector as 'skip this rebalance', so zeros
     is a safe terminal fallback. Each candidate is accepted only if finite.
+
+    Args:
+        constraints: Aligned constraints carrying optional starting and
+            benchmark weights.
+        tickers: Asset order used to align candidate fallback Series.
+        n: Required weight-vector length.
+
+    Returns:
+        Finite fallback weights and the selected source label.
     """
     w0 = _as_np(getattr(constraints, "weights_0", None), tickers)
     if w0 is not None and w0.shape == (n,) and np.all(np.isfinite(w0)):
@@ -89,18 +109,53 @@ def _compute_fallback(constraints: Constraints, tickers: Sequence[str], n: int) 
 
 
 def _budget_target(constraints: Constraints) -> Tuple[float, float, bool]:
-    """Return (min_exposure, max_exposure, is_equality) for the budget test."""
+    """Return the exposure band and equality flag for ``constraints``.
+
+    Args:
+        constraints: Portfolio constraints containing min/max exposure.
+
+    Returns:
+        ``(min_exposure, max_exposure, is_equality)`` for the budget test.
+    """
     max_exp = float(getattr(constraints, "max_exposure", 1.0))
     min_exp = float(getattr(constraints, "min_exposure", max_exp))
     return min_exp, max_exp, np.isclose(min_exp, max_exp)
 
 
 def _derive_tickers(constraints: Constraints, n: int) -> List[Any]:
-    """Best-effort asset labels (for logging / Series alignment)."""
-    for _attr in ("benchmark_weights", "max_weights", "min_weights", "weights_0"):
+    """Derive best-effort asset labels for logging and Series alignment.
+
+    Args:
+        constraints: Constraints whose indexed Series may carry asset labels.
+        n: Number of numeric labels to create when no Series is available.
+
+    Returns:
+        Asset labels in solver-vector order.
+    """
+    for _attr in (
+            "benchmark_weights",
+            "max_weights",
+            "min_weights",
+            "weights_0",
+            "asset_returns",
+            "turnover_costs",
+    ):
         _s = getattr(constraints, _attr, None)
         if _s is not None and hasattr(_s, "index"):
             return list(_s.index)
+
+    for _container_attr, _indexed_attr in (
+            ("group_lower_upper_constraints", "group_loadings"),
+            ("group_tracking_error_constraint", "group_loadings"),
+            ("group_turnover_constraint", "group_loadings"),
+            ("sector_deviation_constraints", "factor_loading_mat"),
+            ("style_deviation_constraints", "factor_loading_mat"),
+            ("benchmark_beta_constraint", "beta_loadings"),
+    ):
+        _container = getattr(constraints, _container_attr, None)
+        _indexed = getattr(_container, _indexed_attr, None)
+        if _indexed is not None and hasattr(_indexed, "index"):
+            return list(_indexed.index)
     return list(range(n))
 
 
@@ -113,6 +168,17 @@ def _validate_weight_vector(w: np.ndarray, constraints: Constraints, n: int,
     band), long-only, per-asset max_weights, per-asset min_weights. Shared by
     the CVXPY, scipy and risk-budgeting validators so the accept/reject logic
     is identical across backends.
+
+    Args:
+        w: Candidate solver weights.
+        constraints: Aligned portfolio constraints.
+        n: Expected number of weights.
+        tickers: Asset order for aligning Series-valued bounds.
+        budget_atol: Absolute tolerance for total exposure.
+        bound_atol: Absolute tolerance for long-only and box bounds.
+
+    Returns:
+        ``(is_valid, reason)``; reason is empty for a valid vector.
     """
     if w.shape != (n,) or not np.all(np.isfinite(w)):
         return False, (f"non-finite or wrong-shape weights (shape={w.shape}, "
@@ -184,6 +250,240 @@ class SolverDiagnostic:
     max_box_violation: float
 
 
+@dataclass(frozen=True)
+class ConstraintResidual:
+    """One evaluated constraint with bounds, tolerance, and pass/fail state."""
+
+    constraint_type: str
+    name: str
+    actual: float
+    lower: Optional[float]
+    upper: Optional[float]
+    violation: float
+    tolerance: float
+    hard: bool
+    passed: bool
+
+
+@dataclass(frozen=True)
+class OptimizationOutcome:
+    """Structured solver result suitable for production audit and reporting.
+
+    ``weights`` is always the vector returned to the caller: the accepted
+    solution or the documented fallback. ``accepted`` distinguishes the two.
+    ``constraints`` and ``covar_factorization`` are the exact aligned objects
+    used in the solve, allowing downstream compliance audits to reproduce its
+    geometry without rebuilding state.
+    """
+
+    weights: np.ndarray
+    accepted: bool
+    solver: str
+    status: Optional[str]
+    context: str
+    reason: str = ''
+    fallback_source: Optional[str] = None
+    constraint_residuals: Tuple[ConstraintResidual, ...] = ()
+    covar_factorization: Optional[CovarianceFactorization] = None
+    constraints: Optional[Constraints] = None
+
+    @property
+    def compliant(self) -> bool:
+        return all(r.passed for r in self.constraint_residuals if r.hard)
+
+    def residuals_frame(self) -> pd.DataFrame:
+        """Return the constraint audit as a report-ready DataFrame."""
+        columns = [
+            'constraint_type', 'name', 'actual', 'lower', 'upper',
+            'violation', 'tolerance', 'hard', 'passed',
+        ]
+        if not self.constraint_residuals:
+            return pd.DataFrame(columns=columns)
+        return pd.DataFrame([
+            {column: getattr(residual, column) for column in columns}
+            for residual in self.constraint_residuals
+        ])
+
+
+def evaluate_constraint_residuals(
+        weights: np.ndarray,
+        constraints: Constraints,
+        covar: Optional[np.ndarray] = None,
+        covar_factorization: Optional[CovarianceFactorization] = None,
+        tolerance: float = 1e-4,
+) -> Tuple[ConstraintResidual, ...]:
+    """Evaluate solver and policy constraints on one weight vector.
+
+    The covariance is the stabilized solver covariance when a factorization is
+    supplied, ensuring the audit measures exactly the geometry enforced by the
+    optimizer. Soft utility terms are included with ``hard=False`` for
+    reporting but do not determine compliance.
+
+    Args:
+        weights: Candidate portfolio weights in aligned constraint order.
+        constraints: Ticker-aligned constraint set used by the solver.
+        covar: Covariance used when no factorization is available.
+        covar_factorization: Optional exact factorization used by the solver;
+            takes precedence over ``covar``.
+        tolerance: Default absolute tolerance for aggregate constraints.
+
+    Returns:
+        Immutable residual records for all applicable hard and soft terms.
+    """
+    w = np.asarray(weights, dtype=float).ravel()
+    tickers = _derive_tickers(constraints, len(w))
+    index = pd.Index(tickers)
+    utility = (
+        constraints.constraint_enforcement_type
+        == ConstraintEnforcementType.UTILITY_CONSTRAINTS
+    )
+    risk_covar = (
+        covar_factorization.covar
+        if covar_factorization is not None else covar
+    )
+    if risk_covar is not None:
+        risk_covar = np.asarray(risk_covar, dtype=float)
+
+    residuals: List[ConstraintResidual] = []
+
+    def add(kind: str, name: str, actual: float,
+            lower: Optional[float] = None,
+            upper: Optional[float] = None,
+            hard: bool = True,
+            atol: float = tolerance) -> None:
+        violation = 0.0
+        if lower is not None:
+            violation = max(violation, float(lower) - float(actual))
+        if upper is not None:
+            violation = max(violation, float(actual) - float(upper))
+        residuals.append(ConstraintResidual(
+            constraint_type=kind,
+            name=str(name),
+            actual=float(actual),
+            lower=None if lower is None else float(lower),
+            upper=None if upper is None else float(upper),
+            violation=max(0.0, float(violation)),
+            tolerance=float(atol),
+            hard=bool(hard),
+            passed=(not hard) or violation <= atol,
+        ))
+
+    min_exp, max_exp, _ = _budget_target(constraints)
+    add('exposure', 'total', float(w.sum()), min_exp, max_exp)
+    if constraints.is_long_only:
+        add('long_only', 'minimum_weight', float(w.min()), lower=0.0,
+            atol=1e-6)
+
+    min_w = _as_np(constraints.min_weights, index)
+    max_w = _as_np(constraints.max_weights, index)
+    for pos, ticker in enumerate(index):
+        if min_w is not None and np.isfinite(min_w[pos]):
+            add('instrument_weight', ticker, w[pos], lower=min_w[pos], atol=1e-6)
+        if max_w is not None and np.isfinite(max_w[pos]):
+            add('instrument_weight', ticker, w[pos], upper=max_w[pos], atol=1e-6)
+
+    if constraints.target_return is not None and constraints.asset_returns is not None:
+        actual_return = float(
+            constraints.asset_returns.reindex(index).fillna(0.0).to_numpy() @ w)
+        add('target_return', 'portfolio', actual_return,
+            lower=constraints.target_return)
+
+    if risk_covar is not None:
+        portfolio_var = max(float(w @ risk_covar @ w), 0.0)
+        portfolio_vol = float(np.sqrt(portfolio_var))
+        if constraints.max_target_portfolio_vol_an is not None:
+            add('portfolio_volatility', 'maximum', portfolio_vol,
+                upper=constraints.max_target_portfolio_vol_an, hard=not utility)
+        if constraints.min_target_portfolio_vol_an is not None:
+            add('portfolio_volatility', 'minimum', portfolio_vol,
+                lower=constraints.min_target_portfolio_vol_an, hard=not utility)
+
+    if constraints.weights_0 is not None:
+        w0 = constraints.weights_0.reindex(index).fillna(0.0).to_numpy(dtype=float)
+        trade = w - w0
+        if constraints.turnover_constraint is not None:
+            if constraints.turnover_costs is not None:
+                costs = constraints.turnover_costs.reindex(
+                    index).fillna(1.0).to_numpy()
+                actual_turnover = float(np.abs(costs * trade).sum())
+            else:
+                actual_turnover = float(np.abs(trade).sum())
+            add('turnover', 'total_l1', actual_turnover,
+                upper=constraints.turnover_constraint, hard=not utility)
+
+        group_turnover = constraints.group_turnover_constraint
+        if group_turnover is not None and group_turnover.group_max_turnover is not None:
+            loadings = group_turnover.group_loadings.reindex(index).fillna(0.0)
+            for group, limit in group_turnover.group_max_turnover.items():
+                if group not in loadings.columns or pd.isna(limit):
+                    continue
+                actual = float(np.abs(loadings[group].to_numpy() * trade).sum())
+                add('group_turnover', group, actual, upper=float(limit),
+                    hard=not utility)
+
+    benchmark = constraints.benchmark_weights
+    if benchmark is not None and risk_covar is not None:
+        benchmark_np = benchmark.reindex(index).fillna(0.0).to_numpy(dtype=float)
+        active = w - benchmark_np
+        total_tre = float(np.sqrt(max(float(active @ risk_covar @ active), 0.0)))
+        if constraints.tracking_err_vol_constraint is not None:
+            add('tracking_error', 'total', total_tre,
+                upper=constraints.tracking_err_vol_constraint, hard=not utility)
+        group_tre = constraints.group_tracking_error_constraint
+        if group_tre is not None and group_tre.group_tre_vols is not None:
+            loadings = group_tre.group_loadings.reindex(index).fillna(0.0)
+            for group, limit in group_tre.group_tre_vols.items():
+                if group not in loadings.columns or pd.isna(limit):
+                    continue
+                group_active = loadings[group].to_numpy() * active
+                actual = float(np.sqrt(max(
+                    float(group_active @ risk_covar @ group_active), 0.0)))
+                add('group_tracking_error', group, actual, upper=float(limit),
+                    hard=not utility)
+
+    group_bounds = constraints.group_lower_upper_constraints
+    if group_bounds is not None:
+        loadings = group_bounds.group_loadings.reindex(index).fillna(0.0)
+        for group in loadings.columns:
+            actual = float(loadings[group].to_numpy() @ w)
+            lower = (
+                group_bounds.group_min_allocation.get(group)
+                if group_bounds.group_min_allocation is not None else None
+            )
+            upper = (
+                group_bounds.group_max_allocation.get(group)
+                if group_bounds.group_max_allocation is not None else None
+            )
+            if lower is not None and pd.isna(lower):
+                lower = None
+            if upper is not None and pd.isna(upper):
+                upper = None
+            if lower is not None or upper is not None:
+                add('group_weight', group, actual, lower=lower, upper=upper)
+
+    for kind, deviation in (
+            ('sector_deviation', constraints.sector_deviation_constraints),
+            ('style_deviation', constraints.style_deviation_constraints)):
+        if deviation is None or benchmark is None:
+            continue
+        active = w - benchmark.reindex(index).fillna(0.0).to_numpy(dtype=float)
+        loadings = deviation.factor_loading_mat.reindex(index).fillna(0.0)
+        for group, limit in deviation.factor_max_deviation.items():
+            if group not in loadings.columns or pd.isna(limit):
+                continue
+            actual = float(loadings[group].to_numpy() @ active)
+            add(kind, group, abs(actual), upper=float(limit), hard=not utility)
+
+    beta_constraint = constraints.benchmark_beta_constraint
+    if beta_constraint is not None and beta_constraint.beta_loadings is not None:
+        actual_beta = float(
+            beta_constraint.beta_loadings.reindex(index).fillna(0.0).to_numpy() @ w)
+        add('benchmark_beta', 'portfolio', actual_beta,
+            lower=beta_constraint.beta_min, upper=beta_constraint.beta_max)
+
+    return tuple(residuals)
+
+
 _NAN_METRICS = {"sum_w": float("nan"), "budget_residual": float("nan"),
                 "max_box_violation": float("nan")}
 
@@ -193,6 +493,14 @@ def _weight_metrics(w: Optional[np.ndarray], constraints: Constraints,
     """Raw (unthresholded) telemetry for the diagnostic: sum, budget residual,
     worst box / long-only breach. Independent of the accept/reject decision in
     ``_validate_weight_vector``. NaN when the weights are missing or non-finite.
+
+    Args:
+        w: Candidate weights, or None.
+        constraints: Aligned budget and box constraints.
+        tickers: Asset order for aligning Series-valued bounds.
+
+    Returns:
+        Sum, budget residual, and maximum box violation telemetry.
     """
     if w is None or w.shape != (len(tickers),) or not np.all(np.isfinite(w)):
         return dict(_NAN_METRICS)
@@ -221,8 +529,26 @@ def _emit_diag(level: int, message: str, context: str, solver: str,
                status: Optional[str], outcome: str, accepted: bool, reason: str,
                fallback_source: Optional[str], w: Optional[np.ndarray],
                constraints: Constraints, tickers: Sequence[str], n: int) -> None:
-    """Log ``message`` at ``level`` with a structured ``SolverDiagnostic`` on the
-    record (``extra={"solver_diag": ...}``) for ``SolverRejectionSummary``."""
+    """Log a message with a structured ``SolverDiagnostic`` record.
+
+    Args:
+        level: Python logging severity.
+        message: Human-readable diagnostic message.
+        context: Rebalance or mandate label.
+        solver: Solver/backend name.
+        status: Raw solver status, if available.
+        outcome: Normalized accepted/rejected category.
+        accepted: Whether the solver weights were used.
+        reason: Rejection or degradation explanation.
+        fallback_source: Returned fallback label when rejected.
+        w: Candidate solver weights.
+        constraints: Aligned constraints used for telemetry.
+        tickers: Asset order for Series alignment.
+        n: Expected number of assets.
+
+    The record is attached under ``extra={"solver_diag": ...}`` for
+    ``SolverRejectionSummary``.
+    """
     metrics = _weight_metrics(w, constraints, tickers)
     diag = SolverDiagnostic(
         context=context, solver=solver, status=status, outcome=outcome,
@@ -243,7 +569,11 @@ def validate_solution(
     budget_atol: float = 1e-4,
     bound_atol: float = 1e-6,
     accept_inaccurate: bool = True,
-) -> Tuple[np.ndarray, bool]:
+    covar: Optional[np.ndarray] = None,
+    covar_factorization: Optional[CovarianceFactorization] = None,
+    constraint_atol: float = 1e-4,
+    return_outcome: bool = False,
+) -> Union[Tuple[np.ndarray, bool], OptimizationOutcome]:
     """Validate a CVXPY solver result and return safe weights.
 
     Runs on every solve. Rejects a result that (a) is missing, (b) has a hard
@@ -276,6 +606,14 @@ def validate_solution(
         budget_atol: absolute tolerance on the full-investment / exposure-band
             constraint. The 1.5e6 incident fails this by ~6 orders of magnitude.
         bound_atol: absolute tolerance on the box / long-only bounds.
+        covar: Covariance used by the solver for risk residuals when no
+            factorization is supplied.
+        covar_factorization: Optional exact solver factorization. Its
+            stabilized covariance takes precedence over ``covar``.
+        constraint_atol: Absolute tolerance for aggregate hard constraints
+            such as group weights, turnover, tracking error, and beta.
+        return_outcome: If True, return ``OptimizationOutcome`` instead of the
+            legacy ``(weights, is_valid)`` tuple.
         accept_inaccurate: if True, an ``optimal_inaccurate`` status that is
             otherwise feasible is accepted (with a warning) rather than
             discarded — useful so a marginally-imprecise but sane solve is not
@@ -284,19 +622,46 @@ def validate_solution(
     Returns:
         (weights, is_valid). ``weights`` is always a finite ndarray of length
         ``n`` — either the accepted solver output or the fallback. ``is_valid``
-        is True only when the solver output itself was accepted.
+        is True only when the solver output itself was accepted. With
+        ``return_outcome=True``, returns an ``OptimizationOutcome`` containing
+        the same safe weights plus solver, residual, fallback, constraint, and
+        covariance audit data.
     """
     tickers = _derive_tickers(constraints, n)
     tag = f"[{context}] " if context else ""
 
+    def _result(weights: np.ndarray, accepted: bool, reason: str = '',
+                fallback_source: Optional[str] = None):
+        if not return_outcome:
+            return weights, accepted
+        residuals = evaluate_constraint_residuals(
+            weights=weights,
+            constraints=constraints,
+            covar=covar,
+            covar_factorization=covar_factorization,
+            tolerance=constraint_atol,
+        )
+        return OptimizationOutcome(
+            weights=np.array(weights, dtype=float),
+            accepted=accepted,
+            solver=solver,
+            status=problem_status,
+            context=context,
+            reason=reason,
+            fallback_source=fallback_source,
+            constraint_residuals=residuals,
+            covar_factorization=covar_factorization,
+            constraints=constraints,
+        )
+
     def _reject(reason: str, level: int = logging.ERROR,
-                w: Optional[np.ndarray] = None) -> Tuple[np.ndarray, bool]:
+                w: Optional[np.ndarray] = None):
         fallback, source = _compute_fallback(constraints, tickers, n)
         msg = (f"{tag}solver={solver} status={problem_status}: REJECTED solution "
                f"({reason}); falling back to {source}.")
         _emit_diag(level, msg, context, solver, problem_status, "rejected", False,
                    reason, source, w, constraints, tickers, n)
-        return fallback, False
+        return _result(fallback, False, reason=reason, fallback_source=source)
 
     # (1) missing solution
     if optimal_weights is None:
@@ -316,6 +681,21 @@ def validate_solution(
         w, constraints, n, tickers, budget_atol=budget_atol, bound_atol=bound_atol)
     if not ok:
         return _reject(reason, w=w)
+    full_residuals = evaluate_constraint_residuals(
+        weights=w,
+        constraints=constraints,
+        covar=covar,
+        covar_factorization=covar_factorization,
+        tolerance=constraint_atol,
+    )
+    breached = [r for r in full_residuals if r.hard and not r.passed]
+    if breached:
+        worst = max(breached, key=lambda residual: residual.violation)
+        return _reject(
+            f"hard constraint {worst.constraint_type}:{worst.name} violated "
+            f"by {worst.violation:.6g}",
+            w=w,
+        )
     s = float(np.sum(w))
 
     # (6) inaccurate-but-feasible: accept with a warning, or reject if disallowed
@@ -328,7 +708,7 @@ def validate_solution(
                 f"max(w)={w.max():.6g}).",
                 context, solver, problem_status, "accepted_inaccurate", True,
                 "", None, w, constraints, tickers, n)
-            return w, True
+            return _result(w, True)
         return _reject(f"status '{problem_status}' and accept_inaccurate=False",
                        logging.WARNING, w)
 
@@ -338,7 +718,7 @@ def validate_solution(
                f"(sum(w)={s:.6g}, max(w)={w.max():.6g}).",
                context, solver, problem_status, "accepted", True,
                "", None, w, constraints, tickers, n)
-    return w, True
+    return _result(w, True)
 
 
 def validate_scipy_solution(
@@ -704,6 +1084,79 @@ class RelaxationSummary(logging.Handler):
                 f"{self.max_relaxation:.4f}{extra}")
 
 
+class DroppedGroupSummary(logging.Handler):
+    """Aggregate expected zero-loading group removals without warning spam."""
+
+    def __init__(self) -> None:
+        super().__init__(level=logging.DEBUG)
+        self.records: List[DroppedGroupRecord] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        item = getattr(record, 'dropped_groups', None)
+        if isinstance(item, DroppedGroupRecord):
+            self.records.append(item)
+
+    def summary(self) -> str:
+        if not self.records:
+            return 'zero-loading groups dropped: none'
+        frequency: Dict[str, int] = {}
+        for record in self.records:
+            for group in record.groups:
+                frequency[group] = frequency.get(group, 0) + 1
+        top = sorted(frequency.items(), key=lambda item: -item[1])[:5]
+        detail = '; '.join(f'{group} ({count})' for group, count in top)
+        return (f'zero-loading groups dropped: {len(self.records)} aligned '
+                f'constraint sets; most frequent: {detail}')
+
+
+class WarningSummary(logging.Handler):
+    """Aggregate captured Python warnings by operational category."""
+
+    def __init__(self) -> None:
+        super().__init__(level=logging.WARNING)
+        self.counts: Dict[str, int] = {}
+
+    @staticmethod
+    def category(record: logging.LogRecord) -> str:
+        message = record.getMessage()
+        if 'factorlasso:' in message and 'fewer than warmup_period' in message:
+            return 'factorlasso warm-up assets zeroed'
+        if 'UserWarning:' in message:
+            message = message.split('UserWarning:', 1)[1]
+        return message.strip().splitlines()[0][:160]
+
+    def emit(self, record: logging.LogRecord) -> None:
+        category = self.category(record)
+        self.counts[category] = self.counts.get(category, 0) + 1
+
+    def summary(self) -> str:
+        total = sum(self.counts.values())
+        if total == 0:
+            return 'captured warnings: none'
+        top = sorted(self.counts.items(), key=lambda item: -item[1])[:5]
+        detail = '; '.join(f'{category} ({count})' for category, count in top)
+        return f'captured warnings: {total}; {detail}'
+
+
+class _RepeatedWarningFilter(logging.Filter):
+    """Keep the first few repeated warm-up warnings in human-readable logs."""
+
+    def __init__(self, max_per_category: int = 3) -> None:
+        super().__init__()
+        self.max_per_category = max_per_category
+        self.counts: Dict[str, int] = {}
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.name != 'py.warnings':
+            return True
+        category = WarningSummary.category(record)
+        if category != 'factorlasso warm-up assets zeroed':
+            return True
+        count = self.counts.get(category, 0) + 1
+        self.counts[category] = count
+        return count <= self.max_per_category
+
+
 @dataclass(frozen=True)
 class InputContractRecord:
     """Structured record of one pre-solve input-contract evaluation.
@@ -726,6 +1179,10 @@ class InputContractRecord:
     benchmarks: Tuple[Tuple[int, str], ...] = ()
     structural: Tuple[str, ...] = ()
     covar_issues: Tuple[str, ...] = ()
+    factorized: bool = False
+    n_eigenvalues_floored: int = 0
+    stabilized_min_eig: float = float('nan')
+    stabilized_cond: float = float('nan')
 
 
 class InputContractSummary(logging.Handler):
@@ -812,8 +1269,14 @@ class InputContractSummary(logging.Handler):
             if freq:
                 (a, b), c = max(freq.items(), key=lambda kv: kv[1])
                 pair_str = f"; most frequent collinear pair {a!r}-{b!r} ({c})"
-            lines.append(f"  conditioning: ill-conditioned on {self.n_ill_conditioned}/{m} "
-                         f"rebalances{pair_str}; worst min_eig {self.worst_min_eig:.2e}")
+            factorized = sum(1 for r in self.records if r.ill_conditioned and r.factorized)
+            floored = sum(r.n_eigenvalues_floored for r in self.records)
+            stabilized = (
+                f"; stabilized on {factorized}/{self.n_ill_conditioned} solves "
+                f"({floored} eigenvalues floored)" if factorized else "")
+            lines.append(f"  conditioning: raw covariance ill-conditioned on "
+                         f"{self.n_ill_conditioned}/{m} solves{pair_str}; worst "
+                         f"raw min_eig {self.worst_min_eig:.2e}{stabilized}")
         if self.n_benchmark:
             top = sorted(self.benchmark_frequency().items(), key=lambda kv: -kv[1])[:2]
             top_str = "; ".join(f"index {i} {k} ({c})" for (i, k), c in top)
@@ -839,23 +1302,90 @@ class RunDiagnostics:
     """Bundle of the run-level diagnostic handlers returned by
     ``configure_run_logging(attach_summary=True)``.
 
-    Exposes the rejection, relaxation and input-contract summaries together;
-    ``.summary()`` combines all three and ``.check_fallback_gate(...)`` delegates
-    to the rejection summary so existing call sites keep working.
+    Exposes rejection, relaxation, input-contract, zero-loading-group, and
+    warning summaries together. ``summary()`` produces persistent log text,
+    ``to_frame()`` produces workbook rows, ``check_fallback_gate(...)`` applies
+    the run-level quality gate, and ``close()`` detaches owned handlers.
     """
 
     def __init__(self, rejections: SolverRejectionSummary,
                  relaxations: RelaxationSummary,
-                 contract: "Optional[InputContractSummary]" = None) -> None:
+                 contract: "Optional[InputContractSummary]" = None,
+                 dropped_groups: Optional[DroppedGroupSummary] = None,
+                 warnings_summary: Optional[WarningSummary] = None,
+                 installed_handlers: Optional[List[Tuple[logging.Logger,
+                                                         logging.Handler]]] = None) -> None:
         self.rejections = rejections
         self.relaxations = relaxations
         self.contract = contract
+        self.dropped_groups = dropped_groups
+        self.warnings_summary = warnings_summary
+        self._installed_handlers = installed_handlers or []
 
     def summary(self) -> str:
         parts = [self.rejections.summary(), self.relaxations.summary()]
         if self.contract is not None:
             parts.append(self.contract.summary())
+        if self.dropped_groups is not None:
+            parts.append(self.dropped_groups.summary())
+        if self.warnings_summary is not None:
+            parts.append(self.warnings_summary.summary())
         return "\n".join(parts)
+
+    def log_summary(self, logger_: Optional[logging.Logger] = None) -> None:
+        """Persist the run summary through configured logging handlers.
+
+        Args:
+            logger_: Optional destination logger; defaults to this module's
+                logger so installed file/console handlers receive the summary.
+        """
+        (logger_ or logger).info("run diagnostics summary:\n%s", self.summary())
+
+    def to_frame(self) -> pd.DataFrame:
+        """Return a compact, workbook-ready run diagnostics table."""
+        rows = [
+            ('batch_solver', 'solves', self.rejections.n_total),
+            ('batch_solver', 'accepted', self.rejections.n_accepted),
+            ('batch_solver', 'rejected', self.rejections.n_rejected),
+            ('batch_solver', 'numerical_blowups', self.rejections.n_blowup),
+            ('batch_solver', 'infeasible_fallbacks',
+             self.rejections.n_infeasible_fallback),
+            ('batch_solver', 'fallback_fraction',
+             self.rejections.fallback_fraction),
+            ('batch_relaxation', 'rebalances_relaxed',
+             self.relaxations.n_rebalances_relaxed),
+            ('batch_relaxation', 'max_relaxation',
+             self.relaxations.max_relaxation),
+        ]
+        if self.contract is not None:
+            rows.extend([
+                ('batch_input', 'solves', self.contract.n_solves),
+                ('batch_input', 'raw_ill_conditioned',
+                 self.contract.n_ill_conditioned),
+                ('batch_input', 'benchmark_outside_box',
+                 self.contract.n_benchmark),
+                ('batch_input', 'unreachable_group_bounds',
+                 self.contract.n_group),
+                ('batch_input', 'structural_failures',
+                 self.contract.n_structural),
+                ('batch_input', 'covariance_integrity_failures',
+                 self.contract.n_covar),
+            ])
+        if self.warnings_summary is not None:
+            for category, count in sorted(
+                    self.warnings_summary.counts.items(), key=lambda item: -item[1]):
+                rows.append(('batch_warning', category, count))
+        return pd.DataFrame.from_records(
+            rows, columns=['category', 'metric', 'value']).set_index(
+                ['category', 'metric'])
+
+    def close(self) -> None:
+        """Detach handlers installed for this run, making setup reusable."""
+        for owner, handler in reversed(self._installed_handlers):
+            if handler in owner.handlers:
+                owner.removeHandler(handler)
+            handler.close()
+        self._installed_handlers.clear()
 
     def check_fallback_gate(self, max_fraction: float = 0.05,
                             raise_on_breach: bool = False) -> bool:
@@ -905,57 +1435,111 @@ def configure_run_logging(
     reproducibility. Set ``console_level=logging.ERROR`` for a quiet console with
     the detail in the file only.
 
-    Returns a :class:`RunDiagnostics` bundle when ``attach_summary`` is True
-    (else ``None``), holding the rejection and relaxation summaries. Enabling it
+    Repeated factorlasso warm-up warnings are limited to the first three per
+    console/file handler while every occurrence is still counted. Repeated
+    calls remove only handlers installed by this helper, preventing duplicate
+    logging in notebooks and services. File output uses UTF-8 with a BOM for
+    reliable Windows viewing.
+
+    Args:
+        log_path: Optional persistent log file. Existing content is replaced.
+        console_level: Minimum severity emitted to the console.
+        file_level: Minimum severity emitted to ``log_path``.
+        capture_warnings: Route Python warnings through ``py.warnings``.
+        attach_summary: Attach aggregation handlers and return their lifecycle
+            owner.
+
+    Returns:
+        A :class:`RunDiagnostics` bundle when ``attach_summary`` is True;
+        otherwise None. The bundle owns all aggregation handlers. Enabling it
     lifts the solver-diagnostics logger to DEBUG (so accepted solves are counted)
-    and the constraints logger to INFO (so per-rebalance relaxations are tallied)
+    and the constraints logger to DEBUG (so relaxations and dropped groups are tallied)
     — neither is printed unless you lower ``console_level``. Call
     ``diagnostics.summary()`` for the combined report and
     ``diagnostics.check_fallback_gate(max_fraction=..., raise_on_breach=...)`` to
     fail loud when too large a fraction of rebalances fell back.
     """
     root = logging.getLogger()
+    # Reconfiguration is common in notebooks and test runners. Remove only
+    # handlers owned by this helper; never disturb application-owned logging.
+    managed_loggers = [
+        root,
+        logging.getLogger(logger.name),
+        logging.getLogger('optimalportfolios.optimization.constraints'),
+        logging.getLogger('py.warnings'),
+    ]
+    for managed_logger in managed_loggers:
+        for previous in list(managed_logger.handlers):
+            if getattr(previous, '_optimalportfolios_run_handler', False):
+                managed_logger.removeHandler(previous)
+                previous.close()
     root.setLevel(min(console_level, file_level))
     fmt = logging.Formatter("%(asctime)s %(levelname)-7s %(name)s | %(message)s",
                             "%Y-%m-%d %H:%M:%S")
     ch = logging.StreamHandler()
+    ch._optimalportfolios_run_handler = True
     ch.setLevel(console_level)
     ch.setFormatter(fmt)
+    ch.addFilter(_RepeatedWarningFilter())
     root.addHandler(ch)
+    installed_handlers: List[Tuple[logging.Logger, logging.Handler]] = [(root, ch)]
     if log_path is not None:
-        fh = logging.FileHandler(log_path, mode="w", encoding="utf-8")
+        fh = logging.FileHandler(log_path, mode="w", encoding="utf-8-sig")
+        fh._optimalportfolios_run_handler = True
         fh.setLevel(file_level)
         fh.setFormatter(fmt)
+        fh.addFilter(_RepeatedWarningFilter())
         root.addHandler(fh)
+        installed_handlers.append((root, fh))
     if capture_warnings:
         logging.captureWarnings(True)
     log_environment()
     diagnostics = None
     if attach_summary:
         rejections = SolverRejectionSummary()
+        rejections._optimalportfolios_run_handler = True
         diag_logger = logging.getLogger(logger.name)
         # accepted solves are emitted at DEBUG; lift this logger to DEBUG so they
         # reach the summary handler. The console/file handlers keep their own
         # (higher) levels, so DEBUG records are tallied but not printed.
         diag_logger.setLevel(logging.DEBUG)
         diag_logger.addHandler(rejections)
+        installed_handlers.append((diag_logger, rejections))
 
         relaxations = RelaxationSummary()
+        relaxations._optimalportfolios_run_handler = True
         # per-rebalance relaxations are emitted at INFO on the constraints logger;
         # lift it to INFO so the summary tallies them (console keeps its level).
         cons_logger = logging.getLogger("optimalportfolios.optimization.constraints")
-        cons_logger.setLevel(logging.INFO)
+        cons_logger.setLevel(logging.DEBUG)
         cons_logger.addHandler(relaxations)
+        installed_handlers.append((cons_logger, relaxations))
+
+        dropped_groups = DroppedGroupSummary()
+        dropped_groups._optimalportfolios_run_handler = True
+        cons_logger.addHandler(dropped_groups)
+        installed_handlers.append((cons_logger, dropped_groups))
 
         # the input contract emits per-rebalance records on the solver-diagnostics
         # logger (DEBUG when clean, INFO when it finds issues); this handler tallies
         # them into one line per category. Same logger as the rejection summary;
         # each handler filters by its own record attribute.
         contract = InputContractSummary()
+        contract._optimalportfolios_run_handler = True
         diag_logger.addHandler(contract)
+        installed_handlers.append((diag_logger, contract))
+
+        warnings_summary = WarningSummary()
+        warnings_summary._optimalportfolios_run_handler = True
+        warning_logger = logging.getLogger('py.warnings')
+        warning_logger.addHandler(warnings_summary)
+        installed_handlers.append((warning_logger, warnings_summary))
 
         diagnostics = RunDiagnostics(rejections=rejections, relaxations=relaxations,
-                                     contract=contract)
+                                     contract=contract,
+                                     dropped_groups=dropped_groups,
+                                     warnings_summary=warnings_summary,
+                                     installed_handlers=installed_handlers)
     return diagnostics
 
 
@@ -984,6 +1568,13 @@ def diagnose_solver_failure(problem_status: Optional[str], constraints: Constrai
     ``infeasible`` / ``infeasible_inaccurate`` → elastic re-solve (constraints).
     Anything else we rejected (optimal/inaccurate blow-up, numerical_error) →
     covariance conditioning, since the feasible region was non-empty.
+
+    Args:
+        problem_status: Raw solver status.
+        constraints: Aligned constraints for elastic diagnosis and asset labels.
+        covar: Optional covariance for conditioning diagnostics.
+        solver: Solver/backend name included in logs.
+        context: Rebalance or mandate label included in logs.
     """
     status = str(problem_status or "").lower()
     if any(tok in status for tok in _INFEASIBLE_TOKENS):
@@ -1021,8 +1612,17 @@ def diagnose_infeasibility(constraints: Constraints, covar: Optional[np.ndarray]
     constraints were satisfiable and the infeasible status was numerical, not
     structural — in that case the covariance conditioning is reported instead.
 
-    Returns a dict {label: violation} (empty if none / not applicable). Logs a
-    formatted summary on the ``logger`` channel.
+    Args:
+        constraints: Aligned constraints to relax diagnostically.
+        covar: Optional covariance used when infeasibility appears numerical.
+        solver: Solver/backend name included in logs.
+        context: Rebalance or mandate label included in logs.
+        slack_tol: Minimum elastic slack reported as a breach.
+        max_report: Maximum number of individual breaches written to the log.
+
+    Returns:
+        Constraint label to required relaxation; empty when none is found.
+        A formatted summary is also written to the ``logger`` channel.
     """
     import cvxpy as cvx  # lazy: only needed when diagnosis actually runs
 
@@ -1184,7 +1784,9 @@ def validate_solver_inputs(pd_covar: pd.DataFrame, constraints: Constraints,
                            deep_feasibility: bool = False,
                            solver: str = "CLARABEL",
                            symmetry_atol: float = 1e-8,
-                           bound_atol: float = 1e-6) -> InputContractResult:
+                           bound_atol: float = 1e-6,
+                           covar_factorization: Optional[
+                               CovarianceFactorization] = None) -> InputContractResult:
     """Validate solver inputs at the wrapper entry, before the solve.
 
     Cheap, deterministic checks (run on every solve when enabled via
@@ -1213,6 +1815,24 @@ def validate_solver_inputs(pd_covar: pd.DataFrame, constraints: Constraints,
     conditioning / benchmark / group-reachability folded into a single INFO line
     so an :class:`InputContractSummary` can tally them instead of flooding the
     console). Never raises and never mutates the inputs.
+
+    Args:
+        pd_covar: Filtered covariance matrix entering the solver.
+        constraints: Ticker-aligned constraints for the same universe.
+        context: Rebalance or mandate label included in diagnostic records.
+        n_dropped: Number of assets removed before this validation.
+        check_conditioning: Evaluate raw covariance conditioning.
+        check_feasibility: Evaluate cheap box, group, and benchmark necessary
+            conditions.
+        deep_feasibility: Run the optional elastic feasibility program.
+        solver: Solver name used by the deep feasibility diagnostic.
+        symmetry_atol: Maximum accepted covariance asymmetry.
+        bound_atol: Tolerance for structural box and benchmark comparisons.
+        covar_factorization: Optional factorization already computed by the
+            wrapper. Its raw/stabilized telemetry avoids another eigen solve.
+
+    Returns:
+        ``InputContractResult`` with hard-integrity status and all findings.
     """
     tag = f"[{context}] " if context else ""
     issues: List[str] = []
@@ -1233,7 +1853,18 @@ def validate_solver_inputs(pd_covar: pd.DataFrame, constraints: Constraints,
             context=context, ok=ok, ill_conditioned=ill_conditioned,
             cond=cond_v, min_eig=mineig_v, collinear_pair=collinear_pair,
             groups=tuple(groups), benchmarks=tuple(benchmarks),
-            structural=tuple(structural), covar_issues=tuple(covar_issues))
+            structural=tuple(structural), covar_issues=tuple(covar_issues),
+            factorized=covar_factorization is not None,
+            n_eigenvalues_floored=(
+                covar_factorization.n_eigenvalues_floored
+                if covar_factorization is not None else 0),
+            stabilized_min_eig=(
+                covar_factorization.stabilized_min_eigenvalue
+                if covar_factorization is not None else float('nan')),
+            stabilized_cond=(
+                covar_factorization.stabilized_condition_number
+                if covar_factorization is not None else float('nan')),
+        )
 
     # --- covariance integrity (hard -> ERROR + early return) ---
     if pd_covar is None:
@@ -1276,16 +1907,37 @@ def validate_solver_inputs(pd_covar: pd.DataFrame, constraints: Constraints,
 
     # --- conditioning (computed silently; folded into the contract record) ---
     if check_conditioning:
-        condd = check_covar_conditioning(pd_covar, context=context, emit=False)
-        cond_v = float(condd.get("cond", float("nan")))
-        mineig_v = float(condd.get("min_eig", float("nan")))
-        pair = condd.get("worst_pair")
-        if bool(condd.get("rank_deficient")) or (cond_v == cond_v and cond_v > 1e12):
+        if covar_factorization is not None:
+            cond_v = covar_factorization.raw_condition_number
+            mineig_v = covar_factorization.raw_min_eigenvalue
+            pair = None
+            if m.shape[0] > 1:
+                d = np.sqrt(np.clip(np.diag(m), 1e-300, None))
+                corr = m / np.outer(d, d)
+                np.fill_diagonal(corr, 0.0)
+                pos = np.unravel_index(int(np.argmax(np.abs(corr))), corr.shape)
+                pair = (str(pd_covar.index[pos[0]]), str(pd_covar.columns[pos[1]]))
+            rank_deficient = mineig_v <= 1e-12
+        else:
+            condd = check_covar_conditioning(pd_covar, context=context, emit=False)
+            cond_v = float(condd.get("cond", float("nan")))
+            mineig_v = float(condd.get("min_eig", float("nan")))
+            pair = condd.get("worst_pair")
+            rank_deficient = bool(condd.get("rank_deficient"))
+        if rank_deficient or (cond_v == cond_v and cond_v > 1e12):
             ill_conditioned = True
             collinear_pair = tuple(pair) if pair is not None else None
             pair_str = f", pair {pair[0]!r}/{pair[1]!r}" if pair is not None else ""
-            issues.append(f"covariance ill-conditioned (cond={cond_v:.2e}, "
-                          f"min_eig={mineig_v:.2e}{pair_str})")
+            if covar_factorization is not None:
+                issues.append(
+                    f"raw covariance ill-conditioned (cond={cond_v:.2e}, "
+                    f"min_eig={mineig_v:.2e}{pair_str}); stabilized with "
+                    f"{covar_factorization.n_eigenvalues_floored} eigenvalue(s) "
+                    f"floored (min_eig="
+                    f"{covar_factorization.stabilized_min_eigenvalue:.2e})")
+            else:
+                issues.append(f"covariance ill-conditioned (cond={cond_v:.2e}, "
+                              f"min_eig={mineig_v:.2e}{pair_str})")
 
     # --- cheap structural feasibility ---
     if check_feasibility and idx is not None:

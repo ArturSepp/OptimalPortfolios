@@ -22,6 +22,9 @@ Two formulations are supported:
 2. **Utility penalties** (``ConstraintEnforcementType.UTILITY_CONSTRAINTS``):
    The volatility and turnover are penalised in the objective.
 
+Both CVXPY formulations factor the filtered covariance once by default and
+reuse the stabilized matrix and square root in risk terms and validation.
+
 Reference:
     Sepp A., Ossa I., and Kastenholz M. (2026),
     "Robust Optimization of Strategic and Tactical Asset Allocation
@@ -35,7 +38,16 @@ import pandas as pd
 import cvxpy as cvx
 from typing import Optional, Union, Dict
 
-from optimalportfolios.optimization.constraints import Constraints, ConstraintEnforcementType
+from optimalportfolios.optimization.constraints import (
+    ConstraintEnforcementType,
+    Constraints,
+    cvx_covar_variance,
+)
+from optimalportfolios.optimization.covar_factorization import (
+    CovarianceFactorization,
+    factorize_covariance,
+    resolve_covariance_factorization,
+)
 from optimalportfolios.optimization.solver_diagnostics import validate_solution
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.config import OptimiserConfig
@@ -62,7 +74,8 @@ def rolling_max_return_target_vol(prices: pd.DataFrame,
         benchmark_weights: Optional benchmark. None for absolute vol constraint.
         covar_dict: Pre-computed covariance matrices keyed by rebalancing date.
         rebalancing_indicators: Optional binary DataFrame for position freezing.
-        optimiser_config: Solver configuration.
+        optimiser_config: Solver configuration, including covariance
+            factorization policy for each single-date solve.
 
     Returns:
         DataFrame of portfolio weights.
@@ -145,6 +158,7 @@ def wrapper_max_return_target_vol(pd_covar: pd.DataFrame,
         weights_0: Previous-period weights for warm-start / turnover.
         rebalancing_indicators: Binary series for position freezing.
         optimiser_config: Solver configuration.
+        context: Rebalance label included in solver diagnostics.
 
     Returns:
         Portfolio weights as pd.Series aligned to pd_covar.index.
@@ -192,6 +206,10 @@ def wrapper_max_return_target_vol(pd_covar: pd.DataFrame,
 
     alphas_np = er_clean.to_numpy()
 
+    covar_factorization = (
+        factorize_covariance(clean_covar.to_numpy())
+        if optimiser_config.factorize_covar else None
+    )
     if constraints.constraint_enforcement_type == ConstraintEnforcementType.UTILITY_CONSTRAINTS:
         weights = cvx_max_return_target_vol_utility(
             covar=clean_covar.to_numpy(),
@@ -200,7 +218,9 @@ def wrapper_max_return_target_vol(pd_covar: pd.DataFrame,
             has_benchmark=benchmark_weights is not None,
             solver=optimiser_config.solver,
             verbose=optimiser_config.verbose,
-            context=context)
+            context=context,
+            factorize_covar=optimiser_config.factorize_covar,
+            covar_factorization=covar_factorization)
     else:
         weights = cvx_max_return_target_vol(
             covar=clean_covar.to_numpy(),
@@ -209,7 +229,9 @@ def wrapper_max_return_target_vol(pd_covar: pd.DataFrame,
             has_benchmark=benchmark_weights is not None,
             solver=optimiser_config.solver,
             verbose=optimiser_config.verbose,
-            context=context)
+            context=context,
+            factorize_covar=optimiser_config.factorize_covar,
+            covar_factorization=covar_factorization)
 
     weights[np.isinf(weights)] = 0.0
     weights = pd.Series(weights, index=valid_tickers)
@@ -223,7 +245,10 @@ def cvx_max_return_target_vol(covar: np.ndarray,
                                has_benchmark: bool = False,
                                solver: str = 'CLARABEL',
                                verbose: bool = False,
-                               context: str = ''
+                               context: str = '',
+                               factorize_covar: bool = True,
+                               covar_factorization: Optional[
+                                   CovarianceFactorization] = None,
                                ) -> np.ndarray:
     """
     Maximise expected return subject to a hard volatility constraint.
@@ -235,14 +260,29 @@ def cvx_max_return_target_vol(covar: np.ndarray,
         has_benchmark: If True, objective is active return α'(w - w_b).
         solver: CVXPY solver name.
         verbose: If True, print CVXPY solver diagnostics.
+        context: Rebalance label included in solver diagnostics.
+        factorize_covar: Compute and use an explicit covariance square root
+            when no precomputed factorization is supplied.
+        covar_factorization: Optional wrapper-computed factorization reused in
+            constraints and validation.
 
     Returns:
         Optimal weights (N,). Falls back to weights_0 or zeros on failure.
     """
-    n = covar.shape[0]
+    raw_covar = np.asarray(covar, dtype=float)
+    covar_factorization = resolve_covariance_factorization(
+        covar=raw_covar,
+        factorize_covar=factorize_covar,
+        covar_factorization=covar_factorization,
+    )
+    solver_covar = (
+        covar_factorization.covar
+        if covar_factorization is not None else raw_covar
+    )
+    n = raw_covar.shape[0]
     nonneg = constraints.is_long_only
     w = cvx.Variable(n, nonneg=nonneg)
-    covar_psd = cvx.psd_wrap(covar)
+    covar_psd = cvx.psd_wrap(solver_covar)
 
     if has_benchmark and constraints.benchmark_weights is not None:
         w_b = constraints.benchmark_weights.to_numpy()
@@ -251,7 +291,11 @@ def cvx_max_return_target_vol(covar: np.ndarray,
         objective_fun = alphas.T @ w
 
     objective = cvx.Maximize(objective_fun)
-    constraints_ = constraints.set_cvx_all_constraints(w=w, covar=covar_psd)
+    constraints_ = constraints.set_cvx_all_constraints(
+        w=w,
+        covar=covar_psd,
+        covar_factorization=covar_factorization,
+    )
 
     problem = cvx.Problem(objective, constraints_)
     try:
@@ -266,7 +310,8 @@ def cvx_max_return_target_vol(covar: np.ndarray,
         solved_status = 'solver_error'
 
     optimal_weights, _is_valid = validate_solution(
-        w.value, solved_status, constraints, n, solver=solver, context=context)
+        w.value, solved_status, constraints, n, solver=solver, context=context,
+        covar=solver_covar, covar_factorization=covar_factorization)
 
     return optimal_weights
 
@@ -277,7 +322,10 @@ def cvx_max_return_target_vol_utility(covar: np.ndarray,
                                        has_benchmark: bool = False,
                                        solver: str = 'CLARABEL',
                                        verbose: bool = False,
-                                       context: str = ''
+                                       context: str = '',
+                                       factorize_covar: bool = True,
+                                       covar_factorization: Optional[
+                                           CovarianceFactorization] = None,
                                        ) -> np.ndarray:
     """
     Maximise return with volatility and turnover penalties.
@@ -289,24 +337,49 @@ def cvx_max_return_target_vol_utility(covar: np.ndarray,
         has_benchmark: If True, use benchmark-relative formulation.
         solver: CVXPY solver name.
         verbose: If True, print CVXPY solver diagnostics.
+        context: Rebalance label included in solver diagnostics.
+        factorize_covar: Compute and use an explicit covariance square root
+            when no precomputed factorization is supplied.
+        covar_factorization: Optional wrapper-computed factorization reused in
+            utility terms, constraints, and validation.
 
     Returns:
         Optimal weights (N,). Falls back to weights_0 or zeros on failure.
     """
-    n = covar.shape[0]
+    raw_covar = np.asarray(covar, dtype=float)
+    covar_factorization = resolve_covariance_factorization(
+        covar=raw_covar,
+        factorize_covar=factorize_covar,
+        covar_factorization=covar_factorization,
+    )
+    solver_covar = (
+        covar_factorization.covar
+        if covar_factorization is not None else raw_covar
+    )
+    n = raw_covar.shape[0]
     nonneg = constraints.is_long_only
     w = cvx.Variable(n, nonneg=nonneg)
-    covar_psd = cvx.psd_wrap(covar)
+    covar_psd = cvx.psd_wrap(solver_covar)
 
     if has_benchmark and constraints.benchmark_weights is not None:
         constraints1 = constraints.copy()
         objective_fun, constraints_ = constraints1.set_cvx_utility_objective_constraints(
-            w=w, alphas=alphas, covar=covar_psd)
+            w=w,
+            alphas=alphas,
+            covar=covar_psd,
+            covar_factorization=covar_factorization,
+        )
     else:
         objective_fun = alphas.T @ w
 
         if constraints.tre_utility_weight is not None:
-            objective_fun = objective_fun - constraints.tre_utility_weight * cvx.quad_form(w, covar_psd)
+            portfolio_variance = cvx_covar_variance(
+                active_weights=w,
+                covar=covar_psd,
+                covar_factorization=covar_factorization,
+            )
+            objective_fun = (
+                objective_fun - constraints.tre_utility_weight * portfolio_variance)
 
         if constraints.weights_0 is not None and constraints.turnover_utility_weight is not None:
             if constraints.turnover_costs is not None:
@@ -335,6 +408,7 @@ def cvx_max_return_target_vol_utility(covar: np.ndarray,
         solved_status = 'solver_error'
 
     optimal_weights, _is_valid = validate_solution(
-        w.value, solved_status, constraints, n, solver=solver, context=context)
+        w.value, solved_status, constraints, n, solver=solver, context=context,
+        covar=solver_covar, covar_factorization=covar_factorization)
 
     return optimal_weights

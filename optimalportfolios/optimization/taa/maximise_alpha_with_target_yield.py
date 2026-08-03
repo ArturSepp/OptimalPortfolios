@@ -18,6 +18,10 @@ portfolio return, and Σ is the covariance matrix.
 This formulation separates the alpha signal (what we want to maximise) from
 the return constraint (what we need to deliver).
 
+The hard and soft tracking-error paths factor the filtered covariance once by
+default and reuse the stabilized matrix and square root in compatible risk
+terms and post-solve validation.
+
 Reference:
     Sepp A., Ossa I., and Kastenholz M. (2026),
     "Robust Optimization of Strategic and Tactical Asset Allocation
@@ -34,6 +38,11 @@ from typing import Dict, Optional, Union
 
 from optimalportfolios import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.optimization.covar_factorization import (
+    CovarianceFactorization,
+    factorize_covariance,
+    resolve_covariance_factorization,
+)
 from optimalportfolios.optimization.solver_diagnostics import validate_solution
 from optimalportfolios.optimization.config import OptimiserConfig
 from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
@@ -179,6 +188,7 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
             benchmark_weights. When False, TE is hard (if a budget is set).
         weights_0: Previous-period weights for warm-start / fallback.
         optimiser_config: Solver configuration.
+        context: Rebalance label included in solver diagnostics.
 
     Returns:
         Portfolio weights as pd.Series aligned to pd_covar.index.
@@ -209,6 +219,10 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
         benchmark_weights=benchmark_weights,
     )
 
+    covar_factorization = (
+        factorize_covariance(clean_covar.to_numpy())
+        if optimiser_config.factorize_covar else None
+    )
     weights = cvx_maximise_alpha_with_target_return(
         covar=clean_covar.to_numpy(),
         alphas=good_vectors['alphas'].to_numpy(),
@@ -216,7 +230,9 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
         soft_tracking_error=soft_tracking_error,
         solver=optimiser_config.solver,
         verbose=optimiser_config.verbose,
-        context=context
+        context=context,
+        factorize_covar=optimiser_config.factorize_covar,
+        covar_factorization=covar_factorization,
     )
 
     weights[np.isinf(weights)] = 0.0
@@ -232,7 +248,10 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
                                           soft_tracking_error: bool = False,
                                           verbose: bool = False,
                                           solver: str = 'CLARABEL',
-                                          context: str = ''
+                                          context: str = '',
+                                          factorize_covar: bool = True,
+                                          covar_factorization: Optional[
+                                              CovarianceFactorization] = None,
                                           ) -> np.ndarray:
     """
     Solve alpha-maximising portfolio allocation via CVXPY.
@@ -268,17 +287,32 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
             only the return target hard. If False, use the hard-constraint form.
         verbose: If True, print CVXPY solver diagnostics.
         solver: CVXPY solver name.
+        context: Rebalance label included in solver diagnostics.
+        factorize_covar: Compute and use an explicit covariance square root
+            when no precomputed factorization is supplied.
+        covar_factorization: Optional wrapper-computed factorization reused in
+            objective terms, constraints, and validation.
 
     Returns:
         Optimal weights (N,). Falls back to weights_0 or zeros on failure.
     """
-    n = covar.shape[0]
+    raw_covar = np.asarray(covar, dtype=float)
+    covar_factorization = resolve_covariance_factorization(
+        covar=raw_covar,
+        factorize_covar=factorize_covar,
+        covar_factorization=covar_factorization,
+    )
+    solver_covar = (
+        covar_factorization.covar
+        if covar_factorization is not None else raw_covar
+    )
+    n = raw_covar.shape[0]
     if constraints.is_long_only:
         nonneg = True
     else:
         nonneg = False
     w = cvx.Variable(n, nonneg=nonneg)
-    covar_psd = cvx.psd_wrap(covar)
+    covar_psd = cvx.psd_wrap(solver_covar)
 
     if soft_tracking_error and constraints.benchmark_weights is not None:
         # Soft TE only: TE becomes a utility penalty (tre_utility_weight) while
@@ -292,7 +326,10 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
             group_turnover_constraint=None,
         )
         objective_fun, constraints_ = constraints_soft.set_cvx_utility_objective_constraints(
-            w=w, alphas=alphas, covar=covar_psd,
+            w=w,
+            alphas=alphas,
+            covar=covar_psd,
+            covar_factorization=covar_factorization,
         )
         objective = cvx.Maximize(objective_fun)
         # keep turnover HARD if a budget is set, mirroring set_cvx_all_constraints
@@ -316,7 +353,11 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
         else:
             objective_fun = alphas.T @ w
         objective = cvx.Maximize(objective_fun)
-        constraints_ = constraints.set_cvx_all_constraints(w=w, covar=covar_psd)
+        constraints_ = constraints.set_cvx_all_constraints(
+            w=w,
+            covar=covar_psd,
+            covar_factorization=covar_factorization,
+        )
 
     problem = cvx.Problem(objective, constraints_)
     try:
@@ -331,6 +372,7 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
         solved_status = 'solver_error'
 
     optimal_weights, _is_valid = validate_solution(
-        w.value, solved_status, constraints, n, solver=solver, context=context)
+        w.value, solved_status, constraints, n, solver=solver, context=context,
+        covar=solver_covar, covar_factorization=covar_factorization)
 
     return optimal_weights

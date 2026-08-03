@@ -9,8 +9,8 @@ authors:
 repository-code: "https://github.com/ArturSepp/OptimalPortfolios"
 url: "https://pypi.org/project/optimalportfolios/"
 license: MIT
-version: 6.8.0
-date-released: "2026-08-02"
+version: 6.9.0
+date-released: "2026-08-03"
 keywords:
   - portfolio-optimization
   - backtesting
