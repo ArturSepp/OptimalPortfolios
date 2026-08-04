@@ -51,7 +51,7 @@ def run_local_test(local_test: LocalTests):
         pd_covar = pd.DataFrame(52.0 * qis.compute_masked_covar_corr(data=returns, is_covar=True),
                                 index=prices.columns, columns=prices.columns)
         print(f"pd_covar=\n{pd_covar}")
-        weights = wrapper_quadratic_optimisation(pd_covar=pd_covar,
+        weights, _ = wrapper_quadratic_optimisation(pd_covar=pd_covar,
                                                  constraints=constraints,
                                                  weights_0=benchmark_weights)
 

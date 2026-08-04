@@ -87,7 +87,7 @@ def run_local_test(local_test: LocalTests):
                 covar=covar,
                 alphas=alphas,
                 constraints=constraints,
-            )
+            ).weights
 
             print_portfolio(
                 f"TE budget = {te_budget:.1%}",
@@ -116,7 +116,7 @@ def run_local_test(local_test: LocalTests):
                 covar=covar,
                 alphas=alphas,
                 constraints=constraints,
-            )
+            ).weights
 
             print_portfolio(
                 f"λ_TE = {lam:.1f}",
@@ -137,7 +137,7 @@ def run_local_test(local_test: LocalTests):
         )
         w_hard = cvx_maximise_alpha_over_tre(
             covar=covar, alphas=alphas, constraints=constraints_hard
-        )
+        ).weights
         active_hard = w_hard - benchmark
         te_hard = np.sqrt(active_hard @ covar @ active_hard)
 
@@ -155,7 +155,7 @@ def run_local_test(local_test: LocalTests):
             )
             w_util = cvx_maximise_tre_utility(
                 covar=covar, alphas=alphas, constraints=constraints_util
-            )
+            ).weights
             active_util = w_util - benchmark
             te_util = np.sqrt(active_util @ covar @ active_util)
             if abs(te_util - te_hard) < best_te_diff:
@@ -187,7 +187,7 @@ def run_local_test(local_test: LocalTests):
             )
             w = cvx_maximise_alpha_over_tre(
                 covar=covar, alphas=alphas, constraints=constraints
-            )
+            ).weights
             active = w - benchmark
             te_realised = np.sqrt(active @ covar @ active)
             active_alpha = alphas @ active
@@ -243,7 +243,7 @@ def run_local_test(local_test: LocalTests):
         )
 
         # (a) normal case
-        w_normal = wrapper_maximise_alpha_over_tre(
+        w_normal, _ = wrapper_maximise_alpha_over_tre(
             pd_covar=pd_covar,
             alphas=alphas_s,
             benchmark_weights=benchmark_s,
@@ -260,7 +260,7 @@ def run_local_test(local_test: LocalTests):
         pd_covar_nan.loc['Gold', :] = np.nan
         pd_covar_nan.loc[:, 'Gold'] = np.nan
 
-        w_nan = wrapper_maximise_alpha_over_tre(
+        w_nan, _ = wrapper_maximise_alpha_over_tre(
             pd_covar=pd_covar_nan,
             alphas=alphas_s,
             benchmark_weights=benchmark_s,
@@ -271,7 +271,7 @@ def run_local_test(local_test: LocalTests):
         print(f"Gold weight: {w_nan['Gold']:.6f} (should be 0)\n")
 
         # (c) no alpha signal (pure benchmark tracking)
-        w_tracking = wrapper_maximise_alpha_over_tre(
+        w_tracking, _ = wrapper_maximise_alpha_over_tre(
             pd_covar=pd_covar,
             alphas=None,
             benchmark_weights=benchmark_s,
@@ -284,16 +284,16 @@ def run_local_test(local_test: LocalTests):
         print(f"Benchmark:\n{benchmark_s.to_string(float_format='{:.4f}'.format)}")
         print(f"TE: {te_tracking:.4%} (should be ≈ 0)\n")
 
-        # (d) detailed output with risk contributions
-        df_detail = wrapper_maximise_alpha_over_tre(
+        # (d) fixed wrapper output contract
+        w_detail, outcome = wrapper_maximise_alpha_over_tre(
             pd_covar=pd_covar,
             alphas=alphas_s,
             benchmark_weights=benchmark_s,
             constraints=constraints,
-            detailed_output=True,
         )
         print(f"── Wrapper: detailed output ──")
-        print(df_detail.to_string(float_format='{:.4f}'.format))
+        print(w_detail.to_string(float_format='{:.4f}'.format))
+        print(outcome)
 
     plt.show()
 

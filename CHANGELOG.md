@@ -7,6 +7,18 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+- Covariance factorization is now owned exclusively by each low-level CVXPY solver. Wrappers pass
+  only `factorize_covar`; solver APIs no longer accept a precomputed factorization, and
+  `resolve_covariance_factorization` has been removed. Each enabled solve calls
+  `factorize_covariance` directly once and reuses the result internally.
+- Factorization-capable single-date optimiser wrappers now have one fixed return contract:
+  `(weights, outcome)`. The optional outcome and detailed-output branches were removed; callers
+  compute presentation-specific risk-contribution tables separately.
+- `validate_solution` now always returns `OptimizationOutcome`. Its legacy tuple return and
+  `return_outcome` switch were removed; validated weights and acceptance state are available as
+  `outcome.weights` and `outcome.accepted`.
+
 ## [6.9.0] - 2026-08-03
 
 ### Added

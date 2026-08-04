@@ -27,7 +27,7 @@ The failure cannot be reliably pre-empted by provoking the solver (modern
 CLARABEL stays feasible even at cond ~6e14 on small problems) nor by checking
 convexity (psd_wrap defeats the DCP check). The robust defence is to validate
 the *output* unconditionally, on every solve. ``validate_solution`` checks the
-weight vector plus every applicable hard policy constraint and can return an
+weight vector plus every applicable hard policy constraint and returns an
 ``OptimizationOutcome`` carrying the aligned constraints, residuals, fallback
 state, and covariance factorization used by the solver.
 
@@ -572,9 +572,8 @@ def validate_solution(
     covar: Optional[np.ndarray] = None,
     covar_factorization: Optional[CovarianceFactorization] = None,
     constraint_atol: float = 1e-4,
-    return_outcome: bool = False,
-) -> Union[Tuple[np.ndarray, bool], OptimizationOutcome]:
-    """Validate a CVXPY solver result and return safe weights.
+) -> OptimizationOutcome:
+    """Validate a CVXPY solver result and return its structured outcome.
 
     Runs on every solve. Rejects a result that (a) is missing, (b) has a hard
     failure status, (c) is non-finite, (d) violates the budget, or (e) violates
@@ -612,28 +611,23 @@ def validate_solution(
             stabilized covariance takes precedence over ``covar``.
         constraint_atol: Absolute tolerance for aggregate hard constraints
             such as group weights, turnover, tracking error, and beta.
-        return_outcome: If True, return ``OptimizationOutcome`` instead of the
-            legacy ``(weights, is_valid)`` tuple.
         accept_inaccurate: if True, an ``optimal_inaccurate`` status that is
             otherwise feasible is accepted (with a warning) rather than
             discarded — useful so a marginally-imprecise but sane solve is not
             needlessly replaced by the previous weights.
 
     Returns:
-        (weights, is_valid). ``weights`` is always a finite ndarray of length
+        An ``OptimizationOutcome`` containing finite ``weights`` of length
         ``n`` — either the accepted solver output or the fallback. ``is_valid``
-        is True only when the solver output itself was accepted. With
-        ``return_outcome=True``, returns an ``OptimizationOutcome`` containing
-        the same safe weights plus solver, residual, fallback, constraint, and
-        covariance audit data.
+        The ``accepted`` flag records whether the solver output itself was
+        accepted; the outcome also carries solver, residual, fallback,
+        constraint, and covariance audit data.
     """
     tickers = _derive_tickers(constraints, n)
     tag = f"[{context}] " if context else ""
 
     def _result(weights: np.ndarray, accepted: bool, reason: str = '',
-                fallback_source: Optional[str] = None):
-        if not return_outcome:
-            return weights, accepted
+                fallback_source: Optional[str] = None) -> OptimizationOutcome:
         residuals = evaluate_constraint_residuals(
             weights=weights,
             constraints=constraints,

@@ -53,7 +53,7 @@ def run_local_test(local_test: LocalTests):
         optimal_weights = cvx_quadratic_optimisation(portfolio_objective=PortfolioObjective.MIN_VARIANCE,
                                                      covar=covar,
                                                      means=means,
-                                                     constraints=constraints)
+                                                     constraints=constraints).weights
 
         _print_portfolio_outputs(optimal_weights=optimal_weights,
                                 covar=covar,
@@ -66,7 +66,7 @@ def run_local_test(local_test: LocalTests):
                                                      covar=covar,
                                                      means=means,
                                                      constraints=constraints,
-                                                     carra=gamma)
+                                                     carra=gamma).weights
 
         _print_portfolio_outputs(optimal_weights=optimal_weights,
                                 covar=covar,
@@ -93,7 +93,7 @@ def run_local_test(local_test: LocalTests):
                                                       covar=covar,
                                                       means=means,
                                                       constraints=constraints,
-                                                      carra=lang_lambda)
+                                                      carra=lang_lambda).weights
 
             portfolio_vol = np.sqrt(w_lambda. T @covar @w_lambda)
             portfolio_sharpe = means.T @ w_lambda / portfolio_vol
@@ -132,7 +132,7 @@ def run_local_test(local_test: LocalTests):
                                                       covar=covar,
                                                       means=means,
                                                       constraints=constraints,
-                                                      carra=lang_lambda)
+                                                      carra=lang_lambda).weights
 
             print(f"portfolio with lambda = {lang_lambda}")
             _print_portfolio_outputs(optimal_weights=w_lambda,
@@ -153,7 +153,7 @@ def run_local_test(local_test: LocalTests):
 
         opt_sharpe_w = cvx_maximize_portfolio_sharpe(covar=covar,
                                                      means=means,
-                                                     constraints=constraints)
+                                                     constraints=constraints).weights
 
         print(f"exact solution")
         _print_portfolio_outputs(optimal_weights=opt_sharpe_w,
@@ -200,7 +200,7 @@ def run_local_test(local_test: LocalTests):
         exposure_budget_eq = (np.array([1.0, 0.0]), 1.0)
         optimal_weights = cvx_maximize_portfolio_sharpe(covar=covar,
                                                         means=means,
-                                                        constraints=constraints)
+                                                        constraints=constraints).weights
 
         _print_portfolio_outputs(optimal_weights=optimal_weights,
                                 covar=covar,

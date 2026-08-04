@@ -7,15 +7,15 @@ and an explicit square root ``B`` satisfying ``B @ B.T == covar``.  Passing
 ``B`` into CVXPY lets tracking-error terms use norms and sums of squares rather
 than asking each ``quad_form`` atom to factor the same ill-conditioned matrix.
 
-Wrappers call :func:`factorize_covariance` once after NaN filtering and pass
-the resulting :class:`CovarianceFactorization` through the objective,
-constraints, post-solve validation, and ROSAA reporting. The container also
-records raw and stabilized conditioning telemetry for production diagnostics.
+Each supported low-level CVXPY solver calls :func:`factorize_covariance` once
+after its wrapper has filtered the covariance, then reuses the resulting
+:class:`CovarianceFactorization` through the objective, constraints, post-solve
+validation, and ROSAA reporting. The container also records raw and stabilized
+conditioning telemetry for production diagnostics.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 
@@ -170,43 +170,3 @@ def factorize_covariance(
         n_eigenvalues_floored=int(np.sum(eigenvalues < eigenvalue_floor)),
         max_eigenvalue_adjustment=float(adjustment.max()),
     )
-
-
-def resolve_covariance_factorization(
-        covar: np.ndarray,
-        factorize_covar: bool = True,
-        covar_factorization: Optional[CovarianceFactorization] = None,
-) -> Optional[CovarianceFactorization]:
-    """Validate or compute the single covariance factorization for one solve.
-
-    Low-level solver functions accept an optional precomputed factorization so
-    wrappers can factor the filtered covariance exactly once and reuse it in
-    both the objective and every compatible constraint. Direct low-level calls
-    retain the same behaviour by computing the factorization here when the
-    default ``factorize_covar=True`` is used.
-
-    Args:
-        covar: Raw square covariance matrix for this solve.
-        factorize_covar: Compute a factorization when no precomputed one is
-            supplied. Defaults to True.
-        covar_factorization: Optional factorization already computed by the
-            wrapper. Its covariance shape must match ``covar``.
-
-    Returns:
-        The supplied or newly computed factorization, or None when
-        ``factorize_covar`` is False.
-
-    Raises:
-        ValueError: If a supplied factorization has an incompatible shape, or
-            if a newly requested factorization cannot be constructed.
-    """
-    values = np.asarray(covar, dtype=float)
-    if covar_factorization is not None:
-        if covar_factorization.covar.shape != values.shape:
-            raise ValueError(
-                "covar_factorization shape does not match covar: "
-                f"{covar_factorization.covar.shape} != {values.shape}")
-        return covar_factorization
-    if factorize_covar:
-        return factorize_covariance(values)
-    return None

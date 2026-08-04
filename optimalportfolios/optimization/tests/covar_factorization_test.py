@@ -1,6 +1,7 @@
 """Tests for factorized covariance use in hard and utility TRE optimization."""
 from __future__ import annotations
 
+import inspect
 import cvxpy as cvx
 import numpy as np
 import pandas as pd
@@ -89,14 +90,12 @@ def test_factorization_reconstructs_stabilized_near_singular_covariance() -> Non
 
 def test_wrapper_can_return_a_structured_auditable_outcome() -> None:
     constraints = _constraints(ConstraintEnforcementType.FORCED_CONSTRAINTS)
-    frame, outcome = tre_solver.wrapper_maximise_alpha_over_tre(
+    weights, outcome = tre_solver.wrapper_maximise_alpha_over_tre(
         pd_covar=pd.DataFrame(_covar(), index=TICKERS, columns=TICKERS),
         alphas=pd.Series([0.03, 0.01, -0.01, 0.0], index=TICKERS),
         benchmark_weights=constraints.benchmark_weights,
         constraints=constraints,
         weights_0=constraints.weights_0,
-        detailed_output=True,
-        return_outcome=True,
         optimiser_config=OptimiserConfig(validate_inputs=False),
     )
 
@@ -105,7 +104,7 @@ def test_wrapper_can_return_a_structured_auditable_outcome() -> None:
     assert outcome.compliant
     assert outcome.constraints is not None
     assert outcome.covar_factorization is not None
-    assert 'weights' in frame.columns
+    assert isinstance(weights, pd.Series)
     assert any(r.constraint_type == 'group_tracking_error'
                for r in outcome.constraint_residuals)
 
@@ -136,7 +135,8 @@ def test_factorized_and_legacy_utility_solutions_are_equivalent() -> None:
         factorize_covar=False,
     )
 
-    np.testing.assert_allclose(factorized, legacy, rtol=1e-6, atol=1e-7)
+    np.testing.assert_allclose(
+        factorized.weights, legacy.weights, rtol=1e-6, atol=1e-7)
 
 
 def test_factorized_group_utility_preserves_quadratic_value() -> None:
@@ -165,7 +165,7 @@ def test_factorized_group_utility_preserves_quadratic_value() -> None:
     ConstraintEnforcementType.FORCED_CONSTRAINTS,
     ConstraintEnforcementType.UTILITY_CONSTRAINTS,
 ])
-def test_wrapper_factorizes_once_per_solve_with_multiple_groups(
+def test_solve_factorizes_once_with_multiple_groups(
         monkeypatch,
         enforcement: ConstraintEnforcementType,
 ) -> None:
@@ -179,7 +179,7 @@ def test_wrapper_factorizes_once_per_solve_with_multiple_groups(
 
     monkeypatch.setattr(tre_solver, 'factorize_covariance', counted)
     constraints = _constraints(enforcement)
-    weights = tre_solver.wrapper_maximise_alpha_over_tre(
+    weights, _ = tre_solver.wrapper_maximise_alpha_over_tre(
         pd_covar=pd.DataFrame(_covar(), index=TICKERS, columns=TICKERS),
         alphas=pd.Series([0.03, 0.01, -0.01, 0.0], index=TICKERS),
         benchmark_weights=constraints.benchmark_weights,
@@ -202,7 +202,7 @@ def test_factorization_is_enabled_by_default_and_can_be_disabled(monkeypatch) ->
 
     monkeypatch.setattr(tre_solver, 'factorize_covariance', unexpected)
     constraints = _constraints(ConstraintEnforcementType.UTILITY_CONSTRAINTS)
-    weights = tre_solver.wrapper_maximise_alpha_over_tre(
+    weights, _ = tre_solver.wrapper_maximise_alpha_over_tre(
         pd_covar=pd.DataFrame(_covar(), index=TICKERS, columns=TICKERS),
         alphas=pd.Series([0.03, 0.01, -0.01, 0.0], index=TICKERS),
         benchmark_weights=constraints.benchmark_weights,
@@ -230,7 +230,7 @@ def _run_quadratic(optimiser_config: OptimiserConfig) -> pd.Series:
         constraints=_basic_constraints(),
         portfolio_objective=PortfolioObjective.MIN_VARIANCE,
         optimiser_config=optimiser_config,
-    )
+    )[0]
 
 
 def _run_max_sharpe(optimiser_config: OptimiserConfig) -> pd.Series:
@@ -239,7 +239,7 @@ def _run_max_sharpe(optimiser_config: OptimiserConfig) -> pd.Series:
         means=pd.Series([0.08, 0.06, 0.04, 0.02], index=TICKERS),
         constraints=_basic_constraints(),
         optimiser_config=optimiser_config,
-    )
+    )[0]
 
 
 def _run_min_variance_target_return(
@@ -251,7 +251,7 @@ def _run_min_variance_target_return(
         target_return=0.04,
         constraints=_basic_constraints(),
         optimiser_config=optimiser_config,
-    )
+    )[0]
 
 
 def _run_max_return_target_vol(optimiser_config: OptimiserConfig) -> pd.Series:
@@ -261,7 +261,7 @@ def _run_max_return_target_vol(optimiser_config: OptimiserConfig) -> pd.Series:
         target_vol=0.12,
         constraints=_basic_constraints(),
         optimiser_config=optimiser_config,
-    )
+    )[0]
 
 
 def _run_alpha_target_return(optimiser_config: OptimiserConfig) -> pd.Series:
@@ -272,7 +272,7 @@ def _run_alpha_target_return(optimiser_config: OptimiserConfig) -> pd.Series:
         target_return=0.04,
         constraints=_basic_constraints(max_target_portfolio_vol_an=0.15),
         optimiser_config=optimiser_config,
-    )
+    )[0]
 
 
 @pytest.mark.parametrize(('solver_module', 'run_wrapper'), [
@@ -289,7 +289,7 @@ def _run_alpha_target_return(optimiser_config: OptimiserConfig) -> pd.Series:
     'alpha_target_return',
 ])
 @pytest.mark.parametrize(('enabled', 'expected_calls'), [(True, 1), (False, 0)])
-def test_all_other_supported_wrappers_factorize_once_and_honour_flag(
+def test_all_other_supported_solves_factorize_once_and_honour_flag(
         monkeypatch,
         solver_module,
         run_wrapper,
@@ -310,3 +310,23 @@ def test_all_other_supported_wrappers_factorize_once_and_honour_flag(
     assert calls == expected_calls
     assert np.isfinite(weights.to_numpy()).all()
     assert float(weights.sum()) == pytest.approx(1.0, abs=1e-6)
+
+
+@pytest.mark.parametrize('solver_function', [
+    tre_solver.cvx_maximise_alpha_over_tre,
+    tre_solver.cvx_maximise_tre_utility,
+    quadratic_solver.cvx_quadratic_optimisation,
+    max_sharpe_solver.cvx_maximize_portfolio_sharpe,
+    max_sharpe_solver._cvx_maximize_sharpe_charnes_cooper,
+    min_variance_solver.cvx_min_variance_target_return,
+    min_variance_solver.cvx_min_variance_target_return_utility,
+    max_return_solver.cvx_max_return_target_vol,
+    max_return_solver.cvx_max_return_target_vol_utility,
+    target_yield_solver.cvx_maximise_alpha_with_target_return,
+])
+def test_cvx_solver_api_does_not_accept_precomputed_factorization(
+        solver_function,
+) -> None:
+    parameters = inspect.signature(solver_function).parameters
+    assert 'factorize_covar' in parameters
+    assert 'covar_factorization' not in parameters

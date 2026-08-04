@@ -68,7 +68,7 @@ def solve_overlay_tail_floor(means: pd.Series,
     constraints = Constraints(**kwargs)
     weights = cvx_maximize_portfolio_sharpe(covar=covar.to_numpy(),
                                             means=means.to_numpy(),
-                                            constraints=constraints)
+                                            constraints=constraints).weights
     return pd.Series(weights, index=means.index)
 
 

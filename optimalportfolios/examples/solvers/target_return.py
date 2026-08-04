@@ -158,7 +158,7 @@ def run_local_test(local_test: LocalTests):
                                    min_exposure=0.5
                                    )
 
-        weights = wrapper_maximise_alpha_with_target_return(pd_covar=pd_covar, alphas=alphas, yields=last_yields,
+        weights, _ = wrapper_maximise_alpha_with_target_return(pd_covar=pd_covar, alphas=alphas, yields=last_yields,
                                                             target_return=target_return,
                                                             constraints=constraints)
         print(f"weights={weights}")

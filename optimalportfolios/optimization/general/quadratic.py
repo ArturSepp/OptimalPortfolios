@@ -24,12 +24,11 @@ from typing import Tuple, Optional, Dict
 # optimalportfolios
 from optimalportfolios.config import PortfolioObjective
 from optimalportfolios.optimization.constraints import Constraints, cvx_covar_variance
-from optimalportfolios.optimization.covar_factorization import (
-    CovarianceFactorization,
-    factorize_covariance,
-    resolve_covariance_factorization,
+from optimalportfolios.optimization.covar_factorization import factorize_covariance
+from optimalportfolios.optimization.solver_diagnostics import (
+    OptimizationOutcome,
+    validate_solution,
 )
-from optimalportfolios.optimization.solver_diagnostics import validate_solution
 from optimalportfolios.optimization.config import OptimiserConfig
 from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
@@ -90,7 +89,7 @@ def rolling_quadratic_optimisation(prices: pd.DataFrame,
             means = expected_returns.loc[date, :]
         else:
             means = None
-        weights_ = wrapper_quadratic_optimisation(
+        weights_, _ = wrapper_quadratic_optimisation(
             pd_covar=pd_covar,
             constraints=constraints,
             weights_0=weights_0,
@@ -119,7 +118,7 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
                                    carra: float = 1.0,
                                    optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True),
                                    context: str = ''
-                                   ) -> pd.Series:
+                                   ) -> Tuple[pd.Series, OptimizationOutcome]:
     """
     Single-date quadratic optimisation with NaN/zero-variance filtering.
 
@@ -136,7 +135,7 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
         context: Rebalance label included in solver diagnostics.
 
     Returns:
-        Portfolio weights as pd.Series aligned to pd_covar.index.
+        Portfolio weights and the structured solver outcome.
     """
     vectors = dict(means=means) if means is not None else None
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(
@@ -160,11 +159,7 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
         weights_0=weights_0
     )
 
-    covar_factorization = (
-        factorize_covariance(clean_covar.to_numpy())
-        if optimiser_config.factorize_covar else None
-    )
-    weights = cvx_quadratic_optimisation(
+    outcome = cvx_quadratic_optimisation(
         portfolio_objective=portfolio_objective,
         covar=clean_covar.to_numpy(),
         constraints=constraints1,
@@ -174,12 +169,12 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
         verbose=optimiser_config.verbose,
         context=context,
         factorize_covar=optimiser_config.factorize_covar,
-        covar_factorization=covar_factorization,
     )
+    weights = outcome.weights
     weights[np.isinf(weights)] = 0.0
     weights = pd.Series(weights, index=clean_covar.index)
     weights = weights.reindex(index=pd_covar.index).fillna(0.0)
-    return weights
+    return weights, outcome
 
 
 def cvx_quadratic_optimisation(portfolio_objective: PortfolioObjective,
@@ -191,9 +186,7 @@ def cvx_quadratic_optimisation(portfolio_objective: PortfolioObjective,
                                carra: float = 1.0,
                                context: str = '',
                                factorize_covar: bool = True,
-                               covar_factorization: Optional[
-                                   CovarianceFactorization] = None,
-                               ) -> np.ndarray:
+                               ) -> OptimizationOutcome:
     """
     Solve quadratic portfolio optimisation via CVXPY.
 
@@ -211,21 +204,15 @@ def cvx_quadratic_optimisation(portfolio_objective: PortfolioObjective,
         verbose: If True, print CVXPY solver diagnostics.
         solver: CVXPY solver name.
         context: Rebalance label included in solver diagnostics.
-        factorize_covar: Compute and use an explicit covariance square root
-            when no precomputed factorization is supplied.
-        covar_factorization: Optional wrapper-computed factorization reused in
-            the objective, constraints, and validation.
+        factorize_covar: Compute and use an explicit covariance square root.
         carra: Risk aversion coefficient γ.
 
     Returns:
-        Optimal weights (N,). Falls back to weights_0 or zeros on failure.
+        Structured outcome containing safe weights and diagnostics.
     """
     raw_covar = np.asarray(covar, dtype=float)
-    covar_factorization = resolve_covariance_factorization(
-        covar=raw_covar,
-        factorize_covar=factorize_covar,
-        covar_factorization=covar_factorization,
-    )
+    covar_factorization = (
+        factorize_covariance(raw_covar) if factorize_covar else None)
     solver_covar = (
         covar_factorization.covar
         if covar_factorization is not None else raw_covar
@@ -272,11 +259,11 @@ def cvx_quadratic_optimisation(portfolio_objective: PortfolioObjective,
         w.value = None
         solved_status = 'solver_error'
 
-    optimal_weights, _is_valid = validate_solution(
+    outcome = validate_solution(
         w.value, solved_status, constraints, n, solver=solver, context=context,
         covar=solver_covar, covar_factorization=covar_factorization)
 
-    return optimal_weights
+    return outcome
 
 
 def solve_analytic_log_opt(covar: np.ndarray,

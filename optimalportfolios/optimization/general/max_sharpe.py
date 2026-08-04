@@ -39,16 +39,15 @@ import warnings
 import numpy as np
 import pandas as pd
 import cvxpy as cvx
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints, cvx_covar_variance
-from optimalportfolios.optimization.covar_factorization import (
-    CovarianceFactorization,
-    factorize_covariance,
-    resolve_covariance_factorization,
+from optimalportfolios.optimization.covar_factorization import factorize_covariance
+from optimalportfolios.optimization.solver_diagnostics import (
+    OptimizationOutcome,
+    validate_solution,
 )
-from optimalportfolios.optimization.solver_diagnostics import validate_solution
 from optimalportfolios.optimization.config import OptimiserConfig
 from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
 
@@ -86,12 +85,13 @@ def rolling_maximize_portfolio_sharpe(prices: pd.DataFrame,
             prev_date=prev_date, date=date,
             use_drifted_weights_0=optimiser_config.use_drifted_weights_0,
         )
-        weights_ = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
-                                                     means=expected_returns.loc[date, :],
-                                                     constraints=constraints,
-                                                     weights_0=weights_0,
-                                                     optimiser_config=optimiser_config,
-                                                     context=str(pd.Timestamp(date).date()))
+        weights_, _ = wrapper_maximize_portfolio_sharpe(
+            pd_covar=pd_covar,
+            means=expected_returns.loc[date, :],
+            constraints=constraints,
+            weights_0=weights_0,
+            optimiser_config=optimiser_config,
+            context=str(pd.Timestamp(date).date()))
         weights_0 = weights_
         prev_date = date
         weights[date] = weights_
@@ -107,7 +107,7 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
                                       weights_0: pd.Series = None,
                                       optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True),
                                       context: str = ''
-                                      ) -> pd.Series:
+                                      ) -> Tuple[pd.Series, OptimizationOutcome]:
     """
     Single-date maximum Sharpe with NaN/zero-variance filtering.
 
@@ -120,7 +120,7 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
         context: Rebalance label included in solver diagnostics.
 
     Returns:
-        Portfolio weights as pd.Series aligned to pd_covar.index.
+        Portfolio weights and the structured solver outcome.
     """
     vectors = dict(means=means)
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar, vectors=vectors)
@@ -134,24 +134,19 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
                                                          total_to_good_ratio=total_to_good_ratio,
                                                          weights_0=weights_0)
 
-    covar_factorization = (
-        factorize_covariance(clean_covar.to_numpy())
-        if (optimiser_config.factorize_covar
-            and constraints1.max_exposure == constraints1.min_exposure)
-        else None
-    )
-    weights = cvx_maximize_portfolio_sharpe(covar=clean_covar.to_numpy(),
-                                            means=good_vectors['means'].to_numpy(),
-                                            constraints=constraints1,
-                                            solver=optimiser_config.solver,
-                                            verbose=optimiser_config.verbose,
-                                            context=context,
-                                            factorize_covar=optimiser_config.factorize_covar,
-                                            covar_factorization=covar_factorization)
+    outcome = cvx_maximize_portfolio_sharpe(
+        covar=clean_covar.to_numpy(),
+        means=good_vectors['means'].to_numpy(),
+        constraints=constraints1,
+        solver=optimiser_config.solver,
+        verbose=optimiser_config.verbose,
+        context=context,
+        factorize_covar=optimiser_config.factorize_covar)
+    weights = outcome.weights
     weights[np.isinf(weights)] = 0.0
     weights = pd.Series(weights, index=clean_covar.index)
     weights = weights.reindex(index=pd_covar.index).fillna(0.0)
-    return weights
+    return weights, outcome
 
 
 def cvx_maximize_portfolio_sharpe(covar: np.ndarray,
@@ -161,9 +156,7 @@ def cvx_maximize_portfolio_sharpe(covar: np.ndarray,
                                   solver: str = 'CLARABEL',
                                   context: str = '',
                                   factorize_covar: bool = True,
-                                  covar_factorization: Optional[
-                                      CovarianceFactorization] = None,
-                                  ) -> np.ndarray:
+                                  ) -> OptimizationOutcome:
     """
     Maximise the Sharpe ratio via the Charnes-Cooper transformation.
 
@@ -189,11 +182,9 @@ def cvx_maximize_portfolio_sharpe(covar: np.ndarray,
         context: Rebalance label included in solver diagnostics.
         factorize_covar: Use one controlled covariance square root on the
             fixed-exposure CVXPY path. Ignored by the SciPy fallback.
-        covar_factorization: Optional precomputed factorization from the
-            wrapper; reused without another eigendecomposition.
 
     Returns:
-        Optimal weights (N,). Falls back to weights_0 or zeros on failure.
+        Structured outcome containing safe weights and diagnostics.
     """
     if constraints.max_exposure != constraints.min_exposure:
         # long-short: Charnes-Cooper requires equality sum constraint
@@ -205,8 +196,7 @@ def cvx_maximize_portfolio_sharpe(covar: np.ndarray,
                                                     constraints=constraints,
                                                     verbose=verbose, solver=solver,
                                                     context=context,
-                                                    factorize_covar=factorize_covar,
-                                                    covar_factorization=covar_factorization)
+                                                    factorize_covar=factorize_covar)
 
 
 def _cvx_maximize_sharpe_charnes_cooper(covar: np.ndarray,
@@ -216,9 +206,7 @@ def _cvx_maximize_sharpe_charnes_cooper(covar: np.ndarray,
                                          solver: str = 'CLARABEL',
                                          context: str = '',
                                          factorize_covar: bool = True,
-                                         covar_factorization: Optional[
-                                             CovarianceFactorization] = None,
-                                         ) -> np.ndarray:
+                                         ) -> OptimizationOutcome:
     """Solve the fixed-exposure Charnes-Cooper formulation.
 
     Args:
@@ -228,19 +216,14 @@ def _cvx_maximize_sharpe_charnes_cooper(covar: np.ndarray,
         verbose: Forward solver output when True.
         solver: CVXPY solver name.
         context: Rebalance label included in solver diagnostics.
-        factorize_covar: Compute an explicit covariance square root when a
-            precomputed factorization is not supplied.
-        covar_factorization: Optional wrapper-computed factorization.
+        factorize_covar: Compute and use an explicit covariance square root.
 
     Returns:
-        Validated normalized weights, or the configured safe fallback.
+        Structured outcome containing safe weights and diagnostics.
     """
     raw_covar = np.asarray(covar, dtype=float)
-    covar_factorization = resolve_covariance_factorization(
-        covar=raw_covar,
-        factorize_covar=factorize_covar,
-        covar_factorization=covar_factorization,
-    )
+    covar_factorization = (
+        factorize_covariance(raw_covar) if factorize_covar else None)
     solver_covar = (
         covar_factorization.covar
         if covar_factorization is not None else raw_covar
@@ -279,11 +262,11 @@ def _cvx_maximize_sharpe_charnes_cooper(covar: np.ndarray,
     optimal_weights = z.value
     if optimal_weights is not None:
         optimal_weights = optimal_weights[:n] / optimal_weights[n]
-    optimal_weights, _is_valid = validate_solution(
+    outcome = validate_solution(
         optimal_weights, solved_status, constraints, n, solver=solver, context=context,
         covar=solver_covar, covar_factorization=covar_factorization)
 
-    return optimal_weights
+    return outcome
 
 
 def _scipy_maximize_sharpe(covar: np.ndarray,
@@ -291,7 +274,7 @@ def _scipy_maximize_sharpe(covar: np.ndarray,
                             constraints: Constraints,
                             verbose: bool = False,
                             context: str = ''
-                            ) -> np.ndarray:
+                            ) -> OptimizationOutcome:
     """Direct Sharpe-ratio maximisation via SciPy SLSQP for long-short.
 
     Args:
@@ -302,7 +285,7 @@ def _scipy_maximize_sharpe(covar: np.ndarray,
         context: Rebalance label included in solution diagnostics.
 
     Returns:
-        Validated optimal weights, or the configured safe fallback.
+        Structured outcome containing safe weights and diagnostics.
     """
     from scipy.optimize import minimize
 
@@ -324,7 +307,8 @@ def _scipy_maximize_sharpe(covar: np.ndarray,
 
     optimal_weights = res.x
     status = 'optimal' if res.success else 'solver_error'
-    optimal_weights, _is_valid = validate_solution(
-        optimal_weights, status, constraints, n, solver='SLSQP', context=context)
+    outcome = validate_solution(
+        optimal_weights, status, constraints, n, solver='SLSQP', context=context,
+        covar=covar)
 
-    return optimal_weights
+    return outcome

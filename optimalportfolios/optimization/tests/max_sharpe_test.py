@@ -38,7 +38,7 @@ def run_local_test(local_test: LocalTests):
         # basic max Sharpe with long-only constraint
         constraints = Constraints(is_long_only=True)
 
-        weights = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
+        weights, _ = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
                                                     means=means,
                                                     constraints=constraints)
 
@@ -60,11 +60,11 @@ def run_local_test(local_test: LocalTests):
         constraints_capped = Constraints(is_long_only=True,
                                           max_weights=pd.Series(0.4, index=tickers))
 
-        w_uncapped = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
+        w_uncapped, _ = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
                                                        means=means,
                                                        constraints=constraints_uncapped)
 
-        w_capped = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
+        w_capped, _ = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
                                                      means=means,
                                                      constraints=constraints_capped)
 
@@ -82,7 +82,7 @@ def run_local_test(local_test: LocalTests):
                                   max_weights=pd.Series(0.5, index=tickers))
 
         # (a) normal case
-        w_normal = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
+        w_normal, _ = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
                                                      means=means,
                                                      constraints=constraints)
         port_vol = np.sqrt(w_normal.values @ covar @ w_normal.values)
@@ -97,7 +97,7 @@ def run_local_test(local_test: LocalTests):
         pd_covar_nan.loc['Gold', :] = np.nan
         pd_covar_nan.loc[:, 'Gold'] = np.nan
 
-        w_nan = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar_nan,
+        w_nan, _ = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar_nan,
                                                    means=means,
                                                    constraints=constraints)
 
@@ -108,7 +108,7 @@ def run_local_test(local_test: LocalTests):
 
         # (c) with warm-start from previous weights
         weights_0 = pd.Series({'Equity': 0.3, 'Bonds': 0.4, 'Gold': 0.1, 'HighYield': 0.2})
-        w_warm = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
+        w_warm, _ = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
                                                     means=means,
                                                     constraints=constraints,
                                                     weights_0=weights_0)
@@ -125,7 +125,7 @@ def run_local_test(local_test: LocalTests):
         for cap in caps:
             constraints = Constraints(is_long_only=True,
                                       max_weights=pd.Series(cap, index=tickers))
-            w = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
+            w, _ = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
                                                   means=means,
                                                   constraints=constraints)
             port_ret = w @ means

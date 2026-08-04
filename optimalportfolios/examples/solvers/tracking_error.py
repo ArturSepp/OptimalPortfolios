@@ -100,7 +100,7 @@ def run_local_test(local_test: LocalTests):
                                    weights_0=benchmark_weights,
                                    group_lower_upper_constraints=group_lower_upper_constraints)
 
-        weights = wrapper_maximise_alpha_over_tre(pd_covar=pd_covar,
+        weights, _ = wrapper_maximise_alpha_over_tre(pd_covar=pd_covar,
                                                   alphas=alphas,
                                                   benchmark_weights=benchmark_weights,
                                                   constraints=constraints,
@@ -151,7 +151,7 @@ def run_local_test(local_test: LocalTests):
                                            turnover_constraint=turnover_constraint,  # max turover at rebalancing
                                            weights_0=benchmark_weights)
 
-                weights = wrapper_maximise_alpha_over_tre(pd_covar=pd_covar,
+                weights, _ = wrapper_maximise_alpha_over_tre(pd_covar=pd_covar,
                                                           alphas=alphas,
                                                           benchmark_weights=benchmark_weights,
                                                           constraints=constraints,

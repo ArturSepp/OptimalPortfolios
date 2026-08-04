@@ -108,9 +108,10 @@ def _long_short_fully_invested() -> Constraints:
 def test_min_variance_matches_the_closed_form() -> None:
     """w = Σ⁻¹1 / (1'Σ⁻¹1)."""
     covar, sigma = _general_universe()
-    weights = op.wrapper_quadratic_optimisation(pd_covar=covar,
-                                                constraints=_long_short_fully_invested(),
-                                                portfolio_objective=PortfolioObjective.MIN_VARIANCE)
+    weights, _ = op.wrapper_quadratic_optimisation(
+        pd_covar=covar,
+        constraints=_long_short_fully_invested(),
+        portfolio_objective=PortfolioObjective.MIN_VARIANCE)
     inv, one = np.linalg.inv(sigma), np.ones(len(TICKERS))
     reference = inv @ one / (one @ inv @ one)
     np.testing.assert_allclose(np.asarray(weights, dtype=float), reference, atol=ANALYTIC_TOL)
@@ -126,7 +127,7 @@ def test_min_variance_is_a_minimum_not_merely_a_solution() -> None:
     covar, sigma = _general_universe()
     weights = np.asarray(op.wrapper_quadratic_optimisation(
         pd_covar=covar, constraints=_long_short_fully_invested(),
-        portfolio_objective=PortfolioObjective.MIN_VARIANCE), dtype=float)
+        portfolio_objective=PortfolioObjective.MIN_VARIANCE)[0], dtype=float)
     variance = weights @ sigma @ weights
     rng = np.random.default_rng(11)
     for _ in range(25):
@@ -142,8 +143,8 @@ def test_max_sharpe_matches_the_tangency_closed_form() -> None:
     """w = Σ⁻¹μ / (1'Σ⁻¹μ)."""
     covar, sigma = _general_universe()
     mu = _means()
-    weights = op.wrapper_maximize_portfolio_sharpe(pd_covar=covar, means=mu,
-                                                   constraints=_long_short_fully_invested())
+    weights, _ = op.wrapper_maximize_portfolio_sharpe(
+        pd_covar=covar, means=mu, constraints=_long_short_fully_invested())
     inv, one = np.linalg.inv(sigma), np.ones(len(TICKERS))
     reference = inv @ mu.to_numpy() / (one @ inv @ mu.to_numpy())
     np.testing.assert_allclose(np.asarray(weights, dtype=float), reference, atol=ANALYTIC_TOL)
@@ -215,9 +216,9 @@ def test_min_variance_target_return_matches_the_closed_form(target_return: float
     a, b, c, d = _abc(sigma, m)
     reference = ((c - target_return * b) * (inv @ one)
                  + (target_return * a - b) * (inv @ m)) / d
-    weights = op.wrapper_min_variance_target_return(pd_covar=covar, expected_returns=mu,
-                                                    target_return=target_return,
-                                                    constraints=_long_short_fully_invested())
+    weights, _ = op.wrapper_min_variance_target_return(
+        pd_covar=covar, expected_returns=mu, target_return=target_return,
+        constraints=_long_short_fully_invested())
     np.testing.assert_allclose(np.asarray(weights, dtype=float), reference, atol=1e-6)
 
 
@@ -228,7 +229,7 @@ def test_min_variance_target_return_hits_its_target(target_return: float) -> Non
     mu = _means()
     weights = np.asarray(op.wrapper_min_variance_target_return(
         pd_covar=covar, expected_returns=mu, target_return=target_return,
-        constraints=_long_short_fully_invested()), dtype=float)
+        constraints=_long_short_fully_invested())[0], dtype=float)
     assert weights @ mu.to_numpy() == pytest.approx(target_return, abs=1e-6)
     assert weights.sum() == pytest.approx(1.0, abs=1e-8)
 
@@ -245,9 +246,9 @@ def test_max_return_target_vol_matches_the_closed_form(target_vol: float) -> Non
     direction = inv @ (m - (b / a) * one)        # zero-sum, increases expected return
     k = np.sqrt((target_vol ** 2 - w_min_var @ sigma @ w_min_var) / (direction @ sigma @ direction))
     reference = w_min_var + k * direction
-    weights = op.wrapper_max_return_target_vol(pd_covar=covar, expected_returns=mu,
-                                               target_vol=target_vol,
-                                               constraints=_long_short_fully_invested())
+    weights, _ = op.wrapper_max_return_target_vol(
+        pd_covar=covar, expected_returns=mu, target_vol=target_vol,
+        constraints=_long_short_fully_invested())
     np.testing.assert_allclose(np.asarray(weights, dtype=float), reference, atol=1e-6)
 
 
@@ -257,7 +258,7 @@ def test_max_return_target_vol_hits_its_target(target_vol: float) -> None:
     covar, sigma = _general_universe()
     weights = np.asarray(op.wrapper_max_return_target_vol(
         pd_covar=covar, expected_returns=_means(), target_vol=target_vol,
-        constraints=_long_short_fully_invested()), dtype=float)
+        constraints=_long_short_fully_invested())[0], dtype=float)
     assert np.sqrt(weights @ sigma @ weights) == pytest.approx(target_vol, abs=1e-6)
 
 
@@ -293,9 +294,9 @@ def test_maximise_alpha_over_tre_matches_the_closed_form(tracking_error: float) 
     constraints = Constraints(is_long_only=False, min_exposure=1.0, max_exposure=1.0,
                               benchmark_weights=benchmark,
                               tracking_err_vol_constraint=tracking_error)
-    weights = op.wrapper_maximise_alpha_over_tre(pd_covar=covar, alphas=alphas,
-                                                 benchmark_weights=benchmark,
-                                                 constraints=constraints)
+    weights, _ = op.wrapper_maximise_alpha_over_tre(
+        pd_covar=covar, alphas=alphas, benchmark_weights=benchmark,
+        constraints=constraints)
     np.testing.assert_allclose(np.asarray(weights, dtype=float), reference, atol=1e-6)
 
 
@@ -315,7 +316,7 @@ def test_maximise_alpha_over_tre_spends_its_tracking_error_budget(tracking_error
                               tracking_err_vol_constraint=tracking_error)
     weights = np.asarray(op.wrapper_maximise_alpha_over_tre(
         pd_covar=covar, alphas=alphas, benchmark_weights=benchmark,
-        constraints=constraints), dtype=float)
+        constraints=constraints)[0], dtype=float)
     active = weights - benchmark.to_numpy()
     assert np.sqrt(active @ sigma @ active) == pytest.approx(tracking_error, abs=1e-6)
 
@@ -337,7 +338,7 @@ def test_long_only_min_variance_satisfies_the_kkt_conditions() -> None:
     covar, sigma = _general_universe()
     weights = np.asarray(op.wrapper_quadratic_optimisation(
         pd_covar=covar, constraints=Constraints(is_long_only=True),
-        portfolio_objective=PortfolioObjective.MIN_VARIANCE), dtype=float)
+        portfolio_objective=PortfolioObjective.MIN_VARIANCE)[0], dtype=float)
     assert np.all(weights >= -1e-8), f'long-only solution has a negative weight: {weights}'
 
     marginal = sigma @ weights
@@ -358,12 +359,12 @@ def test_weight_bounds_are_respected_and_binding() -> None:
                               max_weights=pd.Series(np.full(len(TICKERS), cap), index=TICKERS))
     weights = np.asarray(op.wrapper_quadratic_optimisation(
         pd_covar=covar, constraints=constraints,
-        portfolio_objective=PortfolioObjective.MIN_VARIANCE), dtype=float)
+        portfolio_objective=PortfolioObjective.MIN_VARIANCE)[0], dtype=float)
     assert weights.max() <= cap + 1e-6, f'cap {cap} exceeded: {weights}'
     assert weights.sum() == pytest.approx(1.0, abs=1e-6)
     unconstrained = np.asarray(op.wrapper_quadratic_optimisation(
         pd_covar=covar, constraints=Constraints(is_long_only=True),
-        portfolio_objective=PortfolioObjective.MIN_VARIANCE), dtype=float)
+        portfolio_objective=PortfolioObjective.MIN_VARIANCE)[0], dtype=float)
     assert unconstrained.max() > cap, (
         'the unconstrained optimum already respects the cap, so this test proves nothing; '
         'lower the cap')
@@ -379,12 +380,12 @@ def test_constrained_optimum_is_worse_than_the_unconstrained_one() -> None:
     covar, sigma = _general_universe()
     free = np.asarray(op.wrapper_quadratic_optimisation(
         pd_covar=covar, constraints=_long_short_fully_invested(),
-        portfolio_objective=PortfolioObjective.MIN_VARIANCE), dtype=float)
+        portfolio_objective=PortfolioObjective.MIN_VARIANCE)[0], dtype=float)
     capped = np.asarray(op.wrapper_quadratic_optimisation(
         pd_covar=covar,
         constraints=Constraints(is_long_only=True,
                                 max_weights=pd.Series(np.full(len(TICKERS), 0.30), index=TICKERS)),
-        portfolio_objective=PortfolioObjective.MIN_VARIANCE), dtype=float)
+        portfolio_objective=PortfolioObjective.MIN_VARIANCE)[0], dtype=float)
     assert capped @ sigma @ capped >= free @ sigma @ free - 1e-12
 
 

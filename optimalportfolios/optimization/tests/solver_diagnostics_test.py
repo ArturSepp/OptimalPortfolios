@@ -73,9 +73,9 @@ def _feasible_w():
 def test_accepts_clean_feasible_solution():
     c = _constraints()
     w_in = _feasible_w()
-    w_out, ok = validate_solution(w_in, "optimal", c, n=5, solver="CLARABEL")
-    assert ok is True
-    np.testing.assert_allclose(w_out, w_in)
+    outcome = validate_solution(w_in, "optimal", c, n=5, solver="CLARABEL")
+    assert outcome.accepted is True
+    np.testing.assert_allclose(outcome.weights, w_in)
 
 
 # -----------------------------------------------------------------------------
@@ -93,14 +93,14 @@ def test_rejects_budget_blowup_1p5e6(caplog):
     assert blowup.sum() > 1e6  # sanity: this is the pathology
 
     with caplog.at_level(logging.ERROR):
-        w_out, ok = validate_solution(
+        outcome = validate_solution(
             blowup, "optimal_inaccurate", c, n=5,
             solver="CLARABEL", context="GROWM 2021-04-30")
 
-    assert ok is False
+    assert outcome.accepted is False
     # fell back to weights_0
-    np.testing.assert_allclose(w_out, c.weights_0.to_numpy())
-    assert abs(w_out.sum() - 1.0) < 1e-6
+    np.testing.assert_allclose(outcome.weights, c.weights_0.to_numpy())
+    assert abs(outcome.weights.sum() - 1.0) < 1e-6
     # the log names the budget violation, the date, and the bad sum
     rec = caplog.text.lower()
     assert "budget" in rec and "rejected" in rec
@@ -114,8 +114,8 @@ def test_rejects_budget_blowup_even_when_status_optimal(caplog):
     c = _constraints()
     blowup = _feasible_w() * 1.0e5  # sum = 1e5
     with caplog.at_level(logging.ERROR):
-        _, ok = validate_solution(blowup, "optimal", c, n=5, solver="CLARABEL")
-    assert ok is False
+        outcome = validate_solution(blowup, "optimal", c, n=5, solver="CLARABEL")
+    assert outcome.accepted is False
 
 
 # -----------------------------------------------------------------------------
@@ -124,32 +124,32 @@ def test_rejects_budget_blowup_even_when_status_optimal(caplog):
 
 def test_rejects_none_solution():
     c = _constraints()
-    w_out, ok = validate_solution(None, "optimal", c, n=5, solver="CLARABEL")
-    assert ok is False
-    np.testing.assert_allclose(w_out, c.weights_0.to_numpy())
+    outcome = validate_solution(None, "optimal", c, n=5, solver="CLARABEL")
+    assert outcome.accepted is False
+    np.testing.assert_allclose(outcome.weights, c.weights_0.to_numpy())
 
 
 def test_rejects_nonfinite_weights():
     c = _constraints()
     bad = _feasible_w().copy()
     bad[3] = np.inf
-    _, ok = validate_solution(bad, "optimal", c, n=5)
-    assert ok is False
+    outcome = validate_solution(bad, "optimal", c, n=5)
+    assert outcome.accepted is False
 
 
 def test_rejects_box_violation():
     """Sums to 1 but one weight (0.90) exceeds the 0.40 cap."""
     c = _constraints(max_w=0.40)
     bad = np.array([0.90, 0.05, 0.03, 0.01, 0.01])
-    _, ok = validate_solution(bad, "optimal", c, n=5)
-    assert ok is False
+    outcome = validate_solution(bad, "optimal", c, n=5)
+    assert outcome.accepted is False
 
 
 def test_rejects_negative_weight_long_only():
     c = _constraints(is_long_only=True)
     bad = np.array([0.70, 0.40, 0.15, -0.30, 0.05])  # sums to 1 but PE < 0
-    _, ok = validate_solution(bad, "optimal", c, n=5)
-    assert ok is False
+    outcome = validate_solution(bad, "optimal", c, n=5)
+    assert outcome.accepted is False
 
 
 @pytest.mark.parametrize("status", ["infeasible", "unbounded",
@@ -158,8 +158,8 @@ def test_rejects_hard_status_even_if_weights_look_ok(status):
     """A feasible-looking w.value paired with a hard/None status is rejected —
     the solver is telling us it did not actually solve the problem."""
     c = _constraints()
-    _, ok = validate_solution(_feasible_w(), status, c, n=5)
-    assert ok is False
+    outcome = validate_solution(_feasible_w(), status, c, n=5)
+    assert outcome.accepted is False
 
 
 # -----------------------------------------------------------------------------
@@ -169,25 +169,25 @@ def test_rejects_hard_status_even_if_weights_look_ok(status):
 def test_accepts_inaccurate_but_feasible_with_warning(caplog):
     c = _constraints()
     with caplog.at_level(logging.WARNING):
-        w_out, ok = validate_solution(_feasible_w(), "optimal_inaccurate", c, n=5,
-                                      accept_inaccurate=True)
-    assert ok is True
+        outcome = validate_solution(
+            _feasible_w(), "optimal_inaccurate", c, n=5, accept_inaccurate=True)
+    assert outcome.accepted is True
     assert "imprecise" in caplog.text.lower()
 
 
 def test_rejects_inaccurate_and_infeasible():
     c = _constraints()
     blowup = _feasible_w() * 1e4
-    _, ok = validate_solution(blowup, "optimal_inaccurate", c, n=5)
-    assert ok is False
+    outcome = validate_solution(blowup, "optimal_inaccurate", c, n=5)
+    assert outcome.accepted is False
 
 
 def test_inaccurate_rejected_when_flag_off(caplog):
     c = _constraints()
     with caplog.at_level(logging.WARNING):
-        _, ok = validate_solution(_feasible_w(), "optimal_inaccurate", c, n=5,
-                                  accept_inaccurate=False)
-    assert ok is False
+        outcome = validate_solution(
+            _feasible_w(), "optimal_inaccurate", c, n=5, accept_inaccurate=False)
+    assert outcome.accepted is False
 
 
 # -----------------------------------------------------------------------------
@@ -196,16 +196,16 @@ def test_inaccurate_rejected_when_flag_off(caplog):
 
 def test_fallback_to_benchmark_when_no_weights_0():
     c = _constraints(with_weights_0=False, with_benchmark=True)
-    w_out, ok = validate_solution(None, "optimal", c, n=5)
-    assert ok is False
-    np.testing.assert_allclose(w_out, c.benchmark_weights.to_numpy())
+    outcome = validate_solution(None, "optimal", c, n=5)
+    assert outcome.accepted is False
+    np.testing.assert_allclose(outcome.weights, c.benchmark_weights.to_numpy())
 
 
 def test_fallback_to_zeros_when_no_weights_0_or_benchmark():
     c = _constraints(with_weights_0=False, with_benchmark=False)
-    w_out, ok = validate_solution(None, "optimal", c, n=5)
-    assert ok is False
-    np.testing.assert_allclose(w_out, np.zeros(5))
+    outcome = validate_solution(None, "optimal", c, n=5)
+    assert outcome.accepted is False
+    np.testing.assert_allclose(outcome.weights, np.zeros(5))
 
 
 # -----------------------------------------------------------------------------
@@ -226,14 +226,15 @@ def test_property_output_always_feasible_for_arbitrary_garbage():
                              "infeasible", "solver_error"])
         with _w.catch_warnings():
             _w.simplefilter("ignore")
-            w_out, ok = validate_solution(w, status, c, n=5)
-        assert np.all(np.isfinite(w_out))
-        if not ok:
+            outcome = validate_solution(w, status, c, n=5)
+        assert np.all(np.isfinite(outcome.weights))
+        if not outcome.accepted:
             # fallback is always feasible: fully invested (or zeros) and in-box
-            s = w_out.sum()
-            assert abs(s - 1.0) < 1e-6 or np.allclose(w_out, 0.0)
-            assert w_out.min() >= -1e-9
-            assert w_out.max() <= 0.40 + 1e-9 or np.allclose(w_out, 0.0)
+            s = outcome.weights.sum()
+            assert abs(s - 1.0) < 1e-6 or np.allclose(outcome.weights, 0.0)
+            assert outcome.weights.min() >= -1e-9
+            assert (outcome.weights.max() <= 0.40 + 1e-9
+                    or np.allclose(outcome.weights, 0.0))
 
 
 # -----------------------------------------------------------------------------
@@ -415,16 +416,16 @@ def _assert_writable_and_assignable(w):
 def test_cvxpy_fallback_is_writable():
     """Infeasible solve → fallback to weights_0 must be writable."""
     c = _constraints()            # carries a pd.Series weights_0
-    w, ok = validate_solution(None, 'infeasible', c, n=5)
-    assert ok is False
-    _assert_writable_and_assignable(w)
+    outcome = validate_solution(None, 'infeasible', c, n=5)
+    assert outcome.accepted is False
+    _assert_writable_and_assignable(outcome.weights)
 
 
 def test_cvxpy_accepted_solution_is_writable():
     c = _constraints()
-    w, ok = validate_solution(_feasible_w(), 'optimal', c, n=5)
-    assert ok is True
-    _assert_writable_and_assignable(w)
+    outcome = validate_solution(_feasible_w(), 'optimal', c, n=5)
+    assert outcome.accepted is True
+    _assert_writable_and_assignable(outcome.weights)
 
 
 def test_scipy_fallback_is_writable():

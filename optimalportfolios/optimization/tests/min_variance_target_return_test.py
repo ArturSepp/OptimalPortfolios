@@ -77,7 +77,7 @@ def run_local_test(local_test: LocalTests):
         print(f"Vols:   {dict(zip(tickers, [f'{v:.1%}' for v in vols]))}")
 
         for target in targets:
-            weights = wrapper_min_variance_target_return(
+            weights, _ = wrapper_min_variance_target_return(
                 pd_covar=pd_covar,
                 expected_returns=expected_returns,
                 target_return=target,
@@ -101,7 +101,7 @@ def run_local_test(local_test: LocalTests):
         print(f"Benchmark: {dict(zip(tickers, [f'{b:.0%}' for b in benchmark]))}")
 
         for target in targets:
-            weights = wrapper_min_variance_target_return(
+            weights, _ = wrapper_min_variance_target_return(
                 pd_covar=pd_covar,
                 expected_returns=expected_returns,
                 target_return=target,
@@ -126,7 +126,7 @@ def run_local_test(local_test: LocalTests):
             is_long_only=True,
             max_weights=pd.Series(0.6, index=tickers),
         )
-        w_hard = wrapper_min_variance_target_return(
+        w_hard, _ = wrapper_min_variance_target_return(
             pd_covar=pd_covar,
             expected_returns=expected_returns,
             target_return=target,
@@ -142,7 +142,7 @@ def run_local_test(local_test: LocalTests):
             constraint_enforcement_type=ConstraintEnforcementType.UTILITY_CONSTRAINTS,
             turnover_utility_weight=5.0,
         )
-        w_util = wrapper_min_variance_target_return(
+        w_util, _ = wrapper_min_variance_target_return(
             pd_covar=pd_covar,
             expected_returns=expected_returns,
             target_return=target,
@@ -169,7 +169,7 @@ def run_local_test(local_test: LocalTests):
         targets = np.arange(0.015, 0.060, 0.005)
         results = []
         for target in targets:
-            weights = wrapper_min_variance_target_return(
+            weights, _ = wrapper_min_variance_target_return(
                 pd_covar=pd_covar,
                 expected_returns=expected_returns,
                 target_return=target,
@@ -208,7 +208,7 @@ def run_local_test(local_test: LocalTests):
                                   max_weights=pd.Series(0.5, index=tickers))
 
         # (a) normal case
-        w_normal = wrapper_min_variance_target_return(
+        w_normal, _ = wrapper_min_variance_target_return(
             pd_covar=pd_covar,
             expected_returns=expected_returns,
             target_return=0.03,
@@ -224,7 +224,7 @@ def run_local_test(local_test: LocalTests):
         pd_covar_nan.loc['Gold', :] = np.nan
         pd_covar_nan.loc[:, 'Gold'] = np.nan
 
-        w_nan = wrapper_min_variance_target_return(
+        w_nan, _ = wrapper_min_variance_target_return(
             pd_covar=pd_covar_nan,
             expected_returns=expected_returns,
             target_return=0.03,
@@ -236,7 +236,7 @@ def run_local_test(local_test: LocalTests):
         print(f"Sum: {w_nan.sum():.4f}\n")
 
         # (c) infeasible target return (above max asset return) — should clamp
-        w_infeasible = wrapper_min_variance_target_return(
+        w_infeasible, _ = wrapper_min_variance_target_return(
             pd_covar=pd_covar,
             expected_returns=expected_returns,
             target_return=0.10,  # above max expected return of 6%

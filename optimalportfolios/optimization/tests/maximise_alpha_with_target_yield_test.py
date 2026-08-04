@@ -48,7 +48,7 @@ def run_local_test(local_test: LocalTests):
         print(f"\nVols:   {dict(zip(tickers, [f'{v:.1%}' for v in vols]))}")
 
         for target in targets:
-            weights = wrapper_maximise_alpha_with_target_return(
+            weights, _ = wrapper_maximise_alpha_with_target_return(
                 pd_covar=pd_covar,
                 alphas=alphas,
                 yields=yields,
@@ -76,7 +76,7 @@ def run_local_test(local_test: LocalTests):
         targets = np.arange(0.005, 0.055, 0.005)
         results = []
         for target in targets:
-            weights = wrapper_maximise_alpha_with_target_return(
+            weights, _ = wrapper_maximise_alpha_with_target_return(
                 pd_covar=pd_covar,
                 alphas=alphas,
                 yields=yields,

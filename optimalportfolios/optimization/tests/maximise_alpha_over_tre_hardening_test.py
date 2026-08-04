@@ -67,7 +67,7 @@ def test_happy_path_near_singular_covar_is_feasible():
     pd_covar = _near_singular_covar()
     alphas = pd.Series([0.01, 0.005, 0.01, 0.04, 0.04], index=TICKERS)
     constraints = _utility_constraints()
-    w = wrapper_maximise_alpha_over_tre(
+    w, _ = wrapper_maximise_alpha_over_tre(
         pd_covar=pd_covar,
         alphas=alphas,
         benchmark_weights=constraints.benchmark_weights,
@@ -110,9 +110,10 @@ def test_finite_garbage_solver_return_is_caught(monkeypatch, caplog):
     import logging
     with caplog.at_level(logging.WARNING,
                          logger="optimalportfolios.optimization.solver_diagnostics"):
-        w = cvx_maximise_tre_utility(
+        outcome = cvx_maximise_tre_utility(
             covar=covar, constraints=constraints, alphas=alphas,
             solver="CLARABEL", context="GROWM 2021-04-30")
+    w = outcome.weights
     assert any("REJECTED" in r.getMessage() for r in caplog.records)
 
     # the 5e5 garbage was rejected; we fell back to the (feasible) weights_0

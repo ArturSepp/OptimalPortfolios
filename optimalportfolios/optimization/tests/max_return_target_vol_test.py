@@ -81,7 +81,7 @@ def run_local_test(local_test: LocalTests):
         print(f"Vols:   {dict(zip(tickers, [f'{v:.1%}' for v in vols]))}")
 
         for vol_budget in vol_budgets:
-            weights = wrapper_max_return_target_vol(
+            weights, _ = wrapper_max_return_target_vol(
                 pd_covar=pd_covar,
                 expected_returns=expected_returns,
                 target_vol=vol_budget,
@@ -105,7 +105,7 @@ def run_local_test(local_test: LocalTests):
         print(f"Benchmark: {dict(zip(tickers, [f'{b:.0%}' for b in benchmark]))}")
 
         for te_budget in te_budgets:
-            weights = wrapper_max_return_target_vol(
+            weights, _ = wrapper_max_return_target_vol(
                 pd_covar=pd_covar,
                 expected_returns=expected_returns,
                 target_vol=te_budget,
@@ -128,7 +128,7 @@ def run_local_test(local_test: LocalTests):
             is_long_only=True,
             max_weights=pd.Series(0.5, index=tickers),
         )
-        w_hard = wrapper_max_return_target_vol(
+        w_hard, _ = wrapper_max_return_target_vol(
             pd_covar=pd_covar,
             expected_returns=expected_returns,
             target_vol=vol_budget,
@@ -147,7 +147,7 @@ def run_local_test(local_test: LocalTests):
                 constraint_enforcement_type=ConstraintEnforcementType.UTILITY_CONSTRAINTS,
                 tre_utility_weight=lam,
             )
-            w_util = wrapper_max_return_target_vol(
+            w_util, _ = wrapper_max_return_target_vol(
                 pd_covar=pd_covar,
                 expected_returns=expected_returns,
                 target_vol=vol_budget,
@@ -177,7 +177,7 @@ def run_local_test(local_test: LocalTests):
         vol_budgets = np.arange(0.03, 0.16, 0.01)
         results = []
         for vol_budget in vol_budgets:
-            weights = wrapper_max_return_target_vol(
+            weights, _ = wrapper_max_return_target_vol(
                 pd_covar=pd_covar,
                 expected_returns=expected_returns,
                 target_vol=vol_budget,
@@ -216,7 +216,7 @@ def run_local_test(local_test: LocalTests):
                                   max_weights=pd.Series(0.5, index=tickers))
 
         # (a) normal case — absolute vol
-        w_normal = wrapper_max_return_target_vol(
+        w_normal, _ = wrapper_max_return_target_vol(
             pd_covar=pd_covar,
             expected_returns=expected_returns,
             target_vol=0.08,
@@ -234,7 +234,7 @@ def run_local_test(local_test: LocalTests):
         pd_covar_nan.loc['Gold', :] = np.nan
         pd_covar_nan.loc[:, 'Gold'] = np.nan
 
-        w_nan = wrapper_max_return_target_vol(
+        w_nan, _ = wrapper_max_return_target_vol(
             pd_covar=pd_covar_nan,
             expected_returns=expected_returns,
             target_vol=0.08,
@@ -247,7 +247,7 @@ def run_local_test(local_test: LocalTests):
 
         # (c) with benchmark (TE mode)
         benchmark = pd.Series({'Equity': 0.40, 'Bonds': 0.30, 'Gold': 0.10, 'HighYield': 0.20})
-        w_te = wrapper_max_return_target_vol(
+        w_te, _ = wrapper_max_return_target_vol(
             pd_covar=pd_covar,
             expected_returns=expected_returns,
             target_vol=0.03,
@@ -263,7 +263,7 @@ def run_local_test(local_test: LocalTests):
         print(f"Sum:    {w_te.sum():.4f}\n")
 
         # (d) very tight vol budget — should produce conservative allocation
-        w_tight = wrapper_max_return_target_vol(
+        w_tight, _ = wrapper_max_return_target_vol(
             pd_covar=pd_covar,
             expected_returns=expected_returns,
             target_vol=0.03,

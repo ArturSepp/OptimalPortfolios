@@ -52,7 +52,7 @@ def run_local_test(local_test: LocalTests):
                                 index=prices.columns, columns=prices.columns)
         print(f"pd_covar=\n{pd_covar}")
 
-        weights = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
+        weights, _ = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
                                                     means=52.0*returns.mean(axis=0),
                                                     constraints=constraints,
                                                     weights_0=benchmark_weights)
