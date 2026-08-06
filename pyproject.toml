@@ -3,11 +3,12 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
+license = "MIT"
+license-files = ["LICENSE.txt"]
 name = "optimalportfolios"
 version = "6.9.0"
 description = "Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python"
 readme = "README.md"
-license = {text = "MIT"}
 authors = [
     {name = "Artur Sepp", email = "artursepp@gmail.com"},
 ]
@@ -29,18 +30,16 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Financial and Insurance Industry",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
     "Topic :: Office/Business :: Financial :: Investment",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 dependencies = [
     "numpy>=2.0",
@@ -155,3 +154,18 @@ pandas = "pd"
 [tool.coverage.run]
 source = ["optimalportfolios"]
 omit = ["*/tests/*", "*/examples/*", "papers/*"]
+
+[dependency-groups]
+test = ["pytest>=8.0", "pytest-cov>=5.0"]
+
+[tool.bumpversion]
+current_version = "6.9.0"
+tag = false
+commit = false
+allow_dirty = false
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+regex = true
+search = '(?ms)^\[project\]((?:(?!^\[)[\s\S])*?)^version = "{current_version}"'
+replace = '[project]\1version = "{new_version}"'
