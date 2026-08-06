@@ -166,6 +166,7 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     MULTI_COVAR_ESTIMATORS_BACKTEST = 1
 
 

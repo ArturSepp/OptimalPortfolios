@@ -36,11 +36,13 @@ KKT_RTOL = 1e-4  # relative spread of RC_i / b_i over free assets
 
 
 def _cov_from(vols: np.ndarray, rho: np.ndarray) -> np.ndarray:
+    """Build a covariance from a vol vector and a correlation matrix."""
     vols = np.asarray(vols)
     return np.outer(vols, vols) * np.asarray(rho)
 
 
 def _risk_contributions(x: np.ndarray, covar: np.ndarray) -> np.ndarray:
+    """Per-asset risk contributions to portfolio vol (they sum to it)."""
     sigma = np.sqrt(x @ covar @ x)
     return x * (covar @ x) / sigma
 
@@ -187,23 +189,27 @@ def test_paper_table9_two_rows():
 # -----------------------------------------------------------------------------
 
 def test_pyrb_parity_erc4():
+    """Frozen pyrb parity: unconstrained ERC on the four-asset problem."""
     x, _ = solve_constrained_risk_budgeting(covar=COV4)
     np.testing.assert_allclose(x, PYRB_ERC4, atol=PYRB_PARITY_ATOL)
 
 
 def test_pyrb_parity_rb4():
+    """Frozen pyrb parity: tilted budgets on the four-asset problem."""
     x, _ = solve_constrained_risk_budgeting(covar=COV4,
                                             budgets=np.array([0.30, 0.30, 0.195, 0.205]))
     np.testing.assert_allclose(x, PYRB_RB4, atol=PYRB_PARITY_ATOL)
 
 
 def test_pyrb_parity_erc4_box():
+    """Frozen pyrb parity: four-asset ERC under a 30% box cap."""
     x, _ = solve_constrained_risk_budgeting(covar=COV4,
                                             bounds=np.array([[0.0, 0.30]] * 4))
     np.testing.assert_allclose(x, PYRB_ERC4_BOX30, atol=PYRB_PARITY_ATOL)
 
 
 def test_pyrb_parity_erc8_one_row():
+    """Frozen pyrb parity: eight-asset ERC under one group floor row."""
     c_rows = -np.array([[0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0]])
     c_lhs = -np.array([0.30])
     x, _ = solve_constrained_risk_budgeting(covar=COV8, c_rows=c_rows, c_lhs=c_lhs)
@@ -211,6 +217,7 @@ def test_pyrb_parity_erc8_one_row():
 
 
 def test_pyrb_parity_erc8_two_rows():
+    """Frozen pyrb parity: eight-asset ERC under two group rows."""
     c_rows = np.array([[0.0, 0.0, 0.0, 0.0, -1.0, -1.0, -1.0, -1.0],
                        [1.0, -1.0, 0.0, 0.0, 1.0, -1.0, 0.0, 0.0]])
     c_lhs = np.array([-0.30, -0.05])
@@ -316,6 +323,7 @@ def test_zero_sum_budgets_raise_cleanly():
 
 
 def test_negative_budget_raises():
+    """A negative budget raises, naming the non-negativity requirement."""
     try:
         solve_constrained_risk_budgeting(covar=COV4,
                                          budgets=np.array([0.5, 0.5, 0.5, -0.5]))
@@ -341,6 +349,7 @@ def test_malformed_bounds_raise_value_error_not_index_error():
 # -----------------------------------------------------------------------------
 
 class LocalTests(Enum):
+    """Groups of tests the local dispatcher can run."""
     PAPER_TABLES = 1
     PYRB_PARITY = 2
     PROPERTIES = 3

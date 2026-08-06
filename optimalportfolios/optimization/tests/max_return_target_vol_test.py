@@ -46,6 +46,7 @@ def print_portfolio(label: str,
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     MAX_RETURN_ABS_VOL = 1
     MAX_RETURN_TE_BUDGET = 2
     HARD_VS_UTILITY = 3

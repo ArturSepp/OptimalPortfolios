@@ -26,6 +26,7 @@ def plot_static_risk_budgets_vs_weights(prices: pd.DataFrame,
                                         strategy_ticker: str = 'Risk-budgeted portfolio',
                                         benchmark_ticker: str = 'Static portfolio'
                                         ) -> List[plt.Figure]:
+    """Report the risk-budgeted portfolio against the static-weight portfolio."""
     # create static_weights on same
     static_weights = pd.DataFrame.from_dict({date: given_static_weights for date in risk_budgets_weights.index}, orient='index')
 
@@ -91,6 +92,7 @@ def plot_static_risk_budgets_vs_weights(prices: pd.DataFrame,
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     SOLVE_FOR_RISK_BUDGETS = 1
     ILLUSTRATE_WEIGHTS = 2
 

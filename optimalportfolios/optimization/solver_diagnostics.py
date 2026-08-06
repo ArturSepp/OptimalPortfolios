@@ -289,6 +289,7 @@ class OptimizationOutcome:
 
     @property
     def compliant(self) -> bool:
+        """Whether every hard constraint residual passed at its tolerance."""
         return all(r.passed for r in self.constraint_residuals if r.hard)
 
     def residuals_frame(self) -> pd.DataFrame:
@@ -351,6 +352,7 @@ def evaluate_constraint_residuals(
             upper: Optional[float] = None,
             hard: bool = True,
             atol: float = tolerance) -> None:
+        """Record one residual, deriving its violation from the supplied bounds."""
         violation = 0.0
         if lower is not None:
             violation = max(violation, float(lower) - float(actual))
@@ -628,6 +630,7 @@ def validate_solution(
 
     def _result(weights: np.ndarray, accepted: bool, reason: str = '',
                 fallback_source: Optional[str] = None) -> OptimizationOutcome:
+        """Wrap ``weights`` in an outcome, auditing them against the solve geometry."""
         residuals = evaluate_constraint_residuals(
             weights=weights,
             constraints=constraints,
@@ -650,6 +653,7 @@ def validate_solution(
 
     def _reject(reason: str, level: int = logging.ERROR,
                 w: Optional[np.ndarray] = None):
+        """Log the rejection and return the fallback outcome for ``reason``."""
         fallback, source = _compute_fallback(constraints, tickers, n)
         msg = (f"{tag}solver={solver} status={problem_status}: REJECTED solution "
                f"({reason}); falling back to {source}.")
@@ -756,6 +760,7 @@ def validate_scipy_solution(
 
     def _reject(reason: str, level: int = logging.ERROR,
                 w: Optional[np.ndarray] = None) -> Tuple[np.ndarray, bool]:
+        """Log the rejection and return ``(fallback, False)`` for ``reason``."""
         fallback, source = _compute_fallback(constraints, tickers, n)
         msg = (f"{tag}solver={solver} success={success} status={status}: "
                f"REJECTED solution ({reason}; scipy: {message}); "
@@ -827,6 +832,7 @@ def validate_rb_solution(
 
     def _reject(reason: str, level: int = logging.ERROR,
                 w: Optional[np.ndarray] = None) -> Tuple[np.ndarray, bool]:
+        """Log the rejection and return ``(fallback, False)`` for ``reason``."""
         fallback, source = _compute_fallback(constraints, tickers, n)
         msg = (f"{tag}solver={solver}: REJECTED solution ({reason}); "
                f"falling back to {source}.")
@@ -947,33 +953,40 @@ class SolverRejectionSummary(logging.Handler):
     """
 
     def __init__(self) -> None:
+        """Create the handler at DEBUG so accepted solves are tallied too."""
         super().__init__(level=logging.DEBUG)   # DEBUG so accepted solves are tallied too
         self.records: List[SolverDiagnostic] = []
 
     def emit(self, record: logging.LogRecord) -> None:
+        """Collect the ``SolverDiagnostic`` on ``record``, ignoring other records."""
         diag = getattr(record, "solver_diag", None)
         if isinstance(diag, SolverDiagnostic):
             self.records.append(diag)
 
     @property
     def n_total(self) -> int:
+        """Number of solves recorded this run."""
         return len(self.records)
 
     @property
     def n_accepted(self) -> int:
+        """Number of solves whose solver output was accepted."""
         return sum(1 for d in self.records if d.accepted)
 
     @property
     def n_rejected(self) -> int:
+        """Number of solves that fell back instead of using the solver output."""
         return sum(1 for d in self.records if not d.accepted)
 
     @property
     def n_blowup(self) -> int:
+        """Rejections logged at ERROR: the numerical blow-up case."""
         return sum(1 for d in self.records
                    if not d.accepted and d.severity >= logging.ERROR)
 
     @property
     def n_infeasible_fallback(self) -> int:
+        """Rejections logged below ERROR: the solver reported no usable solution."""
         return sum(1 for d in self.records
                    if not d.accepted and d.severity < logging.ERROR)
 
@@ -983,6 +996,7 @@ class SolverRejectionSummary(logging.Handler):
         return self.n_rejected / self.n_total if self.n_total else 0.0
 
     def summary(self) -> str:
+        """One-line tally of solves, rejections by severity, and fallback rate."""
         return (f"solver outcomes this run: {self.n_total} solves, "
                 f"{self.n_rejected} rejected "
                 f"({self.n_blowup} ERROR / numerical blow-up, "
@@ -1031,28 +1045,34 @@ class RelaxationSummary(logging.Handler):
     """
 
     def __init__(self) -> None:
+        """Create the handler at DEBUG so every relaxation record is tallied."""
         super().__init__(level=logging.DEBUG)
         self.records: List[RelaxationRecord] = []
 
     def emit(self, record: logging.LogRecord) -> None:
+        """Collect the ``RelaxationRecord`` on ``record``, ignoring other records."""
         rec = getattr(record, "relaxation", None)
         if isinstance(rec, RelaxationRecord):
             self.records.append(rec)
 
     @property
     def n_rebalances_relaxed(self) -> int:
+        """Number of rebalances on which a group bound was relaxed."""
         return len(self.records)
 
     @property
     def n_breached_budget(self) -> int:
+        """Number of relaxed rebalances that breached the budget."""
         return sum(1 for r in self.records if r.breached_budget)
 
     @property
     def n_breached_tol(self) -> int:
+        """Number of relaxed rebalances that breached the magnitude tolerance."""
         return sum(1 for r in self.records if r.breached_tol)
 
     @property
     def max_relaxation(self) -> float:
+        """Largest single relaxation this run (0.0 when none was recorded)."""
         return max((r.max_relaxation for r in self.records), default=0.0)
 
     def bound_frequency(self) -> Dict[Tuple[str, str], int]:
@@ -1064,6 +1084,7 @@ class RelaxationSummary(logging.Handler):
         return freq
 
     def summary(self) -> str:
+        """One-line tally of relaxed rebalances, most-relaxed bounds, and breaches."""
         if not self.records:
             return "group-bound relaxations this run: none"
         freq = self.bound_frequency()
@@ -1082,15 +1103,18 @@ class DroppedGroupSummary(logging.Handler):
     """Aggregate expected zero-loading group removals without warning spam."""
 
     def __init__(self) -> None:
+        """Create the handler at DEBUG so every dropped-group record is tallied."""
         super().__init__(level=logging.DEBUG)
         self.records: List[DroppedGroupRecord] = []
 
     def emit(self, record: logging.LogRecord) -> None:
+        """Collect the ``DroppedGroupRecord`` on ``record``, ignoring other records."""
         item = getattr(record, 'dropped_groups', None)
         if isinstance(item, DroppedGroupRecord):
             self.records.append(item)
 
     def summary(self) -> str:
+        """One-line tally of dropped zero-loading groups and the most frequent ones."""
         if not self.records:
             return 'zero-loading groups dropped: none'
         frequency: Dict[str, int] = {}
@@ -1107,11 +1131,13 @@ class WarningSummary(logging.Handler):
     """Aggregate captured Python warnings by operational category."""
 
     def __init__(self) -> None:
+        """Create the handler at WARNING, the level captured warnings arrive on."""
         super().__init__(level=logging.WARNING)
         self.counts: Dict[str, int] = {}
 
     @staticmethod
     def category(record: logging.LogRecord) -> str:
+        """Reduce a warning record to a stable, countable category label."""
         message = record.getMessage()
         if 'factorlasso:' in message and 'fewer than warmup_period' in message:
             return 'factorlasso warm-up assets zeroed'
@@ -1120,10 +1146,12 @@ class WarningSummary(logging.Handler):
         return message.strip().splitlines()[0][:160]
 
     def emit(self, record: logging.LogRecord) -> None:
+        """Increment the tally for this record's category."""
         category = self.category(record)
         self.counts[category] = self.counts.get(category, 0) + 1
 
     def summary(self) -> str:
+        """One-line tally of captured warnings and the most frequent categories."""
         total = sum(self.counts.values())
         if total == 0:
             return 'captured warnings: none'
@@ -1136,11 +1164,13 @@ class _RepeatedWarningFilter(logging.Filter):
     """Keep the first few repeated warm-up warnings in human-readable logs."""
 
     def __init__(self, max_per_category: int = 3) -> None:
+        """Create the filter, keeping ``max_per_category`` records per throttled category."""
         super().__init__()
         self.max_per_category = max_per_category
         self.counts: Dict[str, int] = {}
 
     def filter(self, record: logging.LogRecord) -> bool:
+        """Pass a record through unless it exceeds the warm-up warning quota."""
         if record.name != 'py.warnings':
             return True
         category = WarningSummary.category(record)
@@ -1193,44 +1223,54 @@ class InputContractSummary(logging.Handler):
     """
 
     def __init__(self) -> None:
+        """Create the handler at DEBUG so every contract evaluation is tallied."""
         super().__init__(level=logging.DEBUG)
         self.records: List[InputContractRecord] = []
 
     def emit(self, record: logging.LogRecord) -> None:
+        """Collect the ``InputContractRecord`` on ``record``, ignoring other records."""
         rec = getattr(record, "input_contract", None)
         if isinstance(rec, InputContractRecord):
             self.records.append(rec)
 
     @property
     def n_solves(self) -> int:
+        """Number of pre-solve contract evaluations recorded."""
         return len(self.records)
 
     @property
     def n_ill_conditioned(self) -> int:
+        """Number of evaluations whose raw covariance was ill-conditioned."""
         return sum(1 for r in self.records if r.ill_conditioned)
 
     @property
     def n_benchmark(self) -> int:
+        """Number of evaluations with a benchmark weight outside its box."""
         return sum(1 for r in self.records if r.benchmarks)
 
     @property
     def n_group(self) -> int:
+        """Number of evaluations with an unreachable group bound."""
         return sum(1 for r in self.records if r.groups)
 
     @property
     def n_structural(self) -> int:
+        """Number of evaluations with a box-versus-budget infeasibility."""
         return sum(1 for r in self.records if r.structural)
 
     @property
     def n_covar(self) -> int:
+        """Number of evaluations with a hard covariance-integrity problem."""
         return sum(1 for r in self.records if r.covar_issues)
 
     @property
     def worst_min_eig(self) -> float:
+        """Smallest raw minimum eigenvalue over ill-conditioned solves, NaN when none."""
         eigs = [r.min_eig for r in self.records if r.ill_conditioned and r.min_eig == r.min_eig]
         return min(eigs) if eigs else float("nan")
 
     def collinear_frequency(self) -> Dict[Tuple[str, str], int]:
+        """How many evaluations each unordered collinear asset pair appeared in."""
         freq: Dict[Tuple[str, str], int] = {}
         for r in self.records:
             if r.collinear_pair is not None:
@@ -1239,6 +1279,7 @@ class InputContractSummary(logging.Handler):
         return freq
 
     def group_frequency(self) -> Dict[Tuple[str, str], int]:
+        """How many evaluations each ``(group, kind)`` reachability finding appeared in."""
         freq: Dict[Tuple[str, str], int] = {}
         for r in self.records:
             for item in r.groups:
@@ -1246,6 +1287,7 @@ class InputContractSummary(logging.Handler):
         return freq
 
     def benchmark_frequency(self) -> Dict[Tuple[int, str], int]:
+        """How many evaluations each ``(index, kind)`` benchmark finding appeared in."""
         freq: Dict[Tuple[int, str], int] = {}
         for r in self.records:
             for item in r.benchmarks:
@@ -1253,6 +1295,7 @@ class InputContractSummary(logging.Handler):
         return freq
 
     def summary(self) -> str:
+        """Report the contract findings, one line per affected category."""
         m = self.n_solves
         if m == 0:
             return "input contract: no solves recorded"
@@ -1309,6 +1352,16 @@ class RunDiagnostics:
                  warnings_summary: Optional[WarningSummary] = None,
                  installed_handlers: Optional[List[Tuple[logging.Logger,
                                                          logging.Handler]]] = None) -> None:
+        """Bundle the run-level handlers and record which of them this run installed.
+
+        Args:
+            rejections: Per-solve accept/reject tally.
+            relaxations: Frozen-overhang group-bound relaxation tally.
+            contract: Optional pre-solve input-contract tally.
+            dropped_groups: Optional zero-loading group removal tally.
+            warnings_summary: Optional captured-warning tally.
+            installed_handlers: ``(logger, handler)`` pairs that ``close()`` detaches.
+        """
         self.rejections = rejections
         self.relaxations = relaxations
         self.contract = contract
@@ -1317,6 +1370,7 @@ class RunDiagnostics:
         self._installed_handlers = installed_handlers or []
 
     def summary(self) -> str:
+        """Concatenate the summary of every attached handler, one section each."""
         parts = [self.rejections.summary(), self.relaxations.summary()]
         if self.contract is not None:
             parts.append(self.contract.summary())
@@ -1383,6 +1437,7 @@ class RunDiagnostics:
 
     def check_fallback_gate(self, max_fraction: float = 0.05,
                             raise_on_breach: bool = False) -> bool:
+        """Apply the fallback gate; see ``SolverRejectionSummary.check_fallback_gate``."""
         return self.rejections.check_fallback_gate(max_fraction, raise_on_breach)
 
 
@@ -1398,6 +1453,7 @@ def log_environment(config_hash: Optional[str] = None) -> None:
     import platform
 
     def _ver(mod_name: str) -> str:
+        """Return ``mod_name.__version__``, or ``'n/a'`` when it cannot be imported."""
         try:
             return importlib.import_module(mod_name).__version__
         except Exception:
@@ -1586,6 +1642,7 @@ def diagnose_solver_failure(problem_status: Optional[str], constraints: Constrai
 
 
 def _diag_asset_index(constraints: Constraints) -> Optional[pd.Index]:
+    """Return the asset index of the first indexed constraint bound, if any carries one."""
     for fld in ("min_weights", "max_weights", "benchmark_weights"):
         s = getattr(constraints, fld, None)
         if isinstance(s, pd.Series):
@@ -1700,6 +1757,7 @@ def diagnose_infeasibility(constraints: Constraints, covar: Optional[np.ndarray]
         return {}
 
     def _val(var: Any, elem: Optional[int]) -> float:
+        """Read one elastic slack value, indexing ``elem`` for the vector slacks."""
         return float(var.value if elem is None else var.value[elem])
 
     violations = {}
@@ -1843,6 +1901,7 @@ def validate_solver_inputs(pd_covar: pd.DataFrame, constraints: Constraints,
     n = len(idx) if idx is not None else (pd_covar.shape[0] if pd_covar is not None else 0)
 
     def _record(ok: bool) -> InputContractRecord:
+        """Snapshot the findings gathered so far as an ``InputContractRecord``."""
         return InputContractRecord(
             context=context, ok=ok, ill_conditioned=ill_conditioned,
             cond=cond_v, min_eig=mineig_v, collinear_pair=collinear_pair,

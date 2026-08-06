@@ -88,6 +88,7 @@ def fetch_minimal_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     ILLUSTRATE_INPUT_DATA = 1
 
 

@@ -86,6 +86,7 @@ class TestRunSignalDiagnostics:
     """run_signal_diagnostics — pure compute."""
 
     def test_accepts_alphas_data(self):
+        """An ``AlphasData`` signal runs at the requested horizons."""
         ard, ad, gd = _make_synthetic_alphas_data()
         result = run_signal_diagnostics(asset_returns_dict=ard, signal=ad,
                                         group_data=gd, horizons=[1, 3])
@@ -100,12 +101,14 @@ class TestRunSignalDiagnostics:
         assert list(result.pooled_universe.index) == ['1', '2', '3', '6']
 
     def test_accepts_dataframe(self):
+        """A plain score DataFrame is accepted in place of ``AlphasData``."""
         ard, ad, _ = _make_synthetic_alphas_data()
         result = run_signal_diagnostics(asset_returns_dict=ard,
                                         signal=ad.alpha_scores, horizons=[1])
         assert isinstance(result, qis.SignalDiagnosticsResult)
 
     def test_signal_attribute_selection(self):
+        """``signal_attribute`` picks which score panel is diagnosed."""
         ard, ad, gd = _make_synthetic_alphas_data()
         r1 = run_signal_diagnostics(asset_returns_dict=ard, signal=ad,
                                     signal_attribute='alpha_scores',
@@ -117,6 +120,7 @@ class TestRunSignalDiagnostics:
         assert np.isfinite(r2.pooled_universe.loc['1', 'beta'])
 
     def test_raises_on_missing_attribute(self):
+        """An attribute that ``AlphasData`` does not define raises."""
         ard, ad, _ = _make_synthetic_alphas_data()
         with pytest.raises(AttributeError):
             run_signal_diagnostics(asset_returns_dict=ard, signal=ad,
@@ -124,6 +128,7 @@ class TestRunSignalDiagnostics:
                                    horizons=[1])
 
     def test_raises_when_signal_attribute_is_none(self):
+        """An attribute that is present but unpopulated raises."""
         ard, ad, _ = _make_synthetic_alphas_data()
         with pytest.raises(ValueError, match='is None'):
             run_signal_diagnostics(asset_returns_dict=ard, signal=ad,
@@ -135,6 +140,7 @@ class TestRunSignalDiagnosticsPerComponent:
     """run_signal_diagnostics_per_component — compute sweep."""
 
     def test_runs_only_populated_components(self):
+        """The sweep covers exactly the populated score components."""
         ard, ad, gd = _make_synthetic_alphas_data()
         results = run_signal_diagnostics_per_component(
             asset_returns_dict=ard, alphas_data=ad,
@@ -144,6 +150,7 @@ class TestRunSignalDiagnosticsPerComponent:
                                        'beta_score'}
 
     def test_components_filter(self):
+        """``components`` restricts the sweep to the named panels."""
         ard, ad, gd = _make_synthetic_alphas_data()
         results = run_signal_diagnostics_per_component(
             asset_returns_dict=ard, alphas_data=ad, group_data=gd,
@@ -156,9 +163,11 @@ class TestCompareSignalDiagnostics:
     """compare_signal_diagnostics — comparison table."""
 
     def test_returns_empty_for_empty_dict(self):
+        """An empty result dict compares to an empty table."""
         assert compare_signal_diagnostics({}).empty
 
     def test_aggregates_pooled_rows_multi_horizon(self):
+        """Multi-horizon results aggregate to one row per signal and horizon."""
         ard, ad, gd = _make_synthetic_alphas_data()
         results = run_signal_diagnostics_per_component(
             asset_returns_dict=ard, alphas_data=ad,
@@ -169,6 +178,7 @@ class TestCompareSignalDiagnostics:
         assert len(out) == 6   # 3 signals × 2 horizons
 
     def test_aggregates_pooled_rows_single_horizon(self):
+        """A single horizon aggregates to one row per signal."""
         ard, ad, gd = _make_synthetic_alphas_data()
         results = run_signal_diagnostics_per_component(
             asset_returns_dict=ard, alphas_data=ad,

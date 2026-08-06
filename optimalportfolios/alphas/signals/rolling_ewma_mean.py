@@ -1,3 +1,5 @@
+"""Expanding EWMA mean returns evaluated on a rebalancing schedule."""
+
 import pandas as pd
 import qis as qis
 

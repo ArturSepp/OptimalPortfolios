@@ -55,6 +55,13 @@ class CovarianceFactorization:
     max_eigenvalue_adjustment: float = 0.0
 
     def __post_init__(self) -> None:
+        """Validate shape, finiteness and the ``factor @ factor.T == covar`` identity.
+
+        Raises:
+            ValueError: If the covariance is not square, the factor has the wrong
+                number of rows, either input is non-finite, or the reconstruction
+                misses ``covar`` by more than ``DEFAULT_RECONSTRUCTION_RTOL``.
+        """
         covar = np.asarray(self.covar, dtype=float)
         factor = np.asarray(self.factor, dtype=float)
         if covar.ndim != 2 or covar.shape[0] != covar.shape[1]:

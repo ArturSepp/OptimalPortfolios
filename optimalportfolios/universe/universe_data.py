@@ -78,10 +78,12 @@ class UniverseData:
     validate_on_init: bool = field(default=True, repr=False)
 
     def __post_init__(self):
+        """Validate the universe on construction unless ``validate_on_init`` is off."""
         if self.validate_on_init:
             self.validate()
 
     def rename_index(self) -> UniverseData:
+        """Return a copy with assets renamed from tickers to their metadata names."""
         rename_map = self.name.to_dict()
         prices = self.prices.rename(rename_map, axis=1)
         metadata = self.metadata.rename(rename_map, axis=0)
@@ -108,6 +110,7 @@ class UniverseData:
             self._validate_group_loadings()
 
     def _validate_asset_alignment(self) -> None:
+        """Raise when price columns and metadata rows describe different assets."""
         price_assets = set(self.prices.columns)
         meta_assets = set(self.metadata.index)
         if price_assets != meta_assets:
@@ -119,6 +122,7 @@ class UniverseData:
             )
 
     def _validate_metadata_fields(self) -> None:
+        """Raise when a metadata column required by ``metadata_fields`` is absent."""
         required = {f.value for f in self.metadata_fields}
         present = set(self.metadata.columns)
         missing = required - present
@@ -126,6 +130,7 @@ class UniverseData:
             raise ValueError(f"Metadata missing required columns: {missing}")
 
     def _validate_group_loadings(self) -> None:
+        """Raise when a group-loadings index does not match the price columns."""
         price_assets = set(self.prices.columns)
         for name, gl in [('level1', self.group_loadings_level1),
                          ('level2', self.group_loadings_level2)]:
@@ -135,6 +140,7 @@ class UniverseData:
                 )
 
     def _validate_no_duplicates(self) -> None:
+        """Raise when an asset name appears twice in prices or metadata."""
         if self.prices.columns.duplicated().any():
             dupes = self.prices.columns[self.prices.columns.duplicated()].tolist()
             raise ValueError(f"Duplicate asset names in prices: {dupes}")
@@ -143,6 +149,7 @@ class UniverseData:
             raise ValueError(f"Duplicate asset names in metadata: {dupes}")
 
     def _validate_no_nulls_in_metadata(self) -> None:
+        """Raise when a required metadata column contains nulls."""
         required = {f.value for f in self.metadata_fields}
         nulls = self.metadata[list(required)].isnull().any()
         cols_with_nulls = nulls[nulls].index.tolist()
@@ -151,26 +158,32 @@ class UniverseData:
 
     @property
     def name(self) -> pd.Series:
+        """Long asset names, indexed by ticker."""
         return self.metadata[MetadataField.NAME]
 
     @property
     def asset_class(self) -> pd.Series:
+        """Asset class per asset."""
         return self.metadata[MetadataField.ASSET_CLASS]
 
     @property
     def currency(self) -> pd.Series:
+        """Currency per asset."""
         return self.metadata[MetadataField.CURRENCY]
 
     @property
     def assets(self) -> list[str]:
+        """Asset tickers in price-column order."""
         return list(self.prices.columns)
 
     @property
     def n_assets(self) -> int:
+        """Number of assets in the universe."""
         return len(self.prices.columns)
 
     @property
     def date_range(self) -> tuple[pd.Timestamp, pd.Timestamp]:
+        """First and last price date."""
         return self.prices.index[0], self.prices.index[-1]
 
     @classmethod
@@ -279,6 +292,16 @@ class UniverseData:
                                returns_freqs: str = 'ME',
                                is_log_returns: bool = False
                                ) -> Dict[str, pd.DataFrame]:
+        """Resample the universe prices to returns through ``qis``.
+
+        Args:
+            returns_freqs: Pandas frequency at which returns are computed.
+            is_log_returns: Return log rather than arithmetic returns.
+
+        Returns:
+            Frequency keyed returns, with the first observation kept as zero rather
+            than dropped.
+        """
         asset_returns_dict = qis.compute_asset_returns_dict(
             prices=self.prices,
             returns_freqs=returns_freqs,

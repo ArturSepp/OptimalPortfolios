@@ -1,3 +1,8 @@
+"""Local diagnostic script for the quadratic and maximum-Sharpe solvers.
+
+Prints and plots solved portfolios; contributes no collected tests.
+"""
+
 # packages
 import numpy as np
 import pandas as pd
@@ -25,6 +30,7 @@ def _print_portfolio_outputs(optimal_weights: np.ndarray,
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     MIN_VAR = 1
     MAX_UTILITY = 2
     EFFICIENT_FRONTIER = 3

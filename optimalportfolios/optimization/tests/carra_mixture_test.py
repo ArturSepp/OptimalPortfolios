@@ -1,3 +1,8 @@
+"""Local diagnostic script for the CARA and CARA-mixture solvers.
+
+Prints solved weights for hand-built inputs; contributes no collected tests.
+"""
+
 import numpy as np
 from enum import Enum
 
@@ -6,6 +11,7 @@ from optimalportfolios.optimization.general.carra_mixture import opt_maximize_ca
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     CARA = 1
     CARA_MIX = 2
 

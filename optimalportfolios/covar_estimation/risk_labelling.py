@@ -77,6 +77,11 @@ def _cluster_series(cd: CurrentFactorCovarData) -> pd.Series:
 # --------------------------------------------------------------------------- #
 @dataclass(frozen=True)
 class _Fingerprint:
+    """One raw cluster at one date, reduced to what lineage matching needs.
+
+    Carries the members, their weighted factor beta, the factor / idiosyncratic
+    variance split, the implied R2 and the dominant factor.
+    """
     members: Tuple[str, ...]
     beta: np.ndarray          # (M,)
     factor_var: float
@@ -127,6 +132,10 @@ def _snapshot_fingerprints(cd: CurrentFactorCovarData,
 # affinity
 # --------------------------------------------------------------------------- #
 def _overlap(a: Tuple[str, ...], b: Tuple[str, ...], common: set, metric: str) -> float:
+    """Membership affinity of two clusters over the assets common to both dates.
+
+    Jaccard index when ``metric`` is ``'jaccard'``, overlap coefficient otherwise.
+    """
     aset, bset = set(a) & common, set(b) & common
     if not aset or not bset:
         return 0.0
@@ -173,6 +182,7 @@ def _match_panel(snapshots: Dict[pd.Timestamp, Dict[Any, _Fingerprint]],
     next_did = [0]
 
     def new_id() -> str:
+        """Return the next derived-track id."""
         next_did[0] += 1
         return f"d{next_did[0]:03d}"
 
@@ -373,6 +383,7 @@ def _match_panel_mcf(snapshots: Dict[pd.Timestamp, Dict[Any, _Fingerprint]],
     did_of: Dict[Tuple, str] = {}
     counter = [0]
     def new_id() -> str:
+        """Return the next derived-track id."""
         counter[0] += 1; return f"d{counter[0]:03d}"
     for v in sorted(nodes, key=lambda x: (didx[x[0]], str(x[1]))):
         if v in pred:
@@ -413,6 +424,7 @@ def _match_panel_mcf(snapshots: Dict[pd.Timestamp, Dict[Any, _Fingerprint]],
 # --------------------------------------------------------------------------- #
 @dataclass(frozen=True)
 class TrackPanel:
+    """One derived track's fingerprint history: betas, vol split, R2, size and members."""
     betas: pd.DataFrame
     factor_vol: pd.Series
     idio_vol: pd.Series
@@ -426,6 +438,7 @@ class TrackPanel:
 def _build_tracks(relabel: pd.DataFrame,
                   snapshots: Dict[pd.Timestamp, Dict[Any, _Fingerprint]],
                   factors: List[str]) -> Dict[str, TrackPanel]:
+    """Group the relabelled snapshots into one fingerprint panel per derived track."""
     tracks: Dict[str, TrackPanel] = {}
     for did, grp in relabel.groupby('derived_id'):
         rows_beta, idx = [], []
@@ -450,6 +463,12 @@ def _build_tracks(relabel: pd.DataFrame,
 
 def _classify(tracks: Dict[str, TrackPanel], x_covars: Dict[pd.Timestamp, np.ndarray],
               n_dates: int, cfg: TaxonomyConfig) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Classify each track and collect its within-track beta breaks.
+
+    Returns:
+        ``(classification, transitions)`` — one classification row per track,
+        sorted by coverage, and one transition row per beta-regime break.
+    """
     rows, trans = [], []
     for did, tp in tracks.items():
         live = list(tp.betas.index)
@@ -502,6 +521,7 @@ def _classify(tracks: Dict[str, TrackPanel], x_covars: Dict[pd.Timestamp, np.nda
 # --------------------------------------------------------------------------- #
 @dataclass(frozen=True)
 class RiskClusterReport:
+    """Lineage analysis result, with label, panel, table and figure views."""
     relabel: pd.DataFrame
     tracks: Dict[str, TrackPanel]
     classification: pd.DataFrame
@@ -594,6 +614,7 @@ class RiskClusterReport:
         return panel.reindex(sorted(panel.columns), axis=1)
 
     def _labels(self, label_kind: str, asset_meta: Optional[pd.DataFrame]) -> pd.Series:
+        """Return derived_id to label for the requested ``label_kind``."""
         if label_kind == 'factor':
             return self.factor_labels()
         if label_kind == 'meta':
@@ -625,6 +646,7 @@ class RiskClusterReport:
         return row.map(self._labels(label_kind, asset_meta).to_dict())
 
     def to_tables(self) -> Dict[str, pd.DataFrame]:
+        """Return the report as workbook-ready tables keyed by name."""
         return dict(classification=self.classification,
                     membership_panel=self.to_membership_panel(),
                     lineage=self.lineage,
@@ -632,6 +654,7 @@ class RiskClusterReport:
                     relabel=self.relabel)
 
     def to_figures(self):
+        """Plot the lineage timeline and the per-track factor-vol heatmap."""
         import matplotlib.pyplot as plt
         figs = []
         # 1. lineage Gantt: derived ids as bands over time
@@ -664,6 +687,33 @@ def analyze_risk_clusters(covar_data: RollingFactorCovarData, *,
                              weighting: str = 'equal',
                              taxonomy: Optional[TaxonomyConfig] = None,
                              method: str = 'mcf') -> RiskClusterReport:
+    """Track raw risk clusters through time and classify the resulting lineages.
+
+    Fingerprints every raw cluster at every date, links consecutive dates by
+    membership overlap and factor-beta proximity, assigns a stable derived id per
+    lineage, and classifies each resulting track.
+
+    Args:
+        covar_data: Rolling factor covariance data, one snapshot per date.
+        overlap_metric: ``'overlap'`` coefficient or ``'jaccard'`` for membership
+            affinity.
+        beta_metric: Recorded in ``params`` for provenance; the beta distance is
+            always the spread vol under the average factor covariance.
+        combine: ``'gated'`` arbitration of overlap and beta, or ``'blend'``.
+        overlap_band: ``(low, high)`` overlap thresholds used by the gate.
+        spread_vol_cut: Beta spread vol above which two clusters stop matching.
+        bridge_window: How many dates a dormant track may be revived across.
+        bridge_decay: Per-date weight decay on a bridged link (``'mcf'`` only).
+        w_overlap: Weight on overlap when overlap and beta are blended.
+        weighting: ``'equal'`` or ``'inv_vol'`` member weighting in a fingerprint.
+        taxonomy: Classification thresholds; defaults to ``TaxonomyConfig()``.
+        method: ``'mcf'`` / ``'graph'`` for the min-cost-flow matcher, anything
+            else for the per-transition Hungarian matcher.
+
+    Returns:
+        The relabel map, track panels, classification, lineage, transitions and
+        the parameters used.
+    """
     cfg = taxonomy or TaxonomyConfig()
     dates = list(covar_data.dates)
     snapshots: Dict[pd.Timestamp, Dict[Any, _Fingerprint]] = {}
@@ -697,5 +747,6 @@ def analyze_risk_clusters(covar_data: RollingFactorCovarData, *,
 
 
 def run_risk_label_report(covar_data: RollingFactorCovarData, **kwargs):
+    """Run the cluster analysis and return its ``(figures, tables)`` pair."""
     report = analyze_risk_clusters(covar_data, **kwargs)
     return report.to_figures(), report.to_tables()

@@ -59,6 +59,7 @@ def run_etf_tracking_portfolio(prices: pd.DataFrame,
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     ONE_STEP_OPTIMISATION = 1
     TRACKING_ERROR_GRID = 2
     ROLLING_OPTIMISATION = 3

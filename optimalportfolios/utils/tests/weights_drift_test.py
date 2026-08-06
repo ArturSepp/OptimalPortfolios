@@ -27,11 +27,13 @@ from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
 # -----------------------------------------------------------------------------
 
 def _build_prices(values, dates, columns):
+    """Build a price panel from values, dates and column labels."""
     return pd.DataFrame(values, index=pd.DatetimeIndex(dates), columns=columns)
 
 
 @pytest.fixture
 def prices_clean():
+    """A clean three-asset monthly price panel with no gaps."""
     dates = ['2025-01-31', '2025-02-28', '2025-03-31', '2025-04-30']
     values = [
         [100.0, 100.0, 100.0],
@@ -108,6 +110,7 @@ def test_variable_exposure_cash_sleeve():
 # -----------------------------------------------------------------------------
 
 def test_toggle_off_returns_input_unchanged(prices_clean):
+    """``use_drifted_weights_0=False`` returns the input weights untouched."""
     w0 = pd.Series({'A': 0.5, 'B': 0.3, 'C': 0.2})
     out = apply_drift_to_weights_0(
         weights_0=w0, prices=prices_clean,
@@ -119,6 +122,7 @@ def test_toggle_off_returns_input_unchanged(prices_clean):
 
 
 def test_none_weights_passthrough(prices_clean):
+    """``None`` weights pass straight through."""
     out = apply_drift_to_weights_0(
         weights_0=None, prices=prices_clean,
         prev_date=pd.Timestamp('2025-01-31'),
@@ -128,6 +132,7 @@ def test_none_weights_passthrough(prices_clean):
 
 
 def test_zero_weights_passthrough(prices_clean):
+    """All-zero weights pass through rather than dividing by a zero NAV."""
     w0 = pd.Series({'A': 0.0, 'B': 0.0, 'C': 0.0})
     out = apply_drift_to_weights_0(
         weights_0=w0, prices=prices_clean,
@@ -138,6 +143,7 @@ def test_zero_weights_passthrough(prices_clean):
 
 
 def test_none_prices_passthrough():
+    """Missing prices pass the weights through."""
     w0 = pd.Series({'A': 0.5, 'B': 0.5})
     out = apply_drift_to_weights_0(
         weights_0=w0, prices=None,
@@ -148,6 +154,7 @@ def test_none_prices_passthrough():
 
 
 def test_none_prev_date_passthrough(prices_clean):
+    """A missing previous date passes the weights through."""
     w0 = pd.Series({'A': 0.5, 'B': 0.3, 'C': 0.2})
     out = apply_drift_to_weights_0(
         weights_0=w0, prices=prices_clean,

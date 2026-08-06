@@ -18,6 +18,7 @@ from optimalportfolios.examples.data.universe import fetch_benchmark_universe_da
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     ONE_STEP_OPTIMISATION = 1
     ROLLING_OPTIMISATION = 2
 

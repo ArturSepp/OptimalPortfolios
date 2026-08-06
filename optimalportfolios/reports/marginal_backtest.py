@@ -13,6 +13,7 @@ import optimalportfolios as opt
 
 
 class OptimisationType(str, Enum):
+    """Optimisers compared by the marginal-inclusion backtest."""
     EW = 'EqualWeight'
     ERC = 'ERC'
     MAX_DIV = 'MaxDiv'
@@ -36,6 +37,7 @@ class OptimisationParams(NamedTuple):
     weight_implementation_lag: Optional[int] = 1  # for daily prices, t day weight is implemented at t+1 day
 
     def to_dict(self) -> Dict[str, Any]:
+        """Return the parameters as a plain dict, for logging and report headers."""
         return self._asdict()
 
 

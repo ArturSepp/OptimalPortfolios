@@ -67,11 +67,13 @@ def print_beta_and_r2(label: str, model: LassoModel) -> pd.DataFrame:
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     LASSO_BETAS = 1
     LASSO_COVAR_DIFFERENT_FREQUENCIES = 2
 
 
 def run_local_test(local_test: LocalTests):
+    """Run one local diagnostic scenario for development and debugging."""
     pd.set_option('display.max_rows', 500)
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)

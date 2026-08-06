@@ -16,6 +16,7 @@ from optimalportfolios.covar_estimation.ewma_covar_estimator import EwmaCovarEst
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     MAX_DIVERSIFICATION_SIMPLE = 1
     MAX_DIVERSIFICATION_WITH_BOUNDS = 2
     MAX_DIVERSIFICATION_ROLLING = 3

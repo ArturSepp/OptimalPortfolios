@@ -18,6 +18,7 @@ from optimalportfolios.optimization.general.risk_budgeting import (
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     RISK_PARITY_COMPARE = 1
     RISK_BUDGETING_WITH_BOUNDS = 2
     WRAPPER_RISK_BUDGETING = 3
