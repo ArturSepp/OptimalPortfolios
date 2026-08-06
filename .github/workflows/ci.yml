@@ -11,6 +11,32 @@ env:
   MPLBACKEND: Agg
 
 jobs:
+  lint:
+    # The three stack invariants configured in pyproject.toml -- TID251 (subject packages
+    # never import each other), TID253 (an optional extra is never imported at module
+    # level) and ICN (the numpy/pandas aliases) -- are green across the whole package, so
+    # a finding here is always something the change under review introduced.
+    #
+    # Deliberately not the full E/W/F set: that carries a large legacy backlog which
+    # AGENTS.md asks be left alone, so gating it would block every unrelated PR.
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install ruff
+      run: |
+        python -m pip install --upgrade pip
+        pip install "ruff>=0.4"
+
+    - name: Check stack invariants
+      run: ruff check --select TID251,TID253,ICN optimalportfolios/
+
   test:
     runs-on: ubuntu-latest
     strategy:
