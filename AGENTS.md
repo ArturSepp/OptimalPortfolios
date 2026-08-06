@@ -67,7 +67,7 @@ interrogate                                              # docstring coverage, m
 
 *Note: Terminal execution should be compatible with Windows PowerShell within PyCharm.*
 
-Optional extras: `data`, `reports`, `visualization`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.12 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal.
+Optional extras: `data`, `reports`, `visualization`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.12 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. A third job runs `interrogate` on 3.12 and gates the docstring coverage at 100%. Run it from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
 
 ## Conventions
 
