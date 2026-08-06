@@ -169,3 +169,15 @@ filename = "pyproject.toml"
 regex = true
 search = '(?ms)^\[project\]((?:(?!^\[)[\s\S])*?)^version = "{current_version}"'
 replace = '[project]\1version = "{new_version}"'
+
+[[tool.bumpversion.files]]
+filename = "CITATION.cff"
+regex = true
+search = '(?m)^(version:\s*){current_version}\s*$'
+replace = '\1{new_version}'
+
+[[tool.bumpversion.files]]
+filename = "README.md"
+regex = true
+search = '(?m)^(\s*version\s*=\s*\{){current_version}(\},\s*)$'
+replace = '\1{new_version}\2'
