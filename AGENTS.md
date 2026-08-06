@@ -59,7 +59,7 @@ Tests live inside the package as `optimalportfolios/<subpackage>/tests/*_test.py
 
 ```bash
 pip install -e ".[dev]"                                  # editable install with dev tools
-pytest                                                   # run the test suite (180 tests, ~9 s)
+pytest                                                   # run the test suite (593 tests, ~20 s)
 pytest optimalportfolios/optimization/tests/constraints_test.py -v
 ruff check optimalportfolios/                            # lint (papers/ is excluded)
 interrogate                                              # docstring coverage, must stay at 100%
@@ -109,4 +109,4 @@ Then: commit, tag `v<version>`, build and publish to PyPI, and cut a GitHub Rele
 
 - The previous `CLAUDE.md` described version 4.1.1 and a black/isort/flake8/mypy toolchain; the project has since moved to `ruff` and this file supersedes it.
 - `ruff check optimalportfolios/` reports around 780 findings, almost all `E501` line-length in the older modules. CI does not gate on lint. Fix only the lines your specific change touches; a repository-wide reflow is not wanted.
-- **Offline Fixture Anomaly:** The 6.2.0 changelog mentions a 69-test suite and an offline fixture (`examples/data/multiasset_returns.csv` with `examples.data.multiasset.load_multiasset_data`). This fixture is committed but unused. Ignore it completely and do not attempt to integrate it into the current 180-test suite.
+- **Offline Fixture Anomaly:** The 6.2.0 changelog mentions a 69-test suite and an offline fixture (`examples/data/multiasset_returns.csv` with `examples.data.multiasset.load_multiasset_data`). This fixture is committed but unused. Ignore it completely and do not attempt to integrate it into the current 593-test suite.
