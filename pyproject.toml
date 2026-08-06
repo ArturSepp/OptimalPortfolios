@@ -71,6 +71,12 @@ visualization = [
     "plotly>=5.0.0",
 ]
 
+# the default 'mcf' matcher in covar_estimation.risk_labelling solves a min-cost-flow
+# path cover with networkx; the 'hungarian' matcher needs nothing extra.
+clustering = [
+    "networkx>=3.0",
+]
+
 jupyter = [
     "jupyter>=1.0.0",
     "notebook>=6.5.0",
@@ -81,11 +87,11 @@ dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "ruff>=0.4",
-    "optimalportfolios[data]",
+    "optimalportfolios[data,clustering]",
 ]
 
 all = [
-    "optimalportfolios[data,reports,visualization,jupyter]",
+    "optimalportfolios[data,reports,visualization,jupyter,clustering]",
 ]
 
 [project.urls]
@@ -134,7 +140,7 @@ extend-select = ["TID251", "TID253", "ICN"]
 # core install keeps working. A module dedicated to a single optional backend is the documented
 # exception and is named in per-file-ignores below.
 banned-module-level-imports = ["yfinance", "pandas_datareader", "pybloqs", "plotly", "pyarrow",
-                               "psycopg2", "sqlalchemy"]
+                               "psycopg2", "sqlalchemy", "networkx"]
 
 [tool.ruff.lint.flake8-import-conventions.aliases]
 # replaces ruff's default alias map, which also demands `matplotlib as mpl` everywhere. Only
