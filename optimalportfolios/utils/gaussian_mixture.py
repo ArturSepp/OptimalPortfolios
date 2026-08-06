@@ -1,3 +1,11 @@
+"""Gaussian mixture estimation and plotting without an sklearn dependency.
+
+``fit_gmm`` is an EM fit equivalent to ``sklearn.mixture.GaussianMixture`` with
+``covariance_type='full'``. ``Params`` holds a fitted mixture in pandas form for
+reporting, and the plotting and rolling helpers back the mixture-based
+optimisation examples and regime diagnostics.
+"""
+
 # packages
 import numpy as np
 import matplotlib.pyplot as plt
@@ -27,6 +35,7 @@ class GMMResult:
     weights_: np.ndarray      # (n_components,)
 
     def predict(self, x: np.ndarray) -> np.ndarray:
+        """Assign each row of ``x`` to its most likely mixture component."""
         resp = _e_step(x, self.means_, self.covariances_, self.weights_)
         return resp.argmax(axis=1)
 
@@ -144,11 +153,13 @@ def fit_gmm(x: np.ndarray,
 
 @dataclass
 class Params:
+    """A fitted mixture: per-component means, covariances and probabilities."""
     means: List[np.ndarray]
     covars: List[np.ndarray]
     probs: np.ndarray
 
     def print(self):
+        """Print the fitted probabilities, means and covariances."""
         print(f"probs=\n{self.probs}")
         print(f"mus=\n{self.means}")
         print(f"sigmas=\n{self.covars}")
@@ -177,6 +188,7 @@ class Params:
         return covar_dict, pd_means, self.probs
 
     def get_params(self, idx: int = 0) -> pd.DataFrame:
+        """Per-component probability, mean and vol of feature ``idx``, as one frame."""
         means = np.array([mean[idx] for mean in self.means])
         std = np.array([np.sqrt(covar[idx][idx]) for covar in self.covars])
         probs = pd.Series(self.probs, name='Prob')
@@ -186,6 +198,18 @@ class Params:
 
     def get_all_params(self, columns: List[str], vol_scaler: float = 1.0
                        ) -> Tuple[pd.DataFrame, pd.DataFrame, Union[pd.Series, Dict[str, pd.DataFrame]]]:
+        """Per-component means, vols and correlations over the named features.
+
+        Args:
+            columns: Feature names, in the column order of the fitted data.
+            vol_scaler: Scales means linearly and vols by its square root, so an
+                annualisation factor can be applied in one place.
+
+        Returns:
+            Means (with the component probability as the first column), vols, and
+            correlations — pairwise values for two features, otherwise one correlation
+            matrix per component.
+        """
         probs = pd.Series(self.probs, name='Prob')
         means = [probs]
         vols = []
@@ -211,6 +235,14 @@ def fit_gaussian_mixture(x: np.ndarray,
                          an_factor: float = 1.0,
                          idx: int = None
                          ) -> Params:
+    """Fit a mixture and return it as ``Params``.
+
+    Args:
+        x: Observations, shape ``(n_samples, n_features)``.
+        n_components: Number of mixture components.
+        an_factor: Scales the fitted means and covariances, e.g. to annualise.
+        idx: Feature to sort the components by; ``None`` keeps solver order.
+    """
     gmm = fit_gmm(x, n_components=n_components, random_state=RANDOM_STATE)
 
     if idx is not None:
@@ -253,6 +285,11 @@ def plot_mixure1(x: np.ndarray,
                  columns: List[str] = None,
                  ax=None
                  ) -> None:
+    """Plot a one-dimensional histogram of ``x`` with the fitted densities.
+
+    Draws the first two component densities and their sum, so it assumes a
+    two-component fit.
+    """
     ax = ax or plt.gca()
 
     gmm = fit_gmm(x, n_components=n_components, random_state=RANDOM_STATE)
@@ -284,6 +321,11 @@ def plot_mixure2(x: np.ndarray,
                  **kwargs
                  ) -> None:
 
+    """Scatter the first two features of ``x``, coloured by fitted component.
+
+    Each component is overlaid with its covariance ellipses. ``idx`` sorts the
+    components by that feature's mean so colours stay comparable across panels.
+    """
     if ax is None:
         ax = plt.subplots(1, 1)
 
@@ -337,6 +379,23 @@ def estimate_rolling_mixture(prices: Union[pd.Series, pd.DataFrame],
                              annualize: bool = True
                              ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
+    """Fit a mixture on a rolling window of one price series.
+
+    Args:
+        prices: Single price series (a one-column DataFrame is accepted).
+        returns_freq: Frequency of the log returns fed to the mixture.
+        rebalancing_freq: Frequency of the estimation dates.
+        roll_window: Number of rebalancing periods in each estimation window.
+        n_components: Number of mixture components.
+        annualize: Scale the fitted parameters to annual units.
+
+    Returns:
+        Means, vols and probabilities per estimation date, with components ordered
+        by their mean.
+
+    Raises:
+        ValueError: If ``prices`` carries more than one column.
+    """
     if isinstance(prices, pd.Series):
         prices = prices.to_frame()
     elif isinstance(prices, pd.DataFrame) and len(prices.columns) > 1:

@@ -11,6 +11,7 @@ from optimalportfolios.optimization.taa.maximise_alpha_with_target_yield import 
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     ALPHA_TARGET_RETURN = 1
     ALPHA_FRONTIER = 2
 

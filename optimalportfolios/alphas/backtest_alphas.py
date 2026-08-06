@@ -289,6 +289,7 @@ def multi_backtest_alpha_signals(prices: pd.DataFrame,
 
 
 class CrossBacktestParam(Enum):
+    """Which signal parameter ``cross_backtest_alpha_signals`` sweeps."""
     MOM_SPAN = 'MOM_SPAN'
     BETA_SPAN = 'BETA_SPAN'
     MOM_BETA_SPAN = 'MOM_BETA_SPAN'

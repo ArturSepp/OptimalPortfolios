@@ -40,6 +40,7 @@ def print_portfolio(label: str,
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     HARD_CONSTRAINTS = 1
     UTILITY_PENALTIES = 2
     HARD_VS_UTILITY = 3

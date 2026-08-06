@@ -81,6 +81,7 @@ dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "ruff>=0.4",
+    "interrogate>=1.7",
     "optimalportfolios[data]",
 ]
 
@@ -151,6 +152,14 @@ pandas = "pd"
 # nothing above it imports at module level, so a core install never reaches this import.
 "rosaa/universe_profiler/figures.py" = ["TID253"]
 "rosaa/universe_profiler/report_html.py" = ["TID253"]
+
+[tool.interrogate]
+# Docstring coverage is at 100% on the package, so a miss is always something just
+# introduced — the same argument that puts the three stack invariants in ruff.
+# `papers/` is excluded for the reason it is excluded from ruff: it reproduces
+# published code and is left exactly as-is. `rosaa/` is gitignored and not ours.
+fail-under = 100
+exclude = ["papers", "rosaa"]
 
 [tool.coverage.run]
 source = ["optimalportfolios"]

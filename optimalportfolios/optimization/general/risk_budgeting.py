@@ -363,6 +363,7 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
     given_weights_np = given_weights.to_numpy()
 
     def objective_function(risk_budgets: np.ndarray) -> float:
+        """Mean absolute gap between the backtested average weights and the targets."""
         risk_budgets = pd.Series(risk_budgets, index=prices.columns)
         risk_budget_weights = rolling_risk_budgeting(prices=prices,
                                                      covar_dict=covar_dict,

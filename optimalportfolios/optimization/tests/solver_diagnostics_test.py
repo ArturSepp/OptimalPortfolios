@@ -71,6 +71,7 @@ def _feasible_w():
 # -----------------------------------------------------------------------------
 
 def test_accepts_clean_feasible_solution():
+    """A clean feasible solve is accepted and returned unchanged."""
     c = _constraints()
     w_in = _feasible_w()
     outcome = validate_solution(w_in, "optimal", c, n=5, solver="CLARABEL")
@@ -123,6 +124,7 @@ def test_rejects_budget_blowup_even_when_status_optimal(caplog):
 # -----------------------------------------------------------------------------
 
 def test_rejects_none_solution():
+    """A ``None`` solution falls back to weights_0."""
     c = _constraints()
     outcome = validate_solution(None, "optimal", c, n=5, solver="CLARABEL")
     assert outcome.accepted is False
@@ -130,6 +132,7 @@ def test_rejects_none_solution():
 
 
 def test_rejects_nonfinite_weights():
+    """A non-finite weight is rejected even under an 'optimal' status."""
     c = _constraints()
     bad = _feasible_w().copy()
     bad[3] = np.inf
@@ -146,6 +149,7 @@ def test_rejects_box_violation():
 
 
 def test_rejects_negative_weight_long_only():
+    """A negative weight is rejected when the mandate is long-only."""
     c = _constraints(is_long_only=True)
     bad = np.array([0.70, 0.40, 0.15, -0.30, 0.05])  # sums to 1 but PE < 0
     outcome = validate_solution(bad, "optimal", c, n=5)
@@ -167,6 +171,7 @@ def test_rejects_hard_status_even_if_weights_look_ok(status):
 # -----------------------------------------------------------------------------
 
 def test_accepts_inaccurate_but_feasible_with_warning(caplog):
+    """An imprecise but feasible solve is accepted with a warning."""
     c = _constraints()
     with caplog.at_level(logging.WARNING):
         outcome = validate_solution(
@@ -176,6 +181,7 @@ def test_accepts_inaccurate_but_feasible_with_warning(caplog):
 
 
 def test_rejects_inaccurate_and_infeasible():
+    """An imprecise solve that is also infeasible is rejected."""
     c = _constraints()
     blowup = _feasible_w() * 1e4
     outcome = validate_solution(blowup, "optimal_inaccurate", c, n=5)
@@ -183,6 +189,7 @@ def test_rejects_inaccurate_and_infeasible():
 
 
 def test_inaccurate_rejected_when_flag_off(caplog):
+    """An imprecise solve is rejected when ``accept_inaccurate`` is off."""
     c = _constraints()
     with caplog.at_level(logging.WARNING):
         outcome = validate_solution(
@@ -195,6 +202,7 @@ def test_inaccurate_rejected_when_flag_off(caplog):
 # -----------------------------------------------------------------------------
 
 def test_fallback_to_benchmark_when_no_weights_0():
+    """Without weights_0 the fallback is the benchmark."""
     c = _constraints(with_weights_0=False, with_benchmark=True)
     outcome = validate_solution(None, "optimal", c, n=5)
     assert outcome.accepted is False
@@ -202,6 +210,7 @@ def test_fallback_to_benchmark_when_no_weights_0():
 
 
 def test_fallback_to_zeros_when_no_weights_0_or_benchmark():
+    """Without weights_0 or a benchmark the fallback is zeros."""
     c = _constraints(with_weights_0=False, with_benchmark=False)
     outcome = validate_solution(None, "optimal", c, n=5)
     assert outcome.accepted is False
@@ -242,6 +251,7 @@ def test_property_output_always_feasible_for_arbitrary_garbage():
 # -----------------------------------------------------------------------------
 
 def _covar_from_corr(vols, corr):
+    """Build a covariance DataFrame over ``TICKERS`` from vols and a correlation matrix."""
     vols = np.asarray(vols, float)
     c = np.outer(vols, vols) * np.asarray(corr, float)
     c = (c + c.T) / 2.0
@@ -287,6 +297,7 @@ def test_flags_indefinite_covar(caplog):
 
 
 def test_clean_covar_no_warning(caplog):
+    """A well-conditioned covariance is reported clean and logs nothing."""
     vols = [0.20, 0.05, 0.15, 0.10, 0.12]
     corr = np.eye(5)
     corr[0, 4] = corr[4, 0] = 0.5
@@ -309,6 +320,7 @@ def _scipy_res(success=True, status=0, message="Optimization terminated successf
 
 
 def test_scipy_accepts_feasible_solution():
+    """A clean feasible scipy solve is accepted and returned unchanged."""
     c = _constraints()
     w_out, ok = validate_scipy_solution(_feasible_w(), _scipy_res(), c, n=5)
     assert ok is True
@@ -316,6 +328,7 @@ def test_scipy_accepts_feasible_solution():
 
 
 def test_scipy_rejects_nonconvergence(caplog):
+    """A scipy non-convergence falls back and surfaces the solver message."""
     c = _constraints()
     res = _scipy_res(success=False, status=8,
                      message="Positive directional derivative for linesearch")
@@ -336,6 +349,7 @@ def test_scipy_rejects_budget_blowup_even_if_success():
 
 
 def test_scipy_rejects_nonfinite():
+    """A non-finite scipy weight is rejected even when scipy reports success."""
     c = _constraints()
     bad = _feasible_w().copy()
     bad[2] = np.nan
@@ -349,6 +363,7 @@ def test_scipy_rejects_nonfinite():
 # -----------------------------------------------------------------------------
 
 def test_rb_accepts_feasible_solution():
+    """A clean feasible risk-budgeting solve is accepted and returned unchanged."""
     c = _constraints()
     w_out, ok = validate_rb_solution(_feasible_w(), c, n=5)
     assert ok is True
@@ -367,12 +382,14 @@ def test_rb_rejects_nan_solution(caplog):
 
 
 def test_rb_rejects_none_solution():
+    """A ``None`` risk-budgeting solution falls back to weights_0."""
     c = _constraints()
     _, ok = validate_rb_solution(None, c, n=5)
     assert ok is False
 
 
 def test_rb_rejects_nonconvergence_flag():
+    """An explicit ``converged=False`` forces a rejection."""
     c = _constraints()
     _, ok = validate_rb_solution(_feasible_w(), c, n=5, converged=False)
     assert ok is False
@@ -408,6 +425,7 @@ def test_rb_rejects_group_row_violation(caplog):
 # -----------------------------------------------------------------------------
 
 def _assert_writable_and_assignable(w):
+    """Assert the validated weights are writable and survive in-place assignment."""
     assert w.flags.writeable, "validator returned a read-only array"
     w[np.isinf(w)] = 0.0          # the exact op that crashed in wrapper_maximise_alpha_over_tre
     w[0] = 0.123                  # general in-place write must succeed
@@ -422,6 +440,7 @@ def test_cvxpy_fallback_is_writable():
 
 
 def test_cvxpy_accepted_solution_is_writable():
+    """An accepted CVXPY solution is returned as a writable array."""
     c = _constraints()
     outcome = validate_solution(_feasible_w(), 'optimal', c, n=5)
     assert outcome.accepted is True
@@ -429,6 +448,7 @@ def test_cvxpy_accepted_solution_is_writable():
 
 
 def test_scipy_fallback_is_writable():
+    """A scipy fallback is returned as a writable array."""
     c = _constraints()
     w, ok = validate_scipy_solution(None, _scipy_res(success=False), c, n=5)
     assert ok is False
@@ -436,6 +456,7 @@ def test_scipy_fallback_is_writable():
 
 
 def test_rb_fallback_is_writable():
+    """A risk-budgeting fallback is returned as a writable array."""
     c = _constraints()
     w, ok = validate_rb_solution(None, c, n=5)
     assert ok is False
@@ -448,6 +469,7 @@ def test_rb_fallback_is_writable():
 # -----------------------------------------------------------------------------
 
 def test_rejection_severity_levels(caplog):
+    """Blow-ups log at ERROR while honest no-solution statuses log at WARNING."""
     c = _constraints()
     # optimal status but budget blow-up -> ERROR
     with caplog.at_level(logging.WARNING):
@@ -469,6 +491,7 @@ def test_rejection_severity_levels(caplog):
 
 
 def test_rejection_summary_handler():
+    """The summary handler tallies one ERROR and one WARNING rejection."""
     from optimalportfolios.optimization.solver_diagnostics import (
         SolverRejectionSummary)
     h = SolverRejectionSummary()
@@ -489,6 +512,7 @@ def test_rejection_summary_handler():
 # -----------------------------------------------------------------------------
 
 def _group_floor_infeasible_constraints():
+    """Constraints whose two group floors jointly overshoot full investment."""
     from optimalportfolios.optimization.constraints import GroupLowerUpperConstraints
     idx = pd.Index(["A", "B", "C", "D", "E"])
     glu = GroupLowerUpperConstraints(
@@ -503,6 +527,7 @@ def _group_floor_infeasible_constraints():
 
 
 def test_diagnose_infeasibility_identifies_group_floor_overshoot():
+    """The elastic re-solve names both overshooting group floors and their sizes."""
     from optimalportfolios.optimization.solver_diagnostics import diagnose_infeasibility
     out = diagnose_infeasibility(_group_floor_infeasible_constraints(), context="t")
     assert set(out) == {"group_min:G1", "group_min:G2"}
@@ -510,6 +535,7 @@ def test_diagnose_infeasibility_identifies_group_floor_overshoot():
 
 
 def test_diagnose_infeasibility_box_cannot_reach_full_investment():
+    """The elastic re-solve names the caps that block full investment."""
     from optimalportfolios.optimization.solver_diagnostics import diagnose_infeasibility
     idx = pd.Index(["A", "B", "C", "D", "E"])
     c = Constraints(is_long_only=True, min_weights=pd.Series(0.0, index=idx),
@@ -521,6 +547,7 @@ def test_diagnose_infeasibility_box_cannot_reach_full_investment():
 
 
 def test_diagnose_infeasibility_feasible_returns_empty():
+    """A satisfiable constraint set yields no elastic breaches."""
     from optimalportfolios.optimization.solver_diagnostics import diagnose_infeasibility
     idx = pd.Index(["A", "B", "C"])
     c = Constraints(is_long_only=True, min_weights=pd.Series(0.0, index=idx),
@@ -564,12 +591,14 @@ def _attach_summary_at_debug():
     lg.addHandler(h)
 
     def restore():
+        """Detach the handler and restore the logger level."""
         lg.removeHandler(h)
         lg.setLevel(prev)
     return h, restore
 
 
 def test_summary_counts_every_solve_and_fallback_fraction():
+    """Accepted and rejected solves are both counted in the fallback fraction."""
     c = _constraints()
     h, restore = _attach_summary_at_debug()
     try:
@@ -588,6 +617,7 @@ def test_summary_counts_every_solve_and_fallback_fraction():
 
 
 def test_fallback_gate_passes_within_threshold(caplog):
+    """A fallback fraction at the threshold passes the gate without an ERROR."""
     c = _constraints()
     h, restore = _attach_summary_at_debug()
     try:
@@ -604,6 +634,7 @@ def test_fallback_gate_passes_within_threshold(caplog):
 
 
 def test_fallback_gate_breaches_and_can_raise(caplog):
+    """A breached gate logs at ERROR and raises only when asked to."""
     c = _constraints()
     h, restore = _attach_summary_at_debug()
     try:
@@ -624,6 +655,7 @@ def test_fallback_gate_breaches_and_can_raise(caplog):
 
 
 def test_fallback_gate_noop_when_no_solves():
+    """With no solves recorded the gate passes and the fraction is zero."""
     h, restore = _attach_summary_at_debug()
     try:
         assert h.check_fallback_gate(max_fraction=0.05) is True    # nothing recorded
@@ -640,10 +672,12 @@ _SD_LOGGER = "optimalportfolios.optimization.solver_diagnostics"
 
 
 def _diag_covar(diag=(0.04, 0.03, 0.02, 0.05, 0.05)):
+    """A clean diagonal covariance over ``TICKERS`` for input-contract tests."""
     return pd.DataFrame(np.diag(diag), index=TICKERS, columns=TICKERS)
 
 
 def test_input_contract_accepts_clean_inputs():
+    """Clean covariance and constraints pass the contract with no issues."""
     from optimalportfolios.optimization.solver_diagnostics import validate_solver_inputs
     res = validate_solver_inputs(_diag_covar(), _constraints(), context="t")
     assert res.ok is True
@@ -652,6 +686,7 @@ def test_input_contract_accepts_clean_inputs():
 
 
 def test_input_contract_flags_nonfinite_covar():
+    """A non-finite covariance entry is a hard contract failure."""
     from optimalportfolios.optimization.solver_diagnostics import validate_solver_inputs
     m = np.diag([0.04, 0.03, 0.02, 0.05, 0.05])
     m[0, 0] = np.nan
@@ -662,6 +697,7 @@ def test_input_contract_flags_nonfinite_covar():
 
 
 def test_input_contract_flags_box_cannot_reach_budget(caplog):
+    """A box that cannot reach full investment is flagged but is not a hard failure."""
     from optimalportfolios.optimization.solver_diagnostics import validate_solver_inputs
     idx = pd.Index(TICKERS)
     c = Constraints(is_long_only=True, min_weights=pd.Series(0.0, index=idx),
@@ -675,6 +711,7 @@ def test_input_contract_flags_box_cannot_reach_budget(caplog):
 
 
 def test_input_contract_flags_benchmark_out_of_bounds():
+    """A benchmark weight above its cap is reported as an issue."""
     from optimalportfolios.optimization.solver_diagnostics import validate_solver_inputs
     idx = pd.Index(TICKERS)
     c = Constraints(is_long_only=True, min_weights=pd.Series(0.0, index=idx),
@@ -687,6 +724,7 @@ def test_input_contract_flags_benchmark_out_of_bounds():
 
 
 def test_input_contract_deep_feasibility_runs_elastic(caplog):
+    """``deep_feasibility`` runs the elastic pre-flight and reports its finding."""
     from optimalportfolios.optimization.solver_diagnostics import validate_solver_inputs
     idx = pd.Index(TICKERS)
     c = Constraints(is_long_only=True, min_weights=pd.Series(0.0, index=idx),
@@ -704,6 +742,7 @@ def test_input_contract_deep_feasibility_runs_elastic(caplog):
 # -----------------------------------------------------------------------------
 
 def test_relaxation_summary_tallies_records():
+    """The relaxation handler tallies records, bound frequency, and the largest relaxation."""
     from optimalportfolios.optimization.solver_diagnostics import RelaxationSummary
     from optimalportfolios.optimization.constraints import RelaxationRecord
     h = RelaxationSummary()
@@ -734,6 +773,7 @@ def test_relaxation_summary_tallies_records():
 
 
 def test_run_diagnostics_bundle_delegates():
+    """The bundle delegates the gate and concatenates the handler summaries."""
     from optimalportfolios.optimization.solver_diagnostics import (
         RunDiagnostics, SolverRejectionSummary, RelaxationSummary)
     d = RunDiagnostics(rejections=SolverRejectionSummary(),
@@ -744,6 +784,7 @@ def test_run_diagnostics_bundle_delegates():
 
 
 def test_log_environment_emits_versions(caplog):
+    """The environment banner records library versions and the config hash."""
     from optimalportfolios.optimization.solver_diagnostics import log_environment
     with caplog.at_level(logging.INFO, logger=_SD_LOGGER):
         log_environment(config_hash="abc123")
@@ -752,6 +793,7 @@ def test_log_environment_emits_versions(caplog):
 
 
 def test_input_contract_summary_tallies():
+    """The contract handler normalises pair order and tallies findings per category."""
     from optimalportfolios.optimization.solver_diagnostics import (
         InputContractSummary, InputContractRecord)
     h = InputContractSummary()
@@ -790,6 +832,7 @@ def test_input_contract_summary_tallies():
 
 
 def test_run_diagnostics_includes_contract():
+    """The bundle includes the input-contract section when a contract handler is attached."""
     from optimalportfolios.optimization.solver_diagnostics import (
         RunDiagnostics, SolverRejectionSummary, RelaxationSummary,
         InputContractSummary)

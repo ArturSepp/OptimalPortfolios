@@ -67,6 +67,7 @@ def _make_gluc(
     group_max: dict = None,
     loadings: pd.DataFrame = None,
 ) -> GroupLowerUpperConstraints:
+    """A group lower/upper constraint over the default loadings, with optional bounds."""
     return GroupLowerUpperConstraints(
         group_loadings=(loadings if loadings is not None else GROUP_LOADINGS).copy(),
         group_min_allocation=pd.Series(group_min, dtype=float) if group_min else None,
@@ -104,6 +105,7 @@ def _run_test(name: str, fn):
 
 
 def _print_summary():
+    """Print the pass/fail tally and every captured error."""
     total = _results["passed"] + _results["failed"]
     print(f"\n{'='*60}")
     print(f"Results: {_results['passed']}/{total} passed, {_results['failed']} failed")
@@ -323,6 +325,7 @@ def _make_bdc(
     max_deviation: dict = None,
     loadings: pd.DataFrame = None,
 ) -> BenchmarkDeviationConstraints:
+    """A benchmark-deviation constraint over the sector loadings, capped at 5% by default."""
     if max_deviation is None:
         max_deviation = {col: 0.05 for col in (loadings if loadings is not None else SECTOR_LOADINGS).columns}
     return BenchmarkDeviationConstraints(
@@ -1206,6 +1209,7 @@ SECTIONS = {
 
 
 def run_section(key: str):
+    """Run every test in one section of ``SECTIONS``, printing a header."""
     name, tests = SECTIONS[key]
     print(f"\n{'━'*60}")
     print(f"  Section {key}: {name}")

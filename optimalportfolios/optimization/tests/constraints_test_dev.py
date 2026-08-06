@@ -78,6 +78,7 @@ def _solve(w, objective, constraints, label=""):
 # ══════════════════════════════════════════════════════════════════════
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     # --- Basic constraint behaviour ---
     BASIC_LONG_ONLY = 1
     BASIC_MIN_MAX_WEIGHTS = 2
@@ -115,6 +116,7 @@ def run_local_test(local_test: LocalTests):
     # 1–5: Basic constraints
     # ─────────────────────────────────────────────────────────────
 
+    """Run one local diagnostic scenario for development and debugging."""
     if local_test == LocalTests.BASIC_LONG_ONLY:
         print("Long-only min-variance: all weights should be >= 0, sum = 1")
         c = Constraints(is_long_only=True)

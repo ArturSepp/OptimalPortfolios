@@ -47,6 +47,7 @@ def _near_singular_covar():
 
 
 def _utility_constraints(weights_0=True):
+    """Long-only utility-enforced constraints at the GROWM TRE weight."""
     idx = pd.Index(TICKERS)
     bench = pd.Series([0.45, 0.35, 0.15, 0.05, 0.0], index=idx)
     w0 = pd.Series([0.44, 0.34, 0.16, 0.06, 0.0], index=idx) if weights_0 else None
@@ -101,6 +102,7 @@ def test_finite_garbage_solver_return_is_caught(monkeypatch, caplog):
 
     # Make the "solver" return a finite blow-up iterate (sum ~5e5) and no status.
     def fake_solve(self, *args, **kwargs):
+        """Stand in for ``Problem.solve``, writing a finite blow-up iterate and no status."""
         for v in self.variables():
             v.value = np.full(v.shape[0], 1.0e5)
         return None

@@ -53,6 +53,29 @@ jobs:
     - name: Run the test suite
       run: pytest
 
+  docstrings:
+    # Docstring coverage is at 100%, so a miss is always something the change
+    # under review introduced. interrogate only parses the AST, so this needs
+    # no project dependencies and stays a seconds-long job. The threshold and
+    # the papers/ exclusion live in [tool.interrogate] in pyproject.toml.
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install interrogate
+      run: |
+        python -m pip install --upgrade pip
+        pip install "interrogate>=1.7"
+
+    - name: Check docstring coverage
+      run: interrogate -v
+
   core-install:
     # The suite must stay green without the optional extras: no test may need
     # data, network or a Bloomberg terminal. Without this job the constraint is

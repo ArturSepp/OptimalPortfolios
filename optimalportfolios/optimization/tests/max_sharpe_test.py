@@ -13,6 +13,7 @@ from optimalportfolios.optimization.constraints import Constraints
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     MAXIMIZE_SHARPE = 1
     SHARPE_WITH_BOUNDS = 2
     WRAPPER_WITH_NANS = 3

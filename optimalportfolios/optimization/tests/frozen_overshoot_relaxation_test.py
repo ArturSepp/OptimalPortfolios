@@ -250,6 +250,7 @@ def test_relaxation_message_includes_context_date(caplog):
     rebal = pd.Series({'PE': 0, 'HF': 0, 'REIT': 0, 'EQ_US': 1, 'EQ_EU': 1})
 
     def _relax_msgs():
+        """The captured relaxation messages, in order."""
         return [r.getMessage() for r in caplog.records
                 if 'overshoot' in r.getMessage() or 'undershoot' in r.getMessage()]
 
@@ -291,6 +292,7 @@ def test_relaxation_magnitude_bound_escalates(caplog):
     rebal = pd.Series({'PE': 0, 'HF': 0, 'REIT': 0, 'EQ_US': 1, 'EQ_EU': 1})
 
     def _records():
+        """The structured ``RelaxationRecord`` objects attached to the captured logs."""
         return [r for r in (getattr(rec, "relaxation", None) for rec in caplog.records)
                 if isinstance(r, RelaxationRecord)]
 

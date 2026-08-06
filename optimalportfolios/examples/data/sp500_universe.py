@@ -49,10 +49,12 @@ def create_sp500_universe_with_yahoo(local_path: str = LOCAL_PATH) -> None:
     """
     inclusion_indicators, inclusion_indicators_bbg = create_inclusion_indicators()
     def fetch_universe_prices(tickers: List[str]) -> pd.DataFrame:
+        """Download closing prices for the constituent tickers, in the given order."""
         prices = yf.download(tickers=tickers, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close']
         return prices[tickers]
 
     def fetch_universe_industry(tickers: List[str]) -> pd.Series:
+        """Look up each ticker's sector, falling back to ``'unclassified'``."""
         group_data = {}
         for ticker in tickers:
             this = yf.Ticker(ticker).info
@@ -153,6 +155,7 @@ def load_sp500_universe_bloomberg(local_path: str = LOCAL_PATH
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     CREATE_UNIVERSE_DATA_WITH_YAHOO = 1
     CREATE_UNIVERSE_DATA_WITH_BLOOMBERG = 2
     LOAD = 3

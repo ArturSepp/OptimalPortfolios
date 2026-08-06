@@ -14,6 +14,7 @@ from optimalportfolios import LassoModel, LassoModelType, FactorCovarEstimator
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     MOMENTUM_SINGLE_FREQ = 1
     MOMENTUM_MIXED_FREQ = 2
     MOMENTUM_GROUPED = 3

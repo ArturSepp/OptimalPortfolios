@@ -54,6 +54,7 @@ def run_bonds_etf_optimal_portfolio(prices: pd.DataFrame,
 
 
 def compute_dividend_rolling_1y(dividend: pd.Series):
+    """Annualise a quarterly dividend series as a rolling one-year sum."""
     rolling_1y = 4.0 * dividend.asfreq('ME', method='ffill').fillna(0.0).rolling(3).sum()
     return rolling_1y
 
@@ -110,6 +111,7 @@ def fetch_benchmark_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Data
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     ILLUSTRATE_INPUT_DATA = 1
     ONE_STEP_OPTIMISATION = 2
     ROLLING_OPTIMISATION = 3

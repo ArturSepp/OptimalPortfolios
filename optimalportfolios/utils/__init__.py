@@ -1,3 +1,6 @@
+"""Public API of the shared utilities: NaN filtering, portfolio statistics, weight
+rounding and drift.
+"""
 
 from optimalportfolios.utils.filter_nans import (filter_covar_and_vectors,
                                                  filter_covar_and_vectors_for_nans)

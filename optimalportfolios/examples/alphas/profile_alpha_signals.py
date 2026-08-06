@@ -67,12 +67,14 @@ def fetch_bond_etf_universe() -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     JOINT_PROFILE = 1        # profile carry + low_beta + momentum together
     SINGLE_CARRY = 2         # profile carry alone
     QUANTILE_SWEEP = 3       # carry at several top-quantiles
 
 
 def run_local_test(local_test: LocalTests = LocalTests.JOINT_PROFILE) -> None:
+    """Run one local diagnostic scenario for development and debugging."""
     prices, carry, benchmark_price, group_data = fetch_bond_etf_universe()
     time_period = qis.TimePeriod('31Dec2015', prices.index[-1])
     perf_params = qis.PerfParams(freq='ME')

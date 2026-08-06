@@ -69,6 +69,7 @@ def run_max_diversification_sensitivity_to_span(prices: pd.DataFrame,
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     MAX_DIVERSIFICATION_SPAN = 1
 
 

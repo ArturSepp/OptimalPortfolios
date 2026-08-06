@@ -1,3 +1,7 @@
+"""Public API of ``optimalportfolios``: covariance estimation, optimisers, universes
+and the alpha and reporting layers, re-exported from their subpackages.
+"""
+
 import optimalportfolios.local_path
 
 from optimalportfolios.config import PortfolioObjective

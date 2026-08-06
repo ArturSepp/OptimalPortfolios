@@ -1,3 +1,8 @@
+"""Local diagnostic script for the Gaussian mixture fit and its plots.
+
+Contributes no collected tests; the plotting cases need a display backend.
+"""
+
 # packages
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,6 +17,7 @@ from optimalportfolios.utils.gaussian_mixture import (fit_gaussian_mixture,
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     FIT1 = 1
     FIT2 = 2
     ROLLING_FIT = 3

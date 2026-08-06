@@ -87,6 +87,7 @@ def print_solution(label: str,
 
 
 def run_example():
+    """Solve one three-asset risk-budgeting problem with both solvers and print both."""
     # ── Universe setup ──────────────────────────────────────────────────
     # Three assets: two positively correlated, one negatively correlated
     # with both (the "hedging" asset). This creates a non-trivial
