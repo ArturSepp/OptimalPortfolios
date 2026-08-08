@@ -19,6 +19,21 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `return_outcome` switch were removed; validated weights and acceptance state are available as
   `outcome.weights` and `outcome.accepted`.
 
+## [6.10.0] - 2026-08-08
+
+**No numerical behaviour changes.** The delegated results are pinned against pre-change
+characterisation goldens and independent covariance identities at `rtol=1e-12`.
+
+### Added
+- `build_risk_model` adapts rolling factor covariance data, dated current factor snapshots, and
+  covariance-only dictionaries to the canonical `qis.RiskModel` computation layer.
+
+### Changed
+- `PortfolioOptimisationResult` delegates tracking error, factor/residual tracking-error
+  decomposition, and factor exposures to `qis.RiskModel`; output values, labels, and shapes are
+  unchanged and characterisation-tested.
+- The minimum `qis` version is now 5.7.0, which provides `qis.RiskModel` and `qis.WEIGHT_TOL`.
+
 ## [6.9.0] - 2026-08-03
 
 ### Added
