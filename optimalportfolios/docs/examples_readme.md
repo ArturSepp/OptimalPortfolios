@@ -54,6 +54,7 @@ Each file shows both a single-date solve via `wrapper_*` and a rolling backtest 
 | File | Solver | Method |
 |---|---|---|
 | `min_variance.py` | `rolling_quadratic_optimisation` (MIN_VARIANCE) | CVXPY QP. Minimise `w′Σw`. |
+| `minimum_tracking_error.py` | `rolling_minimise_tracking_error` | CVXPY QP. Minimise `(w − w_b)′Σ(w − w_b)` relative to a static or rolling benchmark. |
 | `max_sharpe.py` | `rolling_maximize_portfolio_sharpe` | CVXPY SOCP via Charnes–Cooper transformation. Rolling EWMA mean + covar. |
 | `max_diversification.py` | `rolling_maximise_diversification` | SciPy SLSQP. Maximise `DR(w) = w′σ / sqrt(w′Σw)`. |
 | `risk_budgeting.py` | `rolling_risk_budgeting` | Internal CCD/ADMM. Equal or specified risk contributions. |
@@ -128,9 +129,10 @@ signal on its own. The [alphas module README](../alphas/README.md) documents the
 1. `data/universe.py` — understand the test fixture everything builds on.
 2. `backtests/minimal_backtest.py` — see one full workflow end-to-end.
 3. `solvers/min_variance.py` — minimal solver demo with both single-date and rolling forms.
-4. `solvers/tracking_error.py` — the production TAA pattern (alpha + benchmark + TE constraint).
-5. `comparisons/optimisers.py` — see how objectives differ on the same universe.
-6. `covar_estimation/lasso_covar_estimation.py` — when EWMA isn't enough, this is the next step.
+4. `solvers/minimum_tracking_error.py` — covariance-closest feasible portfolio relative to a benchmark.
+5. `solvers/tracking_error.py` — the production TAA pattern (alpha + benchmark + TE constraint).
+6. `comparisons/optimisers.py` — see how objectives differ on the same universe.
+7. `covar_estimation/lasso_covar_estimation.py` — when EWMA isn't enough, this is the next step.
 
 ---
 

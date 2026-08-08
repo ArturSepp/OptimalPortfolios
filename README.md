@@ -692,8 +692,9 @@ examples/
 1. [`examples/data/universe.py`](optimalportfolios/examples/data/universe.py) — understand the shared fixture.
 2. [`examples/backtests/minimal_backtest.py`](optimalportfolios/examples/backtests/minimal_backtest.py) — see one full workflow end-to-end.
 3. [`examples/solvers/min_variance.py`](optimalportfolios/examples/solvers/min_variance.py) — minimal solver demo with both single-date and rolling forms.
-4. [`examples/solvers/tracking_error.py`](optimalportfolios/examples/solvers/tracking_error.py) — the production TAA pattern (alpha + benchmark + TE constraint).
-5. [`examples/comparisons/optimisers.py`](optimalportfolios/examples/comparisons/optimisers.py) — see how objectives differ on the same universe.
+4. [`examples/solvers/minimum_tracking_error.py`](optimalportfolios/examples/solvers/minimum_tracking_error.py) — covariance-closest feasible portfolio relative to a benchmark.
+5. [`examples/solvers/tracking_error.py`](optimalportfolios/examples/solvers/tracking_error.py) — the production TAA pattern (alpha + benchmark + TE constraint).
+6. [`examples/comparisons/optimisers.py`](optimalportfolios/examples/comparisons/optimisers.py) — see how objectives differ on the same universe.
 
 ### Highlighted demos
 

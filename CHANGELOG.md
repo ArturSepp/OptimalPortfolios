@@ -7,6 +7,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+- ROSAA model execution supports an inert-by-default desk-instruction correction dead-band.
+  Current Min/Max and explicit minimum, maximum or fixed-target breaches inside the configured
+  tolerance are retained and audited without weakening product or lifecycle constraints.
+
 ### Changed
 - Covariance factorization is now owned exclusively by each low-level CVXPY solver. Wrappers pass
   only `factorize_covar`; solver APIs no longer accept a precomputed factorization, and
@@ -19,14 +24,20 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `return_outcome` switch were removed; validated weights and acceptance state are available as
   `outcome.weights` and `outcome.accepted`.
 
-## [6.10.0] - 2026-08-08
+## [6.10.0] - 2026-08-09
 
-**No numerical behaviour changes.** The delegated results are pinned against pre-change
-characterisation goldens and independent covariance identities at `rtol=1e-12`.
+**No numerical behaviour changes to existing entry points.** The delegated results are pinned
+against pre-change characterisation goldens and independent covariance identities at
+`rtol=1e-12`.
 
 ### Added
 - `build_risk_model` adapts rolling factor covariance data, dated current factor snapshots, and
   covariance-only dictionaries to the canonical `qis.RiskModel` computation layer.
+- Minimum-tracking-error optimisation now provides paired single-date and rolling entry points;
+  the rolling pipeline supports static or time-varying benchmarks, prior-weight drift, and
+  point-in-time asset inclusion indicators.
+- `compute_eligible_rebalancing_bounds` derives auditable current-to-model implementation
+  corridors and rebalancing indicators from instrument-level limits.
 
 ### Changed
 - `PortfolioOptimisationResult` delegates tracking error, factor/residual tracking-error

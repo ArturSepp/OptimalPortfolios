@@ -9,9 +9,9 @@ Compatible CVXPY solvers factor covariance once per solve by default through
 and an ``OptimizationOutcome`` with report-ready ``ConstraintResidual`` records.
 
 Submodule structure:
-    general/    — objective-driven solvers (min-var, max Sharpe, max div, CARA, risk budgeting)
-    saa/        — strategic solvers with CMA inputs, return/vol targets
-    taa/        — tactical solvers with alpha signals, TE constraints, benchmarks
+    general/    - objective solvers, including minimum tracking error
+    saa/        - strategic solvers with CMA inputs and return/volatility targets
+    taa/        - tactical solvers with alpha signals, TE constraints and benchmarks
 """
 # config
 from optimalportfolios.optimization.config import OptimiserConfig
@@ -32,11 +32,15 @@ from optimalportfolios.optimization.constraints import (
     GroupLowerUpperConstraints,
     GroupTrackingErrorConstraint,
     GroupTurnoverConstraint,
+    compute_eligible_rebalancing_bounds,
     merge_group_lower_upper_constraints,
 )
 
 # general solvers
 from optimalportfolios.optimization.general import (
+    rolling_minimise_tracking_error,
+    wrapper_minimise_tracking_error,
+    cvx_minimise_tracking_error,
     rolling_quadratic_optimisation,
     wrapper_quadratic_optimisation,
     cvx_quadratic_optimisation,
