@@ -71,6 +71,12 @@ visualization = [
     "plotly>=5.0.0",
 ]
 
+docs = [
+    "sphinx>=7.2",
+    "furo>=2024.1.29",
+    "myst-parser>=2.0",
+]
+
 # the default 'mcf' matcher in covar_estimation.risk_labelling solves a min-cost-flow
 # path cover with networkx; the 'hungarian' matcher needs nothing extra.
 clustering = [

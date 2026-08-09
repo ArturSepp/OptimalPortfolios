@@ -12,6 +12,7 @@ __pycache__/
 
 # YAML
 *.yaml
+!.readthedocs.yaml
 
 # Byte-compiled / optimized / DLL files
 docs/figures/
