@@ -104,59 +104,59 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
     """
     if portfolio_objective == PortfolioObjective.EQUAL_RISK_CONTRIBUTION:
         weights = rolling_risk_budgeting(prices=prices,
-                                             constraints=constraints,
-                                             covar_dict=covar_dict,
-                                             risk_budget=risk_budget,
-                                             optimiser_config=optimiser_config)
+                                         constraints=constraints,
+                                         covar_dict=covar_dict,
+                                         risk_budget=risk_budget,
+                                         optimiser_config=optimiser_config)
 
     elif portfolio_objective == PortfolioObjective.MAX_DIVERSIFICATION:
         weights = rolling_maximise_diversification(prices=prices,
-                                                       constraints=constraints,
-                                                       covar_dict=covar_dict,
-                                                       optimiser_config=optimiser_config)
+                                                   constraints=constraints,
+                                                   covar_dict=covar_dict,
+                                                   optimiser_config=optimiser_config)
 
     elif portfolio_objective == PortfolioObjective.MIN_VARIANCE:
         weights = rolling_quadratic_optimisation(prices=prices,
-                                                     constraints=constraints,
-                                                     portfolio_objective=portfolio_objective,
-                                                     covar_dict=covar_dict,
-                                                     carra=carra,
-                                                     optimiser_config=optimiser_config)
+                                                 constraints=constraints,
+                                                 portfolio_objective=portfolio_objective,
+                                                 covar_dict=covar_dict,
+                                                 carra=carra,
+                                                 optimiser_config=optimiser_config)
 
     elif portfolio_objective == PortfolioObjective.QUADRATIC_UTILITY:
         expected_returns = estimate_rolling_ewma_means(prices=prices,
-                                                rebalancing_dates=list(covar_dict.keys()),
-                                                returns_freq=returns_freq,
-                                                span=span, annualize=True)
+                                                       rebalancing_dates=list(covar_dict.keys()),
+                                                       returns_freq=returns_freq,
+                                                       span=span, annualize=True)
         weights = rolling_quadratic_optimisation(prices=prices,
-                                                     constraints=constraints,
-                                                     portfolio_objective=portfolio_objective,
-                                                     covar_dict=covar_dict,
-                                                     expected_returns=expected_returns,
-                                                     carra=carra,
-                                                     optimiser_config=optimiser_config)
+                                                 constraints=constraints,
+                                                 portfolio_objective=portfolio_objective,
+                                                 covar_dict=covar_dict,
+                                                 expected_returns=expected_returns,
+                                                 carra=carra,
+                                                 optimiser_config=optimiser_config)
 
     elif portfolio_objective == PortfolioObjective.MAXIMUM_SHARPE_RATIO:
         expected_returns = estimate_rolling_ewma_means(prices=prices,
-                                                rebalancing_dates=list(covar_dict.keys()),
-                                                returns_freq=returns_freq,
-                                                span=span, annualize=True)
+                                                       rebalancing_dates=list(covar_dict.keys()),
+                                                       returns_freq=returns_freq,
+                                                       span=span, annualize=True)
         weights = rolling_maximize_portfolio_sharpe(prices=prices,
-                                                        expected_returns=expected_returns,
-                                                        constraints=constraints,
-                                                        covar_dict=covar_dict,
-                                                        optimiser_config=optimiser_config)
+                                                    expected_returns=expected_returns,
+                                                    constraints=constraints,
+                                                    covar_dict=covar_dict,
+                                                    optimiser_config=optimiser_config)
 
     elif portfolio_objective == PortfolioObjective.MAX_CARA_MIXTURE:
         weights = rolling_maximize_cara_mixture(prices=prices,
-                                                    constraints=constraints,
-                                                    time_period=time_period,
-                                                    returns_freq=returns_freq,
-                                                    rebalancing_freq=rebalancing_freq,
-                                                    carra=carra,
-                                                    n_components=n_mixures,
-                                                    roll_window=roll_window,
-                                                    optimiser_config=optimiser_config)
+                                                constraints=constraints,
+                                                time_period=time_period,
+                                                returns_freq=returns_freq,
+                                                rebalancing_freq=rebalancing_freq,
+                                                carra=carra,
+                                                n_components=n_mixures,
+                                                roll_window=roll_window,
+                                                optimiser_config=optimiser_config)
 
     else:
         raise NotImplementedError(f"{portfolio_objective}")
