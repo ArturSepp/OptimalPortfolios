@@ -21,7 +21,7 @@ covar_estimation/
 ├── covar_reporting.py          # Diagnostic plots (clusters, betas, R²)
 ├── utils.py                    # Shared utilities (returns computation)
 └── tests/
-    └── factor_covar_estimator_test.py
+    └── factor_covar_estimator_local.py
 
 # External (from factorlasso package):
 #   CurrentFactorCovarData      — single-date factor covariance decomposition

@@ -29,7 +29,7 @@ optimalportfolios/alphas/
 │   ├── rolling_ewma_mean.py           # estimate_rolling_ewma_means()
 │   ├── utils.py                       # score_within_clusters()
 │   └── tests/
-│       └── signals_test.py
+│       └── signals_local.py
 ├── alpha_data.py                      # AlphasData container
 ├── backtest_alphas.py                 # Backtesting harness
 └── README.md

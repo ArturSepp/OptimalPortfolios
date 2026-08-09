@@ -997,7 +997,7 @@ directly from the deleted module path
 * Within-group cross-sectional scoring via `group_data` parameter
 * `AlphasData` container moved from `utils/manager_alphas.py` to `alphas/alpha_data.py`
 * `backtest_alphas.py` moved from `reports/` to `alphas/` with fixed function names (typo corrections: `backtest_alpha_signas` → `backtest_alpha_signals`, etc.)
-* Comprehensive test suite in `alphas/tests/signals_test.py`
+* Comprehensive test suite in `alphas/tests/signals_local.py`
 
 **Deprecated and removed:**
 

@@ -25,15 +25,15 @@ optimization/
 │   ├── maximise_alpha_over_tre.py
 │   └── maximise_alpha_with_target_yield.py
 └── tests/                          # One test file per solver
-    ├── quadratic_test.py
-    ├── max_sharpe_test.py
-    ├── max_diversification_test.py
-    ├── risk_budgeting_test.py
-    ├── carra_mixture_test.py
-    ├── min_variance_target_return_test.py
-    ├── max_return_target_vol_test.py
-    ├── maximise_alpha_over_tre_test.py
-    ├── maximise_alpha_with_target_yield_test.py
+    ├── quadratic_local.py
+    ├── max_sharpe_local.py
+    ├── max_diversification_local.py
+    ├── risk_budgeting_local.py
+    ├── carra_mixture_local.py
+    ├── min_variance_target_return_local.py
+    ├── max_return_target_vol_local.py
+    ├── maximise_alpha_over_tre_local.py
+    ├── maximise_alpha_with_target_yield_local.py
     ├── constraints_test.py
     ├── test_constraints.py
     └── constraints_dev_tests.py

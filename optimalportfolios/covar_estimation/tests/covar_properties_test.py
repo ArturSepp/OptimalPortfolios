@@ -1,7 +1,7 @@
 """
 properties the covariance estimators must have, asserted rather than printed.
 
-Both estimators had diagnostic scripts and no tests. `ewma_covar_estimator_test.py` computes the
+Both estimators had diagnostic scripts and no tests. `ewma_covar_estimator_local.py` computes the
 agreement between `fit_current_covar` and the last matrix of `fit_rolling_covars`, prints either
 "EXACT MATCH" or "MISMATCH — investigate", and returns; nothing reads the output, so a mismatch
 has always been a line of console text rather than a failure. That comparison is the first test
@@ -171,7 +171,7 @@ def test_fit_current_covar_equals_the_last_rolling_matrix() -> None:
     """
     the two entry points agree on the same data.
 
-    This is the check `ewma_covar_estimator_test.py` prints as "EXACT MATCH" or
+    This is the check `ewma_covar_estimator_local.py` prints as "EXACT MATCH" or
     "MISMATCH — investigate" and nobody reads. Monthly rebalancing puts the last rolling date on
     the last return date, so the two see identical data and must agree exactly; with a coarser
     rebalancing frequency they legitimately differ, because the rolling matrix is taken at the

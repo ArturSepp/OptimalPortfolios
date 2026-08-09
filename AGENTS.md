@@ -53,7 +53,7 @@ optimalportfolios/
 papers/              code accompanying the published papers (excluded from ruff)
 ```
 
-Tests live inside the package as `optimalportfolios/<subpackage>/tests/*_test.py`; there is no top-level `tests/` directory. Not every `*_test.py` is a pytest module: sixteen of them are `run_local_test` diagnostic scripts that print and plot, contribute no collected tests, and need the author's local price data. They are still imported during collection, so they must stay importable on a core install — put an optional import inside the function that needs it and raise `ImportError` naming the extra.
+Tests live inside the package as `optimalportfolios/<subpackage>/tests/*_test.py`; there is no top-level `tests/` directory. Fifteen `*_local.py` files are `run_local_test` diagnostic dispatchers: run them manually when the required local price data is available; pytest never collects them, and the test suite is exactly what bare `pytest` collects.
 
 ## Commands
 

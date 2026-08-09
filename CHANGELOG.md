@@ -226,7 +226,7 @@ backtest paths are unchanged from the 6.4.0 tree.
   `AlphasData` adapter, the per-component sweep and the comparison aggregation
   are collected again.
 - `yfinance` is no longer imported at module scope in
-  `examples/data/test_data.py` and `universe/tests/universe_data_test.py`. Both
+  `examples/data/test_data.py` and `universe/tests/universe_data_local.py`. Both
   imports are function-local and raise `ImportError` naming the `[data]` extra,
   so a core install collects the suite instead of erroring. `yfinance` remains a
   test-and-example dependency; no library module imports it.
