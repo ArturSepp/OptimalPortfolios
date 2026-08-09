@@ -75,6 +75,7 @@ qis.save_fig(fig=figs[1], file_name=f"example_portfolio_factsheet2", local_path=
 
 # 6. can create customised report using portfolio_data custom report
 def run_customised_reporting(portfolio_data) -> plt.Figure:
+    """Plot NAV, weights and the return scatter of one portfolio on a custom figure."""
     with sns.axes_style("darkgrid"):
         fig, axs = plt.subplots(3, 1, figsize=(12, 12), tight_layout=True)
     perf_params = qis.PerfParams(freq='W-WED', freq_reg='ME')

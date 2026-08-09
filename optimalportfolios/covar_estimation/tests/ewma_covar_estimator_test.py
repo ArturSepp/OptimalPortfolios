@@ -15,6 +15,7 @@ from optimalportfolios.covar_estimation.ewma_covar_estimator import EwmaCovarEst
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     CURRENT_VS_ROLLING_LAST = 1
     ROLLING_COVAR_PROPERTIES = 2
 

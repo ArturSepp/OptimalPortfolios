@@ -1,3 +1,5 @@
+"""Public API of the alpha signal layer, one constructor pair per signal."""
+
 from optimalportfolios.alphas.alpha_data import AlphasData
 from optimalportfolios.alphas.signals.momentum import (
     compute_momentum_alpha,

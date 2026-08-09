@@ -76,6 +76,7 @@ def run_cross_backtest(prices: pd.DataFrame,
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     CROSS_BACKTEST = 1
 
 

@@ -1,3 +1,10 @@
+"""pybloqs reporting for a ``PortfolioOptimisationResult``.
+
+Dedicated to the optional ``reports`` backend and not reachable from
+``optimalportfolios/__init__.py``, so ``pybloqs`` is imported at module level
+here by documented exception.
+"""
+
 import pandas as pd
 import pybloqs as p
 import pybloqs.block.table_formatters as tf

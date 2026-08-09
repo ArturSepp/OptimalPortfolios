@@ -26,6 +26,7 @@ def plot_current_covar_data(covar_data: CurrentFactorCovarData,
                             **kwargs
                             ) -> List[plt.Figure]:
 
+    """Plot the HCGL diagnostics of one covariance snapshot."""
     df = covar_data.get_snapshot()
     figs = plot_hcgl_covar_data(x_covar=covar_data.x_covar,
                                 y_covar=covar_data.y_covar,
@@ -132,6 +133,20 @@ def plot_clusters(clusters: Dict[str, pd.Series],
                   cutoffs: Dict[str, float],
                   figsize: Tuple[float, float] = (14, 10)
                   ) -> Tuple[pd.Series, plt.Figure]:
+    """Plot the clustering dendrogram of each reporting cadence.
+
+    Args:
+        clusters: Cadence to asset cluster labels.
+        linkages: Cadence to scipy linkage matrix.
+        cutoffs: Cadence to the distance at which clusters were cut.
+        figsize: Figure size.
+
+    Returns:
+        The aggregated cluster labels and the figure.
+
+    Raises:
+        NotImplementedError: Unless exactly one or two cadences are supplied.
+    """
     fig = plt.figure(figsize=figsize, constrained_layout=True)
 
     if len(clusters.keys()) == 1:

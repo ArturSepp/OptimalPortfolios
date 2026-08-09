@@ -100,6 +100,7 @@ def run_backtest_under_policy(prices: pd.DataFrame,
                               group_data: pd.Series,
                               rebalancing_costs: float = 0.0003,
                               ) -> Tuple[pd.DataFrame, qis.PortfolioData]:
+    """Backtest a min-variance portfolio under one drifted-weights policy."""
     cfg = OptimiserConfig(use_drifted_weights_0=use_drifted_weights_0)
     weights = rolling_quadratic_optimisation(
         prices=prices,
@@ -124,6 +125,7 @@ def run_backtest_under_policy(prices: pd.DataFrame,
 # -----------------------------------------------------------------------------
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     DRIFT_POLICY_COMPARISON = 1
 
 

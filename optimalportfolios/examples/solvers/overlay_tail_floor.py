@@ -89,11 +89,13 @@ def create_synthetic_inputs() -> tuple:
 
 
 class UnitTests(Enum):
+    """Unit-test scenarios ``run_unit_test`` can run."""
     NO_FLOOR = 1
     ZERO_FLOOR = 2
 
 
 def run_unit_test(unit_test: UnitTests) -> None:
+    """Solve the synthetic overlay problem for one scenario and print the weights."""
     means, covar, bear_contributions = create_synthetic_inputs()
     if unit_test == UnitTests.NO_FLOOR:
         w = solve_overlay_tail_floor(means=means, covar=covar,

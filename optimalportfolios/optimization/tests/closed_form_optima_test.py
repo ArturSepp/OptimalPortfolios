@@ -189,6 +189,7 @@ def test_max_diversification_maximises_the_diversification_ratio() -> None:
     vols = np.sqrt(np.diag(sigma))
 
     def ratio(w: np.ndarray) -> float:
+        """Diversification ratio of a weight vector."""
         return float(w @ vols / np.sqrt(w @ sigma @ w))
 
     best = ratio(weights)

@@ -48,6 +48,7 @@ def _panel() -> Tuple[pd.DataFrame, pd.Series, pd.Series, pd.DataFrame]:
     n = len(dates)
 
     def nav(vol: float) -> np.ndarray:
+        """A random-walk NAV path at the given per-period vol."""
         return 100.0 * np.exp(np.cumsum(rng.normal(0.005, vol, size=n)))
 
     prices = pd.DataFrame({t: nav(0.03 + 0.005 * i)
@@ -62,6 +63,7 @@ def _panel() -> Tuple[pd.DataFrame, pd.Series, pd.Series, pd.DataFrame]:
 
 # each entry: label, callable(**span_kwargs) -> (score, raw), the span under test
 def _signal_cases():
+    """One case per signal: label, runner, the span under test, and its scalar value."""
     prices, benchmark, returns_freq, carry = _panel()
     common = dict(prices=prices, returns_freq=returns_freq)
     return [
@@ -89,27 +91,32 @@ IDS = [c[0] for c in CASES]
 # -- the resolver -------------------------------------------------------------
 
 def test_scalar_resolves_to_itself_at_every_cadence() -> None:
+    """A scalar span means the same horizon whatever the cadence."""
     for freq in ('ME', 'QE', 'W-WED'):
         assert resolve_span(12, freq=freq, name='long_span') == 12
 
 
 def test_mapping_resolves_per_cadence() -> None:
+    """A mapping resolves to the entry of the asset's reporting cadence."""
     table = {'ME': 12, 'QE': 4}
     assert resolve_span(table, freq='ME', name='long_span') == 12
     assert resolve_span(table, freq='QE', name='long_span') == 4
 
 
 def test_none_stays_none_so_an_optional_span_can_still_be_disabled() -> None:
+    """``None`` survives the resolver so an optional span stays disabled."""
     assert resolve_span(None, freq='QE', name='vol_span') is None
 
 
 def test_an_uncovered_cadence_raises_rather_than_inheriting() -> None:
+    """A cadence missing from the mapping raises instead of silently inheriting."""
     with pytest.raises(ValueError, match='but an asset reports at'):
         resolve_span({'ME': 12}, freq='QE', name='long_span')
 
 
 @pytest.mark.parametrize('bad', [0, -3, True, 2.5])
 def test_a_span_that_is_not_a_positive_int_raises(bad) -> None:
+    """A span that is not a positive int is rejected."""
     with pytest.raises(ValueError):
         resolve_span(bad, freq='ME', name='long_span')
 
@@ -196,6 +203,7 @@ def test_the_single_frequency_entry_point_resolves_a_mapping() -> None:
 
 
 def test_the_single_frequency_entry_point_raises_on_an_uncovered_cadence() -> None:
+    """The single-frequency branch also raises on a cadence the mapping omits."""
     prices, benchmark, _, _ = _panel()
     with pytest.raises(ValueError, match='but an asset reports at'):
         compute_momentum_alpha(prices=prices, benchmark_price=benchmark, returns_freq='QE',
@@ -207,6 +215,7 @@ def test_the_single_frequency_entry_point_raises_on_an_uncovered_cadence() -> No
 # never touch, because compute_*_alpha dispatches to _compute_*_alpha_mixed_freq
 # instead. Without them, a bucket loop can stop resolving and nothing fails.
 def _cluster_cases():
+    """One case per cluster entry point, taking the cadence as an argument."""
     prices, benchmark, returns_freq, carry = _panel()
     return [
         ('momentum', lambda freq, **k: compute_momentum_cluster_alpha(
@@ -246,6 +255,7 @@ def test_the_cluster_mixed_branch_resolves_per_bucket(label, run, span_name, sca
 @pytest.mark.parametrize('label,run,span_name,scalar', CLUSTER_CASES, ids=CLUSTER_IDS)
 def test_the_cluster_mixed_branch_raises_on_an_uncovered_cadence(
         label, run, span_name, scalar) -> None:
+    """The cluster mixed-frequency bucket loop raises on an uncovered cadence."""
     with pytest.raises(ValueError, match='but an asset reports at'):
         run(MIXED_FREQ, **{span_name: {'ME': scalar}})
 

@@ -59,14 +59,15 @@ Tests live inside the package as `optimalportfolios/<subpackage>/tests/*_test.py
 
 ```bash
 pip install -e ".[dev]"                                  # editable install with dev tools
-pytest                                                   # run the test suite (180 tests, ~9 s)
+pytest                                                   # run the test suite (593 tests, ~20 s)
 pytest optimalportfolios/optimization/tests/constraints_test.py -v
 ruff check optimalportfolios/                            # lint (papers/ is excluded)
+interrogate                                              # docstring coverage, must stay at 100%
 ```
 
 *Note: Terminal execution should be compatible with Windows PowerShell within PyCharm.*
 
-Optional extras: `data`, `reports`, `visualization`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.12 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal.
+Optional extras: `data`, `reports`, `visualization`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.12 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. A third job runs `interrogate` on 3.12 and gates the docstring coverage at 100%. Run it from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
 
 ## Conventions
 
@@ -76,6 +77,7 @@ Optional extras: `data`, `reports`, `visualization`, `jupyter`, `dev`, `all`. Su
   - `TID251` fails an import of `trendfollowing`, `privateassets`, `stochvolmodels`, `goal_based_allocation` or `vanilla_option_pricers`. This package depends on `qis` and `factorlasso` and on nothing else in the stack; subject packages never import each other. `qis` and `factorlasso` are of course not banned — they are declared dependencies, and importing them is the point.
   - `TID253` fails a **module-level** import of an optional extra (`yfinance`, `pandas_datareader`, `pybloqs`, `plotly`, `pyarrow`, `psycopg2`, `sqlalchemy`); the same import inside a function passes, which is the pattern the collection note above requires. `optimalportfolios/examples/**` and `reports/portfolio_result_pybloqs.py` are named in `per-file-ignores` — add to that list only for a module `optimalportfolios/__init__.py` cannot reach.
   - `ICN` pins `import numpy as np` and `import pandas as pd`. Ruff's default alias map is replaced rather than extended, so `matplotlib` stays free to be both `mpl` and `plt`.
+- **Every module, class, method and function carries a docstring.** `interrogate` is configured in `pyproject.toml` with `fail-under = 100` and, like ruff, excludes `papers/`. The bar is 100% rather than a partial target for the same reason the invariants above are lint: at 100% a miss is always something you just introduced. Nested closures and one-line properties count too — a short single line stating what the thing returns is enough; reserve the `Args:`/`Returns:` block for public entry points.
 - Optimisation problems are expressed with `cvxpy`; `quadprog` is used where a dedicated QP solver is faster. Do not introduce a third optimisation backend.
 - Enums and dataclasses carry configuration (optimiser type, constraint sets, estimation settings) — extend the existing enum rather than passing raw strings.
 - Time series are pandas objects with a `DatetimeIndex`; the backtest layer is NaN-aware by design, so preserve NaN handling when refactoring.
@@ -187,4 +189,4 @@ Then: commit, tag `v<version>`, build and publish to PyPI, and cut a GitHub Rele
 
 - The previous `CLAUDE.md` described version 4.1.1 and a black/isort/flake8/mypy toolchain; the project has since moved to `ruff` and this file supersedes it.
 - `ruff check optimalportfolios/` reports around 780 findings, almost all `E501` line-length in the older modules. CI does not gate on lint. Fix only the lines your specific change touches; a repository-wide reflow is not wanted.
-- **Offline Fixture Anomaly:** The 6.2.0 changelog mentions a 69-test suite and an offline fixture (`examples/data/multiasset_returns.csv` with `examples.data.multiasset.load_multiasset_data`). This fixture is committed but unused. Ignore it completely and do not attempt to integrate it into the current 180-test suite.
+- **Offline Fixture Anomaly:** The 6.2.0 changelog mentions a 69-test suite and an offline fixture (`examples/data/multiasset_returns.csv` with `examples.data.multiasset.load_multiasset_data`). This fixture is committed but unused. Ignore it completely and do not attempt to integrate it into the current 593-test suite.

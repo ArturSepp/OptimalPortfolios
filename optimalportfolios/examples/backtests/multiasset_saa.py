@@ -28,6 +28,7 @@ BACKTEST_START = '31Dec2005'
 
 
 def _saa_covar_dict(prices: pd.DataFrame):
+    """Rolling EWMA covariances for the SAA examples, on the module's settings."""
     estimator = EwmaCovarEstimator(returns_freq=RETURNS_FREQ, span=EWMA_SPAN,
                                    rebalancing_freq=REBALANCING_FREQ)
     time_period = qis.TimePeriod(start=BACKTEST_START, end=prices.index[-1])
@@ -48,12 +49,14 @@ def _group_constraints(group_data: pd.Series) -> GroupLowerUpperConstraints:
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     ERC_VS_MIN_VARIANCE = 1
     GROUP_CONSTRAINED_ERC = 2
     OBJECTIVE_SWEEP = 3
 
 
 def run_local_test(local_test: LocalTests):
+    """Run one local diagnostic scenario for development and debugging."""
     data = load_multiasset_data()
     prices = data.prices
     tickers = prices.columns.to_list()

@@ -1,3 +1,10 @@
+"""Simulate factor-model returns and check the covariance they imply.
+
+``simulate_factor_model_returns`` draws betas, factors and idiosyncratic noise;
+``verify_factor_model`` compares the theoretical covariance with the empirical
+one, so a covariance estimator can be exercised against a known truth.
+"""
+
 import numpy as np
 import pandas as pd
 from typing import Tuple, Optional
@@ -340,6 +347,7 @@ if __name__ == "__main__":
 
 
     def cov_to_corr(cov_matrix):
+        """Correlation matrix implied by a covariance matrix."""
         std_devs = np.sqrt(np.diag(cov_matrix))
         return cov_matrix / np.outer(std_devs, std_devs)
 

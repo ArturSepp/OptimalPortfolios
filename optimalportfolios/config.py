@@ -1,3 +1,5 @@
+"""Portfolio objectives implemented by the rolling optimisation engine."""
+
 from enum import Enum
 
 

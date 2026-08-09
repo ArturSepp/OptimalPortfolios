@@ -93,6 +93,7 @@ def _estimate_rolling_regression_alphas(prices: pd.DataFrame,
     estimated_betas_dates = list(estimated_betas.keys())
 
     def _compute_excess_for_freq(asset_prices: pd.DataFrame, freq: str) -> pd.DataFrame:
+        """Excess returns of one reporting-cadence bucket, using its lagged betas."""
         # asset returns on this frequency define the spine
         y_ = qis.to_returns(prices=asset_prices, is_log_returns=True, drop_first=True, freq=freq)
         # factor returns over the SAME periods as the asset returns: reindex the

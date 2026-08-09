@@ -342,6 +342,7 @@ def solve_constrained_risk_budgeting(covar: np.ndarray,
     cache = {'lam': None, 'x': None}
 
     def solve_at(lambda_log: float) -> np.ndarray:
+        """Solve the log-barrier problem at ``lambda_log`` and cache the iterate."""
         if c_rows is None:
             x = _ccd_solve(covar=covar, budgets=budgets,
                            lower_bounds=lower_bounds, upper_bounds=upper_bounds,
@@ -356,6 +357,7 @@ def solve_constrained_risk_budgeting(covar: np.ndarray,
         return x
 
     def f(lambda_log: float) -> float:
+        """Budget residual ``sum(x(lambda)) - 1``, increasing in ``lambda_log``."""
         return float(np.sum(solve_at(lambda_log))) - 1.0
 
     # seed λ from the scaling identity of the unconstrained problem,

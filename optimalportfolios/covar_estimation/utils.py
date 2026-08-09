@@ -1,3 +1,5 @@
+"""Return construction shared by the covariance estimators."""
+
 from __future__ import annotations
 
 from typing import Optional

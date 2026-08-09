@@ -293,6 +293,7 @@ def _scipy_maximize_sharpe(covar: np.ndarray,
     x0 = np.ones(n) / n
 
     def neg_sharpe(w):
+        """Negative portfolio Sharpe ratio, flat at zero vol so SLSQP stays finite."""
         port_ret = means @ w
         port_vol = np.sqrt(w @ covar @ w)
         if port_vol < 1e-12:

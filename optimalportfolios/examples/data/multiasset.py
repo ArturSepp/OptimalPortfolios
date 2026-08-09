@@ -43,6 +43,7 @@ class MultiAssetData:
     sub_group_data: pd.Series
 
     def __post_init__(self):
+        """Validate that prices, returns and both group Series describe the same instruments."""
         if not self.returns.columns.equals(self.prices.columns):
             raise ValueError("returns and prices columns are misaligned")
         if not self.group_data.index.equals(self.returns.columns):
@@ -52,6 +53,7 @@ class MultiAssetData:
 
 
 def _data_path() -> Path:
+    """Path of the committed returns fixture, next to this module."""
     return Path(__file__).parent / FILE_NAME
 
 

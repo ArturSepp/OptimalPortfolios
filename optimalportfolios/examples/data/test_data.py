@@ -22,6 +22,7 @@ UNIVERSE_DATA = dict(SPY='Equities',
 
 
 def update_test_prices() -> pd.DataFrame:
+    """Download the test universe prices and save them as the committed fixture."""
     try:
         import yfinance as yf
     except ImportError as e:
@@ -37,11 +38,13 @@ def update_test_prices() -> pd.DataFrame:
 
 
 def load_test_data() -> pd.DataFrame:
+    """Load the committed test universe prices."""
     prices = qis.load_df_from_csv(file_name=FILE_NAME, local_path=local_path.get_resource_path())
     return prices
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     UPDATE_TEST_PRICES = 1
     LOAD_TEST_PRICES = 2
 

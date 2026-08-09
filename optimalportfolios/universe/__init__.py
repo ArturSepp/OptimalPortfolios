@@ -1,3 +1,6 @@
+"""Public API of the universe layer: metadata fields, ``UniverseData`` and its
+transforms.
+"""
 
 from optimalportfolios.universe.universe_data import MetadataField, UniverseData
 

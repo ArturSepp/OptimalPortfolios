@@ -51,6 +51,7 @@ def compute_benchamark_portfolio_risk_contributions(w_portfolio: pd.Series,
 
 
 def create_stocks_data():
+    """Download the Dow 30 prices and save them as the example's CSV fixture."""
     dow_30_tickers = ['NVDA', 'MSFT', 'AAPL', 'AMZN', 'JPM', 'WMT', 'V', 'JNJ', 'PG', 'HD', 'KO', 'CSCO', 'IBM',
                       'CVX', 'UNH', 'CRM', 'DIS', 'AXP', 'MCD', 'GS', 'MRK', 'CAT', 'VZ', 'BA', 'AMGN', 'HON', 'NKE',
                       'SHW', 'MMM', 'TRV']

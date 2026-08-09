@@ -728,6 +728,7 @@ class BenchmarkDeviationConstraints:
             raise ValueError(f"factor_max_deviation must be given")
 
     def copy(self) -> BenchmarkDeviationConstraints:
+        """Return a deep copy of the deviation loadings and bounds."""
         return BenchmarkDeviationConstraints(
             factor_loading_mat=self.factor_loading_mat.copy(),
             factor_max_deviation=self.factor_max_deviation.copy(),
@@ -753,6 +754,18 @@ class BenchmarkDeviationConstraints:
             w: cvx.Variable,
             benchmark_weights: pd.Series,
     ) -> List[Inequality]:
+        """Build the absolute active-deviation inequalities for each factor.
+
+        Groups whose loadings are all zero are skipped, so an unloaded group cannot
+        make the problem infeasible.
+
+        Args:
+            w: Weight variable.
+            benchmark_weights: Benchmark weights defining the active positions.
+
+        Returns:
+            One ``|c' (w - b)| <= max_deviation`` inequality per loaded factor.
+        """
         constraints = []
         for group in self.factor_max_deviation.index:
             group_loading = self.factor_loading_mat[group]
@@ -874,6 +887,7 @@ class BenchmarkBetaConstraint:
     beta_loadings: Optional[pd.Series] = None
 
     def __post_init__(self):
+        """Validate that a bound is given and that the range is not inverted."""
         if self.beta_min is None and self.beta_max is None:
             raise ValueError("at least one of beta_min / beta_max must be given")
         if (self.beta_min is not None and self.beta_max is not None
@@ -881,6 +895,7 @@ class BenchmarkBetaConstraint:
             raise ValueError(f"beta_min={self.beta_min} > beta_max={self.beta_max}")
 
     def copy(self) -> BenchmarkBetaConstraint:
+        """Return a copy of the bounds and of the loadings, when present."""
         return BenchmarkBetaConstraint(
             beta_min=self.beta_min,
             beta_max=self.beta_max,
@@ -930,6 +945,7 @@ class BenchmarkBetaConstraint:
         return constraints
 
     def print(self):
+        """Print the beta range and the current loadings."""
         print(f"beta range: [{self.beta_min}, {self.beta_max}]")
         print(f"beta_loadings:\n{self.beta_loadings}")
 

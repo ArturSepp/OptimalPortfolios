@@ -1,3 +1,7 @@
+"""Local diagnostic script for ``round_weights_to_pct``.
+
+Contributes no collected tests.
+"""
 
 import pandas as pd
 from enum import Enum
@@ -6,6 +10,7 @@ from optimalportfolios.utils.portfolio_funcs import round_weights_to_pct
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     ROUND_WEIGHTS = 1
 
 

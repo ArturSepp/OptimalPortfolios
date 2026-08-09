@@ -9,10 +9,12 @@ from typing import Tuple, Union, Optional
 
 
 def compute_portfolio_variance(w: np.ndarray, covar: np.ndarray) -> float:
+    """Return the portfolio variance ``w' Sigma w``."""
     return w.T @ covar @ w
 
 
 def compute_portfolio_risk_contributions(w: np.ndarray, covar: np.ndarray) -> np.ndarray:
+    """Return per-asset risk contributions, which sum to the portfolio vol."""
     portfolio_vol = np.sqrt(w.T @ covar @ w)
     marginal_risk_contribution = covar @ w.T
     rc = np.multiply(marginal_risk_contribution, w) / portfolio_vol
@@ -22,6 +24,7 @@ def compute_portfolio_risk_contributions(w: np.ndarray, covar: np.ndarray) -> np
 def compute_portfolio_vol(covar: Union[np.ndarray, pd.DataFrame],
                           weights: Union[np.ndarray, pd.Series]
                           ):
+    """Return the portfolio volatility, accepting numpy or pandas inputs."""
     if isinstance(covar, pd.DataFrame):
         covar = covar.to_numpy()
     if isinstance(weights, pd.Series):
@@ -35,6 +38,19 @@ def compute_tre_turnover_stats(covar: np.ndarray,
                                weights_0: pd.Series,
                                alphas: pd.Series = None
                                ) -> Tuple[float, float, float, float, float]:
+    """Summarise one solution against its benchmark and its prior weights.
+
+    Args:
+        covar: Covariance aligned with the weight indices.
+        benchmark_weights: Benchmark weights.
+        weights: Solution weights.
+        weights_0: Prior weights, used for turnover.
+        alphas: Optional alphas, used for the portfolio alpha.
+
+    Returns:
+        ``(te_vol, turnover, port_alpha, port_vol, benchmark_vol)``, with the alpha
+        reported as 0.0 when no alphas are given.
+    """
     weight_diff = weights.subtract(benchmark_weights)
     benchmark_vol = np.sqrt(benchmark_weights @ covar @ benchmark_weights.T)
     port_vol = np.sqrt(weights @ covar @ weights.T)
@@ -48,6 +64,7 @@ def compute_tre_turnover_stats(covar: np.ndarray,
 
 
 def calculate_diversification_ratio(w: np.ndarray, covar: np.ndarray) -> float:
+    """Return the weighted average asset vol over the portfolio vol."""
     avg_weighted_vol = np.sqrt(np.diag(covar)) @ w.T
     portfolio_vol = np.sqrt(compute_portfolio_variance(w, covar))
     diversification_ratio = avg_weighted_vol/portfolio_vol
@@ -58,6 +75,11 @@ def compute_portfolio_risk_contribution_outputs(weights: pd.Series,
                                                 clean_covar: pd.DataFrame,
                                                 risk_budget: Optional[pd.Series] = None
                                                 ) -> pd.DataFrame:
+    """Tabulate weights, risk contributions and risk budgets per asset.
+
+    Weights are aligned to the covariance columns; ``risk_budget`` defaults to
+    zeros when it is not supplied.
+    """
     weights = weights.loc[clean_covar.columns]
     asset_rc = compute_portfolio_risk_contributions(weights.to_numpy(), clean_covar.to_numpy())
     asset_rc_ratio = asset_rc / np.nansum(asset_rc)

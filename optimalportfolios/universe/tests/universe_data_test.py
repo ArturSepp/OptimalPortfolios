@@ -1,3 +1,8 @@
+"""Local diagnostic script for ``UniverseData``.
+
+Contributes no collected tests and needs the ``data`` extra: the universe is
+downloaded, not committed.
+"""
 
 import pandas as pd
 import qis as qis
@@ -51,6 +56,7 @@ def fetch_universe_data(start_date: str = "2003-12-31") -> UniverseData:
 
 
 def fetch_risk_factor_prices(start_date: str = "2003-12-31") -> pd.DataFrame:
+    """Download the equity and rate risk-factor prices (needs the ``data`` extra)."""
     try:
         import yfinance as yf
     except ImportError as e:
@@ -64,6 +70,7 @@ def fetch_risk_factor_prices(start_date: str = "2003-12-31") -> pd.DataFrame:
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     CREATE_UNIVERSE_DATA = 1
     LOAD_UNIVERSE_DATA = 2
 

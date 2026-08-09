@@ -31,6 +31,7 @@ TICKERS = pd.Index(['A', 'B', 'C', 'D'])
 
 
 def _covar() -> np.ndarray:
+    """A well-conditioned 4-asset covariance built from vols and a correlation matrix."""
     vols = np.array([0.20, 0.12, 0.08, 0.05])
     corr = np.array([
         [1.00, 0.30, 0.10, 0.00],
@@ -42,6 +43,7 @@ def _covar() -> np.ndarray:
 
 
 def _group_loadings() -> pd.DataFrame:
+    """Loadings splitting the four tickers into a Growth and a Defensive group."""
     return pd.DataFrame({
         'Growth': [1.0, 1.0, 0.0, 0.0],
         'Defensive': [0.0, 0.0, 1.0, 1.0],
@@ -49,6 +51,7 @@ def _group_loadings() -> pd.DataFrame:
 
 
 def _constraints(enforcement: ConstraintEnforcementType) -> Constraints:
+    """Constraints carrying the group TRE term as a hard bound or as a utility penalty."""
     benchmark = pd.Series(0.25, index=TICKERS)
     kwargs = {}
     if enforcement == ConstraintEnforcementType.FORCED_CONSTRAINTS:
@@ -73,6 +76,7 @@ def _constraints(enforcement: ConstraintEnforcementType) -> Constraints:
 
 
 def test_factorization_reconstructs_stabilized_near_singular_covariance() -> None:
+    """The factor reproduces the stabilized covariance, with the floor applied and reported."""
     covar = _covar()
     covar[-1, :] = covar[-2, :]
     covar[:, -1] = covar[:, -2]
@@ -89,6 +93,7 @@ def test_factorization_reconstructs_stabilized_near_singular_covariance() -> Non
 
 
 def test_wrapper_can_return_a_structured_auditable_outcome() -> None:
+    """The TRE wrapper returns an accepted, compliant outcome with its solve geometry."""
     constraints = _constraints(ConstraintEnforcementType.FORCED_CONSTRAINTS)
     weights, outcome = tre_solver.wrapper_maximise_alpha_over_tre(
         pd_covar=pd.DataFrame(_covar(), index=TICKERS, columns=TICKERS),
@@ -110,6 +115,7 @@ def test_wrapper_can_return_a_structured_auditable_outcome() -> None:
 
 
 def test_factorization_accepts_roundoff_but_rejects_material_indefiniteness() -> None:
+    """Round-off negativity is floored; material indefiniteness raises."""
     roundoff = np.diag([1.0, -5e-12])
     result = factorize_covariance(roundoff)
     assert float(np.linalg.eigvalsh(result.covar).min()) > 0.0
@@ -119,6 +125,7 @@ def test_factorization_accepts_roundoff_but_rejects_material_indefiniteness() ->
 
 
 def test_factorized_and_legacy_utility_solutions_are_equivalent() -> None:
+    """Factorized and legacy utility solves reach the same weights."""
     constraints = _constraints(ConstraintEnforcementType.UTILITY_CONSTRAINTS)
     alphas = np.array([0.03, 0.01, -0.01, 0.0])
 
@@ -140,6 +147,7 @@ def test_factorized_and_legacy_utility_solutions_are_equivalent() -> None:
 
 
 def test_factorized_group_utility_preserves_quadratic_value() -> None:
+    """The factorized group TRE utility term has the same value as the legacy form."""
     group_constraint = _constraints(
         ConstraintEnforcementType.UTILITY_CONSTRAINTS
     ).group_tracking_error_constraint
@@ -169,10 +177,12 @@ def test_solve_factorizes_once_with_multiple_groups(
         monkeypatch,
         enforcement: ConstraintEnforcementType,
 ) -> None:
+    """One solve factorizes the covariance exactly once, for either enforcement type."""
     calls = 0
     original = tre_solver.factorize_covariance
 
     def counted(covar):
+        """Count the calls and delegate to the real ``factorize_covariance``."""
         nonlocal calls
         calls += 1
         return original(covar)
@@ -195,9 +205,11 @@ def test_solve_factorizes_once_with_multiple_groups(
 
 
 def test_factorization_is_enabled_by_default_and_can_be_disabled(monkeypatch) -> None:
+    """Factorization defaults to on and is genuinely skipped when disabled."""
     assert OptimiserConfig().factorize_covar is True
 
     def unexpected(_covar):
+        """Fail the test if the solver factorizes when the flag is off."""
         raise AssertionError('factorize_covariance must not be called')
 
     monkeypatch.setattr(tre_solver, 'factorize_covariance', unexpected)
@@ -216,6 +228,7 @@ def test_factorization_is_enabled_by_default_and_can_be_disabled(monkeypatch) ->
 
 
 def _basic_constraints(**kwargs) -> Constraints:
+    """Long-only box constraints over the four tickers, with optional overrides."""
     values = dict(
         min_weights=pd.Series(0.0, index=TICKERS),
         max_weights=pd.Series(0.80, index=TICKERS),
@@ -225,6 +238,7 @@ def _basic_constraints(**kwargs) -> Constraints:
 
 
 def _run_quadratic(optimiser_config: OptimiserConfig) -> pd.Series:
+    """Run the quadratic min-variance wrapper and return its weights."""
     return quadratic_solver.wrapper_quadratic_optimisation(
         pd_covar=pd.DataFrame(_covar(), index=TICKERS, columns=TICKERS),
         constraints=_basic_constraints(),
@@ -234,6 +248,7 @@ def _run_quadratic(optimiser_config: OptimiserConfig) -> pd.Series:
 
 
 def _run_max_sharpe(optimiser_config: OptimiserConfig) -> pd.Series:
+    """Run the maximum-Sharpe wrapper and return its weights."""
     return max_sharpe_solver.wrapper_maximize_portfolio_sharpe(
         pd_covar=pd.DataFrame(_covar(), index=TICKERS, columns=TICKERS),
         means=pd.Series([0.08, 0.06, 0.04, 0.02], index=TICKERS),
@@ -245,6 +260,7 @@ def _run_max_sharpe(optimiser_config: OptimiserConfig) -> pd.Series:
 def _run_min_variance_target_return(
         optimiser_config: OptimiserConfig,
 ) -> pd.Series:
+    """Run the min-variance target-return wrapper and return its weights."""
     return min_variance_solver.wrapper_min_variance_target_return(
         pd_covar=pd.DataFrame(_covar(), index=TICKERS, columns=TICKERS),
         expected_returns=pd.Series([0.08, 0.06, 0.04, 0.02], index=TICKERS),
@@ -255,6 +271,7 @@ def _run_min_variance_target_return(
 
 
 def _run_max_return_target_vol(optimiser_config: OptimiserConfig) -> pd.Series:
+    """Run the max-return target-vol wrapper and return its weights."""
     return max_return_solver.wrapper_max_return_target_vol(
         pd_covar=pd.DataFrame(_covar(), index=TICKERS, columns=TICKERS),
         expected_returns=pd.Series([0.08, 0.06, 0.04, 0.02], index=TICKERS),
@@ -265,6 +282,7 @@ def _run_max_return_target_vol(optimiser_config: OptimiserConfig) -> pd.Series:
 
 
 def _run_alpha_target_return(optimiser_config: OptimiserConfig) -> pd.Series:
+    """Run the alpha-with-target-return wrapper and return its weights."""
     return target_yield_solver.wrapper_maximise_alpha_with_target_return(
         pd_covar=pd.DataFrame(_covar(), index=TICKERS, columns=TICKERS),
         alphas=pd.Series([0.03, 0.01, -0.01, 0.0], index=TICKERS),
@@ -296,10 +314,12 @@ def test_all_other_supported_solves_factorize_once_and_honour_flag(
         enabled: bool,
         expected_calls: int,
 ) -> None:
+    """Every other supported wrapper factorizes once when enabled and never when not."""
     calls = 0
     original = solver_module.factorize_covariance
 
     def counted(covar):
+        """Count the calls and delegate to the real ``factorize_covariance``."""
         nonlocal calls
         calls += 1
         return original(covar)
@@ -327,6 +347,7 @@ def test_all_other_supported_solves_factorize_once_and_honour_flag(
 def test_cvx_solver_api_does_not_accept_precomputed_factorization(
         solver_function,
 ) -> None:
+    """The cvx-level solvers take the flag, never a precomputed factorization."""
     parameters = inspect.signature(solver_function).parameters
     assert 'factorize_covar' in parameters
     assert 'covar_factorization' not in parameters

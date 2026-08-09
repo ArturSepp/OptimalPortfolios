@@ -85,6 +85,7 @@ def run_multi_optimisers_backtest(prices: pd.DataFrame,
 
 
 class LocalTests(Enum):
+    """Local diagnostic scenarios ``run_local_test`` can run."""
     MULTI_OPTIMISERS_BACKTEST = 1
 
 

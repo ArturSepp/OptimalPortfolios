@@ -1,3 +1,5 @@
+"""Public API of the alpha layer: signals, profiling and alpha backtests."""
+
 from optimalportfolios.alphas.alpha_data import AlphasData
 from optimalportfolios.alphas.profile import (
     backtest_alpha_rank_portfolio,

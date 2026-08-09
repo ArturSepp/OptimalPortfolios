@@ -212,6 +212,7 @@ class PortfolioOptimisationResult:
         return self._weights_df - self._current_df
 
     def get_assets_metadata(self, return_name: Optional[str] = 'CMA') -> pd.DataFrame:
+        """Asset metadata, with the expected return appended as ``return_name`` when available."""
         asset_table = self.metadata
         if self.expected_return is not None and return_name is not None:
             asset_table = pd.concat([asset_table, self.expected_return.rename(return_name)],
@@ -219,6 +220,7 @@ class PortfolioOptimisationResult:
         return asset_table
 
     def get_asset_betas_table(self, return_name: Optional[str] = 'CMA') -> pd.DataFrame:
+        """Covariance snapshot per asset, with the expected return as its first column."""
         asset_risk_table = self.covar_data.get_snapshot()
         if self.expected_return is not None and return_name is not None:
             asset_risk_table = pd.concat([self.expected_return.rename(return_name),
@@ -227,6 +229,7 @@ class PortfolioOptimisationResult:
         return asset_risk_table
 
     def get_combined_asset_weight_table(self, weights_to_pct: bool = False) -> pd.DataFrame:
+        """Asset metadata joined to the weight summary, one row per asset."""
         weights_df = self.compute_weight_summary(weights_to_pct=weights_to_pct)
         metadata = self.get_assets_metadata()
         weights = pd.concat([metadata, weights_df], axis=1, sort=False)
@@ -587,6 +590,7 @@ class PortfolioOptimisationResult:
         return result
 
     def compute_group_allocation(self, group: str, name: str = None, weights_to_pct: bool = False) -> pd.Series:
+        """Weights of one portfolio aggregated over the levels of ``group``."""
         name = name or self.portfolio_names[0]
         group_data = self.group_attributions[group]
         allocation = self.get_weights(name).groupby(group_data).sum()
@@ -653,6 +657,7 @@ class PortfolioOptimisationResult:
                 trade_w[name] = w - cur
 
         def _build_df(data: Dict[str, pd.Series]) -> pd.DataFrame:
+            """Assemble one tickers-by-portfolio frame, rounded to percent when asked."""
             df = pd.DataFrame(data)  # rows = tickers, cols = portfolio names
             if weights_to_pct:
                 df = df.apply(round_weights_to_pct, axis=0)
@@ -986,6 +991,7 @@ class PortfolioOptimisationResult:
         return dfs, result
 
     def __repr__(self) -> str:
+        """One-line summary: vol, tracking error and, when known, turnover."""
         name = self.portfolio_names[0]
         w = self.get_weights(name)
         vol = self.compute_portfolio_vol(w)

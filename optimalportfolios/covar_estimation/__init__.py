@@ -1,3 +1,6 @@
+"""Public API of the covariance layer: the EWMA and factor (HCGL) estimators and
+their reporting helpers.
+"""
 
 from optimalportfolios.covar_estimation.factor_covar_estimator import (FactorCovarEstimator,
                                                                        estimate_lasso_factor_covar_data)
