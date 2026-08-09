@@ -13,6 +13,12 @@ The rolling wrapper accepts pre-computed covariance matrices (from any
 CovarEstimator) and rebalances at each date in the covar dict. Compatible
 CVXPY risk expressions reuse one controlled covariance factorization per
 filtered single-date solve.
+
+Expected returns and covariance must use consistent caller-supplied annualisation; weights are
+dimensionless and the solver does not resample inputs. Main entry points are
+``rolling_quadratic_optimisation``, ``wrapper_quadratic_optimisation``, and
+``cvx_quadratic_optimisation``. Boundary: mean/covariance estimation, policy design, and
+performance reporting are external.
 """
 # packages
 import warnings

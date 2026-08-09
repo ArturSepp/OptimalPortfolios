@@ -9,6 +9,12 @@ Unlike Euclidean target projection, cash and low-volatility instruments enter
 through the full covariance matrix. The caller owns policy-specific bounds;
 this module owns covariance factorization, CVXPY construction, validation, and
 structured diagnostics.
+
+Weights and benchmark weights are dimensionless; covariance remains in caller-supplied variance
+units, so the objective has those same units and no resampling or annualisation occurs here.
+Main entry points are ``rolling_minimise_tracking_error``,
+``wrapper_minimise_tracking_error``, and ``cvx_minimise_tracking_error``. Boundary: benchmark
+design, covariance estimation, and policy-specific bounds remain caller responsibilities.
 """
 from typing import Dict, Optional, Tuple, Union
 

@@ -39,6 +39,12 @@ parameter and cannot change any result. ``validate_solver_inputs`` reuses the
 wrapper's factorization telemetry, while ``RunDiagnostics`` aggregates solver
 outcomes, relaxations, dropped zero-loading groups, input-contract findings,
 and captured warnings for persistent logs and workbook reporting.
+
+Weights and constraint exposures are dimensionless; covariance matrices remain in the caller's
+variance units, and this module neither resamples nor annualises inputs. Main entry points are
+``validate_solution``, ``validate_solver_inputs``, ``check_covar_conditioning``, and
+``RunDiagnostics``. Boundary: objective construction and covariance estimation belong to their
+solver and estimator modules, not here.
 """
 from __future__ import annotations
 

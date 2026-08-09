@@ -200,32 +200,19 @@ def generate_alpha_profile_report(multi_portfolio_data: qis.MultiPortfolioData,
     ``{local_path}/{file_name}.pdf``. Kept separate from the backtester so the backtest stays a pure
     data producer; call this when a report is wanted.
 
-    Parameters
-    ----------
-    multi_portfolio_data : qis.MultiPortfolioData
-        the profiled legs, as returned by backtest_alpha_rank_portfolio.
-    time_period : qis.TimePeriod, optional
-        reporting window; defaults to the full sample.
-    perf_params : qis.PerfParams, optional
-        performance parameters; defaults to monthly-frequency stats.
-    regime_benchmark : str, optional
-        ticker of the leg to use as the regime-classification benchmark; defaults to the last leg
-        (the equal-weight benchmark appended by the profiler).
-    group_data : pd.Series, optional
-        ticker -> group labels for grouped exposures.
-    backtest_name : str
-        title shown on the factsheet.
-    file_name : str
-        output file stem (``.pdf`` appended).
-    local_path : str, optional
-        output directory; if None the qis default output path is used.
-    add_current_date : bool
-        append the run date to the file name.
+    Args:
+        multi_portfolio_data: Profiled legs returned by ``backtest_alpha_rank_portfolio``.
+        time_period: Reporting window; defaults to the full sample.
+        perf_params: Performance parameters; defaults to monthly-frequency statistics.
+        regime_benchmark: Leg used for regime classification; defaults to the final leg.
+        group_data: Ticker-to-group labels for grouped exposures.
+        backtest_name: Title shown on the factsheet.
+        file_name: Output file stem; ``.pdf`` is appended.
+        local_path: Output directory; ``None`` uses the qis default output path.
+        add_current_date: Append the run date to the file name.
 
-    Returns
-    -------
-    List[matplotlib.figure.Figure]
-        the generated figures (also written to disk).
+    Returns:
+        Generated matplotlib figures, which are also written to disk.
     """
     if perf_params is None:
         perf_params = qis.PerfParams(freq='ME')

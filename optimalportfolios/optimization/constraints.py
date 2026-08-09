@@ -12,6 +12,11 @@ factor norm and hard upper-risk limits as second-order-cone constraints, so one
 controlled covariance decomposition is reused throughout a solve.
 
 All dataclass containers are immutable (frozen=True). Mutation methods return new instances.
+
+Weights, budgets, and exposure loadings are dimensionless; volatility, tracking-error, and
+turnover limits use the caller's units, with no resampling or annualisation in this module.
+``Constraints`` and the group-constraint dataclasses are the main entry points. Boundary:
+optimiser objectives, covariance estimation, and performance reporting are owned elsewhere.
 """
 from __future__ import annotations, division
 import warnings

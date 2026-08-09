@@ -30,6 +30,12 @@ Reference:
     "Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios",
     The Journal of Portfolio Management, 52(4), 86-120.
     Available at https://www.pm-research.com/content/iijpormgmt/52/4/86
+
+Covariance is consumed in caller-supplied variance units; weights and risk budgets are
+dimensionless, budgets are normalised by the solver, and no frequency conversion occurs here.
+Main entry points are ``rolling_risk_budgeting``, ``wrapper_risk_budgeting``, and
+``opt_risk_budgeting``. Boundary: covariance estimation, risk-budget design, and reporting are
+outside this module.
 """
 from __future__ import division
 

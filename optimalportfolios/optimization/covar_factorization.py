@@ -12,6 +12,11 @@ after its wrapper has filtered the covariance, then reuses the resulting
 :class:`CovarianceFactorization` through the objective, constraints, post-solve
 validation, and ROSAA reporting. The container also records raw and stabilized
 conditioning telemetry for production diagnostics.
+
+The stabilized covariance keeps the input variance units and its factor ``B`` has the
+corresponding volatility units; no frequency conversion or weight normalisation occurs here.
+Main entry points are ``factorize_covariance`` and ``CovarianceFactorization``. Boundary:
+covariance estimation, optimisation objectives, and solver acceptance policy are out of scope.
 """
 from __future__ import annotations
 

@@ -23,6 +23,11 @@ Matchers
 
 Public API: ``analyze_risk_clusters(covar_data, ...) -> RiskClusterReport`` and the
 convenience wrapper ``run_risk_label_report(...) -> (figures, tables)``.
+
+Beta distance is the spread volatility
+``sqrt((β_b - β_a)' Σ_F (β_b - β_a))`` in the factor covariance's supplied units; cluster
+memberships are categorical and no resampling or annualisation is performed. Boundary: this
+offline diagnostic neither estimates covariance nor produces a tradeable backtest signal.
 """
 from __future__ import annotations
 

@@ -12,6 +12,12 @@ Reference:
     Sepp A., Ossa I., and Kastenholz M. (2026),
     "Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios",
     The Journal of Portfolio Management, 52(4), 86-120.
+
+The model assembles annualised asset covariance as ``Σ_y = β Σ_x β' + D``: factor covariance
+and residual variances are annualised from their configured return frequencies, while betas are
+dimensionless. Main entry points are ``FactorCovarEstimator`` and
+``estimate_lasso_factor_covar_data``. Boundary: portfolio optimisation, signal construction,
+and performance reporting are downstream concerns.
 """
 from __future__ import annotations
 

@@ -17,6 +17,12 @@ Reference:
     "Optimal Allocation to Cryptocurrencies in Diversified Portfolios",
     Risk Magazine, pp. 1-6, October 2023.
     Available at https://ssrn.com/abstract=4217841
+
+The rolling path computes log returns at ``returns_freq`` and annualises fitted means and
+covariances with the matching frequency factor before solving; weights are dimensionless.
+Main entry points are ``rolling_maximize_cara_mixture``, ``wrapper_maximize_cara_mixture``, and
+``opt_maximize_cara_mixture``. Boundary: return forecasting, covariance estimation outside the
+mixture fit, and performance reporting are not owned here.
 """
 
 import warnings

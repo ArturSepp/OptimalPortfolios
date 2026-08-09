@@ -19,6 +19,12 @@ References:
     "Optimal Allocation to Cryptocurrencies in Diversified Portfolios",
     Risk Magazine, pp. 1-6, October 2023.
     Available at https://ssrn.com/abstract=4217841
+
+Covariance and marginal volatilities must share one caller-supplied frequency; the objective is
+scale-invariant and weights are dimensionless, with no annualisation performed in this module.
+Main entry points are ``rolling_maximise_diversification``,
+``wrapper_maximise_diversification``, and ``opt_maximise_diversification``. Boundary: covariance
+estimation, policy definition, and reporting are external.
 """
 # packages
 import warnings

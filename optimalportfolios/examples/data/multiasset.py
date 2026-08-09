@@ -61,17 +61,13 @@ def load_multiasset_data(drop_incomplete_history: bool = True,  # trim leading N
                          ) -> MultiAssetData:
     """load the committed multi-asset universe fixture.
 
-    Parameters
-    ----------
-    drop_incomplete_history : bool
-        When True (default) the panel is trimmed to the first fully populated
-        month so covariance estimation sees no NaNs; when False the full ragged
-        history since 1999-12 is returned with leading NaNs intact.
+    Args:
+        drop_incomplete_history: When true, trim the panel to the first fully populated
+            month so covariance estimation sees no NaNs. When false, retain the full ragged
+            history since 1999-12 with leading NaNs.
 
-    Returns
-    -------
-    MultiAssetData
-        returns, prices, group_data, sub_group_data.
+    Returns:
+        Returns, prices, group data, and subgroup data as ``MultiAssetData``.
     """
     path = _data_path()
     # metadata: two header rows below the instrument-name row (skip the leading

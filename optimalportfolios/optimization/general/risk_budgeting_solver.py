@@ -36,6 +36,11 @@ optimization/tests/risk_budgeting_solver_test.py.
 
 The module is internal to optimalportfolios: the public entry point is
 ``opt_risk_budgeting`` in optimization/general/risk_budgeting.py.
+
+Covariance is consumed in caller-supplied variance units; weights and budgets are dimensionless,
+budgets are normalised internally, and the returned weights sum to one without resampling or
+annualisation. The main internal entry point is ``solve_constrained_risk_budgeting``. Boundary:
+covariance estimation, portfolio-policy construction, and reporting are not implemented here.
 """
 # packages
 import math
@@ -128,27 +133,18 @@ def _ccd_solve(covar: np.ndarray,
     by rank-1 updates per coordinate (O(n) each) and refreshed by a full O(n²)
     recomputation once per cycle to bound floating-point drift.
 
-    Parameters
-    ----------
-    covar : np.ndarray, shape (n, n)
-        Covariance matrix Σ.
-    budgets : np.ndarray, shape (n,)
-        Risk budgets b, non-negative.
-    lower_bounds, upper_bounds : np.ndarray, shape (n,)
-        Box bounds lo, hi.
-    lambda_log : float
-        Log-barrier multiplier λ.
-    x0 : np.ndarray, shape (n,)
-        Starting point.
-    varphi : float
-        ADMM penalty φ; 0.0 outside the ADMM x-update.
-    v_x : np.ndarray, shape (n,), optional
-        ADMM anchor v = z - u; zeros when None.
+    Args:
+        covar: Covariance matrix ``Σ`` with shape ``(n, n)``.
+        budgets: Non-negative risk budgets ``b`` with shape ``(n,)``.
+        lower_bounds: Lower box bounds with shape ``(n,)``.
+        upper_bounds: Upper box bounds with shape ``(n,)``.
+        lambda_log: Log-barrier multiplier ``λ``.
+        x0: Starting point with shape ``(n,)``.
+        varphi: ADMM penalty ``φ``; zero outside the ADMM x-update.
+        v_x: ADMM anchor ``v = z - u``; zeros when ``None``.
 
-    Returns
-    -------
-    x : np.ndarray, shape (n,)
-        The CCD fixed point (not normalised to sum one).
+    Returns:
+        CCD fixed point, not normalised to sum one.
     """
     n = covar.shape[0]
     var = np.ascontiguousarray(np.diag(covar))
@@ -275,32 +271,22 @@ def solve_constrained_risk_budgeting(covar: np.ndarray,
     the pinned vector: f(λ) has no sign change in that case and the pinned
     weights are the unique feasible point.
 
-    Parameters
-    ----------
-    covar : np.ndarray, shape (n, n)
-        Covariance matrix Σ.
-    budgets : np.ndarray, shape (n,), optional
-        Risk budgets b (normalised internally). Equal budgets when None.
-    bounds : np.ndarray, shape (n, 2), optional
-        Per-asset [lower, upper] bounds; [0, 1e3] when None. This is the
-        first element of ``Constraints.set_pyrb_constraints``.
-    c_rows : np.ndarray, shape (p, n), optional
-        Linear inequality matrix C in C x <= d (group constraints). Second
-        element of ``Constraints.set_pyrb_constraints``.
-    c_lhs : np.ndarray, shape (p,), optional
-        Right-hand side d. Third element of ``Constraints.set_pyrb_constraints``.
+    Args:
+        covar: Covariance matrix ``Σ`` with shape ``(n, n)``.
+        budgets: Risk budgets ``b`` with shape ``(n,)``, normalised internally;
+            ``None`` selects equal budgets.
+        bounds: Per-asset ``[lower, upper]`` bounds with shape ``(n, 2)``;
+            ``None`` uses ``[0, 1e3]``. This is the first element returned by
+            ``Constraints.set_pyrb_constraints``.
+        c_rows: Linear inequality matrix ``C`` in ``C x <= d`` with shape ``(p, n)``.
+        c_lhs: Right-hand side ``d`` with shape ``(p,)``.
 
-    Returns
-    -------
-    (x, lambda_star) : Tuple[np.ndarray, float]
-        Optimal weights (sum one to root-finding precision) and the barrier
-        multiplier λ* = R(x*) at the optimum; λ* is NaN for a pinned box.
+    Returns:
+        Optimal weights, summing to one to root-finding precision, and barrier
+        multiplier ``λ* = R(x*)``. The multiplier is NaN for a pinned box.
 
-    Raises
-    ------
-    ValueError
-        On invalid inputs, an infeasible box (Σ lo > 1 or Σ hi < 1), or a
-        bracket failure. The caller decides the fallback.
+    Raises:
+        ValueError: If inputs are invalid, the box is infeasible, or bracketing fails.
     """
     covar = np.ascontiguousarray(covar, dtype=float)
     n = covar.shape[0]

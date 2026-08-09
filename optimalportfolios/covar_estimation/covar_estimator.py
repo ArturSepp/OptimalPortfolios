@@ -11,6 +11,11 @@ The shared output contract is:
 Each subclass defines its own input signature (EWMA takes prices;
 factor model takes risk_factor_prices + asset_returns_dict), but all
 return the same type for downstream portfolio optimisation.
+
+Estimator outputs use annualised covariance units while weights and portfolio normalisation are
+not handled by this interface. ``CovarEstimator.fit_current_covar`` and
+``CovarEstimator.fit_rolling_covars`` define the entry-point contract. Boundary: concrete
+estimation mathematics, optimisation, and reporting belong to subclasses or downstream layers.
 """
 from __future__ import annotations
 
@@ -64,4 +69,3 @@ class CovarEstimator(ABC):
             Dict mapping rebalancing dates to annualised covariance matrices.
         """
         ...
-

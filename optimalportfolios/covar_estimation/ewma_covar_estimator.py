@@ -8,6 +8,11 @@ and shrinkage toward identity.
 Usage:
     >>> estimator = EwmaCovarEstimator(returns_freq='W-WED', span=52, rebalancing_freq='QE')
     >>> covar_dict = estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+
+Returns are sampled at ``returns_freq`` and the estimator reports
+``Σ_annual = annualisation_factor × Σ_EWMA``; weights are not part of this layer.
+Main entry points are ``EwmaCovarEstimator`` and ``estimate_current_ewma_covar``. Boundary:
+portfolio objectives, constraints, and performance reporting are not implemented here.
 """
 from __future__ import annotations
 

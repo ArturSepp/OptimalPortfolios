@@ -28,26 +28,18 @@ def solve_overlay_tail_floor(means: pd.Series,
                              ) -> pd.Series:
     """maximise sharpe of core + overlays with a linear bear-contribution floor.
 
-    Parameters
-    ----------
-    means : pd.Series
-        annualised expected excess returns, core first.
-    covar : pd.DataFrame
-        annualised covariance on the same index.
-    bear_contributions : pd.Series
-        per-asset a_i such that a' w is the portfolio bear-regime return
-        contribution, for example ann_vol * bear_regime_sharpe.
-    overlay_budget : float
-        fixed sum of overlay weights.
-    floor_b0 : float, optional
-        floor on a' w, folded into the coefficient vector to keep the
-        constraint homogeneous under the charnes-cooper transform.
-        None disables the floor.
+    Args:
+        means: Annualised expected excess returns, with the core asset first.
+        covar: Annualised covariance on the same index.
+        bear_contributions: Per-asset ``a_i`` such that ``a' w`` is the portfolio
+            bear-regime return contribution, for example annualised volatility times
+            bear-regime Sharpe.
+        overlay_budget: Fixed sum of overlay weights.
+        floor_b0: Floor on ``a' w``, folded into the coefficient vector to keep the
+            constraint homogeneous under the Charnes-Cooper transform. ``None`` disables it.
 
-    Returns
-    -------
-    pd.Series
-        optimal weights with weights[CORE] = 1.
+    Returns:
+        Optimal weights with ``weights[CORE] = 1``.
     """
     if CORE not in means.index:
         raise ValueError(f"means must contain the fixed asset {CORE!r}")

@@ -34,6 +34,12 @@ Reference:
     Charnes A. and Cooper W.W. (1962),
     "Programming with Linear Fractional Functionals",
     Naval Research Logistics Quarterly, 9(3-4), 181-186.
+
+Expected returns and covariance must use consistent caller-supplied annualisation; weights are
+dimensionless and this module performs no frequency conversion. Main entry points are
+``rolling_maximize_portfolio_sharpe``, ``wrapper_maximize_portfolio_sharpe``, and
+``cvx_maximize_portfolio_sharpe``. Boundary: expected-return and covariance estimation, policy
+design, and reporting are outside this solver.
 """
 import warnings
 import numpy as np

@@ -11,6 +11,11 @@ Convention:
 Supports N portfolios: weights and benchmark_weights can be pd.Series (single)
 or pd.DataFrame (multiple portfolios as columns). current_weights is optional
 and follows the same convention.
+
+Weights are dimensionless; return, covariance, and factor units are accepted unchanged and
+risk calculations delegate to ``qis.RiskModel`` rather than being re-annualised here. The main
+entry point is ``PortfolioOptimisationResult``. Boundary: optimisation, covariance estimation,
+and general-purpose plotting do not belong in this result container.
 """
 from __future__ import annotations
 

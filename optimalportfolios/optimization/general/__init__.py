@@ -2,6 +2,9 @@
 
 Objective-driven solvers used as building blocks or for standalone portfolio
 construction, including covariance tracking-error minimization.
+
+Inputs retain their caller-supplied return and covariance units, while portfolio weights are
+dimensionless. Boundary: this namespace re-exports solvers but owns no estimation or reporting.
 """
 from optimalportfolios.optimization.general.quadratic import (
     rolling_quadratic_optimisation,
