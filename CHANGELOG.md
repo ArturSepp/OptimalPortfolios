@@ -31,6 +31,10 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 dependency-free `hungarian` alternative when NetworkX is absent, instead of leaking a raw
 `ModuleNotFoundError`.
 
+`estimate_rolling_mixture` now defaults to `n_components=2` (the previous default of three
+raised `IndexError` in its two-regime extraction), raises an explicit `ValueError` for other
+component counts, and documents and tests its ascending-by-mean output order.
+
 ### Added
 - The `clustering` extra installs NetworkX for minimum-cost-flow risk-cluster matching.
 - Risk-labelling tests compare both matchers with SciPy and brute-force independent references;

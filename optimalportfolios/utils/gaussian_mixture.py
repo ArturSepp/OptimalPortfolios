@@ -376,7 +376,7 @@ def estimate_rolling_mixture(prices: Union[pd.Series, pd.DataFrame],
                              returns_freq: str = 'W-WED',
                              rebalancing_freq: str = 'QE',
                              roll_window: int = 20,
-                             n_components: int = 3,
+                             n_components: int = 2,
                              annualize: bool = True
                              ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
@@ -387,15 +387,21 @@ def estimate_rolling_mixture(prices: Union[pd.Series, pd.DataFrame],
         returns_freq: Frequency of the log returns fed to the mixture.
         rebalancing_freq: Frequency of the estimation dates.
         roll_window: Number of rebalancing periods in each estimation window.
-        n_components: Number of mixture components.
+        n_components: Number of mixture components; exactly two are supported.
         annualize: Scale the fitted parameters to annual units.
 
     Returns:
-        Means, vols and probabilities per estimation date.
+        Means, vols and probabilities per estimation date, with components ordered
+        ascending by mean.
 
     Raises:
-        ValueError: If ``prices`` carries more than one column.
+        ValueError: If ``n_components`` is not two or ``prices`` carries more than one column.
     """
+    if n_components != 2:
+        raise ValueError(
+            f"estimate_rolling_mixture supports n_components=2, got {n_components!r}"
+        )
+
     if isinstance(prices, pd.Series):
         prices = prices.to_frame()
     elif isinstance(prices, pd.DataFrame) and len(prices.columns) > 1:
