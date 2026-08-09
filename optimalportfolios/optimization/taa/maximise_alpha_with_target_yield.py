@@ -36,7 +36,7 @@ import pandas as pd
 import cvxpy as cvx
 from typing import Dict, Optional, Union, Tuple
 
-from optimalportfolios import filter_covar_and_vectors_for_nans
+from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.optimization.covar_factorization import factorize_covariance
 from optimalportfolios.optimization.solver_diagnostics import (

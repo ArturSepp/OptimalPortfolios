@@ -50,9 +50,16 @@ References:
 import pandas as pd
 import qis as qis
 from typing import Optional, Dict
-import optimalportfolios as opt
+from optimalportfolios.alphas.signals.rolling_ewma_mean import estimate_rolling_ewma_means
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.optimization.config import OptimiserConfig
+from optimalportfolios.optimization.general.carra_mixture import rolling_maximize_cara_mixture
+from optimalportfolios.optimization.general.max_diversification import (
+    rolling_maximise_diversification,
+)
+from optimalportfolios.optimization.general.max_sharpe import rolling_maximize_portfolio_sharpe
+from optimalportfolios.optimization.general.quadratic import rolling_quadratic_optimisation
+from optimalportfolios.optimization.general.risk_budgeting import rolling_risk_budgeting
 from optimalportfolios.config import PortfolioObjective
 
 
@@ -96,20 +103,20 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
         DataFrame of portfolio weights.
     """
     if portfolio_objective == PortfolioObjective.EQUAL_RISK_CONTRIBUTION:
-        weights = opt.rolling_risk_budgeting(prices=prices,
+        weights = rolling_risk_budgeting(prices=prices,
                                              constraints=constraints,
                                              covar_dict=covar_dict,
                                              risk_budget=risk_budget,
                                              optimiser_config=optimiser_config)
 
     elif portfolio_objective == PortfolioObjective.MAX_DIVERSIFICATION:
-        weights = opt.rolling_maximise_diversification(prices=prices,
+        weights = rolling_maximise_diversification(prices=prices,
                                                        constraints=constraints,
                                                        covar_dict=covar_dict,
                                                        optimiser_config=optimiser_config)
 
     elif portfolio_objective == PortfolioObjective.MIN_VARIANCE:
-        weights = opt.rolling_quadratic_optimisation(prices=prices,
+        weights = rolling_quadratic_optimisation(prices=prices,
                                                      constraints=constraints,
                                                      portfolio_objective=portfolio_objective,
                                                      covar_dict=covar_dict,
@@ -117,11 +124,11 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
                                                      optimiser_config=optimiser_config)
 
     elif portfolio_objective == PortfolioObjective.QUADRATIC_UTILITY:
-        expected_returns = opt.estimate_rolling_ewma_means(prices=prices,
+        expected_returns = estimate_rolling_ewma_means(prices=prices,
                                                 rebalancing_dates=list(covar_dict.keys()),
                                                 returns_freq=returns_freq,
                                                 span=span, annualize=True)
-        weights = opt.rolling_quadratic_optimisation(prices=prices,
+        weights = rolling_quadratic_optimisation(prices=prices,
                                                      constraints=constraints,
                                                      portfolio_objective=portfolio_objective,
                                                      covar_dict=covar_dict,
@@ -130,18 +137,18 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
                                                      optimiser_config=optimiser_config)
 
     elif portfolio_objective == PortfolioObjective.MAXIMUM_SHARPE_RATIO:
-        expected_returns = opt.estimate_rolling_ewma_means(prices=prices,
+        expected_returns = estimate_rolling_ewma_means(prices=prices,
                                                 rebalancing_dates=list(covar_dict.keys()),
                                                 returns_freq=returns_freq,
                                                 span=span, annualize=True)
-        weights = opt.rolling_maximize_portfolio_sharpe(prices=prices,
+        weights = rolling_maximize_portfolio_sharpe(prices=prices,
                                                         expected_returns=expected_returns,
                                                         constraints=constraints,
                                                         covar_dict=covar_dict,
                                                         optimiser_config=optimiser_config)
 
     elif portfolio_objective == PortfolioObjective.MAX_CARA_MIXTURE:
-        weights = opt.rolling_maximize_cara_mixture(prices=prices,
+        weights = rolling_maximize_cara_mixture(prices=prices,
                                                     constraints=constraints,
                                                     time_period=time_period,
                                                     returns_freq=returns_freq,
