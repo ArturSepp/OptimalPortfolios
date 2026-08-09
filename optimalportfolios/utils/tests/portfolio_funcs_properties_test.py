@@ -303,5 +303,45 @@ def test_tracking_error_is_zero_against_the_portfolio_itself() -> None:
     assert turnover == pytest.approx(0.0, abs=1e-12)
 
 
+def test_tre_turnover_stats_match_public_risk_model_on_seeded_psd_covariances() -> None:
+    """Pin solver-hot-path risk statistics to the canonical qis formulas."""
+    # Seed 20260810; portfolio and benchmark vol are TE against a zero benchmark.
+    rng = np.random.default_rng(20260810)
+    tickers = pd.Index([f'asset_{idx}' for idx in range(7)])
+    date = pd.Timestamp('2026-06-30')
+    zero_weights = pd.Series(0.0, index=tickers)
+
+    for sample in range(8):
+        root = rng.normal(scale=0.12, size=(len(tickers), len(tickers)))
+        covar_values = root @ root.T + np.diag(rng.uniform(0.001, 0.004, len(tickers)))
+        covar = pd.DataFrame(covar_values, index=tickers, columns=tickers)
+        benchmark = pd.Series(rng.dirichlet(np.ones(len(tickers))), index=tickers)
+        if sample == 0:
+            weights = pd.Series(
+                [0.75, -0.35, 0.40, -0.20, 0.25, -0.05, 0.20], index=tickers)
+            assert (weights < 0.0).any(), 'the property set must include a long-short portfolio'
+        else:
+            weights = pd.Series(rng.dirichlet(np.ones(len(tickers))), index=tickers)
+        previous = pd.Series(rng.dirichlet(np.ones(len(tickers))), index=tickers)
+
+        te_vol, _, _, port_vol, benchmark_vol = portfolio_funcs.compute_tre_turnover_stats(
+            covar=covar_values,
+            benchmark_weights=benchmark,
+            weights=weights,
+            weights_0=previous,
+        )
+        risk_model = qis.RiskModel(covar={date: covar})
+        np.testing.assert_allclose(
+            [te_vol, port_vol, benchmark_vol],
+            [
+                risk_model.compute_tre_at_date(benchmark, weights, date),
+                risk_model.compute_tre_at_date(zero_weights, weights, date),
+                risk_model.compute_tre_at_date(zero_weights, benchmark, date),
+            ],
+            rtol=1e-12,
+            atol=1e-16,
+        )
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

@@ -14,3 +14,7 @@ from optimalportfolios.covar_estimation.covar_reporting import (plot_current_cov
                                                                 run_rolling_covar_report)
 
 from optimalportfolios.covar_estimation.utils import compute_returns_from_prices
+
+from optimalportfolios.covar_estimation.risk_model_adapter import (
+    build_risk_model as build_risk_model,
+)

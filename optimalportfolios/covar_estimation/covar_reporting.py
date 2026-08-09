@@ -145,7 +145,7 @@ def plot_clusters(clusters: Dict[str, pd.Series],
         The aggregated cluster labels and the figure.
 
     Raises:
-        NotImplementedError: For more than two cadences, which has no panel layout.
+        NotImplementedError: Unless exactly one or two cadences are supplied.
     """
     fig = plt.figure(figsize=figsize, constrained_layout=True)
 

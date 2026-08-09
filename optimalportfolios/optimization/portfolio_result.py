@@ -19,6 +19,7 @@ import pandas as pd
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Union, List, Tuple
 from factorlasso import CurrentFactorCovarData, VarianceColumns
+from optimalportfolios.covar_estimation.risk_model_adapter import build_risk_model
 from optimalportfolios.utils.portfolio_funcs import round_weights_to_pct
 from optimalportfolios.optimization.constraints import Constraints
 
@@ -34,6 +35,9 @@ def _to_dataframe(w: Union[pd.Series, pd.DataFrame], default_name: str = 'portfo
 class PortfolioOptimisationResult:
     """
     Portfolio optimisation output with factor model context for risk attribution.
+
+    Tracking-error and factor-exposure computations delegate to ``qis.RiskModel`` in
+    ``qis.portfolio.risk.risk_model``.
 
     Supports N portfolios via DataFrame inputs. When weights is a DataFrame,
     each column is a separate portfolio. benchmark_weights is matched:
@@ -121,6 +125,12 @@ class PortfolioOptimisationResult:
         else:
             self._current_df = None
 
+        self._risk_model_date = (
+            pd.Timestamp(self.covar_data.estimation_date)
+            if self.covar_data.estimation_date is not None
+            else pd.Timestamp('1900-01-01')
+        )
+        self._risk_model = build_risk_model({self._risk_model_date: self.covar_data})
         self._validate_group_attributions()
 
     def _validate_group_attributions(self) -> None:
@@ -241,7 +251,12 @@ class PortfolioOptimisationResult:
     def compute_tracking_error(self, name: str = None) -> float:
         """Tracking error: TE = sqrt(delta' Sigma_y delta) for a portfolio."""
         name = name or self.portfolio_names[0]
-        return np.sqrt(self.compute_portfolio_variance(self.get_active_weights(name)))
+        return self._risk_model.compute_tre_at_date(
+            benchmark_weights=self.get_benchmark(name),
+            portfolio_weights=self.get_weights(name),
+            date=self._risk_model_date,
+            strict=True,
+        )
 
     # === Turnover analysis ===
 
@@ -309,27 +324,14 @@ class PortfolioOptimisationResult:
         return out
 
     def _compute_tracking_error_metrics(self, active_weights: pd.Series) -> Dict[str, float]:
-        """
-        Compute tracking error decomposition: TE, factor_te, residual_te.
-
-        Factor exposure of active weights: f_delta = delta @ beta  -> (M,)
-        """
-        delta = active_weights.loc[self.tickers].values  # (N,)
-        betas = self.covar_data.y_betas.loc[self.tickers, :].values  # (N x M)
-
-        active_factor_exp = delta @ betas  # (N,) @ (N,M) = (M,)
-        factor_te_var = float(active_factor_exp @ self.covar_data.x_covar.values @ active_factor_exp)
-
-        residual_vars = self.covar_data.y_variances.loc[self.tickers, VarianceColumns.RESIDUAL_VARS.value].values
-        residual_te_var = float((delta ** 2) @ residual_vars)
-
-        total_te_var = factor_te_var + residual_te_var
-
-        return {
-            'tracking_error': np.sqrt(total_te_var),
-            'factor_te': np.sqrt(factor_te_var),
-            'residual_te': np.sqrt(residual_te_var),
-        }
+        """Compute tracking error decomposition: TE, factor_te, residual_te."""
+        zero_benchmark = pd.Series(0.0, index=self.tickers)
+        return self._risk_model.compute_tre_decomposition_at_date(
+            benchmark_weights=zero_benchmark,
+            portfolio_weights=active_weights,
+            date=self._risk_model_date,
+            strict=True,
+        ).to_dict()
 
     def compute_returns_risk_snapshot(self) -> pd.DataFrame:
         """
@@ -374,28 +376,23 @@ class PortfolioOptimisationResult:
         return pd.DataFrame(result)
 
     def _compute_active_risk_attribution(self, active_weights: pd.Series) -> Dict[str, float]:
-        """
-        Decompose tracking error for a given active weight vector (full detail).
-
-        Factor exposure: f_delta = delta @ beta  -> (M,)
-        """
-        delta = active_weights.loc[self.tickers].values  # (N,)
-        betas = self.covar_data.y_betas.loc[self.tickers, :].values  # (N x M)
-
-        active_factor_exp = delta @ betas  # (N,) @ (N,M) = (M,)
-        factor_te_var = float(active_factor_exp @ self.covar_data.x_covar.values @ active_factor_exp)
-
-        residual_vars = self.covar_data.y_variances.loc[self.tickers, VarianceColumns.RESIDUAL_VARS.value].values
-        residual_te_var = float((delta ** 2) @ residual_vars)
-
-        total_te_var = factor_te_var + residual_te_var
-
+        """Decompose tracking error for a given active weight vector (full detail)."""
+        zero_benchmark = pd.Series(0.0, index=self.tickers)
+        decomposition = self._risk_model.compute_tre_decomposition_at_date(
+            benchmark_weights=zero_benchmark,
+            portfolio_weights=active_weights,
+            date=self._risk_model_date,
+            strict=True,
+        ).to_dict()
+        total_te_var = decomposition['tracking_error'] ** 2
         return {
-            'tracking_error': np.sqrt(total_te_var),
-            'factor_te': np.sqrt(factor_te_var),
-            'residual_te': np.sqrt(residual_te_var),
-            'factor_pct': factor_te_var / total_te_var if total_te_var > 0 else 0.0,
-            'residual_pct': residual_te_var / total_te_var if total_te_var > 0 else 0.0
+            **decomposition,
+            'factor_pct': (
+                decomposition['factor_te'] ** 2 / total_te_var if total_te_var > 0 else 0.0
+            ),
+            'residual_pct': (
+                decomposition['residual_te'] ** 2 / total_te_var if total_te_var > 0 else 0.0
+            ),
         }
 
     def compute_active_risk_attribution(self) -> pd.DataFrame:
@@ -413,15 +410,12 @@ class PortfolioOptimisationResult:
         return pd.DataFrame(result)
 
     def _compute_factor_exposures_for_weights(self, weights: pd.Series) -> pd.Series:
-        """
-        Factor exposures: f = w @ beta for arbitrary weight vector.
-
-        w is (N,), beta is (N x M), result is (M,) indexed by factor names.
-        """
-        w = weights.loc[self.tickers].values  # (N,)
-        betas = self.covar_data.y_betas.loc[self.tickers, :]  # (N x M)
-        exposures = w @ betas.values  # (N,) @ (N,M) = (M,)
-        return pd.Series(exposures, index=betas.columns)
+        """Compute factor exposures for an arbitrary weight vector."""
+        return self._risk_model.compute_exposures_at_date(
+            portfolio_weights=weights,
+            date=self._risk_model_date,
+            strict=True,
+        )
 
     def _compute_factor_risk_contribution(self, weights: pd.Series) -> pd.Series:
         """

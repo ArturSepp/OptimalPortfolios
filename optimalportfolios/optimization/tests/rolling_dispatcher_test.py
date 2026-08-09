@@ -96,6 +96,12 @@ def _dispatchers() -> Dict[str, Callable]:
             lambda prices, constraints, covar_dict, **kw: op.rolling_maximize_portfolio_sharpe(
                 prices=prices, constraints=constraints, covar_dict=covar_dict,
                 expected_returns=_means(prices), **kw),
+        'rolling_minimise_tracking_error':
+            lambda prices, constraints, covar_dict, **kw: op.rolling_minimise_tracking_error(
+                prices=prices, constraints=constraints, covar_dict=covar_dict,
+                benchmark_weights=pd.Series(
+                    [1.0] + [0.0] * (len(prices.columns) - 1), index=prices.columns
+                ), **kw),
     }
 
 

@@ -1,7 +1,7 @@
 """General-purpose portfolio optimisation solvers.
 
-Objective-driven solvers with no benchmark or active overlay semantics.
-Used as building blocks or for standalone portfolio construction.
+Objective-driven solvers used as building blocks or for standalone portfolio
+construction, including covariance tracking-error minimization.
 """
 from optimalportfolios.optimization.general.quadratic import (
     rolling_quadratic_optimisation,
@@ -34,4 +34,10 @@ from optimalportfolios.optimization.general.risk_budgeting import (
     wrapper_risk_budgeting,
     opt_risk_budgeting,
     solve_for_risk_budgets_from_given_weights,
+)
+
+from optimalportfolios.optimization.general.minimum_tracking_error import (
+    rolling_minimise_tracking_error,
+    wrapper_minimise_tracking_error,
+    cvx_minimise_tracking_error,
 )

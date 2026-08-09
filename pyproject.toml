@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optimalportfolios"
-version = "6.9.0"
+version = "6.10.0"
 description = "Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python"
 readme = "README.md"
 license = {text = "MIT"}
@@ -52,7 +52,7 @@ dependencies = [
     "PyYAML>=6.0",
     "cvxpy>=1.3.0",
     "quadprog>=0.1.11",
-    "qis>=5.0.5",
+    "qis>=5.7.0",
     "factorlasso>=0.10.1",
 ]
 
@@ -71,6 +71,12 @@ visualization = [
     "plotly>=5.0.0",
 ]
 
+# the default 'mcf' matcher in covar_estimation.risk_labelling solves a min-cost-flow
+# path cover with networkx; the 'hungarian' matcher needs nothing extra.
+clustering = [
+    "networkx>=3.0",
+]
+
 jupyter = [
     "jupyter>=1.0.0",
     "notebook>=6.5.0",
@@ -82,11 +88,11 @@ dev = [
     "pytest-cov>=4.0.0",
     "ruff>=0.4",
     "interrogate>=1.7",
-    "optimalportfolios[data]",
+    "optimalportfolios[data,clustering]",
 ]
 
 all = [
-    "optimalportfolios[data,reports,visualization,jupyter]",
+    "optimalportfolios[data,reports,visualization,jupyter,clustering]",
 ]
 
 [project.urls]
@@ -135,7 +141,7 @@ extend-select = ["TID251", "TID253", "ICN"]
 # core install keeps working. A module dedicated to a single optional backend is the documented
 # exception and is named in per-file-ignores below.
 banned-module-level-imports = ["yfinance", "pandas_datareader", "pybloqs", "plotly", "pyarrow",
-                               "psycopg2", "sqlalchemy"]
+                               "psycopg2", "sqlalchemy", "networkx"]
 
 [tool.ruff.lint.flake8-import-conventions.aliases]
 # replaces ruff's default alias map, which also demands `matplotlib as mpl` everywhere. Only

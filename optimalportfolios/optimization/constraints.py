@@ -3,6 +3,8 @@
 This module provides a comprehensive framework for defining and enforcing portfolio
 constraints across multiple optimization backends. It supports individual asset
 constraints, group-based constraints, tracking error limits, and turnover controls.
+It also provides the current/model implementation corridor used to derive
+eligible instrument bounds and rebalancing indicators for live proposals.
 
 Compatible CVXPY risk expressions accept a precomputed
 ``CovarianceFactorization``. When supplied, variance is expressed as a squared
@@ -29,6 +31,71 @@ from optimalportfolios.optimization.covar_factorization import CovarianceFactori
 
 
 logger = logging.getLogger(__name__)
+
+
+def compute_eligible_rebalancing_bounds(
+        current_weights: pd.Series,
+        model_weights: pd.Series,
+        current_min_weights: pd.Series,
+        current_max_weights: pd.Series,
+) -> Tuple[pd.Series, pd.Series, pd.Series]:
+    """Build instrument bounds for trading a current portfolio toward a model.
+
+    The eligible interval is the current/model corridor, narrowed by projecting
+    the supplied current minimum and maximum weights into that corridor. An
+    instrument is eligible for rebalancing when either its current or model
+    weight is material. Consequently, a proposal can remain at the current
+    weight or move toward the model, but cannot overshoot the model or open an
+    instrument absent from both portfolios.
+
+    All inputs are aligned to ``current_weights.index`` and missing values are
+    treated as zero.
+
+    Args:
+        current_weights: Actual implemented portfolio weights.
+        model_weights: Target model portfolio weights.
+        current_min_weights: Candidate minimum implementation weights.
+        current_max_weights: Candidate maximum implementation weights.
+
+    Returns:
+        Tuple containing eligible minimum weights, eligible maximum weights,
+        and binary rebalancing indicators in that order.
+
+    Raises:
+        ValueError: If an aligned current minimum exceeds its current maximum.
+    """
+    index = current_weights.index
+    current = current_weights.reindex(index).fillna(0.0).astype(float)
+    model = model_weights.reindex(index).fillna(0.0).astype(float)
+    current_min = current_min_weights.reindex(index).fillna(0.0).astype(float)
+    current_max = current_max_weights.reindex(index).fillna(0.0).astype(float)
+
+    invalid_bounds = current_min > current_max + 1e-12
+    if invalid_bounds.any():
+        invalid = pd.DataFrame({
+            'current_min': current_min.loc[invalid_bounds],
+            'current_max': current_max.loc[invalid_bounds],
+        })
+        raise ValueError(
+            "current_min_weights exceeds current_max_weights:\n"
+            f"{invalid.to_string()}"
+        )
+
+    corridor_min = np.minimum(current.to_numpy(), model.to_numpy())
+    corridor_max = np.maximum(current.to_numpy(), model.to_numpy())
+    eligible_min = pd.Series(
+        np.clip(current_min.to_numpy(), corridor_min, corridor_max),
+        index=index,
+    )
+    eligible_max = pd.Series(
+        np.clip(current_max.to_numpy(), corridor_min, corridor_max),
+        index=index,
+    )
+    rebalancing_indicators = (
+        (current.abs() > 1e-8) | (model.abs() > 1e-8)
+    ).astype(int)
+
+    return eligible_min, eligible_max, rebalancing_indicators
 
 
 def _cvx_factor_risk(
@@ -1158,7 +1225,8 @@ class Constraints:
             target_return: float = None,
             rebalancing_indicators: pd.Series = None,
             context: str = '',
-            max_relaxation_tol: Optional[float] = None
+            max_relaxation_tol: Optional[float] = None,
+            relax_frozen_group_bounds: bool = True,
     ) -> Constraints:
         """Update constraints with valid tickers and rebalancing logic.
 
@@ -1178,6 +1246,9 @@ class Constraints:
             context: Rebalance label used in any constraint-relaxation logs.
             max_relaxation_tol: Optional maximum permitted relative relaxation
                 when fixed-position constraints must be reconciled.
+            relax_frozen_group_bounds: Whether frozen positions may widen group
+                allocation bounds. Disable for execution-policy projection,
+                where an infeasible selected trade set must remain visible.
 
         Returns:
             New Constraints object with all Series aligned to valid_tickers.
@@ -1270,7 +1341,8 @@ class Constraints:
         gluc = self_dict.get('group_lower_upper_constraints')
         min_w = self_dict.get('min_weights')
         max_w = self_dict.get('max_weights')
-        if gluc is not None and (min_w is not None or max_w is not None):
+        if (relax_frozen_group_bounds and gluc is not None
+                and (min_w is not None or max_w is not None)):
             loadings = gluc.group_loadings
             gmin = gluc.group_min_allocation
             gmax = gluc.group_max_allocation

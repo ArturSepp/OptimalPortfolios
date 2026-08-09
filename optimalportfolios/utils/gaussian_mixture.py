@@ -239,7 +239,8 @@ def fit_gaussian_mixture(x: np.ndarray,
 
     Args:
         x: Observations, shape ``(n_samples, n_features)``.
-        n_components: Number of mixture components.
+        n_components: Number passed to the fitter. Rolling vol extraction currently
+            supports exactly two components.
         an_factor: Scales the fitted means and covariances, e.g. to annualise.
         idx: Feature to sort the components by; ``None`` keeps solver order.
     """
@@ -390,8 +391,7 @@ def estimate_rolling_mixture(prices: Union[pd.Series, pd.DataFrame],
         annualize: Scale the fitted parameters to annual units.
 
     Returns:
-        Means, vols and probabilities per estimation date, with components ordered
-        by their mean.
+        Means, vols and probabilities per estimation date.
 
     Raises:
         ValueError: If ``prices`` carries more than one column.

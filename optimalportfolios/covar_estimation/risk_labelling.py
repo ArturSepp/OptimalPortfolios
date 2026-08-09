@@ -324,7 +324,13 @@ def _match_panel_mcf(snapshots: Dict[pd.Timestamp, Dict[Any, _Fingerprint]],
     whole panel jointly so bridge edges can route a persistent cluster's
     identity *around* a transient merge/split rather than handing it off locally.
     """
-    import networkx as nx
+    try:
+        import networkx as nx
+    except ImportError as e:
+        raise ImportError(
+            "the 'mcf' matcher needs networkx: pip install optimalportfolios[clustering]. "
+            "Alternatively pass method='hungarian', which needs no extra."
+        ) from e
     dates = sorted(snapshots.keys())
     didx = {d: i for i, d in enumerate(dates)}
 
@@ -701,7 +707,8 @@ def analyze_risk_clusters(covar_data: RollingFactorCovarData, *,
             always the spread vol under the average factor covariance.
         combine: ``'gated'`` arbitration of overlap and beta, or ``'blend'``.
         overlap_band: ``(low, high)`` overlap thresholds used by the gate.
-        spread_vol_cut: Beta spread vol above which two clusters stop matching.
+        spread_vol_cut: Beta-spread-vol threshold for gated low/mid-overlap links
+            and for the blended beta score; high-overlap links can exceed it.
         bridge_window: How many dates a dormant track may be revived across.
         bridge_decay: Per-date weight decay on a bridged link (``'mcf'`` only).
         w_overlap: Weight on overlap when overlap and beta are blended.
