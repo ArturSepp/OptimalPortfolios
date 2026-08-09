@@ -314,7 +314,13 @@ def _match_panel_mcf(snapshots: Dict[pd.Timestamp, Dict[Any, _Fingerprint]],
     whole panel jointly so bridge edges can route a persistent cluster's
     identity *around* a transient merge/split rather than handing it off locally.
     """
-    import networkx as nx
+    try:
+        import networkx as nx
+    except ImportError as e:
+        raise ImportError(
+            "the 'mcf' matcher needs networkx: pip install optimalportfolios[clustering]. "
+            "Alternatively pass method='hungarian', which needs no extra."
+        ) from e
     dates = sorted(snapshots.keys())
     didx = {d: i for i, d in enumerate(dates)}
 
