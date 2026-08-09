@@ -328,8 +328,9 @@ def _match_panel_mcf(snapshots: Dict[pd.Timestamp, Dict[Any, _Fingerprint]],
         import networkx as nx
     except ImportError as e:
         raise ImportError(
-            "the 'mcf' matcher needs networkx: pip install optimalportfolios[clustering]. "
-            "Alternatively pass method='hungarian', which needs no extra."
+            "the 'mcf'/'graph' matcher needs networkx: "
+            "pip install 'optimalportfolios[clustering]' -- alternatively pass "
+            "method='hungarian', which needs no extra"
         ) from e
     dates = sorted(snapshots.keys())
     didx = {d: i for i, d in enumerate(dates)}
