@@ -26,6 +26,24 @@ body:
     validations:
       required: true
 
+  - type: input
+    id: install-command
+    attributes:
+      label: Installation command
+      description: "The exact command used to install optimalportfolios"
+      placeholder: "e.g. pip install -e \".[dev]\""
+    validations:
+      required: true
+
+  - type: input
+    id: extras
+    attributes:
+      label: Extras installed
+      description: "List the installed extras, or write none for a core install"
+      placeholder: "e.g. data, clustering; or none"
+    validations:
+      required: true
+
   - type: textarea
     id: what
     attributes:

@@ -24,6 +24,32 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `return_outcome` switch were removed; validated weights and acceptance state are available as
   `outcome.weights` and `outcome.accepted`.
 
+## [6.11.0] - 2026-08-09
+
+**Behaviour change:** risk-cluster matching now has a dedicated `clustering` extra. The default
+`mcf` matcher raises a guarded `ImportError` that names `optimalportfolios[clustering]` and the
+dependency-free `hungarian` alternative when NetworkX is absent, instead of leaking a raw
+`ModuleNotFoundError`.
+
+### Added
+- The `clustering` extra installs NetworkX for minimum-cost-flow risk-cluster matching.
+- Risk-labelling tests compare both matchers with SciPy and brute-force independent references;
+  package coverage is now ratcheted at 61% after measuring 62.97%.
+- A Sphinx documentation build provides installation guidance, an offline quickstart, and an
+  autosummary inventory of every package-root public name; Read the Docs builds it on Python 3.11.
+
+### Changed
+- Numerical module headers now state units, conventions, entry points, and package boundaries.
+  Docstring coverage remains 100%, with an AST gate enforcing the package-wide Google style.
+- CI action revisions and the Ruff minor series are pinned. CI gates stack import invariants,
+  docstring coverage, the coverage floor, the full Python 3.10–3.12 suite, and a core install.
+- Package-internal root imports were replaced by direct module imports, breaking avoidable import
+  cycles without changing the public API.
+- Fifteen local plotting and diagnostic scripts no longer use pytest's `*_test.py` naming.
+- MIT licensing and package metadata were audited for JOSS and PEP 639 alignment. The existing
+  OSI-approved MIT file and consistent `license = {text = "MIT"}` metadata are retained by explicit
+  maintainer decision; this release does not change the licence.
+
 ## [6.10.0] - 2026-08-09
 
 **No numerical behaviour changes to existing entry points.** The delegated results are pinned

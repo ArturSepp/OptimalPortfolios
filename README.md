@@ -78,18 +78,23 @@ The package is the reference implementation for the ROSAA framework published in
 optimisation solvers, covariance estimators, and alpha signals are battle-tested
 on live multi-asset portfolios.
 
-### Quick-start: rolling backtest in 10 lines
+### Quick-start: offline rolling backtest
 
 ```python
-import qis as qis
-from optimalportfolios import (EwmaCovarEstimator, Constraints,
-                               PortfolioObjective, compute_rolling_optimal_weights)
+import qis
+from optimalportfolios import (
+    Constraints,
+    EwmaCovarEstimator,
+    PortfolioObjective,
+    compute_rolling_optimal_weights,
+)
+from optimalportfolios.examples.data.multiasset import load_multiasset_data
 
-prices = ...  # pd.DataFrame of asset prices (may have NaNs, different start dates)
-time_period = qis.TimePeriod('31Dec2004', '15Mar2026')
+prices = load_multiasset_data().prices.iloc[-120:, :4]
+time_period = qis.TimePeriod(prices.index[0], prices.index[-1])
 
 # estimate covariance → optimise → get rolling weights
-estimator = EwmaCovarEstimator(returns_freq='W-WED', span=52, rebalancing_freq='QE')
+estimator = EwmaCovarEstimator(returns_freq='ME', span=24, rebalancing_freq='QE')
 covar_dict = estimator.fit_rolling_covars(prices=prices, time_period=time_period)
 weights = compute_rolling_optimal_weights(prices=prices,
                                           portfolio_objective=PortfolioObjective.MAX_DIVERSIFICATION,
@@ -98,13 +103,13 @@ weights = compute_rolling_optimal_weights(prices=prices,
                                           covar_dict=covar_dict)
 
 # backtest with transaction costs
-portfolio = qis.backtest_model_portfolio(prices=prices, weights=weights,
+portfolio = qis.backtest_model_portfolio(prices=prices.loc[weights.index[0]:], weights=weights,
                                          rebalancing_costs=0.001, ticker='MaxDiv')
 ```
 
-That's it — from prices to backtested portfolio in 10 lines, with automatic NaN
-handling, roll-forward estimation (no hindsight bias), drift-aware turnover
-accounting, and any optimisation objective.
+The committed multi-asset fixture keeps this example offline. The same pipeline
+supports price panels with NaNs and different start dates, while preserving
+roll-forward estimation (no hindsight bias) and drift-aware turnover accounting.
 
 ### Design scope
 
@@ -1104,7 +1109,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={OptimalPortfolios: Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python},
   year={2026},
-  version={6.10.0},
+  version={6.11.0},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```
