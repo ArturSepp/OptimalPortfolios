@@ -76,7 +76,12 @@ jobs:
         print('factorlasso integration OK')
         "
 
+    - name: Run the test suite with coverage gate
+      if: matrix.python-version == '3.12'
+      run: pytest --cov=optimalportfolios
+
     - name: Run the test suite
+      if: matrix.python-version != '3.12'
       run: pytest
 
   docstrings:

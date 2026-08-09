@@ -170,3 +170,6 @@ exclude = ["papers", "rosaa"]
 [tool.coverage.run]
 source = ["optimalportfolios"]
 omit = ["*/tests/*", "*/examples/*", "papers/*"]
+
+[tool.coverage.report]
+fail_under = 61
