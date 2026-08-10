@@ -8,6 +8,8 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Added
+- Added a module-scope root-package import-cycle regression guard, adapted from PR #22 by
+  @tschm, while retaining function- and method-local import support.
 - ROSAA model execution supports an inert-by-default desk-instruction correction dead-band.
   Current Min/Max and explicit minimum, maximum or fixed-target breaches inside the configured
   tolerance are retained and audited without weakening product or lifecycle constraints.
