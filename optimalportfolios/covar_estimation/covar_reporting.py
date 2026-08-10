@@ -156,7 +156,7 @@ def plot_clusters(clusters: Dict[str, pd.Series],
     elif len(clusters.keys()) == 2:
         gs = fig.add_gridspec(nrows=4, ncols=3, wspace=0.0, hspace=0.0)
         axs = [fig.add_subplot(gs[0, :2]), fig.add_subplot(gs[1:, :2])]
-        titles = [f"(A) Quarterly", f"(B) Monthly"]
+        titles = ["(A) Quarterly", "(B) Monthly"]
     else:
         raise NotImplementedError(f"number clusters = {len(clusters.keys())}")
 

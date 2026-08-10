@@ -42,7 +42,7 @@ def run_local_test(local_test: LocalTests):
         vols = pd.Series(np.sqrt(np.diag(covar.values)), index=covar.columns, name='Vol')
         corr = covar / np.outer(vols, vols)
 
-        print(f"── EWMA covariance (weekly, span=52) ──")
+        print("── EWMA covariance (weekly, span=52) ──")
         print(f"\nAnnualised vols:\n{vols.to_string(float_format='{:.2%}'.format)}")
         print(f"\nCorrelation matrix:\n{corr.to_string(float_format='{:.3f}'.format)}")
         print(f"\nCovariance matrix:\n{covar.to_string(float_format='{:.6f}'.format)}")
@@ -70,7 +70,7 @@ def run_local_test(local_test: LocalTests):
             vol_table[label] = pd.Series(np.sqrt(np.diag(covar.values)), index=covar.columns)
 
         vol_df = pd.DataFrame(vol_table).T
-        print(f"── Vol sensitivity to span and frequency ──")
+        print("── Vol sensitivity to span and frequency ──")
         print(vol_df.to_string(float_format='{:.2%}'.format))
 
     elif local_test == LocalTests.CURRENT_COVAR_VOL_NORM:
@@ -93,9 +93,9 @@ def run_local_test(local_test: LocalTests):
                                 vols_norm.rename('VolNorm'),
                                 (vols_norm / vols_plain).rename('Ratio')], axis=1)
 
-        print(f"── Plain vs Vol-normalised EWMA ──")
+        print("── Plain vs Vol-normalised EWMA ──")
         print(f"\nVols:\n{comparison.to_string(float_format='{:.4%}'.format)}")
-        print(f"\nCorrelation difference (VolNorm - Plain):")
+        print("\nCorrelation difference (VolNorm - Plain):")
         print((corr_norm - corr_plain).to_string(float_format='{:.4f}'.format))
 
     elif local_test == LocalTests.ROLLING_COVARS:
@@ -112,10 +112,10 @@ def run_local_test(local_test: LocalTests):
             rolling_vols[date] = pd.Series(np.sqrt(np.diag(covar.values)), index=covar.columns)
         rolling_vols = pd.DataFrame.from_dict(rolling_vols, orient='index')
 
-        print(f"\nRolling vols (last 5 dates):")
+        print("\nRolling vols (last 5 dates):")
         print(rolling_vols.tail().to_string(float_format='{:.2%}'.format))
 
-        print(f"\nAverage vols:")
+        print("\nAverage vols:")
         print(rolling_vols.mean().to_string(float_format='{:.2%}'.format))
 
         # plot
@@ -151,7 +151,7 @@ def run_local_test(local_test: LocalTests):
             diff = np.abs(covar_dict_class[date].values - covar_dict_func[date].values).max()
             max_diff = max(max_diff, diff)
 
-        print(f"── Class vs standalone function ──")
+        print("── Class vs standalone function ──")
         print(f"Dates match:     {dates_match}")
         print(f"Num dates:       {len(dates_class)}")
         print(f"Max abs diff:    {max_diff:.2e}")

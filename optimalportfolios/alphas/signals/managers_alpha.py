@@ -13,7 +13,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import qis as qis
-from typing import Optional, Tuple, Union, Dict
+from typing import Tuple, Union, Dict
 from qis import get_annualization_factor
 
 

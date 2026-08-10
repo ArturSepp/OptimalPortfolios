@@ -21,7 +21,6 @@ dimensionless and the solver does not resample inputs. Main entry points are
 performance reporting are external.
 """
 # packages
-import warnings
 import numpy as np
 import pandas as pd
 import cvxpy as cvx
@@ -242,7 +241,7 @@ def cvx_quadratic_optimisation(portfolio_objective: PortfolioObjective,
 
     elif portfolio_objective == PortfolioObjective.QUADRATIC_UTILITY:
         if means is None:
-            raise ValueError(f"means must be given for QUADRATIC_UTILITY objective")
+            raise ValueError("means must be given for QUADRATIC_UTILITY objective")
         objective_fun = means.T @ w - 0.5 * carra * portfolio_var
 
     else:

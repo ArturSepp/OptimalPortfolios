@@ -77,7 +77,7 @@ def run_local_test(local_test: LocalTests):
         constraints = Constraints(is_long_only=True,
                                   max_weights=pd.Series(0.5, index=tickers))
 
-        print(f"── Inputs ──")
+        print("── Inputs ──")
         print(f"Expected returns:\n{expected_returns.to_string(float_format='{:.3%}'.format)}")
         print(f"Vols:   {dict(zip(tickers, [f'{v:.1%}' for v in vols]))}")
 
@@ -102,7 +102,7 @@ def run_local_test(local_test: LocalTests):
         constraints = Constraints(is_long_only=True,
                                   max_weights=pd.Series(0.6, index=tickers))
 
-        print(f"── Max active return with TE budget ──")
+        print("── Max active return with TE budget ──")
         print(f"Benchmark: {dict(zip(tickers, [f'{b:.0%}' for b in benchmark]))}")
 
         for te_budget in te_budgets:
@@ -166,7 +166,7 @@ def run_local_test(local_test: LocalTests):
         print_portfolio(f"Utility (λ_vol={best_lam:.1f}, matched vol)",
                         best_w_util.values, covar, expected_returns.values, tickers)
 
-        print(f"\n  Weight difference (hard - utility):")
+        print("\n  Weight difference (hard - utility):")
         for i, t in enumerate(tickers):
             print(f"    {t:12s}  Δw = {w_hard.values[i] - best_w_util.values[i]:+.4f}")
 
@@ -224,7 +224,7 @@ def run_local_test(local_test: LocalTests):
             constraints=constraints,
         )
         port_vol = np.sqrt(w_normal.values @ covar @ w_normal.values)
-        print(f"── Wrapper: normal case (vol budget = 8%) ──")
+        print("── Wrapper: normal case (vol budget = 8%) ──")
         print(f"Weights:\n{w_normal.to_string(float_format='{:.4f}'.format)}")
         print(f"Return:  {w_normal @ expected_returns:.4%}")
         print(f"Vol:     {port_vol:.4%}  (budget: 8.00%)")
@@ -241,7 +241,7 @@ def run_local_test(local_test: LocalTests):
             target_vol=0.08,
             constraints=constraints,
         )
-        print(f"── Wrapper: Gold NaN covariance ──")
+        print("── Wrapper: Gold NaN covariance ──")
         print(f"Weights:\n{w_nan.to_string(float_format='{:.4f}'.format)}")
         print(f"Gold weight: {w_nan['Gold']:.6f} (should be 0)")
         print(f"Sum:         {w_nan.sum():.4f}\n")
@@ -257,7 +257,7 @@ def run_local_test(local_test: LocalTests):
         )
         active = w_te.values - benchmark.values
         te = np.sqrt(active @ covar @ active)
-        print(f"── Wrapper: TE mode (budget = 3%) ──")
+        print("── Wrapper: TE mode (budget = 3%) ──")
         print(f"Weights:\n{w_te.to_string(float_format='{:.4f}'.format)}")
         print(f"TE:     {te:.4%}  (budget: 3.00%)")
         print(f"Active return: {expected_returns.values @ active:.4%}")
@@ -271,7 +271,7 @@ def run_local_test(local_test: LocalTests):
             constraints=constraints,
         )
         port_vol_tight = np.sqrt(w_tight.values @ covar @ w_tight.values)
-        print(f"── Wrapper: tight vol budget (3%) ──")
+        print("── Wrapper: tight vol budget (3%) ──")
         print(f"Weights:\n{w_tight.to_string(float_format='{:.4f}'.format)}")
         print(f"Vol:     {port_vol_tight:.4%}  (budget: 3.00%)")
         print(f"Return:  {w_tight @ expected_returns:.4%}")

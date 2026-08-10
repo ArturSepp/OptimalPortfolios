@@ -30,7 +30,6 @@ import traceback
 import numpy as np
 import pandas as pd
 import cvxpy as cvx
-from enum import Enum
 
 from optimalportfolios.optimization.constraints import (
     Constraints,
@@ -110,7 +109,7 @@ def _print_summary():
     print(f"\n{'='*60}")
     print(f"Results: {_results['passed']}/{total} passed, {_results['failed']} failed")
     if _results["errors"]:
-        print(f"\nFailed tests:")
+        print("\nFailed tests:")
         for name, e in _results["errors"]:
             print(f"  - {name}: {type(e).__name__}: {e}")
     print(f"{'='*60}")

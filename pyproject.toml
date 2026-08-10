@@ -114,6 +114,7 @@ optimalportfolios = ["*.yaml"]
 testpaths = ["optimalportfolios"]
 addopts = "-ra -q --tb=short"
 
+# `papers/` reproduces published code and is left exactly as-is.
 [tool.ruff]
 line-length = 100
 exclude = ["papers"]
@@ -126,6 +127,15 @@ select = ["E", "F", "W"]
 # pandas aliases. None belongs to the "I" (isort) family, so the import-grouping convention is
 # untouched. Verified green on the repository as it stands.
 extend-select = ["TID251", "TID253", "ICN"]
+
+# --- what CI gates, and why it is not everything --------------------------------------------
+# CI gates TID251,TID253,ICN,F. All four are green on the whole package, so a finding is always
+# something the change under review introduced.
+#
+# `E` and `W` stay ungated because of the ~380 E501 line-length findings in the older modules.
+# Those are a deliberate backlog: fix the lines your change touches, and do not reflow the
+# repository. `F` was separated from them because it is a correctness family — an unused
+# import, an undefined name, a dropped assignment — not a formatting preference.
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 # A1: optimalportfolios depends on qis and factorlasso, and on nothing else in the stack.
@@ -150,6 +160,12 @@ numpy = "np"
 pandas = "pd"
 
 [tool.ruff.lint.per-file-ignores]
+# An `__init__.py` here is a re-export layer: an import is present *because* it belongs to the
+# subpackage's public surface, and the star imports in the top-level `__init__.py` are how that
+# surface is assembled. F401 (unused import) and F403 (star import) describe both as faults, so
+# they are off for that one filename rather than answered file by file with `# noqa`. The rule
+# this preserves: adding a public import must not require maintaining a second list beside it.
+"__init__.py" = ["F401", "F403"]
 # examples are documentation and run top to bottom
 "optimalportfolios/examples/**" = ["TID253"]
 # module dedicated to the pybloqs backend; not reachable from optimalportfolios/__init__.py

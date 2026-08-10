@@ -71,7 +71,7 @@ def run_local_test(local_test: LocalTests):
         # as TE budget increases, the portfolio tilts further from benchmark
         te_budgets = [0.01, 0.03, 0.05, 0.10]
 
-        print(f"── Inputs ──")
+        print("── Inputs ──")
         print(f"Alphas:    {dict(zip(tickers, [f'{a:.2%}' for a in alphas]))}")
         print(f"Benchmark: {dict(zip(tickers, [f'{b:.0%}' for b in benchmark]))}")
         print(f"Vols:      {dict(zip(tickers, [f'{v:.0%}' for v in vols]))}")
@@ -100,7 +100,7 @@ def run_local_test(local_test: LocalTests):
         # higher lambda_TE = more risk aversion = closer to benchmark
         lambda_tes = [0.5, 2.0, 10.0, 50.0]
 
-        print(f"── Utility penalty formulation ──")
+        print("── Utility penalty formulation ──")
         print(f"Alphas:    {dict(zip(tickers, [f'{a:.2%}' for a in alphas]))}")
         print(f"Benchmark: {dict(zip(tickers, [f'{b:.0%}' for b in benchmark]))}")
 
@@ -170,7 +170,7 @@ def run_local_test(local_test: LocalTests):
 
         # weight difference
         diff = w_hard - best_w_util
-        print(f"\n  Weight difference (hard - utility):")
+        print("\n  Weight difference (hard - utility):")
         for i, t in enumerate(tickers):
             print(f"    {t:12s}  Δw = {diff[i]:+.4f}")
 
@@ -252,7 +252,7 @@ def run_local_test(local_test: LocalTests):
         )
         active = w_normal.values - benchmark
         te = np.sqrt(active @ covar @ active)
-        print(f"── Wrapper: normal case ──")
+        print("── Wrapper: normal case ──")
         print(f"Weights:\n{w_normal.to_string(float_format='{:.4f}'.format)}")
         print(f"TE: {te:.4%}\n")
 
@@ -267,7 +267,7 @@ def run_local_test(local_test: LocalTests):
             benchmark_weights=benchmark_s,
             constraints=constraints,
         )
-        print(f"── Wrapper: Gold NaN covariance ──")
+        print("── Wrapper: Gold NaN covariance ──")
         print(f"Weights:\n{w_nan.to_string(float_format='{:.4f}'.format)}")
         print(f"Gold weight: {w_nan['Gold']:.6f} (should be 0)\n")
 
@@ -280,7 +280,7 @@ def run_local_test(local_test: LocalTests):
         )
         active_tracking = w_tracking.values - benchmark
         te_tracking = np.sqrt(active_tracking @ covar @ active_tracking)
-        print(f"── Wrapper: no alpha (pure tracking) ──")
+        print("── Wrapper: no alpha (pure tracking) ──")
         print(f"Weights:\n{w_tracking.to_string(float_format='{:.4f}'.format)}")
         print(f"Benchmark:\n{benchmark_s.to_string(float_format='{:.4f}'.format)}")
         print(f"TE: {te_tracking:.4%} (should be ≈ 0)\n")
@@ -292,7 +292,7 @@ def run_local_test(local_test: LocalTests):
             benchmark_weights=benchmark_s,
             constraints=constraints,
         )
-        print(f"── Wrapper: detailed output ──")
+        print("── Wrapper: detailed output ──")
         print(w_detail.to_string(float_format='{:.4f}'.format))
         print(outcome)
 

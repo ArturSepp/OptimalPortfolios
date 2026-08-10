@@ -191,7 +191,7 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
                                                                   inclusion_indicators=inclusion_indicators)
 
     if len(clean_covar.columns) == 0:
-        warnings.warn(f"wrapper_risk_budgeting: no valid assets in covariance matrix, returning zero weights")
+        warnings.warn("wrapper_risk_budgeting: no valid assets in covariance matrix, returning zero weights")
         return pd.Series(0.0, index=pd_covar.index)
 
     # rescale risk budgets for reduced universe

@@ -486,7 +486,7 @@ class GroupTrackingErrorConstraint:
                 missing = self.group_loadings.columns[~this]
                 warnings.warn(f"Missing in group_loadings.columns: {missing}")
         else:
-            raise ValueError(f"group_tre_vols or group_tre_utility_weights must be given")
+            raise ValueError("group_tre_vols or group_tre_utility_weights must be given")
 
     def update(self, valid_tickers: List[str]) -> GroupTrackingErrorConstraint:
         """Filter group TRE loadings to ``valid_tickers``.
@@ -588,7 +588,7 @@ class GroupTrackingErrorConstraint:
                     term = -1.0 * group_tre_utility_weight * group_tre_variance
                     objective_fun = add_term_to_objective_function(objective_fun, term)
         if objective_fun is None:
-            warnings.warn(f"objective_fun is None in set_cvx_group_tre_utility()")
+            warnings.warn("objective_fun is None in set_cvx_group_tre_utility()")
         return objective_fun
 
     def print(self):
@@ -627,7 +627,7 @@ class GroupTurnoverConstraint:
                 missing = self.group_loadings.columns[~this]
                 warnings.warn(f"Missing in self.group_loadings.columns: {missing}")
         else:
-            raise ValueError(f"group_max_turnover or group_turnover_utility_weights must be given")
+            raise ValueError("group_max_turnover or group_turnover_utility_weights must be given")
 
     def update(self, valid_tickers: List[str]) -> GroupTurnoverConstraint:
         """Filter group turnover loadings to ``valid_tickers``.
@@ -688,7 +688,7 @@ class GroupTurnoverConstraint:
             ValueError: If group turnover utility weights were not configured.
         """
         if self.group_turnover_utility_weights is None:
-            raise ValueError(f"group_turnover_utility_weights must be supplied")
+            raise ValueError("group_turnover_utility_weights must be supplied")
         objective_fun = None
         if weights_0 is None:
             logger.debug("group turnover constraint skipped because weights_0 is absent")
@@ -730,7 +730,7 @@ class BenchmarkDeviationConstraints:
                 missing = self.factor_max_deviation.index[~this]
                 warnings.warn(f"factor_max_deviation entries not in factor_loading_mat.columns: {missing.tolist()}")
         else:
-            raise ValueError(f"factor_max_deviation must be given")
+            raise ValueError("factor_max_deviation must be given")
 
     def copy(self) -> BenchmarkDeviationConstraints:
         """Return a deep copy of the deviation loadings and bounds."""

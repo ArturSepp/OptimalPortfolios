@@ -57,7 +57,7 @@ def plot_static_risk_budgets_vs_weights(prices: pd.DataFrame,
                                             benchmark_ticker=f"(A) {benchmark_ticker}"))
     fig, axs = plt.subplots(1, 2, figsize=figsize, tight_layout=True)
     if add_titles:
-        qis.set_suptitle(fig, title=f"Time series of weights by asset classes")
+        qis.set_suptitle(fig, title="Time series of weights by asset classes")
     figs.append(fig)
     qis.plot_exposures_strategy_vs_benchmark_stack(strategy_exposures=risk_budgets_weights,
                                                benchmark_exposures=static_weights,
@@ -71,7 +71,7 @@ def plot_static_risk_budgets_vs_weights(prices: pd.DataFrame,
     benchmark_risk_contributions_ac = static_portfolio.compute_risk_contributions_implied_by_covar(**rc_kwargs)
     fig, axs = plt.subplots(1, 2, figsize=figsize, tight_layout=True)
     if add_titles:
-        qis.set_suptitle(fig, title=f"Time Series of risk contributions by asset classes")
+        qis.set_suptitle(fig, title="Time Series of risk contributions by asset classes")
     figs.append(fig)
     qis.plot_exposures_strategy_vs_benchmark_stack(strategy_exposures=strategy_risk_contributions_ac,
                                                    benchmark_exposures=benchmark_risk_contributions_ac,

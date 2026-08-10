@@ -7,8 +7,22 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+- Fixed `examples/solvers/risk_budgeting.py` to pass its constructed 10%–30% asset-class
+  constraints into the demonstrated solve in PR #36 by @tschm. On the committed 19-asset
+  fixture, Cash falls from 44.7552286661% to the 30% cap; all 19 weights change, with
+  0.295104561020 L1 weight difference (14.7552280510% one-way turnover).
+
 ### Changed
 - Added the Read the Docs site and excluded local-only trees from root docstring scans.
+- CI now gates the `F` (pyflakes) family alongside the three stack invariants, all green on the
+  package. The ~380 `E501` line-length findings remain ungated and untouched. Ruff configuration
+  stays in `[tool.ruff]` in `pyproject.toml`, which remains the stack's single configuration home.
+- `F401` and `F403` are ignored for `"__init__.py"` in `[tool.ruff.lint.per-file-ignores]`, since
+  an import there is a re-export. No `__all__` is introduced: adding a name to a subpackage's
+  public API stays a single edit, with no second list to maintain beside the import. The public
+  surface is unchanged — the 125 names `optimalportfolios` exposes, and every name reachable
+  through `from optimalportfolios.<sub> import *`.
 - Modernized packaging licence metadata to the PEP 639 SPDX form (`license = "MIT"` and
   `license-files = ["LICENSE.txt"]`), with no change to the legal licence or package behavior;
   originally proposed in PR #9 by @tschm.

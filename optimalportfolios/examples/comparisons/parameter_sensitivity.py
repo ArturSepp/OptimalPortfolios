@@ -107,9 +107,9 @@ def run_local_test(local_test: LocalTests):
                                                            perf_time_period=perf_time_period)
 
         # save png and pdf
-        qis.save_fig(fig=figs[0], file_name=f"max_diversification_span", local_path=FIGURES_PATH)
+        qis.save_fig(fig=figs[0], file_name="max_diversification_span", local_path=FIGURES_PATH)
         qis.save_figs_to_pdf(figs=figs,
-                             file_name=f"max_diversification_span",
+                             file_name="max_diversification_span",
                              orientation='landscape',
                              local_path=local_path.get_output_path())
     plt.show()

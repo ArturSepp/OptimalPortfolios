@@ -69,10 +69,10 @@ def run_local_test(local_test: LocalTests):
         vol_comparison = pd.concat([vols_current, vols_rolling,
                                     (vols_current - vols_rolling).rename('Diff')], axis=1)
 
-        print(f"── Current vs Rolling Last ──")
+        print("── Current vs Rolling Last ──")
         print(f"Last rolling date:  {last_date.strftime('%d%b%Y')}")
         print(f"Price data ends:    {prices.index[-1].strftime('%d%b%Y')}")
-        print(f"\nVol comparison:")
+        print("\nVol comparison:")
         print(vol_comparison.to_string(float_format='{:.6%}'.format))
         print(f"\nMax abs covar diff:  {max_diff:.2e}")
         print(f"Mean abs covar diff: {mean_diff:.2e}")
@@ -82,12 +82,12 @@ def run_local_test(local_test: LocalTests):
         # difference because fit_current_covar uses all data up to the end
         # while fit_rolling_covars extracts at the rebalancing date
         if max_diff < 1e-10:
-            print(f"\nRESULT: EXACT MATCH")
+            print("\nRESULT: EXACT MATCH")
         elif max_diff < 1e-4:
-            print(f"\nRESULT: CLOSE MATCH (last rebalancing date likely "
-                  f"precedes last price date by a few days)")
+            print("\nRESULT: CLOSE MATCH (last rebalancing date likely "
+                  "precedes last price date by a few days)")
         else:
-            print(f"\nRESULT: MISMATCH — investigate")
+            print("\nRESULT: MISMATCH — investigate")
 
     elif local_test == LocalTests.ROLLING_COVAR_PROPERTIES:
         """
@@ -105,8 +105,8 @@ def run_local_test(local_test: LocalTests):
         n_dates = len(covar_dict)
         dates = sorted(covar_dict.keys())
 
-        print(f"── Rolling Covar Properties ──")
-        print(f"Estimator:    EWMA (weekly returns, span=52, quarterly rebal)")
+        print("── Rolling Covar Properties ──")
+        print("Estimator:    EWMA (weekly returns, span=52, quarterly rebal)")
         print(f"Universe:     {n} assets: {tickers}")
         print(f"Period:       {dates[0].strftime('%d%b%Y')} – {dates[-1].strftime('%d%b%Y')}")
         print(f"Num matrices: {n_dates}")
@@ -156,22 +156,22 @@ def run_local_test(local_test: LocalTests):
         min_vol_series = pd.Series(all_min_vol, index=dates)
 
         # report
-        print(f"\n── Shape and labels ──")
+        print("\n── Shape and labels ──")
         print(f"Wrong shape:  {n_wrong_shape} / {n_dates}")
         print(f"Wrong labels: {n_wrong_labels} / {n_dates}")
 
-        print(f"\n── Data quality ──")
+        print("\n── Data quality ──")
         print(f"Contains NaN: {n_nan} / {n_dates}")
         print(f"Contains Inf: {n_inf} / {n_dates}")
         print(f"Asymmetric:   {n_asymmetric} / {n_dates}")
 
-        print(f"\n── Positive semi-definiteness ──")
+        print("\n── Positive semi-definiteness ──")
         print(f"Min eigenvalue across all dates: {min_eig_series.min():.6e}")
         print(f"Max eigenvalue min:              {min_eig_series.max():.6e}")
         n_non_psd = (min_eig_series < -1e-10).sum()
         print(f"Non-PSD matrices:                {n_non_psd} / {n_dates}")
 
-        print(f"\n── Annualised vol range ──")
+        print("\n── Annualised vol range ──")
         print(f"Global min vol: {min_vol_series.min():.2%}")
         print(f"Global max vol: {max_vol_series.max():.2%}")
         vol_reasonable = (min_vol_series.min() > 0.01) and (max_vol_series.max() < 1.0)
@@ -181,7 +181,7 @@ def run_local_test(local_test: LocalTests):
         date_diffs = pd.Series(dates).diff().dropna()
         min_gap = date_diffs.min().days
         max_gap = date_diffs.max().days
-        print(f"\n── Rebalancing schedule ──")
+        print("\n── Rebalancing schedule ──")
         print(f"Min gap between dates: {min_gap} days")
         print(f"Max gap between dates: {max_gap} days")
         quarterly_ok = (min_gap >= 80) and (max_gap <= 100)

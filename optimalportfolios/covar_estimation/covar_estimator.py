@@ -19,7 +19,6 @@ estimation mathematics, optimisation, and reporting belong to subclasses or down
 """
 from __future__ import annotations
 
-from enum import Enum
 
 import pandas as pd
 from abc import ABC, abstractmethod

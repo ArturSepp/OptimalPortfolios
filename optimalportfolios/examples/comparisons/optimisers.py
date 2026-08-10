@@ -109,9 +109,9 @@ def run_local_test(local_test: LocalTests):
                                              perf_time_period=perf_time_period)
 
         # save png and pdf
-        qis.save_fig(fig=figs[0], file_name=f"multi_optimisers_backtest", local_path=FIGURES_PATH)
+        qis.save_fig(fig=figs[0], file_name="multi_optimisers_backtest", local_path=FIGURES_PATH)
         qis.save_figs_to_pdf(figs=figs,
-                             file_name=f"multi_optimisers_backtest",
+                             file_name="multi_optimisers_backtest",
                              orientation='landscape',
                              local_path=local_path.get_output_path())
     plt.show()

@@ -28,4 +28,3 @@ from optimalportfolios.alphas.signals.utils import (
     extract_rolling_clusters,
     score_within_clusters,
 )
-

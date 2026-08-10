@@ -70,9 +70,9 @@ KWARGS_FOOTNOTE = {'title_wrap': True, 'text_align': 'left', 'font_size': "12px"
                    'margin_top': 0, 'margin_bottom': 0,
                    'font-family': font_family}
 
-RA_TABLE_FOOTNOTE = (u"\u002A" + f"Vol (annualized volatility) and Skew (Skeweness) are computed using daily returns, "
-                                 f"Sharpe is computed assuming zero risk-free rate, "
-                                 f"Max DD is maximum drawdown, "
-                                 f"Best and Worst are the highest and lowest daily returns, "
-                                 f"Alpha (annualized daily alpha), Beta, R2 (R squared) are estimated using regression "
-                                 f"of daily returns explained by underlying coin")
+RA_TABLE_FOOTNOTE = (u"\u002A" + "Vol (annualized volatility) and Skew (Skeweness) are computed using daily returns, "
+                                 "Sharpe is computed assuming zero risk-free rate, "
+                                 "Max DD is maximum drawdown, "
+                                 "Best and Worst are the highest and lowest daily returns, "
+                                 "Alpha (annualized daily alpha), Beta, R2 (R squared) are estimated using regression "
+                                 "of daily returns explained by underlying coin")

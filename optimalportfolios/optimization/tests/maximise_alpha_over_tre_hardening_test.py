@@ -23,7 +23,7 @@ import pytest
 import cvxpy as cvx
 
 from optimalportfolios.optimization.constraints import (
-    Constraints, ConstraintEnforcementType, GroupLowerUpperConstraints,
+    Constraints, ConstraintEnforcementType,
 )
 from optimalportfolios.optimization.config import OptimiserConfig
 from optimalportfolios.optimization.taa.maximise_alpha_over_tre import (

@@ -69,8 +69,8 @@ qis.save_figs_to_pdf(figs=figs,
                      file_name=f"{portfolio_data.nav.name}_portfolio_factsheet",
                      orientation='landscape',
                      local_path=lp.get_output_path())
-qis.save_fig(fig=figs[0], file_name=f"example_portfolio_factsheet1", local_path=FIGURES_PATH)
-qis.save_fig(fig=figs[1], file_name=f"example_portfolio_factsheet2", local_path=FIGURES_PATH)
+qis.save_fig(fig=figs[0], file_name="example_portfolio_factsheet1", local_path=FIGURES_PATH)
+qis.save_fig(fig=figs[1], file_name="example_portfolio_factsheet2", local_path=FIGURES_PATH)
 
 
 # 6. can create customised report using portfolio_data custom report
@@ -96,6 +96,6 @@ def run_customised_reporting(portfolio_data) -> plt.Figure:
 # run customised report
 fig = run_customised_reporting(portfolio_data)
 # save png
-qis.save_fig(fig=fig, file_name=f"example_customised_report", local_path=FIGURES_PATH)
+qis.save_fig(fig=fig, file_name="example_customised_report", local_path=FIGURES_PATH)
 
 plt.show()

@@ -27,7 +27,6 @@ Main entry points are ``rolling_maximise_diversification``,
 estimation, policy definition, and reporting are external.
 """
 # packages
-import warnings
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
