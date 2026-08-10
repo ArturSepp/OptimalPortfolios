@@ -13,7 +13,7 @@ backtesting. Optional extras add integrations that are not needed by every
 user:
 
 ``data``
-   Free-data loaders backed by yfinance and pandas-datareader.
+   The free-data loader backed by yfinance.
 
 ``clustering``
    The default minimum-cost-flow matcher used to keep risk-cluster labels
@@ -32,10 +32,10 @@ Install an extra by placing its name in square brackets:
    pip install "optimalportfolios[clustering]"
    pip install -e ".[dev]"
 
-Additional ``reports``, ``visualization``, and ``jupyter`` extras provide the
-pybloqs report backend, Plotly charts, and notebook tooling respectively. The
-``all`` extra installs all runtime integrations. Documentation contributors can
-install the Sphinx toolchain with:
+Additional ``reports`` and ``jupyter`` extras provide the pybloqs report backend
+and notebook tooling respectively. The ``all`` extra installs the ``data``,
+``reports``, ``jupyter``, and ``clustering`` runtime integrations. Documentation
+contributors can install the Sphinx toolchain with:
 
 .. code-block:: console
 

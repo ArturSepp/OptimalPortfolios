@@ -53,7 +53,9 @@ optimalportfolios/
 papers/              code accompanying the published papers (excluded from ruff)
 ```
 
-Tests live inside the package as `optimalportfolios/<subpackage>/tests/*_test.py`; there is no top-level `tests/` directory. Fifteen `*_local.py` files are `run_local_test` diagnostic dispatchers: run them manually when the required local price data is available; pytest never collects them, and the test suite is exactly what bare `pytest` collects.
+Tests live inside the package as `optimalportfolios/<subpackage>/tests/*_test.py`; there is no top-level `tests/` directory. Sixteen `*_local.py` files are `run_local_test` diagnostic dispatchers: run them manually when the required local price data is available; pytest never collects them, and the test suite is exactly what bare `pytest` collects. The sixteenth is `examples/data/etf_prices_local.py`, which is also the shared loader those dispatchers import their price panel from.
+
+Every file matching pytest's default patterns — `*_test.py` **and** `test_*.py` — collects at least one test, so the file count is a usable proxy for the suite. Keep it that way: a new diagnostic script belongs in `*_local.py`, not under a test-shaped name. A name matching either pattern is *imported* at collection even when it contributes no tests, which is how a module-level import of an optional extra has twice broken CI.
 
 ## Commands
 

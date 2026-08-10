@@ -46,3 +46,15 @@ rebalancing cost.
 Weights decided at a rebalancing date are applied to the following holding
 period. Returns in this example are simple monthly returns, and covariance
 matrices are annualised from that frequency.
+
+What to change first
+--------------------
+
+* **The objective.** Swap ``PortfolioObjective.MAX_DIVERSIFICATION`` for any
+  other ``PortfolioObjective`` member; the rest of the call is unchanged.
+* **The constraints.** ``Constraints`` carries long-only, leverage, group
+  bounds, turnover, and tracking-error limits in one object shared by every
+  solver.
+* **The covariance estimator.** Replace ``EwmaCovarEstimator`` with
+  ``FactorCovarEstimator`` to use the HCGL sparse factor model instead of an
+  EWMA covariance matrix.

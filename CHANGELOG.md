@@ -11,6 +11,29 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `examples/solvers/risk_budgeting.py` built a `GroupLowerUpperConstraints` and never passed it
   to `Constraints`, so the example's stated 10%–30% asset-class bounds were not applied to the
   solve it demonstrates. Found as an unused-variable finding, not by reading the output.
+### Changed
+- Modernized packaging licence metadata to the PEP 639 SPDX form (`license = "MIT"` and
+  `license-files = ["LICENSE.txt"]`), with no change to the legal licence or package behavior;
+  originally proposed in PR #9 by @tschm.
+- `examples/data/test_data.py` is renamed to `examples/data/etf_prices_local.py`. It matched
+  pytest's `test_*.py` pattern, so it was imported at collection while contributing no tests —
+  the mechanism behind two past CI failures from module-level optional-extra imports. The
+  `load_test_data` and `update_test_prices` functions are unchanged; only the module path moves,
+  and the six `*_local.py` diagnostics that import it are updated. Every file matching either of
+  pytest's default patterns now collects at least one test.
+- Ported three content improvements from PR #38 by @tschm into the retained Sphinx pages: the
+  6.12.0 optional-extras truth, the quickstart's "What to change first" guidance, and the
+  landing-page overview and publication links.
+
+## [6.12.0] - 2026-08-10
+
+**Behaviour change:** Dispatching `AlphaSignal.RESIDUAL_MOMENTUM` and
+`RESIDUAL_MOM_AND_BETA` through `compute_signal_scores` previously raised
+`TypeError: compute_residual_momentum_alpha() got an unexpected keyword argument
+'momentum_span'`. PR #23 by @tschm makes both routes run and honour the requested
+`momentum_span`. At span 4 versus the receiver default 12, every overlapping score changed;
+the measured mean absolute differences were 0.381535895168 score units for residual momentum
+and 0.269786618740 for the composite signal.
 
 ### Added
 - Added a module-scope root-package import-cycle regression guard, adapted from PR #22 by
