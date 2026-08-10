@@ -13,6 +13,10 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   tolerance are retained and audited without weakening product or lifecycle constraints.
 
 ### Changed
+- The S&P 500 span comparison example now uses the project-local output-path helper instead of
+  the undeclared private `quant_strats` package, resolving issue #27.
+- The Bloomberg S&P 500 universe example now raises an actionable, exception-chained installation
+  message when `bbg-fetch` is unavailable, resolving issue #27.
 - Covariance factorization is now owned exclusively by each low-level CVXPY solver. Wrappers pass
   only `factorize_covar`; solver APIs no longer accept a precomputed factorization, and
   `resolve_covariance_factorization` has been removed. Each enabled solve calls
@@ -23,6 +27,14 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `validate_solution` now always returns `OptimizationOutcome`. Its legacy tuple return and
   `return_outcome` switch were removed; validated weights and acceptance state are available as
   `outcome.weights` and `outcome.accepted`.
+
+### Removed
+- Removed the unused `plotly` dependency and `visualization` extra because no shipped package code
+  imports Plotly, resolving issue #27.
+- Removed `pandas-datareader` from the `data` extra because no shipped package code imports it,
+  resolving issue #27.
+- Removed the direct `jinja2` declaration because `pybloqs` already installs it transitively,
+  resolving issue #27.
 
 ## [6.11.0] - 2026-08-09
 
