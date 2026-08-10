@@ -15,9 +15,19 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 - Added a module-scope root-package import-cycle regression guard, adapted from PR #22 by
   @tschm, while retaining function- and method-local import support.
+- Restored 37 lineage-event tests under a non-colliding name and expanded the dev suite to
+  1,111 tests in PR #23 by @tschm. Fresh line coverage is 89.696766627576%, and the ratchet
+  floor is 88 (`floor(measured) - 1`).
+- Added a pinned `pip-audit` CI gate over the dependency tree resolved from `pyproject.toml`
+  in PR #31 by @tschm.
 - ROSAA model execution supports an inert-by-default desk-instruction correction dead-band.
   Current Min/Max and explicit minimum, maximum or fixed-target breaches inside the configured
   tolerance are retained and audited without weakening product or lifecycle constraints.
+
+### Fixed
+- Three-or-more-dimensional covariance arrays are labelled as DataFrames before
+  `qis.covar_to_corr`, preserving asset labels, in PR #23 by @tschm.
+- `plot_mixure2` now unpacks the Matplotlib figure and axes correctly in PR #23 by @tschm.
 
 ### Changed
 - Every subpackage `__init__.py` now declares an `__all__`, stating its export surface
@@ -32,6 +42,10 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   the undeclared private `quant_strats` package, resolving issue #27.
 - The Bloomberg S&P 500 universe example now raises an actionable, exception-chained installation
   message when `bbg-fetch` is unavailable, resolving issue #27.
+- Renamed the signal-diagnostics test to the repository's `*_test.py` convention in PR #26 by
+  @tschm.
+- Extended the CI test matrix through Python 3.13 in PR #30 by @tschm; Python 3.12 remains the
+  single coverage-gated matrix entry.
 - Covariance factorization is now owned exclusively by each low-level CVXPY solver. Wrappers pass
   only `factorize_covar`; solver APIs no longer accept a precomputed factorization, and
   `resolve_covariance_factorization` has been removed. Each enabled solve calls
@@ -50,6 +64,8 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   resolving issue #27.
 - Removed the direct `jinja2` declaration because `pybloqs` already installs it transitively,
   resolving issue #27.
+- Removed the orphaned `uv.lock` in PR #32 by @tschm; project dependencies remain declared in
+  `pyproject.toml`.
 
 ## [6.11.0] - 2026-08-09
 
