@@ -178,4 +178,13 @@ source = ["optimalportfolios"]
 omit = ["*/tests/*", "*/examples/*", "papers/*"]
 
 [tool.coverage.report]
-fail_under = 61
+# A ratchet, not a target: the floor sits just under the measured level so coverage cannot
+# regress silently, and it is raised as tests land.
+#
+# Measure on a `[dev]` install, which is what the 3.12 leg of the `test` job in ci.yml does.
+# A *core* install lacks the `clustering` extra, so the `mcf` cases in the risk_labelling
+# tests skip and the total lands about a point lower -- below this floor. That is not a
+# problem in CI, because the core-install job deliberately runs a bare `pytest` with no
+# coverage: its purpose is to prove the suite runs without the extras. But it does mean
+# `pytest --cov` on a core install will fail this gate; use `pip install -e ".[dev]"`.
+fail_under = 88
