@@ -13,6 +13,13 @@ nav:
   - Getting Started:
     - Installation: installation.md
     - Quickstart: quickstart.md
+  - Guides:
+    - Alpha signals: alphas.md
+    - Signal profiling: alpha_profiling.md
+    - Covariance estimation: covariance.md
+    - Portfolio optimisers: optimisers.md
+    - Overlay with a fixed core: overlay_tail_floor.md
+  - Examples: examples.md
   - API Reference: api.md
 
 extra:

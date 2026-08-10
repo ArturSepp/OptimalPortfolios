@@ -1,4 +1,8 @@
-# `optimalportfolios.examples`
+---
+icon: material/play-box-outline
+---
+
+# Examples
 
 Runnable scripts illustrating every solver, covariance estimator, and end-to-end
 workflow in the package. Each file runs as `python -m optimalportfolios.examples.<path>`
@@ -116,7 +120,7 @@ Useful as inputs / diagnostics for the backtest examples above.
 Demos of the rank-based alpha profiler in `optimalportfolios/alphas/profile/`. The profiler holds
 the top quantile of assets ranked by a signal, equal-weighted, against an equal-weight-all
 benchmark — no optimiser and no covariance — so what it reports is the selection power of the
-signal on its own. The [alphas module README](../alphas/README.md) documents the API.
+signal on its own. [Signal profiling](alpha_profiling.md) documents the API.
 
 | File | What it shows |
 |---|---|

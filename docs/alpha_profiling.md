@@ -1,4 +1,8 @@
-# Alphas Module
+---
+icon: material/chart-box-outline
+---
+
+# Signal profiling
 
 Alpha signal construction and profiling for the `optimalportfolios` package.
 
@@ -111,7 +115,6 @@ yourself and call `backtest_alpha_rank_portfolio` directly.
 
 ## Example
 
-[`examples/alphas/profile_alpha_signals.py`](../examples/alphas/profile_alpha_signals.py) fetches a
-bond-ETF universe, profiles carry, low-beta and momentum jointly, and sweeps carry across
-top-quantiles. Run it top to bottom. The [examples README](../docs/examples_readme.md) lists it
-under `alphas/`.
+[`optimalportfolios/examples/alphas/profile_alpha_signals.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/optimalportfolios/examples/alphas/profile_alpha_signals.py)
+fetches a bond-ETF universe, profiles carry, low-beta and momentum jointly, and sweeps carry
+across top-quantiles. Run it top to bottom. [Examples](examples.md) lists it under `alphas/`.

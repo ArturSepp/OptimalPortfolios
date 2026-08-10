@@ -49,7 +49,8 @@ optimalportfolios/
   universe/          instrument universes
   reports/           reporting built on qis
   tests/             cross-cutting tests (release metadata agreement)
-  utils/, examples/, docs/, config.py, local_path.py, settings.yaml
+  utils/, examples/, config.py, local_path.py, settings.yaml
+docs/                the MkDocs book (see Documentation below) -- no prose lives in the package
 papers/              code accompanying the published papers (excluded from ruff)
 ```
 
@@ -79,6 +80,13 @@ whenever measured coverage rises, and lowering it requires a dated `CHANGELOG.md
 The book is MkDocs Material, built by the separate `book.yml` workflow, which runs
 `mkdocs build --strict` on every pull request. Sphinx and Read the Docs were removed
 in favour of it.
+
+**Prose documentation lives in `docs/`, never inside `optimalportfolios/`.** Six markdown
+files used to sit in the package — `optimalportfolios/docs/` plus a README in `alphas/`
+and `covar_estimation/` — where they shipped in the sdist and no book ever rendered them.
+They are now `docs/alphas.md`, `docs/alpha_profiling.md`, `docs/covariance.md`,
+`docs/optimisers.md`, `docs/examples.md` and `docs/overlay_tail_floor.md`. When you
+document a subpackage, add or extend a page there and put it in the `nav`.
 
 - `mkdocs.yml` carries site identity and `nav` only; theme, markdown extensions and
   plugins live in `docs/mkdocs-base.yml`, which the root file `INHERIT`s.

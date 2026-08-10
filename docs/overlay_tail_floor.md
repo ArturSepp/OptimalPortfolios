@@ -1,4 +1,8 @@
-# Overlay optimisation with a fixed core and linear side constraints
+---
+icon: material/layers-outline
+---
+
+# Overlay optimisation with a fixed core
 
 This note documents a `Constraints` pattern for a common institutional problem:
 a core portfolio is held at a fixed weight, a sleeve of overlays is budgeted on
@@ -55,4 +59,6 @@ floors are reported by the solver ("status=infeasible") with a fallback to
 `weights_0` or zeros; a quick feasibility bound for a long-only sleeve with
 budget `W` is `max(a_sleeve) * W + a_core >= b0`.
 
-See `examples/solvers/overlay_tail_floor.py` for a runnable synthetic example.
+See
+[`optimalportfolios/examples/solvers/overlay_tail_floor.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/optimalportfolios/examples/solvers/overlay_tail_floor.py)
+for a runnable synthetic example.

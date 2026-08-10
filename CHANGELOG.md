@@ -15,6 +15,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   tolerance are retained and audited without weakening product or lifecycle constraints.
 
 ### Changed
+- Prose documentation moved out of the package. `optimalportfolios/docs/` and the READMEs in
+  `optimalportfolios/alphas/` and `optimalportfolios/covar_estimation/` — 1559 lines that
+  shipped in the sdist and were rendered by nothing — are now book pages: `docs/alphas.md`,
+  `docs/alpha_profiling.md`, `docs/covariance.md`, `docs/optimisers.md`, `docs/examples.md`
+  and `docs/overlay_tail_floor.md`. No markdown remains under `optimalportfolios/`.
 - Documentation moved from Sphinx/Read the Docs to an MkDocs Material book. `docs/*.rst`,
   `docs/conf.py` and `.readthedocs.yaml` were removed; the `docs` extra now installs
   `mkdocs-material` and `mkdocstrings[python]`. A new `book.yml` workflow runs

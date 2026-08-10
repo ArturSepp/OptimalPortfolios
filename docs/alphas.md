@@ -1,4 +1,8 @@
-# Alphas Module — `optimalportfolios.alphas`
+---
+icon: material/lightning-bolt-outline
+---
+
+# Alpha signals
 
 Alpha signal building blocks for the `optimalportfolios` package.
 

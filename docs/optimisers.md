@@ -1,8 +1,12 @@
-# Optimization Module
+---
+icon: material/tune-variant
+---
+
+# Portfolio optimisers
 
 Developer documentation for the portfolio optimisation solvers in
-`optimalportfolios`. For user-facing overview and quick start, see the
-[project README](examples_readme.md).
+`optimalportfolios`. For the user-facing overview see the
+[Quickstart](quickstart.md); for the runnable demos see [Examples](examples.md).
 
 ## Architecture
 

@@ -1,4 +1,8 @@
-# Covariance Estimation Module
+---
+icon: material/grid
+---
+
+# Covariance estimation
 
 Covariance matrix estimation framework for the `optimalportfolios` package.
 
