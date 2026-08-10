@@ -7,11 +7,12 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-### Fixed
-- Fixed `examples/solvers/risk_budgeting.py` to pass its constructed 10%–30% asset-class
-  constraints into the demonstrated solve in PR #36 by @tschm. On the committed 19-asset
-  fixture, Cash falls from 44.7552286661% to the 30% cap; all 19 weights change, with
-  0.295104561020 L1 weight difference (14.7552280510% one-way turnover).
+## [6.13.0] - 2026-08-11
+
+**Example behaviour fix:** `examples/solvers/risk_budgeting.py` now passes its constructed
+10%–30% asset-class constraints into the demonstrated solve, in PR #36 by @tschm. On the
+committed 19-asset fixture, Cash falls from 44.7552286661% to the 30% cap; all 19 weights
+change, with 0.295104561020 L1 weight difference (14.7552280510% one-way turnover).
 
 ### Changed
 - Added the Read the Docs site and excluded local-only trees from root docstring scans.
