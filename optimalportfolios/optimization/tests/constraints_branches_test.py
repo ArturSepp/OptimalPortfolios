@@ -409,6 +409,92 @@ def test_update_min_max_weights_accepts_a_box_where_there_was_none() -> None:
     assert updated.max_weights['defensive'] == 0.6
 
 
+def short_only_group_loadings() -> pd.DataFrame:
+    """Loadings where one group is held entirely short.
+
+    A hedge overlay is stated as a negative loading: the group's exposure is the *short* leg.
+    The column is not all-zero, so it survives the zero-column drop and reaches the two
+    membership loops — both of which define membership as a strictly positive loading and so
+    find none. Nothing about the group is checkable in that state; what matters is that it is
+    passed over rather than reduced over an empty set.
+    """
+    return pd.DataFrame({'hedge': [0.0, 0.0, -1.0], 'core': [1.0, 1.0, 0.0]}, index=TICKERS)
+
+
+def test_a_group_held_only_short_is_passed_over_by_the_bound_validation() -> None:
+    """with no positively-loaded member there is no box sum to test the group bound against
+
+    The construction-time check compares a group's bound with the loading-weighted sum of its
+    members' box bounds. Over an empty membership that sum is zero, and every non-zero floor
+    would be reported as unreachable — an error on every rebalancing date, for a group whose
+    bound the check simply cannot speak to.
+    """
+    constraints = Constraints(
+        is_long_only=False,
+        min_weights=pd.Series(-1.0, index=TICKERS),
+        max_weights=pd.Series(1.0, index=TICKERS),
+        group_lower_upper_constraints=GroupLowerUpperConstraints(
+            group_loadings=short_only_group_loadings(),
+            group_min_allocation=pd.Series({'hedge': -0.5, 'core': 0.0}),
+            group_max_allocation=pd.Series({'hedge': 0.0, 'core': 1.0})))
+    # constructed without error, and the group is still carried
+    assert 'hedge' in constraints.group_lower_upper_constraints.group_loadings.columns
+    assert constraints.group_lower_upper_constraints.group_max_allocation['hedge'] == 0.0
+
+
+def test_a_group_held_only_short_is_passed_over_by_the_frozen_overhang_pass() -> None:
+    """the relaxation loop applies the same membership rule as the validation above
+
+    The two loops have to agree: a group the validation declines to check must not be one the
+    relaxation silently widens, or a bound would move on the strength of a sum over no assets.
+    """
+    constraints = Constraints(
+        is_long_only=False,
+        min_weights=pd.Series(-1.0, index=TICKERS),
+        max_weights=pd.Series(1.0, index=TICKERS),
+        weights_0=pd.Series([0.6, 0.6, -0.2], index=TICKERS),
+        group_lower_upper_constraints=GroupLowerUpperConstraints(
+            group_loadings=short_only_group_loadings(),
+            group_min_allocation=pd.Series({'hedge': -0.5, 'core': 0.0}),
+            group_max_allocation=pd.Series({'hedge': 0.0, 'core': 1.0})))
+    updated = constraints.update_with_valid_tickers(
+        valid_tickers=TICKERS,
+        rebalancing_indicators=pd.Series([1.0, 0.0, 0.0], index=TICKERS))
+    gluc = updated.group_lower_upper_constraints
+    assert gluc.group_max_allocation['hedge'] == 0.0
+    assert gluc.group_min_allocation['hedge'] == -0.5
+
+
+def test_a_relaxation_past_full_investment_is_logged_as_an_error(caplog) -> None:
+    """a waiver that widens a group above the budget leaves the set infeasible, and says so
+
+    The frozen-overhang waiver exists for a drifted book a few tens of basis points out of
+    compliance. A book that is over-invested — 110% here, which is what a live PMS state or a
+    long drift without a rebalance looks like — pushes the group cap past ``max_exposure``,
+    and no portfolio can satisfy both. The relaxation still happens (there is nothing better
+    to do for this one date) but it escalates to ERROR and names the number, because the
+    solve that follows will produce something that has to be validated rather than trusted.
+    """
+    over_invested = pd.Series([0.4, 0.4, 0.3], index=TICKERS)      # sums to 1.1
+    constraints = make_constraints(
+        weights_0=over_invested,
+        group_lower_upper_constraints=GroupLowerUpperConstraints(
+            group_loadings=pd.DataFrame({'total': [1.0, 1.0, 1.0]}, index=TICKERS),
+            group_min_allocation=pd.Series({'total': 0.0}),
+            group_max_allocation=pd.Series({'total': 0.9})))
+    with caplog.at_level(logging.INFO,
+                         logger='optimalportfolios.optimization.constraints'):
+        updated = constraints.update_with_valid_tickers(
+            valid_tickers=TICKERS, context='2024-03-31',
+            rebalancing_indicators=pd.Series(0.0, index=TICKERS))   # everything frozen
+
+    assert updated.group_lower_upper_constraints.group_max_allocation['total'] > 1.0
+    escalated = [record for record in caplog.records if record.levelno >= logging.ERROR]
+    assert any('relaxed group_max above max_exposure' in record.getMessage()
+               for record in escalated)
+    assert any('must be validated' in record.getMessage() for record in escalated)
+
+
 def test_a_group_whose_members_all_dropped_is_left_alone_in_the_frozen_overhang_pass():
     """the relaxation loop skips a group with no members rather than dividing by nothing
 
@@ -653,6 +739,41 @@ def test_pyrb_constraints_report_no_rows_when_no_group_bounds_are_stated() -> No
     bounds, c_rows, c_lhs = make_constraints().set_pyrb_constraints(covar=COVAR.to_numpy())
     assert c_rows is None and c_lhs is None
     assert len(bounds) == len(TICKERS)
+
+
+def test_pyrb_constraints_report_no_rows_when_the_group_bounds_are_all_unset() -> None:
+    """a group block whose every bound is NaN produces no rows either
+
+    A grouping with no allocations attached is how a caller states the *partition* without
+    constraining it — for reporting, or because the bounds arrive later. It has to reach the
+    solver as "unconstrained", not as an empty matrix with a row count of zero.
+    """
+    unbounded = GroupLowerUpperConstraints(group_loadings=GROUP_LOADINGS,
+                                           group_min_allocation=None,
+                                           group_max_allocation=None)
+    bounds, c_rows, c_lhs = make_constraints(
+        group_lower_upper_constraints=unbounded).set_pyrb_constraints(covar=COVAR.to_numpy())
+    assert c_rows is None and c_lhs is None
+    assert len(bounds) == len(TICKERS)
+
+
+def test_group_bounds_reach_the_cvx_problem_through_the_full_constraint_builder() -> None:
+    """``set_cvx_all_constraints`` emits the group block, not only the box and the budget
+
+    Every solver in the package builds its constraint list through this one call, so a group
+    bound that is not emitted here is a mandate limit that no solver applies — while the
+    constraint set still reports carrying it.
+    """
+    constraints = make_constraints(
+        group_lower_upper_constraints=GroupLowerUpperConstraints(
+            group_loadings=GROUP_LOADINGS,
+            group_min_allocation=pd.Series({'risky': 0.0, 'safe': 0.0}),
+            group_max_allocation=pd.Series({'risky': 0.3, 'safe': 1.0})))
+    w = cvx.Variable(len(TICKERS), nonneg=True)
+    emitted = constraints.set_cvx_all_constraints(w=w, covar=cvx.psd_wrap(COVAR.to_numpy()))
+    solved = solve_under(w, emitted)
+    assert solved is not None
+    assert float(solved[:2].sum()) <= 0.3 + 1e-5, 'the group cap never reached the solver'
 
 
 if __name__ == '__main__':
