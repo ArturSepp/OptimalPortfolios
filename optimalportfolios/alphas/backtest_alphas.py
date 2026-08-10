@@ -85,7 +85,9 @@ def compute_signal_scores(prices: pd.DataFrame,
             returns_freq=returns_freq or 'ME',
             group_data=group_data,
             beta_span=beta_span,
-            momentum_span=momentum_span)
+            # the residual-momentum smoothing span is `long_span` there; passing it as
+            # `momentum_span` raised TypeError, so this signal never ran
+            long_span=momentum_span)
 
     elif alpha_signal == AlphaSignal.MOMENTUM_AND_BETA:
         mom_scores, _ = compute_momentum_alpha(
@@ -114,7 +116,8 @@ def compute_signal_scores(prices: pd.DataFrame,
             returns_freq=returns_freq or 'ME',
             group_data=group_data,
             beta_span=beta_span,
-            momentum_span=momentum_span)
+            # see RESIDUAL_MOMENTUM above: the keyword is `long_span`
+            long_span=momentum_span)
 
         beta_scores, _ = compute_low_beta_alpha(
             prices=prices,
