@@ -7,6 +7,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+- Modernized packaging licence metadata to the PEP 639 SPDX form (`license = "MIT"` and
+  `license-files = ["LICENSE.txt"]`), with no change to the legal licence or package behavior;
+  originally proposed in PR #9 by @tschm.
+
 ## [6.12.0] - 2026-08-10
 
 **Behaviour change:** Dispatching `AlphaSignal.RESIDUAL_MOMENTUM` and
