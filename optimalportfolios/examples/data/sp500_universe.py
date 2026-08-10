@@ -105,7 +105,13 @@ def create_sp500_universe_with_bloomberg(start_date: pd.Timestamp = pd.Timestamp
         start_date: Start date for time series universe. Defaults to Dec 31, 1995.
         local_path: Path to directory for saving CSV files. Defaults to LOCAL_PATH.
     """
-    from bbg_fetch import fetch_field_timeseries_per_tickers, fetch_fundamentals
+    try:
+        from bbg_fetch import fetch_field_timeseries_per_tickers, fetch_fundamentals
+    except ImportError as exc:
+        raise ImportError(
+            "create_sp500_universe_with_bloomberg needs bbg-fetch and a live Bloomberg "
+            "terminal: pip install bbg-fetch"
+        ) from exc
     inclusion_indicators, inclusion_indicators_bbg = create_inclusion_indicators()
 
     tickers = inclusion_indicators_bbg.columns.to_list()
