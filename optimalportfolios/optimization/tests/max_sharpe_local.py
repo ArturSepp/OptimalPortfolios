@@ -47,7 +47,7 @@ def run_local_test(local_test: LocalTests):
         port_vol = np.sqrt(weights.values @ covar @ weights.values)
         sharpe = port_ret / port_vol
 
-        print(f"── Max Sharpe (long-only, no caps) ──")
+        print("── Max Sharpe (long-only, no caps) ──")
         print(f"Expected returns:\n{means.to_string(float_format='{:.2%}'.format)}")
         print(f"\nOptimal weights:\n{weights.to_string(float_format='{:.4f}'.format)}")
         print(f"\nPortfolio return: {port_ret:.4%}")
@@ -89,7 +89,7 @@ def run_local_test(local_test: LocalTests):
         port_vol = np.sqrt(w_normal.values @ covar @ w_normal.values)
         sharpe = (w_normal @ means) / port_vol
 
-        print(f"── Wrapper: normal case ──")
+        print("── Wrapper: normal case ──")
         print(f"Weights:\n{w_normal.to_string(float_format='{:.4f}'.format)}")
         print(f"Sharpe: {sharpe:.2f}  Sum: {w_normal.sum():.4f}\n")
 
@@ -102,7 +102,7 @@ def run_local_test(local_test: LocalTests):
                                                    means=means,
                                                    constraints=constraints)
 
-        print(f"── Wrapper: Gold NaN covariance ──")
+        print("── Wrapper: Gold NaN covariance ──")
         print(f"Weights:\n{w_nan.to_string(float_format='{:.4f}'.format)}")
         print(f"Gold weight: {w_nan['Gold']:.6f} (should be 0)")
         print(f"Sum: {w_nan.sum():.4f}\n")
@@ -114,7 +114,7 @@ def run_local_test(local_test: LocalTests):
                                                     constraints=constraints,
                                                     weights_0=weights_0)
 
-        print(f"── Wrapper: with warm-start ──")
+        print("── Wrapper: with warm-start ──")
         print(f"Weights:\n{w_warm.to_string(float_format='{:.4f}'.format)}")
         sharpe_warm = (w_warm @ means) / np.sqrt(w_warm.values @ covar @ w_warm.values)
         print(f"Sharpe: {sharpe_warm:.2f}  Sum: {w_warm.sum():.4f}")

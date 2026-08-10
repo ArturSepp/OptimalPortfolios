@@ -43,7 +43,7 @@ def run_local_test(local_test: LocalTests):
         constraints = Constraints(is_long_only=True,
                                   max_weights=pd.Series(0.5, index=tickers))
 
-        print(f"── Inputs ──")
+        print("── Inputs ──")
         print(f"Alphas:\n{alphas.to_string(float_format='{:.3%}'.format)}")
         print(f"\nYields:\n{yields.to_string(float_format='{:.3%}'.format)}")
         print(f"\nVols:   {dict(zip(tickers, [f'{v:.1%}' for v in vols]))}")

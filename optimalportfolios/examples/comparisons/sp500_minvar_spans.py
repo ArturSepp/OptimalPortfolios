@@ -120,7 +120,7 @@ def run_local_test(local_test: LocalTests):
 
         qis.save_figs_to_pdf(
             figs=figs,
-            file_name=f"sp500_span_sensitivity_factsheet",
+            file_name="sp500_span_sensitivity_factsheet",
             orientation='landscape',
             local_path=lp.get_output_path(),
         )

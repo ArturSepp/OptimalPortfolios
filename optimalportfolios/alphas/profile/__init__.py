@@ -18,3 +18,19 @@ from optimalportfolios.alphas.profile.signal_profilers import (
     profile_carry,
     profile_alpha_signals,
 )
+
+
+# The export surface of this subpackage. `from ... import *` — including the star
+# imports in the top-level __init__ — re-exports exactly this list.
+__all__ = [
+    'ProfileSignal',
+    'backtest_alpha_rank_portfolio',
+    'compute_alpha_rank_analysis_table',
+    'compute_top_quantile_equal_weights',
+    'generate_alpha_profile_report',
+    'profile_alpha_signals',
+    'profile_carry',
+    'profile_low_beta',
+    'profile_momentum',
+    'profile_residual_momentum',
+]

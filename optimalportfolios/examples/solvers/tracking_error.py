@@ -200,14 +200,14 @@ def run_local_test(local_test: LocalTests):
         portfolio_data = qis.backtest_model_portfolio(prices=prices,
                                                       weights=weights,
                                                       rebalancing_costs=rebalancing_costs,
-                                                      ticker=f"Optimal Portfolio")
+                                                      ticker="Optimal Portfolio")
         portfolio_data.set_group_data(group_data=group_data)
         # benchmark portfolio
         equal_weights = qis.df_to_equal_weight_allocation(weights)  # same allocatin with equal weights
         benchmark_portfolio_data = qis.backtest_model_portfolio(prices=prices,
                                                                 weights=equal_weights,
                                                                 rebalancing_costs=rebalancing_costs,
-                                                                ticker=f"Benchmark Portfolio")
+                                                                ticker="Benchmark Portfolio")
         benchmark_portfolio_data.set_group_data(group_data=group_data)
 
         kwargs = qis.fetch_default_report_kwargs(time_period=time_period, add_rates_data=True)
@@ -220,7 +220,7 @@ def run_local_test(local_test: LocalTests):
                                                              add_grouped_cum_pnl=False,
                                                              **kwargs)
         qis.save_figs_to_pdf(figs=figs,
-                             file_name=f"tracking error portfolio", orientation='landscape',
+                             file_name="tracking error portfolio", orientation='landscape',
                              local_path=lp.get_output_path())
 
 

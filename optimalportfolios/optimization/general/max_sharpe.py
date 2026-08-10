@@ -41,11 +41,10 @@ dimensionless and this module performs no frequency conversion. Main entry point
 ``cvx_maximize_portfolio_sharpe``. Boundary: expected-return and covariance estimation, policy
 design, and reporting are outside this solver.
 """
-import warnings
 import numpy as np
 import pandas as pd
 import cvxpy as cvx
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints, cvx_covar_variance

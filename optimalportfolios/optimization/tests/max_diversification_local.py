@@ -40,7 +40,7 @@ def run_local_test(local_test: LocalTests):
         port_vol = np.sqrt(weights.values @ covar @ weights.values)
         dr = calculate_diversification_ratio(w=weights.values, covar=covar)
 
-        print(f"\n── Simple two-asset case ──")
+        print("\n── Simple two-asset case ──")
         print(f"Asset vols:           {vols}")
         print(f"Weights:              {weights.to_string(float_format='{:.4f}'.format)}")
         print(f"Portfolio vol:        {port_vol:.4%}")
@@ -68,7 +68,7 @@ def run_local_test(local_test: LocalTests):
         port_vol = np.sqrt(weights.values @ covar @ weights.values)
         dr = calculate_diversification_ratio(w=weights.values, covar=covar)
 
-        print(f"\n── Four-asset case with 40% cap ──")
+        print("\n── Four-asset case with 40% cap ──")
         print(f"Asset vols:           {dict(zip(tickers, [f'{v:.1%}' for v in vols]))}")
         print(f"Weights:\n{weights.to_string(float_format='{:.4f}'.format)}")
         print(f"Portfolio vol:        {port_vol:.4%}")
@@ -109,7 +109,7 @@ def run_local_test(local_test: LocalTests):
                 dr_series[date] = calculate_diversification_ratio(w=w, covar=pd_covar.values)
         dr_series = pd.Series(dr_series, name='Diversification Ratio')
 
-        print(f"\n── Rolling max diversification ──")
+        print("\n── Rolling max diversification ──")
         print(f"Mean DR:    {dr_series.mean():.3f}")
         print(f"Min DR:     {dr_series.min():.3f}")
         print(f"Max DR:     {dr_series.max():.3f}")

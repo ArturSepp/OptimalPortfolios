@@ -12,13 +12,15 @@ env:
 
 jobs:
   lint:
-    # The three stack invariants configured in pyproject.toml -- TID251 (subject packages
+    # The three stack invariants configured in ruff.toml -- TID251 (subject packages
     # never import each other), TID253 (an optional extra is never imported at module
-    # level) and ICN (the numpy/pandas aliases) -- are green across the whole package, so
-    # a finding here is always something the change under review introduced.
+    # level) and ICN (the numpy/pandas aliases) -- plus the whole F family, are green
+    # across the package, so a finding here is always something the change under review
+    # introduced.
     #
-    # Deliberately not the full E/W/F set: that carries a large legacy backlog which
-    # AGENTS.md asks be left alone, so gating it would block every unrelated PR.
+    # F is gated and E/W are not, because the legacy backlog AGENTS.md asks be left alone
+    # is ~380 E501 line-length findings. F is a correctness family -- an unused import, an
+    # undefined name, a dropped assignment -- and was separable from the formatting one.
     runs-on: ubuntu-latest
 
     steps:
@@ -35,8 +37,8 @@ jobs:
         # Pin the current Ruff 0.16 minor series for reproducible lint results.
         pip install "ruff~=0.16.0"
 
-    - name: Check stack invariants
-      run: ruff check --select TID251,TID253,ICN optimalportfolios/
+    - name: Check stack invariants and the F family
+      run: ruff check --select TID251,TID253,ICN,F optimalportfolios/
 
   test:
     runs-on: ubuntu-latest

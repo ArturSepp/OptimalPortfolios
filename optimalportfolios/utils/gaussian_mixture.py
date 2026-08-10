@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import scipy.stats as ss
-from scipy.stats import bernoulli, multivariate_normal
+from scipy.stats import multivariate_normal
 from scipy.cluster.vq import kmeans2
 from dataclasses import dataclass
 from matplotlib.patches import Ellipse
@@ -405,7 +405,7 @@ def estimate_rolling_mixture(prices: Union[pd.Series, pd.DataFrame],
     if isinstance(prices, pd.Series):
         prices = prices.to_frame()
     elif isinstance(prices, pd.DataFrame) and len(prices.columns) > 1:
-        raise ValueError(f"supported only 1-d price time series")
+        raise ValueError("supported only 1-d price time series")
 
     rets = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True, freq=returns_freq)
 

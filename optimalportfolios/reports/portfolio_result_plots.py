@@ -8,10 +8,8 @@ Requires: matplotlib, seaborn, qis.
 """
 from __future__ import annotations
 
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List
 
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import qis as qis

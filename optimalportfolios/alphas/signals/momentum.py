@@ -16,7 +16,6 @@ Pipeline:
 """
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 import qis as qis
 from typing import Dict, Mapping, Optional, Tuple, Union

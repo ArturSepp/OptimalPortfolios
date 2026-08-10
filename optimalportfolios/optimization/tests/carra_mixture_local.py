@@ -27,8 +27,9 @@ def run_local_test(local_test: LocalTests):
         means = np.array([0.3, 0.1])
         covar = np.array([[0.2 ** 2, 0.01],
                           [0.01, 0.1 ** 2]])
-        w_rb = opt_maximize_cara(means=means, covar=covar, carra=10, is_exp=False, disp=True)
-        w_rb = opt_maximize_cara(means=means, covar=covar, carra=10, is_exp=True, disp=True)
+        # both calls print their solution via disp=True; the return value is not used
+        opt_maximize_cara(means=means, covar=covar, carra=10, is_exp=False, disp=True)
+        opt_maximize_cara(means=means, covar=covar, carra=10, is_exp=True, disp=True)
 
     elif local_test == LocalTests.CARA_MIX:
         means = [np.array([0.05, -0.1]), np.array([0.05, 2.0])]

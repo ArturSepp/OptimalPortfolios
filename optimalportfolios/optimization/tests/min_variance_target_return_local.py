@@ -73,7 +73,7 @@ def run_local_test(local_test: LocalTests):
         constraints = Constraints(is_long_only=True,
                                   max_weights=pd.Series(0.5, index=tickers))
 
-        print(f"── Inputs ──")
+        print("── Inputs ──")
         print(f"Expected returns:\n{expected_returns.to_string(float_format='{:.3%}'.format)}")
         print(f"Vols:   {dict(zip(tickers, [f'{v:.1%}' for v in vols]))}")
 
@@ -98,7 +98,7 @@ def run_local_test(local_test: LocalTests):
         constraints = Constraints(is_long_only=True,
                                   max_weights=pd.Series(0.6, index=tickers))
 
-        print(f"── Min TE variance with return floor ──")
+        print("── Min TE variance with return floor ──")
         print(f"Benchmark: {dict(zip(tickers, [f'{b:.0%}' for b in benchmark]))}")
 
         for target in targets:
@@ -158,7 +158,7 @@ def run_local_test(local_test: LocalTests):
         print_portfolio("Utility (λ_TO=5.0)", w_util.values, covar,
                         expected_returns.values, tickers, benchmark)
 
-        print(f"\n  Weight difference (hard - utility):")
+        print("\n  Weight difference (hard - utility):")
         for i, t in enumerate(tickers):
             print(f"    {t:12s}  Δw = {w_hard.values[i] - w_util.values[i]:+.4f}")
 
@@ -215,7 +215,7 @@ def run_local_test(local_test: LocalTests):
             target_return=0.03,
             constraints=constraints,
         )
-        print(f"── Wrapper: normal case ──")
+        print("── Wrapper: normal case ──")
         print(f"Weights:\n{w_normal.to_string(float_format='{:.4f}'.format)}")
         print(f"Return: {w_normal @ expected_returns:.4%}")
         print(f"Sum: {w_normal.sum():.4f}\n")
@@ -231,7 +231,7 @@ def run_local_test(local_test: LocalTests):
             target_return=0.03,
             constraints=constraints,
         )
-        print(f"── Wrapper: Gold NaN covariance ──")
+        print("── Wrapper: Gold NaN covariance ──")
         print(f"Weights:\n{w_nan.to_string(float_format='{:.4f}'.format)}")
         print(f"Gold weight: {w_nan['Gold']:.6f} (should be 0)")
         print(f"Sum: {w_nan.sum():.4f}\n")
@@ -243,7 +243,7 @@ def run_local_test(local_test: LocalTests):
             target_return=0.10,  # above max expected return of 6%
             constraints=constraints,
         )
-        print(f"── Wrapper: infeasible target (10% > max 6%) ──")
+        print("── Wrapper: infeasible target (10% > max 6%) ──")
         print(f"Weights:\n{w_infeasible.to_string(float_format='{:.4f}'.format)}")
         print(f"Return: {w_infeasible @ expected_returns:.4%}")
         print(f"Sum: {w_infeasible.sum():.4f}\n")

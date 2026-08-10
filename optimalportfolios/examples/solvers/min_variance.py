@@ -1,7 +1,6 @@
 """
 example of minimum-variance portfolio via quadratic optimisation; one-step and rolling backtest variants
 """
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import qis as qis
@@ -100,7 +99,7 @@ def run_local_test(local_test: LocalTests):
                                                              add_grouped_cum_pnl=False,
                                                              **kwargs)
         qis.save_figs_to_pdf(figs=figs,
-                             file_name=f"min variance portfolio", orientation='landscape',
+                             file_name="min variance portfolio", orientation='landscape',
                              local_path=lp.get_output_path())
 
 

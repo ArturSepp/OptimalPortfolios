@@ -29,3 +29,24 @@ from optimalportfolios.alphas.signals.utils import (
     score_within_clusters,
 )
 
+
+# The export surface of this subpackage. `from ... import *` — including the star
+# imports in the top-level __init__ — re-exports exactly this list.
+__all__ = [
+    'AlphasData',
+    'compute_low_beta_alpha',
+    'compute_low_beta_cluster_alpha',
+    'compute_managers_alpha',
+    'compute_momentum_alpha',
+    'compute_momentum_cluster_alpha',
+    'compute_ra_carry_alpha',
+    'compute_ra_carry_alphas',
+    'compute_ra_carry_cluster_alpha',
+    'compute_residual_momentum_alpha',
+    'compute_residual_momentum_cluster_alpha',
+    'compute_residual_reversal_alpha',
+    'compute_residual_reversal_cluster_alpha',
+    'estimate_rolling_ewma_means',
+    'extract_rolling_clusters',
+    'score_within_clusters',
+]

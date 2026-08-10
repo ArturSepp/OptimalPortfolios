@@ -25,7 +25,6 @@ Main entry points are ``rolling_maximize_cara_mixture``, ``wrapper_maximize_cara
 mixture fit, and performance reporting are not owned here.
 """
 
-import warnings
 import logging
 import numpy as np
 import pandas as pd

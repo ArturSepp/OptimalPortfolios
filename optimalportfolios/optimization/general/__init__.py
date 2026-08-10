@@ -44,3 +44,30 @@ from optimalportfolios.optimization.general.minimum_tracking_error import (
     wrapper_minimise_tracking_error,
     cvx_minimise_tracking_error,
 )
+
+
+# The export surface of this subpackage. `from ... import *` — including the star
+# imports in the top-level __init__ — re-exports exactly this list.
+__all__ = [
+    'cvx_maximize_portfolio_sharpe',
+    'cvx_minimise_tracking_error',
+    'cvx_quadratic_optimisation',
+    'opt_maximise_diversification',
+    'opt_maximize_cara',
+    'opt_maximize_cara_mixture',
+    'opt_risk_budgeting',
+    'rolling_maximise_diversification',
+    'rolling_maximize_cara_mixture',
+    'rolling_maximize_portfolio_sharpe',
+    'rolling_minimise_tracking_error',
+    'rolling_quadratic_optimisation',
+    'rolling_risk_budgeting',
+    'solve_analytic_log_opt',
+    'solve_for_risk_budgets_from_given_weights',
+    'wrapper_maximise_diversification',
+    'wrapper_maximize_cara_mixture',
+    'wrapper_maximize_portfolio_sharpe',
+    'wrapper_minimise_tracking_error',
+    'wrapper_quadratic_optimisation',
+    'wrapper_risk_budgeting',
+]

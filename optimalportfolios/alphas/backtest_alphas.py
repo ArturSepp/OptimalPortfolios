@@ -276,7 +276,7 @@ def multi_backtest_alpha_signals(prices: pd.DataFrame,
         add_rates_data=False)
     figs = qis.generate_multi_portfolio_factsheet(
         multi_portfolio_data=multi_portfolio_data,
-        backtest_name=f"Alpha portfolios",
+        backtest_name="Alpha portfolios",
         time_period=time_period,
         add_strategy_factsheets=False,
         add_brinson_attribution=True,

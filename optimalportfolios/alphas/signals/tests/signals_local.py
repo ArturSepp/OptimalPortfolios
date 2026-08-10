@@ -45,7 +45,7 @@ def run_local_test(local_test: LocalTests):
             prices=prices, benchmark_price=benchmark_price,
             returns_freq='ME', long_span=12)
 
-        print(f"── Momentum (monthly, span=12) ──")
+        print("── Momentum (monthly, span=12) ──")
         print(f"\nScores (last 5):\n{score.tail().to_string(float_format='{:.3f}'.format)}")
         print(f"\nRaw momentum (last 5):\n{raw.tail().to_string(float_format='{:.4f}'.format)}")
 
@@ -66,7 +66,7 @@ def run_local_test(local_test: LocalTests):
             prices=prices, benchmark_price=benchmark_price,
             returns_freq=returns_freq, long_span=12)
 
-        print(f"── Momentum mixed freq ──")
+        print("── Momentum mixed freq ──")
         print(f"Frequencies: {returns_freq.to_dict()}")
         print(f"\nScores (last 5):\n{score.tail().to_string(float_format='{:.3f}'.format)}")
 
@@ -82,7 +82,7 @@ def run_local_test(local_test: LocalTests):
             prices=prices, benchmark_price=benchmark_price,
             returns_freq='ME', group_data=None, long_span=12)
 
-        print(f"── Grouped vs Global scoring ──")
+        print("── Grouped vs Global scoring ──")
         print(f"Groups: {group_data.to_dict()}")
         print(f"\nGrouped (last 3):\n{score_grouped.tail(3).to_string(float_format='{:.3f}'.format)}")
         print(f"\nGlobal (last 3):\n{score_global.tail(3).to_string(float_format='{:.3f}'.format)}")
@@ -93,7 +93,7 @@ def run_local_test(local_test: LocalTests):
             prices=prices, benchmark_price=benchmark_price,
             returns_freq='ME', beta_span=12)
 
-        print(f"── Low Beta (monthly, span=12) ──")
+        print("── Low Beta (monthly, span=12) ──")
         print(f"\nScores (last 5):\n{score.tail().to_string(float_format='{:.3f}'.format)}")
         print(f"\nRaw betas (last 5):\n{raw_beta.tail().to_string(float_format='{:.3f}'.format)}")
 
@@ -114,7 +114,7 @@ def run_local_test(local_test: LocalTests):
             prices=prices, benchmark_price=benchmark_price,
             returns_freq=returns_freq, beta_span=12)
 
-        print(f"── Low Beta mixed freq ──")
+        print("── Low Beta mixed freq ──")
         print(f"\nScores (last 5):\n{score.tail().to_string(float_format='{:.3f}'.format)}")
 
     elif local_test == LocalTests.MANAGERS_ALPHA:
@@ -141,7 +141,7 @@ def run_local_test(local_test: LocalTests):
             estimated_betas=rolling_data.get_y_betas(),
             returns_freq='ME', alpha_span=12)
 
-        print(f"── Managers Alpha (monthly, span=12) ──")
+        print("── Managers Alpha (monthly, span=12) ──")
         print(f"\nScores (last 5):\n{score.tail().to_string(float_format='{:.3f}'.format)}")
         print(f"\nRaw alpha (last 5):\n{raw_alpha.tail().to_string(float_format='{:.4f}'.format)}")
 
@@ -158,7 +158,7 @@ def run_local_test(local_test: LocalTests):
             prices=prices, benchmark_price=benchmark_price,
             returns_freq='ME', beta_span=12, momentum_span=12)
 
-        print(f"── Residual Momentum (monthly, beta_span=12, momentum_span=12) ──")
+        print("── Residual Momentum (monthly, beta_span=12, momentum_span=12) ──")
         print(f"\nScores (last 5):\n{score.tail().to_string(float_format='{:.3f}'.format)}")
         print(f"\nRaw residual momentum (last 5):\n{raw.tail().to_string(float_format='{:.4f}'.format)}")
 
@@ -179,7 +179,7 @@ def run_local_test(local_test: LocalTests):
             prices=prices, benchmark_price=benchmark_price,
             returns_freq=returns_freq, beta_span=12, momentum_span=12)
 
-        print(f"── Residual Momentum mixed freq ──")
+        print("── Residual Momentum mixed freq ──")
         print(f"Frequencies: {returns_freq.to_dict()}")
         print(f"\nScores (last 5):\n{score.tail().to_string(float_format='{:.3f}'.format)}")
 
@@ -197,7 +197,7 @@ def run_local_test(local_test: LocalTests):
             returns_freq='ME', group_data=None,
             beta_span=12, momentum_span=12)
 
-        print(f"── Residual Momentum: Grouped vs Global ──")
+        print("── Residual Momentum: Grouped vs Global ──")
         print(f"Groups: {group_data.to_dict()}")
         print(f"\nGrouped (last 3):\n{score_grouped.tail(3).to_string(float_format='{:.3f}'.format)}")
         print(f"\nGlobal (last 3):\n{score_global.tail(3).to_string(float_format='{:.3f}'.format)}")
@@ -213,7 +213,7 @@ def run_local_test(local_test: LocalTests):
             prices=prices, benchmark_price=benchmark_price,
             returns_freq='ME', beta_span=12, momentum_span=12)
 
-        print(f"── Total Momentum vs Residual Momentum ──")
+        print("── Total Momentum vs Residual Momentum ──")
         print(f"\nMomentum scores (last 3):\n{mom_score.tail(3).to_string(float_format='{:.3f}'.format)}")
         print(f"\nResidual mom scores (last 3):\n{res_score.tail(3).to_string(float_format='{:.3f}'.format)}")
 

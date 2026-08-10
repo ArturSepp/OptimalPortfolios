@@ -37,7 +37,7 @@ def run_local_test(local_test: LocalTests):
 
         vol = np.sqrt(np.diag(covar))
         corr = covar / np.outer(vol, vol)
-        print(f"── Input ──")
+        print("── Input ──")
         print(f"Vols:   {vol}")
         print(f"Corr:\n{np.array2string(corr, precision=3)}")
         print(f"Budget: {risk_budget}")
@@ -68,23 +68,23 @@ def run_local_test(local_test: LocalTests):
         vol_rb_bounded = np.sqrt(compute_portfolio_variance(w_rb_bounded, covar))
 
         # print comparison
-        print(f"\n── Scipy SLSQP ──")
+        print("\n── Scipy SLSQP ──")
         print(f"Weights:    {np.array2string(w_scipy, precision=4)}")
         print(f"RC (norm):  {np.array2string(rc_scipy / np.nansum(rc_scipy), precision=4)}")
         print(f"Port vol:   {vol_scipy:.4%}")
 
-        print(f"\n── CCD/ADMM (unconstrained) ──")
+        print("\n── CCD/ADMM (unconstrained) ──")
         print(f"Weights:    {np.array2string(w_rb, precision=4)}")
         print(f"RC (norm):  {np.array2string(rc_rb / np.nansum(rc_rb), precision=4)}")
         print(f"Port vol:   {vol_rb:.4%}")
 
-        print(f"\n── CCD/ADMM (max 40% per asset) ──")
+        print("\n── CCD/ADMM (max 40% per asset) ──")
         print(f"Weights:    {np.array2string(w_rb_bounded, precision=4)}")
         print(f"RC (norm):  {np.array2string(rc_rb_bounded / np.nansum(rc_rb_bounded), precision=4)}")
         print(f"Port vol:   {vol_rb_bounded:.4%}")
 
         # budget tracking error: |realised RC - target budget|
-        print(f"\n── Budget tracking ──")
+        print("\n── Budget tracking ──")
         print(f"Scipy MAE:        {np.mean(np.abs(rc_scipy / np.nansum(rc_scipy) - risk_budget)):.6f}")
         print(f"CCD/ADMM MAE:         {np.mean(np.abs(rc_rb / np.nansum(rc_rb) - risk_budget)):.6f}")
         print(f"CCD/ADMM bounded MAE: {np.mean(np.abs(rc_rb_bounded / np.nansum(rc_rb_bounded) - risk_budget)):.6f}")
@@ -110,7 +110,7 @@ def run_local_test(local_test: LocalTests):
                                    max_weights=pd.Series(0.4, index=tickers)),
         }
 
-        print(f"── Four-asset risk budgeting ──")
+        print("── Four-asset risk budgeting ──")
         print(f"Vols:  {dict(zip(tickers, [f'{v:.1%}' for v in vols]))}")
         print(f"Corr:\n{np.array2string(corr, precision=2)}\n")
 
@@ -151,7 +151,7 @@ def run_local_test(local_test: LocalTests):
                                        risk_budget=budget_all)
         rc_all = compute_portfolio_risk_contributions(w_all.values, covar)
 
-        print(f"── Wrapper: all assets active ──")
+        print("── Wrapper: all assets active ──")
         print(f"Weights:\n{w_all.to_string(float_format='{:.4f}'.format)}")
         print(f"RC (norm): {np.array2string(rc_all / np.nansum(rc_all), precision=4)}")
         print(f"Sum: {w_all.sum():.4f}\n")
@@ -162,7 +162,7 @@ def run_local_test(local_test: LocalTests):
                                           constraints=constraints,
                                           risk_budget=budget_no_hy)
 
-        print(f"── Wrapper: HighYield excluded (budget=0) ──")
+        print("── Wrapper: HighYield excluded (budget=0) ──")
         print(f"Weights:\n{w_no_hy.to_string(float_format='{:.4f}'.format)}")
         print(f"HighYield weight: {w_no_hy['HighYield']:.6f} (should be 0)")
         print(f"Sum: {w_no_hy.sum():.4f}\n")
@@ -176,7 +176,7 @@ def run_local_test(local_test: LocalTests):
                                         constraints=constraints,
                                         risk_budget=budget_with_nan)
 
-        print(f"── Wrapper: Gold has NaN covariance ──")
+        print("── Wrapper: Gold has NaN covariance ──")
         print(f"Weights:\n{w_nan.to_string(float_format='{:.4f}'.format)}")
         print(f"Gold weight: {w_nan['Gold']:.6f} (should be 0)")
         print(f"Sum: {w_nan.sum():.4f}\n")
@@ -186,7 +186,7 @@ def run_local_test(local_test: LocalTests):
                                            constraints=constraints,
                                            risk_budget=budget_all,
                                            detailed_output=True)
-        print(f"── Wrapper: detailed output ──")
+        print("── Wrapper: detailed output ──")
         print(df_detail.to_string(float_format='{:.4f}'.format))
 
     elif local_test == LocalTests.ROLLING_RISK_BUDGETING:
@@ -248,7 +248,7 @@ def run_local_test(local_test: LocalTests):
                                                          weight_implementation_lag=1,
                                                          rebalancing_costs=0.0010)
 
-        print(f"\n── Rolling risk budgeting ──")
+        print("\n── Rolling risk budgeting ──")
         print(f"Equal budget:  {equal_budget.to_dict()}")
         print(f"Tilted budget: {tilted_budget.to_dict()}")
 

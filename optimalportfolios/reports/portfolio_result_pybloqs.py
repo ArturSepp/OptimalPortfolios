@@ -5,7 +5,6 @@ Dedicated to the optional ``reports`` backend and not reachable from
 here by documented exception.
 """
 
-import pandas as pd
 import pybloqs as p
 import pybloqs.block.table_formatters as tf
 from optimalportfolios.optimization import PortfolioOptimisationResult
@@ -78,7 +77,7 @@ def generate_portfolio_report(
             diff_heatmap_cols.append('trade')
 
         b_weights = p.Block(
-            [p.Paragraph(f"Optimised portfolio weights", **KWARGS_TITLE),
+            [p.Paragraph("Optimised portfolio weights", **KWARGS_TITLE),
              p.Block(weights,
                      formatters=[
                          tf.FmtPercent(n_decimals=2, columns=numeric_cols, apply_to_header_and_index=False),
@@ -103,7 +102,7 @@ def generate_portfolio_report(
         turnover_df = turnover.to_frame().T
         pct_cols = ['turnover', 'buys', 'sells', 'avg_trade_size', 'max_trade_size']
         b_turnover = p.Block(
-            [p.Paragraph(f"Turnover analysis", **KWARGS_TITLE),
+            [p.Paragraph("Turnover analysis", **KWARGS_TITLE),
              p.Block(turnover_df,
                      formatters=[
                          tf.FmtPercent(n_decimals=2, columns=pct_cols, apply_to_header_and_index=False),
@@ -256,7 +255,7 @@ def generate_portfolio_report(
     pct_cols = ['CMA', 'r2', 'stat_alpha', 'insample_alpha', 'total_vol', 'sys_vol', 'resid_vol']
 
     b_asset_risk = p.Block(
-        [p.Paragraph(f"Asset factor exposures and risk", **KWARGS_TITLE),
+        [p.Paragraph("Asset factor exposures and risk", **KWARGS_TITLE),
          p.Block(asset_risk_table,
                  formatters=[
                      tf.FmtDecimals(n=2, columns=decimal_cols, apply_to_header_and_index=False),

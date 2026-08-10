@@ -36,7 +36,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import cvxpy as cvx
-from typing import Optional, Union, Dict, Tuple
+from typing import Union, Dict, Tuple
 
 from optimalportfolios.optimization.constraints import (
     ConstraintEnforcementType,

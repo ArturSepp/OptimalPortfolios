@@ -1,7 +1,6 @@
 """
 example of constrained risk-budgeting portfolio (equal or specified risk contributions) solved via CCD/ADMM
 """
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import qis as qis
@@ -43,7 +42,8 @@ def run_local_test(local_test: LocalTests):
     constraints = Constraints(is_long_only=True,
                                min_weights=pd.Series(0.0, index=prices.columns),
                                max_weights=pd.Series(1.0, index=prices.columns),
-                               weights_0=benchmark_weights)
+                               weights_0=benchmark_weights,
+                               group_lower_upper_constraints=group_lower_upper_constraints)
 
     if local_test == LocalTests.ONE_STEP_OPTIMISATION:
         # optimise using last available universe as inputs
@@ -102,7 +102,7 @@ def run_local_test(local_test: LocalTests):
                                                              add_grouped_cum_pnl=False,
                                                              **kwargs)
         qis.save_figs_to_pdf(figs=figs,
-                             file_name=f"risk parity portfolio", orientation='landscape',
+                             file_name="risk parity portfolio", orientation='landscape',
                              local_path=lp.get_output_path())
 
 

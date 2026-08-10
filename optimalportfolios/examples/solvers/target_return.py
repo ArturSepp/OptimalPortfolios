@@ -185,7 +185,7 @@ def run_local_test(local_test: LocalTests):
                                                       weights=weights,
                                                       rebalancing_costs=0.0000,
                                                       weight_implementation_lag=1,
-                                                      ticker=f"Optimal Portfolio")
+                                                      ticker="Optimal Portfolio")
         portfolio_data.set_group_data(group_data=group_data)
         kwargs = qis.fetch_default_report_kwargs(time_period=time_period, add_rates_data=True)
         figs = qis.generate_strategy_factsheet(portfolio_data=portfolio_data,
@@ -195,7 +195,7 @@ def run_local_test(local_test: LocalTests):
                                                add_grouped_cum_pnl=False,
                                                **kwargs)
         qis.save_figs_to_pdf(figs=figs,
-                             file_name=f"target return portfolio", orientation='landscape',
+                             file_name="target return portfolio", orientation='landscape',
                              local_path=lp.get_output_path())
 
 

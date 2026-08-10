@@ -99,7 +99,7 @@ def run_local_test(local_test: LocalTests):
                                                              add_grouped_cum_pnl=False,
                                                              **kwargs)
         qis.save_figs_to_pdf(figs=figs,
-                             file_name=f"max diversification portfolio", orientation='landscape',
+                             file_name="max diversification portfolio", orientation='landscape',
                              local_path=lp.get_output_path())
 
 

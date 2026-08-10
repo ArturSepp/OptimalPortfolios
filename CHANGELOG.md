@@ -7,6 +7,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+- `examples/solvers/risk_budgeting.py` built a `GroupLowerUpperConstraints` and never passed it
+  to `Constraints`, so the example's stated 10%–30% asset-class bounds were not applied to the
+  solve it demonstrates. Found as an unused-variable finding, not by reading the output.
+
 ### Added
 - Added a module-scope root-package import-cycle regression guard, adapted from PR #22 by
   @tschm, while retaining function- and method-local import support.
@@ -15,6 +20,14 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   tolerance are retained and audited without weakening product or lifecycle constraints.
 
 ### Changed
+- Every subpackage `__init__.py` now declares an `__all__`, stating its export surface
+  explicitly for the first time. The public API is unchanged — all 125 names `optimalportfolios`
+  exposed before are exposed after — but `from optimalportfolios.<sub> import *` now re-exports
+  a written-down list rather than whatever was left in the namespace.
+- Ruff configuration moved from `[tool.ruff]` in `pyproject.toml` to a top-level `ruff.toml`.
+  Rule selection and behaviour are unchanged.
+- CI now gates the `F` (pyflakes) family alongside the three stack invariants. The ~380 `E501`
+  line-length findings remain ungated and untouched.
 - Covariance factorization is now owned exclusively by each low-level CVXPY solver. Wrappers pass
   only `factorize_covar`; solver APIs no longer accept a precomputed factorization, and
   `resolve_covariance_factorization` has been removed. Each enabled solve calls

@@ -427,7 +427,7 @@ def run_local_test(local_test: LocalTests):
         active = weights - BENCHMARK_WEIGHTS.to_numpy()
         te = np.sqrt(active @ COVAR @ active)
         turnover = np.abs(weights - w0.to_numpy()).sum()
-        print(f"\n  Summary:")
+        print("\n  Summary:")
         print(f"    TE vol:   {te:.4f} (limit: 0.03)")
         print(f"    Turnover: {turnover:.4f} (limit: 0.15)")
         for grp in GROUP_LOADINGS.columns:

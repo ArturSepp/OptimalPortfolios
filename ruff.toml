@@ -1,0 +1,66 @@
+# Ruff configuration for optimalportfolios.
+#
+# Kept here rather than in `[tool.ruff]` in pyproject.toml: the block is mostly prose — the
+# reason each rule is on, and the reason the wider set is not gated — and it reads better as
+# its own file than buried between the packaging metadata and the pytest settings. Ruff reads
+# `ruff.toml` in preference to `pyproject.toml`, so the two must not both define the config.
+#
+# `papers/` reproduces published code and is left exactly as-is.
+
+line-length = 100
+exclude = ["papers"]
+
+[lint]
+select = ["E", "F", "W"]
+
+# --- stack invariants as lint, not prose ---------------------------------------------------
+# TID251 bans an import outright, TID253 bans it only at module level, ICN pins the numpy and
+# pandas aliases. None belongs to the "I" (isort) family, so the import-grouping convention is
+# untouched. Verified green on the repository as it stands.
+extend-select = ["TID251", "TID253", "ICN"]
+
+# --- what CI gates, and why it is not everything --------------------------------------------
+# CI gates TID251,TID253,ICN,F. All four are green on the whole package, so a finding is always
+# something the change under review introduced.
+#
+# `E` and `W` stay ungated because of the ~380 E501 line-length findings in the older modules.
+# Those are a deliberate backlog: fix the lines your change touches, and do not reflow the
+# repository. `F` was separated from them because it is a correctness family — an unused
+# import, an undefined name, a dropped assignment — not a formatting preference.
+#
+# F401 in an `__init__.py` is a re-export, not an unused import. Every subpackage declares an
+# `__all__` that states its export surface, which is what makes those imports "used" and what
+# makes the star imports in the top-level `__init__.py` auditable. Never run `--fix` on F401
+# without checking what it is about to delete.
+
+[lint.flake8-tidy-imports.banned-api]
+# A1: optimalportfolios depends on qis and factorlasso, and on nothing else in the stack.
+# Subject packages never import each other.
+"trendfollowing".msg = "A1: subject packages never import each other."
+"privateassets".msg = "A1: subject packages never import each other."
+"stochvolmodels".msg = "A1: subject packages never import each other."
+"goal_based_allocation".msg = "A1: subject packages never import each other."
+"vanilla_option_pricers".msg = "A1: subject packages never import each other."
+
+[lint.flake8-tidy-imports]
+# A3: an optional extra is imported inside a function and guarded, never at module level, so a
+# core install keeps working. A module dedicated to a single optional backend is the documented
+# exception and is named in per-file-ignores below.
+banned-module-level-imports = ["yfinance", "pandas_datareader", "pybloqs", "plotly", "pyarrow",
+                               "psycopg2", "sqlalchemy", "networkx"]
+
+[lint.flake8-import-conventions.aliases]
+# replaces ruff's default alias map, which also demands `matplotlib as mpl` everywhere. Only
+# numpy and pandas are house convention; matplotlib is legitimately both `mpl` and `plt` here.
+numpy = "np"
+pandas = "pd"
+
+[lint.per-file-ignores]
+# examples are documentation and run top to bottom
+"optimalportfolios/examples/**" = ["TID253"]
+# module dedicated to the pybloqs backend; not reachable from optimalportfolios/__init__.py
+"optimalportfolios/reports/portfolio_result_pybloqs.py" = ["TID253"]
+# module dedicated to the plotly backend in the private rosaa tree. The layer is a leaf that
+# nothing above it imports at module level, so a core install never reaches this import.
+"rosaa/universe_profiler/figures.py" = ["TID253"]
+"rosaa/universe_profiler/report_html.py" = ["TID253"]

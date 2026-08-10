@@ -238,7 +238,6 @@ def verify_factor_model(simulation_results: dict) -> dict:
     asset_stats_df = pd.DataFrame(verification_stats).set_index('Asset')
 
     # Create covariance comparison matrices
-    n_assets = len(asset_returns.columns)
     covariance_comparison = []
     covariance_errors = []
 

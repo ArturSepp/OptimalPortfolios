@@ -53,9 +53,6 @@ def run_local_test(local_test: LocalTests):
 
     if local_test == LocalTests.MIN_VAR:
 
-        weight_min = np.array([0.0, 0.0])
-        weight_max = np.array([10.0, 10.0])
-
         optimal_weights = cvx_quadratic_optimisation(portfolio_objective=PortfolioObjective.MIN_VARIANCE,
                                                      covar=covar,
                                                      means=means,
@@ -161,7 +158,7 @@ def run_local_test(local_test: LocalTests):
                                                      means=means,
                                                      constraints=constraints).weights
 
-        print(f"exact solution")
+        print("exact solution")
         _print_portfolio_outputs(optimal_weights=opt_sharpe_w,
                                 covar=covar,
                                 means=means)

@@ -16,7 +16,7 @@ signal the core doesn't have a wrapper for, compute the panel yourself and call 
 import pandas as pd
 import qis as qis
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import Dict, Optional
 
 # optimalportfolios
 from optimalportfolios.alphas.signals.momentum import compute_momentum_alpha

@@ -1,7 +1,6 @@
 """
 example of maximum-Sharpe-ratio portfolio via the Charnes-Cooper transformation; rolling EWMA estimates for both mean and covariance
 """
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import qis as qis
@@ -109,7 +108,7 @@ def run_local_test(local_test: LocalTests):
                                                              add_grouped_cum_pnl=False,
                                                              **kwargs)
         qis.save_figs_to_pdf(figs=figs,
-                             file_name=f"max sharpe portfolio", orientation='landscape',
+                             file_name="max sharpe portfolio", orientation='landscape',
                              local_path=lp.get_output_path())
 
 

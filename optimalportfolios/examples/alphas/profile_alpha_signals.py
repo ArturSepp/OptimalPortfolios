@@ -16,7 +16,6 @@ from enum import Enum
 
 # optimalportfolios
 from optimalportfolios.alphas import (profile_carry,
-                                      profile_low_beta,
                                       profile_alpha_signals,
                                       ProfileSignal,
                                       compute_alpha_rank_analysis_table,

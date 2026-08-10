@@ -3,7 +3,6 @@ example of backtester with long-short weights
 """
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 import qis as qis
 
 # package
