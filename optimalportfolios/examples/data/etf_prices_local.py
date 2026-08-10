@@ -1,6 +1,14 @@
-"""
-implement test universe for optimisations
-use update and save universe for speed-up of test cases
+"""the eight-ETF cross-asset universe the local diagnostics run on.
+
+Both halves of this module need the author's machine: ``update_test_prices`` downloads from
+Yahoo, and ``load_test_data`` reads the saved panel out of ``RESOURCE_PATH``. Neither is
+reachable in CI, and nothing here asserts anything.
+
+Hence the ``_local`` suffix. The file was called ``test_data.py`` and so matched pytest's
+``test_*.py`` pattern: it collected no tests but was still *imported* at collection time,
+which is the mechanism behind the two CI failures a module-level ``yfinance`` import has
+already caused here. The ``yfinance`` import is function-local below, but the naming is what
+made that a rule to remember rather than a property of the layout.
 """
 
 # imports

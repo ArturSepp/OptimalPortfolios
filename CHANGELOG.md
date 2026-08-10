@@ -40,6 +40,12 @@ and 0.269786618740 for the composite signal.
 - `plot_mixure2` now unpacks the Matplotlib figure and axes correctly in PR #23 by @tschm.
 
 ### Changed
+- `examples/data/test_data.py` is renamed to `examples/data/etf_prices_local.py`. It matched
+  pytest's `test_*.py` pattern, so it was imported at collection while contributing no tests —
+  the mechanism behind two past CI failures from module-level optional-extra imports. The
+  `load_test_data` and `update_test_prices` functions are unchanged; only the module path moves,
+  and the six `*_local.py` diagnostics that import it are updated. Every file matching either of
+  pytest's default patterns now collects at least one test.
 - The S&P 500 span comparison example now uses the project-local output-path helper instead of
   the undeclared private `quant_strats` package, resolving issue #27.
 - The Bloomberg S&P 500 universe example now raises an actionable, exception-chained installation

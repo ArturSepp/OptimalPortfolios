@@ -27,7 +27,7 @@ def run_local_test(local_test: LocalTests):
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
 
-    from optimalportfolios.examples.data.test_data import load_test_data
+    from optimalportfolios.examples.data.etf_prices_local import load_test_data
     prices = load_test_data()
     prices = prices.loc['2000':, :]
     tickers = prices.columns.to_list()
