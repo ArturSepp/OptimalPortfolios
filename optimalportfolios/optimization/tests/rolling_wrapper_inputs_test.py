@@ -63,8 +63,13 @@ def make_prices(n_days: int = 400) -> pd.DataFrame:
 
 
 def make_covar_dict(covar: np.ndarray = COVAR) -> Dict[pd.Timestamp, pd.DataFrame]:
-    """The same covariance at every rebalancing date."""
-    frame = pd.DataFrame(covar, index=TICKERS, columns=TICKERS)
+    """The same covariance at every rebalancing date.
+
+    The array is copied rather than wrapped. ``pd.DataFrame(ndarray)`` shares the buffer under
+    pandas 2, so a frame built here and written to later would reach back into the module-level
+    ``COVAR`` — see ``covar_with_a_dead_asset``.
+    """
+    frame = pd.DataFrame(np.array(covar, copy=True), index=TICKERS, columns=TICKERS)
     return {date: frame for date in REBALANCING_DATES}
 
 
@@ -108,6 +113,21 @@ def target_vols() -> pd.Series:
 def target_returns() -> pd.Series:
     """A return target inside the achievable range of ALPHAS."""
     return pd.Series(0.05, index=REBALANCING_DATES)
+
+
+def test_the_fixtures_do_not_write_into_the_shared_covariance() -> None:
+    """building a covariance frame must not reach back into the module-level array
+
+    Under pandas 2 ``pd.DataFrame(ndarray)`` wraps the buffer instead of copying it, so a
+    fixture that mutates its frame silently poisons ``COVAR`` for every test that runs after
+    it — which surfaced as ``multivariate_normal`` failing with "SVD did not converge" in
+    eight unrelated cases, on the 3.10 leg only. Asserted here because the corruption is
+    invisible in the test that causes it and fatal in the ones that follow.
+    """
+    covar_with_a_dead_asset()
+    make_covar_dict()
+    assert np.isfinite(COVAR).all(), 'a fixture wrote NaN into the shared covariance'
+    np.testing.assert_allclose(COVAR, np.outer(VOLS, VOLS) * CORR)
 
 
 # --------------------------------------------------------------------------- #
@@ -253,8 +273,15 @@ def test_a_rebalancing_that_solved_to_nothing_resets_the_drift_chain(wrapper: st
 # rescaling when assets drop out
 # --------------------------------------------------------------------------- #
 def covar_with_a_dead_asset() -> Dict[pd.Timestamp, pd.DataFrame]:
-    """A covariance whose third asset is all-NaN, so the filter drops it before the solve."""
-    frame = pd.DataFrame(COVAR, index=TICKERS, columns=TICKERS)
+    """A covariance whose third asset is all-NaN, so the filter drops it before the solve.
+
+    The copy is load-bearing. ``pd.DataFrame(ndarray)`` wraps the buffer without copying it
+    under pandas 2 (pandas 3 copies on write), so the two assignments below wrote straight
+    into the module-level ``COVAR`` — every later ``make_prices`` then drew from a covariance
+    full of NaN and ``multivariate_normal`` failed inside LAPACK with "SVD did not converge",
+    in eight tests that have nothing to do with this fixture.
+    """
+    frame = pd.DataFrame(np.array(COVAR, copy=True), index=TICKERS, columns=TICKERS)
     frame.loc[TICKERS[2], :] = np.nan
     frame.loc[:, TICKERS[2]] = np.nan
     return {date: frame for date in REBALANCING_DATES}
