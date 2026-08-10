@@ -17,14 +17,17 @@ expected score is arithmetic rather than a recorded output.
 year on monthly data and three years on quarterly, and every branch of it is an error path.
 """
 # packages
+from types import SimpleNamespace
 import numpy as np
 import pandas as pd
 import pytest
+import qis
 # optimalportfolios
 from optimalportfolios.alphas.backtest_alphas import AlphaSignal, compute_signal_scores
 from optimalportfolios.alphas.signals.utils import (
     _global_zscore,
     _split_cluster_label,
+    extract_rolling_clusters,
     resolve_span,
     score_within_clusters,
 )
@@ -119,6 +122,70 @@ def test_global_zscore_returns_zeros_when_there_is_nothing_to_standardise() -> N
 
 
 # --------------------------------------------------------------------------- #
+# extract_rolling_clusters
+# --------------------------------------------------------------------------- #
+def make_rolling_covar_data(clusters_by_date: dict) -> SimpleNamespace:
+    """The shape ``extract_rolling_clusters`` reads: ``.data[date].clusters``.
+
+    ``RollingFactorCovarData`` comes out of a factorlasso estimation over real prices, which
+    this suite deliberately does not run. Only the two attributes the function touches are
+    stood up here, so the branches are exercised on stated assignments rather than on whatever
+    an estimator happened to produce.
+    """
+    return SimpleNamespace(
+        data={date: SimpleNamespace(clusters=clusters)
+              for date, clusters in clusters_by_date.items()})
+
+
+def test_extract_rolling_clusters_keys_the_assignments_by_estimation_date() -> None:
+    """the flat per-date Series is passed through, keyed by the date it was estimated on"""
+    assignment = pd.Series(['QE:1'] * 4 + ['QE:2'] * 4, index=TICKERS)
+    rolling = extract_rolling_clusters(
+        make_rolling_covar_data({SIGNAL_DATES[0]: assignment,
+                                 SIGNAL_DATES[1]: assignment}))
+    assert list(rolling.keys()) == [SIGNAL_DATES[0], SIGNAL_DATES[1]]
+    pd.testing.assert_series_equal(rolling[SIGNAL_DATES[0]], assignment)
+
+
+def test_extract_rolling_clusters_skips_dates_with_no_assignment() -> None:
+    """a date the estimator produced nothing for is absent, not present and empty
+
+    An empty Series left in the dict would be scored as a partition of zero assets, which
+    ``score_within_clusters`` reads as a degenerate cluster rather than as missing data.
+    """
+    assignment = pd.Series(['QE:1'] * 8, index=TICKERS)
+    rolling = extract_rolling_clusters(
+        make_rolling_covar_data({SIGNAL_DATES[0]: None,
+                                 SIGNAL_DATES[1]: pd.Series(dtype=object),
+                                 SIGNAL_DATES[2]: assignment}))
+    assert list(rolling.keys()) == [SIGNAL_DATES[2]]
+
+
+def test_extract_rolling_clusters_keeps_the_last_label_of_a_duplicated_ticker() -> None:
+    """a ticker carrying both an ME and a QE label would otherwise form two clusters"""
+    assignment = pd.Series(['ME:1', 'QE:3'], index=[TICKERS[0], TICKERS[0]])
+    rolling = extract_rolling_clusters(
+        make_rolling_covar_data({SIGNAL_DATES[0]: assignment}))
+    assert rolling[SIGNAL_DATES[0]].to_dict() == {TICKERS[0]: 'QE:3'}
+
+
+def test_extract_rolling_clusters_filters_to_the_requested_universe() -> None:
+    """the covariance universe is wider than the signal universe, so it is narrowed here"""
+    assignment = pd.Series(['QE:1'] * 4 + ['QE:2'] * 4, index=TICKERS)
+    rolling = extract_rolling_clusters(
+        make_rolling_covar_data({SIGNAL_DATES[0]: assignment}), assets=TICKERS[:3])
+    assert list(rolling[SIGNAL_DATES[0]].index) == TICKERS[:3]
+
+
+def test_extract_rolling_clusters_drops_a_date_that_covers_none_of_the_universe() -> None:
+    """filtering can empty a date, and an emptied date is dropped like an absent one"""
+    assignment = pd.Series(['QE:1'] * 4, index=TICKERS[4:])
+    rolling = extract_rolling_clusters(
+        make_rolling_covar_data({SIGNAL_DATES[0]: assignment}), assets=TICKERS[:3])
+    assert rolling == {}
+
+
+# --------------------------------------------------------------------------- #
 # score_within_clusters
 # --------------------------------------------------------------------------- #
 def test_scoring_without_clusters_falls_back_to_the_full_cross_section() -> None:
@@ -210,6 +277,55 @@ def test_assets_absent_from_the_partition_score_zero() -> None:
     scored = score_within_clusters(raw_signal=raw, rolling_clusters=clusters,
                                    min_cluster_size=3)
     assert np.allclose(scored.loc[SIGNAL_DATES[0], TICKERS[5:]].to_numpy(), 0.0)
+
+
+def test_a_row_with_almost_everything_missing_scores_on_the_raw_values() -> None:
+    """with fewer than two observations there is no dispersion to standardise against
+
+    Estimating a mean and a standard deviation from one point gives 0 and NaN, and dividing by
+    NaN would silently blank the whole row. The fallback states (0, 1) instead, so the one
+    asset that did report keeps its raw value and stays comparable to the zeros around it.
+    """
+    raw = make_raw_signal(dates=SIGNAL_DATES[:1])
+    raw.loc[SIGNAL_DATES[0], TICKERS[1:]] = np.nan  # only t0 reported this date
+    # two clusters over three assets, so the degenerate single-cluster branch is not taken
+    clusters = {SIGNAL_DATES[0]: pd.Series(['a', 'a', 'b'], index=TICKERS[:3])}
+    scored = score_within_clusters(raw_signal=raw, rolling_clusters=clusters,
+                                   min_cluster_size=3)
+    assert scored.loc[SIGNAL_DATES[0], TICKERS[0]] == raw.loc[SIGNAL_DATES[0], TICKERS[0]]
+
+
+def test_a_lookup_that_returns_nothing_scores_the_row_zero(monkeypatch) -> None:
+    """the None backstop keeps a build whose as-of lookup returns None from raising
+
+    ``find_upto_date_from_datetime_index`` returns None below the first index date in the qis
+    build pinned here; the guard on ``date < first_cluster_date`` normally means the call is
+    never made in that state. The backstop exists for builds where it is, and is pinned here
+    by forcing the lookup to return None on a date that does have an assignment.
+    """
+    monkeypatch.setattr(qis, 'find_upto_date_from_datetime_index',
+                        lambda index, date: None)
+    raw = make_raw_signal(dates=SIGNAL_DATES[:1])
+    clusters = {SIGNAL_DATES[0]: pd.Series(['a'] * 5 + ['b'] * 3, index=TICKERS)}
+    scored = score_within_clusters(raw_signal=raw, rolling_clusters=clusters)
+    assert np.allclose(scored.loc[SIGNAL_DATES[0]].to_numpy(), 0.0)
+
+
+def test_a_lookup_that_raises_scores_the_row_zero(monkeypatch) -> None:
+    """the sibling backstop: other qis builds raise where this one returns None
+
+    Scoring the row 0.0 is the same answer as the None path — a date with no usable
+    assignment contributes nothing, rather than aborting the whole backtest.
+    """
+    def _raise(index, date):
+        """Stand in for a qis build that raises instead of returning None."""
+        raise KeyError(date)
+
+    monkeypatch.setattr(qis, 'find_upto_date_from_datetime_index', _raise)
+    raw = make_raw_signal(dates=SIGNAL_DATES[:1])
+    clusters = {SIGNAL_DATES[0]: pd.Series(['a'] * 5 + ['b'] * 3, index=TICKERS)}
+    scored = score_within_clusters(raw_signal=raw, rolling_clusters=clusters)
+    assert np.allclose(scored.loc[SIGNAL_DATES[0]].to_numpy(), 0.0)
 
 
 def test_nan_cluster_assignments_are_dropped() -> None:

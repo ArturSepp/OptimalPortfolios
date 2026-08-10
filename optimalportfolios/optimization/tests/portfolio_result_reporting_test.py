@@ -62,20 +62,33 @@ def make_result(shared_benchmark: bool = False,
                 with_current: bool = True,
                 with_groups: bool = True,
                 with_bounds: bool = True,
-                self_benchmarked: bool = False) -> PortfolioOptimisationResult:
+                self_benchmarked: bool = False,
+                current_as_frame: bool = False,
+                cross_benchmarked: bool = False,
+                with_expected_return: bool = True) -> PortfolioOptimisationResult:
     """Build a two-portfolio result, varying the options that select different branches."""
     rng = np.random.default_rng(SEED)
     weights = pd.DataFrame({'balanced': rng.dirichlet(np.ones(len(ASSETS))),
                             'defensive': rng.dirichlet(np.ones(len(ASSETS)))}, index=ASSETS)
     if self_benchmarked:
         benchmark = weights.copy()
+    elif cross_benchmarked:
+        # each portfolio is benchmarked against the *other* one, so both benchmark vectors
+        # already appear in the portfolio section and both must be deduplicated away
+        benchmark = pd.DataFrame({'balanced': weights['defensive'].to_numpy(),
+                                  'defensive': weights['balanced'].to_numpy()}, index=ASSETS)
     elif shared_benchmark:
         benchmark = pd.Series(rng.dirichlet(np.ones(len(ASSETS))), index=ASSETS, name='benchmark')
     else:
         benchmark = pd.DataFrame({'balanced': rng.dirichlet(np.ones(len(ASSETS))),
                                   'defensive': rng.dirichlet(np.ones(len(ASSETS)))}, index=ASSETS)
-    current = (pd.Series(rng.dirichlet(np.ones(len(ASSETS))), index=ASSETS, name='current')
-               if with_current else None)
+    if not with_current:
+        current = None
+    elif current_as_frame:
+        current = pd.DataFrame({'balanced': rng.dirichlet(np.ones(len(ASSETS))),
+                                'defensive': rng.dirichlet(np.ones(len(ASSETS)))}, index=ASSETS)
+    else:
+        current = pd.Series(rng.dirichlet(np.ones(len(ASSETS))), index=ASSETS, name='current')
     group_attributions = ({'asset_class': pd.Series(GROUPS, index=ASSETS),
                            'region': pd.Series(REGIONS, index=ASSETS)} if with_groups else {})
     ac_bounds = (pd.DataFrame({'min': [0.0, 0.1, 0.0], 'max': [0.6, 0.5, 0.3]},
@@ -85,7 +98,8 @@ def make_result(shared_benchmark: bool = False,
         weights=weights, benchmark_weights=benchmark, covar_data=make_covar_data(),
         group_attributions=group_attributions, current_weights=current,
         metadata=pd.DataFrame({'Asset Class': GROUPS, 'Region': REGIONS}, index=ASSETS),
-        expected_return=pd.Series(rng.normal(0.06, 0.02, len(ASSETS)), index=ASSETS),
+        expected_return=(pd.Series(rng.normal(0.06, 0.02, len(ASSETS)), index=ASSETS)
+                         if with_expected_return else None),
         ac_bounds=ac_bounds, reference_ccy='USD', portfolio_id='test',
         optimisation_date=pd.Timestamp('2026-07-31'))
 
@@ -255,6 +269,50 @@ def test_shared_benchmark_is_listed_once_under_its_own_name() -> None:
     assert labels.count('benchmark') == 1
 
 
+def test_a_benchmark_that_is_another_portfolio_is_listed_once() -> None:
+    """cross-benchmarked portfolios must not restate each other's weights as benchmarks
+
+    With ``balanced`` benchmarked against ``defensive`` and vice versa, both benchmark
+    vectors are already in the portfolio section. Listing them again would put the same
+    weights in the attribution tables twice under two names — the duplication the key-based
+    skip exists to prevent, and one that reads as a real second position.
+    """
+    result = make_result(cross_benchmarked=True)
+    labels = [label for label, _ in result._get_all_labelled_weight_vectors()]
+    assert not any(label.endswith('_benchmark') for label in labels)
+    assert len(labels) == len(set(labels)), f"duplicate labels: {labels}"
+    # the active vectors are still there: the portfolios genuinely differ from each other
+    assert {'balanced_active', 'defensive_active'} <= set(labels)
+
+
+def test_per_portfolio_current_weights_are_labelled_per_portfolio() -> None:
+    """a current-weights frame means each mandate has its own starting portfolio
+
+    The Series form is one live book shared by every candidate portfolio; the frame form is
+    one book per mandate. Collapsing the second into the first would compute every mandate's
+    trade against somebody else's holdings.
+    """
+    result = make_result(current_as_frame=True)
+    labels = [label for label, _ in result._get_all_labelled_weight_vectors()]
+    assert {'balanced_current', 'defensive_current'} <= set(labels)
+    assert {'balanced_current_active', 'defensive_current_active'} <= set(labels)
+    assert 'current' not in labels
+    # and the accessor returns that portfolio's own column
+    pd.testing.assert_series_equal(result.get_current('balanced'),
+                                   result.current_weights['balanced'], check_names=False)
+
+
+def test_per_portfolio_current_weights_are_reordered_onto_the_weight_columns() -> None:
+    """the frame is aligned to the weight columns, not trusted to arrive in their order"""
+    result = make_result(current_as_frame=True)
+    swapped = result.current_weights[['defensive', 'balanced']]
+    realigned = PortfolioOptimisationResult(
+        weights=result.weights, benchmark_weights=result.benchmark_weights,
+        covar_data=result.covar_data, group_attributions={}, current_weights=swapped)
+    pd.testing.assert_series_equal(realigned.get_current('balanced'),
+                                   result.get_current('balanced'))
+
+
 def test_group_allocation_aggregates_one_portfolio_over_group_levels() -> None:
     """the allocation of a portfolio sums its weights within each group level"""
     result = make_result()
@@ -305,6 +363,22 @@ def test_all_weights_summary_is_tickers_by_portfolio() -> None:
         'portfolio', 'benchmark', 'active'}
 
 
+def test_all_weights_summary_can_report_whole_percentage_points() -> None:
+    """the percent form rounds every column to integers that still sum to the total
+
+    A naive round-to-percent leaves the column summing to 99 or 101, which shows up on a
+    factsheet as a portfolio that is not fully invested. ``round_weights_to_pct`` corrects
+    for that, and applying it column by column is what keeps each portfolio's total intact.
+    """
+    result = make_result()
+    tables = result.compute_all_weights_summary(weights_to_pct=True)
+    portfolio = tables['portfolio']
+    for name in result.portfolio_names:
+        assert portfolio[name].sum() == pytest.approx(100.0, abs=1.0)
+    # the raw form is untouched, so the rounding is a view rather than a mutation
+    assert result.compute_all_weights_summary()['portfolio'].max().max() < 1.0
+
+
 def test_factor_exposures_summary_splits_and_aggregates() -> None:
     """six tables by default, two when aggregated, over the same factor columns"""
     result = make_result()
@@ -317,11 +391,77 @@ def test_factor_exposures_summary_splits_and_aggregates() -> None:
     assert len(aggregated['factor_exposures']) >= len(split['exposure_portfolio'])
 
 
+def test_factor_exposures_summary_lists_a_shared_benchmark_once() -> None:
+    """one benchmark for every portfolio is one row, under the benchmark's own name"""
+    result = make_result(shared_benchmark=True)
+    split = result.compute_factor_exposures_summary(aggregate=False)
+    assert list(split['exposure_benchmark'].index) == ['benchmark']
+    assert list(split['exposure_benchmark'].columns) == list(FACTORS)
+
+
+def test_factor_exposures_summary_skips_a_self_benchmarked_portfolio() -> None:
+    """with zero active weights there is no active exposure to report, and no benchmark row
+
+    The benchmark rows would repeat the portfolio rows exactly, and the active rows would be
+    a table of zeros — both are noise on a factsheet, and the zero row in particular reads as
+    a measured result rather than as an absent one.
+    """
+    result = make_result(self_benchmarked=True)
+    split = result.compute_factor_exposures_summary(aggregate=False)
+    assert split['exposure_benchmark'].empty
+    assert split['exposure_active'].empty
+    assert list(split['exposure_portfolio'].index) == result.portfolio_names
+
+
+def test_factor_exposures_summary_deduplicates_a_cross_benchmark() -> None:
+    """a benchmark already present as a portfolio is not restated in the benchmark block"""
+    split = make_result(cross_benchmarked=True).compute_factor_exposures_summary()
+    assert split['exposure_benchmark'].empty
+    assert not split['exposure_active'].empty
+
+
 def test_risk_summary_splits_and_aggregates() -> None:
     """the risk view offers the same split/aggregate choice as the exposures view"""
     result = make_result()
     assert isinstance(result.compute_risk_summary(aggregate=False), dict)
     assert isinstance(result.compute_risk_summary(aggregate=True), dict)
+
+
+def test_risk_summary_lists_a_shared_benchmark_once() -> None:
+    """the benchmark block collapses to the one benchmark every portfolio shares"""
+    split = make_result(shared_benchmark=True).compute_risk_summary(aggregate=False)
+    assert list(split['benchmark'].index) == ['benchmark']
+
+
+def test_risk_summary_skips_self_and_cross_benchmarked_vectors() -> None:
+    """the same two skips as the exposures view, so the two tables stay row-comparable
+
+    A factsheet puts these side by side. If one deduplicates and the other does not, the
+    reader is left comparing a four-row exposure table with a six-row risk table and no
+    indication which rows correspond.
+    """
+    self_split = make_result(self_benchmarked=True).compute_risk_summary(aggregate=False)
+    assert self_split['benchmark'].empty
+    cross_split = make_result(cross_benchmarked=True).compute_risk_summary(aggregate=False)
+    assert cross_split['benchmark'].empty
+
+
+def test_the_returns_risk_snapshot_reports_a_benchmark_per_portfolio() -> None:
+    """with per-portfolio benchmarks each gets its own column, unlike the shared case
+
+    Tracking error is only on the portfolio rows: a benchmark has no tracking error against
+    itself, so the benchmark columns carry the risk decomposition alone.
+    """
+    result = make_result()
+    snapshot = result.compute_returns_risk_snapshot()
+    assert {'balanced', 'defensive', 'balanced_benchmark', 'defensive_benchmark'} <= set(
+        snapshot.columns)
+    assert snapshot.loc['tracking_error', 'balanced'] > 0.0
+    assert pd.isna(snapshot.loc['tracking_error', 'balanced_benchmark'])
+    # the shared case names the benchmark once instead
+    shared = make_result(shared_benchmark=True).compute_returns_risk_snapshot()
+    assert 'benchmark' in shared.columns
+    assert 'balanced_benchmark' not in shared.columns
 
 
 def test_summary_reports_one_line_of_metrics_per_portfolio() -> None:
@@ -390,6 +530,20 @@ def test_report_bundles_every_section() -> None:
 def test_report_without_current_weights_omits_turnover() -> None:
     """turnover needs a starting portfolio, so the section is absent without one"""
     assert 'turnover' not in make_result(with_current=False).report()
+
+
+def test_report_without_expected_returns_drops_the_cma_column_only() -> None:
+    """the asset snapshot is built on the tickers when there is no return forecast
+
+    ``expected_return`` is optional — a risk-only mandate has none — and the snapshot must
+    still carry the weights. Seeding the frame from an absent forecast would give an empty
+    index and drop every asset row silently.
+    """
+    snapshot = make_result(with_expected_return=False).report(name='balanced')[
+        'asset_snapshot']
+    assert list(snapshot.index) == list(ASSETS)
+    assert 'CMA' not in snapshot.columns
+    assert {'weight', 'active_weight', 'current_weight', 'trade'} <= set(snapshot.columns)
 
 
 def test_efficient_frontier_data_defaults_to_one_profile() -> None:

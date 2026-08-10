@@ -39,6 +39,7 @@ import pytest
 # optimalportfolios
 import optimalportfolios as op
 from optimalportfolios import Constraints, PortfolioObjective
+from optimalportfolios.optimization.general.quadratic import solve_analytic_log_opt
 
 TICKERS = ['A', 'B', 'C', 'D']
 VOLS = np.array([0.10, 0.15, 0.20, 0.25])
@@ -388,6 +389,60 @@ def test_constrained_optimum_is_worse_than_the_unconstrained_one() -> None:
                                 max_weights=pd.Series(np.full(len(TICKERS), 0.30), index=TICKERS)),
         portfolio_objective=PortfolioObjective.MIN_VARIANCE)[0], dtype=float)
     assert capped @ sigma @ capped >= free @ sigma @ free - 1e-12
+
+
+# ───────────────────────────────────────────────────────────────────────────────
+# the analytic quadratic-utility solution
+# ───────────────────────────────────────────────────────────────────────────────
+
+
+def test_analytic_log_opt_solves_the_unconstrained_first_order_condition() -> None:
+    """
+    w = Σ⁻¹μ / γ.
+
+    ``solve_analytic_log_opt`` is the formula itself rather than a solver, so it is checked
+    against the condition that defines the optimum: the gradient of μ'w - (γ/2)w'Σw vanishes,
+    i.e. μ = γΣw exactly.
+    """
+    covar, sigma = _general_universe()
+    mu = _means().to_numpy()
+    gamma = 2.5
+    weights = solve_analytic_log_opt(covar=sigma, means=mu, gamma=gamma)
+    np.testing.assert_allclose(weights, np.linalg.inv(sigma) @ mu / gamma, atol=ANALYTIC_TOL)
+    np.testing.assert_allclose(gamma * sigma @ weights, mu, atol=ANALYTIC_TOL)
+
+
+def test_analytic_log_opt_meets_its_exposure_budget_exactly() -> None:
+    """
+    with a'w = a₀ the multiplier is set so the budget binds, and it must bind exactly.
+
+    A wrong sign on the multiplier still returns a plausible tilted portfolio — it simply
+    misses the budget — which is why the budget is asserted rather than only the direction.
+    """
+    covar, sigma = _general_universe()
+    mu = _means().to_numpy()
+    a, a0, gamma = np.ones(len(TICKERS)), 1.0, 3.0
+    weights = solve_analytic_log_opt(covar=sigma, means=mu,
+                                     exposure_budget_eq=(a, a0), gamma=gamma)
+    assert float(a @ weights) == pytest.approx(a0, abs=ANALYTIC_TOL)
+    # and it is the *best* such portfolio: the constrained gradient is parallel to a
+    gradient = mu - gamma * sigma @ weights
+    np.testing.assert_allclose(gradient, gradient[0] * a, atol=ANALYTIC_TOL)
+
+
+def test_analytic_log_opt_matches_the_solver_on_the_same_problem() -> None:
+    """the formula and the cvxpy quadratic-utility solve agree on the fully invested problem"""
+    covar, sigma = _general_universe()
+    mu = _means()
+    gamma = 3.0
+    analytic = solve_analytic_log_opt(covar=sigma, means=mu.to_numpy(),
+                                      exposure_budget_eq=(np.ones(len(TICKERS)), 1.0),
+                                      gamma=gamma)
+    solved = np.asarray(op.wrapper_quadratic_optimisation(
+        pd_covar=covar, constraints=_long_short_fully_invested(),
+        portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
+        means=mu, carra=gamma)[0], dtype=float)
+    np.testing.assert_allclose(solved, analytic, atol=1e-6)
 
 
 if __name__ == '__main__':

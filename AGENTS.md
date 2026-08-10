@@ -59,7 +59,7 @@ Tests live inside the package as `optimalportfolios/<subpackage>/tests/*_test.py
 
 ```bash
 pip install -e ".[dev]"                                  # editable install with dev tools
-pytest                                                   # run the test suite (908 tests, ~45 s)
+pytest                                                   # run the test suite (1067 tests, ~30 s)
 pytest optimalportfolios/optimization/tests/constraints_test.py -v
 ruff check optimalportfolios/                            # lint (papers/ is excluded)
 interrogate                                              # docstring coverage, must stay at 100%
@@ -69,8 +69,8 @@ interrogate                                              # docstring coverage, m
 
 Optional extras: `data`, `reports`, `visualization`, `clustering`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.12 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. Separate jobs gate the three ruff stack invariants and `interrogate` docstring coverage at 100%. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
 
-Full-package line coverage measured **83.45%** on the 908-test dev suite. The Python 3.12
-matrix entry gates `pytest --cov=optimalportfolios` at `fail_under = 83`; this floor rises
+Full-package line coverage measured **89.19%** on the 1067-test dev suite. The Python 3.12
+matrix entry gates `pytest --cov=optimalportfolios` at `fail_under = 89`; this floor rises
 whenever measured coverage rises, and lowering it requires a dated `CHANGELOG.md` note.
 Measure on a `[dev]` install: a core install lacks the `clustering` extra, so the `mcf` cases
 skip and the total lands below the floor.

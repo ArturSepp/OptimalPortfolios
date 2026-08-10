@@ -199,9 +199,9 @@ def score_within_clusters(
         scored_row = pd.Series(0.0, index=all_cols, name=date)
 
         for cluster_id, tickers in clusters_t.groupby(clusters_t).groups.items():
+            # clusters_t was already intersected with all_cols above, so every ticker in a
+            # group is a column of row_values and no group can come out empty
             cols = [c for c in tickers if c in row_values.index]
-            if not cols:
-                continue
 
             if len(cols) <= min_cluster_size:
                 # small cluster: normalize using global statistics

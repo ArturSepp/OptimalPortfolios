@@ -27,7 +27,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.optimization.constraints import (
+    Constraints, GroupLowerUpperConstraints)
 from optimalportfolios.optimization.solver_diagnostics import (
     validate_solution,
     validate_scipy_solution,
@@ -215,6 +216,142 @@ def test_fallback_to_zeros_when_no_weights_0_or_benchmark():
     outcome = validate_solution(None, "optimal", c, n=5)
     assert outcome.accepted is False
     np.testing.assert_allclose(outcome.weights, np.zeros(5))
+
+
+# -----------------------------------------------------------------------------
+# validate_solution — the band budget and the non-long-only floor
+# -----------------------------------------------------------------------------
+
+def _band_constraints(min_exposure=0.0, max_exposure=1.0):
+    """Constraints stating an exposure *band* rather than full investment.
+
+    A band is how a cash-holding or leverage-capable mandate is written: the budget test then
+    has to check two bounds instead of one equality, and both halves of it are separate code.
+    """
+    idx = pd.Index(TICKERS)
+    return Constraints(
+        is_long_only=True,
+        min_weights=pd.Series(0.0, index=idx),
+        max_weights=pd.Series(1.0, index=idx),
+        min_exposure=min_exposure,
+        max_exposure=max_exposure,
+        weights_0=pd.Series(0.2, index=idx),
+    )
+
+
+def test_a_weight_vector_outside_the_exposure_band_is_rejected(caplog):
+    """a band is two bounds, and breaching either one rejects the solve"""
+    c = _band_constraints(min_exposure=0.5, max_exposure=1.0)
+    with caplog.at_level(logging.WARNING,
+                         logger="optimalportfolios.optimization.solver_diagnostics"):
+        over = validate_solution(np.full(5, 0.4), "optimal", c, n=5)     # sums to 2.0
+    assert over.accepted is False
+    assert any("exposure band violated" in r.getMessage() for r in caplog.records)
+
+    caplog.clear()
+    with caplog.at_level(logging.WARNING,
+                         logger="optimalportfolios.optimization.solver_diagnostics"):
+        under = validate_solution(np.full(5, 0.05), "optimal", c, n=5)   # sums to 0.25
+    assert under.accepted is False
+    assert any("exposure band violated" in r.getMessage() for r in caplog.records)
+
+
+def test_a_weight_vector_inside_the_exposure_band_is_accepted():
+    """within the band there is no budget residual to report, and the solve stands"""
+    c = _band_constraints(min_exposure=0.5, max_exposure=1.0)
+    w = np.full(5, 0.15)                                                  # sums to 0.75
+    outcome = validate_solution(w, "optimal", c, n=5)
+    assert outcome.accepted is True
+    np.testing.assert_allclose(outcome.weights, w)
+
+
+def test_a_long_short_solve_below_its_floor_names_the_asset(caplog):
+    """a min-weight breach is reported by index and by how far short it fell
+
+    Under long-only the negative-weight check catches this first; with shorts permitted the
+    floor is the only thing standing between the solve and a position the mandate forbids.
+    """
+    idx = pd.Index(TICKERS)
+    c = Constraints(is_long_only=False,
+                    min_weights=pd.Series([0.10, 0.0, 0.0, 0.0, 0.0], index=idx),
+                    max_weights=pd.Series(1.0, index=idx),
+                    min_exposure=1.0, max_exposure=1.0,
+                    weights_0=pd.Series(0.2, index=idx))
+    with caplog.at_level(logging.WARNING,
+                         logger="optimalportfolios.optimization.solver_diagnostics"):
+        outcome = validate_solution(np.array([0.0, 0.25, 0.25, 0.25, 0.25]), "optimal",
+                                    c, n=5)
+    assert outcome.accepted is False
+    assert any("min_weight violated" in r.getMessage() for r in caplog.records)
+    np.testing.assert_allclose(outcome.weights, c.weights_0.to_numpy())
+
+
+def test_a_solve_that_breaches_a_group_bound_is_rejected(caplog):
+    """the residual audit gates too: in-box and fully invested is not sufficient
+
+    This vector passes every box and budget test — the breach is only visible once the group
+    loadings are applied. Without the residual gate it would be accepted, and a mandate limit
+    would be quietly exceeded for that rebalancing date.
+    """
+    idx = pd.Index(TICKERS)
+    loadings = pd.DataFrame({'alts': [0.0, 0.0, 0.0, 1.0, 1.0]}, index=idx)
+    c = Constraints(
+        is_long_only=True,
+        min_weights=pd.Series(0.0, index=idx),
+        max_weights=pd.Series(1.0, index=idx),
+        min_exposure=1.0, max_exposure=1.0,
+        weights_0=pd.Series(0.2, index=idx),
+        group_lower_upper_constraints=GroupLowerUpperConstraints(
+            group_loadings=loadings,
+            group_min_allocation=pd.Series([0.0], index=['alts']),
+            group_max_allocation=pd.Series([0.10], index=['alts'])))
+    w = np.array([0.20, 0.20, 0.20, 0.20, 0.20])          # 0.40 in 'alts', cap is 0.10
+    with caplog.at_level(logging.WARNING,
+                         logger="optimalportfolios.optimization.solver_diagnostics"):
+        outcome = validate_solution(w, "optimal", c, n=5, covar=np.eye(5) * 0.04)
+    assert outcome.accepted is False
+    assert any("hard constraint group_weight:alts violated" in r.getMessage()
+               for r in caplog.records)
+    assert not outcome.compliant
+
+
+def test_bounds_given_as_plain_arrays_are_honoured():
+    """the box may arrive unlabelled, and it is then taken in the tickers' own order
+
+    ``Constraints`` is a plain dataclass with no coercion, so a caller working in numpy can
+    hand it arrays. Treating those as absent would drop the box silently.
+    """
+    idx = pd.Index(TICKERS)
+    c = Constraints(is_long_only=True,
+                    max_weights=np.array([0.25, 1.0, 1.0, 1.0, 1.0]),
+                    min_exposure=1.0, max_exposure=1.0,
+                    weights_0=pd.Series(0.2, index=idx))
+    breached = validate_solution(np.array([0.6, 0.1, 0.1, 0.1, 0.1]), "optimal", c, n=5)
+    assert breached.accepted is False
+    respected = validate_solution(np.array([0.2, 0.2, 0.2, 0.2, 0.2]), "optimal", c, n=5)
+    assert respected.accepted is True
+
+
+def test_the_asset_order_can_come_from_a_group_loadings_table():
+    """with no labelled box or benchmark, the group loadings state the asset order
+
+    Some constraint sets carry nothing but a group block. The index has to be recovered from
+    it, because falling back to 0..n-1 would misalign every Series-valued bound that arrives
+    later in the same run.
+    """
+    idx = pd.Index(TICKERS)
+    loadings = pd.DataFrame({'alts': [0.0, 0.0, 0.0, 1.0, 1.0]}, index=idx)
+    c = Constraints(
+        is_long_only=True, min_exposure=1.0, max_exposure=1.0,
+        group_lower_upper_constraints=GroupLowerUpperConstraints(
+            group_loadings=loadings,
+            group_min_allocation=pd.Series([0.0], index=['alts']),
+            group_max_allocation=pd.Series([1.0], index=['alts'])))
+    outcome = validate_solution(np.full(5, 0.2), "optimal", c, n=5,
+                                covar=np.eye(5) * 0.04)
+    assert outcome.accepted is True
+    assert [r.name for r in outcome.constraint_residuals
+            if r.constraint_type == 'group_weight'] == ['alts']
 
 
 # -----------------------------------------------------------------------------

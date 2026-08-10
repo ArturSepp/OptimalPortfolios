@@ -219,6 +219,14 @@ def test_rename_index_leaves_absent_loadings_absent() -> None:
     assert renamed.group_loadings_level2 is None
 
 
+def test_rename_index_moves_the_second_loadings_level_too() -> None:
+    """level2 is renamed on the same map as level1, or its index stops matching the prices"""
+    level2 = make_group_loadings().rename(columns={'Growth': 'Liquid', 'Defensive': 'Illiquid'})
+    renamed = make_universe(group_loadings_level2=level2).rename_index()
+    assert list(renamed.group_loadings_level2.index) == renamed.assets
+    assert list(renamed.group_loadings_level2.columns) == ['Liquid', 'Illiquid']
+
+
 # --------------------------------------------------------------------------- #
 # persistence
 # --------------------------------------------------------------------------- #
@@ -257,6 +265,46 @@ def test_load_can_restrict_to_a_time_period(tmp_path) -> None:
     assert loaded.prices.index[0] >= period.start
 
 
+def test_save_and_load_round_trip_both_loadings_levels(tmp_path) -> None:
+    """two loadings keys are written and read back in the order they are named"""
+    level2 = make_group_loadings().rename(columns={'Growth': 'Liquid', 'Defensive': 'Illiquid'})
+    universe = make_universe(group_loadings_level2=level2)
+    local_path = f"{tmp_path}/"
+    universe.save(file_name='two_levels', local_path=local_path)
+    loaded = UniverseData.load(
+        file_name='two_levels', local_path=local_path, metadata_fields=MetadataField,
+        group_loadings_keys=['group_loadings_level1', 'group_loadings_level2'])
+    assert list(loaded.group_loadings_level1.columns) == ['Growth', 'Defensive']
+    assert list(loaded.group_loadings_level2.columns) == ['Liquid', 'Illiquid']
+
+
+def test_load_rejects_a_dataset_that_carries_no_metadata(tmp_path) -> None:
+    """a missing metadata file yields no contract at all, so the loader stops here
+
+    ``qis.load_df_dict_from_csv`` skips a key whose file is absent rather than raising, so
+    without this check the universe would be constructed against a ``None`` metadata table and
+    fail much later inside validation with no clue which file was missing.
+    """
+    local_path = f"{tmp_path}/"
+    make_universe().save(file_name='headless', local_path=local_path)
+    (tmp_path / 'headless_metadata.csv').unlink()
+    with pytest.raises(ValueError, match="No 'metadata' key found"):
+        UniverseData.load(file_name='headless', local_path=local_path,
+                          metadata_fields=MetadataField)
+
+
+def test_load_prefers_an_excel_metadata_override_over_the_saved_csv(tmp_path) -> None:
+    """metadata_filename replaces the stored metadata, which is how a curated sheet is used"""
+    local_path = f"{tmp_path}/"
+    make_universe().save(file_name='override', local_path=local_path)
+    override = make_metadata()
+    override[MetadataField.NAME.value] = ['A', 'B', 'C', 'D']
+    override.to_excel(f"{local_path}curated.xlsx", sheet_name='Sheet1')
+    loaded = UniverseData.load(file_name='override', local_path=local_path,
+                               metadata_fields=MetadataField, metadata_filename='curated')
+    assert list(loaded.name) == ['A', 'B', 'C', 'D']
+
+
 # --------------------------------------------------------------------------- #
 # transforms
 # --------------------------------------------------------------------------- #
@@ -283,3 +331,38 @@ def test_unsmoothing_rejects_a_flag_series_on_a_different_universe() -> None:
         copy_universe_data_with_unsmoothed_prices(
             universe_data=make_universe(),
             assets_for_unsmoothing=pd.Series([True], index=['not_an_asset']))
+
+
+def test_unsmoothing_rejects_a_freq_series_on_a_different_universe() -> None:
+    """a per-asset frequency is checked on the same footing as the flags"""
+    with pytest.raises(ValueError, match='freq Series index does not match'):
+        copy_universe_data_with_unsmoothed_prices(
+            universe_data=make_universe(),
+            assets_for_unsmoothing=pd.Series([False, False, False, True], index=ASSETS),
+            freq=pd.Series(['QE'], index=['not_an_asset']))
+
+
+def test_unsmoothing_nothing_returns_the_source_universe_untouched() -> None:
+    """with no asset flagged there is nothing to correct, so the input comes straight back"""
+    universe = make_universe()
+    unchanged = copy_universe_data_with_unsmoothed_prices(
+        universe_data=universe,
+        assets_for_unsmoothing=pd.Series(False, index=ASSETS))
+    assert unchanged is universe
+
+
+def test_unsmoothing_accepts_a_per_asset_frequency_series() -> None:
+    """a Series freq is narrowed to the flagged assets before it reaches the estimator
+
+    The freq Series is stated over the whole universe, but only the flagged leg is unsmoothed;
+    passing the full Series through would ask the estimator for a frequency per asset it was
+    never given prices for.
+    """
+    universe = make_universe()
+    flags = pd.Series([False, False, False, True], index=ASSETS)
+    freqs = pd.Series(['ME', 'ME', 'ME', 'QE'], index=ASSETS)
+    unsmoothed = copy_universe_data_with_unsmoothed_prices(
+        universe_data=universe, assets_for_unsmoothing=flags, freq=freqs, unsmooth_span=8,
+        warmup_period=2)
+    assert unsmoothed.assets == universe.assets
+    assert not unsmoothed.prices['private_equity'].equals(universe.prices['private_equity'])

@@ -27,6 +27,7 @@ import numpy as np
 import pandas as pd
 import pytest
 # optimalportfolios
+from optimalportfolios.utils import gaussian_mixture
 from optimalportfolios.utils.gaussian_mixture import (
     GMMResult,
     Params,
@@ -103,6 +104,24 @@ def test_initialisation_returns_well_formed_parameters() -> None:
         assert np.linalg.eigvalsh(covariance).min() > 0.0
 
 
+def test_initialisation_gives_an_empty_cluster_a_usable_starting_point() -> None:
+    """k-means can leave a cluster with no members, and it still needs parameters
+
+    ``kmeans2`` warns and returns an empty cluster whenever it seeds two centroids on the same
+    point, which is what asking for more components than the data has distinct values does.
+    Taking the mean of no observations would give NaN means and a NaN covariance, and EM would
+    then propagate NaN through every subsequent iteration. The centroid, an identity covariance
+    and an even mixing weight give the component somewhere to start from instead.
+    """
+    x = np.array([[0.0, 0.0], [0.0, 0.0], [1.0, 1.0], [1.0, 1.0]])
+    with pytest.warns(UserWarning, match='clusters is empty'):
+        means, covariances, weights = _initialize_gmm(x, n_components=3, random_state=SEED)
+    empty = int(np.argmin(weights))
+    assert np.allclose(covariances[empty], np.eye(2))
+    assert weights[empty] == pytest.approx(1.0 / 3.0)
+    assert np.isfinite(means).all()
+
+
 def test_initialisation_is_reproducible_for_a_fixed_seed() -> None:
     """the same random_state gives the same starting point, so a fit is reproducible"""
     x = sample_mixture()
@@ -126,6 +145,34 @@ def test_e_step_assigns_an_observation_to_the_component_that_generated_it() -> N
     on_first = TRUE_MEANS[0].reshape(1, -1)
     resp = _e_step(on_first, TRUE_MEANS, TRUE_COVARS, TRUE_WEIGHTS)
     assert resp[0, 0] > resp[0, 1]
+
+
+def test_a_component_whose_density_will_not_evaluate_contributes_nothing(monkeypatch) -> None:
+    """a singular component is dropped from the mixture rather than aborting the fit
+
+    ``multivariate_normal.pdf`` is called with ``allow_singular=True``, so it decomposes
+    almost anything — but a covariance that has collapsed far enough still raises
+    ``LinAlgError`` out of LAPACK, and there is no input that reliably produces it across
+    BLAS builds. Forcing the raise is the only way to pin what the guard does: the component's
+    responsibility goes to zero and the remaining ones renormalise, so the E-step still
+    returns a distribution instead of propagating the exception up through the EM loop.
+    """
+    def _raise_for_the_second_component(x, mean, cov, allow_singular):
+        """Evaluate the first component normally and fail on the second."""
+        if np.allclose(mean, TRUE_MEANS[1]):
+            raise np.linalg.LinAlgError('singular covariance')
+        return real_pdf(x, mean=mean, cov=cov, allow_singular=allow_singular)
+
+    real_pdf = gaussian_mixture.multivariate_normal.pdf
+    monkeypatch.setattr(gaussian_mixture.multivariate_normal, 'pdf',
+                        _raise_for_the_second_component)
+
+    x = sample_mixture(n_samples=200)
+    resp = _e_step(x, TRUE_MEANS, TRUE_COVARS, TRUE_WEIGHTS)
+    assert np.allclose(resp[:, 1], 0.0)
+    assert np.allclose(resp.sum(axis=1), 1.0)
+    # the likelihood is computed on the surviving component alone, and stays finite
+    assert np.isfinite(_compute_log_likelihood(x, TRUE_MEANS, TRUE_COVARS, TRUE_WEIGHTS))
 
 
 def test_m_step_recovers_the_parameters_from_hard_responsibilities() -> None:
@@ -401,3 +448,24 @@ def test_plot_mixure2_creates_its_own_axis_when_none_is_given(agg_backend) -> No
     """the plotting helpers are usable without pre-making a figure"""
     plot_mixure2(sample_mixture(n_samples=300), n_components=2, columns=['spx', 'ust'])
     assert agg_backend.get_fignums()
+
+
+def test_plot_mixure2_names_unlabelled_features_by_position(agg_backend) -> None:
+    """without column names the axes are labelled X1, X2 rather than left blank"""
+    _, ax = agg_backend.subplots()
+    plot_mixure2(sample_mixture(n_samples=300), n_components=2, ax=ax)
+    assert ax.get_xlabel() == 'X1'
+    assert ax.get_ylabel() == 'X2'
+
+
+def test_plot_mixure2_uses_the_stated_palette_for_three_components(agg_backend) -> None:
+    """three components are the regime panel, whose red/grey/green reading is fixed
+
+    Any other count takes a generated palette; three is special-cased so the down, neutral and
+    up regimes keep the same colours from one exhibit to the next.
+    """
+    _, ax = agg_backend.subplots()
+    plot_mixure2(sample_mixture(n_samples=400), n_components=3, ax=ax,
+                 columns=['spx', 'ust'])
+    assert len(ax.collections) > 0
+    assert len(ax.patches) >= 3

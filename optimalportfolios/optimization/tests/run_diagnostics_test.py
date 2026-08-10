@@ -17,12 +17,16 @@ package loggers and puts them back afterwards. Without that a single test would 
 logging for the whole session.
 """
 # packages
+import importlib
 import logging
 import warnings
 import pytest
 # optimalportfolios
 from optimalportfolios.optimization.solver_diagnostics import (
+    DroppedGroupRecord,
     DroppedGroupSummary,
+    InputContractRecord,
+    InputContractSummary,
     RelaxationSummary,
     RunDiagnostics,
     SolverDiagnostic,
@@ -156,6 +160,26 @@ def test_fallback_gate_passes_a_run_with_no_solves() -> None:
 def test_dropped_group_summary_reports_none_when_nothing_was_dropped() -> None:
     """a quiet run says so explicitly rather than returning an empty string"""
     assert DroppedGroupSummary().summary() == 'zero-loading groups dropped: none'
+
+
+def test_dropped_group_summary_ranks_the_groups_it_dropped_most_often() -> None:
+    """the tally names the worst offenders, which is what makes it actionable
+
+    A group with a zero loading column is dropped from the aligned constraint set silently —
+    the solve still runs, the mandate limit simply is not applied. Over a backtest that is
+    thousands of dates and one line of output, so the line has to say *which* groups, not
+    only how many times something happened.
+    """
+    handler = DroppedGroupSummary()
+    for _ in range(4):
+        emit_to(handler, dropped_groups=DroppedGroupRecord(groups=('Alternatives',),
+                                                           no_groups_remain=False))
+    emit_to(handler, dropped_groups=DroppedGroupRecord(groups=('Alternatives', 'Bonds'),
+                                                       no_groups_remain=False))
+    emit_to(handler, dropped_groups='not a record')      # foreign record, ignored
+    text = handler.summary()
+    assert '5 aligned constraint sets' in text
+    assert text.index('Alternatives (5)') < text.index('Bonds (1)')
 
 
 def test_relaxation_summary_ignores_foreign_records() -> None:
@@ -368,3 +392,83 @@ def test_log_environment_emits_a_reproducibility_banner(caplog) -> None:
         log_environment(config_hash='abc123')
     assert caplog.text.strip() != ''
     assert 'abc123' in caplog.text
+
+
+def test_log_environment_reports_a_missing_library_rather_than_failing(caplog,
+                                                                       monkeypatch) -> None:
+    """a library that will not import is recorded as 'n/a', not allowed to end the run
+
+    The banner is diagnostic output at the very start of a run. An optional backend that is
+    absent — or present but without a ``__version__`` — must degrade to a missing entry;
+    raising here would abort a backtest before it had done anything.
+    """
+    def _no_import(name):
+        """Stand in for an environment where none of the libraries can be imported."""
+        raise ImportError(name)
+
+    monkeypatch.setattr(importlib, 'import_module', _no_import)
+    with caplog.at_level(logging.INFO):
+        log_environment()
+    assert 'clarabel=n/a' in caplog.text
+    assert 'numpy=n/a' in caplog.text
+
+
+# --------------------------------------------------------------------------- #
+# InputContractSummary
+# --------------------------------------------------------------------------- #
+def make_contract_record(**overrides) -> InputContractRecord:
+    """One clean per-solve input-contract record, with any finding switched on."""
+    kwargs = dict(context='2024-03-31', ok=True, ill_conditioned=False,
+                  cond=float('nan'), min_eig=float('nan'), collinear_pair=None,
+                  groups=(), benchmarks=(), structural=(), covar_issues=(),
+                  factorized=False, n_eigenvalues_floored=0,
+                  stabilized_min_eig=float('nan'), stabilized_cond=float('nan'))
+    kwargs.update(overrides)
+    return InputContractRecord(**kwargs)
+
+
+def test_input_contract_summary_says_so_when_nothing_was_recorded() -> None:
+    """a summary of no solves is not a summary of a clean run — the two differ"""
+    assert InputContractSummary().summary() == 'input contract: no solves recorded'
+
+
+def test_input_contract_summary_reports_a_clean_run_explicitly() -> None:
+    """solves recorded and nothing wrong with any of them is its own statement
+
+    Without this line a clean run and a run whose handler silently tallied nothing produce
+    the same output, which is exactly the failure this layer is meant to make visible.
+    """
+    handler = InputContractSummary()
+    for _ in range(3):
+        emit_to(handler, input_contract=make_contract_record())
+    assert handler.summary() == 'input contract: no issues across 3 rebalances'
+
+
+def test_input_contract_summary_names_the_structural_and_covariance_findings() -> None:
+    """a box-vs-budget infeasibility and a broken covariance get one line each"""
+    handler = InputContractSummary()
+    emit_to(handler, input_contract=make_contract_record(
+        ok=False, structural=('box caps sum to 0.75 < 1.0',)))
+    emit_to(handler, input_contract=make_contract_record(
+        ok=False, covar_issues=('non_finite',)))
+    emit_to(handler, input_contract=make_contract_record())
+    text = handler.summary()
+    assert 'structural: box-vs-budget infeasible on 1/3 rebalances' in text
+    assert 'covariance integrity: 1/3' in text
+
+
+def test_run_diagnostics_tabulates_the_input_contract_section() -> None:
+    """when the contract handler is attached, its counts join the workbook frame"""
+    contract = InputContractSummary()
+    emit_to(contract, input_contract=make_contract_record(
+        ok=False, ill_conditioned=True, cond=1e14, min_eig=-1e-9,
+        collinear_pair=('PE', 'HF'), benchmarks=((0, 'cap_exceeded'),),
+        groups=(('Alternatives', 'floor_unreachable'),),
+        structural=('box caps sum to 0.75 < 1.0',)))
+    diagnostics = RunDiagnostics(rejections=SolverRejectionSummary(),
+                                 relaxations=RelaxationSummary(), contract=contract)
+    frame = diagnostics.to_frame()
+    assert frame.loc[('batch_input', 'solves'), 'value'] == 1
+    assert frame.loc[('batch_input', 'raw_ill_conditioned'), 'value'] == 1
+    assert frame.loc[('batch_input', 'benchmark_outside_box'), 'value'] == 1
+    assert 'input contract findings' in diagnostics.summary()

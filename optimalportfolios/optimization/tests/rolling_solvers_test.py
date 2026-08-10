@@ -39,10 +39,11 @@ from optimalportfolios import (
     rolling_risk_budgeting,
     solve_for_risk_budgets_from_given_weights,
 )
+from optimalportfolios.optimization.general.quadratic import cvx_quadratic_optimisation
 from optimalportfolios.optimization.taa.maximise_alpha_with_target_yield import (
     rolling_maximise_alpha_with_target_return)
 from optimalportfolios.optimization.wrapper_rolling_portfolios import (
-    compute_rolling_optimal_weights)
+    backtest_rolling_optimal_portfolio, compute_rolling_optimal_weights)
 
 SEED = 20260810
 TICKERS = ['growth', 'balanced', 'defensive']
@@ -389,6 +390,60 @@ def test_compute_rolling_optimal_weights_routes_every_objective(objective) -> No
     assert_valid_weights(weights)
 
 
+def test_quadratic_utility_without_expected_returns_is_rejected_up_front() -> None:
+    """the utility objective is μ'w - γ/2 w'Σw, so it cannot run without μ
+
+    Caught at the rolling entry point rather than one date into the walk: the alternative is a
+    ``NoneType`` failure inside the first single-date solve, which says nothing about the
+    argument the caller left out.
+    """
+    with pytest.raises(ValueError, match='expected_returns must be given'):
+        rolling_quadratic_optimisation(
+            prices=make_prices(), constraints=long_only(), covar_dict=make_covar_dict(),
+            portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY)
+
+
+def test_the_single_date_quadratic_solve_repeats_the_expected_returns_guard() -> None:
+    """the same check at the single-date entry point, which callers reach directly"""
+    with pytest.raises(ValueError, match='means must be given'):
+        cvx_quadratic_optimisation(
+            portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
+            covar=COVAR, constraints=long_only())
+
+
+def test_the_single_date_quadratic_solve_rejects_an_objective_it_cannot_form() -> None:
+    """only the two quadratic objectives have an objective function here
+
+    ``rolling_quadratic_optimisation`` is only ever called with MIN_VARIANCE or
+    QUADRATIC_UTILITY, so this is reachable only by calling the single-date solver directly
+    with something else — the misuse AGENTS.md names when it asks callers to extend the enum
+    rather than pass strings around.
+    """
+    with pytest.raises(ValueError, match='unsupported portfolio_objective'):
+        cvx_quadratic_optimisation(
+            portfolio_objective=PortfolioObjective.MAX_DIVERSIFICATION,
+            covar=COVAR, constraints=long_only())
+
+
+def test_compute_rolling_optimal_weights_routes_the_mixture_objective() -> None:
+    """the CARA mixture arm takes none of the covariance dict, so it is routed separately
+
+    Every other objective is solved off the pre-computed ``covar_dict``; this one estimates
+    its own mixture from the price panel, and so needs the time period, the rebalancing
+    frequency and the roll window that the parametrised cases above have no use for.
+    """
+    prices = make_prices(n_days=900)
+    weights = compute_rolling_optimal_weights(
+        prices=prices, constraints=long_only(), covar_dict=make_covar_dict(),
+        portfolio_objective=PortfolioObjective.MAX_CARA_MIXTURE,
+        time_period=qis.get_time_period(df=prices), rebalancing_freq='QE',
+        returns_freq='W-WED', roll_window=6, n_mixures=2, carra=0.5)
+    assert not weights.empty
+    assert list(weights.columns) == TICKERS
+    assert (weights.to_numpy() >= -1e-6).all()
+    np.testing.assert_allclose(weights.sum(axis=1).to_numpy(), 1.0, atol=1e-4)
+
+
 def test_compute_rolling_optimal_weights_rejects_an_unrouted_objective() -> None:
     """a raw string instead of the enum raises rather than silently returning nothing
 
@@ -400,3 +455,46 @@ def test_compute_rolling_optimal_weights_rejects_an_unrouted_objective() -> None
         compute_rolling_optimal_weights(
             prices=make_prices(), constraints=long_only(), covar_dict=make_covar_dict(),
             portfolio_objective='MinVariance')
+
+
+def test_backtest_rolling_optimal_portfolio_runs_the_weights_through_qis() -> None:
+    """the one-call wrapper optimises and backtests, and hands back a qis PortfolioData
+
+    The backtest itself is ``qis.backtest_model_portfolio`` — this package must not hand-roll
+    a loop over dates that accumulates a position. What is asserted here is the wiring: the
+    panel is truncated to start at the first weight date, and the portfolio that comes back
+    carries the tickers it was given.
+    """
+    prices = make_prices()
+    portfolio = backtest_rolling_optimal_portfolio(
+        prices=prices, constraints=long_only(), covar_dict=make_covar_dict(),
+        portfolio_objective=PortfolioObjective.MIN_VARIANCE, ticker='min_variance')
+    weights = compute_rolling_optimal_weights(
+        prices=prices, constraints=long_only(), covar_dict=make_covar_dict(),
+        portfolio_objective=PortfolioObjective.MIN_VARIANCE)
+    nav = portfolio.get_portfolio_nav()
+    assert nav.name == 'min_variance'
+    assert nav.notna().all()
+    # the backtest starts at the first weight date, not at the start of the price panel
+    # (to within the business-day grid the prices are on, which the weight dates are not)
+    assert abs(nav.index[0] - weights.index[0]) <= pd.Timedelta(days=7)
+    assert nav.index[0] > prices.index[0]
+    assert list(portfolio.weights.columns) == TICKERS
+
+
+def test_backtest_rolling_optimal_portfolio_reports_over_the_requested_period() -> None:
+    """perf_time_period narrows the weights before the backtest, not the report afterwards"""
+    prices = make_prices()
+    period = qis.TimePeriod(REBALANCING_DATES[1], prices.index[-1])
+    portfolio = backtest_rolling_optimal_portfolio(
+        prices=prices, constraints=long_only(), covar_dict=make_covar_dict(),
+        portfolio_objective=PortfolioObjective.MIN_VARIANCE,
+        perf_time_period=period, ticker='windowed')
+    whole = backtest_rolling_optimal_portfolio(
+        prices=prices, constraints=long_only(), covar_dict=make_covar_dict(),
+        portfolio_objective=PortfolioObjective.MIN_VARIANCE, ticker='whole')
+    windowed_start = portfolio.get_portfolio_nav().index[0]
+    assert windowed_start > whole.get_portfolio_nav().index[0]
+    assert windowed_start >= REBALANCING_DATES[0]
+    # the first two rebalancings are gone, so only the last one is traded
+    assert len(portfolio.weights) < len(whole.weights)

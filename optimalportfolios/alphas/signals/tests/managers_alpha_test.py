@@ -140,6 +140,32 @@ def test_periods_before_the_first_beta_are_skipped_not_fabricated() -> None:
     assert excess.index.min() > asset_returns.index[20]
 
 
+def test_a_period_with_a_missing_observation_is_skipped_not_fabricated() -> None:
+    """a gap on either grid drops the period, rather than residualising a NaN return
+
+    A missing price makes both the return ending in the gap and the one starting from it NaN.
+    Carrying those through would put a NaN into the smoothed alpha for the rest of the sample;
+    the module drops them instead, so the affected dates are simply absent from the result.
+    """
+    prices, factor_prices = make_prices(), make_factor_prices()
+    asset_returns = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True,
+                                   freq='ME')
+    gapped = prices.copy()
+    gapped.iloc[10, 0] = np.nan  # one month-end observation of fund_a never reported
+
+    excess = _estimate_rolling_regression_alphas(
+        prices=gapped, risk_factor_prices=factor_prices,
+        estimated_betas=make_betas(asset_returns.index), rebalancing_freq='ME',
+        annualise=False)
+
+    gap_date = prices.index[10]
+    following = asset_returns.index[list(asset_returns.index).index(gap_date) + 1]
+    dropped = set(asset_returns.index[1:]) - set(excess.index)
+    assert dropped == {gap_date, following}
+    # what survives carries no NaN at all — the skip is a drop, not a hole
+    assert excess.notna().all().all()
+
+
 def test_the_beta_is_resolved_as_of_rather_than_by_exact_timestamp() -> None:
     """an offset betas grid still produces a signal instead of an empty frame
 

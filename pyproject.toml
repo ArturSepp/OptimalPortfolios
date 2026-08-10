@@ -187,4 +187,4 @@ omit = ["*/tests/*", "*/examples/*", "papers/*"]
 # problem in CI, because the core-install job deliberately runs a bare `pytest` with no
 # coverage: its purpose is to prove the suite runs without the extras. But it does mean
 # `pytest --cov` on a core install will fail this gate; use `pip install -e ".[dev]"`.
-fail_under = 83
+fail_under = 89
