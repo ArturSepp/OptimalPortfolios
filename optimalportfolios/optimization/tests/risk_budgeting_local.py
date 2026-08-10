@@ -191,7 +191,7 @@ def run_local_test(local_test: LocalTests):
 
     elif local_test == LocalTests.ROLLING_RISK_BUDGETING:
         import qis as qis
-        from optimalportfolios.examples.data.test_data import load_test_data
+        from optimalportfolios.examples.data.etf_prices_local import load_test_data
         from optimalportfolios.covar_estimation.ewma_covar_estimator import EwmaCovarEstimator
 
         prices = load_test_data()

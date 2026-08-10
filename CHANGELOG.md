@@ -15,6 +15,12 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   tolerance are retained and audited without weakening product or lifecycle constraints.
 
 ### Changed
+- `examples/data/test_data.py` is renamed to `examples/data/etf_prices_local.py`. It matched
+  pytest's `test_*.py` pattern, so it was imported at collection while contributing no tests —
+  the mechanism behind two past CI failures from module-level optional-extra imports. The
+  `load_test_data` and `update_test_prices` functions are unchanged; only the module path moves,
+  and the six `*_local.py` diagnostics that import it are updated. Every file matching either of
+  pytest's default patterns now collects at least one test.
 - Covariance factorization is now owned exclusively by each low-level CVXPY solver. Wrappers pass
   only `factorize_covar`; solver APIs no longer accept a precomputed factorization, and
   `resolve_covariance_factorization` has been removed. Each enabled solve calls
