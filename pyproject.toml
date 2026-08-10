@@ -97,7 +97,7 @@ all = [
 
 [project.urls]
 Homepage = "https://github.com/ArturSepp/OptimalPortfolios"
-Documentation = "https://github.com/ArturSepp/OptimalPortfolios/blob/main/README.md"
+Documentation = "https://optimalportfolios.readthedocs.io"
 Repository = "https://github.com/ArturSepp/OptimalPortfolios.git"
 Issues = "https://github.com/ArturSepp/OptimalPortfolios/issues"
 Changelog = "https://github.com/ArturSepp/OptimalPortfolios/blob/main/CHANGELOG.md"
@@ -165,7 +165,7 @@ pandas = "pd"
 # `papers/` is excluded for the reason it is excluded from ruff: it reproduces
 # published code and is left exactly as-is. `rosaa/` is gitignored and not ours.
 fail-under = 100
-exclude = ["papers", "rosaa"]
+exclude = ["papers", "rosaa", ".codex_analysis", "outputs", "tmp", "quant_strats"]
 
 [tool.coverage.run]
 source = ["optimalportfolios"]

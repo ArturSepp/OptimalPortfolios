@@ -8,6 +8,7 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Changed
+- Added the Read the Docs site and excluded local-only trees from root docstring scans.
 - Modernized packaging licence metadata to the PEP 639 SPDX form (`license = "MIT"` and
   `license-files = ["LICENSE.txt"]`), with no change to the legal licence or package behavior;
   originally proposed in PR #9 by @tschm.
