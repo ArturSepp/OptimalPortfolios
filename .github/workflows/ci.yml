@@ -108,6 +108,40 @@ jobs:
     - name: Check docstring coverage
       run: interrogate -v
 
+  audit:
+    # Every core dependency is declared as an open-ended floor (`>=`, no upper bound),
+    # so the installed set drifts forward on every fresh install and a newly-disclosed
+    # advisory would otherwise surface only when someone happened to look.
+    #
+    # `pip-audit <project_path>` resolves the dependency tree from pyproject.toml
+    # without installing it -- 35 packages at the time of writing -- so this stays a
+    # seconds-long job like the docstrings one, rather than paying for the compiled
+    # scientific stack a second time.
+    #
+    # Hard-fails on purpose: the tree is clean today, so a finding here is either a new
+    # advisory or a dependency change under review. If a transitive advisory ever lands
+    # that this project cannot act on, prefer `--ignore-vuln <ID>` with a comment naming
+    # why over disabling the job, so the exception stays visible.
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Set up Python
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: "3.12"
+
+    - name: Install pip-audit
+      run: |
+        python -m pip install --upgrade pip
+        # Pin the current pip-audit 2.10 minor series, as the lint job pins ruff, so a
+        # tool release cannot change the verdict on an unchanged dependency tree.
+        pip install "pip-audit~=2.10.1"
+
+    - name: Audit the dependency tree for known vulnerabilities
+      run: pip-audit .
+
   core-install:
     # The suite must stay green without the optional extras: no test may need
     # data, network or a Bloomberg terminal. Without this job the constraint is
