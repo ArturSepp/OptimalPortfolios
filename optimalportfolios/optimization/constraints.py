@@ -26,7 +26,7 @@ import pandas as pd
 import numpy as np
 import cvxpy as cvx
 from dataclasses import dataclass, fields
-from typing import List, Tuple, Optional, Union, Callable
+from typing import Any, List, Tuple, Optional, Union, Callable
 from cvxpy.atoms.affine.wraps import psd_wrap
 from cvxpy.atoms.affine.add_expr import AddExpression
 from cvxpy.constraints.nonpos import Inequality
@@ -382,11 +382,12 @@ def merge_group_lower_upper_constraints(
     When group names overlap, appends '_1' and '_2' suffixes to distinguish them.
     Missing bounds are filled with specified default values.
 
+    Missing min and max allocations default to ``np.nan``, which the constraint setters
+    ignore.
+
     Args:
         group_lower_upper_constraints1: First constraint object.
         group_lower_upper_constraints2: Second constraint object.
-        Default for missing min allocations is np.nan so it is ignored by setting constraints
-        Default for missing max allocations is np.nan so it is ignored by setting constraints
 
     Returns:
         Merged GroupLowerUpperConstraints object.
@@ -1128,7 +1129,7 @@ class Constraints:
         """
         return {f.name: getattr(self, f.name) for f in fields(self)}
 
-    def copy(self, **overrides) -> Constraints:
+    def copy(self, **overrides: Any) -> Constraints:
         """Create a deep copy of all constraints, optionally overriding specific fields.
 
         Args:
@@ -1166,7 +1167,7 @@ class Constraints:
             self_dict['max_weights'] = max_weights
         return Constraints(**self_dict)
 
-    def update(self, valid_tickers: List[str], **kwargs) -> Constraints:
+    def update(self, valid_tickers: List[str], **kwargs: Any) -> Constraints:
         """Update constraints with valid tickers and additional parameters.
 
         Args:
@@ -1700,7 +1701,7 @@ class Constraints:
             constraints += self.benchmark_beta_constraint.set_cvx_beta_constraints(w=w)
         return objective_fun, constraints
 
-    def set_scipy_bounds(self, covar: np.ndarray):
+    def set_scipy_bounds(self, covar: np.ndarray) -> Optional[np.ndarray]:
         """Convert weight constraints into (min, max) bounds for scipy solvers.
 
         Handles all combinations of min_weights, max_weights, and is_long_only.

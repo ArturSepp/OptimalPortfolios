@@ -89,7 +89,7 @@ class FactorCovarEstimator(CovarEstimator):
     is_apply_vol_normalised_returns: bool = False
     demean: bool = True
 
-    def copy(self, **overrides) -> FactorCovarEstimator:
+    def copy(self, **overrides: Any) -> FactorCovarEstimator:
         """Create a copy, optionally overriding specific fields.
 
         Args:

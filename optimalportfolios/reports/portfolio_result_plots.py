@@ -8,7 +8,7 @@ Requires: matplotlib, seaborn, qis.
 """
 from __future__ import annotations
 
-from typing import Optional, Dict, List, Tuple
+from typing import Any, Optional, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -29,7 +29,7 @@ def plot_efficient_frontier(
         title: Optional[str] = None,
         drop_duplicated_annotations: bool = False,
         ax: Optional[plt.Axes] = None,
-        **kwargs
+        **kwargs: Any
 ) -> plt.Figure:
     """
     Plot expected return vs volatility frontier for multiple profiles

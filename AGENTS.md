@@ -63,15 +63,35 @@ pytest                                                   # run the test suite (6
 pytest optimalportfolios/optimization/tests/constraints_test.py -v
 ruff check optimalportfolios/                            # lint (papers/ is excluded)
 interrogate                                              # docstring coverage, must stay at 100%
+pip install -e ".[docs]" && mkdocs build --strict        # build the book (see below)
 ```
 
 *Note: Terminal execution should be compatible with Windows PowerShell within PyCharm.*
 
-Optional extras: `data`, `reports`, `visualization`, `clustering`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.13 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. Separate jobs gate the three ruff stack invariants, `interrogate` docstring coverage at 100%, and `pip-audit` over the dependency tree resolved from `pyproject.toml`. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
+Optional extras: `data`, `reports`, `visualization`, `clustering`, `jupyter`, `docs`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.13 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. Separate jobs gate the three ruff stack invariants, `interrogate` docstring coverage at 100%, and `pip-audit` over the dependency tree resolved from `pyproject.toml`. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
 
 Full-package line coverage measured **62.97%** on the 627-test dev suite after S6. The Python
 3.12 matrix entry gates `pytest --cov=optimalportfolios` at `fail_under = 61`; this floor rises
 whenever measured coverage rises, and lowering it requires a dated `CHANGELOG.md` note.
+
+## Documentation
+
+The book is MkDocs Material, built by the separate `book.yml` workflow, which runs
+`mkdocs build --strict` on every pull request. Sphinx and Read the Docs were removed
+in favour of it.
+
+- `mkdocs.yml` carries site identity and `nav` only; theme, markdown extensions and
+  plugins live in `docs/mkdocs-base.yml`, which the root file `INHERIT`s.
+- `docs/api.md` addresses each symbol at the **module that defines it**
+  (`::: optimalportfolios.optimization.Constraints`), not at the package root. The root
+  `__init__.py` re-exports through `from optimalportfolios.<sub>.__init__ import *`, and
+  griffe cannot follow that statically. `show_root_full_path: false` renders the bare
+  name, since callers import from the root. Do not "fix" the `__init__.py` to plain
+  `from optimalportfolios.<sub> import *` to make griffe happy — that additionally binds
+  24 submodule names into the public namespace, which `public_api_test.py` guards.
+- `--strict` promotes griffe's docstring warnings to errors, so a parameter documented in
+  an `Args:` block but unannotated in the signature fails the build. `interrogate` does
+  not catch that; the book does.
 
 ## Conventions
 

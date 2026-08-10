@@ -1,0 +1,54 @@
+INHERIT: docs/mkdocs-base.yml
+
+site_name: OptimalPortfolios
+site_description: Multi-asset portfolio construction and backtesting — alpha signals, covariance estimation, constrained optimisation, reporting.
+site_author: Artur Sepp
+site_url: https://artursepp.github.io/OptimalPortfolios/
+repo_url: https://github.com/ArturSepp/OptimalPortfolios
+repo_name: ArturSepp/OptimalPortfolios
+copyright: Copyright &copy; 2023–2026 Artur Sepp
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: installation.md
+    - Quickstart: quickstart.md
+  - API Reference: api.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/ArturSepp/OptimalPortfolios
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/optimalportfolios/
+
+theme:
+  icon:
+    logo: material/chart-timeline-variant
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          # The package sits at the repository root, not under src/.
+          paths: ["."]
+          options:
+            # Matches napoleon_google_docstring = True in the Sphinx conf.py
+            # this book replaces.
+            docstring_style: google
+            # api.md groups the exports under `##` subsystem headings, so each
+            # symbol renders one level below that.
+            heading_level: 3
+            show_root_heading: true
+            # api.md addresses each symbol at the module that defines it, since
+            # the root package re-exports through wildcards that griffe cannot
+            # follow statically. Users import from the root, so show the bare
+            # name rather than optimalportfolios.optimization.Constraints.
+            show_root_full_path: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            show_source: true
+            members_order: source
+            separate_signature: true
+            signature_crossrefs: true

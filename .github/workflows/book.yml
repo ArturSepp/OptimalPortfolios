@@ -1,0 +1,50 @@
+name: Book
+
+# Builds the MkDocs book on every pull request and every push to main, so a
+# broken internal link, a nav entry without a file, or an API reference target
+# that mkdocstrings cannot resolve fails the change that introduced it.
+#
+# Deliberately a separate workflow from ci.yml: the deploy job added once
+# GitHub Pages is enabled on this repository needs `pages: write` and
+# `id-token: write`, and those permissions have no business sitting on the job
+# that runs the test suite.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Set up Python
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: "3.12"
+
+    - name: Install the docs toolchain
+      run: |
+        python -m pip install --upgrade pip
+        # mkdocstrings reads the package statically with griffe, so this needs
+        # the sources on disk rather than an importable install -- but the
+        # editable install also brings in factorlasso, whose re-exported names
+        # api.md documents through the alias.
+        pip install -e ".[docs]"
+
+    - name: Build the book
+      run: mkdocs build --strict
+
+    - name: Upload the built book
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+      with:
+        name: book
+        path: _book/
+        retention-days: 7

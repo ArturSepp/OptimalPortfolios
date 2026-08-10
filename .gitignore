@@ -86,8 +86,8 @@ instance/
 # Scrapy stuff:
 .scrapy
 
-# Sphinx documentation
-docs/_build/
+# MkDocs book output (site_dir in docs/mkdocs-base.yml)
+_book/
 
 # PyBuilder
 target/

@@ -23,6 +23,8 @@ import qis as qis
 from scipy.optimize import linear_sum_assignment
 from typing import Dict, List, Mapping, Optional, Tuple, Union
 
+from factorlasso import RollingFactorCovarData
+
 
 def resolve_span(span: Optional[Union[int, Mapping[str, int]]],
                  freq: str,
@@ -75,7 +77,7 @@ def resolve_span(span: Optional[Union[int, Mapping[str, int]]],
 
 
 def extract_rolling_clusters(
-        rolling_covar_data,
+        rolling_covar_data: RollingFactorCovarData,
         assets: Optional[List[str]] = None,
 ) -> Dict[pd.Timestamp, pd.Series]:
     """Extract time-varying cluster assignments from RollingFactorCovarData.

@@ -71,10 +71,14 @@ visualization = [
     "plotly>=5.0.0",
 ]
 
+# The book is MkDocs Material; see mkdocs.yml and docs/mkdocs-base.yml. mkdocstrings
+# reads the package with griffe, which is static, so the build never imports
+# optimalportfolios and needs none of the optional extras above. It does need the core
+# dependencies on disk: docs/api.md documents names re-exported from qis and factorlasso,
+# and griffe resolves those aliases by reading their sources.
 docs = [
-    "sphinx>=7.2",
-    "furo>=2024.1.29",
-    "myst-parser>=2.0",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.27",
 ]
 
 # the default 'mcf' matcher in covar_estimation.risk_labelling solves a min-cost-flow

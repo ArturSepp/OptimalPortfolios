@@ -15,6 +15,19 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   tolerance are retained and audited without weakening product or lifecycle constraints.
 
 ### Changed
+- Documentation moved from Sphinx/Read the Docs to an MkDocs Material book. `docs/*.rst`,
+  `docs/conf.py` and `.readthedocs.yaml` were removed; the `docs` extra now installs
+  `mkdocs-material` and `mkdocstrings[python]`. A new `book.yml` workflow runs
+  `mkdocs build --strict` on every pull request. `docs/api.md` groups the 116 public
+  exports by the subpackage that defines them, replacing the flat 125-name `autosummary`
+  list, and drops the nine submodules that leak through the root namespace.
+- Six docstring/signature fixes surfaced by the strict book build: `**kwargs` and
+  `**overrides` are annotated `Any` on `Constraints.copy`, `Constraints.update`,
+  `FactorCovarEstimator.copy` and `plot_efficient_frontier`; `Constraints.set_scipy_bounds`
+  declares its `Optional[np.ndarray]` return; `extract_rolling_clusters` annotates
+  `rolling_covar_data` as `RollingFactorCovarData`; and two prose lines misplaced inside the
+  `Args:` block of `merge_group_lower_upper_constraints` moved into the description.
+  No behaviour change.
 - Covariance factorization is now owned exclusively by each low-level CVXPY solver. Wrappers pass
   only `factorize_covar`; solver APIs no longer accept a precomputed factorization, and
   `resolve_covariance_factorization` has been removed. Each enabled solve calls
