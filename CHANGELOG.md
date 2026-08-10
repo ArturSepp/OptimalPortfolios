@@ -12,6 +12,14 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   to `Constraints`, so the example's stated 10%–30% asset-class bounds were not applied to the
   solve it demonstrates. Found as an unused-variable finding, not by reading the output.
 ### Changed
+- CI now gates the `F` (pyflakes) family alongside the three stack invariants, all green on the
+  package. The ~380 `E501` line-length findings remain ungated and untouched. Ruff configuration
+  stays in `[tool.ruff]` in `pyproject.toml`, which remains the stack's single configuration home.
+- `F401` and `F403` are ignored for `"__init__.py"` in `[tool.ruff.lint.per-file-ignores]`, since
+  an import there is a re-export. No `__all__` is introduced: adding a name to a subpackage's
+  public API stays a single edit, with no second list to maintain beside the import. The public
+  surface is unchanged — the 125 names `optimalportfolios` exposes, and every name reachable
+  through `from optimalportfolios.<sub> import *`.
 - Modernized packaging licence metadata to the PEP 639 SPDX form (`license = "MIT"` and
   `license-files = ["LICENSE.txt"]`), with no change to the legal licence or package behavior;
   originally proposed in PR #9 by @tschm.
@@ -53,14 +61,6 @@ and 0.269786618740 for the composite signal.
 - `plot_mixure2` now unpacks the Matplotlib figure and axes correctly in PR #23 by @tschm.
 
 ### Changed
-- Every subpackage `__init__.py` now declares an `__all__`, stating its export surface
-  explicitly for the first time. The public API is unchanged — all 125 names `optimalportfolios`
-  exposed before are exposed after — but `from optimalportfolios.<sub> import *` now re-exports
-  a written-down list rather than whatever was left in the namespace.
-- Ruff configuration moved from `[tool.ruff]` in `pyproject.toml` to a top-level `ruff.toml`.
-  Rule selection and behaviour are unchanged.
-- CI now gates the `F` (pyflakes) family alongside the three stack invariants. The ~380 `E501`
-  line-length findings remain ungated and untouched.
 - The S&P 500 span comparison example now uses the project-local output-path helper instead of
   the undeclared private `quant_strats` package, resolving issue #27.
 - The Bloomberg S&P 500 universe example now raises an actionable, exception-chained installation

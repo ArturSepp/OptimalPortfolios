@@ -2,25 +2,25 @@
 and the alpha and reporting layers, re-exported from their subpackages.
 """
 
-import optimalportfolios.local_path  # noqa: F401  re-exported as optimalportfolios.local_path
+import optimalportfolios.local_path
 
-from optimalportfolios.config import PortfolioObjective as PortfolioObjective
+from optimalportfolios.config import PortfolioObjective
 
-# Each subpackage below declares an ``__all__``, so these stars re-export exactly the list
-# written down in that subpackage's ``__init__`` and nothing else — the surface is auditable
-# there rather than being whatever happened to be left in a namespace. F403 is silenced
-# because the rule's premise ("unable to detect undefined names") no longer holds.
-from optimalportfolios.utils.__init__ import *  # noqa: F403
+# Each star below re-exports its subpackage's namespace, so a subpackage's public surface is
+# the imports written in its own ``__init__`` and nothing beside them. F401 and F403 are off
+# for ``__init__.py`` in pyproject.toml, which is what keeps that arrangement lintable:
+# adding a public import here is one edit, not an import plus a list entry.
+from optimalportfolios.utils.__init__ import *
 
-from optimalportfolios.covar_estimation.__init__ import *  # noqa: F403
+from optimalportfolios.covar_estimation.__init__ import *
 
-from optimalportfolios.optimization.__init__ import *  # noqa: F403
+from optimalportfolios.optimization.__init__ import *
 
-from optimalportfolios.universe.__init__ import *  # noqa: F403
+from optimalportfolios.universe.__init__ import *
 
-from optimalportfolios.reports.__init__ import *  # noqa: F403
+from optimalportfolios.reports.__init__ import *
 
-from optimalportfolios.alphas.__init__ import *  # noqa: F403
+from optimalportfolios.alphas.__init__ import *
 
 """Backward-compatible re-exports from factorlasso."""
 from factorlasso import (  # noqa: F401

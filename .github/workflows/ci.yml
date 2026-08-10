@@ -12,7 +12,7 @@ env:
 
 jobs:
   lint:
-    # The three stack invariants configured in ruff.toml -- TID251 (subject packages
+    # The three stack invariants configured in pyproject.toml -- TID251 (subject packages
     # never import each other), TID253 (an optional extra is never imported at module
     # level) and ICN (the numpy/pandas aliases) -- plus the whole F family, are green
     # across the package, so a finding here is always something the change under review
