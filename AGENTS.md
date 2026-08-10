@@ -69,7 +69,7 @@ pip install -e ".[docs]" && mkdocs build --strict        # build the book (see b
 
 *Note: Terminal execution should be compatible with Windows PowerShell within PyCharm.*
 
-Optional extras: `data`, `reports`, `visualization`, `clustering`, `jupyter`, `docs`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.13 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. Separate jobs gate the three ruff stack invariants, `interrogate` docstring coverage at 100%, and `pip-audit` over the dependency tree resolved from `pyproject.toml`. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
+Optional extras: `data`, `reports`, `clustering`, `jupyter`, `docs`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.13 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. Separate jobs gate the three ruff stack invariants, `interrogate` docstring coverage at 100%, and `pip-audit` over the dependency tree resolved from `pyproject.toml`. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
 
 Full-package line coverage measured **89.70%** on the 1111-test dev suite. The Python 3.12
 matrix entry gates `pytest --cov=optimalportfolios` at `fail_under = 88`; this floor rises

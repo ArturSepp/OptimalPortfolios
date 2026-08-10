@@ -18,14 +18,13 @@ test suite is green on a core install by design.
 
 | Extra | What it adds |
 |---|---|
-| `data` | Free-data loaders backed by `yfinance` and `pandas-datareader`. |
+| `data` | The free-data loader backed by `yfinance`. |
 | `clustering` | The default minimum-cost-flow matcher used to keep risk-cluster labels stable through time. Install it when using the `mcf` cluster matcher; the `hungarian` matcher remains available in the core install. |
 | `reports` | The `pybloqs` report backend. |
-| `visualization` | Plotly charts. |
 | `jupyter` | Notebook tooling. |
 | `docs` | The MkDocs toolchain used to build this book. |
 | `dev` | The test, coverage, lint, and docstring-quality tools used by contributors. It also includes the `data` and `clustering` extras so the complete test suite can run. |
-| `all` | All runtime integrations. |
+| `all` | All runtime integrations: `data`, `reports`, `jupyter`, `clustering`. |
 
 Install an extra by placing its name in square brackets:
 
