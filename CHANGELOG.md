@@ -17,6 +17,9 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `load_test_data` and `update_test_prices` functions are unchanged; only the module path moves,
   and the six `*_local.py` diagnostics that import it are updated. Every file matching either of
   pytest's default patterns now collects at least one test.
+- Ported three content improvements from PR #38 by @tschm into the retained Sphinx pages: the
+  6.12.0 optional-extras truth, the quickstart's "What to change first" guidance, and the
+  landing-page overview and publication links.
 
 ## [6.12.0] - 2026-08-10
 
