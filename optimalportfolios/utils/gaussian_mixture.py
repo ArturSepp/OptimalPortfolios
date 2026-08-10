@@ -225,7 +225,10 @@ class Params:
         else:
             corrs = {}
             for idx, covar in enumerate(self.covars):
-                corrs[f"{idx} cluster"] = pd.DataFrame(qis.covar_to_corr(covar), index=columns, columns=columns)
+                # qis.covar_to_corr normalises with covar.multiply(...), a pandas method, so a
+                # bare ndarray raised AttributeError here. Label the matrix before the call.
+                covar_pd = pd.DataFrame(covar, index=columns, columns=columns)
+                corrs[f"{idx} cluster"] = qis.covar_to_corr(covar_pd)
 
         return means, vols, corrs
 
@@ -328,7 +331,9 @@ def plot_mixure2(x: np.ndarray,
     components by that feature's mean so colours stay comparable across panels.
     """
     if ax is None:
-        ax = plt.subplots(1, 1)
+        # plt.subplots returns (fig, ax); binding the pair to ax made every call that did
+        # not pass an axis fail inside seaborn with "'tuple' object has no attribute 'xaxis'"
+        _, ax = plt.subplots(1, 1)
 
     gmm = fit_gmm(x, n_components=n_components, random_state=RANDOM_STATE)
 
