@@ -59,7 +59,7 @@ Tests live inside the package as `optimalportfolios/<subpackage>/tests/*_test.py
 
 ```bash
 pip install -e ".[dev]"                                  # editable install with dev tools
-pytest                                                   # run the test suite (1072 tests, ~30 s)
+pytest                                                   # run the test suite (1111 tests, ~60 s)
 pytest optimalportfolios/optimization/tests/constraints_test.py -v
 ruff check optimalportfolios/                            # lint (papers/ is excluded)
 interrogate                                              # docstring coverage, must stay at 100%
@@ -67,10 +67,10 @@ interrogate                                              # docstring coverage, m
 
 *Note: Terminal execution should be compatible with Windows PowerShell within PyCharm.*
 
-Optional extras: `data`, `reports`, `visualization`, `clustering`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.13 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. Separate jobs gate the three ruff stack invariants, `interrogate` docstring coverage at 100%, and `pip-audit` over the dependency tree resolved from `pyproject.toml`. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
+Optional extras: `data`, `reports`, `clustering`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.13 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. Separate jobs gate the three ruff stack invariants, `interrogate` docstring coverage at 100%, and `pip-audit` over the dependency tree resolved from `pyproject.toml`. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
 
-Full-package line coverage measured **89.30%** on the 1072-test dev suite. The Python 3.12
-matrix entry gates `pytest --cov=optimalportfolios` at `fail_under = 89`; this floor rises
+Full-package line coverage measured **89.70%** on the 1111-test dev suite. The Python 3.12
+matrix entry gates `pytest --cov=optimalportfolios` at `fail_under = 88`; this floor rises
 whenever measured coverage rises, and lowering it requires a dated `CHANGELOG.md` note.
 Measure on a `[dev]` install: a core install lacks the `clustering` extra, so the `mcf` cases
 skip and the total lands below the floor.
@@ -196,5 +196,5 @@ Then: commit, tag `v<version>`, build and publish to PyPI, and cut a GitHub Rele
 ## Known issues
 
 - The previous `CLAUDE.md` described version 4.1.1 and a black/isort/flake8/mypy toolchain; the project has since moved to `ruff` and this file supersedes it.
-- `ruff check optimalportfolios/` reports 764 baseline findings, almost all `E501` line-length in the older modules. CI gates only the green TID251/TID253/ICN stack invariants; the wider `E`/`W`/`F` set remains ungated by policy. Fix only the lines your specific change touches; a repository-wide reflow is not wanted.
-- **Offline Fixture Anomaly:** The 6.2.0 changelog mentions a 69-test suite and an offline fixture (`examples/data/multiasset_returns.csv` with `examples.data.multiasset.load_multiasset_data`). This fixture is committed but unused. Ignore it completely and do not attempt to integrate it into the current 618-test suite.
+- `ruff check optimalportfolios/` reports 760 baseline findings, almost all `E501` line-length in the older modules. CI gates only the green TID251/TID253/ICN stack invariants; the wider `E`/`W`/`F` set remains ungated by policy. Fix only the lines your specific change touches; a repository-wide reflow is not wanted.
+- **Offline Fixture Anomaly:** The 6.2.0 changelog mentions a 69-test suite and an offline fixture (`examples/data/multiasset_returns.csv` with `examples.data.multiasset.load_multiasset_data`). This fixture is committed but unused. Ignore it completely and do not attempt to integrate it into the current 1111-test suite.
