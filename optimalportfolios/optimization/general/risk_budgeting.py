@@ -378,16 +378,16 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
         sse = np.nanmean(np.abs(np.nanmean(risk_budget_weights, axis=0) - given_weights_np))
         return sse
 
-    # start from the average realised risk contributions of the given weights rather than from
-    # the weights themselves: budgets live in risk space, so this starting point is already
-    # the right scale and SLSQP converges from it in far fewer objective evaluations (each of
-    # which is a whole rolling risk-budgeting backtest)
-    portfolio_rc = {}
-    for date, pd_covar in covar_dict.items():
-        rc = qis.compute_portfolio_risk_contributions(w=given_weights, covar=pd_covar)
-        portfolio_rc[date] = rc / np.nansum(rc)
-    avg_portfolio_rc = pd.DataFrame.from_dict(portfolio_rc, orient='index').mean(axis=0)
-    x0 = avg_portfolio_rc.to_numpy()
+    is_use_avg_rc = True
+    if is_use_avg_rc:
+        portfolio_rc = {}
+        for date, pd_covar in covar_dict.items():
+            rc = qis.compute_portfolio_risk_contributions(w=given_weights, covar=pd_covar)
+            portfolio_rc[date] = rc / np.nansum(rc)
+        avg_portfolio_rc = pd.DataFrame.from_dict(portfolio_rc, orient='index').mean(axis=0)
+        x0 = avg_portfolio_rc.to_numpy()
+    else:
+        x0 = given_weights.to_numpy()
 
     enforce_min_max = np.where(np.greater(given_weights_np, 0.0), 1.0, 0.0)
     min_rbs = min_risk_budget * enforce_min_max
