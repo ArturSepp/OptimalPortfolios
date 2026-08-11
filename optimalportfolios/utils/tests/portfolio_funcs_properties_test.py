@@ -34,7 +34,7 @@ import qis
 # optimalportfolios
 import optimalportfolios.utils.portfolio_funcs as portfolio_funcs
 from optimalportfolios.covar_estimation.ewma_covar_estimator import EwmaCovarEstimator
-from optimalportfolios.examples.data.multiasset import load_multiasset_data
+from optimalportfolios.tests.data.multiasset import load_multiasset_data
 from optimalportfolios.utils.filter_nans import (filter_covar_and_vectors,
                                                  filter_covar_and_vectors_for_nans)
 

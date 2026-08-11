@@ -37,7 +37,7 @@ import qis
 # optimalportfolios
 import optimalportfolios as op
 from optimalportfolios import Constraints
-from optimalportfolios.examples.data.multiasset import load_multiasset_data
+from optimalportfolios.tests.data.multiasset import load_multiasset_data
 from optimalportfolios.tests.data_masks import (mask_delistings, mask_late_listings,
                                                 instruments_alive_at)
 

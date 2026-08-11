@@ -5,6 +5,17 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**Packaging behaviour change (issue #39, reported by @tschm):** wheels no longer ship the
+examples tree; the complete test suite now ships with its offline fixture and supports
+`pytest --pyargs optimalportfolios` as a post-install check. The ubuntu/Python 3.12 coverage
+gate installs from the release-refreshed `constraints.txt`; the remaining matrix and audit
+resolutions continue to float. Removing the examples package marker also removes the accidental
+`optimalportfolios.examples` root-module binding that full-suite collection formerly created;
+the clean-import public API is unchanged. The shipped pytest configuration defaults Matplotlib
+to the non-interactive `Agg` backend while respecting an explicitly selected backend.
+
 ## [6.15.0] - 2026-08-11
 
 non-USD CMA runs using USD-anchored precomputed clusters change numerical results — they previously ran a row-grouped GROUP_LASSO objective and now run the spec's FCGL cluster-factor objective, making USD and non-USD CMA runs consistent for the first time.

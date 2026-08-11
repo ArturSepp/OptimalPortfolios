@@ -104,11 +104,11 @@ Changelog = "https://github.com/ArturSepp/OptimalPortfolios/blob/main/CHANGELOG.
 
 [tool.setuptools.packages.find]
 include = ["optimalportfolios*"]
-exclude = ["tests*", "docs*", "papers*"]
+exclude = ["optimalportfolios.examples*", "docs*", "papers*"]
 
 [tool.setuptools.package-data]
 optimalportfolios = ["*.yaml"]
-"optimalportfolios.examples.data" = ["*.csv"]
+"optimalportfolios.tests.data" = ["*.csv"]
 
 [tool.pytest.ini_options]
 testpaths = ["optimalportfolios"]

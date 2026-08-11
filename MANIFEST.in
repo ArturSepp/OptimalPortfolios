@@ -12,13 +12,15 @@ recursive-include optimalportfolios *.py
 
 # Include specific data files that the package needs
 recursive-include optimalportfolios/data *.csv
+recursive-include optimalportfolios/tests/data *.csv
 recursive-include optimalportfolios/templates *.html
 recursive-include optimalportfolios/static *.css *.js
 recursive-include optimalportfolios *.yml *.yaml *.json *.txt *.md
 
-# Explicitly exclude figures, notebooks, resources, and image files
-recursive-exclude optimalportfolios/examples/figures *
-recursive-exclude optimalportfolios/examples/resources *
+# Examples are repository-only: exclude their whole tree from built distributions.
+recursive-exclude optimalportfolios/examples *
+
+# Explicitly exclude notebooks, resources, and image files
 recursive-exclude optimalportfolios/notebooks *
 recursive-exclude optimalportfolios *figures*
 global-exclude *.png
