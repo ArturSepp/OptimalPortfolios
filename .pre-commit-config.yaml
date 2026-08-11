@@ -1,0 +1,47 @@
+# Local mirror of the CI gates in .github/workflows/ci.yml, so a push fails at commit
+# time rather than on the runner. Install with:
+#
+#     pip install pre-commit && pre-commit install
+#
+# Run over the whole repository once with `pre-commit run --all-files`.
+
+# papers/ reproduces published results and is deliberately excluded from linting;
+# ruff and interrogate exclude it in pyproject.toml too, and this keeps the file
+# hooks off it as well.
+exclude: '^papers/'
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # Check-only, never rewrite. The package carries ~380 E501 and a handful of
+      # W291/W292 findings that AGENTS.md asks be left alone, so a whitespace fixer
+      # would reflow unrelated lines of any legacy file a change happens to touch.
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        # Backtest outputs and factsheets must never reach version control.
+        args: ["--maxkb=500"]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Within the `ruff~=0.16.0` series the lint job pins, so local and CI agree.
+    rev: v0.16.2
+    hooks:
+      - id: ruff-check
+        # Exactly the CI selection: the three stack invariants (TID251, TID253, ICN)
+        # plus the F family. E/W stay out because of the legacy E501 backlog.
+        #
+        # No --fix on purpose. F401 in an __init__.py is a re-export, and autofixing
+        # it would delete the public surface of every subpackage.
+        args: ["--select", "TID251,TID253,ICN,F"]
+
+  - repo: https://github.com/econchick/interrogate
+    rev: 1.7.0
+    hooks:
+      - id: interrogate
+        # fail-under = 100 and the papers/ exclusion live in [tool.interrogate] in
+        # pyproject.toml. Coverage is a whole-package number, so this runs over the
+        # package rather than the staged files.
+        args: ["-v"]
+        pass_filenames: false

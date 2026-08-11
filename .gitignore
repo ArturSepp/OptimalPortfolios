@@ -13,6 +13,7 @@ __pycache__/
 # YAML
 *.yaml
 !.readthedocs.yaml
+!.pre-commit-config.yaml
 
 # Byte-compiled / optimized / DLL files
 docs/figures/

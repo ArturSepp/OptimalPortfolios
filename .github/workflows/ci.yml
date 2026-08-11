@@ -40,6 +40,36 @@ jobs:
     - name: Check stack invariants and the F family
       run: ruff check --select TID251,TID253,ICN,F optimalportfolios/
 
+  pre-commit:
+    # Runs every hook in .pre-commit-config.yaml over the whole repository, so the
+    # local hooks cannot silently rot: a contributor who never ran `pre-commit
+    # install`, or whose hook revs drifted, still fails here.
+    #
+    # --all-files rather than the staged set, because a workflow run has no staged
+    # set and the hooks are cheap enough (ruff, interrogate and file checks) to
+    # sweep the repository each time.
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Set up Python
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: "3.12"
+
+    - name: Install pre-commit
+      run: |
+        python -m pip install --upgrade pip
+        # Pin the current 4.x series, as the lint and audit jobs pin their tools, so
+        # a pre-commit release cannot change the verdict on an unchanged repository.
+        pip install "pre-commit~=4.4"
+
+    - name: Run every hook
+      # show-diff-on-failure turns a rewriting hook's failure into a readable patch
+      # in the log, rather than a bare "files were modified by this hook".
+      run: pre-commit run --all-files --show-diff-on-failure
+
   test:
     # The suite is pure-Python and NaN-aware pandas, but the scientific stack ships
     # per-platform wheels and pandas frequency/locale behaviour has bitten this kind of
