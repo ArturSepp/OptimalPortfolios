@@ -41,10 +41,14 @@ jobs:
       run: ruff check --select TID251,TID253,ICN,F optimalportfolios/
 
   test:
-    runs-on: ubuntu-latest
+    # The suite is pure-Python and NaN-aware pandas, but the scientific stack ships
+    # per-platform wheels and pandas frequency/locale behaviour has bitten this kind of
+    # code before, so the matrix runs every supported Python on all three runners.
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     steps:
@@ -61,6 +65,9 @@ jobs:
         pip install -e ".[dev]"
 
     - name: Verify imports
+      # bash on every runner: the default shell on windows-latest is PowerShell, which
+      # parses this multi-line quoted argument differently.
+      shell: bash
       run: |
         python -c "
         from optimalportfolios import (
@@ -71,6 +78,7 @@ jobs:
         "
 
     - name: Verify factorlasso integration
+      shell: bash
       run: |
         python -c "
         from factorlasso import LassoModel as FL_LassoModel
@@ -83,11 +91,15 @@ jobs:
       # The floor lives in [tool.coverage.report] fail_under in pyproject.toml, so this job
       # fails when coverage regresses below it. term-missing prints the uncovered lines, which
       # is what a contributor needs to act on the failure without re-running locally.
-      if: matrix.python-version == '3.12'
+      #
+      # Measured on ubuntu/3.12 only, so the floor keeps one authoritative number. A
+      # platform-specific skip on another runner would otherwise fail the gate there for
+      # a reason that has nothing to do with coverage regressing.
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
       run: pytest --cov=optimalportfolios --cov-report=term-missing
 
     - name: Run the test suite
-      if: matrix.python-version != '3.12'
+      if: matrix.os != 'ubuntu-latest' || matrix.python-version != '3.12'
       run: pytest
 
   docstrings:
@@ -152,7 +164,11 @@ jobs:
     # data, network or a Bloomberg terminal. Without this job the constraint is
     # a convention, and it has already been broken twice by a module-scope
     # yfinance import.
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -169,6 +185,7 @@ jobs:
         pip install pytest
 
     - name: Assert the optional extras are absent
+      shell: bash
       run: |
         python -c "
         import importlib.util

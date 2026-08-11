@@ -61,7 +61,7 @@ Every file matching pytest's default patterns — `*_test.py` **and** `test_*.py
 
 ```bash
 pip install -e ".[dev]"                                  # editable install with dev tools
-pytest                                                   # run the test suite (1111 tests, ~60 s)
+pytest                                                   # run the test suite (1114 tests, ~60 s)
 pytest optimalportfolios/optimization/tests/constraints_test.py -v
 ruff check optimalportfolios/                            # lint (papers/ is excluded)
 interrogate                                              # docstring coverage, must stay at 100%
@@ -69,10 +69,10 @@ interrogate                                              # docstring coverage, m
 
 *Note: Terminal execution should be compatible with Windows PowerShell within PyCharm.*
 
-Optional extras: `data`, `reports`, `clustering`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.13 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. Separate jobs gate the three ruff stack invariants, `interrogate` docstring coverage at 100%, and `pip-audit` over the dependency tree resolved from `pyproject.toml`. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
+Optional extras: `data`, `reports`, `clustering`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.13 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. Both of those jobs run on `ubuntu-latest`, `windows-latest` and `macos-latest`, so a fix that only holds on POSIX paths or POSIX line endings fails the matrix. Separate jobs gate the three ruff stack invariants, `interrogate` docstring coverage at 100%, and `pip-audit` over the dependency tree resolved from `pyproject.toml`. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
 
-Full-package line coverage measured **89.70%** on the 1111-test dev suite. The Python 3.12
-matrix entry gates `pytest --cov=optimalportfolios` at `fail_under = 88`; this floor rises
+Full-package line coverage measured **89.70%** on the 1114-test dev suite. The
+ubuntu/3.12 matrix entry gates `pytest --cov=optimalportfolios` at `fail_under = 88`; this floor rises
 whenever measured coverage rises, and lowering it requires a dated `CHANGELOG.md` note.
 Measure on a `[dev]` install: a core install lacks the `clustering` extra, so the `mcf` cases
 skip and the total lands below the floor.
