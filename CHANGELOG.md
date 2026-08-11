@@ -7,6 +7,15 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+**Packaging behaviour change (issue #39, reported by @tschm):** wheels no longer ship the
+examples tree; the complete test suite now ships with its offline fixture and supports
+`pytest --pyargs optimalportfolios` as a post-install check. The ubuntu/Python 3.12 coverage
+gate installs from the release-refreshed `constraints.txt`; the remaining matrix and audit
+resolutions continue to float. Removing the examples package marker also removes the accidental
+`optimalportfolios.examples` root-module binding that full-suite collection formerly created;
+the clean-import public API is unchanged. The shipped pytest configuration defaults Matplotlib
+to the non-interactive `Agg` backend while respecting an explicitly selected backend.
+
 ### Changed
 
 - CI test jobs now run on ubuntu-latest, windows-latest and macos-latest across Python

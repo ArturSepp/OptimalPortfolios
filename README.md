@@ -369,6 +369,8 @@ Install from PyPI:
 pip install optimalportfolios
 ```
 
+After installing `pytest`, verify the installed wheel with `python -m pytest --pyargs optimalportfolios`.
+
 Upgrade with:
 
 ```

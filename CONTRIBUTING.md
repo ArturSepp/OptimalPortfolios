@@ -42,8 +42,18 @@ and section you are reading.
 git clone https://github.com/ArturSepp/OptimalPortfolios.git
 cd OptimalPortfolios
 pip install -e ".[dev]"
-pytest optimalportfolios/   # tests live inside the package, not in a top-level tests/
-ruff check optimalportfolios/
+pytest
+ruff check --select TID251,TID253,ICN,F optimalportfolios/
+interrogate -v
+pytest --cov=optimalportfolios --cov-report=term-missing
+pip-audit .
+```
+
+To verify a built or downloaded wheel in a clean environment, install the wheel and `pytest`,
+then run the supported post-install check:
+
+```bash
+python -m pytest --pyargs optimalportfolios
 ```
 
 `AGENTS.md` in this repository documents the layout, commands, conventions, and
@@ -56,7 +66,7 @@ to human contributors.
   are likely to be asked to split.
 - Add or update tests for behaviour you change. A bug fix should come with a test that
   fails before the fix.
-- Run the test suite and `ruff` before submitting.
+- Run the documented CI command set before submitting.
 - Do not bump the version in `pyproject.toml` or `CITATION.cff`; releases are cut
   separately.
 - Do not commit generated output: figures, factsheets, backtest results, or data files.

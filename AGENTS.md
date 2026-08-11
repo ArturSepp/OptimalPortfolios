@@ -48,12 +48,13 @@ optimalportfolios/
   optimization/      optimisers, constraints, solvers
   universe/          instrument universes
   reports/           reporting built on qis
-  tests/             cross-cutting tests (release metadata agreement)
-  utils/, examples/, docs/, config.py, local_path.py, settings.yaml
+  tests/             cross-cutting tests and their offline data fixtures
+  utils/, docs/, config.py, local_path.py, settings.yaml
+  examples/          repository-only examples (excluded from wheels)
 papers/              code accompanying the published papers (excluded from ruff)
 ```
 
-Tests live inside the package as `optimalportfolios/<subpackage>/tests/*_test.py`; there is no top-level `tests/` directory. Sixteen `*_local.py` files are `run_local_test` diagnostic dispatchers: run them manually when the required local price data is available; pytest never collects them, and the test suite is exactly what bare `pytest` collects. The sixteenth is `examples/data/etf_prices_local.py`, which is also the shared loader those dispatchers import their price panel from.
+Tests live inside the package as `optimalportfolios/<subpackage>/tests/*_test.py`; there is no top-level `tests/` directory. The wheel includes these test packages and their fixture under `optimalportfolios/tests/data/`, so `pytest --pyargs optimalportfolios` is the supported post-install check. The shipped `conftest.py` defaults `MPLBACKEND` to the non-interactive `Agg` backend while preserving an explicitly selected backend. The `examples/` tree remains in the repository but is excluded from wheels. Sixteen `*_local.py` files are `run_local_test` diagnostic dispatchers: run them manually when the required local price data is available; pytest never collects them, and the test suite is exactly what bare `pytest` collects. The sixteenth is `examples/data/etf_prices_local.py`, which is also the shared loader those dispatchers import their price panel from.
 
 Every file matching pytest's default patterns — `*_test.py` **and** `test_*.py` — collects at least one test, so the file count is a usable proxy for the suite. Keep it that way: a new diagnostic script belongs in `*_local.py`, not under a test-shaped name. A name matching either pattern is *imported* at collection even when it contributes no tests, which is how a module-level import of an optional extra has twice broken CI.
 
@@ -61,7 +62,7 @@ Every file matching pytest's default patterns — `*_test.py` **and** `test_*.py
 
 ```bash
 pip install -e ".[dev]"                                  # editable install with dev tools
-pytest                                                   # run the test suite (1114 tests, ~60 s)
+pytest                                                   # run the test suite (1113 tests, ~60 s)
 pytest optimalportfolios/optimization/tests/constraints_test.py -v
 ruff check optimalportfolios/                            # lint (papers/ is excluded)
 interrogate                                              # docstring coverage, must stay at 100%
@@ -69,9 +70,9 @@ interrogate                                              # docstring coverage, m
 
 *Note: Terminal execution should be compatible with Windows PowerShell within PyCharm.*
 
-Optional extras: `data`, `reports`, `clustering`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.13 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. Both of those jobs run on `ubuntu-latest`, `windows-latest` and `macos-latest`, so a fix that only holds on POSIX paths or POSIX line endings fails the matrix. Separate jobs gate the three ruff stack invariants, `interrogate` docstring coverage at 100%, and `pip-audit` over the dependency tree resolved from `pyproject.toml`. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
+Optional extras: `data`, `reports`, `clustering`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.13 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. Both of those jobs run on `ubuntu-latest`, `windows-latest` and `macos-latest`, so a fix that only holds on POSIX paths or POSIX line endings fails the matrix. The ubuntu/Python 3.12 coverage cell alone installs against `constraints.txt`, regenerated at each release; the remaining matrix cells, core installs and audit resolution deliberately float. Separate jobs gate the three ruff stack invariants, `interrogate` docstring coverage at 100%, and `pip-audit` over the dependency tree resolved from `pyproject.toml`. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
 
-Full-package line coverage measured **89.70%** on the 1114-test dev suite. The
+Full-package line coverage measured **89.70%** on the 1113-test dev suite. The
 ubuntu/3.12 matrix entry gates `pytest --cov=optimalportfolios` at `fail_under = 88`; this floor rises
 whenever measured coverage rises, and lowering it requires a dated `CHANGELOG.md` note.
 Measure on a `[dev]` install: a core install lacks the `clustering` extra, so the `mcf` cases
@@ -201,4 +202,4 @@ Then: commit, tag `v<version>`, build and publish to PyPI, and cut a GitHub Rele
 - The previous `CLAUDE.md` described version 4.1.1 and a black/isort/flake8/mypy toolchain; the project has since moved to `ruff` and this file supersedes it.
 - `ruff check optimalportfolios/` reports 429 baseline findings: 378 `E501` line-length, and the small `W292`/`E702`/`E712`/`W291`/`E402` remainder. CI gates TID251/TID253/ICN **and `F`**, all green; `E`/`W` remain ungated by policy. Fix only the lines your specific change touches; a repository-wide reflow is not wanted.
 - **`F401` in an `__init__.py` is a re-export, not an unused import.** `F401` and `F403` are therefore off for `"__init__.py"` in `[tool.ruff.lint.per-file-ignores]`, rather than answered file by file with `# noqa`. That keeps the rule this package has always followed: a subpackage's public surface is the imports in its own `__init__.py`, and adding a name to it is one edit — no `__all__` or other second list to maintain beside the import. Never `ruff --fix` F401 across `__init__.py` with that ignore removed: it would delete the re-exports and break `from optimalportfolios import Constraints` for every consumer.
-- **The offline multiasset fixture is live test infrastructure, not an unused artifact.** `examples/data/multiasset_returns.csv`, loaded by `examples.data.multiasset.load_multiasset_data`, feeds three collected suites: `optimization/tests/rolling_dispatcher_test.py`, `utils/tests/portfolio_funcs_properties_test.py` and `covar_estimation/tests/covar_properties_test.py`. Treat the CSV and loader as frozen test data: do not modify, move or delete them without updating those suites, and expect numerical assertions to change if the data changes. (An earlier version of this file wrongly described the fixture as unused.)
+- **The offline multiasset fixture is live test infrastructure, not an unused artifact.** `tests/data/multiasset_returns.csv`, loaded by `tests.data.multiasset.load_multiasset_data`, feeds three collected suites: `optimization/tests/rolling_dispatcher_test.py`, `utils/tests/portfolio_funcs_properties_test.py` and `covar_estimation/tests/covar_properties_test.py`. Treat the CSV and loader as frozen test data: do not modify, move or delete them without updating those suites, and expect numerical assertions to change if the data changes. (An earlier version of this file wrongly described the fixture as unused.)

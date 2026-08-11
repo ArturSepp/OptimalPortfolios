@@ -35,7 +35,7 @@ import qis
 from optimalportfolios import LassoModel, LassoModelType, DependenceMeasure, DistanceTransform
 from optimalportfolios.covar_estimation.ewma_covar_estimator import EwmaCovarEstimator
 from optimalportfolios.covar_estimation.factor_covar_estimator import FactorCovarEstimator
-from optimalportfolios.examples.data.multiasset import load_multiasset_data
+from optimalportfolios.tests.data.multiasset import load_multiasset_data
 
 RETURNS_FREQ = 'ME'
 SPAN = 24
