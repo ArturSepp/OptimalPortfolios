@@ -550,23 +550,6 @@ def test_residual_records_carry_their_bounds_and_tolerance() -> None:
     assert isinstance(record.passed, (bool, np.bool_))
 
 
-def test_a_minimum_volatility_floor_is_audited_like_the_cap() -> None:
-    """both ends of the volatility band are residuals, not only the maximum
-
-    A minimum vol target is how a mandate says "do not de-risk into cash". Auditing only the
-    cap would let a solve satisfy the band on paper while sitting far below the floor.
-    """
-    constraints = make_constraints(min_target_portfolio_vol_an=0.15)
-    residuals = evaluate_constraint_residuals(weights=np.array([0.0, 0.0, 1.0]),
-                                              constraints=constraints, covar=COVAR)
-    floors = [r for r in residuals
-              if r.constraint_type == 'portfolio_volatility' and r.name == 'minimum']
-    assert len(floors) == 1
-    # the all-defensive portfolio realises 6% vol, well under the 15% floor
-    assert not floors[0].passed
-    assert floors[0].actual == pytest.approx(0.06, abs=1e-6)
-
-
 def test_turnover_is_audited_against_the_prior_portfolio() -> None:
     """the L1 trade against weights_0 is measured, with per-asset costs when given
 

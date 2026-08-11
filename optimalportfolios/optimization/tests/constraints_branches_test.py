@@ -545,28 +545,6 @@ def test_a_volatility_cap_without_a_covariance_is_rejected() -> None:
         constraints.set_cvx_all_constraints(w=cvx.Variable(len(TICKERS)))
 
 
-def test_a_volatility_floor_needs_a_covariance_too() -> None:
-    """and the minimum side, which has no factorised form to fall back on"""
-    constraints = make_constraints(min_target_portfolio_vol_an=0.05)
-    with pytest.raises(ValueError, match='covar must be given'):
-        constraints.set_cvx_all_constraints(w=cvx.Variable(len(TICKERS)))
-
-
-def test_a_volatility_floor_is_emitted_as_a_quadratic_lower_bound() -> None:
-    """the floor is built, even though no convex solver will take it
-
-    ``w'Sigma w >= v^2`` is not a convex set, so cvxpy rejects the problem at solve time. The
-    constraint is emitted all the same — a caller asking for a minimum volatility gets a
-    DCP error naming the term, not a silently dropped mandate.
-    """
-    constraints = make_constraints(min_target_portfolio_vol_an=0.12)
-    w = cvx.Variable(len(TICKERS), nonneg=True)
-    emitted = constraints.set_cvx_all_constraints(w=w, covar=cvx.psd_wrap(COVAR.to_numpy()))
-    assert any('QuadForm' in str(constraint) for constraint in emitted)
-    with pytest.raises(cvx.error.DCPError):
-        cvx.Problem(cvx.Minimize(cvx.sum_squares(w)), emitted).solve(solver='CLARABEL')
-
-
 def test_a_group_turnover_block_takes_precedence_over_the_portfolio_cap() -> None:
     """with both stated, the group form is the one built — they are not additive"""
     constraints = make_constraints(

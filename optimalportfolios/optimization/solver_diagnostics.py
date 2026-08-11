@@ -402,9 +402,6 @@ def evaluate_constraint_residuals(
         if constraints.max_target_portfolio_vol_an is not None:
             add('portfolio_volatility', 'maximum', portfolio_vol,
                 upper=constraints.max_target_portfolio_vol_an, hard=not utility)
-        if constraints.min_target_portfolio_vol_an is not None:
-            add('portfolio_volatility', 'minimum', portfolio_vol,
-                lower=constraints.min_target_portfolio_vol_an, hard=not utility)
 
     if constraints.weights_0 is not None:
         w0 = constraints.weights_0.reindex(index).fillna(0.0).to_numpy(dtype=float)

@@ -60,8 +60,8 @@ EQUITY_BETA = [0.95, 0.05, 0.10]
 RATES_BETA = [0.05, 0.85, 0.10]
 
 # the defaults analyze_risk_clusters passes down, restated so a case can vary one of them
-LINK_KWARGS = dict(overlap_metric='overlap', combine='gated', overlap_band=(0.20, 0.60),
-                   spread_vol_cut=0.025, w_overlap=0.6)
+LINK_KWARGS = dict(overlap_metric='overlap', combine='gated', overlap_band=(0.15, 0.60),
+                   spread_vol_cut=0.015, w_overlap=0.6)
 
 ASSETS = ['a1', 'a2', 'a3', 'a4']
 ASSET_BETAS = pd.DataFrame([[0.95, 0.05, 0.10],
@@ -156,11 +156,22 @@ def test_qualifies_gated_rejects_disjoint_members_with_distant_beta() -> None:
     assert weight == 0.0
 
 
-def test_qualifies_gated_accepts_when_beta_arbitrates() -> None:
-    """with low overlap, a beta spread inside the cut still links the pair"""
+def test_qualifies_gated_rejects_below_lower_band_even_when_betas_match() -> None:
+    """Beta proximity cannot link clusters with overlap below the lower gate."""
     ok, weight = _qualifies(make_fingerprint(['a1'], EQUITY_BETA),
                             make_fingerprint(['a9'], EQUITY_BETA),
                             {'a1', 'a9'}, SIGMA, **LINK_KWARGS)
+    assert ok is False
+    assert weight == 0.0
+
+
+def test_qualifies_gated_accepts_mid_overlap_when_beta_arbitrates() -> None:
+    """Inside the overlap band, a beta spread within the cut links the pair."""
+    left = ['a1', 'a2', 'a3', 'a4']
+    right = ['a1', 'b2', 'b3', 'b4']
+    ok, weight = _qualifies(make_fingerprint(left, EQUITY_BETA),
+                            make_fingerprint(right, EQUITY_BETA),
+                            set(left) | set(right), SIGMA, **LINK_KWARGS)
     assert ok is True
     assert weight > 0.0
 
@@ -208,6 +219,19 @@ def test_snapshot_fingerprints_inv_vol_tilts_towards_the_lower_vol_member() -> N
     # a2 has the lower total_vol of the c1 pair and the lower equity beta, so the inverse-vol
     # cluster beta must sit below the equally weighted one
     assert inv_vol['c1'].beta[0] < equal['c1'].beta[0]
+
+
+def test_snapshot_fingerprints_call_zero_beta_idiosyncratic() -> None:
+    """A cluster with no factor contribution has the explicit Idio sentinel."""
+    snapshot = make_snapshot(['c1', 'c1', 'c1', 'c1'])
+    zero_beta_snapshot = CurrentFactorCovarData(
+        x_covar=snapshot.x_covar,
+        y_betas=snapshot.y_betas * 0.0,
+        y_variances=snapshot.y_variances,
+        clusters=snapshot.clusters,
+    )
+    fingerprints, _ = _snapshot_fingerprints(zero_beta_snapshot)
+    assert fingerprints['c1'].dominant == 'Idio'
 
 
 def test_cluster_series_falls_back_to_the_variance_table() -> None:
@@ -297,6 +321,24 @@ def test_hungarian_revives_a_dormant_track_within_the_bridge_window() -> None:
     assert derived_id(relabel, DATES[2], 'Q') == derived_id(relabel, DATES[0], 'Q')
     assert 'birth' not in events_at(lineage, DATES[2])
     assert relabel['derived_id'].nunique() == 2
+
+
+def test_hungarian_revives_the_best_dormant_track_not_insertion_order() -> None:
+    """When two dormant tracks qualify, the higher-affinity identity is revived."""
+    first = make_fingerprint(['a1', 'a2', 'a3', 'a4'], EQUITY_BETA)
+    best = make_fingerprint(['a1', 'a5', 'a6'], EQUITY_BETA)
+    successor = make_fingerprint(['a1', 'a5', 'a6', 'a7'], EQUITY_BETA)
+    relabel, _ = run_hungarian(
+        {
+            DATES[0]: {'first': first, 'best': best},
+            DATES[1]: {},
+            DATES[2]: {'successor': successor},
+        },
+        bridge_window=1,
+    )
+    assert derived_id(relabel, DATES[2], 'successor') == derived_id(
+        relabel, DATES[0], 'best'
+    )
 
 
 def test_hungarian_does_not_revive_beyond_the_bridge_window() -> None:
@@ -453,6 +495,7 @@ def test_analyze_risk_clusters_tracks_a_stable_panel_end_to_end() -> None:
     assert len(report.tracks) == 2
     assert report.params['method'] == 'hungarian'
     assert report.params['overlap_metric'] == 'overlap'
+    assert report.params['bridge_decay'] == 0.5
     assert list(report.factor_covar.index) == FACTORS
     assert np.allclose(report.factor_covar.to_numpy(), SIGMA)
 
@@ -498,6 +541,46 @@ def test_factor_labels_call_a_track_with_no_factor_variance_idiosyncratic() -> N
                                transitions=pd.DataFrame(), params={},
                                factor_covar=pd.DataFrame(SIGMA, index=FACTORS, columns=FACTORS))
     assert report.factor_labels()['d001'] == 'Idiosyncratic'
+
+
+def test_factor_labels_support_a_single_factor_model() -> None:
+    """A one-factor covariance labels without looking for a second factor."""
+    index = pd.DatetimeIndex(DATES)
+    track = TrackPanel(betas=pd.DataFrame({'Equity': [0.8] * 3}, index=index),
+                       factor_vol=pd.Series([0.16] * 3, index=index),
+                       idio_vol=pd.Series([0.04] * 3, index=index),
+                       total_vol=pd.Series([0.17] * 3, index=index),
+                       r2=pd.Series([0.9] * 3, index=index),
+                       size=pd.Series([2] * 3, index=index),
+                       dominant_factor=pd.Series(['Equity'] * 3, index=index),
+                       members={d: ['a1', 'a2'] for d in DATES})
+    report = RiskClusterReport(relabel=pd.DataFrame(), tracks={'d001': track},
+                               classification=pd.DataFrame(), lineage=pd.DataFrame(),
+                               transitions=pd.DataFrame(), params={},
+                               factor_covar=pd.DataFrame([[0.04]], index=['Equity'],
+                                                         columns=['Equity']))
+    assert report.factor_labels()['d001'] == 'Equity high-β · high-vol'
+
+
+def test_label_tracks_treats_nan_equity_beta_as_defensive_zero() -> None:
+    """An all-NaN equity beta uses the documented zero fallback, not core."""
+    index = pd.DatetimeIndex(DATES)
+    track = TrackPanel(betas=pd.DataFrame({'Equity': [np.nan] * 3}, index=index),
+                       factor_vol=pd.Series([0.0] * 3, index=index),
+                       idio_vol=pd.Series([0.07] * 3, index=index),
+                       total_vol=pd.Series([0.07] * 3, index=index),
+                       r2=pd.Series([0.0] * 3, index=index),
+                       size=pd.Series([1] * 3, index=index),
+                       dominant_factor=pd.Series(['Idio'] * 3, index=index),
+                       members={d: ['a1'] for d in DATES})
+    classification = pd.DataFrame({'track_type': ['Idiosyncratic'],
+                                   'modal_dom': ['Idio']}, index=['d001'])
+    report = RiskClusterReport(relabel=pd.DataFrame(), tracks={'d001': track},
+                               classification=classification, lineage=pd.DataFrame(),
+                               transitions=pd.DataFrame(), params={})
+    metadata = pd.DataFrame({'Sub Asset Class': ['US Equity'],
+                             'Asset Class': ['Equity']}, index=['a1'])
+    assert report.label_tracks(metadata)['d001'] == 'US Equity · defensive'
 
 
 def test_membership_panel_is_dates_by_assets() -> None:

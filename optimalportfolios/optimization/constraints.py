@@ -711,13 +711,17 @@ class GroupTurnoverConstraint:
 
 @dataclass(frozen=True)
 class BenchmarkDeviationConstraints:
-    """Benchmark Deviation Constraints: can be used for factor-style deviation constraints, industry deviation constraints
+    """Constrain benchmark-relative sector, industry, or style exposures.
 
-    Creates constraints (elementwise): factor_loading_mat ⊙ (w - w₀) ≤ factor_max_deviation    
+    For every loading column ``g``, the constraint is
+    ``|L_g.T @ (w - benchmark_weights)| <= factor_max_deviation[g]``.
 
     Attributes:
-        factor_loading_mat: matrix of factor loadings (instruments x groups). E.g. in terms of Sector constraints, it would be matrix of binary values
-        factor_max_deviation: Maximum deviation of the factor aggregated by all names
+        factor_loading_mat: Asset-by-group loading matrix. Sector loadings are normally binary
+            membership indicators; style loadings are normally continuous factor exposures.
+        factor_max_deviation: Maximum absolute active exposure for each loading column. Sector
+            limits are normally in portfolio-weight units; style-limit units follow the scaling
+            of the supplied style loadings.
     """
     factor_loading_mat: pd.DataFrame
     factor_max_deviation: pd.Series
@@ -963,6 +967,10 @@ class Constraints:
     tracking error, turnover, group constraints, and target return/volatility.
     Supports multiple optimization backends (CVXPY, SciPy, PyRB).
 
+    Sector and style deviations share ``BenchmarkDeviationConstraints`` and both impose
+    ``|L_g.T @ (w - benchmark_weights)| <= d_g``. Sector loadings are normally binary
+    membership indicators, while style loadings are normally continuous factor exposures.
+
     Immutable: all mutation methods return new Constraints instances.
 
     Attributes:
@@ -979,15 +987,17 @@ class Constraints:
         target_return: Minimum target portfolio return.
         asset_returns: Expected returns for each asset.
         max_target_portfolio_vol_an: Maximum annualized portfolio volatility.
-        min_target_portfolio_vol_an: Minimum annualized portfolio volatility.
         constraint_enforcement_type: How tracking error/turnover constraints are enforced.
         tre_utility_weight: Penalty weight for tracking error in utility optimization.
         turnover_utility_weight: Penalty weight for turnover in utility optimization.
         group_lower_upper_constraints: Group-level allocation constraints.
         group_tracking_error_constraint: Group-level tracking error constraints.
         group_turnover_constraint: Group-level turnover constraints.
-        sector_deviation_constraints: Sector deviation constraints relative to benchmark.
-        style_deviation_constraints: Style deviation constraints relative to benchmark.
+        sector_deviation_constraints: Benchmark-relative limits using normally binary sector
+            membership loadings; deviations are active sector weights.
+        style_deviation_constraints: Benchmark-relative limits using normally continuous style
+            loadings; deviation units follow the scaling of those loadings.
+        benchmark_beta_constraint: Benchmark-relative beta range constraint.
     """
     is_long_only: bool = True
     min_weights: pd.Series = None
@@ -1002,7 +1012,6 @@ class Constraints:
     target_return: float = None
     asset_returns: pd.Series = None
     max_target_portfolio_vol_an: float = None
-    min_target_portfolio_vol_an: float = None
     constraint_enforcement_type: ConstraintEnforcementType = ConstraintEnforcementType.FORCED_CONSTRAINTS
     tre_utility_weight: Optional[float] = 1.0
     turnover_utility_weight: Optional[float] = 0.40
@@ -1541,11 +1550,6 @@ class Constraints:
                         "covar must be given for portfolio volatility constraint")
                 constraints += [
                     cvx.quad_form(w, covar) <= self.max_target_portfolio_vol_an ** 2]
-        if self.min_target_portfolio_vol_an is not None:
-            if covar is None:
-                raise ValueError("covar must be given for portfolio volatility constraint")
-            constraints += [cvx.quad_form(w, covar) >= self.min_target_portfolio_vol_an ** 2]
-
         if self.group_turnover_constraint is not None:
             constraints += self.group_turnover_constraint.set_group_turnover_constraints(
                 w=w, weights_0=self.weights_0)

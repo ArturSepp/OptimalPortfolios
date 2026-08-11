@@ -1,33 +1,63 @@
 """
-Risk labelling for factor-model covariance estimates.
+Persistent risk-cluster lineage labelling for factor-model covariance estimates.
 
 optimalportfolios.covar_estimation.risk_labelling
 
-Consumes a fully estimated ``RollingFactorCovarData`` and produces persistent,
-economically meaningful *risk labels*: it tracks the raw per-date statistical
-clusters through time into stable derived clusters, classifies each by its MATF
-factor profile and risk evolution, and assigns factor/vol-based labels. Pure
-post-processing of the estimated object — no covariance is fitted here.
+Statistical clusters re-estimated at each rebalancing date carry no identity: the same
+economic group returns as ``ME:3`` one month and ``ME:7`` the next, so raw per-date cluster
+ids cannot carry names, history, or stable reporting labels. This module consumes a fully
+estimated ``RollingFactorCovarData`` and builds persistent lineages on top of it:
 
-Reads only ``x_covar`` (Sigma_F), ``y_betas``, ``y_variances`` (``residual_var``),
-and ``clusters`` off each snapshot. Offline / full-panel: look-ahead is acceptable
-because the output is a label diagnostic, not a tradeable signal.
+1. **Fingerprint** every raw cluster at every date: members, member-weighted factor beta
+   ``beta_C = w' B``, the variance split ``beta_C' Sigma_F beta_C`` (factor) vs
+   ``sum w_i^2 sigma_i^2`` (idiosyncratic), and the dominant factor by variance
+   contribution ``beta_C o (Sigma_F beta_C)``.
+2. **Link** clusters across dates when membership overlap and beta proximity qualify. The
+   gate: overlap >= ``hi`` continues outright; ``lo`` <= overlap < ``hi`` links only if the
+   beta spread vol ``sqrt((beta_b - beta_a)' Sigma_F_bar (beta_b - beta_a))`` is within
+   ``spread_vol_cut``; overlap < ``lo`` never links, however close the betas. Units follow
+   the supplied ``Sigma_F`` — annualised fractional vol under the stack convention.
+3. **Assign** one derived id per lineage as a max-weight vertex-disjoint path cover of the
+   link graph, tag birth / continue / bridge / split / merge / death events, classify each
+   track (dominant factor, equity-beta bucket, persistence, vol regime), and emit
+   date-by-asset label panels for reporting.
+
+Reads only ``x_covar`` (Sigma_F), ``y_betas``, ``y_variances`` (``residual_var``) and
+``clusters`` off each snapshot. Pure post-processing — no covariance is fitted here.
 
 Matchers
 --------
-* ``method='mcf'`` (default): global min-cost-flow max-weight vertex-disjoint path
-  cover over consecutive + bridge edges (needs ``networkx``). Recommended for
-  reporting/labelling — drift-free and consolidates persistent clusters.
-* ``method='hungarian'``: per-transition assignment; fast, zero extra dependency,
-  but fragments persistent clusters under realistic churn (greedy drift).
+* ``method='mcf'`` (default): global max-weight vertex-disjoint path cover via min-cost
+  flow over consecutive + bridge edges (needs ``networkx``; the ``[clustering]`` extra).
+  Solves the panel jointly, so a persistent cluster's identity is routed *around* a
+  transient merge/split instead of handed off locally. Recommended for labelling.
+* ``method='hungarian'``: per-transition assignment; fast, zero extra dependency, but
+  fragments persistent clusters under realistic churn (a track absorbed in a transient
+  merge is consumed and cannot be revived by the bridge).
 
-Public API: ``analyze_risk_clusters(covar_data, ...) -> RiskClusterReport`` and the
-convenience wrapper ``run_risk_label_report(...) -> (figures, tables)``.
+The construction is standard data association, applied to risk clusters: snapshot-partition
+event tracking in the community-evolution family (Greene et al. 2010; MONIC, Spiliopoulou
+et al. 2006), with the global matcher following the min-cost-flow formulation of multi-object
+tracking (Zhang, Li & Nevatia, CVPR 2008) and the dormant-track bridge playing the
+gap-closing role of the LAP tracking framework (Jaqaman et al., Nature Methods 2008). The
+domain-specific content is the fingerprint and the Sigma_F-metric beta affinity.
 
-Beta distance is the spread volatility
-``sqrt((β_b - β_a)' Σ_F (β_b - β_a))`` in the factor covariance's supplied units; cluster
-memberships are categorical and no resampling or annualisation is performed. Boundary: this
-offline diagnostic neither estimates covariance nor produces a tradeable backtest signal.
+Matcher defaults (``overlap_band=(0.15, 0.60)``, ``spread_vol_cut=0.015``,
+``bridge_window=6``, ``bridge_decay=0.5``) are grounded in a 2026-08-11 41-config mac_apac
+sweep. Headline sweep findings:
+total per-asset track churn is set by raw cluster membership churn upstream and is flat in
+the matcher parameters; ``bridge_window`` is the consolidation knob; ``bridge_decay`` above
+0.5 lets bridge edges outcompete consecutive continuations and is harmful; the overlap
+coefficient beats Jaccard under asymmetric splits.
+
+Entry points: ``analyze_risk_clusters(covar_data, ...) -> RiskClusterReport`` and the
+convenience wrapper ``run_risk_label_report(...) -> (figures, tables)``. Neither is
+exported in ``__init__.py`` yet; consumers import this module path directly.
+
+Boundary: offline / full-panel — the matching is joint over all dates and track labels use
+life averages, so the output is a look-ahead label diagnostic for reporting and governance,
+never a point-in-time tradeable signal. This module neither estimates covariance nor
+produces backtest inputs.
 """
 from __future__ import annotations
 
@@ -124,7 +154,7 @@ def _snapshot_fingerprints(cd: CurrentFactorCovarData,
         idio_var = float(np.sum((w ** 2) * resid_var.loc[members].to_numpy()))
         total_var = factor_var + idio_var
         contrib = beta_c * (sigma @ beta_c)
-        dominant = factors[int(np.argmax(contrib))] if np.any(contrib > 0) else factors[0]
+        dominant = factors[int(np.argmax(contrib))] if np.any(contrib > 0) else 'Idio'
         out[label] = _Fingerprint(
             members=tuple(members), beta=beta_c, factor_var=factor_var,
             idio_var=idio_var, total_var=total_var,
@@ -166,7 +196,8 @@ def _qualifies(fa: _Fingerprint, fb: _Fingerprint, common: set, sigma_bar: np.nd
     # gated
     if ov >= hi:
         return (True, ov + s_beta)                   # continue / heir
-    if spread_vol <= spread_vol_cut:                 # mid or low overlap -> beta arbitrates
+    # Mid overlap lets beta arbitrate; overlap below the lower band never links.
+    if ov >= lo and spread_vol <= spread_vol_cut:
         return (True, w_overlap * ov + (1.0 - w_overlap) * s_beta)
     return (False, 0.0)
 
@@ -262,20 +293,20 @@ def _match_panel(snapshots: Dict[pd.Timestamp, Dict[Any, _Fingerprint]],
                     lineage.append(dict(parent_id=prev_ids[best], child_id=prev_ids[best],
                                         date=date, event='continue'))
                 continue
-            # bridge: try to revive a dormant track within the window
+            # bridge: revive the best-matching dormant track within the window
             revived = None
+            best_wt = -np.inf
             for did, (ldate, lfp) in dormant.items():
                 if (date - ldate).days <= 0:
                     continue
                 if (dates.index(date) - dates.index(ldate)) > bridge_window + 1:
                     continue
-                ok, _ = _qualifies(lfp, fps[b], set(lfp.members) | set(fps[b].members),
-                                   sigma_bar, overlap_metric=overlap_metric, combine=combine,
-                                   overlap_band=overlap_band, spread_vol_cut=spread_vol_cut,
-                                   w_overlap=w_overlap)
-                if ok:
-                    revived = did
-                    break
+                ok, wt = _qualifies(lfp, fps[b], set(lfp.members) | set(fps[b].members),
+                                    sigma_bar, overlap_metric=overlap_metric, combine=combine,
+                                    overlap_band=overlap_band, spread_vol_cut=spread_vol_cut,
+                                    w_overlap=w_overlap)
+                if ok and wt > best_wt:
+                    revived, best_wt = did, wt
             if revived is not None:
                 next_ids[b] = revived
                 dormant.pop(revived, None)
@@ -567,7 +598,14 @@ class RiskClusterReport:
                      else (f"Diversified {a.mode().iloc[0]}" if len(a) else 'Mixed'))
             modal_ac = a.mode().iloc[0] if len(a) else None
             if modal_ac == equity_factor:
-                eq = float(tp.betas.get(equity_factor, pd.Series(dtype=float)).mean() or 0.0)
+                eq_series = tp.betas.get(equity_factor)
+                eq = (
+                    float(eq_series.mean())
+                    if eq_series is not None and len(eq_series) > 0
+                    else 0.0
+                )
+                if not np.isfinite(eq):
+                    eq = 0.0
                 char = ('high-\u03b2' if eq >= 0.70 else 'defensive' if eq <= 0.30 else 'core')
             else:
                 char = str(self.classification.loc[did, 'modal_dom'])
@@ -594,7 +632,8 @@ class RiskClusterReport:
             order = np.argsort(contrib)[::-1]
             shares = contrib / contrib.sum()
             primary = factors[order[0]]
-            secondary = factors[order[1]] if shares[order[1]] >= secondary_share else None
+            secondary = (factors[order[1]] if len(order) > 1 and shares[order[1]] >= secondary_share
+                         else None)
             if primary == 'Equity':
                 be = b[factors.index('Equity')]
                 desc = 'high-\u03b2' if be >= hi_beta else 'defensive' if be <= lo_beta else 'core'
@@ -691,9 +730,9 @@ def analyze_risk_clusters(covar_data: RollingFactorCovarData, *,
                              overlap_metric: str = 'overlap',
                              beta_metric: str = 'mahalanobis_sf',
                              combine: str = 'gated',
-                             overlap_band: Tuple[float, float] = (0.20, 0.60),
-                             spread_vol_cut: float = 0.025,
-                             bridge_window: int = 1,
+                             overlap_band: Tuple[float, float] = (0.15, 0.60),
+                             spread_vol_cut: float = 0.015,
+                             bridge_window: int = 6,
                              bridge_decay: float = 0.5,
                              w_overlap: float = 0.6,
                              weighting: str = 'equal',
@@ -712,10 +751,14 @@ def analyze_risk_clusters(covar_data: RollingFactorCovarData, *,
         beta_metric: Recorded in ``params`` for provenance; the beta distance is
             always the spread vol under the average factor covariance.
         combine: ``'gated'`` arbitration of overlap and beta, or ``'blend'``.
-        overlap_band: ``(low, high)`` overlap thresholds used by the gate.
-        spread_vol_cut: Beta-spread-vol threshold for gated low/mid-overlap links
-            and for the blended beta score; high-overlap links can exceed it.
+        overlap_band: ``(low, high)`` gate thresholds. Overlap >= ``high``
+            links outright; ``low`` <= overlap < ``high`` links only within
+            ``spread_vol_cut``; overlap < ``low`` never links.
+        spread_vol_cut: Beta-spread-vol threshold (annualised fractional vol)
+            for gated mid-overlap links and the blended beta score;
+            high-overlap links can exceed it.
         bridge_window: How many dates a dormant track may be revived across.
+            Defaults follow the 2026-08-11 mac_apac sweep (see module header).
         bridge_decay: Per-date weight decay on a bridged link (``'mcf'`` only).
         w_overlap: Weight on overlap when overlap and beta are blended.
         weighting: ``'equal'`` or ``'inv_vol'`` member weighting in a fingerprint.
@@ -751,7 +794,8 @@ def analyze_risk_clusters(covar_data: RollingFactorCovarData, *,
     classification, transitions = _classify(tracks, x_covars, len(dates), cfg)
     params = dict(overlap_metric=overlap_metric, beta_metric=beta_metric, combine=combine,
                   overlap_band=overlap_band, spread_vol_cut=spread_vol_cut,
-                  bridge_window=bridge_window, weighting=weighting, method=method)
+                  bridge_window=bridge_window, bridge_decay=bridge_decay,
+                  weighting=weighting, method=method)
     avg_sigma = pd.DataFrame(np.mean([x_covars[d] for d in dates], axis=0),
                              index=factors, columns=factors)
     return RiskClusterReport(relabel=relabel, tracks=tracks, classification=classification,

@@ -139,16 +139,19 @@ optimalportfolios/
 │   ├── covar_estimator.py         # CovarEstimator ABC
 │   ├── ewma_covar_estimator.py    # EwmaCovarEstimator
 │   ├── factor_covar_estimator.py  # FactorCovarEstimator (uses factorlasso)
+│   ├── risk_model_adapter.py      # Canonical qis.RiskModel adapter
 │   ├── risk_labelling.py          # Cluster and factor risk labelling
 │   └── covar_reporting.py         # Rolling covariance diagnostics
 ├── optimization/                  # Portfolio optimisation
 │   ├── constraints.py             # Constraints, GroupLowerUpperConstraints
 │   ├── config.py                  # OptimiserConfig (incl. use_drifted_weights_0)
-│   ├── solver_diagnostics.py      # Post-solve validation, conditioning warnings
+│   ├── covar_factorization.py     # Stabilised covariance and square-root factor
+│   ├── solver_diagnostics.py      # Input contracts, outcomes, residuals and run summaries
 │   ├── portfolio_result.py        # PortfolioOptimisationResult
 │   ├── wrapper_rolling_portfolios.py  # compute_rolling_optimal_weights()
 │   ├── general/                   # Objective-driven solvers
 │   │   ├── quadratic.py           # min variance, max quadratic utility
+│   │   ├── minimum_tracking_error.py  # closest feasible portfolio to benchmark
 │   │   ├── max_sharpe.py          # maximum Sharpe ratio
 │   │   ├── max_diversification.py # maximum diversification ratio
 │   │   ├── carra_mixture.py       # CARA utility under Gaussian mixture
@@ -160,7 +163,9 @@ optimalportfolios/
 │   └── taa/                       # Tactical solvers with alpha and TE constraints
 │       ├── maximise_alpha_over_tre.py
 │       └── maximise_alpha_with_target_yield.py
-├── universe/                      # Universe data containers and transforms
+├── universe/                      # Validated universe data containers and transforms
+│   ├── universe_data.py           # UniverseData: prices, metadata and group loadings
+│   └── universe_transforms.py     # e.g. copy with unsmoothed prices
 ├── utils/                         # Auxiliary analytics
 │   ├── filter_nans.py             # NaN-aware covariance/vector filtering
 │   ├── portfolio_funcs.py         # Risk contributions, diversification ratio
@@ -168,8 +173,9 @@ optimalportfolios/
 │   └── gaussian_mixture.py        # Gaussian mixture fitting (numpy/scipy EM)
 ├── reports/                       # Performance reporting
 │   ├── marginal_backtest.py       # Marginal asset contribution analysis
-│   └── portfolio_result_plots.py  # Optimisation result plots
-└── examples/                      # Worked examples — see examples/README.md
+│   ├── portfolio_result_plots.py  # Optimisation result plots
+│   └── portfolio_result_pybloqs.py  # Optional HTML/PDF result reports
+└── examples/                      # Worked examples — see docs/examples_readme.md
     ├── data/                      # Shared universe fixtures
     ├── solvers/                   # One demo per single-objective solver
     ├── backtests/                 # End-to-end rolling workflows
@@ -181,6 +187,24 @@ optimalportfolios/
 #       Sign-constrained LASSO/Group LASSO/HCGL solver (domain-agnostic)
 #       https://github.com/ArturSepp/factorlasso
 ```
+
+### Analytics at a glance
+
+| Area | Current user-facing analytics |
+| --- | --- |
+| Alpha construction | Momentum, low beta, risk-adjusted carry, managers alpha, residual momentum, residual reversal and rolling EWMA means; fixed-group and time-varying cluster scoring are supported. |
+| Alpha evaluation | Rank-portfolio profiling, cross-backtests, `AlphasData`, IC/IR panels, component diagnostics and comparison tables. |
+| Covariance and dependence | Current/rolling EWMA and HCGL sparse factor covariance; Pearson, Spearman and Gerber dependence choices, configurable correlation-distance transforms through `factorlasso`, and current/rolling covariance diagnostic reports. |
+| Risk-cluster analytics | Persistent cluster lineage, births/deaths/splits/merges and report tables/figures through `analyze_risk_clusters()` and `run_risk_label_report()`. |
+| General optimisation | Minimum variance, quadratic utility, maximum Sharpe, maximum diversification, constrained risk budgeting, CARA Gaussian-mixture utility and minimum tracking error. |
+| SAA and TAA optimisation | Minimum variance at target return, maximum return at target volatility, alpha over tracking error and alpha at target portfolio return. |
+| Constraints and implementation | Instrument/group bounds, exposure, turnover, tracking error, target return/volatility, benchmark-relative sector/style/beta limits, frozen holdings and current-to-model eligibility corridors. |
+| Solver controls and diagnostics | One covariance factorization per compatible CVXPY solve, input-contract validation, structured `OptimizationOutcome`/`ConstraintResidual` output, infeasibility diagnosis and run-level warning summaries. |
+| Portfolio and risk results | `PortfolioOptimisationResult` provides weights/trades, volatility, turnover, tracking error, factor/residual risk, group attribution, factor exposures, efficient-frontier data and report tables using `qis.RiskModel`. |
+| Universe, backtest and reporting | Validated `UniverseData`, metadata/group-loadings persistence and transforms, drift-aware rolling weights, transaction-cost backtests through `qis`, efficient-frontier plots, marginal portfolio backtests and optional PyBloqs HTML/PDF reports. |
+
+This table groups the analytics by workflow. The exact package-root import inventory and callable
+signatures are maintained in the [API reference](docs/api.rst).
 
 **Architecture: factorlasso vs optimalportfolios**
 
@@ -217,10 +241,12 @@ raw market data and the `factorlasso` solver:
 
 ## Alpha signals module
 
-**New in v4.1.1.** The `alphas` module provides standalone alpha signal
-computation functions with a consistent interface. Each function handles
-single-frequency and mixed-frequency universes, supports within-group
-cross-sectional scoring, and returns both a dimensionless score and the
+Introduced in v4.1.1 and expanded through the 6.x releases, the `alphas` module
+provides standalone signal constructors with a consistent interface. The current
+set covers momentum, low beta, carry, managers alpha, residual momentum and
+residual reversal, plus rolling EWMA expected returns. Signal constructors handle
+single- and mixed-frequency universes, support fixed-group or time-varying-cluster
+cross-sectional scoring, and normally return both a dimensionless score and the
 raw signal for diagnostics.
 
 ### Naming convention
@@ -266,6 +292,23 @@ score, raw_alpha = compute_managers_alpha(
     returns_freq='ME', alpha_span=12)
 ```
 
+**Risk-adjusted Carry** (`optimalportfolios.alphas.signals.compute_ra_carry_alpha`) — instrument
+yield divided by trailing EWMA volatility, then cross-sectionally scored. The root-level,
+backward-compatible `compute_ra_carry_alphas` entry point returns the global score only.
+
+**Residual Momentum** (`compute_residual_momentum_alpha`) — EWMA momentum applied to returns after
+removing lagged benchmark-beta exposure.
+
+**Residual Reversal** (`compute_residual_reversal_alpha`) — the negated short-horizon residual
+signal, so recent benchmark-adjusted losers receive positive scores.
+
+**Rolling EWMA Means** (`estimate_rolling_ewma_means`) — point-in-time expected-return panels for
+mean-dependent rolling optimisers.
+
+Momentum, low-beta, carry, residual-momentum and residual-reversal constructors also provide
+`*_cluster_alpha` variants that score within time-varying statistical clusters rather than fixed
+groups. `align_rolling_clusters()` removes arbitrary cluster-label renumbering through time.
+
 ### Mixed-frequency support
 
 All signal functions accept `returns_freq` as a string (uniform) or a `pd.Series` (per-asset frequency). When mixed, the function groups by frequency, computes per group, and merges.
@@ -273,8 +316,13 @@ All signal functions accept `returns_freq` as a string (uniform) or a `pd.Series
 ```python
 # equities monthly, alternatives quarterly
 returns_freq = pd.Series({'SPY': 'ME', 'EZU': 'ME', 'HF_Macro': 'QE', 'PE': 'QE'})
-score, raw = compute_momentum_alpha(prices, returns_freq=returns_freq, ...)
+long_span = {'ME': 12, 'QE': 4}  # one calendar year at both cadences
+score, raw = compute_momentum_alpha(
+    prices=prices, returns_freq=returns_freq, long_span=long_span)
 ```
+
+Signal spans accept either one integer for every cadence or a mapping keyed by cadence. A missing
+mapping key raises instead of silently applying another frequency's horizon.
 
 ### AlphasData container
 
@@ -283,9 +331,14 @@ score, raw = compute_momentum_alpha(prices, returns_freq=returns_freq, ...)
 ```python
 from optimalportfolios.alphas import AlphasData
 
-data = AlphasData(alpha_scores=combined, momentum_score=mom, beta_score=beta, ...)
+data = AlphasData(alpha_scores=combined, momentum_score=mom, beta_score=beta)
 snapshot = data.get_alphas_snapshot(date=pd.Timestamp('2024-12-31'))
 ```
+
+The same layer includes rank-portfolio profiling (`profile_*`, `backtest_alpha_rank_portfolio`,
+`generate_alpha_profile_report`), standalone signal backtests, and IC/IR and risk-contribution
+diagnostics (`signal_diagnostics_panel`, `run_signal_diagnostics_per_component`,
+`compare_signal_diagnostics`).
 
 See the [alphas module README](optimalportfolios/docs/alphas_module_readme.md) for full documentation.
 
@@ -310,41 +363,48 @@ See the [alphas module README](optimalportfolios/docs/alphas_module_readme.md) f
 
 ## Installation
 
-install using
+Install from PyPI:
 
 ```
 pip install optimalportfolios
 ```
 
-upgrade using
+Upgrade with:
 
 ```
 pip install --upgrade optimalportfolios
 ```
 
-clone using
+Clone the repository with:
 
 ```
 git clone https://github.com/ArturSepp/OptimalPortfolios.git
 ```
 
-Core dependencies:
-python = ">=3.10",
-numpy = ">=2.0",
-scipy = ">=1.12.0",
-pandas = ">=2.2.0",
-matplotlib = ">=3.8.0",
-seaborn = ">=0.13.0",
-openpyxl = ">=3.1.0",
-PyYAML = ">=6.0",
-cvxpy = ">=1.3.0",
-quadprog = ">=0.1.11",
-qis = ">=5.0.5,<6",
-factorlasso = ">=0.8.0,<0.9"
+The core package supports Python >=3.10. Its current dependency floors are NumPy >=2.0,
+SciPy >=1.12, pandas >=2.2, Matplotlib >=3.8, seaborn >=0.13, openpyxl >=3.1,
+PyYAML >=6.0, CVXPY >=1.3, quadprog >=0.1.11, `qis` >=5.7 and
+`factorlasso` >=0.10.1. `pyproject.toml` is the source of truth.
 
-Optional dependencies:
-yfinance ">=0.2.40" (for getting test price data),
-pybloqs ">=1.2.13" (for producing html and pdf factsheets)
+Optional extras keep network, reporting, clustering and notebook integrations out of the core
+installation:
+
+| Extra | Adds |
+| --- | --- |
+| `data` | `yfinance` for free-data example loaders. |
+| `reports` | `pybloqs` for HTML/PDF report backends. |
+| `clustering` | NetworkX for the default minimum-cost-flow risk-cluster matcher; the Hungarian matcher needs only the core install. |
+| `jupyter` | Jupyter, Notebook and JupyterLab. |
+| `docs` | Sphinx, Furo and MyST for documentation builds. |
+| `dev` | Pytest, coverage, Ruff and Interrogate, plus `data` and `clustering`. |
+| `all` | All runtime integrations: `data`, `reports`, `jupyter` and `clustering`. |
+
+For example:
+
+```
+pip install "optimalportfolios[clustering]"
+pip install "optimalportfolios[all]"
+```
 
 ## Portfolio optimisers
 
@@ -382,16 +442,26 @@ portfolio optimisation. The recommended workflow is to estimate covariance
 matrices first, then pass them as `covar_dict` to any solver:
 
 ```python
-from optimalportfolios import EwmaCovarEstimator, FactorCovarEstimator
+from optimalportfolios import (
+    EwmaCovarEstimator,
+    FactorCovarEstimator,
+    rolling_maximise_alpha_over_tre,
+    rolling_maximise_diversification,
+    rolling_risk_budgeting,
+)
 
 # estimate once
 estimator = EwmaCovarEstimator(returns_freq='W-WED', span=52, rebalancing_freq='QE')
 covar_dict = estimator.fit_rolling_covars(prices=prices, time_period=time_period)
 
 # reuse across multiple solvers
-weights_rb = rolling_risk_budgeting(prices=prices, covar_dict=covar_dict, ...)
-weights_md = rolling_maximise_diversification(prices=prices, covar_dict=covar_dict, ...)
-weights_te = rolling_maximise_alpha_over_tre(prices=prices, covar_dict=covar_dict, ...)
+weights_rb = rolling_risk_budgeting(
+    prices=prices, constraints=constraints, risk_budget=risk_budget, covar_dict=covar_dict)
+weights_md = rolling_maximise_diversification(
+    prices=prices, constraints=constraints, covar_dict=covar_dict)
+weights_te = rolling_maximise_alpha_over_tre(
+    prices=prices, alphas=alphas, constraints=taa_constraints,
+    benchmark_weights=benchmark_weights, covar_dict=covar_dict)
 ```
 
 This separation provides three benefits: (1) the same covariance matrices can be
@@ -411,7 +481,7 @@ using roll forward analysis.
 
 ### 2. Example of implementation for Maximum Diversification Solver
 
-Using example of `optimization.solvers.max_diversification.py`
+Using `optimization/general/max_diversification.py` as an example:
 
 1. Scipy solver `opt_maximise_diversification()` which takes "clean" inputs of the
    covariance matrix of type `np.ndarray` without NaNs and
@@ -419,7 +489,8 @@ Using example of `optimization.solvers.max_diversification.py`
 
 The lowest level of each optimisation method is `opt_...` or `cvx_...` function taking clean inputs and producing the optimal weights.
 
-The logic of this layer is to implement pure quant logic for the optimiser with cvx solver.
+The logic of this layer is to implement the numerical optimiser with its supported CVXPY or
+SciPy backend.
 
 2. Wrapper function `wrapper_maximise_diversification()` which takes inputs
    covariance matrix of type `pd.DataFrame`
@@ -445,7 +516,9 @@ The logic of this layer is to facilitate the backtest of portfolio optimisation 
 time series of portfolio weights using a Markovian setup. These weights are applied for the backtest
 of the optimal portfolio and the underlying strategy.
 
-Each module in `optimization.solvers` implements specific optimisers and estimators for their inputs.
+Solver modules live in `optimization/general`, `optimization/saa` or `optimization/taa`, according
+to whether their inputs are objective-driven, strategic return/risk targets or tactical alpha and
+benchmark inputs.
 
 ### 3. Constraints
 
@@ -455,23 +528,41 @@ optimisation constraints in solver-independent way.
 The following inputs for various constraints are implemented.
 
 ```python
-@dataclass
+@dataclass(frozen=True)
 class Constraints:
-    is_long_only: bool = True  # for positive allocation weights
-    min_weights: pd.Series = None  # instrument min weights
-    max_weights: pd.Series = None  # instrument max weights
-    max_exposure: float = 1.0  # for long short portfolios: for long_portfolios = 1
-    min_exposure: float = 1.0  # for long short portfolios: for long_portfolios = 1
-    benchmark_weights: pd.Series = None  # for minimisation of tracking error
-    tracking_err_vol_constraint: float = None  # annualised sqrt tracking error
-    weights_0: pd.Series = None  # for turnover constraints
-    turnover_constraint: float = None  # for turnover constraints
-    target_return: float = None  # for optimisation with target return
-    asset_returns: pd.Series = None  # for optimisation with target return
-    max_target_portfolio_vol_an: float = None  # for optimisation with maximum portfolio volatility target
-    min_target_portfolio_vol_an: float = None  # for optimisation with maximum portfolio volatility target
-    group_lower_upper_constraints: GroupLowerUpperConstraints = None  # for group allocations constraints
+    is_long_only: bool = True
+    min_weights: pd.Series = None
+    max_weights: pd.Series = None
+    max_exposure: float = 1.0
+    min_exposure: float = 1.0
+    benchmark_weights: pd.Series = None
+    tracking_err_vol_constraint: float = None
+    weights_0: Optional[pd.Series] = None
+    turnover_constraint: Optional[float] = None
+    turnover_costs: pd.Series = None
+    target_return: float = None
+    asset_returns: pd.Series = None
+    max_target_portfolio_vol_an: float = None
+    constraint_enforcement_type: ConstraintEnforcementType = (
+        ConstraintEnforcementType.FORCED_CONSTRAINTS
+    )
+    tre_utility_weight: Optional[float] = 1.0
+    turnover_utility_weight: Optional[float] = 0.40
+    group_lower_upper_constraints: Optional[GroupLowerUpperConstraints] = None
+    group_tracking_error_constraint: Optional[GroupTrackingErrorConstraint] = None
+    group_turnover_constraint: Optional[GroupTurnoverConstraint] = None
+    # Sector: |L_g.T @ (w - b)| <= d_g; L is normally binary membership.
+    sector_deviation_constraints: Optional[BenchmarkDeviationConstraints] = None
+    # Style: |L_g.T @ (w - b)| <= d_g; L is normally a continuous exposure.
+    style_deviation_constraints: Optional[BenchmarkDeviationConstraints] = None
+    benchmark_beta_constraint: Optional[BenchmarkBetaConstraint] = None
 ```
+
+Both deviation fields use `BenchmarkDeviationConstraints`. For every loading column `g`, they
+enforce `|L_g.T @ (w - b)| <= d_g`, where `w - b` is the active portfolio. Sector loadings are
+normally binary membership indicators, so `d_g` is an active portfolio-weight limit for a sector.
+Style loadings are normally continuous factor exposures, so the units of `d_g` follow the scaling
+of the supplied style scores. Sector and style constraints can be applied simultaneously.
 
 Dataclass `GroupLowerUpperConstraints` implements asset class loading and min and max allocations
 
@@ -489,14 +580,14 @@ class GroupLowerUpperConstraints:
 Constraints are updated on the wrapper level to include the valid tickers
 
 ```python
-    def update_with_valid_tickers(self,  valid_tickers: List[str]) -> Constraints:
+aligned_constraints = constraints.update_with_valid_tickers(valid_tickers=valid_tickers)
 ```
 
 On the solver layer, the constants for the solvers are requested as follows.
 
-For Scipy: `set_scipy_constraints(self, covar: np.ndarray = None) -> List`
+For SciPy: `set_scipy_constraints(self, covar: np.ndarray) -> Tuple[List, np.ndarray]`
 
-For CVXPY: `set_cvx_constraints(self, w: cvx.Variable, covar: np.ndarray = None) -> List`
+For CVXPY: `set_cvx_all_constraints(self, w: cvx.Variable, covar=...) -> List`
 
 **Frozen-position relaxation (new in v5.3.1).** When `rebalancing_indicators`
 freeze illiquid positions for a given rebalance date, `update_with_valid_tickers`
@@ -511,100 +602,90 @@ bound, and the relaxed bound.
 
 ### 4. Wrapper for implemented rolling portfolios
 
-Module `optimisation.wrapper_rolling_portfolios.py` wraps implementation of
-of the following solvers enumerated in `config.py`
+Module `optimization/wrapper_rolling_portfolios.py` dispatches the objectives enumerated in
+`config.py`:
 
 Using the wrapper function allows for cross-sectional analysis of different
 backtest methods and for sensitivity analysis to parameters of
 estimation and solver methods.
 
-```python
-class PortfolioObjective(Enum):
-    """
-    implemented portfolios in rolling_engine
-    """
-    # risk-based:
-    MAX_DIVERSIFICATION = 1  # maximum diversification measure
-    EQUAL_RISK_CONTRIBUTION = 2  # implementation in risk_parity
-    MIN_VARIANCE = 3  # min w^t @ covar @ w
-    # return-risk based
-    QUADRATIC_UTILITY = 4  # max means^t*w- 0.5*gamma*w^t*covar*w
-    MAXIMUM_SHARPE_RATIO = 5  # max means^t*w / sqrt(*w^t*covar*w)
-    # return-skeweness based
-    MAX_CARA_MIXTURE = 6  # carra for mixture distributions
-```
+| `PortfolioObjective` | Dispatcher route | Objective/backend |
+| --- | --- | --- |
+| `MAX_DIVERSIFICATION` | `rolling_maximise_diversification` | Maximum diversification ratio; SciPy SLSQP. |
+| `EQUAL_RISK_CONTRIBUTION` | `rolling_risk_budgeting` | Equal or specified risk budgets; internal CCD/ADMM. |
+| `MIN_VARIANCE` | `rolling_quadratic_optimisation` | Minimum variance; CVXPY QP. |
+| `QUADRATIC_UTILITY` | `rolling_quadratic_optimisation` | Expected return minus quadratic risk penalty; CVXPY QP. |
+| `MAXIMUM_SHARPE_RATIO` | `rolling_maximize_portfolio_sharpe` | Maximum Sharpe via Charnes-Cooper; CVXPY SOCP. |
+| `MAX_CARA_MIXTURE` | `rolling_maximize_cara_mixture` | Expected CARA utility under a Gaussian mixture; SciPy SLSQP. |
+
+Additional rolling analytics have dedicated entry points because they require benchmark, alpha,
+target-return or target-volatility inputs not represented by `PortfolioObjective`:
+
+| Solver family | Rolling entry point |
+| --- | --- |
+| Minimum tracking error | `rolling_minimise_tracking_error` |
+| Minimum variance at target return | `rolling_min_variance_target_return` |
+| Maximum return at target volatility | `rolling_max_return_target_vol` |
+| Maximum alpha over tracking error | `rolling_maximise_alpha_over_tre` |
+| Maximum alpha at target portfolio return | `rolling_maximise_alpha_with_target_return` |
+
+`OptimiserConfig` centralises the current production controls: CVXPY solver selection,
+verbosity, drift-aware prior weights, pre-solve input validation, failed-solve infeasibility
+diagnosis, a maximum frozen-position constraint relaxation and covariance factorization. The
+validation, diagnosis, drift and factorization controls are enabled by default; SciPy and the
+dedicated risk-budgeting backend ignore CVXPY-only settings.
 
 See examples in the [examples folder](#examples) and the
-[`examples/README.md`](optimalportfolios/docs/examples_readme.md) for the full
+[examples guide](optimalportfolios/docs/examples_readme.md) for the full
 demo index.
 
 ### 5. Adding an optimiser
 
-1. Add analytics for computing rolling weights using a new estimator in
-   subpackage `optimization.solvers`. Any third-party packages can be used
+1. Add the mathematical, wrapper and rolling entry points in the appropriate
+   `optimization/general`, `optimization/saa` or `optimization/taa` module, using the existing
+   CVXPY, SciPy or internal risk-budgeting backend.
 2. For cross-sectional analysis, add new optimiser type
    to `config.py` and link implemented
    optimiser in wrapper function `compute_rolling_optimal_weights()` in
-   `optimisation.wrapper_rolling_portfolios.py`
+   `optimization/wrapper_rolling_portfolios.py`.
 
 ### 6. Default parameters
 
-Key parameters include the specification of the estimation sample.
+The covariance estimator and the optimisation dispatcher expose similarly named parameters, but
+they control different estimations.
 
-1. `returns_freq` defines the frequency of returns for covariance matrix estimation. This parameter affects all methods.
+1. On `EwmaCovarEstimator`, `returns_freq` defines the sampling frequency used for covariance
+   estimation. The default for daily prices is weekly Wednesday returns,
+   `returns_freq='W-WED'`. For inherently monthly series such as many hedge-fund indices, use
+   `returns_freq='ME'`.
 
-The default (assuming daily price data) is weekly Wednesday returns `returns_freq = 'W-WED'`.
+2. On `EwmaCovarEstimator`, `span` controls the EWMA decay in observations at `returns_freq`.
+   It uses the pandas/QIS span convention
 
-For price data with monthly observations
-(such as hedge funds), monthly returns should be used `returns_freq = 'ME'`.
+   ```text
+   lambda = 1 - 2 / (span + 1)
+   half_life = log(0.5) / log(lambda)
+   ```
 
-2. `span` defines the estimation span for EWMA covariance matrix. This parameter affects all methods which use
-   EWMA covariance matrix:
+   Thus `span` is not itself the half-life. With weekly returns, `span=52` gives
+   `lambda=51/53`, a half-life of about 18 weekly observations and, asymptotically, about 86.5%
+   of the EWMA weight in the most recent 52 observations. The estimator default is `span=52`;
+   for monthly returns, `span=12` or `span=24` are common choices.
 
-```
-PortfolioObjective in [MAX_DIVERSIFICATION, EQUAL_RISK_CONTRIBUTION, MIN_VARIANCE]
-```
+3. `EwmaCovarEstimator.fit_rolling_covars(..., rebalancing_freq=...)` defines when covariance
+   snapshots are extracted. The estimator's inherited default is quarterly,
+   `rebalancing_freq='QE'`. Any optimiser can consume the resulting `covar_dict`; its objective
+   does not change the covariance decay.
 
-and
+4. On `compute_rolling_optimal_weights`, `span` has a separate role: it is the EWMA span for
+   expected-return estimation used only by `QUADRATIC_UTILITY` and `MAXIMUM_SHARPE_RATIO`.
+   `returns_freq` supplies the corresponding return cadence.
 
-```
-PortfolioObjective in [QUADRATIC_UTILITY, MAXIMUM_SHARPE_RATIO]
-```
-
-The span is defined as the number of returns
-for the half-life of EWMA filter: `ewma_lambda = 1 - 2 / (span+1)`. `span=52` with weekly returns means that
-last 52 weekly returns (one year of data) contribute 50% of weight to estimated covariance matrix
-
-The default (assuming weekly returns) is 52: `span=52`.
-
-For monthly returns, I recommend to use `span=12` or `span=24`.
-
-3. `rebalancing_freq` defines the frequency of weights update. This parameter affects all methods.
-
-The default value is quarterly rebalancing `rebalancing_freq='QE'`.
-
-For the following methods
-
-```
-PortfolioObjective in [QUADRATIC_UTILITY, MAXIMUM_SHARPE_RATIO, MAX_CARA_MIXTURE]
-```
-
-Rebalancing frequency is also the rolling sample update frequency when mean returns and mixture distributions are estimated.
-
-4. `roll_window` defines the number of past returns applied for estimation of rolling mean returns and mixture distributions.
-
-This parameter affects the following optimisers
-
-```
-PortfolioObjective in [QUADRATIC_UTILITY, MAXIMUM_SHARPE_RATIO, MAX_CARA_MIXTURE]
-```
-
-and it is linked to `rebalancing_freq`.
-
-Default value is `roll_window=20` which means that data for past 20 (quarters) are used in the sample
-with `rebalancing_freq='QE'`
-
-For monthly rebalancing, I recommend to use `roll_window=60` which corresponds to using past 5 years of data
+5. On `compute_rolling_optimal_weights`, `rebalancing_freq` and `roll_window` apply only to
+   `MAX_CARA_MIXTURE`. `rebalancing_freq='QE'` determines the mixture-refit dates and
+   `roll_window=20` uses the latest 20 returns sampled at `returns_freq`; the window is counted in
+   return observations, not rebalancing periods. For example, five years of monthly returns use
+   `returns_freq='ME'` and `roll_window=60`.
 
 ### 7. Price time series data
 
@@ -689,8 +770,7 @@ examples/
 ├── backtests/             End-to-end rolling backtest workflows
 ├── comparisons/           A-vs-B sweeps (covar / optimiser / parameter / drift policy)
 ├── covar_estimation/      Covariance estimator demos
-├── alphas/                Alpha signal profiling demos (rank-based profiler)
-└── sp500_universe.py      S&P 500 universe loader (top level)
+└── alphas/                Alpha signal profiling demos (rank-based profiler)
 ```
 
 ### Recommended reading order for newcomers
@@ -826,9 +906,8 @@ See [`optimalportfolios/examples/comparisons/drift_policy.py`](optimalportfolios
 #### Optimal allocation to cryptocurrencies
 
 Computations and visualisations for the paper "Optimal Allocation to
-Cryptocurrencies in Diversified Portfolios" are implemented in
-`optimalportfolios.examples.crypto_allocation`. See the
-[README in that module](optimalportfolios/examples/crypto_allocation/README.md).
+Cryptocurrencies in Diversified Portfolios" are maintained as replication code under
+[`papers/crypto_allocation_risk_2023`](papers/crypto_allocation_risk_2023/README.md).
 
 Published reference: Sepp A. (2023), "Optimal Allocation to Cryptocurrencies in
 Diversified Portfolios", *Risk Magazine*, October 2023, 1-6. Available at
@@ -837,9 +916,8 @@ Diversified Portfolios", *Risk Magazine*, October 2023, 1-6. Available at
 #### Robust optimisation of strategic and tactical asset allocation
 
 Computations and visualisations for the paper "Robust Optimization of Strategic
-and Tactical Asset Allocation for Multi-Asset Portfolios" are implemented in
-`optimalportfolios.examples.robust_optimisation_saa_taa`. See the
-[README in that module](optimalportfolios/examples/robust_optimisation_saa_taa/README.md).
+and Tactical Asset Allocation for Multi-Asset Portfolios" are maintained under
+[`papers/robust_optimisation_jpm_2026`](papers/robust_optimisation_jpm_2026/README.md).
 
 The paper presents the ROSAA framework — a unified approach to strategic and
 tactical asset allocation for multi-asset portfolios. Key contributions: the
@@ -857,6 +935,21 @@ Portfolios", *The Journal of Portfolio Management*, 52(4), 86-120.
 [Paper link](https://eprints.pm-research.com/17511/143431/index.html).
 
 ## Updates
+
+#### August 2026, Versions 6.8.0–6.14.0 released
+
+The recent 6.x series added several production analytics that are now part of the current API:
+
+| Release | Analytics and behavior added |
+| --- | --- |
+| 6.14.0 | Calibrated the offline risk-lineage matcher for more consolidated labels, corrected five lineage edge cases, and removed the unusable non-convex minimum-volatility field; the supported maximum-volatility constraint is unchanged. |
+| 6.12.0–6.13.0 | Standardised factorization-capable wrappers on `(weights, outcome)`, fixed residual-signal dispatch, expanded offline/CI coverage and corrected the constrained risk-budgeting demo. |
+| 6.11.0 | Added the guarded `clustering` extra for minimum-cost-flow risk-cluster matching, with dependency-free Hungarian matching as an alternative. |
+| 6.10.0 | Added minimum-tracking-error rolling optimisation, `build_risk_model()`, current-to-model eligibility corridors and `qis.RiskModel`-backed result attribution. |
+| 6.9.0 | Added controlled covariance factorization, structured `OptimizationOutcome` and `ConstraintResidual` diagnostics, input validation and detailed infeasibility/conditioning reports. |
+| 6.8.0 | Added per-cadence signal spans such as `{'ME': 12, 'QE': 4}` for mixed-frequency universes. |
+
+See [CHANGELOG.md](CHANGELOG.md) for the complete compatibility notes and numerical contracts.
 
 #### May 2026, Version 5.3.1 released
 
@@ -909,7 +1002,7 @@ bound.
 
 **Examples folder reorganised.**
 
-The flat `examples/` layout has been replaced with five purpose-folders:
+The flat `examples/` layout has been replaced with six purpose-folders:
 
 | Old path | New path |
 | --- | --- |
@@ -923,9 +1016,9 @@ The flat `examples/` layout has been replaced with five purpose-folders:
 | `examples.risk_budgeting_pyrb_vs_scipy` | `examples.comparisons.risk_budgeting_ccd_vs_scipy` |
 | `examples.sp500_minvar` | `examples.comparisons.sp500_minvar_spans` |
 | `examples.long_short_optimisation` | `examples.solvers.long_short` |
-| `examples.sp500_universe` | unchanged (kept at top level) |
+| `examples.sp500_universe` | `examples.data.sp500_universe` |
 
-The new layout adds an [`examples/README.md`](optimalportfolios/docs/examples_readme.md)
+The new layout adds an [examples guide](optimalportfolios/docs/examples_readme.md)
 indexing every demo. Six wrong docstrings in `solvers/` corrected
 (carra_mixture, max_diversification, max_sharpe, min_variance, risk_budgeting,
 tracking_error — all were boilerplate copies of "example of minimization of
@@ -1110,7 +1203,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={OptimalPortfolios: Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python},
   year={2026},
-  version={6.13.0},
+  version={6.14.0},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

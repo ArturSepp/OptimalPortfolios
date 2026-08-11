@@ -840,11 +840,7 @@ def test_constraints_cvxpy_target_return():
 
 
 def test_constraints_cvxpy_vol_bounds():
-    """Max portfolio volatility constraint should be respected.
-
-    Note: min_target_portfolio_vol_an (quad_form >= const) is non-DCP and
-    cannot be solved by standard convex solvers. Only max vol is tested here.
-    """
+    """Max portfolio volatility constraint should be respected."""
     c = Constraints(
         is_long_only=True,
         max_target_portfolio_vol_an=0.06,

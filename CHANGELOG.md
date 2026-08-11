@@ -7,6 +7,31 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.14.0] - 2026-08-11
+
+**Risk-label behaviour change:** the default full-panel lineage matcher now enforces the lower
+overlap gate and uses the calibrated `(0.15, 0.60)` overlap band, `0.015` factor-spread-vol cut,
+six-date bridge window and `0.5` bridge decay. On the 284-month mac_apac sweep, derived lineages
+fell from 184 to 131 and distinct tracks per asset from 18.5 to 14.5; total track-id churn was
+effectively flat at 1.709 versus 1.713 moves per asset-year, while matcher-attributable churn
+fell from 0.508 to 0.476. These labels remain offline, full-panel reporting diagnostics and are
+not point-in-time backtest signals.
+
+### Changed
+
+- Corrected five risk-lineage edge cases: zero-overlap clusters no longer link on beta proximity
+  alone; Hungarian bridging selects the highest-affinity dormant track; zero-beta clusters use
+  the `Idio` sentinel; NaN equity beta labels fall back safely; and single-factor models no
+  longer assume a secondary factor. `bridge_decay` is now retained in report provenance.
+- Refreshed the README architecture, analytics inventory, installation extras, constraint
+  semantics, solver workflow and release-history descriptions to match the current package.
+
+### Removed
+
+- Removed `Constraints.min_target_portfolio_vol_an`. Its quadratic volatility lower bound was
+  non-convex and every supported CVXPY solver rejected it with `DCPError`; no successful solve
+  could use the field. The supported `max_target_portfolio_vol_an` constraint is unchanged.
+
 ## [6.13.0] - 2026-08-11
 
 **Example behaviour fix:** `examples/solvers/risk_budgeting.py` now passes its constructed
