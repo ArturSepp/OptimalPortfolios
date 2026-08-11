@@ -7,6 +7,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- CI test jobs now run on ubuntu-latest, windows-latest and macos-latest across Python
+  3.10–3.13, adopted from PR #40 by @tschm; the coverage gate remains ubuntu + Python 3.12.
+
 ## [6.14.0] - 2026-08-11
 
 **Risk-label behaviour change:** the default full-panel lineage matcher now enforces the lower
