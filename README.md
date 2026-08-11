@@ -938,12 +938,13 @@ Portfolios", *The Journal of Portfolio Management*, 52(4), 86-120.
 
 ## Updates
 
-#### August 2026, Versions 6.8.0–6.14.0 released
+#### August 2026, Versions 6.8.0–6.15.0 released
 
-The recent 6.x series added several production analytics that are now part of the current API:
+The recent 6.x series through 6.15.0 added several production analytics that are now part of the current API:
 
 | Release | Analytics and behavior added |
 | --- | --- |
+| 6.15.0 | Added declarative causal cluster smoothing, preserved FCGL/HCGL semantics for externally supplied partitions, and raised the factorlasso floor to 0.13.0. |
 | 6.14.0 | Calibrated the offline risk-lineage matcher for more consolidated labels, corrected five lineage edge cases, and removed the unusable non-convex minimum-volatility field; the supported maximum-volatility constraint is unchanged. |
 | 6.12.0–6.13.0 | Standardised factorization-capable wrappers on `(weights, outcome)`, fixed residual-signal dispatch, expanded offline/CI coverage and corrected the constrained risk-budgeting demo. |
 | 6.11.0 | Added the guarded `clustering` extra for minimum-cost-flow risk-cluster matching, with dependency-free Hungarian matching as an alternative. |
@@ -1205,7 +1206,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={OptimalPortfolios: Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python},
   year={2026},
-  version={6.14.0},
+  version={6.15.0},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

@@ -16,8 +16,21 @@ resolutions continue to float. Removing the examples package marker also removes
 the clean-import public API is unchanged. The shipped pytest configuration defaults Matplotlib
 to the non-interactive `Agg` backend while respecting an explicitly selected backend.
 
+## [6.15.0] - 2026-08-11
+
+non-USD CMA runs using USD-anchored precomputed clusters change numerical results — they previously ran a row-grouped GROUP_LASSO objective and now run the spec's FCGL cluster-factor objective, making USD and non-USD CMA runs consistent for the first time.
+
+### Added
+
+- Added declarative causal cluster smoothing configuration to the rosaa covariance spec and
+  two-pass rolling execution for HOLD, partition-bonus, and similarity-EWMA variants.
+
 ### Changed
 
+- Precomputed cluster partitions now retain the configured FCGL or HCGL penalty semantics through
+  factorlasso's external-cluster fit path instead of changing the estimator to GROUP_LASSO.
+- Raised the factorlasso dependency floor to 0.13.0 for external cluster partitions and causal
+  rolling smoothing.
 - CI test jobs now run on ubuntu-latest, windows-latest and macos-latest across Python
   3.10–3.13, adopted from PR #40 by @tschm; the coverage gate remains ubuntu + Python 3.12.
 
