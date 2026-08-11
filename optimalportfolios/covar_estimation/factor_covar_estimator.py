@@ -29,7 +29,14 @@ from dataclasses import dataclass, asdict, fields
 
 from optimalportfolios.covar_estimation.covar_estimator import CovarEstimator
 from optimalportfolios.covar_estimation.ewma_covar_estimator import estimate_current_ewma_covar
-from factorlasso import LassoModel, LassoModelType, CurrentFactorCovarData, RollingFactorCovarData, VarianceColumns
+from factorlasso import (
+    ClusterSmootherType,
+    CurrentFactorCovarData,
+    LassoModel,
+    RollingFactorCovarData,
+    VarianceColumns,
+    compute_rolling_smoothed_clusters,
+)
 
 
 # Backward compatibility shim — older factorlasso releases predate the
@@ -40,6 +47,34 @@ from factorlasso import LassoModel, LassoModelType, CurrentFactorCovarData, Roll
 _CFCD_SUPPORTS_DERIVED_SIGNS = (
     'derived_signs' in {f.name for f in fields(CurrentFactorCovarData)}
 )
+
+
+def _model_for_frequency(lasso_model: LassoModel, freq: str) -> LassoModel:
+    """Return clustering config with the effective span for one asset cadence."""
+    if lasso_model.span_freq_dict is None:
+        return lasso_model
+    if freq not in lasso_model.span_freq_dict:
+        raise KeyError(f"no span for freq={freq} in lasso_model.span_freq_dict")
+    return lasso_model.copy(kwargs={'span': lasso_model.span_freq_dict[freq]})
+
+
+def _validate_recluster_frequency(recluster_freq: str, rebalancing_freq: str) -> None:
+    """Require HOLD anchors to occur less often than covariance rebalancing dates."""
+    sample_start = pd.Timestamp('2000-01-01')
+    sample_end = pd.Timestamp('2029-12-31')
+    try:
+        recluster_count = len(pd.date_range(sample_start, sample_end, freq=recluster_freq))
+        rebalancing_count = len(pd.date_range(sample_start, sample_end, freq=rebalancing_freq))
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"invalid recluster_freq={recluster_freq!r} or "
+            f"rebalancing_freq={rebalancing_freq!r}"
+        ) from exc
+    if recluster_count >= rebalancing_count:
+        raise ValueError(
+            f"recluster_freq={recluster_freq!r} must be coarser than "
+            f"rebalancing_freq={rebalancing_freq!r}"
+        )
 
 
 @dataclass
@@ -214,10 +249,11 @@ class FactorCovarEstimator(CovarEstimator):
                 ``risk_factor_prices``.
             estimation_date: Reference date for the estimation.
             precomputed_clusters: Optional per-frequency cluster assignments
-                (keys matching ``asset_returns_dict``). When supplied, the
-                per-frequency LassoModel is switched from GROUP_LASSO_CLUSTERS
-                to GROUP_LASSO with these groups. Use case: USD-anchored
-                clustering for non-USD CMA runs.
+                (keys matching ``asset_returns_dict``). The configured cluster
+                model and its penalty semantics are preserved. Use case:
+                USD-anchored clustering for non-USD CMA runs. With an active
+                smoother and no precomputed inputs, the causal clustering pass
+                is rebuilt from the supplied history through ``estimation_date``.
             precomputed_linkages: Per-frequency scipy linkage matrices
                 corresponding to ``precomputed_clusters``. Stored on the
                 returned CurrentFactorCovarData so dendrogram plots still
@@ -228,6 +264,36 @@ class FactorCovarEstimator(CovarEstimator):
         Returns:
             Factor covariance decomposition at the estimation date.
         """
+        smoother_type = ClusterSmootherType(self.lasso_model.cluster_smoother_type)
+        if smoother_type != ClusterSmootherType.NONE and precomputed_clusters is None:
+            estimation_date = estimation_date or max(
+                returns.index[-1] for returns in asset_returns_dict.values()
+            )
+            precomputed_clusters = {}
+            precomputed_linkages = {}
+            precomputed_cutoffs = {}
+            for freq, returns in asset_returns_dict.items():
+                fit_model = _model_for_frequency(self.lasso_model, freq)
+                start_position = min(fit_model.warmup_period - 1, len(returns.index) - 1)
+                start_date = returns.index[start_position]
+                schedule = qis.generate_dates_schedule(
+                    time_period=qis.TimePeriod(start_date, estimation_date),
+                    freq=self.rebalancing_freq,
+                    include_start_date=False,
+                    include_end_date=True,
+                )
+                final_date = pd.Timestamp(estimation_date)
+                if final_date not in schedule:
+                    schedule = sorted([*schedule, final_date])
+                rolling_clusters = compute_rolling_smoothed_clusters(
+                    y=returns,
+                    estimation_dates=schedule,
+                    lasso_model=fit_model,
+                )
+                precomputed_clusters[freq] = rolling_clusters.clusters[final_date]
+                precomputed_linkages[freq] = rolling_clusters.linkages[final_date]
+                precomputed_cutoffs[freq] = rolling_clusters.cutoffs[final_date]
+
         factor_covar_data = estimate_lasso_factor_covar_data(
             risk_factor_prices=risk_factor_prices,
             asset_returns_dict=asset_returns_dict,
@@ -256,7 +322,9 @@ class FactorCovarEstimator(CovarEstimator):
         Fit factor covariance model at each date in a rebalancing schedule.
 
         For each rebalancing date, truncates all input data to ``[:estimation_date]``
-        and calls ``fit_current_factor_covars`` with expanding-window estimation.
+        and calls ``fit_current_factor_covars`` with expanding-window estimation. An
+        active smoother first computes a causal partition path over this exact schedule,
+        then injects the partition into each unchanged cluster-model fit.
 
         Args:
             risk_factor_prices: Factor price panel. Index=dates, columns=factor names.
@@ -268,12 +336,30 @@ class FactorCovarEstimator(CovarEstimator):
         Returns:
             RollingFactorCovarData with full decomposition at each date.
         """
+        effective_rebalancing_freq = rebalancing_freq or self.rebalancing_freq
         rebalancing_schedule = qis.generate_dates_schedule(
             time_period=time_period,
-            freq=rebalancing_freq or self.rebalancing_freq,
+            freq=effective_rebalancing_freq,
             include_start_date=False,
             include_end_date=False
         )
+        smoother_type = ClusterSmootherType(self.lasso_model.cluster_smoother_type)
+        rolling_clusters_by_freq = None
+        if smoother_type != ClusterSmootherType.NONE:
+            if smoother_type == ClusterSmootherType.HOLD:
+                _validate_recluster_frequency(
+                    recluster_freq=str(self.lasso_model.recluster_freq),
+                    rebalancing_freq=effective_rebalancing_freq,
+                )
+            rolling_clusters_by_freq = {
+                freq: compute_rolling_smoothed_clusters(
+                    y=returns,
+                    estimation_dates=rebalancing_schedule,
+                    lasso_model=_model_for_frequency(self.lasso_model, freq),
+                )
+                for freq, returns in asset_returns_dict.items()
+            }
+
         covar_datas: Dict[pd.Timestamp, CurrentFactorCovarData] = {}
         for estimation_date in rebalancing_schedule:
             # Expanding window: use all data up to estimation date
@@ -287,11 +373,29 @@ class FactorCovarEstimator(CovarEstimator):
                     )
                 asset_returns_dict_upto_date[freq] = return_t
 
+            cluster_kwargs = {}
+            if rolling_clusters_by_freq is not None:
+                cluster_kwargs = {
+                    'precomputed_clusters': {
+                        freq: data.clusters[estimation_date]
+                        for freq, data in rolling_clusters_by_freq.items()
+                    },
+                    'precomputed_linkages': {
+                        freq: data.linkages[estimation_date]
+                        for freq, data in rolling_clusters_by_freq.items()
+                    },
+                    'precomputed_cutoffs': {
+                        freq: data.cutoffs[estimation_date]
+                        for freq, data in rolling_clusters_by_freq.items()
+                    },
+                }
+
             covar_datas[estimation_date] = self.fit_current_factor_covars(
                 risk_factor_prices=risk_factor_prices.loc[:estimation_date],
                 asset_returns_dict=asset_returns_dict_upto_date,
                 assets=assets,
-                estimation_date=estimation_date
+                estimation_date=estimation_date,
+                **cluster_kwargs,
             )
 
         return RollingFactorCovarData(data=covar_datas)
@@ -352,11 +456,10 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
         precomputed_clusters: Optional per-frequency cluster assignments to use
             instead of deriving clusters from the y correlation matrix. Keys are
             frequency codes matching ``asset_returns_dict`` (e.g., 'ME', 'QE').
-            When provided, the per-freq LassoModel is switched from
-            GROUP_LASSO_CLUSTERS to GROUP_LASSO with these groups. Primary use
-            case: USD-anchored clustering for non-USD CMA estimation to avoid
-            FX/hedging-induced cluster artefacts. Must be supplied together
-            with ``precomputed_linkages`` and ``precomputed_cutoffs``.
+            The configured FCGL or HCGL model is retained and the external
+            memberships feed its unchanged penalty construction. Primary use
+            case: USD-anchored clustering for non-USD CMA estimation. Must be
+            supplied with ``precomputed_linkages`` and ``precomputed_cutoffs``.
         precomputed_linkages: Per-frequency scipy linkage matrices corresponding
             to ``precomputed_clusters``. Stored on the returned
             CurrentFactorCovarData so dendrogram plots still render with the
@@ -438,18 +541,22 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
                     f"precomputed_clusters[{freq!r}] is missing assignments "
                     f"for {len(missing)} assets: {missing}"
                 )
-            # Switch model to GROUP_LASSO with external groups. copy() goes
-            # through asdict→__init__, re-running the __post_init__ guard
-            # (group_data required for GROUP_LASSO).
-            fit_model = lasso_model.copy(kwargs={
-                'model_type': LassoModelType.GROUP_LASSO,
-                'group_data': external_clusters,
-            })
+            # Preserve FCGL/HCGL semantics; factorlasso skips discovery and
+            # feeds these memberships into the configured penalty blocks.
+            fit_model = lasso_model
         else:
             fit_model = lasso_model
 
         # fit() returns self; estimated_betas is (N x M) DataFrame
-        fit_model.fit(x=x, y=y, verbose=verbose, span=span_f)
+        fit_model.fit(
+            x=x,
+            y=y,
+            verbose=verbose,
+            span=span_f,
+            external_clusters=external_clusters if use_precomputed else None,
+            external_linkage=precomputed_linkages[freq] if use_precomputed else None,
+            external_cutoff=precomputed_cutoffs[freq] if use_precomputed else None,
+        )
 
         # estimated_betas: index=assets, columns=factors (N x M)
         betas_freqs[freq] = fit_model.estimated_betas

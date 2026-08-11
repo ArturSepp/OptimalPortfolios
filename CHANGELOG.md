@@ -5,10 +5,21 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [6.15.0] - 2026-08-11
+
+non-USD CMA runs using USD-anchored precomputed clusters change numerical results — they previously ran a row-grouped GROUP_LASSO objective and now run the spec's FCGL cluster-factor objective, making USD and non-USD CMA runs consistent for the first time.
+
+### Added
+
+- Added declarative causal cluster smoothing configuration to the rosaa covariance spec and
+  two-pass rolling execution for HOLD, partition-bonus, and similarity-EWMA variants.
 
 ### Changed
 
+- Precomputed cluster partitions now retain the configured FCGL or HCGL penalty semantics through
+  factorlasso's external-cluster fit path instead of changing the estimator to GROUP_LASSO.
+- Raised the factorlasso dependency floor to 0.13.0 for external cluster partitions and causal
+  rolling smoothing.
 - CI test jobs now run on ubuntu-latest, windows-latest and macos-latest across Python
   3.10–3.13, adopted from PR #40 by @tschm; the coverage gate remains ubuntu + Python 3.12.
 

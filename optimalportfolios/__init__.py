@@ -24,13 +24,18 @@ from optimalportfolios.alphas.__init__ import *
 
 """Backward-compatible re-exports from factorlasso."""
 from factorlasso import (  # noqa: F401
+    ClusterSmootherType,
     DependenceMeasure,
     DistanceTransform,
     LassoModel,
     LassoModelType,
     CurrentFactorCovarData,
     RollingFactorCovarData,
+    RollingClusterData,
     VarianceColumns,
+    apply_partition_distance_bonus,
+    compute_rolling_smoothed_clusters,
     compute_dependence_matrix,
     compute_gerber_matrix,
+    smooth_similarity_ewma,
 )
