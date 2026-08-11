@@ -627,6 +627,32 @@ def test_rejection_severity_levels(caplog):
                for r in caplog.records)
 
 
+def test_rejection_log_distinguishes_attempt_from_final_execution(caplog):
+    """A rejected solve says its fallback impact is provisional at this layer."""
+    c = _constraints()
+    with caplog.at_level(
+            logging.WARNING,
+            logger="optimalportfolios.optimization.solver_diagnostics",
+    ):
+        validate_solution(
+            None,
+            "infeasible_inaccurate",
+            c,
+            n=5,
+            solver="CLARABEL",
+            context="growf 2026-07-31",
+        )
+
+    message = next(
+        record.getMessage() for record in caplog.records
+        if "REJECTED solution" in record.getMessage()
+    )
+    assert "falling back to weights_0" in message
+    assert "this solver attempt produced no usable weights" in message
+    assert "final portfolio/trade outcome is not decided at this layer" in message
+    assert "reported separately as execution_rebalance" in message
+
+
 def test_rejection_summary_handler():
     """The summary handler tallies one ERROR and one WARNING rejection."""
     from optimalportfolios.optimization.solver_diagnostics import (

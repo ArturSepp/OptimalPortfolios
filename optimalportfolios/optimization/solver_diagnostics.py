@@ -662,7 +662,11 @@ def validate_solution(
         """Log the rejection and return the fallback outcome for ``reason``."""
         fallback, source = _compute_fallback(constraints, tickers, n)
         msg = (f"{tag}solver={solver} status={problem_status}: REJECTED solution "
-               f"({reason}); falling back to {source}.")
+               f"({reason}); falling back to {source}. Impact: this solver "
+               "attempt produced no usable weights; the fallback is returned "
+               "to the caller, but the final portfolio/trade outcome is not "
+               "decided at this layer. Execution retries, rescue, or a skipped "
+               "rebalance are reported separately as execution_rebalance.")
         _emit_diag(level, msg, context, solver, problem_status, "rejected", False,
                    reason, source, w, constraints, tickers, n)
         return _result(fallback, False, reason=reason, fallback_source=source)
