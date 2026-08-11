@@ -34,7 +34,7 @@ Do not vendor or copy code between these packages. If functionality belongs in a
 | Package | Floor | What `rosaa` needs at it |
 |---|---|---|
 | `qis` | **>= 5.5.0** | `load_df_from_csv` / `load_df_dict_from_csv` take `float_precision`; the inputs store cannot round-trip a float exactly without it |
-| `factorlasso` | **>= 0.11.0** | `RollingFactorCovarData.get_alphas` forwards `asset_frequencies` / `default_freq`; below it a per-frequency `alpha_span` silently applies the `'ME'` entry to every quarterly asset |
+| `factorlasso` | **>= 0.14.0** | Canonical cluster-lineage analytics live in `factorlasso.cluster_lineage`; it also includes the earlier per-frequency alpha forwarding required by rosaa |
 | `optimalportfolios` | **>= 6.8.0** | signal spans accept a per-cadence `Mapping[str, int]`; below it `product_config.SIGNALS` raises, since it passes dicts |
 
 `optimalportfolios 6.7.0` was tagged in `CITATION.cff` but never published — its `pyproject.toml` stayed at 6.6.0 — so a fresh `pip install optimalportfolios` before 6.8.0 gives a package `rosaa` cannot run on. Verified with `pip index versions optimalportfolios`, not from the changelog.
@@ -54,6 +54,10 @@ optimalportfolios/
 papers/              code accompanying the published papers (excluded from ruff)
 ```
 
+`optimalportfolios/covar_estimation/risk_labelling.py` is a deprecated compatibility shim for
+the canonical `factorlasso.cluster_lineage` module; keep rosaa imports working, but add lineage
+features and tests in FactorLasso.
+
 Tests live inside the package as `optimalportfolios/<subpackage>/tests/*_test.py`; there is no top-level `tests/` directory. The wheel includes these test packages and their fixture under `optimalportfolios/tests/data/`, so `pytest --pyargs optimalportfolios` is the supported post-install check. The shipped `conftest.py` defaults `MPLBACKEND` to the non-interactive `Agg` backend while preserving an explicitly selected backend. The `examples/` tree remains in the repository but is excluded from wheels. Sixteen `*_local.py` files are `run_local_test` diagnostic dispatchers: run them manually when the required local price data is available; pytest never collects them, and the test suite is exactly what bare `pytest` collects. The sixteenth is `examples/data/etf_prices_local.py`, which is also the shared loader those dispatchers import their price panel from.
 
 Every file matching pytest's default patterns — `*_test.py` **and** `test_*.py` — collects at least one test, so the file count is a usable proxy for the suite. Keep it that way: a new diagnostic script belongs in `*_local.py`, not under a test-shaped name. A name matching either pattern is *imported* at collection even when it contributes no tests, which is how a module-level import of an optional extra has twice broken CI.
@@ -62,7 +66,7 @@ Every file matching pytest's default patterns — `*_test.py` **and** `test_*.py
 
 ```bash
 pip install -e ".[dev]"                                  # editable install with dev tools
-pytest                                                   # run the test suite (1128 tests, ~60 s)
+pytest                                                   # run the test suite (1077 tests, ~60 s)
 pytest optimalportfolios/optimization/tests/constraints_test.py -v
 ruff check optimalportfolios/                            # lint (papers/ is excluded)
 interrogate                                              # docstring coverage, must stay at 100%
@@ -70,13 +74,13 @@ interrogate                                              # docstring coverage, m
 
 *Note: Terminal execution should be compatible with Windows PowerShell within PyCharm.*
 
-Optional extras: `data`, `reports`, `clustering`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.13 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. Both of those jobs run on `ubuntu-latest`, `windows-latest` and `macos-latest`, so a fix that only holds on POSIX paths or POSIX line endings fails the matrix. The ubuntu/Python 3.12 coverage cell alone installs against `constraints.txt`, regenerated at each release; the remaining matrix cells, core installs and audit resolution deliberately float. Separate jobs gate the three ruff stack invariants, `interrogate` docstring coverage at 100%, and `pip-audit` over the dependency tree resolved from `pyproject.toml`. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
+Optional extras: `data`, `reports`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.13 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. Both of those jobs run on `ubuntu-latest`, `windows-latest` and `macos-latest`, so a fix that only holds on POSIX paths or POSIX line endings fails the matrix. The ubuntu/Python 3.12 coverage cell alone installs against `constraints.txt`, regenerated at each release; the remaining matrix cells, core installs and audit resolution deliberately float. Separate jobs gate the three ruff stack invariants, `interrogate` docstring coverage at 100%, and `pip-audit` over the dependency tree resolved from `pyproject.toml`. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
 
-Full-package line coverage measured **89.93%** on the 1128-test dev suite. The
+Full-package line coverage measured **89.27%** on the 1077-test dev suite. The
 ubuntu/3.12 matrix entry gates `pytest --cov=optimalportfolios` at `fail_under = 88`; this floor rises
 whenever measured coverage rises, and lowering it requires a dated `CHANGELOG.md` note.
-Measure on a `[dev]` install: a core install lacks the `clustering` extra, so the `mcf` cases
-skip and the total lands below the floor.
+Measure on a `[dev]` install. NetworkX remains a development dependency solely for independent
+matcher cross-checks; the production `mcf` matcher and its regression tests run in a core install.
 
 ## Conventions
 
@@ -85,7 +89,7 @@ skip and the total lands below the floor.
 - **Ruff is configured in `[tool.ruff]` in `pyproject.toml`**, alongside pytest, coverage and interrogate. `pyproject.toml` is the stack's single configuration home; do not add a `ruff.toml`, which Ruff would read in preference and silently shadow this config.
 - **Four rule sets are enforced by ruff rather than written down**: the three stack invariants below and the whole `F` family. All are green on the package, so a finding is always something you just introduced. `E`/`W` stay ungated because of the ~380 `E501` line-length findings in the older modules:
   - `TID251` fails an import of `trendfollowing`, `privateassets`, `stochvolmodels`, `goal_based_allocation` or `vanilla_option_pricers`. This package depends on `qis` and `factorlasso` and on nothing else in the stack; subject packages never import each other. `qis` and `factorlasso` are of course not banned — they are declared dependencies, and importing them is the point.
-  - `TID253` fails a **module-level** import of an optional extra (`yfinance`, `pandas_datareader`, `pybloqs`, `plotly`, `pyarrow`, `psycopg2`, `sqlalchemy`, `networkx`); the same import inside a function passes, which is the pattern the collection note above requires. `optimalportfolios/examples/**` and `reports/portfolio_result_pybloqs.py` are named in `per-file-ignores` — add to that list only for a module `optimalportfolios/__init__.py` cannot reach.
+  - `TID253` fails a **module-level** import of an optional extra (`yfinance`, `pandas_datareader`, `pybloqs`, `plotly`, `pyarrow`, `psycopg2`, `sqlalchemy`); the same import inside a function passes, which is the pattern the collection note above requires. `optimalportfolios/examples/**` and `reports/portfolio_result_pybloqs.py` are named in `per-file-ignores` — add to that list only for a module `optimalportfolios/__init__.py` cannot reach.
   - `ICN` pins `import numpy as np` and `import pandas as pd`. Ruff's default alias map is replaced rather than extended, so `matplotlib` stays free to be both `mpl` and `plt`.
 - **Every module, class, method and function carries a docstring.** `interrogate` is configured in `pyproject.toml` with `fail-under = 100` and, like ruff, excludes `papers/`. The bar is 100% rather than a partial target for the same reason the invariants above are lint: at 100% a miss is always something you just introduced. Nested closures and one-line properties count too — a short single line stating what the thing returns is enough; reserve the `Args:`/`Returns:` block for public entry points.
 - Optimisation problems are expressed with `cvxpy`; `quadprog` is used where a dedicated QP solver is faster. Do not introduce a third optimisation backend.

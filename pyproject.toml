@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optimalportfolios"
-version = "6.15.0"
+version = "6.16.0"
 description = "Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python"
 readme = "README.md"
 license = "MIT"
@@ -53,7 +53,7 @@ dependencies = [
     "cvxpy>=1.3.0",
     "quadprog>=0.1.11",
     "qis>=5.7.0",
-    "factorlasso>=0.13.0",
+    "factorlasso>=0.14.0",
 ]
 
 [project.optional-dependencies]
@@ -71,12 +71,6 @@ docs = [
     "myst-parser>=2.0",
 ]
 
-# the default 'mcf' matcher in covar_estimation.risk_labelling solves a min-cost-flow
-# path cover with networkx; the 'hungarian' matcher needs nothing extra.
-clustering = [
-    "networkx>=3.0",
-]
-
 jupyter = [
     "jupyter>=1.0.0",
     "notebook>=6.5.0",
@@ -88,11 +82,12 @@ dev = [
     "pytest-cov>=4.0.0",
     "ruff>=0.4",
     "interrogate>=1.7",
-    "optimalportfolios[data,clustering]",
+    "networkx>=3.0",
+    "optimalportfolios[data]",
 ]
 
 all = [
-    "optimalportfolios[data,reports,jupyter,clustering]",
+    "optimalportfolios[data,reports,jupyter]",
 ]
 
 [project.urls]
@@ -151,7 +146,7 @@ extend-select = ["TID251", "TID253", "ICN"]
 # core install keeps working. A module dedicated to a single optional backend is the documented
 # exception and is named in per-file-ignores below.
 banned-module-level-imports = ["yfinance", "pandas_datareader", "pybloqs", "plotly", "pyarrow",
-                               "psycopg2", "sqlalchemy", "networkx"]
+                               "psycopg2", "sqlalchemy"]
 
 [tool.ruff.lint.flake8-import-conventions.aliases]
 # replaces ruff's default alias map, which also demands `matplotlib as mpl` everywhere. Only
@@ -192,9 +187,6 @@ omit = ["*/tests/*", "*/examples/*", "papers/*"]
 # regress silently, and it is raised as tests land.
 #
 # Measure on a `[dev]` install, which is what the 3.12 leg of the `test` job in ci.yml does.
-# A *core* install lacks the `clustering` extra, so the `mcf` cases in the risk_labelling
-# tests skip and the total lands about a point lower -- below this floor. That is not a
-# problem in CI, because the core-install job deliberately runs a bare `pytest` with no
-# coverage: its purpose is to prove the suite runs without the extras. But it does mean
-# `pytest --cov` on a core install will fail this gate; use `pip install -e ".[dev]"`.
+# NetworkX remains a development dependency solely for independent matcher cross-checks; the
+# production `mcf` matcher and its regression tests run in a core install.
 fail_under = 88

@@ -14,7 +14,7 @@ curl_cffi==0.16.0
 cvxpy==1.9.2
 cycler==0.12.1
 et_xmlfile==2.0.0
-factorlasso==0.13.0
+factorlasso==0.14.0
 fonttools==4.63.0
 highspy==1.15.1
 idna==3.18

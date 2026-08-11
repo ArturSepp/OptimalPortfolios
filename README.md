@@ -386,25 +386,25 @@ git clone https://github.com/ArturSepp/OptimalPortfolios.git
 The core package supports Python >=3.10. Its current dependency floors are NumPy >=2.0,
 SciPy >=1.12, pandas >=2.2, Matplotlib >=3.8, seaborn >=0.13, openpyxl >=3.1,
 PyYAML >=6.0, CVXPY >=1.3, quadprog >=0.1.11, `qis` >=5.7 and
-`factorlasso` >=0.10.1. `pyproject.toml` is the source of truth.
+`factorlasso` >=0.14.0. `pyproject.toml` is the source of truth.
 
-Optional extras keep network, reporting, clustering and notebook integrations out of the core
-installation:
+Optional extras keep network-data, reporting and notebook integrations out of the core
+installation. The default risk-lineage matcher is implemented with core NumPy/SciPy code;
+NetworkX is retained only by the development extra as an independent test oracle.
 
 | Extra | Adds |
 | --- | --- |
 | `data` | `yfinance` for free-data example loaders. |
 | `reports` | `pybloqs` for HTML/PDF report backends. |
-| `clustering` | NetworkX for the default minimum-cost-flow risk-cluster matcher; the Hungarian matcher needs only the core install. |
 | `jupyter` | Jupyter, Notebook and JupyterLab. |
 | `docs` | Sphinx, Furo and MyST for documentation builds. |
-| `dev` | Pytest, coverage, Ruff and Interrogate, plus `data` and `clustering`. |
-| `all` | All runtime integrations: `data`, `reports`, `jupyter` and `clustering`. |
+| `dev` | Pytest, coverage, Ruff, Interrogate and the NetworkX matcher oracle, plus `data`. |
+| `all` | All runtime integrations: `data`, `reports` and `jupyter`. |
 
 For example:
 
 ```
-pip install "optimalportfolios[clustering]"
+pip install optimalportfolios
 pip install "optimalportfolios[all]"
 ```
 
@@ -938,12 +938,13 @@ Portfolios", *The Journal of Portfolio Management*, 52(4), 86-120.
 
 ## Updates
 
-#### August 2026, Versions 6.8.0–6.15.0 released
+#### August 2026, Versions 6.8.0–6.16.0 released
 
-The recent 6.x series through 6.15.0 added several production analytics that are now part of the current API:
+The recent 6.x series through 6.16.0 added several production analytics that are now part of the current API:
 
 | Release | Analytics and behavior added |
 | --- | --- |
+| 6.16.0 | Replaced the default risk-lineage matcher's NetworkX runtime dependency with a deterministic sparse SciPy assignment, then moved canonical lineage analytics to factorlasso 0.14; the former OptimalPortfolios module is a deprecated compatibility shim. |
 | 6.15.0 | Added declarative causal cluster smoothing, preserved FCGL/HCGL semantics for externally supplied partitions, and raised the factorlasso floor to 0.13.0. |
 | 6.14.0 | Calibrated the offline risk-lineage matcher for more consolidated labels, corrected five lineage edge cases, and removed the unusable non-convex minimum-volatility field; the supported maximum-volatility constraint is unchanged. |
 | 6.12.0–6.13.0 | Standardised factorization-capable wrappers on `(weights, outcome)`, fixed residual-signal dispatch, expanded offline/CI coverage and corrected the constrained risk-budgeting demo. |
@@ -1206,7 +1207,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={OptimalPortfolios: Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python},
   year={2026},
-  version={6.15.0},
+  version={6.16.0},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

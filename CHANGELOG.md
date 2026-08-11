@@ -5,7 +5,13 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [6.16.0] - 2026-08-12
+
+**Risk-label tie disclosure:** the new deterministic matcher preserves the maximum matched
+weight and aggregate lineage churn on both roadmap panels. On mac_apac, one exact legacy tie
+changes identity assignment: 2014-06-30 `ME:12` links to 2014-07-31 `ME:3` instead of `ME:4`;
+both candidate edges have integer-scaled weight 20,000. S&P 500 relabel and lineage frames are
+byte-identical to the former backend.
 
 **Packaging behaviour change (issue #39, reported by @tschm):** wheels no longer ship the
 examples tree; the complete test suite now ships with its offline fixture and supports
@@ -15,6 +21,24 @@ resolutions continue to float. Removing the examples package marker also removes
 `optimalportfolios.examples` root-module binding that full-suite collection formerly created;
 the clean-import public API is unchanged. The shipped pytest configuration defaults Matplotlib
 to the non-interactive `Agg` backend while respecting an explicitly selected backend.
+
+### Changed
+
+- Replaced the default `mcf` risk-lineage matcher's NetworkX min-cost-flow backend with a
+  deterministic sparse SciPy maximum-weight bipartite assignment using ordered tie
+  perturbations and free unmatched vertices. Plain `optimalportfolios` installs now run the
+  default matcher.
+- Moved canonical cluster-lineage analytics to `factorlasso.cluster_lineage` and raised the
+  factorlasso floor to 0.14.0. The former
+  `optimalportfolios.covar_estimation.risk_labelling` path remains as a thin compatibility shim,
+  re-exports identical objects, and emits one `DeprecationWarning` naming the new package path.
+- Added an independent brute-force oracle over 120 seeded sparse panels, a NetworkX development
+  cross-check, and cached 60-date S&P 500 / 284-date mac_apac golden and runtime validation.
+
+### Removed
+
+- Removed the `clustering` optional extra. NetworkX is retained only by the `dev` extra as an
+  independent test oracle and is no longer imported by production code.
 
 ## [6.15.0] - 2026-08-11
 

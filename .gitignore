@@ -3,6 +3,9 @@
 /rosaa/
 /roadmap/
 /tmp/
+/.codex/
+/.codex_analysis/
+/outputs/
 
 .idea/
 Lib/

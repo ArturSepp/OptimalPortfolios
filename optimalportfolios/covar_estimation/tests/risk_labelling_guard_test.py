@@ -1,29 +1,21 @@
-"""Regression tests for optional dependencies in risk-cluster matching."""
+"""Compatibility tests for the deprecated OptimalPortfolios lineage import path."""
 
+import importlib
 import sys
 
 import pytest
 
-from optimalportfolios.covar_estimation.risk_labelling import _match_panel_mcf
+from factorlasso import analyze_cluster_lineage, run_cluster_lineage_report
 
 
-def test_mcf_import_error_names_extra_and_dependency_free_alternative(monkeypatch) -> None:
-    """The networkx guard names both the install extra and Hungarian alternative."""
-    monkeypatch.setitem(sys.modules, "networkx", None)
+def test_risk_labelling_shim_warns_once_and_reexports_factorlasso() -> None:
+    """A fresh shim import emits one warning and preserves both legacy callable identities."""
+    module_name = "optimalportfolios.covar_estimation.risk_labelling"
+    sys.modules.pop(module_name, None)
 
-    with pytest.raises(ImportError) as exc_info:
-        _match_panel_mcf(
-            snapshots={},
-            x_covars={},
-            overlap_metric="overlap",
-            combine="gated",
-            overlap_band=(0.20, 0.60),
-            spread_vol_cut=0.025,
-            w_overlap=0.6,
-            bridge_window=1,
-        )
+    with pytest.warns(DeprecationWarning, match="factorlasso") as warnings_seen:
+        module = importlib.import_module(module_name)
 
-    message = str(exc_info.value)
-    assert "optimalportfolios[clustering]" in message
-    assert "hungarian" in message
-    assert isinstance(exc_info.value.__cause__, ModuleNotFoundError)
+    assert len(warnings_seen) == 1
+    assert module.analyze_risk_clusters is analyze_cluster_lineage
+    assert module.run_risk_label_report is run_cluster_lineage_report
