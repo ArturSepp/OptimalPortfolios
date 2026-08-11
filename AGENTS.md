@@ -65,6 +65,8 @@ pytest                                                   # run the test suite (1
 pytest optimalportfolios/optimization/tests/constraints_test.py -v
 ruff check optimalportfolios/                            # lint (papers/ is excluded)
 interrogate                                              # docstring coverage, must stay at 100%
+pre-commit install                                       # once per clone, wires up the git hook
+pre-commit run --all-files                               # the same gates CI runs
 ```
 
 *Note: Terminal execution should be compatible with Windows PowerShell within PyCharm.*

@@ -88,6 +88,9 @@ dev = [
     "pytest-cov>=4.0.0",
     "ruff>=0.4",
     "interrogate>=1.7",
+    # runs the hooks in .pre-commit-config.yaml; `pre-commit install` still has to be
+    # run once per clone to wire up the git hook itself.
+    "pre-commit>=4.0",
     "optimalportfolios[data,clustering]",
 ]
 
