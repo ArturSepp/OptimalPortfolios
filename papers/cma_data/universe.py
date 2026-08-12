@@ -3,9 +3,11 @@ The shared paper universe: one source of truth for both paper packages.
 
 Defines the 18-asset universe of the MATF-CMA (JPM) and Achievable Sharpe
 (FAJ) papers: tickers, sleeve names, asset classes, the paper admission
-policy, the nine-factor panel, and the common bootstrap window. Both papers
-import these definitions through cma_data; neither paper defines its own
-universe. Estimated quantities (betas, alphas, vols, premia) do NOT live
+policy, the legacy nine-factor and custom eleven-factor panels, and the common
+bootstrap window. The FAJ paper pins the nine-factor panel; the JPM paper pins
+the custom eleven-factor panel. Both papers import these definitions through
+cma_data; neither paper defines its own universe. Estimated quantities (betas,
+alphas, vols, premia) do NOT live
 here — they live in versioned snapshots (see loaders.py).
 
 Units and conventions: tickers are Bloomberg tickers with the ' Index'
@@ -63,6 +65,10 @@ ADMISSION_POLICY: Dict[str, float] = {
 # The nine-factor MATF panel, canonical order (matches production sheets).
 FACTORS = ['Equity', 'Rates', 'Credit', 'Carry', 'Inflation', 'Commodities',
            'Private Equity', 'Rates Vol', 'Fx']
+
+# JPM MATF_CUSTOM adoption decision D1, 2026-08-12; FAJ continues to use FACTORS.
+FACTORS_CUSTOM = ['Equity', 'Rates', 'Credit', 'Credit EM', 'Carry G10', 'Carry EM',
+                  'Inflation', 'Commodities', 'Private Equity', 'Rates Vol', 'Fx']
 
 # Common bootstrap window for both papers: 300 months.
 BOOTSTRAP_START = '2001-07-31'
