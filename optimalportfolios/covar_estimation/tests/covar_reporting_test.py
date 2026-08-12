@@ -15,10 +15,9 @@ returned aggregate cluster series rather than inspecting pixels.
 those two cases -- and raises otherwise; that guard is the difference between an exception and
 an IndexError three frames deeper.
 
-One path here is currently broken and is pinned as a strict xfail rather than hidden:
-``plot_current_covar_data`` unpacks ``CurrentFactorCovarData`` as though its cluster fields
-were per-cadence dicts, which they have not been since factorlasso moved them to a flat
-Series/DataFrame. See ``test_plot_current_covar_data_is_broken_against_the_factorlasso_shape``.
+The snapshot adapter is checked against factorlasso's flat persisted cluster fields. Its
+plotting inputs are also compared with an independent split of the raw factorlasso output so
+the rendered cadence assignments cannot silently drift from the estimated result.
 """
 # packages
 import matplotlib.pyplot as plt
@@ -29,6 +28,7 @@ import qis
 import scipy.cluster.hierarchy as spc
 from factorlasso import LassoModel, LassoModelType
 # optimalportfolios
+import optimalportfolios.covar_estimation.covar_reporting as covar_reporting
 from optimalportfolios.covar_estimation.covar_reporting import (
     plot_clusters,
     plot_current_covar_data,
@@ -198,22 +198,47 @@ def test_near_zero_betas_are_blanked_rather_than_printed_as_zero(covar_data) -> 
 
 
 # --------------------------------------------------------------------------- #
-# the broken CurrentFactorCovarData adapter
+# the CurrentFactorCovarData adapter
 # --------------------------------------------------------------------------- #
-@pytest.mark.xfail(raises=NotImplementedError, strict=True,
-                   reason="plot_current_covar_data passes CurrentFactorCovarData.clusters "
-                          "(a flat Series keyed by asset) into plot_clusters, which expects a "
-                          "cadence-keyed dict; len() is then the asset count, not the cadence "
-                          "count. Broken for any universe of more than two assets.")
-def test_plot_current_covar_data_is_broken_against_the_factorlasso_shape(covar_data) -> None:
-    """The snapshot adapter has not followed factorlasso's cluster-field shape.
+def test_plot_current_covar_data_handles_the_factorlasso_shape(covar_data) -> None:
+    """The snapshot adapter splits factorlasso's flat fields and renders all four figures."""
+    figs = plot_current_covar_data(covar_data=covar_data)
+    assert len(figs) == 4
+    assert all(isinstance(fig, plt.Figure) for fig in figs)
 
-    ``CurrentFactorCovarData`` declares ``clusters: Optional[pd.Series]``,
-    ``linkages: Optional[pd.DataFrame]`` and ``cutoffs: Optional[pd.Series]``, but this
-    function forwards them to a signature typed ``Dict[str, ...]`` per cadence. Pinned strict
-    so the xfail turns into a failure the moment the adapter is fixed.
-    """
-    plot_current_covar_data(covar_data=covar_data)
+
+def test_seeded_factorlasso_clusters_are_the_clusters_plotted(covar_data,
+                                                              monkeypatch) -> None:
+    """Compare plotted cadence assignments with an independent split of factorlasso output."""
+    y_covar_before = covar_data.y_covar.copy(deep=True)
+    y_betas_before = covar_data.y_betas.copy(deep=True)
+    raw_clusters = covar_data.clusters.dropna().astype(str)
+    expected = {}
+    for freq in covar_data.cutoffs.index:
+        prefix = f'{freq}:'
+        selected = raw_clusters[raw_clusters.str.startswith(prefix)]
+        expected[freq] = selected.str.slice(start=len(prefix))
+
+    plotted = {}
+    real_plot_clusters = covar_reporting.plot_clusters
+
+    def capture_plot_clusters(clusters, linkages, cutoffs, figsize=(14, 10)):
+        """Capture the adapter output while delegating the actual rendering."""
+        plotted.update({freq: values.copy() for freq, values in clusters.items()})
+        return real_plot_clusters(clusters=clusters, linkages=linkages,
+                                  cutoffs=cutoffs, figsize=figsize)
+
+    monkeypatch.setattr(covar_reporting, 'plot_clusters', capture_plot_clusters)
+    figs = covar_reporting.plot_current_covar_data(covar_data=covar_data)
+
+    assert len(raw_clusters) >= 8
+    assert len(figs) == 4
+    assert set(plotted) == set(expected)
+    pd.testing.assert_frame_equal(covar_data.y_covar, y_covar_before)
+    pd.testing.assert_frame_equal(covar_data.y_betas, y_betas_before)
+    for freq in expected:
+        pd.testing.assert_series_equal(plotted[freq].sort_index().astype(str),
+                                       expected[freq].sort_index(), check_names=False)
 
 
 # --------------------------------------------------------------------------- #
@@ -267,14 +292,13 @@ def test_the_rebalancing_frequency_can_be_overridden(panels: tuple,
     assert len(monthly) > len(quarterly)
 
 
-@pytest.mark.xfail(raises=NotImplementedError, strict=True,
-                   reason="is_plot=True routes into the broken plot_current_covar_data adapter; "
-                          "see the snapshot xfail above for the shape mismatch")
-def test_the_rolling_report_cannot_currently_plot(panels: tuple,
-                                                  estimator: FactorCovarEstimator) -> None:
-    """The plotting branch of the rolling report inherits the snapshot adapter's breakage."""
+def test_the_rolling_report_can_plot(panels: tuple,
+                                     estimator: FactorCovarEstimator) -> None:
+    """The plotting branch renders four figures for every fitted snapshot."""
     factor_prices, asset_prices, returns = panels
     time_period = qis.TimePeriod(returns.index[-4], returns.index[-1])
-    run_rolling_covar_report(risk_factor_prices=factor_prices, prices=asset_prices,
-                             covar_estimator=estimator, time_period=time_period,
-                             asset_returns_dict={'ME': returns}, assets=ASSETS, is_plot=True)
+    figs, dfs = run_rolling_covar_report(risk_factor_prices=factor_prices, prices=asset_prices,
+                                         covar_estimator=estimator, time_period=time_period,
+                                         asset_returns_dict={'ME': returns}, assets=ASSETS,
+                                         is_plot=True)
+    assert len(figs) == 4 * len(dfs)
