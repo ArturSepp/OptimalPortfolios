@@ -7,6 +7,12 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- Made soft tracking error ignore a populated hard tracking-error budget during both the solve
+  and post-solve validation, instead of rejecting an optimal soft solution and silently falling
+  back to benchmark weights. Reported by @tschm in issue #49.
+
 ## [6.17.0] - 2026-08-12
 
 **Coverage scope change (2026-08-12):** `[tool.coverage.run] omit` now drops `reports/`

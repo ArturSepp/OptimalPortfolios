@@ -269,8 +269,8 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
     the penalty weights are the calibrated ``tre_utility_weight`` /
     ``turnover_utility_weight`` already on the constraints object, and the
     return target (asset_returns @ w >= target_return) is still enforced as a
-    hard constraint by that builder. The caller should NOT set a hard
-    ``tracking_err_vol_constraint`` in the soft case (it would be ignored here).
+    hard constraint by that builder. A populated ``tracking_err_vol_constraint``
+    is ignored in the soft case during both the solve and post-solve validation.
 
     Args:
         covar: Covariance matrix (N x N).
@@ -300,6 +300,7 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
         nonneg = False
     w = cvx.Variable(n, nonneg=nonneg)
     covar_psd = cvx.psd_wrap(solver_covar)
+    solved_constraints = constraints
 
     if soft_tracking_error and constraints.benchmark_weights is not None:
         # Soft TE only: TE becomes a utility penalty (tre_utility_weight) while
@@ -309,9 +310,11 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
         # constraint explicitly below. Yield target is added hard by the builder.
         constraints_soft = dataclasses.replace(
             constraints,
+            tracking_err_vol_constraint=None,
             turnover_utility_weight=None,
             group_turnover_constraint=None,
         )
+        solved_constraints = constraints_soft
         objective_fun, constraints_ = constraints_soft.set_cvx_utility_objective_constraints(
             w=w,
             alphas=alphas,
@@ -359,7 +362,7 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
         solved_status = 'solver_error'
 
     outcome = validate_solution(
-        w.value, solved_status, constraints, n, solver=solver, context=context,
+        w.value, solved_status, solved_constraints, n, solver=solver, context=context,
         covar=solver_covar, covar_factorization=covar_factorization)
 
     return outcome
