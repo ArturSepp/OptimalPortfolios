@@ -15,7 +15,7 @@ prod pipeline (private) --_local_ extractor--> snapshots/<tag>/  (frozen csv + M
 
 | file | role |
 |---|---|
-| `universe.py` | the 18-asset paper universe, asset classes, paper admission policy, nine-factor panel, common bootstrap window (Jul 2001 – Jun 2026, 300 months) |
+| `universe.py` | the 18-asset paper universe, asset classes, paper admission policy, legacy FAJ and custom JPM factor panels, common bootstrap window (Jul 2001 – Jun 2026, 300 months) |
 | `benchmarks.py` | the eight mandate benchmarks via the two-level construction of the JPM paper's Appendix F |
 | `loaders.py` | `load_snapshot(tag)` with sha256 manifest verification; the `PaperInputs` container |
 | `local_path.py` | path resolution via optional flat `settings.yaml` (key `SNAPSHOTS_PATH`); zero-config defaults |
@@ -29,8 +29,10 @@ prod pipeline (private) --_local_ extractor--> snapshots/<tag>/  (frozen csv + M
 (raw Jensen alpha, EWMA residual mean), resid_vol, total_vol, r2,
 w_workbook (production admission), w_paper (paper policy, PE recut 0.5),
 factor_excess_cma (factor-implied incl. regional add-ons, excl. admitted
-alpha), equity_regional_addon, rf_rate. `betas.csv` 18x9. `factor_covar.csv`
-9x9 annualized. `factor_premia.csv` 9 x (base, stress, upside).
+alpha), equity_regional_addon, rf_rate. With M factors, `betas.csv` is 18 x M,
+`factor_covar.csv` is M x M annualized, and `factor_premia.csv` is
+M x (base, stress, upside). The frozen `2026q2` FAJ cut uses the legacy factor
+panel; the `2026q2_custom` JPM cut uses the eleven-factor custom panel.
 `asset_excess_logreturns.csv` / `asset_total_returns.csv`: return panels on
 the bootstrap window (quarterly assets carry NaN off-quarter).
 `factor_navs.csv`: daily factor NAVs, base 100. `MANIFEST.json`: source
@@ -95,6 +97,6 @@ file fails loudly.
 ```python
 from local_path import load_cma_data          # the paper's own local_path.py
 cma_data = load_cma_data()
-inputs = cma_data.load_snapshot(tag='2026q2') # manifest-verified PaperInputs
+inputs = cma_data.load_snapshot(tag='2026q2_custom') # manifest-verified JPM inputs
 bench = cma_data.get_benchmark_weights(mandate='Balanced with Alts')
 ```
