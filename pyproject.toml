@@ -180,7 +180,11 @@ exclude = ["papers", "rosaa", ".codex_analysis", "outputs", "tmp", "quant_strats
 
 [tool.coverage.run]
 source = ["optimalportfolios"]
-omit = ["*/tests/*", "*/examples/*", "papers/*"]
+# `reports/` is presentation: it renders factsheets through `qis` and `pybloqs` and is exercised
+# by eye, not by assertion. Measuring it only diluted the number the ratchet below defends, so it
+# is omitted rather than left as a permanent 4% drag. Anything with a numerical contract belongs
+# outside `reports/` and is measured.
+omit = ["*/tests/*", "*/examples/*", "papers/*", "*/reports/*"]
 
 [tool.coverage.report]
 # A ratchet, not a target: the floor sits just under the measured level so coverage cannot
@@ -189,4 +193,4 @@ omit = ["*/tests/*", "*/examples/*", "papers/*"]
 # Measure on a `[dev]` install, which is what the 3.12 leg of the `test` job in ci.yml does.
 # NetworkX remains a development dependency solely for independent matcher cross-checks; the
 # production `mcf` matcher and its regression tests run in a core install.
-fail_under = 88
+fail_under = 95
