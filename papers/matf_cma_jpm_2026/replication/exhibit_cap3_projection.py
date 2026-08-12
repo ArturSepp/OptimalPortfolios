@@ -1,7 +1,7 @@
 """
 Exhibits for the Cap 3 governed-set projection (tab:cap3_grid, fig:cap3_implied_premia).
 
-Produces, from the shared cma_data snapshot 2026q2 via governed_cma_projection
+Produces, from the shared cma_data snapshot 2026q2_custom via governed_cma_projection
 (the retired per-paper data/ workbook is gone — superseded 2026-07-30):
 
   figures/cap3_implied_premia.PNG   two-panel figure: (A) implied premium
@@ -142,7 +142,7 @@ def write_exhibit_tex(grid: pd.DataFrame,
     g = grid.copy()
     lines = []
     lines.append("% ===== EXHIBITS: Cap 3 governed-set projection =====")
-    lines.append("% Source: replication/exhibit_cap3_projection.py on cma_data snapshot 2026q2")
+    lines.append("% Source: replication/exhibit_cap3_projection.py on cma_data snapshot 2026q2_custom")
     lines.append("%   (manifest-verified; the retired data/ workbook is superseded 2026-07-30).")
     lines.append("% Homes per owner decision O-J3: tab:cap3_grid main text, fig:cap3_implied_premia Appendix E.")
     lines.append("")

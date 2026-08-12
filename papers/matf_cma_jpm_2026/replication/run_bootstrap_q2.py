@@ -1,7 +1,7 @@
 """
 Bootstrap of the long-only frontier: raw asset-level against MATF factor-structured (Stage J5).
 
-Reimplements Appendix B on the frozen 2026q2 panels, because the original
+Reimplements Appendix B on the frozen 2026q2_custom panels, because the original
 exhibit-build script did not arrive with the package. Two estimators of the same
 frontier on the same 300-month window, so the comparison isolates SAMPLING
 BANDWIDTH rather than level:
