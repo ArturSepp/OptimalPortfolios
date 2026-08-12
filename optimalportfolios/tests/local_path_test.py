@@ -9,6 +9,7 @@ path into every test that runs after it. The fixture below does exactly that, an
 itself is asserted rather than assumed.
 """
 # packages
+import os
 from pathlib import Path
 import pytest
 import yaml
@@ -28,7 +29,10 @@ def clear_path_cache():
 def settings_file(tmp_path: Path, monkeypatch) -> Path:
     """Point the module at a temporary settings.yaml with both documented keys."""
     path = tmp_path / 'settings.yaml'
-    path.write_text(yaml.safe_dump({'RESOURCE_PATH': '/resources/', 'OUTPUT_PATH': '/outputs/'}))
+    resource_path = tmp_path / 'resources'
+    output_path = tmp_path / 'outputs'
+    path.write_text(yaml.safe_dump({'RESOURCE_PATH': str(resource_path),
+                                    'OUTPUT_PATH': str(output_path)}))
     monkeypatch.setattr(local_path, '_SETTINGS_PATH', path)
     return path
 
@@ -41,18 +45,21 @@ def test_the_shipped_settings_file_carries_both_keys() -> None:
 
 def test_the_resource_and_output_paths_are_read_from_the_yaml(settings_file: Path) -> None:
     """Both accessors are thin lookups into the parsed settings."""
-    assert local_path.get_resource_path() == '/resources/'
-    assert local_path.get_output_path() == '/outputs/'
+    paths = yaml.safe_load(settings_file.read_text())
+    assert local_path.get_resource_path() == Path(paths['RESOURCE_PATH']).as_posix()
+    assert local_path.get_output_path() == Path(paths['OUTPUT_PATH']).as_posix()
 
 
 def test_the_settings_are_read_once_and_then_cached(settings_file: Path) -> None:
     """A later edit to the file is not picked up until the cache is cleared."""
-    assert local_path.get_resource_path() == '/resources/'
-    settings_file.write_text(yaml.safe_dump({'RESOURCE_PATH': '/changed/',
-                                             'OUTPUT_PATH': '/outputs/'}))
-    assert local_path.get_resource_path() == '/resources/'      # still the cached read
+    initial = Path(yaml.safe_load(settings_file.read_text())['RESOURCE_PATH']).as_posix()
+    changed = settings_file.parent / 'changed'
+    assert local_path.get_resource_path() == initial
+    settings_file.write_text(yaml.safe_dump({'RESOURCE_PATH': str(changed),
+                                             'OUTPUT_PATH': str(settings_file.parent / 'outputs')}))
+    assert local_path.get_resource_path() == initial      # still the cached read
     local_path.get_paths.cache_clear()
-    assert local_path.get_resource_path() == '/changed/'
+    assert local_path.get_resource_path() == changed.as_posix()
 
 
 def test_a_missing_key_raises_rather_than_returning_none(tmp_path: Path, monkeypatch) -> None:
@@ -62,3 +69,31 @@ def test_a_missing_key_raises_rather_than_returning_none(tmp_path: Path, monkeyp
     monkeypatch.setattr(local_path, '_SETTINGS_PATH', path)
     with pytest.raises(KeyError, match='OUTPUT_PATH'):
         local_path.get_output_path()
+
+
+@pytest.mark.parametrize('settings_value', [None, '..'])
+def test_placeholder_output_falls_back_to_a_writable_checkout_directory(
+        settings_value, tmp_path: Path, monkeypatch) -> None:
+    """An empty or shipped placeholder output resolves to the writable checkout output dir."""
+    path = tmp_path / 'settings.yaml'
+    path.write_text(yaml.safe_dump({'RESOURCE_PATH': settings_value,
+                                    'OUTPUT_PATH': settings_value}))
+    monkeypatch.setattr(local_path, '_SETTINGS_PATH', path)
+
+    output_path = Path(local_path.get_output_path())
+
+    assert output_path == Path(__file__).resolve().parents[2] / 'outputs'
+    assert output_path.is_dir()
+    assert os.access(output_path, os.W_OK)
+    assert chr(92) not in local_path.get_output_path()
+
+
+def test_absent_settings_file_uses_portable_checkout_defaults(tmp_path: Path, monkeypatch) -> None:
+    """A missing YAML file uses the checkout root and its writable output directory."""
+    monkeypatch.setattr(local_path, '_SETTINGS_PATH', tmp_path / 'absent.yaml')
+
+    assert local_path.get_resource_path() == Path(__file__).resolve().parents[2].as_posix()
+    assert local_path.get_output_path() == (
+        Path(__file__).resolve().parents[2] / 'outputs').as_posix()
+    assert chr(92) not in local_path.get_resource_path()
+    assert chr(92) not in local_path.get_output_path()

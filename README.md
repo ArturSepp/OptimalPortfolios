@@ -89,7 +89,7 @@ from optimalportfolios import (
     PortfolioObjective,
     compute_rolling_optimal_weights,
 )
-from optimalportfolios.examples.data.multiasset import load_multiasset_data
+from optimalportfolios.tests.data.multiasset import load_multiasset_data
 
 prices = load_multiasset_data().prices.iloc[-120:, :4]
 time_period = qis.TimePeriod(prices.index[0], prices.index[-1])

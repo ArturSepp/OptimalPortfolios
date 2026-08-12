@@ -2,9 +2,17 @@
 and the alpha and reporting layers, re-exported from their subpackages.
 """
 
+from importlib.metadata import PackageNotFoundError as _PackageNotFoundError
+from importlib.metadata import version as _distribution_version
+
 import optimalportfolios.local_path
 
 from optimalportfolios.config import PortfolioObjective
+
+try:
+    __version__ = _distribution_version('optimalportfolios')
+except _PackageNotFoundError:  # pragma: no cover - only an uninstalled source tree reaches this
+    __version__ = '0+unknown'
 
 # Each star below re-exports its subpackage's namespace, so a subpackage's public surface is
 # the imports written in its own ``__init__`` and nothing beside them. F401 and F403 are off
