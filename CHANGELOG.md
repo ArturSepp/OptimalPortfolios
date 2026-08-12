@@ -7,6 +7,29 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+**Coverage floor raised (2026-08-13):** `fail_under` rises from `95` to `99`; measured coverage
+over the scope narrowed in 6.17.0 is 99.09%, on a suite grown from 1145 to 1272 tests. The
+floor rises whenever measured coverage rises, and lowering it requires a dated note here.
+
+### Added
+
+- Tests for the three signal-backtest factsheet builders in `alphas/backtest_alphas.py`,
+  including a sweep assertion on the recorded target weights rather than on the leg labels,
+  which are derived from the sweep values and would look correct even if the span never
+  reached `compute_signal_scores`.
+- Validation coverage across all three `minimum_tracking_error` entry points, and both
+  `max_sharpe` solver paths with an assertion on which solver actually ran — the
+  Charnes-Cooper transform and the SciPy SLSQP fallback return the same outcome type, so a
+  mis-routed problem is otherwise indistinguishable from a solved one.
+- Tests for `residual_reversal`'s four dispatch branches, pinning the raw signal as the exact
+  negation of `compute_residual_momentum_alpha`. A dropped negation leaves a signal that still
+  scores and still backtests, while buying momentum winners under a module named reversal.
+- Tests for the target-yield solver's soft-tracking-error branch, the risk-budgeting solver's
+  input validation and box-infeasibility guards, and the mixed-cadence-with-groups path shared
+  by `carry`, `low_beta`, `momentum` and `residual_momentum` — the one path that partitions the
+  universe twice and merges the cells back, where a dropped or duplicated ticker still yields a
+  full-looking score panel.
+
 ### Fixed
 
 - Made soft tracking error ignore a populated hard tracking-error budget during both the solve
@@ -20,8 +43,8 @@ alongside `tests/`, `examples/` and `papers/`. The reporting layer renders facts
 `qis` and `pybloqs` and is reviewed by eye rather than by assertion; measured at 3.9% it
 contributed 223 of the 597 missed lines and did nothing but dilute the ratchet. Anything with
 a numerical contract belongs outside `reports/`, where it is still measured. The floor rises
-from `fail_under = 88` to `98`: measured coverage over the narrowed scope is 98.31%, up from
-92.99% at the moment of the scope change, on a suite grown from 1077 to 1200 tests.
+from `fail_under = 88` to `95`: measured coverage over the narrowed scope is 96.18%, up from
+92.99% at the moment of the scope change, on a suite grown from 1077 to 1145 tests.
 
 ### Added
 
@@ -34,17 +57,6 @@ from `fail_under = 88` to `98`: measured coverage over the narrowed scope is 98.
   (`alphas/alpha_data.py`), the HCGL covariance report (`covar_estimation/covar_reporting.py`),
   the CVXPY covariance stabiliser (`optimization/covar_factorization.py`), and the
   settings-path accessors (`local_path.py`).
-- Tests for the three signal-backtest factsheet builders in `alphas/backtest_alphas.py`,
-  including a sweep assertion on the recorded target weights rather than on the leg labels,
-  which are derived from the sweep values and would look correct even if the span never
-  reached `compute_signal_scores`.
-- Validation coverage across all three `minimum_tracking_error` entry points, and both
-  `max_sharpe` solver paths with an assertion on which solver actually ran — the
-  Charnes-Cooper transform and the SciPy SLSQP fallback return the same outcome type, so a
-  mis-routed problem is otherwise indistinguishable from a solved one.
-- Tests for `residual_reversal`'s four dispatch branches, pinning the raw signal as the exact
-  negation of `compute_residual_momentum_alpha`. A dropped negation leaves a signal that still
-  scores and still backtests, while buying momentum winners under a module named reversal.
 
 ### Fixed
 

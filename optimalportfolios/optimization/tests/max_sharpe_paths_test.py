@@ -107,13 +107,32 @@ def test_the_transformed_solution_is_unscaled_back_onto_the_exposure() -> None:
     assert float(np.sum(outcome.weights)) == pytest.approx(1.0, abs=1e-6)
 
 
-def test_the_transformed_solution_favours_the_best_reward_to_risk_asset() -> None:
-    """Asset A has the highest mean and B the second; the Sharpe optimum must not invert them."""
+def test_the_transformed_solution_beats_every_naive_alternative_on_sharpe() -> None:
+    """The recovered weights must actually maximise the ratio, not merely satisfy the bounds.
+
+    Optimality is the claim the transform makes, and it is the one thing box-and-exposure
+    assertions cannot see: a wrong ``k``, a dropped covariance term or a sign slip all leave
+    weights that are long-only, sum to one and look sensible. Scoring the result against the
+    equal-weight portfolio and against each single-asset portfolio is a cheap lower bound that
+    those failures do not clear. Deliberately not asserted: any ordering of the weights against
+    the means. The Sharpe optimum here is ordered D > C > B > A, the exact inverse of the means,
+    because the low-mean assets are the low-vol ones -- an intuition-shaped assertion would
+    pin the wrong portfolio.
+    """
     outcome = cvx_maximize_portfolio_sharpe(covar=covar_matrix(), means=means_vector(),
                                             constraints=make_constraints(1.0, 1.0))
     weights = pd.Series(outcome.weights, index=TICKERS)
-    assert weights['A'] > 0.0
     assert weights.min() >= -1e-9                       # long-only bounds respected
+
+    covar, means = covar_matrix(), means_vector()
+
+    def sharpe(w: np.ndarray) -> float:
+        """Reward-to-risk of a weight vector under the test covariance."""
+        return float(w @ means / np.sqrt(w @ covar @ w))
+
+    best = sharpe(weights.to_numpy())
+    assert best > sharpe(np.full(len(TICKERS), 1.0 / len(TICKERS)))
+    assert best > max(sharpe(row) for row in np.eye(len(TICKERS)))
 
 
 def test_a_solver_failure_on_the_transform_becomes_a_rejected_outcome(monkeypatch) -> None:

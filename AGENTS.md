@@ -66,7 +66,7 @@ Every file matching pytest's default patterns — `*_test.py` **and** `test_*.py
 
 ```bash
 pip install -e ".[dev]"                                  # editable install with dev tools
-pytest                                                   # run the test suite (1200 tests, ~100 s)
+pytest                                                   # run the test suite (1272 tests, ~160 s)
 pytest optimalportfolios/optimization/tests/constraints_test.py -v
 ruff check optimalportfolios/                            # lint (papers/ is excluded)
 interrogate                                              # docstring coverage, must stay at 100%
@@ -76,8 +76,8 @@ interrogate                                              # docstring coverage, m
 
 Optional extras: `data`, `reports`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.13 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. Both of those jobs run on `ubuntu-latest`, `windows-latest` and `macos-latest`, so a fix that only holds on POSIX paths or POSIX line endings fails the matrix. The ubuntu/Python 3.12 coverage cell alone installs against `constraints.txt`, regenerated at each release; the remaining matrix cells, core installs and audit resolution deliberately float. Separate jobs gate the three ruff stack invariants, `interrogate` docstring coverage at 100%, and `pip-audit` over the dependency tree resolved from `pyproject.toml`. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
 
-Line coverage measured **98.31%** on the 1200-test dev suite. The
-ubuntu/3.12 matrix entry gates `pytest --cov=optimalportfolios` at `fail_under = 98`; this floor rises
+Line coverage measured **99.09%** on the 1272-test dev suite. The
+ubuntu/3.12 matrix entry gates `pytest --cov=optimalportfolios` at `fail_under = 99`; this floor rises
 whenever measured coverage rises, and lowering it requires a dated `CHANGELOG.md` note.
 The measured scope is not the whole package: `[tool.coverage.run] omit` drops `reports/` alongside
 `tests/`, `examples/` and `papers/`, because the reporting layer renders through `qis` and `pybloqs`

@@ -72,16 +72,40 @@ def test_the_raw_signal_is_the_exact_negation_of_residual_momentum(universe: dic
 
 
 def test_a_recent_residual_loser_scores_above_a_winner(universe: dict) -> None:
-    """The negation is what makes a loser attractive; the score ordering must reflect it."""
-    _, raw = compute_residual_reversal_alpha(prices=universe['prices'],
-                                             benchmark_price=universe['benchmark_price'])
-    scores, _ = compute_residual_reversal_alpha(prices=universe['prices'],
-                                                benchmark_price=universe['benchmark_price'])
+    """The worst residual momentum must come out with the highest reversal score.
+
+    Stated against ``compute_residual_momentum_alpha`` rather than against the module's own raw
+    frame, because the two together are what the claim needs: scoring is monotone in the raw
+    signal, so a rank comparison within this module holds whether or not the negation happened
+    and proves only that the scorer is order-preserving. Anchoring the extremes on the momentum
+    panel is what fails if the sign is dropped.
+
+    The spans are passed explicitly because the two entry points do not share their defaults:
+    reversal filters at ``long_span=1`` and momentum at ``12``, which is the horizon difference
+    that makes one a reversal signal at all. Left implicit, the panels would be two different
+    signals and the comparison would say nothing about the sign.
+    """
+    kwargs = dict(prices=universe['prices'], benchmark_price=universe['benchmark_price'],
+                  beta_span=12, long_span=1, vol_span=13)
+    scores, raw_reversal = compute_residual_reversal_alpha(**kwargs)
+    _, raw_momentum = compute_residual_momentum_alpha(**kwargs)
+
     date = scores.dropna(how='all').index[-1]
-    row_raw, row_score = raw.loc[date, :].dropna(), scores.loc[date, :].dropna()
-    common = row_raw.index.intersection(row_score.index)
-    # scoring is monotone in the raw signal, so their rank orders agree
-    assert (row_raw[common].rank().equals(row_score[common].rank()))
+    row_score = scores.loc[date, :].dropna()
+    row_momentum = raw_momentum.loc[date, :].dropna()
+    common = row_score.index.intersection(row_momentum.index)
+    assert len(common) >= 2
+
+    worst_momentum = row_momentum[common].idxmin()
+    best_momentum = row_momentum[common].idxmax()
+    assert row_score[worst_momentum] == row_score[common].max()
+    assert row_score[best_momentum] == row_score[common].min()
+    assert row_score[worst_momentum] > row_score[best_momentum]
+
+    # and the scorer is order-preserving, which is why the extremes above transfer
+    row_raw = raw_reversal.loc[date, :].dropna()
+    shared = row_raw.index.intersection(row_score.index)
+    assert row_raw[shared].rank().equals(row_score[shared].rank())
 
 
 # --------------------------------------------------------------------------- #
