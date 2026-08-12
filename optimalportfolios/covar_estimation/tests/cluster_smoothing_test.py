@@ -5,6 +5,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import qis
+import pytest
 
 from factorlasso import (
     ClusterSmootherType,
@@ -82,11 +83,22 @@ def test_none_rolling_path_matches_explicit_current_fits_exactly() -> None:
         pd.testing.assert_series_equal(actual.data[date].clusters, fitted.clusters, check_exact=True)
 
 
-def test_smoothed_rolling_injects_independently_computed_partitions() -> None:
+@pytest.mark.parametrize(
+    ("smoother", "kwargs"),
+    [
+        (ClusterSmootherType.PARTITION_BONUS, {"smoother_delta": 0.05}),
+        (ClusterSmootherType.PARTITION_BONUS,
+         {"smoother_delta": 0.20, "recluster_freq": "QE"}),
+        (ClusterSmootherType.SIMILARITY_EWMA,
+         {"smoother_lambda": 0.50, "recluster_freq": "QE"}),
+    ],
+)
+def test_smoothed_rolling_injects_independently_computed_partitions(
+        smoother: ClusterSmootherType, kwargs: dict) -> None:
     """The rolling fit consumes exactly the partitions from the causal first pass."""
     factors, returns = _inputs()
     period = _period(factors)
-    model = _model(ClusterSmootherType.PARTITION_BONUS, smoother_delta=0.05)
+    model = _model(smoother, **kwargs)
     estimator = FactorCovarEstimator(
         lasso_model=model, rebalancing_freq="ME",
         factor_returns_freq="ME", factor_covar_span=24,
@@ -137,12 +149,23 @@ def test_precomputed_clusters_preserve_fcgl_model_type() -> None:
     assert fitted_types == [LassoModelType.FACTOR_CLUSTER_GROUP_LASSO]
 
 
-def test_smoothed_current_fit_reconstructs_the_trailing_partition() -> None:
+@pytest.mark.parametrize(
+    ("smoother", "kwargs"),
+    [
+        (ClusterSmootherType.SIMILARITY_EWMA, {"smoother_lambda": 0.7}),
+        (ClusterSmootherType.PARTITION_BONUS,
+         {"smoother_delta": 0.2, "recluster_freq": "QE"}),
+        (ClusterSmootherType.SIMILARITY_EWMA,
+         {"smoother_lambda": 0.5, "recluster_freq": "QE"}),
+    ],
+)
+def test_smoothed_current_fit_reconstructs_the_trailing_partition(
+        smoother: ClusterSmootherType, kwargs: dict) -> None:
     """A live fit rebuilds the same causal path as a matching rolling window."""
     factors, returns = _inputs()
     factors = factors.iloc[-20:]
     returns = {'ME': returns['ME'].iloc[-20:]}
-    model = _model(ClusterSmootherType.SIMILARITY_EWMA, smoother_lambda=0.7)
+    model = _model(smoother, **kwargs)
     estimator = FactorCovarEstimator(
         lasso_model=model,
         rebalancing_freq='ME',
@@ -165,11 +188,20 @@ def test_smoothed_current_fit_reconstructs_the_trailing_partition() -> None:
     )
 
 
-def test_hold_frequency_must_be_coarser_than_rebalancing() -> None:
-    """HOLD rejects an anchor that can recluster as often as the fit schedule."""
+@pytest.mark.parametrize(
+    "smoother",
+    [
+        ClusterSmootherType.HOLD,
+        ClusterSmootherType.PARTITION_BONUS,
+        ClusterSmootherType.SIMILARITY_EWMA,
+    ],
+)
+def test_scheduled_frequency_must_be_coarser_than_rebalancing(
+        smoother: ClusterSmootherType) -> None:
+    """Every scheduled smoother rejects anchors as frequent as the fit schedule."""
     factors, returns = _inputs()
     estimator = FactorCovarEstimator(
-        lasso_model=_model(ClusterSmootherType.HOLD, recluster_freq="ME"),
+        lasso_model=_model(smoother, recluster_freq="ME"),
         rebalancing_freq="ME",
         factor_returns_freq="ME",
         factor_covar_span=24,
@@ -180,4 +212,4 @@ def test_hold_frequency_must_be_coarser_than_rebalancing() -> None:
         assert "recluster_freq" in str(exc)
         assert "ME" in str(exc)
     else:
-        raise AssertionError("HOLD accepted recluster_freq='ME' with monthly rebalancing")
+        raise AssertionError(f"{smoother.name} accepted monthly reclustering")

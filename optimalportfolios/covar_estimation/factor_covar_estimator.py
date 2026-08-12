@@ -346,7 +346,7 @@ class FactorCovarEstimator(CovarEstimator):
         smoother_type = ClusterSmootherType(self.lasso_model.cluster_smoother_type)
         rolling_clusters_by_freq = None
         if smoother_type != ClusterSmootherType.NONE:
-            if smoother_type == ClusterSmootherType.HOLD:
+            if self.lasso_model.recluster_freq is not None:
                 _validate_recluster_frequency(
                     recluster_freq=str(self.lasso_model.recluster_freq),
                     rebalancing_freq=effective_rebalancing_freq,
