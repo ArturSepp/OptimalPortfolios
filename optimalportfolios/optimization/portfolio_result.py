@@ -38,30 +38,16 @@ def _to_dataframe(w: Union[pd.Series, pd.DataFrame], default_name: str = 'portfo
 
 @dataclass
 class PortfolioOptimisationResult:
-    """
-    Portfolio optimisation output with factor model context for risk attribution.
+    """Portfolio optimisation output with factor model context for risk attribution.
 
     Tracking-error and factor-exposure computations delegate to ``qis.RiskModel`` in
     ``qis.portfolio.risk.risk_model``.
 
-    Supports N portfolios via DataFrame inputs. When weights is a DataFrame,
-    each column is a separate portfolio. benchmark_weights is matched:
-      - Series: same benchmark for all portfolios
-      - DataFrame: per-portfolio benchmarks (columns must match weights columns)
-
-    current_weights is optional (needed only for turnover analysis):
-      - Series: same current weights for all portfolios
-      - DataFrame: per-portfolio current weights (columns must match weights columns)
-
-    Risk decomposition:
-        sigma^2_p = w' Sigma_y w = w' beta Sigma_x beta' w + w' D w
-                  = systematic risk  + idiosyncratic risk
-
-    Active risk (tracking error):
-        TE^2 = delta' Sigma_y delta  where delta = w - w_bench
-
-    Turnover:
-        turnover = sum |w_new - w_current| / 2
+    ``weights`` and ``benchmark_weights`` may be a Series for one portfolio or DataFrames whose
+    columns are portfolios. ``current_weights`` follows the same convention when turnover is
+    requested. Risk is decomposed into systematic and idiosyncratic terms; active risk applies
+    the same covariance model to benchmark-relative weights, and one-way turnover is half the
+    L1 distance between new and current weights.
     """
 
     # Core portfolio weights: Series (single) or DataFrame (N portfolios as columns)

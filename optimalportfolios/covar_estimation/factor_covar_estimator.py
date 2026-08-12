@@ -422,21 +422,15 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
     then assembles the factor covariance matrix, betas, idiosyncratic variances,
     and in-sample diagnostics into CurrentFactorCovarData.
 
-    Convention:
-        estimated_betas from LassoModel is (N x M) with index=assets, columns=factors.
-        y_betas in CurrentFactorCovarData follows the same (N x M) convention.
+    ``LassoModel.estimated_betas`` and ``CurrentFactorCovarData.y_betas`` both use the
+    (N x M) convention with assets on rows and factors on columns. Clusters, linkages and
+    cutoffs are fitted per frequency, then flattened into persistable pandas objects:
 
-        Clusters, linkages and cutoffs are fitted per-frequency (one clustering
-        step per freq block of assets) but flattened into persistable pandas
-        objects before construction:
-          - clusters: pd.Series indexed by asset (each asset appears in
-            exactly one freq bucket), values are freq-prefixed cluster IDs.
-          - linkages: pd.DataFrame of scipy linkage rows, stacked across
-            freqs with a freq-prefixed merge-step index, columns
-            ['left', 'right', 'distance', 'n_samples']. Use
-            ``factor_covar.get_linkage_array(linkages, freq)`` to recover
-            a scipy-compatible ndarray for a given frequency.
-          - cutoffs: pd.Series indexed by freq code.
+    - ``clusters`` is a Series indexed by asset with frequency-prefixed cluster IDs.
+    - ``linkages`` stacks scipy linkage rows across frequencies under a frequency-prefixed
+      merge-step index. ``factor_covar.get_linkage_array(linkages, freq)`` recovers one
+      scipy-compatible array.
+    - ``cutoffs`` is a Series indexed by frequency code.
 
     Args:
         risk_factor_prices: Factor price series. Index=dates, columns=factor names.

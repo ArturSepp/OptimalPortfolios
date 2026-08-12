@@ -21,7 +21,8 @@ autosummary_generate = True
 autosummary_imported_members = True
 autodoc_typehints = "description"
 napoleon_google_docstring = True
-napoleon_numpy_docstring = False
+napoleon_numpy_docstring = True
+napoleon_use_param = False
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]

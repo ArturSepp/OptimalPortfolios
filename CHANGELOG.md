@@ -17,6 +17,8 @@ from `fail_under = 88` to `95`: measured coverage over the narrowed scope is 96.
 
 ### Added
 
+- Exposed `optimalportfolios.__version__` from installed distribution metadata and added
+  per-object Sphinx API pages with full signatures and rendered argument documentation.
 - Tests for five previously unexercised modules: the rank-based alpha profiler
   (`alphas/profile/core.py`, `alphas/profile/signal_profilers.py`), the alpha container
   (`alphas/alpha_data.py`), the HCGL covariance report (`covar_estimation/covar_reporting.py`),
@@ -25,9 +27,19 @@ from `fail_under = 88` to `95`: measured coverage over the narrowed scope is 96.
 
 ### Fixed
 
+- Made resource and output paths platform-neutral with `pathlib`; a missing or placeholder
+  `settings.yaml` now selects a writable checkout-aware default instead of a literal Windows
+  separator, and the offline multi-asset example now imports its shipped fixture. The defect
+  was reported by @tschm in issue #43.
 - Reconstructed factorlasso's flat, persisted cluster/linkage/cutoff fields by cadence before
   plotting, so `plot_current_covar_data` and `run_rolling_covar_report(is_plot=True)` render
   multi-asset universes again. The defect was discovered by @tschm in PR #44.
+
+### Changed
+
+- Clarified the public reproduction boundary and recorded known environment versions for every
+  paper folder in `papers/README.md`; the package classifier now matches the documented
+  Production/Stable maturity.
 
 ## [6.16.0] - 2026-08-12
 

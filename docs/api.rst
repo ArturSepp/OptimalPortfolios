@@ -6,6 +6,7 @@ root. ``autosummary`` provides a compact inventory; ``autodoc`` provides the
 signatures and docstrings.
 
 .. autosummary::
+   :toctree: generated
 
    optimalportfolios.AlphasData
    optimalportfolios.ConstraintEnforcementType
