@@ -11,9 +11,9 @@ Snapshot contents (all decimal per annum unless stated):
                                 alpha, resid_vol, total_vol, r2, w_workbook,
                                 w_paper, factor_excess_cma,
                                 equity_regional_addon, rf_rate
-    betas.csv                   N x 9 factor loadings
-    factor_covar.csv            9 x 9 factor covariance
-    factor_premia.csv           9 x 3 (base, stress, upside)
+    betas.csv                   N x M factor loadings
+    factor_covar.csv            M x M factor covariance
+    factor_premia.csv           M x 3 (base, stress, upside)
     asset_excess_logreturns.csv estimation returns panel, bootstrap window
     asset_total_returns.csv     reporting returns panel, bootstrap window
     factor_navs.csv             daily factor NAVs (base 100), window-trimmed
@@ -71,9 +71,9 @@ class PaperInputs:
     tag: str
     assets: pd.DataFrame            # per-asset config, index = tickers
     betas: pd.DataFrame             # N x 9
-    factor_covar: pd.DataFrame      # 9 x 9
-    factor_premia: pd.Series        # base premia (9,)
-    factor_premia_scenarios: pd.DataFrame   # 9 x (base, stress, upside)
+    factor_covar: pd.DataFrame      # M x M
+    factor_premia: pd.Series        # base premia (M,)
+    factor_premia_scenarios: pd.DataFrame   # M x (base, stress, upside)
     asset_excess_logreturns: Optional[pd.DataFrame]   # None when not redistributed
     asset_total_returns: Optional[pd.DataFrame]       # None when not redistributed
     factor_navs: Optional[pd.DataFrame]               # None when not redistributed

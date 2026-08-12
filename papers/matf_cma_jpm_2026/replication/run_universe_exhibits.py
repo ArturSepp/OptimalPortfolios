@@ -68,7 +68,7 @@ AS_OF_DATE = '30 June 2026'      # defect D3: the R2 caption says 31 March 2026
 BETA_BLANK_TOL = 5e-3
 IDENTITY_TOL = 1e-10             # decimal p.a.
 
-# Factor colors for the attribution stack. Nine distinguishable hues that
+# Factor colors for the attribution stack. Eleven distinguishable hues that
 # EXCLUDE orange and light blue, because those two carry fixed meanings in the
 # frozen construction waterfall: light blue = regional blend, orange = admitted
 # alpha. Equity leads on the manuscript primary so the largest segment matches
@@ -77,7 +77,9 @@ FACTOR_COLORS: Dict[str, str] = {
     'Equity': '#1f77b4',
     'Rates': '#2ca02c',
     'Credit': '#8c564b',
-    'Carry': '#9467bd',
+    'Credit EM': '#ad494a',
+    'Carry G10': '#9467bd',
+    'Carry EM': '#756bb1',
     'Inflation': '#17becf',
     'Commodities': '#bcbd22',
     'Private Equity': '#e377c2',
@@ -87,10 +89,11 @@ FACTOR_COLORS: Dict[str, str] = {
 ADDON_COLOR = es.LIGHT_BLUE       # regional premium blend, as in the frozen waterfall
 ADMITTED_COLOR = es.ORANGE        # admitted historical alpha, as in the frozen waterfall
 
-# Compact column headers for tb:cma_snapshot: nine betas plus three scenario CMAs in
+# Compact column headers for tb:cma_snapshot: eleven betas plus three scenario CMAs in
 # one printable width. Spelled out in the exhibit caption.
 SNAPSHOT_HEADERS: Dict[str, str] = {
-    'Equity': 'Eq', 'Rates': 'Rt', 'Credit': 'Cr', 'Carry': 'Cy', 'Inflation': 'Inf',
+    'Equity': 'Eq', 'Rates': 'Rt', 'Credit': 'Cr', 'Credit EM': 'CrEM',
+    'Carry G10': 'CyG10', 'Carry EM': 'CyEM', 'Inflation': 'Inf',
     'Commodities': 'Cmd', 'Private Equity': 'PE', 'Rates Vol': 'RVol', 'Fx': 'FX',
 }
 CLASS_ABBREVIATIONS: Dict[str, str] = {'Bonds': 'Bonds', 'Equities': 'Equities',

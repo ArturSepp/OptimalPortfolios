@@ -55,7 +55,8 @@ SHORT_LABELS = {'Income w/o Alts': 'Income', 'Low w/o Alts': 'Low',
 # Compact factor headers so the exposure block and the risk block fit one printable
 # width. Spelled out in the exhibit caption.
 FACTOR_HEADERS: Dict[str, str] = {
-    'Equity': 'Eq', 'Rates': 'Rt', 'Credit': 'Cr', 'Carry': 'Cy', 'Inflation': 'Inf',
+    'Equity': 'Eq', 'Rates': 'Rt', 'Credit': 'Cr', 'Credit EM': 'CrEM',
+    'Carry G10': 'CyG10', 'Carry EM': 'CyEM', 'Inflation': 'Inf',
     'Commodities': 'Cmd', 'Private Equity': 'PE', 'Rates Vol': 'RVol', 'Fx': 'FX',
 }
 

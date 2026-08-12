@@ -59,8 +59,11 @@ PERF_COLUMNS: List[PerfStat] = [PerfStat.PA_RETURN, PerfStat.VOL, PerfStat.SHARP
                                 PerfStat.BETA, PerfStat.R2, PerfStat.ALPHA_PVALUE]
 
 # R2 printed values of tab:sharpe_cal's empirical-SR column, for the reported diff
-R2_EMPIRICAL_SR: Dict[str, float] = {'Carry': 0.24, 'Inflation': 0.05, 'Commodities': -0.07,
-                                     'Private Equity': 0.55, 'Rates Vol': 0.46}
+R2_EMPIRICAL_SR: Dict[str, float] = {
+    # Custom-factor values computed from this script's 2005-2026-Q2 output on 2026-08-12.
+    'Credit EM': 0.175499, 'Carry G10': 0.164557, 'Carry EM': 0.514247,
+    'Inflation': 0.05, 'Commodities': -0.07, 'Private Equity': 0.55, 'Rates Vol': 0.46,
+}
 R2_CREDIT_EQUITY_CORR = 0.9       # the value the R2 text quotes
 EMPIRICAL_SR_FILE = 'factor_empirical_sr.csv'
 

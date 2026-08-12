@@ -125,11 +125,11 @@ def solve_mandate(covar: pd.DataFrame,
                               weights_0=benchmark_weights.rename('Current'),
                               constraint_enforcement_type=ConstraintEnforcementType.FORCED_CONSTRAINTS,
                               tracking_err_vol_constraint=tracking_err_vol_constraint)
-    weights = wrapper_maximise_alpha_over_tre(pd_covar=covar,
-                                              alphas=cmas,
-                                              benchmark_weights=benchmark_weights,
-                                              constraints=constraints,
-                                              weights_0=None)
+    weights, _ = wrapper_maximise_alpha_over_tre(pd_covar=covar,
+                                                 alphas=cmas,
+                                                 benchmark_weights=benchmark_weights,
+                                                 constraints=constraints,
+                                                 weights_0=None)
     if weights.isna().any():
         raise ValueError(f"mandate solve returned NaN weights for "
                          f"{list(weights[weights.isna()].index)!r}")

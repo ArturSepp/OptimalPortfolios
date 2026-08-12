@@ -30,11 +30,10 @@ draw is applied to the asset, factor and residual panels in PAIRED fashion, so
 any joint dependence between factor stress and residual heteroskedasticity
 survives.
 
-Prior (roadmap B10, owner decision O-J1). The Sharpe mean vector is the July
-production prior, asserted equal to the manifest's matf_sharpe_ratios rows
-rather than hard-coded a second time: (0.40, 0.25, 0.40, 0.25, 0.15, 0.15,
-0.60, 0.25, 0.00) in the canonical factor order, with sigma_SR = 0.10 and
-Sigma_SR = sigma_SR^2 rho_F.
+Prior (roadmap B10, owner decision O-J1). The Sharpe mean vector resolves each
+factor through the manifest's family_sharpe_ratio rows: (0.40, 0.25, 0.40,
+0.40, 0.25, 0.25, 0.15, 0.15, 0.60, 0.25, 0.00) in the canonical factor
+order, with sigma_SR = 0.10 and Sigma_SR = sigma_SR^2 rho_F.
 
 Recentering (owner decision, 2026-07-30). The raw panel is shifted by a
 constant per-asset offset to the MATF baseline at the prior mean before the raw
@@ -323,15 +322,20 @@ def build_vol_grid(solver: FrontierSolver,
 def get_prior_mean(inputs) -> pd.Series:
     """the July production Sharpe prior, read from the manifest rather than hard-coded (B10)."""
     config = pd.DataFrame(inputs.manifest['prod_config_snapshot'])
-    rows = config.loc[config['group'] == 'matf_sharpe_ratios']
-    prior = pd.Series({name.split('.', 1)[1]: float(value)
-                       for name, value in zip(rows['Unnamed: 0'], rows['value'])})
-    prior = prior.reindex(inputs.factor_covar.columns)
-    if prior.isna().any():
-        raise ValueError(f"manifest prior misaligned with the factor order, got {list(prior.index)!r}")
-    expected = pd.Series({'Equity': 0.40, 'Rates': 0.25, 'Credit': 0.40, 'Carry': 0.25,
-                          'Inflation': 0.15, 'Commodities': 0.15, 'Private Equity': 0.60,
-                          'Rates Vol': 0.25, 'Fx': 0.00}).reindex(prior.index)
+    rows = config.loc[config['group'] == 'matf_family_sharpe_ratios']
+    family_prior = pd.Series({name.split('.', 1)[1]: float(value)
+                              for name, value in zip(rows['Unnamed: 0'], rows['value'])})
+    factor_family = {'Equity': 'Equity', 'Rates': 'Rates', 'Credit': 'Credit',
+                     'Credit EM': 'Credit', 'Carry G10': 'Carry', 'Carry EM': 'Carry',
+                     'Inflation': 'Inflation', 'Commodities': 'Commodities',
+                     'Private Equity': 'Private Equity', 'Rates Vol': 'Rates Vol', 'Fx': 'Fx'}
+    factors = list(inputs.factor_covar.columns)
+    missing = [factor for factor in factors if factor not in factor_family]
+    if missing:
+        raise ValueError(f"factor-to-family prior mapping missing, got {missing!r}")
+    prior = pd.Series({factor: family_prior[factor_family[factor]] for factor in factors})
+    expected = pd.Series([0.40, 0.25, 0.40, 0.40, 0.25, 0.25, 0.15, 0.15,
+                          0.60, 0.25, 0.00], index=factors)
     if float((prior - expected).abs().max()) > 1e-12:
         raise ValueError(f"manifest prior is not the July B10 vector, got {prior.to_dict()!r}")
     return prior
@@ -752,7 +756,7 @@ def write_bootstrap_artifacts(bandwidth: pd.DataFrame,
                 'MATF-CMA': r"Equation~\eqref{eq:se_matf_full}"}
     inputs_col = {'Sample mean': r"$T_{\mathrm{eff}}$ asset returns",
                   'Grinold-Kroner': r"$K_{GK} = 4$ forecasts per asset",
-                  'MATF-CMA': r"$M = 9$ universe-wide factor SRs"}
+                  'MATF-CMA': r"$M = 11$ universe-wide factor SRs"}
     sample_col = {'Sample mean': r"$T/L$ scales noise",
                   'Grinold-Kroner': r"fixed; no $T$ scaling",
                   'MATF-CMA': r"cross-asset pooling via $\hat{\boldsymbol\beta}$"}

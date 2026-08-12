@@ -8,7 +8,7 @@ value labels in preference to legends, dpi 220, bbox_inches tight, no
 seaborn. Captions and notes live in the manuscript tex, never in the PNG, so
 figures carry a takeaway title and axis labels only.
 
-Factor display order is the canonical cma_data.FACTORS list, with 'Fx'
+Factor display order is the canonical order of the pinned snapshot, with 'Fx'
 rendered as 'FX' (factor_label). Asset display order is the snapshot order,
 which is Bonds then Equities then Alternatives.
 

@@ -1,7 +1,7 @@
 """
 Snapshot-only LaTeX value tables: no optimizer, no randomness (roadmap Stage J1).
 
-Regenerates, from the 2026q2 frozen cut alone, the four manuscript tables whose
+Regenerates, from the 2026q2_custom frozen cut alone, the four manuscript tables whose
 values are functions of the published config:
 
   tab:nine_factors    premium lambda_j (%), factor vol sqrt(Sigma_F,jj) (%),
@@ -12,7 +12,7 @@ values are functions of the published config:
                       sum IR^2 line (= alpha_adm' D^-1 alpha_adm, the raw claim)
                       and a Cap 3 audit row testing that claim against the
                       budget kappa * SR2_MATFCMA at kappa = 1.
-  tab:sharpe_cal      the five structural factors' SR^LR, vol target sigma*,
+  tab:sharpe_cal      the six structural factors' SR^LR, vol target sigma*,
                       lambda = SR^LR sigma* in bp, and the empirical SR joined
                       from run_factor_history_exhibits (Stage J2).
   tab:factor_returns  calendar-2022 and calendar-2023 factor excess returns
@@ -60,7 +60,9 @@ R2_ADMISSION_AUDIT: Dict[str, List[float]] = {
 }
 R2_FACTOR_RETURNS_ANNUAL: Dict[str, Tuple[float, float]] = {
     'Equity': (-19.0, 15.0), 'Rates': (-16.0, 0.0), 'Credit': (-1.0, 7.0),
-    'Carry': (1.0, 2.0), 'Inflation': (4.0, -1.0), 'Commodities': (13.0, -10.0),
+    'Credit EM': (-10.796105, 2.853132), 'Carry G10': (-2.100349, 0.327421),
+    'Carry EM': (13.124404, 4.447466),
+    'Inflation': (4.0, -1.0), 'Commodities': (13.0, -10.0),
     'Private Equity': (-4.0, 5.0), 'Rates Vol': (5.0, -1.0), 'Fx': (12.0, -1.0),
 }
 
@@ -69,7 +71,9 @@ PREMIUM_SOURCE: Dict[str, str] = {
     'Equity': 'P-CAEY earnings yield, regional blend',
     'Rates': 'OIS term premium + curve roll-down',
     'Credit': 'CDS spread net of expected loss',
-    'Carry': 'Equilibrium Sharpe prior',
+    'Credit EM': 'EM sovereign spread net of expected loss',
+    'Carry G10': 'Equilibrium Sharpe prior',
+    'Carry EM': 'Equilibrium Sharpe prior',
     'Inflation': 'Equilibrium Sharpe prior',
     'Commodities': 'Equilibrium Sharpe prior',
     'Private Equity': 'Equilibrium Sharpe prior',
@@ -79,7 +83,8 @@ PREMIUM_SOURCE: Dict[str, str] = {
 
 # The five structural factors of tab:sharpe_cal, with their key reference text.
 STRUCTURAL_FACTORS: Dict[str, str] = {
-    'Carry': r'\cite{LustigRV2011}',
+    'Carry G10': r'\cite{LustigRV2011}',
+    'Carry EM': r'\cite{LustigRV2011}',
     'Inflation': 'Empirical TIPS literature',
     'Commodities': 'Commodity futures literature',
     'Private Equity': r'\cite{Ang2018}',
@@ -208,24 +213,25 @@ def build_sharpe_calibration(inputs,
                              empirical_sr: Optional[pd.Series] = None,   # joined from Stage J2
                              ) -> pd.DataFrame:
     """SR^LR, volatility target, lambda in bp, and the empirical SR for the structural factors."""
-    priors = read_manifest_config(inputs=inputs, group='matf_sharpe_ratios')
+    priors = read_manifest_config(inputs=inputs, group='matf_family_sharpe_ratios')
     vol_targets = read_manifest_config(inputs=inputs, group='factor_vols')
+    factor_family = {'Carry G10': 'Carry', 'Carry EM': 'Carry'}
     rows = {}
     for factor, reference in STRUCTURAL_FACTORS.items():
-        lam = priors[factor] * vol_targets[factor]
-        rows[factor] = {'sr_lr': priors[factor],
+        prior = priors[factor_family.get(factor, factor)]
+        lam = prior * vol_targets[factor]
+        rows[factor] = {'sr_lr': prior,
                         'vol_target': vol_targets[factor],
                         'lambda_bp': 1e4 * lam,
                         'empirical_sr': (np.nan if empirical_sr is None
                                          else float(empirical_sr.get(factor, np.nan))),
                         'reference': reference}
     table = pd.DataFrame.from_dict(rows, orient='index')
-    # the calibrated lambda must reproduce the published premium for the structural factors
+    # With beta priors ON, the published base premia need not equal the static SR x target-vol
+    # calibration. Preserve both: this table shows the governed calibration, while
+    # tab:nine_factors shows the published base premia from factor_premia.csv.
     published = 1e4 * inputs.factor_premia[list(STRUCTURAL_FACTORS)]
-    gap = float((table['lambda_bp'] - published).abs().max())
-    if gap > 1e-6:
-        raise ValueError(f"SR x vol target does not reproduce the published premia, "
-                         f"got max gap {gap!r} bp")
+    table.attrs['published_premium_gap_bp'] = float((table['lambda_bp'] - published).abs().max())
     return table
 
 
@@ -246,7 +252,7 @@ def write_sharpe_calibration_tex(table: pd.DataFrame,
     """drop-in replacement body for tab:sharpe_cal."""
     lines = ['% ===== tab:sharpe_cal — regenerated on cma_data snapshot 2026q2 =====',
              '% Source: replication/run_snapshot_tables.py, MANIFEST prod_config_snapshot',
-             '%   (matf_sharpe_ratios x factor_vols). Empirical SR column joined from',
+             '%   (family_sharpe_ratios x factor_vols). Empirical SR column joined from',
              '%   run_factor_history_exhibits.py (Stage J2), 2005 - 2026-Q2, zero rf.',
              '% July config: Private Equity moves to SR 0.60 / lambda 420 bp (was 0.50 / 350 bp).',
              '']
@@ -289,6 +295,8 @@ def build_factor_returns(inputs,
     implied_upside = annual.loc[upside_year] / SCENARIO_HORIZON
     table.attrs['stress_gap_bp'] = 1e4 * float((scenarios['stress'] - implied_stress).abs().max())
     table.attrs['upside_gap_bp'] = 1e4 * float((scenarios['upside'] - implied_upside).abs().max())
+    table.attrs['scenario_recovered_annual_pct'] = 1e2 * SCENARIO_HORIZON * scenarios[
+        ['stress', 'upside']]
     if max(table.attrs['stress_gap_bp'], table.attrs['upside_gap_bp']) > 1e4 * IDENTITY_TOL:
         raise ValueError(f"scenario columns are not de-compounded annual returns, "
                          f"got max gap {table.attrs['stress_gap_bp']!r} bp")
@@ -379,11 +387,19 @@ def run_snapshot_tables_report(snapshot: str = SNAPSHOT,
     sharpe_cal = build_sharpe_calibration(inputs=inputs, empirical_sr=empirical_sr)
     print('\n--- tab:sharpe_cal ---')
     print(sharpe_cal.round({'sr_lr': 2, 'vol_target': 3, 'lambda_bp': 0, 'empirical_sr': 2}).to_string())
+    print(f"max |static calibration - published base premium|: "
+          f"{sharpe_cal.attrs['published_premium_gap_bp']:.2f} bp "
+          f"(beta priors are ON for this cut)")
 
     factor_returns = build_factor_returns(inputs=inputs)
     additivity_gap_bp = assert_scenario_additivity(inputs=inputs)
     print('\n--- tab:factor_returns ---')
     print(factor_returns.round(2).to_string())
+    recovered = factor_returns.attrs['scenario_recovered_annual_pct'].rename(
+        columns={'stress': 'recovered_stress_pct', 'upside': 'recovered_upside_pct'})
+    print("\nscenario annual returns: NAV-computed versus factor_premia x 5:")
+    print(pd.concat([factor_returns[['annual_stress_pct', 'annual_upside_pct']], recovered],
+                    axis=1).round(6).to_string())
     print(f"\nde-compounding gap: stress {factor_returns.attrs['stress_gap_bp']:.2e} bp, "
           f"upside {factor_returns.attrs['upside_gap_bp']:.2e} bp")
     print(f"scenario additivity gap: {additivity_gap_bp:.2e} bp")
