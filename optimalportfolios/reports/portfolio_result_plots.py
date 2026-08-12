@@ -38,9 +38,8 @@ def plot_efficient_frontier(
 
     Args:
         result: PortfolioOptimisationResult instance with N portfolios.
-        profiles: Dict mapping profile name to list of portfolio names.
-                  Example: {'w/o Alts': ['Income w/o Alts', 'Low w/o Alts', ...],
-                            'with Alts': ['Income with Alts', 'Low with Alts', ...]}
+        profiles: Mapping from profile name to portfolio names, for example
+            ``{'w/o Alts': ['Income w/o Alts'], 'with Alts': ['Income with Alts']}``.
         order: Polynomial order for scatter fit curve.
         markersize: Marker size for scatter points.
         xvar_format: Format string for x-axis (volatility).

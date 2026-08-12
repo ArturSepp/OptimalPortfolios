@@ -251,15 +251,15 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
 
     Two formulations, selected by ``soft_tracking_error``:
 
-    Hard tracking error (default, soft_tracking_error=False):
+    Hard tracking error (default, ``soft_tracking_error=False``)::
 
         max_w  α'(w - w_b)
         s.t.   y'w >= r_target                      (hard return target)
                (w - w_b)'Σ(w - w_b) <= TE²_max      (hard TE, if set on constraints)
                1'w = 1,  w >= 0,  bounds
 
-    Soft tracking error (soft_tracking_error=True) — TE drops from a hard
-    constraint to a penalty so the return target always takes priority:
+    Soft tracking error (``soft_tracking_error=True``) drops TE from a hard
+    constraint to a penalty so the return target always takes priority::
 
         max_w  α'(w - w_b) - λ_TE (w - w_b)'Σ(w - w_b) - λ_TO ||w - w_0||_1
         s.t.   y'w >= r_target                      (hard return target)

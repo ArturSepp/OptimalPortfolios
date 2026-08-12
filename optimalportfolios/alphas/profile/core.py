@@ -95,8 +95,8 @@ def backtest_alpha_rank_portfolio(prices: pd.DataFrame,
         benchmark_ticker: name for the equal-weight benchmark leg.
 
     Returns:
-        qis.MultiPortfolioData: [*alpha legs, equal-weight benchmark]. The benchmark is always
-        last, so portfolio_datas[-1] is the equal-weight reference.
+        qis.MultiPortfolioData: The alpha legs followed by the equal-weight benchmark. The
+        benchmark is always last, so ``portfolio_datas[-1]`` is the equal-weight reference.
     """
     # normalise to a label -> score-panel dict so single-panel and multi-panel share one code path
     if isinstance(alpha_scores, pd.DataFrame):

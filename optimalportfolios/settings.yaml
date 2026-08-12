@@ -1,19 +1,13 @@
-# set pc/developer local paths
-# add to gitignore afterwards
-# set paths to dbs
-
+# Optional developer-local paths. Null values select portable checkout-aware defaults.
+# Replace a value with an absolute or relative path only when a local override is needed.
 
 RESOURCE_PATH:
-  "..\\"
 
 LOCAL_RESOURCE_PATH:
-  "..\\"
 
 UNIVERSE_PATH:
-  "..\\"
 
 OUTPUT_PATH:
-  "..\\"
 
 AWS_POSTGRES:
   ""

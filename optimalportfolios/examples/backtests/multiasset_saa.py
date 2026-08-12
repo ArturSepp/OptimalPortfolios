@@ -18,7 +18,7 @@ from optimalportfolios import (Constraints, GroupLowerUpperConstraints, EwmaCova
                                PortfolioObjective,
                                compute_rolling_optimal_weights,
                                backtest_rolling_optimal_portfolio)
-from optimalportfolios.examples.data.multiasset import load_multiasset_data
+from optimalportfolios.tests.data.multiasset import load_multiasset_data
 
 # annual SAA cadence: 3y EWMA on monthly returns, rebalanced year-end
 RETURNS_FREQ = 'ME'

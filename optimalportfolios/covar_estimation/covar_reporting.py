@@ -19,7 +19,12 @@ from qis.plots.utils import get_table_lines_for_group_data, set_title, set_supti
 from matplotlib.colors import ListedColormap
 from typing import List, Dict, Tuple, Optional, Union
 
-from factorlasso import CurrentFactorCovarData
+from factorlasso import (
+    CurrentFactorCovarData,
+    get_clusters_by_freq,
+    get_cutoffs_by_freq,
+    get_linkages_by_freq,
+)
 from optimalportfolios.covar_estimation.factor_covar_estimator import FactorCovarEstimator
 
 def plot_current_covar_data(covar_data: CurrentFactorCovarData,
@@ -28,6 +33,9 @@ def plot_current_covar_data(covar_data: CurrentFactorCovarData,
 
     """Plot the HCGL diagnostics of one covariance snapshot."""
     df = covar_data.get_snapshot()
+    clusters = get_clusters_by_freq(covar_data.clusters)
+    linkages = get_linkages_by_freq(covar_data.linkages)
+    cutoffs = get_cutoffs_by_freq(covar_data.cutoffs)
     figs = plot_hcgl_covar_data(x_covar=covar_data.x_covar,
                                 y_covar=covar_data.y_covar,
                                 betas=covar_data.y_betas,
@@ -35,9 +43,9 @@ def plot_current_covar_data(covar_data: CurrentFactorCovarData,
                                 total_vol=df['total_vol'],
                                 residual_vol=df['resid_vol'],
                                 alpha=df['stat_alpha'],
-                                clusters=covar_data.clusters,
-                                linkages=covar_data.linkages,
-                                cutoffs=covar_data.cutoffs,
+                                clusters=clusters,
+                                linkages=linkages,
+                                cutoffs=cutoffs,
                                 date=covar_data.estimation_date,
                                 **kwargs)
     return figs

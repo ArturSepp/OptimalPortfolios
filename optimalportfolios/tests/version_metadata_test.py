@@ -18,6 +18,8 @@ from typing import Optional
 import pytest
 import yaml
 
+import optimalportfolios
+
 
 def _repo_root() -> Optional[Path]:
     """return the first ancestor holding pyproject.toml, or None."""
@@ -71,6 +73,11 @@ def test_citation_cff_matches_pyproject():
 def test_readme_bibtex_matches_pyproject():
     """The README BibTeX entry and ``pyproject.toml`` declare the same version."""
     assert _readme_bibtex_version() == _pyproject_version()
+
+
+def test_package_version_matches_pyproject():
+    """The importable package version agrees with the release metadata."""
+    assert optimalportfolios.__version__ == _pyproject_version()
 
 
 def test_citation_cff_date_released_is_iso():

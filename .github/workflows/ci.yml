@@ -94,6 +94,10 @@ jobs:
         print('factorlasso integration OK')
         "
 
+    - name: Smoke-test the offline multi-asset example
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+      run: python optimalportfolios/examples/backtests/multiasset_saa.py
+
     - name: Run the test suite with coverage gate
       # The floor lives in [tool.coverage.report] fail_under in pyproject.toml, so this job
       # fails when coverage regresses below it. term-missing prints the uncovered lines, which

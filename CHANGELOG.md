@@ -5,6 +5,42 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**Coverage scope change (2026-08-12):** `[tool.coverage.run] omit` now drops `reports/`
+alongside `tests/`, `examples/` and `papers/`. The reporting layer renders factsheets through
+`qis` and `pybloqs` and is reviewed by eye rather than by assertion; measured at 3.9% it
+contributed 223 of the 597 missed lines and did nothing but dilute the ratchet. Anything with
+a numerical contract belongs outside `reports/`, where it is still measured. The floor rises
+from `fail_under = 88` to `95`: measured coverage over the narrowed scope is 96.18%, up from
+92.99% at the moment of the scope change, on a suite grown from 1077 to 1145 tests.
+
+### Added
+
+- Exposed `optimalportfolios.__version__` from installed distribution metadata and added
+  per-object Sphinx API pages with full signatures and rendered argument documentation.
+- Tests for five previously unexercised modules: the rank-based alpha profiler
+  (`alphas/profile/core.py`, `alphas/profile/signal_profilers.py`), the alpha container
+  (`alphas/alpha_data.py`), the HCGL covariance report (`covar_estimation/covar_reporting.py`),
+  the CVXPY covariance stabiliser (`optimization/covar_factorization.py`), and the
+  settings-path accessors (`local_path.py`).
+
+### Fixed
+
+- Made resource and output paths platform-neutral with `pathlib`; a missing or placeholder
+  `settings.yaml` now selects a writable checkout-aware default instead of a literal Windows
+  separator, and the offline multi-asset example now imports its shipped fixture. The defect
+  was reported by @tschm in issue #43.
+- Reconstructed factorlasso's flat, persisted cluster/linkage/cutoff fields by cadence before
+  plotting, so `plot_current_covar_data` and `run_rolling_covar_report(is_plot=True)` render
+  multi-asset universes again. The defect was discovered by @tschm in PR #44.
+
+### Changed
+
+- Clarified the public reproduction boundary and recorded known environment versions for every
+  paper folder in `papers/README.md`; the package classifier now matches the documented
+  Production/Stable maturity.
+
 ## [6.16.0] - 2026-08-12
 
 **Risk-label tie disclosure:** the new deterministic matcher preserves the maximum matched
