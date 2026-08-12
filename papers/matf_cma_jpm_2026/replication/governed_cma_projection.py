@@ -45,7 +45,7 @@ from local_path import load_cma_data
 _cma_data = load_cma_data()
 PaperInputs = _cma_data.PaperInputs
 
-SNAPSHOT = '2026q2'                              # the pinned frozen cut
+SNAPSHOT = '2026q2_custom'                       # the pinned frozen cut
 OUTPUT_DIR = Path(__file__).parent / 'figures'
 
 # frozen paper reference values (MATF-CMA R2 draft, Section 4 / knowledge file);

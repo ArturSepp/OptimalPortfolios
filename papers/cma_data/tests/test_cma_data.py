@@ -56,40 +56,47 @@ def test_unknown_mandate_raises():
         cma_data.get_benchmark_weights(mandate='Aggressive')
 
 
-SNAPSHOT = CMA_DATA / 'snapshots' / '2026q2'
+SNAPSHOT_TAGS = ('2026q2', '2026q2_custom')
 
 
-@pytest.mark.skipif(not SNAPSHOT.exists(), reason='no snapshot present')
-def test_snapshot_manifest_verifies():
+@pytest.mark.parametrize('tag', SNAPSHOT_TAGS)
+def test_snapshot_manifest_verifies(tag):
     """every present file matches its hash; absent files are reported, not fatal.
 
     The three return panels are not redistributed publicly, so a public checkout
     reports them as absent. Config files are always present or verify_manifest
     raises.
     """
-    manifest, absent = cma_data.verify_manifest(snapshot_path=SNAPSHOT)
-    assert manifest['tag'] == '2026q2'
+    snapshot = CMA_DATA / 'snapshots' / tag
+    if not snapshot.exists():
+        pytest.skip(f'no {tag} snapshot present')
+    manifest, absent = cma_data.verify_manifest(snapshot_path=snapshot)
+    assert manifest['tag'] == tag
     assert len(manifest['file_sha256']) >= 6
     assert set(absent).issubset(set(cma_data.loaders.PANEL_FILES))
     for name in cma_data.loaders.CONFIG_FILES:
         assert name not in absent
 
 
-@pytest.mark.skipif(not SNAPSHOT.exists(), reason='no snapshot present')
-def test_snapshot_loads_and_aligns():
-    inputs = cma_data.load_snapshot(tag='2026q2')
+@pytest.mark.parametrize('tag', SNAPSHOT_TAGS)
+def test_snapshot_loads_and_aligns(tag):
+    snapshot = CMA_DATA / 'snapshots' / tag
+    if not snapshot.exists():
+        pytest.skip(f'no {tag} snapshot present')
+    inputs = cma_data.load_snapshot(tag=tag)
     assert list(inputs.assets.index) == list(cma_data.get_universe().index)
-    assert inputs.betas.shape == (18, 9)
-    assert inputs.factor_covar.shape == (9, 9)
+    assert inputs.betas.shape == (len(inputs.assets), len(inputs.factor_covar))
+    assert inputs.factor_covar.shape[0] == inputs.factor_covar.shape[1]
+    assert inputs.betas.columns.equals(inputs.factor_covar.columns)
     # the return panels are not redistributed publicly; assert only when present
     if inputs.has_panel('asset_excess_logreturns'):
         assert len(inputs.asset_excess_logreturns) >= 290    # ~300 month rows on the window
     # tampering detection: corrupting one byte must fail verification
-    target = SNAPSHOT / 'betas.csv'
+    target = snapshot / 'betas.csv'
     original = target.read_bytes()
     try:
         target.write_bytes(original + b' ')
         with pytest.raises(ValueError):
-            cma_data.verify_manifest(snapshot_path=SNAPSHOT)
+            cma_data.verify_manifest(snapshot_path=snapshot)
     finally:
         target.write_bytes(original)

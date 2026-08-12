@@ -1,20 +1,20 @@
 """
-Parity harness for the 2026q2 frozen cut: the numbers the manuscript rests on.
+Parity harness for the 2026q2_custom frozen cut: the numbers the manuscript rests on.
 
-Asserts three families on snapshot 2026q2, so any drift in the shared data
+Asserts three families on snapshot 2026q2_custom, so any drift in the shared data
 layer or in the replication mathematics fails loudly before an exhibit is
 built:
 
   reference values (3 decimals)
-      ceiling      lambda' Sigma_F^-1 lambda                       = 0.614
-      attainable   lambda' (Sigma_F + beta_F^-1)^-1 lambda         = 0.238
-      FPIR         attainable / ceiling                            = 0.387
-      raw claim    sum_i (w_i alpha_i / sigma_eps,i)^2             = 1.398
-      GLS claim    a' D^-1 a of the admitted-alpha vector          = 0.625
-      full vector  SR2_alpha(mu) of the published excess CMAs      = 0.456
-      solo premium-like shares  PE .84 / PC .77 / ILS .61 / HF .29 / Gold .29
-      Cap 3 theta  at kappa = 1.00 / 0.50 / 0.25                   = .41/.29/.21
-      Consensus    SR2_alpha on the 17-sleeve published+converted subset = 0.091
+      ceiling      lambda' Sigma_F^-1 lambda                       = 0.529
+      attainable   lambda' (Sigma_F + beta_F^-1)^-1 lambda         = 0.205
+      FPIR         attainable / ceiling                            = 0.388
+      raw claim    sum_i (w_i alpha_i / sigma_eps,i)^2             = 1.444
+      GLS claim    a' D^-1 a of the admitted-alpha vector          = 0.481
+      full vector  SR2_alpha(mu) of the published excess CMAs      = 0.402
+      solo premium-like shares  PE .97 / PC .96 / ILS .79 / HF .37 / Gold .26
+      Cap 3 theta  at kappa = 1.00 / 0.50 / 0.25                   = .38/.27/.19
+      Consensus    SR2_alpha on the 17-sleeve published+converted subset = 0.099
 
   identities (tolerance 1e-10, decimal p.a.)
       factor_excess_cma == betas @ factor_premia + equity_regional_addon
@@ -70,9 +70,9 @@ def inputs():
 
 def test_sharpe_accounting_reference_values(inputs):
     accounting = compute_sharpe_accounting(inputs=inputs)
-    assert round(accounting['ceiling'], 3) == 0.614
-    assert round(accounting['attainable'], 3) == 0.238
-    assert round(accounting['fpir'], 3) == 0.387
+    assert round(accounting['ceiling'], 3) == 0.529
+    assert round(accounting['attainable'], 3) == 0.205
+    assert round(accounting['fpir'], 3) == 0.388
 
 
 def test_admitted_claim_reference_values(inputs):
@@ -81,41 +81,41 @@ def test_admitted_claim_reference_values(inputs):
     raw = float((admitted / assets['resid_vol']).pow(2).sum())
     _, a_adm, _ = compute_gls_decomposition(mu_excess=admitted, inputs=inputs)
     gls = float(a_adm @ (a_adm / assets['resid_vol'] ** 2))
-    assert round(raw, 3) == 1.398
-    assert round(gls, 3) == 0.625
+    assert round(raw, 3) == 1.444
+    assert round(gls, 3) == 0.481
 
 
 def test_full_vector_consistency_measure(inputs):
     assets = inputs.assets
     mu_excess = assets['factor_excess_cma'] + assets['w_paper'] * assets['alpha']
     _, _, sr2_full = compute_gls_decomposition(mu_excess=mu_excess, inputs=inputs)
-    assert round(sr2_full, 3) == 0.456
+    assert round(sr2_full, 3) == 0.402
 
 
 def test_solo_premium_like_shares(inputs):
     shares = compute_solo_premium_like_shares(inputs=inputs)
-    expected = {'MP503001 Index': 0.84,      # Private Equity
-                'MP503008 Index': 0.77,      # Private Credit
-                'EHFI804 Index': 0.61,       # Insurance-Linked
-                'HFRIFWI Index': 0.29,       # Hedge Funds
-                'BCOMGCTR Index': 0.29}      # Gold
+    expected = {'MP503001 Index': 0.97,      # Private Equity
+                'MP503008 Index': 0.96,      # Private Credit
+                'EHFI804 Index': 0.79,       # Insurance-Linked
+                'HFRIFWI Index': 0.37,       # Hedge Funds
+                'BCOMGCTR Index': 0.26}      # Gold
     for ticker, share in expected.items():
         assert round(float(shares[ticker]), 2) == share, ticker
 
 
 def test_cap3_projection_grid(inputs):
-    expected_theta = {1.00: 0.41, 0.50: 0.29, 0.25: 0.21}
+    expected_theta = {1.00: 0.38, 0.50: 0.27, 0.25: 0.19}
     expected_skill_share = {1.00: 0.50, 0.50: 0.33, 0.25: 0.20}
     assert set(KAPPA_GRID) == set(expected_theta)
     for kappa in KAPPA_GRID:
         proj = project_onto_governed_set(inputs=inputs, kappa=kappa)
         assert round(proj.attrs['theta'], 2) == expected_theta[kappa], kappa
         assert round(proj.attrs['rho_after'], 2) == expected_skill_share[kappa], kappa
-        assert round(proj.attrs['rho_before'], 2) == 0.85
+        assert round(proj.attrs['rho_before'], 2) == 0.88
 
 
 def test_consensus_claimed_sr2_alpha(inputs):
-    """0.091 on the 17-sleeve published+converted subset (held-at-MATF excluded)."""
+    """0.099 on the 17-sleeve published+converted subset (held-at-MATF excluded)."""
     consensus = _cma_data.build_consensus_provider()
     tickers = consensus.index[consensus['source'] != 'held_at_matf']
     assert len(tickers) == 17
@@ -124,7 +124,7 @@ def test_consensus_claimed_sr2_alpha(inputs):
     decomposition = decompose_on_subset(mu_excess=mu_cons,
                                         betas=inputs.betas.loc[tickers],
                                         resid_vol=inputs.assets.loc[tickers, 'resid_vol'])
-    assert round(decomposition.attrs['sr2_alpha'], 3) == 0.091
+    assert round(decomposition.attrs['sr2_alpha'], 3) == 0.099
 
 
 # --------------------------------------------------------------------------
@@ -178,7 +178,7 @@ def test_audit_irs_square_sum_to_raw_claim(inputs):
     raw = float((assets['w_paper'] * assets['alpha'] / assets['resid_vol']).pow(2).sum())
     audit = build_admission_audit(inputs=inputs)
     assert float(abs(audit['ir'].pow(2).sum() - raw)) < IDENTITY_TOL
-    assert round(raw, 3) == 1.398
+    assert round(raw, 3) == 1.444
 
 
 def test_waterfall_components_sum_to_published_excess_cma(inputs):
@@ -211,17 +211,19 @@ def test_manifest_verification_rejects_a_tampered_file(tmp_path):
 
 
 def test_snapshot_manifest_pins_the_july_sharpe_priors(inputs):
-    """B10: the bootstrap prior mean vector equals the manifest matf_sharpe_ratios rows."""
+    """B10: every factor inherits its governed family Sharpe prior."""
     config = pd.DataFrame(inputs.manifest['prod_config_snapshot'])
-    rows = config.loc[config['group'] == 'matf_sharpe_ratios']
-    manifest_priors = pd.Series(
+    rows = config.loc[config['group'] == 'matf_family_sharpe_ratios']
+    family_priors = pd.Series(
         {name.split('.', 1)[1]: float(value)
          for name, value in zip(rows['Unnamed: 0'], rows['value'])})
-    expected = pd.Series({'Equity': 0.40, 'Rates': 0.25, 'Credit': 0.40, 'Carry': 0.25,
-                          'Inflation': 0.15, 'Commodities': 0.15, 'Private Equity': 0.60,
-                          'Rates Vol': 0.25, 'Fx': 0.00})
-    pd.testing.assert_series_equal(manifest_priors[list(expected.index)], expected,
-                                   check_names=False, atol=1e-12)
+    factor_family = {'Credit EM': 'Credit', 'Carry G10': 'Carry', 'Carry EM': 'Carry'}
+    manifest_priors = pd.Series(
+        {factor: family_priors[factor_family.get(factor, factor)]
+         for factor in inputs.factor_covar.columns})
+    expected = pd.Series([0.40, 0.25, 0.40, 0.40, 0.25, 0.25, 0.15, 0.15, 0.60, 0.25, 0.00],
+                         index=inputs.factor_covar.columns)
+    pd.testing.assert_series_equal(manifest_priors, expected, check_names=False, atol=1e-12)
 
 
 def test_benchmark_weights_are_d8_correct():
