@@ -74,26 +74,30 @@ def test_a_missing_key_raises_rather_than_returning_none(tmp_path: Path, monkeyp
 @pytest.mark.parametrize('settings_value', [None, '..'])
 def test_placeholder_output_falls_back_to_a_writable_checkout_directory(
         settings_value, tmp_path: Path, monkeypatch) -> None:
-    """An empty or shipped placeholder output resolves to the writable checkout output dir."""
+    """A placeholder output resolves to a writable checkout or installed-package default."""
     path = tmp_path / 'settings.yaml'
     path.write_text(yaml.safe_dump({'RESOURCE_PATH': settings_value,
                                     'OUTPUT_PATH': settings_value}))
     monkeypatch.setattr(local_path, '_SETTINGS_PATH', path)
 
     output_path = Path(local_path.get_output_path())
+    checkout_root = local_path._checkout_root()
+    expected_output = checkout_root / 'outputs' if checkout_root else Path.cwd()
 
-    assert output_path == Path(__file__).resolve().parents[2] / 'outputs'
+    assert output_path == expected_output
     assert output_path.is_dir()
     assert os.access(output_path, os.W_OK)
     assert chr(92) not in local_path.get_output_path()
 
 
 def test_absent_settings_file_uses_portable_checkout_defaults(tmp_path: Path, monkeypatch) -> None:
-    """A missing YAML file uses the checkout root and its writable output directory."""
+    """A missing YAML file uses portable checkout or installed-package defaults."""
     monkeypatch.setattr(local_path, '_SETTINGS_PATH', tmp_path / 'absent.yaml')
+    checkout_root = local_path._checkout_root()
+    expected_resource = checkout_root or Path.cwd()
+    expected_output = checkout_root / 'outputs' if checkout_root else Path.cwd()
 
-    assert local_path.get_resource_path() == Path(__file__).resolve().parents[2].as_posix()
-    assert local_path.get_output_path() == (
-        Path(__file__).resolve().parents[2] / 'outputs').as_posix()
+    assert local_path.get_resource_path() == expected_resource.as_posix()
+    assert local_path.get_output_path() == expected_output.as_posix()
     assert chr(92) not in local_path.get_resource_path()
     assert chr(92) not in local_path.get_output_path()

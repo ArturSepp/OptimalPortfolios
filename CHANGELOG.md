@@ -7,6 +7,8 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.17.0] - 2026-08-12
+
 **Coverage scope change (2026-08-12):** `[tool.coverage.run] omit` now drops `reports/`
 alongside `tests/`, `examples/` and `papers/`. The reporting layer renders factsheets through
 `qis` and `pybloqs` and is reviewed by eye rather than by assertion; measured at 3.9% it
@@ -17,6 +19,8 @@ from `fail_under = 88` to `95`: measured coverage over the narrowed scope is 96.
 
 ### Added
 
+- Added the governed 2026-Q2 custom eleven-factor MATF-CMA snapshot and its
+  release-pinned replication inputs.
 - Exposed `optimalportfolios.__version__` from installed distribution metadata and added
   per-object Sphinx API pages with full signatures and rendered argument documentation.
 - Tests for five previously unexercised modules: the rank-based alpha profiler
@@ -27,6 +31,9 @@ from `fail_under = 88` to `95`: measured coverage over the narrowed scope is 96.
 
 ### Fixed
 
+- Made the shipped `pytest --pyargs optimalportfolios` harness select `Agg` even when package
+  discovery imports Matplotlib before pytest loads `conftest.py`, and made its path assertions
+  honour the documented installed-package fallback.
 - Made resource and output paths platform-neutral with `pathlib`; a missing or placeholder
   `settings.yaml` now selects a writable checkout-aware default instead of a literal Windows
   separator, and the offline multi-asset example now imports its shipped fixture. The defect
@@ -37,6 +44,8 @@ from `fail_under = 88` to `95`: measured coverage over the narrowed scope is 96.
 
 ### Changed
 
+- Repinned the MATF-CMA replication harness and rebuilt its committed exhibits and manuscript
+  numbers; package optimisation and backtest behaviour are unchanged.
 - Clarified the public reproduction boundary and recorded known environment versions for every
   paper folder in `papers/README.md`; the package classifier now matches the documented
   Production/Stable maturity.

@@ -2,7 +2,11 @@
 
 import os
 
-os.environ.setdefault("MPLBACKEND", "Agg")
+if "MPLBACKEND" not in os.environ:
+    os.environ["MPLBACKEND"] = "Agg"
+    import matplotlib
+
+    matplotlib.use("Agg")
 
 
 def pytest_configure() -> None:
