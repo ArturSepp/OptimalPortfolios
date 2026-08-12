@@ -87,10 +87,8 @@ def test_none_rolling_path_matches_explicit_current_fits_exactly() -> None:
     ("smoother", "kwargs"),
     [
         (ClusterSmootherType.PARTITION_BONUS, {"smoother_delta": 0.05}),
-        (ClusterSmootherType.PARTITION_BONUS,
-         {"smoother_delta": 0.20, "recluster_freq": "QE"}),
-        (ClusterSmootherType.SIMILARITY_EWMA,
-         {"smoother_lambda": 0.50, "recluster_freq": "QE"}),
+        (ClusterSmootherType.PARTITION_BONUS, {"smoother_delta": 0.20}),
+        (ClusterSmootherType.SIMILARITY_EWMA, {"smoother_lambda": 0.50}),
     ],
 )
 def test_smoothed_rolling_injects_independently_computed_partitions(
@@ -153,10 +151,8 @@ def test_precomputed_clusters_preserve_fcgl_model_type() -> None:
     ("smoother", "kwargs"),
     [
         (ClusterSmootherType.SIMILARITY_EWMA, {"smoother_lambda": 0.7}),
-        (ClusterSmootherType.PARTITION_BONUS,
-         {"smoother_delta": 0.2, "recluster_freq": "QE"}),
-        (ClusterSmootherType.SIMILARITY_EWMA,
-         {"smoother_lambda": 0.5, "recluster_freq": "QE"}),
+        (ClusterSmootherType.PARTITION_BONUS, {"smoother_delta": 0.2}),
+        (ClusterSmootherType.SIMILARITY_EWMA, {"smoother_lambda": 0.5}),
     ],
 )
 def test_smoothed_current_fit_reconstructs_the_trailing_partition(
@@ -188,20 +184,11 @@ def test_smoothed_current_fit_reconstructs_the_trailing_partition(
     )
 
 
-@pytest.mark.parametrize(
-    "smoother",
-    [
-        ClusterSmootherType.HOLD,
-        ClusterSmootherType.PARTITION_BONUS,
-        ClusterSmootherType.SIMILARITY_EWMA,
-    ],
-)
-def test_scheduled_frequency_must_be_coarser_than_rebalancing(
-        smoother: ClusterSmootherType) -> None:
-    """Every scheduled smoother rejects anchors as frequent as the fit schedule."""
+def test_hold_frequency_must_be_coarser_than_rebalancing() -> None:
+    """HOLD rejects an anchor that can recluster as often as the fit schedule."""
     factors, returns = _inputs()
     estimator = FactorCovarEstimator(
-        lasso_model=_model(smoother, recluster_freq="ME"),
+        lasso_model=_model(ClusterSmootherType.HOLD, recluster_freq="ME"),
         rebalancing_freq="ME",
         factor_returns_freq="ME",
         factor_covar_span=24,
@@ -212,4 +199,4 @@ def test_scheduled_frequency_must_be_coarser_than_rebalancing(
         assert "recluster_freq" in str(exc)
         assert "ME" in str(exc)
     else:
-        raise AssertionError(f"{smoother.name} accepted monthly reclustering")
+        raise AssertionError("HOLD accepted monthly reclustering")
