@@ -296,7 +296,7 @@ def write_factor_history_notes(production_corr: pd.DataFrame,
     credit_equity = float(production_corr.loc['Credit', 'Equity'])
     lines = [
         '% ===== Caption notes for the three restored factor-history exhibits =====',
-        '% Source: replication/run_factor_history_exhibits.py on cma_data snapshot 2026q2.',
+        '% Source: replication/run_factor_history_exhibits.py on cma_data snapshot 2026q2_custom.',
         f"% Window: {navs.index[0].date()} to {navs.index[-1].date()} (calendar 2005 onward).",
         '%',
         '% tb:risk_factors_perf — the NAVs are excess-return NAVs, so the Sharpe column',

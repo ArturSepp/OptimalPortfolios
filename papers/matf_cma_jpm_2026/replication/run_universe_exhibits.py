@@ -160,7 +160,8 @@ def build_cma_snapshot(inputs) -> pd.DataFrame:
 def plot_cma_snapshot(table: pd.DataFrame) -> plt.Figure:
     """render the universe snapshot table with the asset-class blocks separated."""
     boundaries = [i for i in range(1, len(table)) if table['Class'].iloc[i] != table['Class'].iloc[i - 1]]
-    widths = [1.60, 0.82, 0.62] + [0.44] * 9 + [0.52, 0.54, 0.54] + [0.42, 0.50, 0.44]
+    n_factors = len(table.columns) - 8  # Ticker/Class + Base/Stress/Upside/R2/Alpha/Vol
+    widths = [1.60, 0.82, 0.62] + [0.52] * n_factors + [0.52, 0.54, 0.54] + [0.42, 0.50, 0.44]
     return es.table_figure(df=table, col_widths=widths, row_height=0.40, fontsize=7.4,
                            special_columns_colors=[(0, '#c6e2f0')],
                            rows_edge_lines=boundaries, rows_edge_color=es.BLUE)
@@ -480,7 +481,7 @@ def write_universe_notes(per_carrier: pd.DataFrame,
     ils = per_carrier.loc['EHFI804 Index']
     lines = [
         '% ===== Caption notes for the Stage J3 universe exhibits =====',
-        '% Source: replication/run_universe_exhibits.py on cma_data snapshot 2026q2.',
+        '% Source: replication/run_universe_exhibits.py on cma_data snapshot 2026q2_custom.',
         '%',
         f"% DEFECT D3, caption change required on tb:cma_snapshot: the as-of date is",
         f"%   {AS_OF_DATE}, not 31 March 2026. Every illustration in Appendix C restates",

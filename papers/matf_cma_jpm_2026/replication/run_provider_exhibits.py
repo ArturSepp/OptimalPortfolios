@@ -79,7 +79,7 @@ CONVERTED_GROUPS: Dict[str, List[str]] = {
     'Emerging equity (one survey line, two sleeves)':
         ['M1APJ Index', 'M1EFZ Index'],
 }
-R2_CONSENSUS_SR2_ALPHA = 0.091          # the parity reference on the 17-sleeve subset
+R2_CONSENSUS_SR2_ALPHA = 0.099          # custom-cut parity reference on the 17-sleeve subset
 
 
 def load_provider_vectors(snapshots_path: Optional[Path] = None) -> pd.DataFrame:
@@ -327,7 +327,7 @@ def write_provider_saa_tex(weights: pd.DataFrame,
     bonds = inputs.assets.index[inputs.assets['asset_class'] == 'Bonds']
     lines = [
         '% ===== tab:provider_saa — Benchmark, MATF and Consensus columns =====',
-        '% Source: replication/run_provider_exhibits.py on cma_data snapshot 2026q2.',
+        '% Source: replication/run_provider_exhibits.py on cma_data snapshot 2026q2_custom.',
         '% Consensus = Horizon Actuarial 2025 survey averages via cma_data.consensus',
         '%   (printed 10Y ARITHMETIC nominal total returns, USD investor, Exhibit 17).',
         '% Insurance-Linked has no survey line and is held at the MATF value, so it carries',
@@ -379,7 +379,7 @@ def write_provider_decomposition_tex(decomposition: pd.DataFrame,
     largest = grouped.loc[grouped['unattributed_bp'].abs().sort_values(ascending=False).index[:3]]
     lines = [
         '% ===== EXHIBIT: tab:provider_decomposition (NEW, table per owner decision O-J3) =====',
-        '% Source: replication/run_provider_exhibits.py on cma_data snapshot 2026q2.',
+        '% Source: replication/run_provider_exhibits.py on cma_data snapshot 2026q2_custom.',
         f"% Subset: {decomposition.attrs['n_sleeves']} published-plus-converted sleeves;",
         f"%   held-at-MATF sleeves excluded ({decomposition.attrs['excluded']}) because they",
         '%   contribute zero deviation by construction.',

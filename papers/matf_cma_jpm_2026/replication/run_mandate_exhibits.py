@@ -115,7 +115,7 @@ def build_factor_exposures_table(weights: pd.DataFrame, inputs) -> pd.DataFrame:
 def plot_factor_exposures_table(table: pd.DataFrame, inputs) -> plt.Figure:
     """render the exposures block and the risk-share block side by side, one row per mandate."""
     n_factors = len(inputs.betas.columns)
-    widths = [1.62] + [0.46] * n_factors + [0.50] * (n_factors + 1)
+    widths = [1.62] + [0.54] * n_factors + [0.56] * (n_factors + 1)
     # qis draws the edge at the left border of column (id - 1); the index occupies column 0,
     # so the exposures / risk-share separator sits at n_factors + 2
     return es.table_figure(df=table, col_widths=widths, row_height=0.44, fontsize=7.4,
@@ -161,7 +161,7 @@ def write_mandate_notes(stats: pd.DataFrame,
     balanced = stats.loc[MANDATE]
     lines = [
         '% ===== Caption notes for the Stage J4b mandate exhibits =====',
-        '% Source: replication/run_mandate_exhibits.py on cma_data snapshot 2026q2.',
+        '% Source: replication/run_mandate_exhibits.py on cma_data snapshot 2026q2_custom.',
         '%',
         '% fig:illust_frontier — expected TOTAL returns (excess CMA plus the reference cash',
         '%   rate). Dotted lines are the mandate benchmarks, solid lines the TE-constrained',

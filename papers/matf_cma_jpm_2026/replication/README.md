@@ -14,7 +14,7 @@ This package reads its inputs from the shared data layer at
 `../../cma_data` (universe, benchmarks, loaders, the Consensus provider, and
 immutable snapshots), resolved through `local_path.py` — optionally overridden by
 a flat `settings.yaml` (key `CMA_DATA_PATH`), zero configuration needed on a
-fresh clone. The pinned frozen cut is `SNAPSHOT = '2026q2'` in
+fresh clone. The pinned frozen cut is `SNAPSHOT = '2026q2_custom'` in
 `governed_cma_projection.py` and is imported from there, never re-pinned.
 Loaders verify the snapshot's manifest hashes on every run. See
 `../../cma_data/README.md` for the schema and freeze rules. The former per-paper
@@ -147,9 +147,12 @@ Drop-in bodies and figure blocks in `figures/`, never spliced into the manuscrip
 
 ## Configuration of the frozen cut
 
-- 2026-Q2 production cut, 18 assets (14 monthly, 4 quarterly), USD, `rf` 4.18%.
-- Premia: the **July** production config (Equity 3.98%, Rates 1.01%, PE 4.20%,
-  50/50 current-vs-equilibrium blends). This IS the R3 freeze (register K2).
+- 2026-Q2 custom-model production cut, 18 assets (14 monthly, 4 quarterly), USD,
+  `rf` 4.18%; eleven factors in workbook order: Equity, Rates, Credit, Credit EM,
+  Carry G10, Carry EM, Inflation, Commodities, Private Equity, Rates Vol, Fx.
+- Premia: the **July** production config (Equity 3.82%, Rates 1.00%, PE 2.99%,
+  50/50 current-vs-equilibrium blends). `run.use_beta_priors = True` on this cut;
+  the governed research comparison workbooks used `False`.
 - Optimizer: `wrapper_maximise_alpha_over_tre` with `FORCED_CONSTRAINTS`, ±50%
   box around the benchmark, tracking error capped at 1.5%.
 - Benchmarks: `cma_data/benchmarks.py`, D8-correct (the R2 exhibit build
@@ -157,13 +160,14 @@ Drop-in bodies and figure blocks in `figures/`, never spliced into the manuscrip
 - Every optimization runs on **excess** CMAs; the reference cash rate enters only
   at the reporting layer.
 - Bootstrap: B = 500, seed 42, window Jul 2001 – Jun 2026, T = 300 months,
-  blocks mean 12 / min 3, **July** SR prior
-  [0.40, 0.25, 0.40, 0.25, 0.15, 0.15, 0.60, 0.25, 0.00], σ_SR = 0.10, raw panel
+  blocks mean 12 / min 3, **July** family-mapped SR prior
+  [0.40, 0.25, 0.40, 0.40, 0.25, 0.25, 0.15, 0.15, 0.60, 0.25, 0.00],
+  σ_SR = 0.10, raw panel
   recentered, **no pre-inception backfill** (the proxies are not in the snapshot).
 - Private equity admitted at w = 0.5. The **production policy** is `w_paper`;
   the **pre-recut workbook policy** is `w_workbook` (owner ruling O-J11 / B6).
-- Package versions of the extraction run, from the manifest: `qis` 5.0.5,
-  `optimalportfolios` 6.6.0, `factorlasso` 0.10.1.
+- Package versions of the extraction run, from the manifest: `qis` 5.9.4,
+  `optimalportfolios` 6.15.0, `factorlasso` 0.14.0.
 
 ## Reports
 
@@ -178,12 +182,13 @@ Drop-in bodies and figure blocks in `figures/`, never spliced into the manuscrip
 ## Open items
 
 - **`providers.csv`** (owner item O-J7b) unblocks the A–D provider columns, rows
-  and both frontier PNGs. Drop it into `../../cma_data/snapshots/2026q2/` against
+  and both frontier PNGs. Drop it into `../../cma_data/snapshots/2026q2_custom/` against
   the schema in `run_provider_exhibits.PROVIDERS_SCHEMA` and re-run.
 - **Regional P-CAEY and per-country rates extracts** unblock the two Appendix C
   exhibits. Minimal shapes are specified in the completion report's register.
-- **Cross-paper bootstrap prior (O-J8)**: this package uses the July prior; the
-  FAJ instruction file pins the old Q2 prior. Owner call.
+- **Cross-paper model/prior coordination (O1 / O-J8)**: this package uses the
+  eleven-factor custom model and July family prior; FAJ remains on the nine-factor
+  `2026q2` cut. Owner call.
 - **Appendix B prose** needs two corrections the code forced: the recentering step
   is not stated, and the backfill sentence describes proxies the snapshot does not
   carry.
@@ -191,7 +196,7 @@ Drop-in bodies and figure blocks in `figures/`, never spliced into the manuscrip
   printed components with ρ = 0.5, which give 3.77%.
 - **Cross-document consistency with `achievable_sharpe_faj_2026`**: that package is
   the 2026-Q1 cut on 17 assets, this one the 2026-Q2 cut on 18. Both report a
-  factor premium identification ratio near 42%; this cut gives **38.7%**. Confirm
+  factor premium identification ratio near 42%; this cut gives **38.8%**. Confirm
   the ratio's sensitivity to the eighteenth asset or state the difference.
 - **`stationary_block_indices`** now lives in `run_bootstrap_q2.py` here and in a
   copy in the FAJ package. Porting it to `qis` and importing from there in both

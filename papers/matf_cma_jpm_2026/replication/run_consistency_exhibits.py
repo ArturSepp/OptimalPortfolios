@@ -272,7 +272,7 @@ def write_consistency_notes(residuals: pd.DataFrame,
     """caption notes for the Stage J4d exhibits, including the reconciliation gap."""
     lines = [
         '% ===== Caption notes for the Stage J4d consistency exhibits =====',
-        '% Source: replication/run_consistency_exhibits.py on cma_data snapshot 2026q2.',
+        '% Source: replication/run_consistency_exhibits.py on cma_data snapshot 2026q2_custom.',
         '%',
         '% Historical-mean CMAs: sample mean of the native-frequency excess LOG returns,',
         '%   annualized by the observation frequency (12 monthly / 4 quarterly), plus the',

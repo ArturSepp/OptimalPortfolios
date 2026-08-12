@@ -122,7 +122,7 @@ def write_nine_factors_tex(table: pd.DataFrame,
                            file_name: str = 'exhibit_nine_factors.tex',
                            ) -> Path:
     """drop-in replacement body for tab:nine_factors."""
-    lines = ['% ===== tab:nine_factors — regenerated on cma_data snapshot 2026q2 =====',
+    lines = ['% ===== tab:nine_factors — regenerated on cma_data snapshot 2026q2_custom =====',
              '% Source: replication/run_snapshot_tables.py, factor_premia.csv + factor_covar.csv.',
              '% Premium = lambda_j (base column); Vol = sqrt(diag(Sigma_F)); both in percent p.a.',
              '% Premium-source column text is the R2 manuscript text, unchanged.',
@@ -177,7 +177,7 @@ def write_admission_audit_tex(table: pd.DataFrame,
                               file_name: str = 'exhibit_admission_audit.tex',
                               ) -> Path:
     """drop-in replacement body for tab:admission_audit, with the sum IR^2 and Cap 3 lines."""
-    lines = ['% ===== tab:admission_audit — regenerated on cma_data snapshot 2026q2 =====',
+    lines = ['% ===== tab:admission_audit — regenerated on cma_data snapshot 2026q2_custom =====',
              '% Source: replication/run_snapshot_tables.py, assets.csv (production policy w_paper,',
              '%   PE recut to 0.5). The pre-recut workbook policy w_workbook is not used here.',
              '% alpha_i is the EWMA residual mean of the production returns spec, not a',
@@ -250,7 +250,7 @@ def write_sharpe_calibration_tex(table: pd.DataFrame,
                                  file_name: str = 'exhibit_sharpe_cal.tex',
                                  ) -> Path:
     """drop-in replacement body for tab:sharpe_cal."""
-    lines = ['% ===== tab:sharpe_cal — regenerated on cma_data snapshot 2026q2 =====',
+    lines = ['% ===== tab:sharpe_cal — regenerated on cma_data snapshot 2026q2_custom =====',
              '% Source: replication/run_snapshot_tables.py, MANIFEST prod_config_snapshot',
              '%   (family_sharpe_ratios x factor_vols). Empirical SR column joined from',
              '%   run_factor_history_exhibits.py (Stage J2), 2005 - 2026-Q2, zero rf.',
@@ -326,7 +326,7 @@ def write_factor_returns_tex(table: pd.DataFrame,
                              file_name: str = 'exhibit_factor_returns.tex',
                              ) -> Path:
     """drop-in replacement body for tab:factor_returns."""
-    lines = ['% ===== tab:factor_returns — regenerated on cma_data snapshot 2026q2 =====',
+    lines = ['% ===== tab:factor_returns — regenerated on cma_data snapshot 2026q2_custom =====',
              '% Source: replication/run_snapshot_tables.py, factor_navs.csv (calendar-year',
              '%   excess returns) + factor_premia.csv stress/upside columns.',
              '% Resolved semantics: the stress and upside premia columns ARE the de-compounded',

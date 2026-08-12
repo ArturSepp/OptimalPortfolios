@@ -669,7 +669,7 @@ def write_floor_table_tex(floors: pd.DataFrame,
     n = floors.attrs['sigma_multiple']
     lines = [
         '% ===== Section 5.3 scenario floors, B13 one-sigma rule =====',
-        '% Source: replication/run_admission_exhibits.py on cma_data snapshot 2026q2.',
+        '% Source: replication/run_admission_exhibits.py on cma_data snapshot 2026q2_custom.',
         f"% Rule: stress-repriced expected TOTAL return >= mu_bm - {n:.1f} * sigma_bm per mandate,",
         '%   with mu_bm the benchmark expected total return under the base CMAs and sigma_bm',
         '%   the benchmark volatility from the risk model. Anchor-invariant: r_f cancels on',
@@ -712,7 +712,7 @@ def write_governed_dial_tex(governed: pd.DataFrame,
                'the operative constraint on every sleeve')
     lines = [
         '% ===== EXHIBIT: the governed dial (Appendix E per owner decision O-J3) =====',
-        '% Source: replication/run_admission_exhibits.py on cma_data snapshot 2026q2.',
+        '% Source: replication/run_admission_exhibits.py on cma_data snapshot 2026q2_custom.',
         '',
         r"\begin{figure}[H]",
         r"	\captionof{figure}{The Governed Dial: Cap 3 Sets the Admissible Admission Range}"

@@ -1,18 +1,18 @@
-% ===== tab:admission_audit — regenerated on cma_data snapshot 2026q2 =====
+% ===== tab:admission_audit — regenerated on cma_data snapshot 2026q2_custom =====
 % Source: replication/run_snapshot_tables.py, assets.csv (production policy w_paper,
 %   PE recut to 0.5). The pre-recut workbook policy w_workbook is not used here.
 % alpha_i is the EWMA residual mean of the production returns spec, not a
 % full-sample Jensen mean (owner decision O-J2).
 % Extends the R2 body with the portfolio claim line and the Cap 3 audit row.
 
-				Private Equity    & 0.50 &    $2.80$ & 1.40 & 5.35 & 26 & 0.19 & pass & pass \\
-				Private Credit    & 0.50 &    $1.85$ & 0.93 & 3.27 & 28 & 0.19 & pass & pass \\
-				Real Estate       & 0.00 &   $-2.48$ & 0.00 & 2.26 & 0 & 0.00 & pass & pass \\
-				Insurance-Linked  & 1.00 &    $3.58$ & 3.58 & 3.84 & 93 & 0.83 & FAIL & FAIL \\
-				Hedge Funds       & 1.00 &    $2.04$ & 2.04 & 3.37 & 61 & 0.77 & FAIL & FAIL \\
-				Gold              & 0.25 &   $13.93$ & 3.48 & 4.33 & 80 & 0.23 & pass & FAIL \\
+				Private Equity    & 0.50 &    $3.25$ & 1.63 & 5.32 & 31 & 0.22 & pass & pass \\
+				Private Credit    & 0.50 &    $2.47$ & 1.24 & 3.37 & 37 & 0.26 & pass & pass \\
+				Real Estate       & 0.00 &   $-1.63$ & 0.00 & 2.67 & 0 & 0.00 & pass & pass \\
+				Insurance-Linked  & 1.00 &    $3.58$ & 3.58 & 3.85 & 93 & 0.83 & FAIL & FAIL \\
+				Hedge Funds       & 1.00 &    $2.06$ & 2.06 & 3.46 & 60 & 0.78 & FAIL & FAIL \\
+				Gold              & 0.25 &   $10.83$ & 2.71 & 4.28 & 63 & 0.18 & pass & FAIL \\
 				\midrule
-				\multicolumn{6}{l}{Portfolio claim $\boldsymbol\alpha_{adm}^{\intercal}\boldsymbol D^{-1}\boldsymbol\alpha_{adm} = \sum_i \mathrm{IR}_i^2$} & 1.40 & \multicolumn{2}{c}{} \\
-				\multicolumn{6}{l}{Cap 3 budget $\kappa \cdot SR^2_{MATFCMA}$ at $\kappa = 1.00$} & 0.24 & \multicolumn{2}{c}{FAIL} \\
+				\multicolumn{6}{l}{Portfolio claim $\boldsymbol\alpha_{adm}^{\intercal}\boldsymbol D^{-1}\boldsymbol\alpha_{adm} = \sum_i \mathrm{IR}_i^2$} & 1.44 & \multicolumn{2}{c}{} \\
+				\multicolumn{6}{l}{Cap 3 budget $\kappa \cdot SR^2_{MATFCMA}$ at $\kappa = 1.00$} & 0.21 & \multicolumn{2}{c}{FAIL} \\
 %
-% Cap 3 audit: raw claim 1.398 vs budget 0.238 (SR2_MATFCMA = 0.238), skill share 85% -> FAIL.
+% Cap 3 audit: raw claim 1.444 vs budget 0.205 (SR2_MATFCMA = 0.205), skill share 88% -> FAIL.

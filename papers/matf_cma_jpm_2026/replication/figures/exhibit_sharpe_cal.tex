@@ -1,11 +1,12 @@
-% ===== tab:sharpe_cal — regenerated on cma_data snapshot 2026q2 =====
+% ===== tab:sharpe_cal — regenerated on cma_data snapshot 2026q2_custom =====
 % Source: replication/run_snapshot_tables.py, MANIFEST prod_config_snapshot
-%   (matf_sharpe_ratios x factor_vols). Empirical SR column joined from
+%   (family_sharpe_ratios x factor_vols). Empirical SR column joined from
 %   run_factor_history_exhibits.py (Stage J2), 2005 - 2026-Q2, zero rf.
 % July config: Private Equity moves to SR 0.60 / lambda 420 bp (was 0.50 / 350 bp).
 
-				Carry             & 0.25 & 5\% & 125 &                 0.25 & \cite{LustigRV2011} \\
-				Inflation         & 0.15 & 5\% & 75 &                 0.05 & Empirical TIPS literature \\
+				Carry G10         & 0.25 & 5\% & 125 &                 0.16 & \cite{LustigRV2011} \\
+				Carry EM          & 0.25 & 5\% & 125 &                 0.51 & \cite{LustigRV2011} \\
+				Inflation         & 0.15 & 5\% & 75 &              $-0.18$ & Empirical TIPS literature \\
 				Commodities       & 0.15 & 15\% & 225 &              $-0.10$ & Commodity futures literature \\
 				Private Equity    & 0.60 & 7\% & 420 &                 0.60 & \cite{Ang2018} \\
 				Rates Volatility  & 0.25 & 5\% & 125 &                 0.42 & \cite{Morris2026} \\

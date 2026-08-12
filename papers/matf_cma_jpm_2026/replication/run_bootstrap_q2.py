@@ -719,7 +719,7 @@ def write_bootstrap_artifacts(bandwidth: pd.DataFrame,
     regimes = {0.050: 'Aggressive prior', 0.075: 'Moderate--aggressive',
                0.100: 'Paper baseline', 0.125: 'Moderate--loose', 0.150: 'Loose',
                0.200: 'Prior equals data noise scale'}
-    lines = ['% ===== tab:sr_sensitivity — regenerated on cma_data snapshot 2026q2 =====',
+    lines = ['% ===== tab:sr_sensitivity — regenerated on cma_data snapshot 2026q2_custom =====',
              '% Source: replication/run_bootstrap_q2.py, B = 500 per row, seed 42.',
              f"% Reduction ratio of the 90% frontier bandwidth at the {HEADLINE_MANDATE}",
              f"%   benchmark volatility {headline_vol:.2%}. Only sigma_SR varies across rows.",
