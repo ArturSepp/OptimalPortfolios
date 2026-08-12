@@ -12,8 +12,8 @@ alongside `tests/`, `examples/` and `papers/`. The reporting layer renders facts
 `qis` and `pybloqs` and is reviewed by eye rather than by assertion; measured at 3.9% it
 contributed 223 of the 597 missed lines and did nothing but dilute the ratchet. Anything with
 a numerical contract belongs outside `reports/`, where it is still measured. The floor rises
-from `fail_under = 88` to `95`: measured coverage over the narrowed scope is 96.12%, up from
-92.99% at the moment of the scope change, on a suite grown from 1077 to 1142 tests.
+from `fail_under = 88` to `95`: measured coverage over the narrowed scope is 96.18%, up from
+92.99% at the moment of the scope change, on a suite grown from 1077 to 1145 tests.
 
 ### Added
 
@@ -23,16 +23,11 @@ from `fail_under = 88` to `95`: measured coverage over the narrowed scope is 96.
   the CVXPY covariance stabiliser (`optimization/covar_factorization.py`), and the
   settings-path accessors (`local_path.py`).
 
-### Known issues
+### Fixed
 
-- `covar_estimation.covar_reporting.plot_current_covar_data` raises `NotImplementedError` for
-  any universe of more than two assets, and `run_rolling_covar_report(is_plot=True)` inherits
-  the failure. The function forwards `CurrentFactorCovarData.clusters` / `.linkages` /
-  `.cutoffs` into `plot_clusters`, which expects one entry per *cadence*; since factorlasso
-  moved those fields to a flat `pd.Series` / `pd.DataFrame` keyed by asset, the cadence count
-  is read as the asset count. Surfaced by the first test ever to run the path and pinned as a
-  strict `xfail` in `covar_estimation/tests/covar_reporting_test.py`; not fixed here, since
-  repairing the adapter is a behaviour change rather than a test addition.
+- Reconstructed factorlasso's flat, persisted cluster/linkage/cutoff fields by cadence before
+  plotting, so `plot_current_covar_data` and `run_rolling_covar_report(is_plot=True)` render
+  multi-asset universes again. The defect was discovered by @tschm in PR #44.
 
 ## [6.16.0] - 2026-08-12
 
