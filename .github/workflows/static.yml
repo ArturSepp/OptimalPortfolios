@@ -25,11 +25,13 @@ env:
 
 jobs:
   static:
-    # ruff, interrogate and pip-audit gate the repository without installing it -- no project
-    # install, no compiled scientific stack -- so they are separated from ci.yml entirely rather
-    # than riding along with a 16-cell test matrix they share nothing with. They are one job of
-    # three steps, not three jobs: a failure still names which gate broke, but the checkout
-    # happens once.
+    # ruff and interrogate gate the source tree without installing it -- no project install, no
+    # compiled scientific stack -- so they are separated from ci.yml entirely rather than riding
+    # along with a 16-cell test matrix they share nothing with. They are one job of two steps, not
+    # two jobs: a failure still names which gate broke, but the checkout happens once.
+    #
+    # Both read the source and nothing else, which is what makes the every-push trigger above
+    # worth having: their verdict changes exactly when the code changes.
     #
     # Each step runs through `uvx`, which provisions the tool into a throwaway environment on
     # demand. There is deliberately no interpreter-setup step and no install step: `uvx` fetches
@@ -78,28 +80,7 @@ jobs:
       # exclusion resolves against the working directory -- run it from the repository root.
       run: uvx --from "interrogate>=1.7" interrogate -v
 
-    - name: Audit the dependency tree for known vulnerabilities
-      # Every dependency is declared as an open-ended floor (`>=`, no upper bound), so the
-      # installed set drifts forward on every fresh install and a newly-disclosed advisory would
-      # otherwise surface only when someone happened to look.
-      #
-      # Compiled first, rather than `pip-audit .`, because that form audits the *core* tree only
-      # -- 35 packages -- and silently omits every optional extra. `data`, `reports` and `jupyter`
-      # are user-facing (they are what `[all]` installs), and `jupyter`/`notebook`/`jupyterlab`
-      # are among the more advisory-prone packages in this stack, so leaving them ungated defeated
-      # the point. `--all-extras` covers `dev` and `docs` too: those floors drift exactly like the
-      # rest. 168 packages at the time of writing, all clean.
-      #
-      # Resolution only -- nothing is installed, so this stays seconds-long rather than paying for
-      # the compiled scientific stack a second time. Markers resolve at 3.12, the version this
-      # workflow pins; a dependency gated on an older interpreter is out of scope here and is
-      # covered by the ci.yml matrix installing for real.
-      #
-      # Hard-fails on purpose: the tree is clean today, so a finding here is either a new advisory
-      # or a dependency change under review. If an advisory ever lands that this project cannot
-      # act on, prefer `--ignore-vuln <ID>` with a comment naming why over narrowing the set or
-      # disabling the step, so the exception stays visible.
-      run: |
-        uv pip compile --all-extras --python-version 3.12 --quiet \
-          pyproject.toml -o "$RUNNER_TEMP/requirements-audit.txt"
-        uvx --from "pip-audit~=2.10.1" pip-audit -r "$RUNNER_TEMP/requirements-audit.txt"
+    # The dependency audit deliberately does *not* live here. Its verdict is a function of the
+    # dependency floors and the advisory database, not of the source tree, so an every-push
+    # trigger both re-runs it when nothing can have changed and misses the advisory that lands
+    # while the repository is quiet. It is on a daily schedule in audit.yml instead.

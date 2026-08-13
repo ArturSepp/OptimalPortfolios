@@ -1,0 +1,81 @@
+name: Audit
+
+# The audit's verdict is a function of two things -- the dependency floors in pyproject.toml and
+# the state of the advisory database -- and neither is the source tree. That cuts both ways, and
+# is why this is not a step in static.yml on the every-push trigger:
+#
+#   * Running it on a push that cannot change either input re-resolves 168 packages and re-queries
+#     PyPI for an answer that provably has not moved.
+#   * Far worse, a push trigger structurally cannot catch the case this gate exists for. Every
+#     dependency is an open-ended floor (`>=`, no upper bound), so a newly-disclosed advisory can
+#     land against a version this project already accepts without a single commit being made. On a
+#     quiet week nothing would surface it.
+#
+# Hence: daily on a schedule, plus whenever the floors themselves change. 04:17 UTC rather than
+# on the hour, because scheduled jobs queue heavily at :00 and the exact minute is irrelevant here.
+#
+# Note that GitHub only runs `schedule` from the default branch of the upstream repository, and
+# disables it after 60 days with no repository activity. `workflow_dispatch` is here so the gate
+# can always be run by hand, including from a branch.
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  push:
+    branches: [main]
+    paths:
+      - pyproject.toml
+      - constraints.txt
+      - .github/workflows/audit.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - pyproject.toml
+      - constraints.txt
+      - .github/workflows/audit.yml
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  audit:
+    # Resolution only -- nothing is installed, so this stays seconds-long rather than paying for
+    # the compiled scientific stack a second time.
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      with:
+        # Environment markers make the resolved set version-dependent, so this is pinned rather
+        # than left to uv's default. `.python-version` is gitignored, so there is no in-repo file
+        # to inherit it from. A dependency gated on an older interpreter is out of scope here and
+        # is covered by the ci.yml matrix installing for real.
+        python-version: "3.12"
+
+    - name: Resolve the full dependency tree
+      # Compiled rather than `pip-audit .`, because that form audits the *core* tree only -- 35
+      # packages -- and silently omits every optional extra. `data`, `reports` and `jupyter` are
+      # user-facing (they are what `[all]` installs), and jupyter/notebook/jupyterlab are among
+      # the more advisory-prone packages in this stack, so leaving them ungated defeated the
+      # point. `--all-extras` covers `dev` and `docs` too: those floors drift exactly like the
+      # rest. 168 packages at the time of writing.
+      run: |
+        uv pip compile --all-extras --python-version 3.12 --quiet \
+          pyproject.toml -o "$RUNNER_TEMP/requirements-audit.txt"
+
+    - name: Audit the dependency tree for known vulnerabilities
+      # Pinned to the current minor series so a tool release cannot change the verdict on an
+      # unchanged dependency tree.
+      #
+      # Hard-fails on purpose: the tree is clean today, so a finding here is either a new advisory
+      # or a dependency change under review. If an advisory ever lands that this project cannot
+      # act on, prefer `--ignore-vuln <ID>` with a comment naming why over narrowing the set or
+      # disabling the step, so the exception stays visible.
+      run: uvx --from "pip-audit~=2.10.1" pip-audit -r "$RUNNER_TEMP/requirements-audit.txt"
