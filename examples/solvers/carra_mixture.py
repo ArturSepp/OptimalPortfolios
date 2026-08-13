@@ -1,24 +1,24 @@
 """
-example of minimum-variance portfolio via quadratic optimisation; one-step and rolling backtest variants
+example of expected CARA utility maximisation under a K-component Gaussian mixture model of returns
 """
 import pandas as pd
 import matplotlib.pyplot as plt
 import qis as qis
 from enum import Enum
 
-from optimalportfolios import (Constraints, GroupLowerUpperConstraints, EwmaCovarEstimator,
+from optimalportfolios import (Constraints, GroupLowerUpperConstraints,
                                compute_tre_turnover_stats,
-                               wrapper_quadratic_optimisation,
-                               rolling_quadratic_optimisation)
+                               rolling_maximize_cara_mixture,
+                               wrapper_maximize_cara_mixture,
+                               fit_gaussian_mixture)
 
-from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
+from examples.data.universe import fetch_benchmark_universe_data
 
 
 class LocalTests(Enum):
     """Local diagnostic scenarios ``run_local_test`` can run."""
     ONE_STEP_OPTIMISATION = 1
-    TRACKING_ERROR_GRID = 2
-    ROLLING_OPTIMISATION = 3
+    ROLLING_OPTIMISATION = 2
 
 
 def run_local_test(local_test: LocalTests):
@@ -33,32 +33,35 @@ def run_local_test(local_test: LocalTests):
     prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
 
     # add costraints that each asset class is 10% <= sum ac weights <= 30% (benchamrk is 20% each)
-    group_min_allocation = pd.Series(0.1, index=ac_loadings.columns)
-    group_max_allocation = pd.Series(0.3, index=ac_loadings.columns)
+    group_min_allocation = pd.Series(0.05, index=ac_loadings.columns)
+    group_max_allocation = pd.Series(0.25, index=ac_loadings.columns)
     group_lower_upper_constraints = GroupLowerUpperConstraints(group_loadings=ac_loadings,
                                                                group_min_allocation=group_min_allocation,
                                                                group_max_allocation=group_max_allocation)
-
     constraints = Constraints(is_long_only=True,
+                               group_lower_upper_constraints=group_lower_upper_constraints,
                                min_weights=pd.Series(0.0, index=prices.columns),
-                               max_weights=pd.Series(0.2, index=prices.columns),
-                               weights_0=benchmark_weights,
-                               group_lower_upper_constraints=group_lower_upper_constraints)
+                               max_weights=pd.Series(0.5, index=prices.columns),
+                               weights_0=benchmark_weights)
 
     if local_test == LocalTests.ONE_STEP_OPTIMISATION:
         # optimise using last available universe as inputs
-        returns = qis.to_returns(prices, freq='W-WED', is_log_returns=True)
-        pd_covar = pd.DataFrame(52.0 * qis.compute_masked_covar_corr(data=returns, is_covar=True),
-                                index=prices.columns, columns=prices.columns)
-        print(f"pd_covar=\n{pd_covar}")
-        weights, _ = wrapper_quadratic_optimisation(pd_covar=pd_covar,
-                                                 constraints=constraints,
-                                                 weights_0=benchmark_weights)
+        returns = qis.to_returns(prices, freq='ME', is_log_returns=True).dropna()
+        params = fit_gaussian_mixture(x=returns.to_numpy(), n_components=3, an_factor=12)
+
+        weights = wrapper_maximize_cara_mixture(means=params.means,
+                                                covars=params.covars,
+                                                probs=params.probs,
+                                                constraints=constraints,
+                                                tickers=returns.columns.to_list(),
+                                                carra=0.5)
 
         df_weight = pd.concat([benchmark_weights.rename('benchmark'), weights.rename('portfolio')], axis=1)
         print(f"weights=\n{df_weight}")
         qis.plot_bars(df=df_weight)
 
+        pd_covar = pd.DataFrame(12.0 * qis.compute_masked_covar_corr(data=returns, is_covar=True),
+                                index=prices.columns, columns=prices.columns)
         te_vol, turnover, alpha, port_vol, benchmark_vol = compute_tre_turnover_stats(covar=pd_covar.to_numpy(),
                                                                                       benchmark_weights=benchmark_weights,
                                                                                       weights=weights,
@@ -72,13 +75,13 @@ def run_local_test(local_test: LocalTests):
         # optimise using last available universe as inputs
         time_period = qis.TimePeriod('31Jan2007', '17Apr2025')
         rebalancing_costs = 0.0003
-        covar_estimator = EwmaCovarEstimator()
-        covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
-        weights = rolling_quadratic_optimisation(prices=prices,
-                                                 constraints=constraints,
-                                                 covar_dict=covar_dict)
-        print(weights)
 
+        weights = rolling_maximize_cara_mixture(prices=prices,
+                                                constraints=constraints,
+                                                roll_window=12*10,
+                                                returns_freq='ME',
+                                                time_period=time_period)
+        print(weights)
         portfolio_dict = {'Optimal Portfolio': weights,
                           'EqualWeight Portfolio': qis.df_to_equal_weight_allocation(prices, index=weights.index)}
         portfolio_datas = []
@@ -99,7 +102,7 @@ def run_local_test(local_test: LocalTests):
                                                              add_grouped_cum_pnl=False,
                                                              **kwargs)
         qis.save_figs_to_pdf(figs=figs,
-                             file_name="min variance portfolio", orientation='landscape',
+                             file_name="carra utility portfolio", orientation='landscape',
                              local_path=lp.get_output_path())
 
 

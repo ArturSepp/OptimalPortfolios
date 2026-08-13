@@ -1,25 +1,24 @@
 """
-example of maximum-Sharpe-ratio portfolio via the Charnes-Cooper transformation; rolling EWMA estimates for both mean and covariance
+example of maximum-diversification portfolio: maximise the diversification ratio DR(w) = w′σ / sqrt(w′Σw)
 """
 import pandas as pd
 import matplotlib.pyplot as plt
 import qis as qis
 from enum import Enum
 
-from optimalportfolios import (Constraints, GroupLowerUpperConstraints,
+from optimalportfolios import (Constraints, GroupLowerUpperConstraints, EwmaCovarEstimator,
                                compute_tre_turnover_stats,
-                               rolling_maximize_portfolio_sharpe,
-                               wrapper_maximize_portfolio_sharpe,
-                               EwmaCovarEstimator,
-                               estimate_rolling_ewma_means)
+                               rolling_maximise_diversification,
+                               wrapper_maximise_diversification)
 
-from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
+from examples.data.universe import fetch_benchmark_universe_data
 
 
 class LocalTests(Enum):
     """Local diagnostic scenarios ``run_local_test`` can run."""
     ONE_STEP_OPTIMISATION = 1
-    ROLLING_OPTIMISATION = 2
+    TRACKING_ERROR_GRID = 2
+    ROLLING_OPTIMISATION = 3
 
 
 def run_local_test(local_test: LocalTests):
@@ -34,16 +33,16 @@ def run_local_test(local_test: LocalTests):
     prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
 
     # add costraints that each asset class is 10% <= sum ac weights <= 30% (benchamrk is 20% each)
-    group_min_allocation = pd.Series(0.05, index=ac_loadings.columns)
-    group_max_allocation = pd.Series(0.25, index=ac_loadings.columns)
+    group_min_allocation = pd.Series(0.1, index=ac_loadings.columns)
+    group_max_allocation = pd.Series(0.3, index=ac_loadings.columns)
     group_lower_upper_constraints = GroupLowerUpperConstraints(group_loadings=ac_loadings,
                                                                group_min_allocation=group_min_allocation,
                                                                group_max_allocation=group_max_allocation)
     constraints = Constraints(is_long_only=True,
-                               group_lower_upper_constraints=group_lower_upper_constraints,
-                               min_weights=pd.Series(0.0, index=prices.columns),
-                               max_weights=pd.Series(1.0, index=prices.columns),
-                               weights_0=benchmark_weights)
+                               min_weights=0.0 * benchmark_weights,
+                               max_weights=3.0 * benchmark_weights,
+                               weights_0=benchmark_weights,
+                               group_lower_upper_constraints=group_lower_upper_constraints)
 
     if local_test == LocalTests.ONE_STEP_OPTIMISATION:
         # optimise using last available universe as inputs
@@ -52,14 +51,13 @@ def run_local_test(local_test: LocalTests):
                                 index=prices.columns, columns=prices.columns)
         print(f"pd_covar=\n{pd_covar}")
 
-        weights, _ = wrapper_maximize_portfolio_sharpe(pd_covar=pd_covar,
-                                                    means=52.0*returns.mean(axis=0),
-                                                    constraints=constraints,
-                                                    weights_0=benchmark_weights)
+        weights = wrapper_maximise_diversification(pd_covar=pd_covar,
+                                                   constraints=constraints,
+                                                   weights_0=benchmark_weights)
 
         df_weight = pd.concat([benchmark_weights.rename('benchmark'), weights.rename('portfolio')], axis=1)
         print(f"weights=\n{df_weight}")
-        qis.plot_bars(df=df_weight)
+        qis.plot_bars(df=df_weight, stacked=False)
 
         te_vol, turnover, alpha, port_vol, benchmark_vol = compute_tre_turnover_stats(covar=pd_covar.to_numpy(),
                                                                                       benchmark_weights=benchmark_weights,
@@ -72,20 +70,13 @@ def run_local_test(local_test: LocalTests):
 
     elif local_test == LocalTests.ROLLING_OPTIMISATION:
         # optimise using last available universe as inputs
-        time_period = qis.TimePeriod('31Dec2016', '15Mar2026')
+        time_period = qis.TimePeriod('31Jan2007', '17Apr2025')
         rebalancing_costs = 0.0003
-
-        covar_estimator = EwmaCovarEstimator(returns_freq='ME', span=60, rebalancing_freq='YE')
+        covar_estimator = EwmaCovarEstimator()
         covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
-        expected_returns = estimate_rolling_ewma_means(prices=prices,
-                                                rebalancing_dates=list(covar_dict.keys()),
-                                                returns_freq=covar_estimator.returns_freq,
-                                                span=covar_estimator.span, annualize=True)
-        weights = rolling_maximize_portfolio_sharpe(prices=prices,
-                                                    expected_returns=expected_returns,
-                                                    constraints=constraints,
-                                                    covar_dict=covar_dict)
-
+        weights = rolling_maximise_diversification(prices=prices,
+                                                   constraints=constraints,
+                                                   covar_dict=covar_dict)
         print(weights)
 
         portfolio_dict = {'Optimal Portfolio': weights,
@@ -108,7 +99,7 @@ def run_local_test(local_test: LocalTests):
                                                              add_grouped_cum_pnl=False,
                                                              **kwargs)
         qis.save_figs_to_pdf(figs=figs,
-                             file_name="max sharpe portfolio", orientation='landscape',
+                             file_name="max diversification portfolio", orientation='landscape',
                              local_path=lp.get_output_path())
 
 

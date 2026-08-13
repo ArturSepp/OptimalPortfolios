@@ -14,7 +14,7 @@ from optimalportfolios import (
     rolling_minimise_tracking_error,
     wrapper_minimise_tracking_error,
 )
-from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
+from examples.data.universe import fetch_benchmark_universe_data
 
 
 class LocalTests(Enum):

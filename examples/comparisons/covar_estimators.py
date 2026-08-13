@@ -28,7 +28,7 @@ from optimalportfolios import (Constraints, PortfolioObjective,
                                EwmaCovarEstimator,
                                LassoModelType, LassoModel,
                                FactorCovarEstimator)
-from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
+from examples.data.universe import fetch_benchmark_universe_data
 import optimalportfolios.local_path as lp
 
 

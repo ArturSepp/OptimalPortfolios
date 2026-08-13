@@ -73,7 +73,7 @@ def run_local_test(local_test: LocalTests):
         plot_mixure2(x)
 
     elif local_test == LocalTests.ROLLING_FIT:
-        from optimalportfolios.examples.data.etf_prices_local import load_test_data
+        from examples.data.etf_prices_local import load_test_data
         prices = load_test_data()
         prices = prices.loc['2000':, :]  # have at least 3 assets
         prices = prices['SPY'].dropna()

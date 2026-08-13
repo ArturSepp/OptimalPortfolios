@@ -43,7 +43,7 @@ from optimalportfolios import (Constraints, GroupLowerUpperConstraints,
                                PortfolioObjective,
                                rolling_quadratic_optimisation)
 
-from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
+from examples.data.universe import fetch_benchmark_universe_data
 
 
 # -----------------------------------------------------------------------------

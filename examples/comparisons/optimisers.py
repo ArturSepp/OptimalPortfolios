@@ -12,7 +12,7 @@ import qis as qis
 
 # package
 from optimalportfolios import Constraints, backtest_rolling_optimal_portfolio, PortfolioObjective, EwmaCovarEstimator
-from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
+from examples.data.universe import fetch_benchmark_universe_data
 
 
 # Resolve the figures directory relative to this file, not the current working

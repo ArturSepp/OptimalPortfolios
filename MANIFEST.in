@@ -17,8 +17,8 @@ recursive-include optimalportfolios/templates *.html
 recursive-include optimalportfolios/static *.css *.js
 recursive-include optimalportfolios *.yml *.yaml *.json *.txt *.md
 
-# Examples are repository-only: exclude their whole tree from built distributions.
-recursive-exclude optimalportfolios/examples *
+# Examples are repository-only: exclude their whole root-level tree from built distributions.
+recursive-exclude examples *
 
 # Explicitly exclude notebooks, resources, and image files
 recursive-exclude optimalportfolios/notebooks *

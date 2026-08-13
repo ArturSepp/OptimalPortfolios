@@ -50,7 +50,7 @@ optimalportfolios/
   reports/           reporting built on qis
   tests/             cross-cutting tests and their offline data fixtures
   utils/, docs/, config.py, local_path.py, settings.yaml
-  examples/          repository-only examples (excluded from wheels)
+examples/            repository-only examples (excluded from distributions)
 papers/              code accompanying the published papers (excluded from ruff)
 ```
 
@@ -113,7 +113,7 @@ and is reviewed by eye rather than by assertion. Put anything with a numerical c
 `[dev]` is pytest and pytest-cov, and nothing else. It previously also carried `networkx` and
 `optimalportfolios[data]`; neither enabled a single test — collection is 1277 either way. The
 `data` extra was there for the **examples**, not the suite: no test imports yfinance, and the
-eleven files that do all live under `optimalportfolios/examples/`, which is excluded from wheels
+eleven files that do all live under root-level `examples/`, which is excluded from distributions
 and never collected. `networkx` was orphaned when the risk-lineage analytics moved to FactorLasso
 and has no reference left in this repository. To run the examples, install what they need:
 `[dev,data]`, or `[all]`.
@@ -125,7 +125,7 @@ and has no reference left in this repository. To run the examples, install what 
 - **Ruff is configured in `[tool.ruff]` in `pyproject.toml`**, alongside pytest, coverage and interrogate. `pyproject.toml` is the stack's single configuration home; do not add a `ruff.toml`, which Ruff would read in preference and silently shadow this config.
 - **Four rule sets are enforced by ruff rather than written down**: the three stack invariants below and the whole `F` family. All are green on the package, so a finding is always something you just introduced. `E`/`W` stay ungated because of the ~380 `E501` line-length findings in the older modules:
   - `TID251` fails an import of `trendfollowing`, `privateassets`, `stochvolmodels`, `goal_based_allocation` or `vanilla_option_pricers`. This package depends on `qis` and `factorlasso` and on nothing else in the stack; subject packages never import each other. `qis` and `factorlasso` are of course not banned — they are declared dependencies, and importing them is the point.
-  - `TID253` fails a **module-level** import of an optional extra (`yfinance`, `pandas_datareader`, `pybloqs`, `plotly`, `pyarrow`, `psycopg2`, `sqlalchemy`); the same import inside a function passes, which is the pattern the collection note above requires. `optimalportfolios/examples/**` and `reports/portfolio_result_pybloqs.py` are named in `per-file-ignores` — add to that list only for a module `optimalportfolios/__init__.py` cannot reach.
+  - `TID253` fails a **module-level** import of an optional extra (`yfinance`, `pandas_datareader`, `pybloqs`, `plotly`, `pyarrow`, `psycopg2`, `sqlalchemy`); the same import inside a function passes, which is the pattern the collection note above requires. `examples/**` and `reports/portfolio_result_pybloqs.py` are named in `per-file-ignores` — add to that list only for a module `optimalportfolios/__init__.py` cannot reach.
   - `ICN` pins `import numpy as np` and `import pandas as pd`. Ruff's default alias map is replaced rather than extended, so `matplotlib` stays free to be both `mpl` and `plt`.
 - **Every module, class, method and function carries a docstring.** `interrogate` is configured in `pyproject.toml` with `fail-under = 100` and, like ruff, excludes `papers/`. The bar is 100% rather than a partial target for the same reason the invariants above are lint: at 100% a miss is always something you just introduced. Nested closures and one-line properties count too — a short single line stating what the thing returns is enough; reserve the `Args:`/`Returns:` block for public entry points.
 - Optimisation problems are expressed with `cvxpy`; `quadprog` is used where a dedicated QP solver is faster. Do not introduce a third optimisation backend.

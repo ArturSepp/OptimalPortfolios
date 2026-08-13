@@ -32,6 +32,10 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
 
 ### Changed
 
+- Moved the repository-only worked examples from `optimalportfolios/examples/` to root-level
+  `examples/`, making them visible beside the package while keeping them out of wheels and sdists.
+  Example and local-diagnostic imports, documentation links, the workflow runner, and packaging,
+  lint, and coverage exclusions now follow the new location.
 - Replaced `constraints.txt` with a committed `uv.lock`. The release step that regenerated the
   constraints file is now `uv lock`. The ubuntu/3.12 coverage cell syncs `--locked`, which also
   fails when the lock has drifted from `pyproject.toml`; the remaining matrix cells sync
@@ -133,7 +137,7 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
 - Reduced the `dev` extra to `pytest` and `pytest-cov`. It also carried `networkx` and
   `optimalportfolios[data]`; neither enabled a single test, with collection at 1277 either way.
   The `data` extra was there for the examples rather than the suite — no test imports yfinance,
-  and the eleven files that do live under `optimalportfolios/examples/`, which is excluded from
+  and the eleven files that do live under root-level `examples/`, which is excluded from
   wheels and never collected — so every cell of the test matrix was installing yfinance for
   nothing, and could not have established that an optional package was absent. `networkx` was
   orphaned in 6.16.0 when the risk-lineage analytics moved to FactorLasso and has no reference
