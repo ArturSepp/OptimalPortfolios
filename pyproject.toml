@@ -193,4 +193,4 @@ omit = ["*/tests/*", "*/examples/*", "papers/*", "*/reports/*"]
 # Measure on a `[dev]` install, which is what the 3.12 leg of the `test` job in ci.yml does.
 # NetworkX remains a development dependency solely for independent matcher cross-checks; the
 # production `mcf` matcher and its regression tests run in a core install.
-fail_under = 95
+fail_under = 99
