@@ -67,6 +67,16 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
   which can detect dependency drift without a repository event. The example smoke test moved to
   `examples.yml`, which runs it and four others on three runners rather than on one cell.
 
+### Removed
+
+- Removed the `jupyter` extra (`jupyter`, `notebook`, `jupyterlab`) and dropped it from `[all]`,
+  which is now `[data,reports]`. Nothing in this package imports any of the three and the
+  repository contains no notebook, so the extra declared a development environment rather than an
+  integration. It was not free: it carried ~130 packages into the `--all-extras` tree `audit.yml`
+  gates — 168 packages down to 84 — so an advisory anywhere in the notebook stack could turn this
+  project's daily audit red with nothing to fix on either side. Users who want a notebook should
+  install one alongside the package. Every remaining extra names something the package imports.
+
 ### Fixed
 
 - Added an opt-in strict mode to the shared rolling-solver NaN filter, and enabled it for objective

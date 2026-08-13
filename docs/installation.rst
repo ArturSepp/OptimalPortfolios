@@ -32,10 +32,11 @@ Install an extra by placing its name in square brackets:
    pip install "optimalportfolios[clustering]"
    pip install -e ".[dev]"
 
-Additional ``reports`` and ``jupyter`` extras provide the pybloqs report backend
-and notebook tooling respectively. The ``all`` extra installs the ``data``,
-``reports``, ``jupyter``, and ``clustering`` runtime integrations. Documentation
-contributors can install the Sphinx toolchain with:
+An additional ``reports`` extra provides the pybloqs report backend. The ``all``
+extra installs the ``data`` and ``reports`` runtime integrations. There is no
+``jupyter`` extra: nothing in this package imports jupyter, notebook or
+jupyterlab, so install a notebook stack alongside it rather than through it.
+Documentation contributors can install the Sphinx toolchain with:
 
 .. code-block:: console
 

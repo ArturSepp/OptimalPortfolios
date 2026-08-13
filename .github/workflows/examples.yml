@@ -95,7 +95,7 @@ jobs:
 
     - name: Sync with the data extra
       # `data` is the extra these examples actually need; syncing `--all-extras` would install
-      # jupyter and the reporting stack to run scripts that use neither.
+      # the reporting and docs stacks to run scripts that use neither.
       run: uv sync --locked --extra data
 
     - name: Run the network examples
