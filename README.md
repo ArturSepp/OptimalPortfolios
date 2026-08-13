@@ -399,10 +399,10 @@ installation. The default risk-lineage matcher is implemented with core NumPy/Sc
 | `dev` | Pytest and pytest-cov — the test suite and nothing else. |
 | `all` | All runtime integrations: `data` and `reports`. |
 
-Every extra names something this package imports. There is no `jupyter` extra: nothing here
-imports jupyter, notebook or jupyterlab, and the repository contains no notebook, so it only
-added ~130 packages to `[all]` and to the audited dependency tree. Install a notebook stack
-alongside this package if you want one.
+The runtime integration extras, `data` and `reports`, correspond to features that import their
+dependencies. There is no `jupyter` extra: nothing here imports jupyter, notebook or jupyterlab,
+and the repository contains no notebook. Install a notebook stack alongside this package if you
+want one. The `dev` and `docs` extras remain contributor toolchains.
 
 `dev` is deliberately minimal: the suite collects the same 1277 tests with or without the
 optional extras, so nothing else belongs in it. The lint tools are not an extra at all — they

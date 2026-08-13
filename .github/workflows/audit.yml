@@ -4,8 +4,8 @@ name: Audit
 # the state of the advisory database -- and neither is the source tree. That cuts both ways, and
 # is why this is not a step in static.yml on the every-push trigger:
 #
-#   * Running it on a push that cannot change either input re-resolves 168 packages and re-queries
-#     PyPI for an answer that provably has not moved.
+#   * Running it on a push that cannot change either input re-resolves the all-extras tree and
+#     re-queries PyPI for an answer that provably has not moved.
 #   * Far worse, a push trigger structurally cannot catch the case this gate exists for. Every
 #     dependency is an open-ended floor (`>=`, no upper bound), so a newly-disclosed advisory can
 #     land against a version this project already accepts without a single commit being made. On a
@@ -64,8 +64,8 @@ jobs:
       # packages -- and silently omits every optional extra. `data` and `reports` are user-facing
       # (they are what `[all]` installs), so leaving them ungated defeated the point.
       # `--all-extras` covers `dev` and `docs` too: those floors drift exactly like the rest.
-      # 84 packages at the time of writing, down from 168 when a `jupyter` extra pulled the
-      # notebook stack into a tree no file in this repository imports.
+      # The removed `jupyter` convenience extra no longer pulls an unused notebook stack into
+      # this tree.
       #
       # State the contract exactly, because it is narrower than "the floors are safe": this audits
       # *one* resolution -- the newest tree resolvable today, on Linux, for CPython 3.12. Every

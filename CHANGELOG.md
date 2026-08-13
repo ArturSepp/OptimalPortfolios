@@ -71,11 +71,11 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
 
 - Removed the `jupyter` extra (`jupyter`, `notebook`, `jupyterlab`) and dropped it from `[all]`,
   which is now `[data,reports]`. Nothing in this package imports any of the three and the
-  repository contains no notebook, so the extra declared a development environment rather than an
-  integration. It was not free: it carried ~130 packages into the `--all-extras` tree `audit.yml`
-  gates — 168 packages down to 84 — so an advisory anywhere in the notebook stack could turn this
-  project's daily audit red with nothing to fix on either side. Users who want a notebook should
-  install one alongside the package. Every remaining extra names something the package imports.
+  repository contains no notebook, so the extra declared notebook tooling rather than a runtime
+  integration. It also pulled the unused notebook stack into the daily `--all-extras` audit.
+  Users who want a notebook should install one alongside the package. The remaining runtime
+  integration extras, `data` and `reports`, correspond to features that import their dependencies;
+  `dev` and `docs` remain contributor toolchains.
 
 ### Fixed
 
@@ -138,9 +138,10 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
   resolution — the newest tree resolvable on Linux/CPython 3.12 — not every version the
   open-ended floors permit. The lock was a path trigger whose content no step read; it is now
   audited directly, which is the tree a pin can strand on a vulnerable version.
-- Widened `pip-audit` from the core tree to every extra. A bare `pip-audit .` audits only the 11
-  core dependencies and silently omits the optional ones, leaving the user-facing `data`,
-  `reports` and `jupyter` extras ungated; the audited set goes from 35 packages to 168.
+- Widened `pip-audit` from the core tree to every extra. A bare `pip-audit .` audits only the core
+  dependencies and silently omits the optional ones, leaving user-facing integrations and
+  contributor toolchains ungated. The audit continues to cover every remaining extra after the
+  unused `jupyter` convenience extra was removed.
 - Widened the optional-module absence check from three of the seven names ruff bans at module
   level to all of them, and derived the list from `banned-module-level-imports` rather than
   restating it. It runs against the three installed 3.12 environments in `ci.yml` and fresh daily

@@ -73,9 +73,8 @@ docs = [
 
 # There is no `jupyter` extra. It declared jupyter, notebook and jupyterlab, none of which this
 # package imports and none of which any file here needs: the repository contains no notebook.
-# What it did do was carry ~130 packages into `[all]` and into the `--all-extras` tree audit.yml
-# gates, so a notebook-stack advisory could turn this project's daily audit red with nothing to
-# fix on either side. Installing a development environment is the user's business, not an extra.
+# It also pulled the unused notebook stack into `[all]` and the daily `--all-extras` audit.
+# Install notebook tooling alongside the package when needed.
 #
 # Test dependencies only, and nothing else. The lint tools are not here: they gate the repository
 # rather than support the suite, they are never imported by a test, and installing them into all
