@@ -48,6 +48,36 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
 
 ### Fixed
 
+- Pinned the three gating tools exactly instead of to a series: `ruff==0.16.2`,
+  `interrogate==1.7.0` and `pip-audit==2.10.1`, the last moved out of a `uvx --from` range in
+  `audit.yml` into a new `audit` dependency-group. `~=0.16.0` admits any patch release, and a ruff
+  patch may add or fix a rule, so unchanged source could change verdict with nothing in this
+  repository having moved — the reproducibility the comments claimed was not what the specifiers
+  delivered. `pip-audit` additionally ran through `uvx`, which resolves fresh and bypasses
+  `uv.lock` entirely; it now runs `uv run --locked --only-group audit`.
+- Removed the job-level fork guard from `static.yml` and made `pull_request` unconditional. The
+  guard skipped the job for same-repository PRs, and GitHub reports a conditionally skipped job as
+  **successful** — so the required PR check could go green without ruff or interrogate having run.
+  A same-repo PR branch is now checked on both push and pull_request; the duplicate is a
+  seconds-long job with no install, which is the correct thing to pay for a sound gate.
+- Retried `uv sync` in the CI matrix, which has failed a cell outright on transient DNS resolution
+  errors against `files.pythonhosted.org`. uv's own per-request retries do not cover a resolver
+  that gives up mid-flight, so the retry wraps the command: three attempts with 15s and 45s
+  backoff.
+- Restored the three-OS `core-install` matrix and its optional-extras assertion, both dropped by
+  an earlier revision of this branch on the claim that the resolved dependency set is
+  platform-invariant. It is not: environment markers are evaluated per platform, wheel
+  availability differs, and a transitive dependency can arrive on one OS and not another. The
+  `test` matrix cannot substitute, because `[dev]` depends on `optimalportfolios[data]` and so
+  installs yfinance deliberately — no cell of it can establish that an optional package is absent.
+  The assertion now checks all seven `banned-module-level-imports` names, read from
+  `pyproject.toml` rather than restated, and asks the import system on the environment actually
+  built.
+- Added a second `pip-audit` pass over `uv export --locked --all-extras`, and narrowed the stated
+  contract of the first. `uv pip compile --all-extras --python-version 3.12` audits one
+  resolution — the newest tree resolvable on Linux/CPython 3.12 — not every version the
+  open-ended floors permit. The lock was a path trigger whose content no step read; it is now
+  audited directly, which is the tree a pin can strand on a vulnerable version.
 - Widened `pip-audit` from the core tree to every extra. A bare `pip-audit .` audits only the 11
   core dependencies and silently omits the optional ones, leaving the user-facing `data`,
   `reports` and `jupyter` extras ungated; the audited set goes from 35 packages to 168.

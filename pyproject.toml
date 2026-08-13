@@ -94,11 +94,24 @@ dev = [
 # the right home: it is not an extra, so it never ships to a user and never reaches a core
 # install, and unlike a `dev` group it is not synced by default, so the test matrix skips it too.
 #
-# Pinned to a minor series rather than an exact version, so a tool release cannot silently change
-# the verdict on unchanged code, while a patch fix still arrives.
+# Pinned exactly, not to a series. These tools decide whether a change is allowed to land, and a
+# range does not make that verdict reproducible: `ruff~=0.16.0` admits any 0.16.x, and every ruff
+# patch release is entitled to add or fix a rule, so the same unchanged source can pass today and
+# fail tomorrow with nothing in this repository having moved. An exact pin makes a verdict change
+# a reviewed commit rather than an upstream event. Bumping is a deliberate PR: raise the version
+# here, re-lock, and fix whatever the new release now reports.
 lint = [
-    "ruff~=0.16.0",
-    "interrogate~=1.7",
+    "ruff==0.16.2",
+    "interrogate==1.7.0",
+]
+
+# `pip-audit` is separated from `lint` because it is not a source gate: it reads the resolved
+# dependency set and the advisory database, and audit.yml is the only caller. Exact for the same
+# reason as above -- the tool version must not be a free variable when a run turns red -- though
+# note that what this pin fixes is the *scanner*, not the verdict: the advisory database it
+# queries is remote and updates continuously, which is the intended behaviour for a daily audit.
+audit = [
+    "pip-audit==2.10.1",
 ]
 
 all = [

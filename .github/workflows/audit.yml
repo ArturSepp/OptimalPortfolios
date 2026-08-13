@@ -59,26 +59,61 @@ jobs:
         # is covered by the ci.yml matrix installing for real.
         python-version: "3.12"
 
-    - name: Resolve the full dependency tree
+    - name: Resolve the latest all-extras tree
       # Compiled rather than `pip-audit .`, because that form audits the *core* tree only -- 35
       # packages -- and silently omits every optional extra. `data`, `reports` and `jupyter` are
       # user-facing (they are what `[all]` installs), and jupyter/notebook/jupyterlab are among
       # the more advisory-prone packages in this stack, so leaving them ungated defeated the
       # point. `--all-extras` covers `dev` and `docs` too: those floors drift exactly like the
       # rest. 168 packages at the time of writing.
+      #
+      # State the contract exactly, because it is narrower than "the floors are safe": this audits
+      # *one* resolution -- the newest tree resolvable today, on Linux, for CPython 3.12. Every
+      # dependency here is an open-ended floor, so the set of versions this project *permits* is
+      # unbounded and is not audited; an advisory affecting an older-but-permitted version will not
+      # surface here. Nor does it cover the resolutions Windows and macOS or another interpreter
+      # would produce, where environment markers can select different packages. What it does catch
+      # is the case that matters most: a fresh install today pulling in something vulnerable.
       run: |
         uv pip compile --all-extras --python-version 3.12 --quiet \
           pyproject.toml -o "$RUNNER_TEMP/requirements-audit.txt"
 
     - name: Audit the dependency tree for known vulnerabilities
-      # Pinned to the current minor series so a tool release cannot change the verdict on an
-      # unchanged dependency tree.
+      # The version comes from the `audit` dependency-group in pyproject.toml, exactly pinned and
+      # locked in uv.lock, rather than from a range spelled out here. `~=2.10.1` admitted any
+      # 2.10.x, so the scanner could change under an unchanged dependency tree; and `uvx --from`
+      # resolves fresh at run time, bypassing the lock even if the range were tight. `--locked`
+      # fails rather than re-resolving if uv.lock has drifted from pyproject.toml.
+      #
+      # This pins the scanner, not the answer: the advisory database is remote and updates
+      # continuously, which is the whole point of running this daily. A red run means a new
+      # advisory or a dependency change -- never a new pip-audit.
       #
       # Hard-fails on purpose: the tree is clean today, so a finding here is either a new advisory
       # or a dependency change under review. If an advisory ever lands that this project cannot
       # act on, prefer `--ignore-vuln <ID>` with a comment naming why over narrowing the set or
       # disabling the step, so the exception stays visible.
-      run: uvx --from "pip-audit~=2.10.1" pip-audit -r "$RUNNER_TEMP/requirements-audit.txt"
+      run: uv run --locked --only-group audit pip-audit -r "$RUNNER_TEMP/requirements-audit.txt"
+
+    - name: Audit the locked environment for known vulnerabilities
+      # The second of the two trees this workflow is triggered on, and the reason `uv.lock` is a
+      # path trigger at all. The compile above reads pyproject.toml and ignores the lock entirely,
+      # so without this step a lock change would start a run that could not observe it -- the
+      # trigger named an input the job never consumed.
+      #
+      # These are different questions and both are worth asking. The compile audits what a *new*
+      # install resolves to; this audits the exact pinned set that `uv sync --locked` installs --
+      # what the primary CI cell tests against and what anyone building from this repository gets.
+      # A pin can sit on a vulnerable version long after the floor would resolve past it, and that
+      # is invisible to the step above.
+      #
+      # `--no-emit-project` drops the local package itself, which has no PyPI release to match an
+      # advisory against and which pip-audit would otherwise fail to look up.
+      if: ${{ !cancelled() }}
+      run: |
+        uv export --locked --all-extras --no-emit-project --quiet \
+          --format requirements-txt -o "$RUNNER_TEMP/requirements-locked.txt"
+        uv run --locked --only-group audit pip-audit -r "$RUNNER_TEMP/requirements-locked.txt"
 
     - name: Assert no optional module has arrived in the core tree
       # Runs even when the audit above found something. This resolves its own tree and shares

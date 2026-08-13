@@ -1,16 +1,24 @@
 name: Static
 
-# Every push to every branch, not just main and not just branches with a PR open. These gates
-# cost seconds and need no install, so there is no reason to make a contributor open a PR to
-# find out that an import is unused -- the earliest possible signal is the useful one.
+# Two triggers, both unconditional, and deliberately overlapping.
 #
-# `pull_request` stays because a push to a fork does not run here: PRs into this repository
-# routinely come from a fork, and that event is the only way this workflow sees them. The job
-# guard below keeps same-repo branches from running twice over.
+# `pull_request` is the gate: it is the event a required status check is resolved against, and it
+# must run for *every* PR, fork or not. Filtering it -- at the job level or here -- is what makes
+# this check unsound rather than merely redundant, because GitHub reports a skipped job as
+# **successful**. A same-repo PR would then show a green "static" check that ruff and interrogate
+# never ran for, which is strictly worse than having no check at all.
+#
+# `push` is the early signal, and it is additive: these gates cost seconds and need no install, so
+# a contributor should not have to open a PR to find out that an import is unused. It fires on
+# every branch in this repository; a push to a fork runs in the fork, not here.
+#
+# So a same-repo PR branch is checked twice per commit. That is accepted: the duplicate is a
+# seconds-long job with no install, and the alternative -- narrowing `push` to `main` -- would buy
+# those seconds by deleting the early signal on exactly the branches that need it. Suppressing the
+# duplicate on the `pull_request` side is not an alternative at any price; see above.
 on:
   push:
   pull_request:
-    branches: [main]
 
 # Keyed on `github.workflow`, so this workflow's runs only ever cancel each other -- the CI
 # matrix in ci.yml is a separate group and is unaffected. Superseding a run matters more now
@@ -37,11 +45,10 @@ jobs:
     # --only-group`, so their versions are declared once and locked. There is deliberately no
     # install of the project itself: the group is the entire environment.
     #
-    # On `push` this always runs. On `pull_request` it runs only for a PR from a fork, because a
-    # same-repo PR branch has already been gated by the push to that branch and would otherwise
-    # be checked twice per commit. A skipped job reports success, so this stays usable as a
-    # required check.
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    # This job carries no `if:`, on purpose. A conditionally skipped job reports **success** to
+    # the branch-protection API, so any guard here would turn the required check green for the
+    # very PRs it declined to inspect. Whatever it costs to run twice, it is never correct to make
+    # this job's absence indistinguishable from its passing.
     runs-on: ubuntu-latest
 
     steps:

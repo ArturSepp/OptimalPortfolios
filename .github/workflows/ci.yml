@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 # A push to a PR branch makes the run already in flight for that branch pointless: this workflow
-# is 13 jobs, so cancelling it is the single largest saving available here. Runs on `main` are
+# is 15 jobs, so cancelling it is the single largest saving available here. Runs on `main` are
 # keyed per-ref and never cancel each other.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,7 +18,7 @@ env:
   MPLBACKEND: Agg
 
 # This workflow is the part of CI that needs the package installed. The checks that do not --
-# ruff, interrogate, pip-audit -- live in static.yml and run in parallel with it.
+# ruff and interrogate in static.yml, pip-audit in audit.yml -- run in parallel with it.
 jobs:
   test:
     # The suite is pure-Python and NaN-aware pandas, but the scientific stack ships per-platform
@@ -67,7 +67,32 @@ jobs:
       # No pip bootstrap step: pyproject.toml declares PEP 639 `license` and `license-files`, so
       # the built metadata is Metadata-Version 2.4. The pip shipped with the older interpreters in
       # this matrix cannot read that and had to be upgraded first; uv reads it natively.
-      run: uv sync --extra dev ${{ matrix.primary && '--locked' || '--upgrade' }}
+      #
+      # Retried because this step talks to PyPI and the failures observed here are transport, not
+      # resolution: runners have hit `dns error: failed to lookup address information` on
+      # files.pythonhosted.org, which fails the whole matrix cell over a name lookup. uv's own
+      # `--retries` covers a request, but it gives up while the resolver is still mid-flight, so
+      # the retry has to wrap the command as well. Backoff is 15s then 45s -- long enough to
+      # outlast a DNS or CDN blip, and three attempts total still fails fast on a real error like
+      # an unresolvable constraint, which loses ~1 minute rather than masking anything.
+      #
+      # `--upgrade` cells resolve against the live index and so carry the whole exposure;
+      # `--locked` still downloads. Both take the same wrapper.
+      shell: bash
+      run: |
+        sync_cmd=(uv sync --extra dev ${{ matrix.primary && '--locked' || '--upgrade' }})
+        for attempt in 1 2 3; do
+          if "${sync_cmd[@]}"; then
+            exit 0
+          fi
+          if [ "$attempt" -eq 3 ]; then
+            echo "::error::uv sync failed after 3 attempts"
+            exit 1
+          fi
+          delay=$((attempt * 30 - 15))
+          echo "::warning::uv sync attempt $attempt failed; retrying in ${delay}s"
+          sleep "$delay"
+        done
 
     - name: Verify the public import surface
       # bash on every runner: the default shell on windows-latest is PowerShell, which parses this
@@ -105,13 +130,19 @@ jobs:
     # Bloomberg terminal. Without this job the constraint is a convention, and it has already been
     # broken twice by a module-scope yfinance import.
     #
-    # One runner, not the three the `test` job uses. What this job uniquely establishes -- that the
-    # package imports and the suite passes with no extras installed -- is a property of the
-    # dependency graph, and that is invariant across platforms: a module-scope import of an extra
-    # fails identically everywhere. Genuine per-platform breakage is already covered by `test`,
-    # which runs all three runners against a superset of these dependencies, so a second and third
-    # runner here re-derived one bit of information at the cost of the whole suite each time.
-    runs-on: ubuntu-latest
+    # All three runners, not one. An earlier revision of this branch narrowed it to ubuntu on the
+    # argument that "no optional extra is installed" is a property of the dependency graph and so
+    # is platform-invariant. That argument is wrong: environment markers are evaluated per
+    # platform, wheel availability differs, and a transitive dependency can be pulled in on one OS
+    # and not another -- so the resolved core set is genuinely a per-platform question. Nor can the
+    # `test` matrix stand in for it, whatever it costs: `[dev]` depends on `optimalportfolios[data]`
+    # and therefore installs yfinance on purpose, so no cell of that matrix can establish that an
+    # optional package is *absent*. This job is the only place that fact is checked at all.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -124,13 +155,43 @@ jobs:
     - name: Sync the core environment
       # A bare `uv sync` is exactly the core install: it takes no extras, and `lint` is a
       # non-default dependency-group, so neither the optional extras nor the tools are present.
-      # That is why there is no longer a step asserting their absence -- the environment cannot
-      # contain them by construction, where before it was built loosely and then interrogated.
-      #
-      # What that assertion uniquely caught, a core dependency taking an optional module on as a
-      # hard requirement, is a *drift* signal and cannot be seen from a locked environment at all.
-      # It moved to the daily fresh resolution in audit.yml, which is where drift belongs.
       run: uv sync --locked
+
+    - name: Assert the optional extras are absent
+      # The runtime half of TID253, checked on the environment that was actually built, on each of
+      # the three platforms. Ruff proves no *first-party* module imports these at module scope, but
+      # it has per-file ignores and cannot see a transitive arrival -- a core dependency taking one
+      # of them on as a hard requirement passes the lint and lands in what users get from a bare
+      # `pip install optimalportfolios`. That has already broken this project twice.
+      #
+      # The list is read from `banned-module-level-imports` in pyproject.toml rather than repeated
+      # here: repeating it is how this step came to check three of the seven names, leaving plotly,
+      # pyarrow, psycopg2 and sqlalchemy unguarded.
+      #
+      # This asks the import system, not a requirements file, so it answers the question that
+      # matters on this specific runner -- markers and wheel availability have already been
+      # resolved by the time it runs. The complementary check in audit.yml resolves a *fresh* core
+      # tree daily and catches drift this locked environment cannot show; neither subsumes the
+      # other.
+      shell: bash
+      run: |
+        uv run --no-sync python - <<'PY'
+        import importlib.util, sys, tomllib
+
+        with open("pyproject.toml", "rb") as fh:
+            cfg = tomllib.load(fh)
+        banned = cfg["tool"]["ruff"]["lint"]["flake8-tidy-imports"]["banned-module-level-imports"]
+        assert banned, "the ban list is empty; this check would assert nothing"
+
+        present = [m for m in banned if importlib.util.find_spec(m) is not None]
+        if present:
+            sys.exit(
+                "optional modules are importable in a core install: " + ", ".join(present)
+                + "\nEither a core dependency took one on as a hard requirement, or a dependency "
+                  "edit moved it out of an extra."
+            )
+        print(f"core install clean: none of the {len(banned)} banned modules are importable")
+        PY
 
     - name: Run the test suite on a core install
       # `--with pytest` layers the runner on top of the synced environment instead of installing
