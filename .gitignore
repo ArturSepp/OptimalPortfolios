@@ -4,6 +4,8 @@
 /roadmap/
 /tmp/
 /.codex/
+/.codex_tmp/
+/.claude/
 /.codex_analysis/
 /outputs/
 
@@ -160,18 +162,14 @@ dmypy.json
 *.xml
 *.pyc
 /depreciated/
-# Retired: papers/matf_cma_jpm_2026/data/ no longer exists. The same factor-NAV
-# content now lives at papers/cma_data/snapshots/<tag>/factor_navs.csv and is
-# ignored by papers/cma_data/.gitignore together with the two asset return panels.
 *.xlsx
 
-papers/achievable_sharpe_faj_2026/
-/papers/convexity_premium/
+# local helper scripts
+/commit_paper.sh
+/push_paper.sh
+/untrack_pdf.sh
+/fix_placeholders.sh
 
-# MATF-CMA paper folder (papers/matf_cma_jpm_2026)
-papers/matf_cma_jpm_2026/private/
-papers/matf_cma_jpm_2026/presentations/
-papers/matf_cma_jpm_2026/_to_delete/
 
 # Compiled manuscripts: the source and its figures are tracked, the PDF is not.
 papers/**/*.pdf
@@ -188,28 +186,19 @@ papers/**/*.bcf
 papers/**/*.synctex.gz
 papers/**/*.run.xml
 
-# local helper scripts
-/commit_paper.sh
-/push_paper.sh
-/untrack_pdf.sh
-/fix_placeholders.sh
+# papers and reference source documents - not redistributable
+papers/achievable_sharpe_faj_2026/
+/papers/convexity_premium/
+papers/cluster_lineage_2026/
+papers/cluster_lineage_2026/data/
+papers/cluster_lineage_2026/msci_us/
+papers/matf_cma_jpm_2026/private/
+papers/matf_cma_jpm_2026/presentations/
+papers/matf_cma_jpm_2026/_to_delete/
 
-# Placeholder exhibits, not fit to publish. Remove a line once the real figure
-# replaces the stub.
-#
-# Eight of the original ten were regenerated on the cma_data 2026q2 snapshot
-# (roadmap stages J2-J4b) and are now real exhibits, so they came off this list:
-#   benchmark_table.png  cma_snapshot.png  efficient_frontier.PNG
-#   factor_attribution.png  factor_exposures.png  risk_factors_annual.PNG
-#   risk_factors_corr.PNG  risk_factors_perf.PNG
-#
-# These two remain 6 KB stubs: both are BLOCKED on a production extract that
-# does not exist yet (regional P-CAEY levels; per-country term premium and
-# roll-down), and both are still \pendingexhibit boxes in the manuscript, which
-# prints a framed placeholder and never loads the file.
+# Placeholder exhibits that are not fit to publish.
 papers/matf_cma_jpm_2026/paper/figures/equity_factor_cmas.PNG
 papers/matf_cma_jpm_2026/paper/figures/rates_factor_cmas.PNG
 
-# reference source documents (books, survey PDFs) - not redistributable
+# Reference source documents (books, survey PDFs) are not redistributable.
 papers/references/
-papers/cluster_lineage_2026

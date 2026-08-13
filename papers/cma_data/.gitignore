@@ -6,6 +6,7 @@ __pycache__/
 
 # session notes and executor instructions for both papers — untracked
 claude/
+agents/
 
 # ---------------------------------------------------------------------------
 # Redistribution rule for snapshots/<tag>/
