@@ -30,7 +30,31 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
   universe twice and merges the cells back, where a dropped or duplicated ticker still yields a
   full-looking score panel.
 
+### Changed
+
+- Replaced `constraints.txt` with a committed `uv.lock`. The release step that regenerated the
+  constraints file is now `uv lock`. The ubuntu/3.12 coverage cell syncs `--locked`, which also
+  fails when the lock has drifted from `pyproject.toml`; the remaining matrix cells sync
+  `--upgrade` and keep floating.
+- Moved `ruff` and `interrogate` out of the `dev` extra into a `lint` dependency-group. They were
+  previously declared twice, as open floors in `pyproject.toml` (`ruff>=0.4`) and as the real pins
+  in the workflow (`ruff~=0.16.0`), so a contributor's ruff and CI's ruff could disagree about the
+  same file. CI now takes its versions from the group. The group is not an extra and is not synced
+  by default, so it reaches neither a user install nor the test matrix.
+- Split CI into three workflows by what each check depends on: `static.yml` (ruff, interrogate) on
+  every pull request and on pushes to branches in this repository, `audit.yml` on a daily schedule,
+  and `ci.yml` for the jobs that install the package. Moved both installers onto uv, dropping
+  `actions/setup-python`.
+
 ### Fixed
+
+- Widened `pip-audit` from the core tree to every extra. A bare `pip-audit .` audits only the 11
+  core dependencies and silently omits the optional ones, leaving the user-facing `data`,
+  `reports` and `jupyter` extras ungated; the audited set goes from 35 packages to 168.
+- Widened the optional-module absence check from three of the seven names ruff bans at module
+  level to all of them, and derived the list from `banned-module-level-imports` rather than
+  restating it. It now runs against a fresh daily resolution in `audit.yml`, where a transitive
+  arrival is visible, instead of against a locked environment where it cannot be.
 
 - Made soft tracking error ignore a populated hard tracking-error budget during both the solve
   and post-solve validation, instead of rejecting an optimal soft solution and silently falling

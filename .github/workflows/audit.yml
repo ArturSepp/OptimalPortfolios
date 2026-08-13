@@ -24,13 +24,13 @@ on:
     branches: [main]
     paths:
       - pyproject.toml
-      - constraints.txt
+      - uv.lock
       - .github/workflows/audit.yml
   pull_request:
     branches: [main]
     paths:
       - pyproject.toml
-      - constraints.txt
+      - uv.lock
       - .github/workflows/audit.yml
   workflow_dispatch:
 
@@ -79,3 +79,64 @@ jobs:
       # act on, prefer `--ignore-vuln <ID>` with a comment naming why over narrowing the set or
       # disabling the step, so the exception stays visible.
       run: uvx --from "pip-audit~=2.10.1" pip-audit -r "$RUNNER_TEMP/requirements-audit.txt"
+
+    - name: Assert no optional module has arrived in the core tree
+      # Runs even when the audit above found something. This resolves its own tree and shares
+      # nothing with that step but a checkout, so letting a CVE hide a dependency leak would turn
+      # one scheduled run into two. `!cancelled()` rather than `always()`, so a cancelled run
+      # still cancels the step.
+      if: ${{ !cancelled() }}
+      # The runtime half of TID253, and the reason core-install no longer carries an assertion of
+      # its own. Ruff proves that no first-party module imports an optional backend at module
+      # scope, but it cannot see a *transitive* arrival: a core dependency taking `yfinance` or
+      # `sqlalchemy` on as a hard requirement passes every lint and quietly ends up in what users
+      # get from a bare `pip install optimalportfolios`. That has already broken this project
+      # twice, via a module-scope yfinance import.
+      #
+      # It belongs here rather than in ci.yml because it is a drift signal. ci.yml syncs from
+      # uv.lock, and a locked environment cannot show drift by construction -- it reports whatever
+      # was true when the lock was written. Only a fresh resolution can, and this workflow already
+      # runs one daily.
+      #
+      # Resolves the core tree with no extras, then checks it against the same
+      # `banned-module-level-imports` list ruff gates with, read from pyproject.toml rather than
+      # restated -- restating it is how the old assertion came to cover three of seven names.
+      run: |
+        uv pip compile --python-version 3.12 --quiet \
+          pyproject.toml -o "$RUNNER_TEMP/requirements-core.txt"
+        uv run --no-project python - "$RUNNER_TEMP/requirements-core.txt" <<'PY'
+        import sys, tomllib
+
+        def normalise(name):
+            return name.lower().replace("_", "-").replace(".", "-")
+
+        with open("pyproject.toml", "rb") as fh:
+            cfg = tomllib.load(fh)
+        banned = cfg["tool"]["ruff"]["lint"]["flake8-tidy-imports"]["banned-module-level-imports"]
+        assert banned, "the ban list is empty; this check would assert nothing"
+
+        core = set()
+        for line in open(sys.argv[1]):
+            line = line.split("#", 1)[0].strip()
+            if line and not line.startswith("-"):
+                core.add(normalise(line.split("==")[0]))
+
+        # A distribution can carry a module under a different name, and a banned module can ship
+        # as a variant package -- psycopg2 as psycopg2-binary being the case in point -- so a
+        # prefix match is deliberate here. A false positive is a five-minute conversation; a false
+        # negative is the bug this exists to catch.
+        leaked = sorted(
+            f"{m} (as {d})"
+            for m in banned
+            for d in core
+            if d == normalise(m) or d.startswith(normalise(m) + "-")
+        )
+        if leaked:
+            sys.exit(
+                "optional modules reached the core dependency tree: "
+                + ", ".join(leaked)
+                + "\nEither a core dependency took one on as a hard requirement, or a dependency "
+                  "edit moved it out of an extra."
+            )
+        print(f"core tree clean: {len(core)} packages, none of the {len(banned)} banned modules")
+        PY

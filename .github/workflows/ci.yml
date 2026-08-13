@@ -25,10 +25,10 @@ jobs:
     # wheels and pandas frequency/locale behaviour has bitten this kind of code before, so the
     # matrix runs every supported Python on all three runners.
     #
-    # `primary` marks the one cell -- ubuntu/3.12 -- that installs against constraints.txt, runs
-    # the offline example and gates coverage. It is set through `include` so the pinned and
-    # floating legs are one step each instead of two near-identical pairs; the remaining cells
-    # leave it unset, which is falsy in an expression.
+    # `primary` marks the one cell -- ubuntu/3.12 -- that syncs `--locked` from uv.lock, runs the
+    # offline example and gates coverage. It is set through `include` so the pinned and floating
+    # legs are one step each instead of two near-identical pairs; the remaining cells leave it
+    # unset, which is falsy in an expression.
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -50,26 +50,31 @@ jobs:
         # setup-python step. The version has to be passed explicitly: `.python-version` is
         # gitignored, so there is no in-repo file for uv to discover.
         python-version: ${{ matrix.python-version }}
-        # Creates and activates a .venv for the steps below, so `uv pip install`, `python` and
-        # `pytest` all address the same environment without an activation dance per runner.
-        activate-environment: true
         # `enable-cache` defaults to `auto` -- on for push and pull_request on GitHub-hosted
         # runners -- and the default `cache-dependency-glob` already covers pyproject.toml and
-        # constraints.txt. The cache holds downloaded and built wheels, not a resolution, so the
+        # uv.lock. The cache holds downloaded and built wheels, not a resolution, so the
         # deliberately floating cells keep floating.
 
-    - name: Install the package and its dev extra
+    - name: Sync the environment
+      # The pinned and floating legs differ by one flag rather than by a whole step.
+      #
+      # `--locked` on the primary cell installs the lock exactly and *fails* if uv.lock has
+      # drifted from pyproject.toml, which is what stops a dependency edit landing without a
+      # re-lock. Everywhere else `--upgrade` re-resolves from the floors and ignores the lock, so
+      # the matrix keeps testing what a user installing today would actually get. That float is
+      # the point of the other eleven cells; pinning them would only test the lock twelve times.
+      #
       # No pip bootstrap step: pyproject.toml declares PEP 639 `license` and `license-files`, so
       # the built metadata is Metadata-Version 2.4. The pip shipped with the older interpreters in
       # this matrix cannot read that and had to be upgraded first; uv reads it natively.
-      run: uv pip install ${{ matrix.primary && '-c constraints.txt' || '' }} -e ".[dev]"
+      run: uv sync --extra dev ${{ matrix.primary && '--locked' || '--upgrade' }}
 
     - name: Verify the public import surface
       # bash on every runner: the default shell on windows-latest is PowerShell, which parses this
       # multi-line quoted argument differently.
       shell: bash
       run: |
-        python -c "
+        uv run python -c "
         from optimalportfolios import (
             PortfolioObjective, Constraints, GroupLowerUpperConstraints,
             FactorCovarEstimator, EwmaCovarEstimator
@@ -82,7 +87,7 @@ jobs:
 
     - name: Smoke-test the offline multi-asset example
       if: matrix.primary
-      run: python optimalportfolios/examples/backtests/multiasset_saa.py
+      run: uv run python optimalportfolios/examples/backtests/multiasset_saa.py
 
     - name: Run the test suite
       # On the primary cell only, coverage is measured and gated. The floor lives in
@@ -93,7 +98,7 @@ jobs:
       # Measured on one cell so the floor keeps one authoritative number. A platform-specific skip
       # on another runner would otherwise fail the gate there for a reason that has nothing to do
       # with coverage regressing.
-      run: pytest ${{ matrix.primary && '--cov=optimalportfolios --cov-report=term-missing' || '' }}
+      run: uv run pytest ${{ matrix.primary && '--cov=optimalportfolios --cov-report=term-missing' || '' }}
 
   core-install:
     # The suite must stay green without the optional extras: no test may need data, network or a
@@ -115,35 +120,20 @@ jobs:
       uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
       with:
         python-version: "3.12"
-        activate-environment: true
 
-    - name: Install the core package only
-      # A fresh venv per run, so the absence asserted below is a property of the dependency tree
-      # rather than of a leftover environment.
-      run: uv pip install -e . pytest
-
-    - name: Assert the optional extras are absent
-      # The module list is read from `banned-module-level-imports` in pyproject.toml rather than
-      # repeated here, because repeating it is how the two drifted apart: this step used to check
-      # three of the seven names ruff bans, leaving plotly, pyarrow, psycopg2 and sqlalchemy
-      # unguarded for no reason. One list, one place.
+    - name: Sync the core environment
+      # A bare `uv sync` is exactly the core install: it takes no extras, and `lint` is a
+      # non-default dependency-group, so neither the optional extras nor the tools are present.
+      # That is why there is no longer a step asserting their absence -- the environment cannot
+      # contain them by construction, where before it was built loosely and then interrogated.
       #
-      # This is the runtime half of TID253, not a duplicate of it. Ruff proves no *first-party*
-      # module imports these at module scope, but it has per-file-ignores and it cannot see a
-      # transitive arrival -- a core dependency taking one of them on as a hard requirement would
-      # pass the lint and fail here, which is exactly the case worth catching.
-      shell: bash
-      run: |
-        python -c "
-        import importlib.util, tomllib
-        with open('pyproject.toml', 'rb') as fh:
-            cfg = tomllib.load(fh)
-        banned = cfg['tool']['ruff']['lint']['flake8-tidy-imports']['banned-module-level-imports']
-        assert banned, 'the ban list is empty; this check would assert nothing'
-        for name in banned:
-            assert importlib.util.find_spec(name) is None, f'{name} leaked into the core install'
-        print(f'core install confirmed: {len(banned)} optional modules absent')
-        "
+      # What that assertion uniquely caught, a core dependency taking an optional module on as a
+      # hard requirement, is a *drift* signal and cannot be seen from a locked environment at all.
+      # It moved to the daily fresh resolution in audit.yml, which is where drift belongs.
+      run: uv sync --locked
 
     - name: Run the test suite on a core install
-      run: pytest
+      # `--with pytest` layers the runner on top of the synced environment instead of installing
+      # it into it, so the thing under test stays a core install exactly. pytest brings only
+      # iniconfig, packaging and pluggy, none of which is an optional extra.
+      run: uv run --with pytest pytest

@@ -77,13 +77,28 @@ jupyter = [
     "jupyterlab>=3.0.0",
 ]
 
+# Test dependencies only. The lint tools are not here: they gate the repository rather than
+# support the suite, they are never imported by a test, and installing them into all twelve
+# matrix cells bought nothing. They live in the `lint` dependency-group below.
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
-    "ruff>=0.4",
-    "interrogate>=1.7",
     "networkx>=3.0",
     "optimalportfolios[data]",
+]
+
+[dependency-groups]
+# The versions CI gates with, stated once. These were previously declared twice -- as open
+# floors here (`ruff>=0.4`) and as the real pins in the workflow (`ruff~=0.16.0`) -- so a
+# contributor's local ruff and CI's ruff could disagree about the same file. A PEP 735 group is
+# the right home: it is not an extra, so it never ships to a user and never reaches a core
+# install, and unlike a `dev` group it is not synced by default, so the test matrix skips it too.
+#
+# Pinned to a minor series rather than an exact version, so a tool release cannot silently change
+# the verdict on unchanged code, while a patch fix still arrives.
+lint = [
+    "ruff~=0.16.0",
+    "interrogate~=1.7",
 ]
 
 all = [

@@ -27,15 +27,15 @@ jobs:
   static:
     # ruff and interrogate gate the source tree without installing it -- no project install, no
     # compiled scientific stack -- so they are separated from ci.yml entirely rather than riding
-    # along with a 16-cell test matrix they share nothing with. They are one job of two steps, not
+    # along with a 13-job test matrix they share nothing with. They are one job of two steps, not
     # two jobs: a failure still names which gate broke, but the checkout happens once.
     #
     # Both read the source and nothing else, which is what makes the every-push trigger above
     # worth having: their verdict changes exactly when the code changes.
     #
-    # Each step runs through `uvx`, which provisions the tool into a throwaway environment on
-    # demand. There is deliberately no interpreter-setup step and no install step: `uvx` fetches
-    # the Python too.
+    # Both tools come from the `lint` dependency-group in pyproject.toml via `uv run
+    # --only-group`, so their versions are declared once and locked. There is deliberately no
+    # install of the project itself: the group is the entire environment.
     #
     # On `push` this always runs. On `pull_request` it runs only for a PR from a fork, because a
     # same-repo PR branch has already been gated by the push to that branch and would otherwise
@@ -50,14 +50,14 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
       with:
-        # Sets UV_PYTHON, which is what the `uvx` environments below resolve against. Pinned
-        # rather than left to uv's default because `pip-audit` resolves the dependency tree under
-        # this interpreter, and environment markers make that answer version-dependent. Note that
-        # `.python-version` is gitignored, so there is no in-repo file to inherit this from.
+        # Sets UV_PYTHON, which is the interpreter the `lint` group is installed against. Pinned
+        # rather than left to uv's default so a new Python release cannot change which ruff or
+        # interrogate wheel is selected. `.python-version` is gitignored, so there is no in-repo
+        # file to inherit this from.
         python-version: "3.12"
         # `enable-cache` defaults to `auto`, which is on for push and pull_request on
         # GitHub-hosted runners, and the default `cache-dependency-glob` already covers
-        # pyproject.toml and constraints.txt. Left at the defaults on purpose.
+        # pyproject.toml and uv.lock. Left at the defaults on purpose.
 
     - name: Check stack invariants and the F family
       # The three stack invariants configured in pyproject.toml -- TID251 (subject packages never
@@ -69,16 +69,25 @@ jobs:
       # ~380 E501 line-length findings. F is a correctness family -- an unused import, an undefined
       # name, a dropped assignment -- and was separable from the formatting one.
       #
-      # `--from` pins the minor series rather than an exact version, so a tool release cannot
-      # change the verdict on unchanged code. Same for the two steps below.
-      run: uvx --from "ruff~=0.16.0" ruff check --select TID251,TID253,ICN,F optimalportfolios/
+      # The version comes from the `lint` dependency-group in pyproject.toml, stated once and
+      # locked in uv.lock, so the ruff a contributor runs locally and the ruff that gates here are
+      # the same build. `--only-group` installs that group and nothing else -- not the project,
+      # not the compiled scientific stack -- and `--locked` fails rather than silently re-resolving
+      # if uv.lock has drifted from pyproject.toml.
+      run: uv run --locked --only-group lint ruff check --select TID251,TID253,ICN,F optimalportfolios/
 
     - name: Check docstring coverage
+      # Runs even when the ruff step above failed. These are two independent gates that share a
+      # job only to share a checkout, and steps are sequential, so without this a lint finding
+      # would mask the docstring result and turn one push into two round trips. `!cancelled()`
+      # rather than `always()`, so cancelling the run still cancels the step. The job still fails
+      # if either gate fails.
+      if: ${{ !cancelled() }}
       # Docstring coverage is at 100%, so a miss is always something the change under review
       # introduced. interrogate only parses the AST, so this needs no project dependencies. The
       # threshold and the papers/ exclusion live in [tool.interrogate] in pyproject.toml, and the
       # exclusion resolves against the working directory -- run it from the repository root.
-      run: uvx --from "interrogate>=1.7" interrogate -v
+      run: uv run --locked --only-group lint interrogate -v
 
     # The dependency audit deliberately does *not* live here. Its verdict is a function of the
     # dependency floors and the advisory database, not of the source tree, so an every-push
