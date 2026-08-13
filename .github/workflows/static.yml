@@ -79,16 +79,27 @@ jobs:
       run: uvx --from "interrogate>=1.7" interrogate -v
 
     - name: Audit the dependency tree for known vulnerabilities
-      # Every core dependency is declared as an open-ended floor (`>=`, no upper bound), so the
+      # Every dependency is declared as an open-ended floor (`>=`, no upper bound), so the
       # installed set drifts forward on every fresh install and a newly-disclosed advisory would
       # otherwise surface only when someone happened to look.
       #
-      # `pip-audit <project_path>` resolves the dependency tree from pyproject.toml without
-      # installing it -- 35 packages at the time of writing -- rather than paying for the compiled
-      # scientific stack a second time.
+      # Compiled first, rather than `pip-audit .`, because that form audits the *core* tree only
+      # -- 35 packages -- and silently omits every optional extra. `data`, `reports` and `jupyter`
+      # are user-facing (they are what `[all]` installs), and `jupyter`/`notebook`/`jupyterlab`
+      # are among the more advisory-prone packages in this stack, so leaving them ungated defeated
+      # the point. `--all-extras` covers `dev` and `docs` too: those floors drift exactly like the
+      # rest. 168 packages at the time of writing, all clean.
+      #
+      # Resolution only -- nothing is installed, so this stays seconds-long rather than paying for
+      # the compiled scientific stack a second time. Markers resolve at 3.12, the version this
+      # workflow pins; a dependency gated on an older interpreter is out of scope here and is
+      # covered by the ci.yml matrix installing for real.
       #
       # Hard-fails on purpose: the tree is clean today, so a finding here is either a new advisory
-      # or a dependency change under review. If a transitive advisory ever lands that this project
-      # cannot act on, prefer `--ignore-vuln <ID>` with a comment naming why over disabling the
-      # step, so the exception stays visible.
-      run: uvx --from "pip-audit~=2.10.1" pip-audit .
+      # or a dependency change under review. If an advisory ever lands that this project cannot
+      # act on, prefer `--ignore-vuln <ID>` with a comment naming why over narrowing the set or
+      # disabling the step, so the exception stays visible.
+      run: |
+        uv pip compile --all-extras --python-version 3.12 --quiet \
+          pyproject.toml -o "$RUNNER_TEMP/requirements-audit.txt"
+        uvx --from "pip-audit~=2.10.1" pip-audit -r "$RUNNER_TEMP/requirements-audit.txt"
