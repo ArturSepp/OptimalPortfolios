@@ -6,8 +6,8 @@ on:
   pull_request:
     branches: [main]
 
-# A push to a PR branch makes the run already in flight for that branch pointless: the matrix
-# is 16 jobs, so cancelling it is the single largest saving available here. Runs on `main` are
+# A push to a PR branch makes the run already in flight for that branch pointless: this workflow
+# is 13 jobs, so cancelling it is the single largest saving available here. Runs on `main` are
 # keyed per-ref and never cancel each other.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -99,11 +99,14 @@ jobs:
     # The suite must stay green without the optional extras: no test may need data, network or a
     # Bloomberg terminal. Without this job the constraint is a convention, and it has already been
     # broken twice by a module-scope yfinance import.
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+    #
+    # One runner, not the three the `test` job uses. What this job uniquely establishes -- that the
+    # package imports and the suite passes with no extras installed -- is a property of the
+    # dependency graph, and that is invariant across platforms: a module-scope import of an extra
+    # fails identically everywhere. Genuine per-platform breakage is already covered by `test`,
+    # which runs all three runners against a superset of these dependencies, so a second and third
+    # runner here re-derived one bit of information at the cost of the whole suite each time.
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -120,13 +123,26 @@ jobs:
       run: uv pip install -e . pytest
 
     - name: Assert the optional extras are absent
+      # The module list is read from `banned-module-level-imports` in pyproject.toml rather than
+      # repeated here, because repeating it is how the two drifted apart: this step used to check
+      # three of the seven names ruff bans, leaving plotly, pyarrow, psycopg2 and sqlalchemy
+      # unguarded for no reason. One list, one place.
+      #
+      # This is the runtime half of TID253, not a duplicate of it. Ruff proves no *first-party*
+      # module imports these at module scope, but it has per-file-ignores and it cannot see a
+      # transitive arrival -- a core dependency taking one of them on as a hard requirement would
+      # pass the lint and fail here, which is exactly the case worth catching.
       shell: bash
       run: |
         python -c "
-        import importlib.util
-        for name in ('yfinance', 'pandas_datareader', 'pybloqs'):
+        import importlib.util, tomllib
+        with open('pyproject.toml', 'rb') as fh:
+            cfg = tomllib.load(fh)
+        banned = cfg['tool']['ruff']['lint']['flake8-tidy-imports']['banned-module-level-imports']
+        assert banned, 'the ban list is empty; this check would assert nothing'
+        for name in banned:
             assert importlib.util.find_spec(name) is None, f'{name} leaked into the core install'
-        print('core install confirmed')
+        print(f'core install confirmed: {len(banned)} optional modules absent')
         "
 
     - name: Run the test suite on a core install
