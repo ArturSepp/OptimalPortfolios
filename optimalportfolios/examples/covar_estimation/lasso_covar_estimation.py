@@ -62,7 +62,7 @@ def print_beta_and_r2(label: str, model: LassoModel) -> pd.DataFrame:
     print(f"  {label}")
     print(f"{'=' * 60}")
     print(betas.to_string(float_format='{:.4f}'.format))
-    print(f"\nR²:\n{r2.to_string(float_format='{:.4f}'.format)}")
+    print(f"\nR2:\n{r2.to_string(float_format='{:.4f}'.format)}")
     return betas
 
 
@@ -98,7 +98,7 @@ def run_local_test(local_test: LocalTests):
             model_type=LassoModelType.LASSO,
             **qis.update_kwargs(lasso_params, dict(reg_lambda=0.0)),
         ).fit(x=x, y=y)
-        betas_full = print_beta_and_r2('Multivariate Regression (λ=0)', model_full)
+        betas_full = print_beta_and_r2('Multivariate Regression (lambda=0)', model_full)
 
         # ── 2. Independent LASSO ──
         model_lasso = LassoModel(
@@ -116,7 +116,7 @@ def run_local_test(local_test: LocalTests):
 
         # ── 4. HCGL ──
         model_hcgl = LassoModel(
-            model_type=LassoModelType.GROUP_LASSO_CLUSTERS,
+            model_type=LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
             **lasso_params,
         ).fit(x=x, y=y)
         betas_hcgl = print_beta_and_r2('HCGL (Group LASSO + Clusters)', model_hcgl)
@@ -136,7 +136,7 @@ def run_local_test(local_test: LocalTests):
         # using FactorCovarEstimator with mixed-frequency asset returns
 
         lasso_model = LassoModel(
-            model_type=LassoModelType.GROUP_LASSO_CLUSTERS,
+            model_type=LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
             **lasso_params,
         )
 
@@ -196,13 +196,13 @@ def run_local_test(local_test: LocalTests):
         )
 
         # ── Print covariance matrices ──
-        print("\n── All Monthly ──")
+        print("\n-- All Monthly --")
         print(covar_all_monthly.y_covar)
-        print("\n── Mixed Frequency (ME / ME / QE) ──")
+        print("\n-- Mixed Frequency (ME / ME / QE) --")
         print(covar_mixed_freq.y_covar)
-        print("\n── All Weekly ──")
+        print("\n-- All Weekly --")
         print(covar_all_weekly.y_covar)
-        print("\n── Weekly factors, mixed asset freq ──")
+        print("\n-- Weekly factors, mixed asset freq --")
         print(covar_weekly_mixed.y_covar)
 
         # ── Heatmap comparison ──

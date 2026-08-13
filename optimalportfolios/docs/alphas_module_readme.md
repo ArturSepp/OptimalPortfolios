@@ -220,7 +220,7 @@ avoids the problem of heterogeneous groups inflating scores for outliers.
 ### How Clusters Are Derived
 
 Clusters come from the HCGL/LASSO covariance estimator
-(`FactorCovarEstimator` with `LassoModelType.GROUP_LASSO_CLUSTERS`):
+(`FactorCovarEstimator` with `LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO`):
 
 1. At each estimation date, the LASSO solver produces sparse factor
    loadings for each asset.

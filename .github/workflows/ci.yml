@@ -6,204 +6,136 @@ on:
   pull_request:
     branches: [main]
 
+# A push to a PR branch makes the run already in flight for that branch pointless: this workflow
+# is 12 jobs, so cancelling it is the single largest saving available here. Runs on `main` are
+# keyed per-ref and never cancel each other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   MPLBACKEND: Agg
 
+# This workflow is the part of CI that needs the package installed. The checks that do not --
+# ruff and interrogate in static.yml, pip-audit in audit.yml -- run in parallel with it.
 jobs:
-  lint:
-    # The three stack invariants configured in pyproject.toml -- TID251 (subject packages
-    # never import each other), TID253 (an optional extra is never imported at module
-    # level) and ICN (the numpy/pandas aliases) -- plus the whole F family, are green
-    # across the package, so a finding here is always something the change under review
-    # introduced.
-    #
-    # F is gated and E/W are not, because the legacy backlog AGENTS.md asks be left alone
-    # is ~380 E501 line-length findings. F is a correctness family -- an unused import, an
-    # undefined name, a dropped assignment -- and was separable from the formatting one.
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-    - name: Set up Python
-      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-      with:
-        python-version: "3.12"
-
-    - name: Install ruff
-      run: |
-        python -m pip install --upgrade pip
-        # Pin the current Ruff 0.16 minor series for reproducible lint results.
-        pip install "ruff~=0.16.0"
-
-    - name: Check stack invariants and the F family
-      run: ruff check --select TID251,TID253,ICN,F optimalportfolios/
-
   test:
-    # The suite is pure-Python and NaN-aware pandas, but the scientific stack ships
-    # per-platform wheels and pandas frequency/locale behaviour has bitten this kind of
-    # code before, so the matrix runs every supported Python on all three runners.
+    # The suite is pure-Python and NaN-aware pandas, but the scientific stack ships per-platform
+    # wheels and pandas frequency/locale behaviour has bitten this kind of code before, so the
+    # matrix runs every supported Python on all three runners.
+    #
+    # `primary` marks the one cell -- ubuntu/3.12 -- that syncs `--locked` from uv.lock and gates
+    # coverage. It is set through `include` so the pinned and floating
+    # legs are one step each instead of two near-identical pairs; the remaining cells leave it
+    # unset, which is falsy in an expression.
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13"]
+        include:
+          - os: ubuntu-latest
+            python-version: "3.12"
+            primary: true
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+    - name: Install uv and Python ${{ matrix.python-version }}
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
       with:
+        # uv supplies the interpreter as well as the installer, so there is no separate
+        # setup-python step. The version has to be passed explicitly: `.python-version` is
+        # gitignored, so there is no in-repo file for uv to discover.
         python-version: ${{ matrix.python-version }}
+        # `enable-cache` defaults to `auto` -- on for push and pull_request on GitHub-hosted
+        # runners -- and the default `cache-dependency-glob` already covers pyproject.toml and
+        # uv.lock. The cache holds downloaded and built wheels, not a resolution, so the
+        # deliberately floating cells keep floating.
 
-    - name: Install pinned coverage dependencies
-      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
-      run: |
-        python -m pip install --upgrade pip
-        pip install -c constraints.txt -e ".[dev]"
-
-    - name: Install floating test dependencies
-      if: matrix.os != 'ubuntu-latest' || matrix.python-version != '3.12'
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e ".[dev]"
-
-    - name: Verify imports
-      # bash on every runner: the default shell on windows-latest is PowerShell, which
-      # parses this multi-line quoted argument differently.
-      shell: bash
-      run: |
-        python -c "
-        from optimalportfolios import (
-            PortfolioObjective, Constraints, GroupLowerUpperConstraints,
-            FactorCovarEstimator, EwmaCovarEstimator
-        )
-        print('All imports OK')
-        "
-
-    - name: Verify factorlasso integration
-      shell: bash
-      run: |
-        python -c "
-        from factorlasso import LassoModel as FL_LassoModel
-        from optimalportfolios import LassoModel as OP_LassoModel
-        assert FL_LassoModel is OP_LassoModel, 'Re-export mismatch'
-        print('factorlasso integration OK')
-        "
-
-    - name: Smoke-test the offline multi-asset example
-      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
-      run: python optimalportfolios/examples/backtests/multiasset_saa.py
-
-    - name: Run the test suite with coverage gate
-      # The floor lives in [tool.coverage.report] fail_under in pyproject.toml, so this job
-      # fails when coverage regresses below it. term-missing prints the uncovered lines, which
-      # is what a contributor needs to act on the failure without re-running locally.
+    - name: Sync the environment
+      # The pinned and floating legs differ by one flag rather than by a whole step.
       #
-      # Measured on ubuntu/3.12 only, so the floor keeps one authoritative number. A
-      # platform-specific skip on another runner would otherwise fail the gate there for
-      # a reason that has nothing to do with coverage regressing.
-      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
-      run: pytest --cov=optimalportfolios --cov-report=term-missing
+      # `--locked` on the primary cell installs the lock exactly and *fails* if uv.lock has
+      # drifted from pyproject.toml, which is what stops a dependency edit landing without a
+      # re-lock. Everywhere else `--upgrade` re-resolves from the floors and ignores the lock, so
+      # the matrix keeps testing what a user installing today would actually get. That float is
+      # the point of the other eleven cells; pinning them would only test the lock twelve times.
+      #
+      # No pip bootstrap step: pyproject.toml declares PEP 639 `license` and `license-files`, so
+      # the built metadata is Metadata-Version 2.4. The pip shipped with the older interpreters in
+      # this matrix cannot read that and had to be upgraded first; uv reads it natively.
+      #
+      # Retried because this step talks to PyPI and the failures observed here are transport, not
+      # resolution: runners have hit `dns error: failed to lookup address information` on
+      # files.pythonhosted.org, which fails the whole matrix cell over a name lookup. uv's own
+      # `--retries` covers a request, but it gives up while the resolver is still mid-flight, so
+      # the retry has to wrap the command as well. Backoff is 15s then 45s -- long enough to
+      # outlast a DNS or CDN blip, and three attempts total still fails fast on a real error like
+      # an unresolvable constraint, which loses ~1 minute rather than masking anything.
+      #
+      # `--upgrade` cells resolve against the live index and so carry the whole exposure;
+      # `--locked` still downloads. Both take the same wrapper.
+      shell: bash
+      run: |
+        sync_cmd=(uv sync --extra dev ${{ matrix.primary && '--locked' || '--upgrade' }})
+        for attempt in 1 2 3; do
+          if "${sync_cmd[@]}"; then
+            exit 0
+          fi
+          if [ "$attempt" -eq 3 ]; then
+            echo "::error::uv sync failed after 3 attempts"
+            exit 1
+          fi
+          delay=$((attempt * 30 - 15))
+          echo "::warning::uv sync attempt $attempt failed; retrying in ${delay}s"
+          sleep "$delay"
+        done
+
+    # There is no inline import-surface step here any more. It imported five public names and
+    # asserted that one of the nine factorlasso re-exports was the same object as its source;
+    # `optimalportfolios/tests/public_api_test.py` checks every public name and all nine
+    # re-exports on every matrix cell, so the inline version was strictly weaker in a job the
+    # suite already covers. That file's docstring records the move.
+    # Add public-surface contracts there, not back into this workflow.
+    #
+    # The multiasset_saa.py smoke test has moved to examples.yml, which runs that example and the
+    # four other offline ones on all three runners instead of on this one primary cell, and puts
+    # the eighteen network-bound examples on a schedule. Executing examples is not this
+    # workflow's job.
+
+    - name: Assert optional modules are absent
+      # `[dev]` is only pytest and pytest-cov over the core tree. Check the actual 3.12 environment
+      # on all three operating systems so platform-specific markers or wheels cannot make an
+      # optional backend arrive unnoticed. audit.yml complements this locked/floating install
+      # check with a fresh Linux resolution each day, which is what detects dependency drift while
+      # the repository is quiet.
+      if: matrix.python-version == '3.12'
+      shell: bash
+      run: |
+        uv run --no-sync python - <<'PY'
+        import importlib.util
+        import tomllib
+
+        with open("pyproject.toml", "rb") as fh:
+            config = tomllib.load(fh)
+        banned = config["tool"]["ruff"]["lint"]["flake8-tidy-imports"][
+            "banned-module-level-imports"
+        ]
+        leaked = [name for name in banned if importlib.util.find_spec(name) is not None]
+        assert not leaked, f"optional modules leaked into the dev-over-core environment: {leaked}"
+        print(f"optional-module absence confirmed: {len(banned)}/{len(banned)}")
+        PY
 
     - name: Run the test suite
-      if: matrix.os != 'ubuntu-latest' || matrix.python-version != '3.12'
-      run: pytest
-
-  docstrings:
-    # Docstring coverage is at 100%, so a miss is always something the change
-    # under review introduced. interrogate only parses the AST, so this needs
-    # no project dependencies and stays a seconds-long job. The threshold and
-    # the papers/ exclusion live in [tool.interrogate] in pyproject.toml.
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-    - name: Set up Python
-      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-      with:
-        python-version: "3.12"
-
-    - name: Install interrogate
-      run: |
-        python -m pip install --upgrade pip
-        pip install "interrogate>=1.7"
-
-    - name: Check docstring coverage
-      run: interrogate -v
-
-  audit:
-    # Every core dependency is declared as an open-ended floor (`>=`, no upper bound),
-    # so the installed set drifts forward on every fresh install and a newly-disclosed
-    # advisory would otherwise surface only when someone happened to look.
-    #
-    # `pip-audit <project_path>` resolves the dependency tree from pyproject.toml
-    # without installing it -- 35 packages at the time of writing -- so this stays a
-    # seconds-long job like the docstrings one, rather than paying for the compiled
-    # scientific stack a second time.
-    #
-    # Hard-fails on purpose: the tree is clean today, so a finding here is either a new
-    # advisory or a dependency change under review. If a transitive advisory ever lands
-    # that this project cannot act on, prefer `--ignore-vuln <ID>` with a comment naming
-    # why over disabling the job, so the exception stays visible.
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-    - name: Set up Python
-      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-      with:
-        python-version: "3.12"
-
-    - name: Install pip-audit
-      run: |
-        python -m pip install --upgrade pip
-        # Pin the current pip-audit 2.10 minor series, as the lint job pins ruff, so a
-        # tool release cannot change the verdict on an unchanged dependency tree.
-        pip install "pip-audit~=2.10.1"
-
-    - name: Audit the dependency tree for known vulnerabilities
-      run: pip-audit .
-
-  core-install:
-    # The suite must stay green without the optional extras: no test may need
-    # data, network or a Bloomberg terminal. Without this job the constraint is
-    # a convention, and it has already been broken twice by a module-scope
-    # yfinance import.
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-
-    steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-    - name: Set up Python
-      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-      with:
-        python-version: "3.12"
-
-    - name: Install the core package only
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .
-        pip install pytest
-
-    - name: Assert the optional extras are absent
-      shell: bash
-      run: |
-        python -c "
-        import importlib.util
-        for name in ('yfinance', 'pandas_datareader', 'pybloqs'):
-            assert importlib.util.find_spec(name) is None, f'{name} leaked into the core install'
-        print('core install confirmed')
-        "
-
-    - name: Run the test suite on a core install
-      run: pytest
+      # On the primary cell only, coverage is measured and gated. The floor lives in
+      # [tool.coverage.report] fail_under in pyproject.toml, so this fails when coverage regresses
+      # below it; term-missing prints the uncovered lines, which is what a contributor needs to act
+      # on the failure without re-running locally.
+      #
+      # Measured on one cell so the floor keeps one authoritative number. A platform-specific skip
+      # on another runner would otherwise fail the gate there for a reason that has nothing to do
+      # with coverage regressing.
+      run: uv run pytest ${{ matrix.primary && '--cov=optimalportfolios --cov-report=term-missing' || '' }}

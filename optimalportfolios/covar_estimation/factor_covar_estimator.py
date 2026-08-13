@@ -103,7 +103,7 @@ class FactorCovarEstimator(CovarEstimator):
 
     Example:
         >>> estimator = FactorCovarEstimator(
-        ...     lasso_model=LassoModel(model_type=LassoModelType.GROUP_LASSO_CLUSTERS,
+        ...     lasso_model=LassoModel(model_type=LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
         ...                            reg_lambda=1e-5, span=36),
         ...     factor_returns_freq='ME',
         ...     rebalancing_freq='QE',

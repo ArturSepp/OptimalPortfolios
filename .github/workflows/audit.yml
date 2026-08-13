@@ -1,0 +1,207 @@
+name: Audit
+
+# The audit's verdict is a function of two things -- the dependency floors in pyproject.toml and
+# the state of the advisory database -- and neither is the source tree. That cuts both ways, and
+# is why this is not a step in static.yml on the every-push trigger:
+#
+#   * Running it on a push that cannot change either input re-resolves 168 packages and re-queries
+#     PyPI for an answer that provably has not moved.
+#   * Far worse, a push trigger structurally cannot catch the case this gate exists for. Every
+#     dependency is an open-ended floor (`>=`, no upper bound), so a newly-disclosed advisory can
+#     land against a version this project already accepts without a single commit being made. On a
+#     quiet week nothing would surface it.
+#
+# Hence: daily on a schedule, plus whenever the floors themselves change. 04:17 UTC rather than
+# on the hour, because scheduled jobs queue heavily at :00 and the exact minute is irrelevant here.
+#
+# Note that GitHub only runs `schedule` from the default branch of the upstream repository, and
+# disables it after 60 days with no repository activity. `workflow_dispatch` is here so the gate
+# can always be run by hand, including from a branch.
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  push:
+    branches: [main]
+    paths:
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/audit.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/audit.yml
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  audit:
+    # Resolution only -- nothing is installed, so this stays seconds-long rather than paying for
+    # the compiled scientific stack a second time.
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      with:
+        # Environment markers make the resolved set version-dependent, so this is pinned rather
+        # than left to uv's default. `.python-version` is gitignored, so there is no in-repo file
+        # to inherit it from. A dependency gated on an older interpreter is out of scope here and
+        # is covered by the ci.yml matrix installing for real.
+        python-version: "3.12"
+
+    - name: Resolve the latest all-extras tree
+      # Compiled rather than `pip-audit .`, because that form audits the *core* tree only -- 35
+      # packages -- and silently omits every optional extra. `data`, `reports` and `jupyter` are
+      # user-facing (they are what `[all]` installs), and jupyter/notebook/jupyterlab are among
+      # the more advisory-prone packages in this stack, so leaving them ungated defeated the
+      # point. `--all-extras` covers `dev` and `docs` too: those floors drift exactly like the
+      # rest. 168 packages at the time of writing.
+      #
+      # State the contract exactly, because it is narrower than "the floors are safe": this audits
+      # *one* resolution -- the newest tree resolvable today, on Linux, for CPython 3.12. Every
+      # dependency here is an open-ended floor, so the set of versions this project *permits* is
+      # unbounded and is not audited; an advisory affecting an older-but-permitted version will not
+      # surface here. Nor does it cover the resolutions Windows and macOS or another interpreter
+      # would produce, where environment markers can select different packages. What it does catch
+      # is the case that matters most: a fresh install today pulling in something vulnerable.
+      run: |
+        uv pip compile --all-extras --python-version 3.12 --quiet \
+          pyproject.toml -o "$RUNNER_TEMP/requirements-audit.txt"
+
+    - name: Audit the dependency tree for known vulnerabilities
+      # The version comes from the `audit` dependency-group in pyproject.toml, exactly pinned and
+      # locked in uv.lock, rather than from a range spelled out here. `~=2.10.1` admitted any
+      # 2.10.x, so the scanner could change under an unchanged dependency tree; and `uvx --from`
+      # resolves fresh at run time, bypassing the lock even if the range were tight. `--locked`
+      # fails rather than re-resolving if uv.lock has drifted from pyproject.toml.
+      #
+      # This pins the scanner, not the answer: the advisory database is remote and updates
+      # continuously, which is the whole point of running this daily. A red run means a new
+      # advisory or a dependency change -- never a new pip-audit.
+      #
+      # Hard-fails on purpose: the tree is clean today, so a finding here is either a new advisory
+      # or a dependency change under review. If an advisory ever lands that this project cannot
+      # act on, prefer `--ignore-vuln <ID>` with a comment naming why over narrowing the set or
+      # disabling the step, so the exception stays visible.
+      run: uv run --locked --only-group audit pip-audit -r "$RUNNER_TEMP/requirements-audit.txt"
+
+    - name: Audit the locked environment for known vulnerabilities
+      # The second of the two trees this workflow is triggered on, and the reason `uv.lock` is a
+      # path trigger at all. The compile above reads pyproject.toml and ignores the lock entirely,
+      # so without this step a lock change would start a run that could not observe it -- the
+      # trigger named an input the job never consumed.
+      #
+      # These are different questions and both are worth asking. The compile audits what a *new*
+      # install resolves to; this audits the exact pinned set that `uv sync --locked` installs --
+      # what the primary CI cell tests against and what anyone building from this repository gets.
+      # A pin can sit on a vulnerable version long after the floor would resolve past it, and that
+      # is invisible to the step above.
+      #
+      # `--no-emit-project` drops the local package itself, which has no PyPI release to match an
+      # advisory against and which pip-audit would otherwise fail to look up.
+      if: ${{ !cancelled() }}
+      run: |
+        uv export --locked --all-extras --no-emit-project --quiet \
+          --format requirements-txt -o "$RUNNER_TEMP/requirements-locked.txt"
+        uv run --locked --only-group audit pip-audit -r "$RUNNER_TEMP/requirements-locked.txt"
+
+    - name: Assert no optional module has arrived in the core tree
+      # Runs even when the audit above found something. This resolves its own tree and shares
+      # nothing with that step but a checkout, so letting a CVE hide a dependency leak would turn
+      # one scheduled run into two. `!cancelled()` rather than `always()`, so a cancelled run
+      # still cancels the step.
+      if: ${{ !cancelled() }}
+      # This is the drift half of the optional-module contract. ci.yml asks the import system in
+      # the environments it actually built on Linux, Windows and macOS; this step instead resolves
+      # fresh core and dev trees every day. The two checks answer different questions: the matrix
+      # catches platform-specific arrivals in the tested environment, while this catches a
+      # dependency changing upstream while the repository is quiet.
+      #
+      # It is the runtime half of TID253. Ruff proves no first-party module imports an optional
+      # backend at module scope, but it cannot see a *transitive* arrival: a core dependency
+      # taking `yfinance` or `sqlalchemy` on as a hard requirement passes every lint and quietly
+      # ends up in what users get from a bare `pip install optimalportfolios`. That has already
+      # broken this project twice, via a module-scope yfinance import. Only a fresh resolution can
+      # show it, and only a schedule runs one when no commit has been made.
+      #
+      # It belongs here as well as in ci.yml because it is a drift signal. A locked environment
+      # cannot show drift by construction, and even the floating CI cells run only on repository
+      # activity. Only a scheduled fresh resolution can report a transitive arrival with no commit.
+      #
+      # Resolves two trees and checks both against the same `banned-module-level-imports` list
+      # ruff gates with, read from pyproject.toml rather than restated -- restating it is how the
+      # old assertion came to cover three of seven names.
+      #
+      #   core   the bare tree, which is what `pip install optimalportfolios` gives a user.
+      #   dev    the tree the ci.yml test matrix installs. `[dev]` is meant to be pytest and
+      #          pytest-cov over that same core tree. It carried `optimalportfolios[data]` until
+      #          recently, which put yfinance in all twelve cells; checking the resolved tree here
+      #          catches that dependency edit even before an environment is installed.
+      run: |
+        uv pip compile --python-version 3.12 --quiet \
+          pyproject.toml -o "$RUNNER_TEMP/requirements-core.txt"
+        uv pip compile --extra dev --python-version 3.12 --quiet \
+          pyproject.toml -o "$RUNNER_TEMP/requirements-dev.txt"
+        uv run --no-project python - "$RUNNER_TEMP/requirements-core.txt" \
+                                    "$RUNNER_TEMP/requirements-dev.txt" <<'PY'
+        import sys, tomllib
+
+        def normalise(name):
+            return name.lower().replace("_", "-").replace(".", "-")
+
+        with open("pyproject.toml", "rb") as fh:
+            cfg = tomllib.load(fh)
+        banned = cfg["tool"]["ruff"]["lint"]["flake8-tidy-imports"]["banned-module-level-imports"]
+        assert banned, "the ban list is empty; this check would assert nothing"
+
+        def resolved(path):
+            names = set()
+            for line in open(path):
+                line = line.split("#", 1)[0].strip()
+                if line and not line.startswith("-"):
+                    names.add(normalise(line.split("==")[0]))
+            return names
+
+        # A distribution can carry a module under a different name, and a banned module can ship
+        # as a variant package -- psycopg2 as psycopg2-binary being the case in point -- so a
+        # prefix match is deliberate here. A false positive is a five-minute conversation; a false
+        # negative is the bug this exists to catch.
+        def leaks(names):
+            return sorted(
+                f"{m} (as {d})"
+                for m in banned
+                for d in names
+                if d == normalise(m) or d.startswith(normalise(m) + "-")
+            )
+
+        failures = []
+        for label, path, why in (
+            ("core", sys.argv[1],
+             "Either a core dependency took one on as a hard requirement, or a dependency edit "
+             "moved it out of an extra."),
+            ("dev", sys.argv[2],
+             "`[dev]` is meant to be pytest and pytest-cov over the core tree. An optional extra "
+             "here means the ci.yml test matrix no longer shows the suite passes without one."),
+        ):
+            names = resolved(path)
+            found = leaks(names)
+            if found:
+                failures.append(f"{label} tree: {', '.join(found)}\n  {why}")
+            else:
+                print(f"{label} tree clean: {len(names)} packages, "
+                      f"none of the {len(banned)} banned modules")
+
+        if failures:
+            sys.exit("optional modules reached a tree that must not contain them:\n"
+                     + "\n".join(failures))
+        PY

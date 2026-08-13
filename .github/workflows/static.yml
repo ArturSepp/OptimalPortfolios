@@ -1,0 +1,102 @@
+name: Static
+
+# Two triggers, both unconditional, and deliberately overlapping.
+#
+# `pull_request` is the gate: it is the event a required status check is resolved against, and it
+# must run for *every* PR, fork or not. Filtering it -- at the job level or here -- is what makes
+# this check unsound rather than merely redundant, because GitHub reports a skipped job as
+# **successful**. A same-repo PR would then show a green "static" check that ruff and interrogate
+# never ran for, which is strictly worse than having no check at all.
+#
+# `push` is the early signal, and it is additive: these gates cost seconds and need no install, so
+# a contributor should not have to open a PR to find out that an import is unused. It fires on
+# every branch in this repository; a push to a fork runs in the fork, not here.
+#
+# So a same-repo PR branch is checked twice per commit. That is accepted: the duplicate is a
+# seconds-long job with no install, and the alternative -- narrowing `push` to `main` -- would buy
+# those seconds by deleting the early signal on exactly the branches that need it. Suppressing the
+# duplicate on the `pull_request` side is not an alternative at any price; see above.
+on:
+  push:
+  pull_request:
+
+# Keyed on `github.workflow`, so this workflow's runs only ever cancel each other -- the CI
+# matrix in ci.yml is a separate group and is unaffected. Superseding a run matters more now
+# that every branch push starts one, so cancellation is keyed on the ref rather than the event:
+# any branch cancels its own in-flight run, and only `main` keeps every run it starts.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  static:
+    # ruff and interrogate gate the source tree without installing it -- no project install, no
+    # compiled scientific stack -- so they are separated from ci.yml entirely rather than riding
+    # along with a 13-job test matrix they share nothing with. They are one job of two steps, not
+    # two jobs: a failure still names which gate broke, but the checkout happens once.
+    #
+    # Both read the source and nothing else, which is what makes the every-push trigger above
+    # worth having: their verdict changes exactly when the code changes.
+    #
+    # Both tools come from the `lint` dependency-group in pyproject.toml via `uv run
+    # --only-group`, so their versions are declared once and locked. There is deliberately no
+    # install of the project itself: the group is the entire environment.
+    #
+    # This job carries no `if:`, on purpose. A conditionally skipped job reports **success** to
+    # the branch-protection API, so any guard here would turn the required check green for the
+    # very PRs it declined to inspect. Whatever it costs to run twice, it is never correct to make
+    # this job's absence indistinguishable from its passing.
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      with:
+        # Sets UV_PYTHON, which is the interpreter the `lint` group is installed against. Pinned
+        # rather than left to uv's default so a new Python release cannot change which ruff or
+        # interrogate wheel is selected. `.python-version` is gitignored, so there is no in-repo
+        # file to inherit this from.
+        python-version: "3.12"
+        # `enable-cache` defaults to `auto`, which is on for push and pull_request on
+        # GitHub-hosted runners, and the default `cache-dependency-glob` already covers
+        # pyproject.toml and uv.lock. Left at the defaults on purpose.
+
+    - name: Check stack invariants and the F family
+      # The three stack invariants configured in pyproject.toml -- TID251 (subject packages never
+      # import each other), TID253 (an optional extra is never imported at module level) and ICN
+      # (the numpy/pandas aliases) -- plus the whole F family, are green across the package, so a
+      # finding here is always something the change under review introduced.
+      #
+      # F is gated and E/W are not, because the legacy backlog AGENTS.md asks be left alone is
+      # ~380 E501 line-length findings. F is a correctness family -- an unused import, an undefined
+      # name, a dropped assignment -- and was separable from the formatting one.
+      #
+      # The version comes from the `lint` dependency-group in pyproject.toml, stated once and
+      # locked in uv.lock, so the ruff a contributor runs locally and the ruff that gates here are
+      # the same build. `--only-group` installs that group and nothing else -- not the project,
+      # not the compiled scientific stack -- and `--locked` fails rather than silently re-resolving
+      # if uv.lock has drifted from pyproject.toml.
+      run: uv run --locked --only-group lint ruff check --select TID251,TID253,ICN,F optimalportfolios/
+
+    - name: Check docstring coverage
+      # Runs even when the ruff step above failed. These are two independent gates that share a
+      # job only to share a checkout, and steps are sequential, so without this a lint finding
+      # would mask the docstring result and turn one push into two round trips. `!cancelled()`
+      # rather than `always()`, so cancelling the run still cancels the step. The job still fails
+      # if either gate fails.
+      if: ${{ !cancelled() }}
+      # Docstring coverage is at 100%, so a miss is always something the change under review
+      # introduced. interrogate only parses the AST, so this needs no project dependencies. The
+      # threshold and the papers/ exclusion live in [tool.interrogate] in pyproject.toml, and the
+      # exclusion resolves against the working directory -- run it from the repository root.
+      run: uv run --locked --only-group lint interrogate -v
+
+    # The dependency audit deliberately does *not* live here. Its verdict is a function of the
+    # dependency floors and the advisory database, not of the source tree, so an every-push
+    # trigger both re-runs it when nothing can have changed and misses the advisory that lands
+    # while the repository is quiet. It is on a daily schedule in audit.yml instead.

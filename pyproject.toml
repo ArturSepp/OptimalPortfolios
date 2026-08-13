@@ -77,13 +77,52 @@ jupyter = [
     "jupyterlab>=3.0.0",
 ]
 
+# Test dependencies only, and nothing else. The lint tools are not here: they gate the repository
+# rather than support the suite, they are never imported by a test, and installing them into all
+# twelve matrix cells bought nothing. They live in the `lint` dependency-group below.
+#
+# Two entries were removed for the same reason -- neither enabled a single test. Collection is
+# 1277 tests with them and 1277 without:
+#
+#   * `optimalportfolios[data]` was here for the *examples*, not the suite. No test imports
+#     yfinance; the eleven files that do all live under `optimalportfolios/examples/`, which is
+#     excluded from wheels and never collected. Keeping it here meant every cell of the test
+#     matrix installed yfinance, so no cell could establish that an optional package is absent --
+#     the matrix silently contradicted the constraint `core-install` exists to enforce.
+#   * `networkx` was orphaned by 981f7e0, which moved the risk-lineage analytics to FactorLasso.
+#     It has no reference anywhere in this repository.
+#
+# To run the examples, install the extra they actually need: `[dev,data]`, or `[all]`.
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
-    "ruff>=0.4",
-    "interrogate>=1.7",
-    "networkx>=3.0",
-    "optimalportfolios[data]",
+]
+
+[dependency-groups]
+# The versions CI gates with, stated once. These were previously declared twice -- as open
+# floors here (`ruff>=0.4`) and as the real pins in the workflow (`ruff~=0.16.0`) -- so a
+# contributor's local ruff and CI's ruff could disagree about the same file. A PEP 735 group is
+# the right home: it is not an extra, so it never ships to a user and never reaches a core
+# install, and unlike a `dev` group it is not synced by default, so the test matrix skips it too.
+#
+# Pinned exactly, not to a series. These tools decide whether a change is allowed to land, and a
+# range does not make that verdict reproducible: `ruff~=0.16.0` admits any 0.16.x, and every ruff
+# patch release is entitled to add or fix a rule, so the same unchanged source can pass today and
+# fail tomorrow with nothing in this repository having moved. An exact pin makes a verdict change
+# a reviewed commit rather than an upstream event. Bumping is a deliberate PR: raise the version
+# here, re-lock, and fix whatever the new release now reports.
+lint = [
+    "ruff==0.16.2",
+    "interrogate==1.7.0",
+]
+
+# `pip-audit` is separated from `lint` because it is not a source gate: it reads the resolved
+# dependency set and the advisory database, and audit.yml is the only caller. Exact for the same
+# reason as above -- the tool version must not be a free variable when a run turns red -- though
+# note that what this pin fixes is the *scanner*, not the verdict: the advisory database it
+# queries is remote and updates continuously, which is the intended behaviour for a daily audit.
+audit = [
+    "pip-audit==2.10.1",
 ]
 
 all = [
@@ -191,6 +230,6 @@ omit = ["*/tests/*", "*/examples/*", "papers/*", "*/reports/*"]
 # regress silently, and it is raised as tests land.
 #
 # Measure on a `[dev]` install, which is what the 3.12 leg of the `test` job in ci.yml does.
-# NetworkX remains a development dependency solely for independent matcher cross-checks; the
-# production `mcf` matcher and its regression tests run in a core install.
+# That is now pytest and pytest-cov over the core tree: the suite collects the same 1277 tests
+# with or without the optional extras, so the measured scope does not depend on them.
 fail_under = 99

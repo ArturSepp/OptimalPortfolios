@@ -58,32 +58,65 @@ papers/              code accompanying the published papers (excluded from ruff)
 the canonical `factorlasso.cluster_lineage` module; keep rosaa imports working, but add lineage
 features and tests in FactorLasso.
 
-Tests live inside the package as `optimalportfolios/<subpackage>/tests/*_test.py`; there is no top-level `tests/` directory. The wheel includes these test packages and their fixture under `optimalportfolios/tests/data/`, so `pytest --pyargs optimalportfolios` is the supported post-install check. The shipped `conftest.py` defaults `MPLBACKEND` to the non-interactive `Agg` backend while preserving an explicitly selected backend. The `examples/` tree remains in the repository but is excluded from wheels. Sixteen `*_local.py` files are `run_local_test` diagnostic dispatchers: run them manually when the required local price data is available; pytest never collects them, and the test suite is exactly what bare `pytest` collects. The sixteenth is `examples/data/etf_prices_local.py`, which is also the shared loader those dispatchers import their price panel from.
+Tests live inside the package as `optimalportfolios/<subpackage>/tests/*_test.py`; there is no top-level `tests/` directory. The wheel includes these test packages and their fixture under `optimalportfolios/tests/data/`, so `pytest --pyargs optimalportfolios` is the supported post-install check. The shipped `conftest.py` defaults `MPLBACKEND` to the non-interactive `Agg` backend while preserving an explicitly selected backend. The `examples/` tree remains in the repository but is excluded from wheels. Nineteen `*_local.py` files are local-data diagnostics: run them manually when their price data or terminal is available; pytest and the unattended examples workflow skip them. Eighteen are `run_local_test` dispatchers. `examples/backtests/tracking_error_decomposition_local.py` is the one direct diagnostic script, and `examples/data/etf_prices_local.py` is also the shared loader those dispatchers import their price panel from.
 
 Every file matching pytest's default patterns — `*_test.py` **and** `test_*.py` — collects at least one test, so the file count is a usable proxy for the suite. Keep it that way: a new diagnostic script belongs in `*_local.py`, not under a test-shaped name. A name matching either pattern is *imported* at collection even when it contributes no tests, which is how a module-level import of an optional extra has twice broken CI.
 
 ## Commands
 
 ```bash
-pip install -e ".[dev]"                                  # editable install with dev tools
-pytest                                                   # run the test suite (1276 tests, ~3 min)
-pytest optimalportfolios/optimization/tests/constraints_test.py -v
-ruff check optimalportfolios/                            # lint (papers/ is excluded)
-interrogate                                              # docstring coverage, must stay at 100%
+uv sync --extra dev                                      # editable install, versions from uv.lock
+uv run pytest                                            # run the test suite (1277 tests, ~3 min)
+uv run pytest optimalportfolios/optimization/tests/constraints_test.py -v
+uv run --only-group lint ruff check optimalportfolios/   # lint (papers/ is excluded)
+uv run --only-group lint interrogate                     # docstring coverage, must stay at 100%
 ```
+
+`pip install -e ".[dev]"` still works, but it resolves fresh rather than from `uv.lock`, so it is
+not what CI gates the pinned cell against; the floating matrix cells reach the same effect with
+`uv sync --extra dev --upgrade`. The lint
+tools are deliberately **not** in the `dev` extra: they are declared once in the `lint`
+dependency-group, which is where the workflow takes its versions from too, so a local `ruff` and
+CI's `ruff` cannot disagree about the same file. `--only-group` installs that group alone, without
+the project or the compiled scientific stack.
+
+The three tools that decide whether a change may land are pinned **exactly**, not to a series:
+`ruff==0.16.2` and `interrogate==1.7.0` in the `lint` group, `pip-audit==2.10.1` in the `audit`
+group. A range does not make a verdict reproducible — `ruff~=0.16.0` admits any 0.16.x, and a ruff
+patch release may add or fix a rule, so unchanged source could pass today and fail tomorrow with
+nothing here having moved. Exact pins make a verdict change a reviewed commit rather than an
+upstream event; bumping one is a deliberate PR (raise the version, `uv lock`, fix what the new
+release reports). Note what this does *not* fix: `pip-audit`'s advisory database is remote and
+updates continuously, so the audit's answer is expected to change on its own — that is the point of
+running it daily. The pin fixes the scanner, not the verdict.
 
 *Note: Terminal execution should be compatible with Windows PowerShell within PyCharm.*
 
-Optional extras: `data`, `reports`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; CI runs 3.10 – 3.13 on a `[dev]` install and 3.12 again on a core install, which must be green: no test may need data, network or a Bloomberg terminal. Both of those jobs run on `ubuntu-latest`, `windows-latest` and `macos-latest`, so a fix that only holds on POSIX paths or POSIX line endings fails the matrix. The ubuntu/Python 3.12 coverage cell alone installs against `constraints.txt`, regenerated at each release; the remaining matrix cells, core installs and audit resolution deliberately float. Separate jobs gate the three ruff stack invariants, `interrogate` docstring coverage at 100%, and `pip-audit` over the dependency tree resolved from `pyproject.toml`. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
+Optional extras: `data`, `reports`, `jupyter`, `dev`, `all`. Supported Python is >= 3.10; `ci.yml` runs 3.10 – 3.13 on a `[dev]` install, which must be green: no test may need data, network or a Bloomberg terminal. It runs on `ubuntu-latest`, `windows-latest` and `macos-latest`, so a fix that only holds on POSIX paths or POSIX line endings fails the matrix. CI installs with `uv`, which supplies the interpreter as well, so there is no `setup-python` step; `.python-version` is gitignored, so every job states its Python version explicitly rather than inheriting one from the tree. Pinning lives in `uv.lock` and nowhere else — `constraints.txt` is gone, and the release step that regenerated it is now `uv lock`. The ubuntu/Python 3.12 coverage cell syncs `--locked`, which also fails if `uv.lock` has drifted from `pyproject.toml`, so a dependency edit cannot land without a re-lock; the remaining matrix cells sync `--upgrade` and so deliberately float, keeping the matrix honest about what a user installing today actually gets. The two legs differ by that one flag rather than by a whole step. There is no separate `core-install` job: `[dev]` is now only pytest and pytest-cov over the core tree, so the twelve test cells already run that suite without optional extras. On Python 3.12, all three operating systems additionally ask the import system to prove that every `banned-module-level-imports` name is absent; this preserves the platform-specific dependency guarantee without running the complete suite twice.
 
-Line coverage measured **99.03%** on the 1276-test dev suite. The
+Three further workflows gate the repository without installing it as a dependency of the test matrix. `static.yml` holds the source-only gates — the three ruff stack invariants and `interrogate` docstring coverage at 100% — and runs unconditionally on every pull request, plus on pushes to branches in this repository. The fork guard sits on the push trigger, not on the job: GitHub reports a conditionally skipped job as *successful*, so a job-level `if` would let the PR check go green without ruff or interrogate ever running. `audit.yml` runs daily, plus on pushes and PRs touching `pyproject.toml` or `uv.lock`, and holds the checks whose answers depend on the outside world rather than on the source. It runs `pip-audit` over two different trees. First `uv pip compile --all-extras`, rather than a bare `pip-audit .`, because that form covers only the 11 core dependencies and silently omits every extra — including the user-facing `data`, `reports` and `jupyter` ones; the gated set is 168 packages, not 35. State that contract narrowly: it audits **one** resolution — the newest tree resolvable today, on Linux, for CPython 3.12 — not every version the open-ended floors permit, and not what Windows, macOS or another interpreter would resolve to. Second, `uv export --locked --all-extras`, which audits the exact pinned set `uv sync --locked` installs; a pin can sit on a vulnerable version long after the floor would resolve past it, and that is invisible to the first. This second tree is why `uv.lock` is a path trigger — without it the trigger would name an input no step consumed. The workflow also resolves fresh core and `[dev]` trees and fails if either contains one of the banned optional modules. This complements, rather than replaces, the three-platform installed-environment assertion in `ci.yml`: the matrix catches platform-specific arrivals, while the scheduled fresh resolution catches dependency drift when no repository event occurs. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
+
+`examples.yml` executes the example scripts, which nothing else does: `examples/` is excluded from wheels, dropped by `[tool.coverage.run] omit`, and never collected by pytest, so an example can call an API that no longer exists and stay broken indefinitely. Ruff does not close the gap either — the rot these attract is attribute-level, not name-level. The workflow was added after `LassoModelType.GROUP_LASSO_CLUSTERS` was found broken in two examples, a shipped docstring and three documents; an enum member that was renamed upstream is still a valid attribute access to a linter.
+
+It has two lanes, and the split is **derived rather than listed**: `.github/scripts/run_examples.py` walks each unattended example's intra-`examples` import closure and calls it network-bound if `yfinance` is reachable at all. Of 23 unattended examples, 18 are network-bound — 7 import it directly and the rest reach it through `examples/data/universe.py`, whose `fetch_benchmark_universe_data()` downloads 15 tickers back to 2003. The **offline** lane runs the other 5 on all three runners and gates pull requests; it syncs the *core* environment, so it shows the examples work for someone who ran a plain `pip install optimalportfolios`. The **network** lane runs the 18 on a daily schedule only, `continue-on-error`, with a step-summary report — gating a PR on dozens of live Yahoo downloads would fail on Yahoo's availability far more often than on the diff. Files named `*_local.py` are excluded from both lanes because their required local CSV or Bloomberg preconditions cannot be met on a runner. The script fails on an empty lane, so a classification bug cannot report success by running nothing.
+
+That `network` job carries a job-level `if`, which `static.yml` deliberately does not. The distinction matters: a skipped job reports *success*, so a guard is only ever safe on a job that must never gate. That one qualifies twice — excluded from the PR path by the condition, and `continue-on-error` on top. Do not add it to branch protection.
+
+Line coverage measured **99.09%** on the 1277-test dev suite. The
 ubuntu/3.12 matrix entry gates `pytest --cov=optimalportfolios` at `fail_under = 99`; this floor rises
 whenever measured coverage rises, and lowering it requires a dated `CHANGELOG.md` note.
 The measured scope is not the whole package: `[tool.coverage.run] omit` drops `reports/` alongside
 `tests/`, `examples/` and `papers/`, because the reporting layer renders through `qis` and `pybloqs`
 and is reviewed by eye rather than by assertion. Put anything with a numerical contract outside
-`reports/`, where it is measured. Measure on a `[dev]` install. NetworkX remains a development dependency solely for independent
-matcher cross-checks; the production `mcf` matcher and its regression tests run in a core install.
+`reports/`, where it is measured. Measure on a `[dev]` install.
+
+`[dev]` is pytest and pytest-cov, and nothing else. It previously also carried `networkx` and
+`optimalportfolios[data]`; neither enabled a single test — collection is 1277 either way. The
+`data` extra was there for the **examples**, not the suite: no test imports yfinance, and the
+eleven files that do all live under `optimalportfolios/examples/`, which is excluded from wheels
+and never collected. `networkx` was orphaned when the risk-lineage analytics moved to FactorLasso
+and has no reference left in this repository. To run the examples, install what they need:
+`[dev,data]`, or `[all]`.
 
 ## Conventions
 

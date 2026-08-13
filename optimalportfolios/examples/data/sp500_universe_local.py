@@ -4,6 +4,9 @@ note that some of the companies ever included in the S&P500 are de-listed and yf
 """
 
 # packages
+import os
+from pathlib import Path
+
 import pandas as pd
 import qis as qis
 import yfinance as yf
@@ -13,7 +16,7 @@ from enum import Enum
 from optimalportfolios.local_path import get_resource_path
 
 # path to save universe universe
-LOCAL_PATH = f"{get_resource_path()}//sp500//"
+LOCAL_PATH = str(Path(get_resource_path()) / "sp500") + os.sep
 # download from source: https://github.com/fja05680/sp500
 SP500_FILE = "S&P 500 Historical Components & Changes(07-12-2025).csv"
 

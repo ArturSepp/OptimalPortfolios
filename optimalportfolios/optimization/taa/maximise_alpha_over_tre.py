@@ -182,7 +182,8 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
         vectors = None
     else:
         vectors = dict(alphas=alphas)
-    clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar, vectors=vectors)
+    clean_covar, good_vectors = filter_covar_and_vectors_for_nans(
+        pd_covar=pd_covar, vectors=vectors, drop_non_finite_vectors=alphas is not None)
 
     if optimiser_config.apply_total_to_good_ratio:
         total_to_good_ratio = len(pd_covar.columns) / len(clean_covar.columns)
