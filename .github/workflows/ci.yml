@@ -17,65 +17,9 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   MPLBACKEND: Agg
 
+# This workflow is the part of CI that needs the package installed. The checks that do not --
+# ruff, interrogate, pip-audit -- live in static.yml and run in parallel with it.
 jobs:
-  static:
-    # ruff, interrogate and pip-audit each need a Python and nothing else -- no project install,
-    # no compiled scientific stack -- and each runs in seconds. As three jobs they paid for three
-    # checkouts and three interpreter setups to do that; as one job they share a single setup and
-    # a single pip invocation. They stay three separate *steps*, so a failure still names which
-    # gate broke.
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-    - name: Set up Python
-      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-      with:
-        python-version: "3.12"
-        cache: pip
-        cache-dependency-path: pyproject.toml
-
-    - name: Install the static-analysis tools
-      run: |
-        python -m pip install --upgrade pip
-        # Pinned to their current minor series so a tool release cannot change the verdict on
-        # unchanged code or an unchanged dependency tree.
-        pip install "ruff~=0.16.0" "interrogate>=1.7" "pip-audit~=2.10.1"
-
-    - name: Check stack invariants and the F family
-      # The three stack invariants configured in pyproject.toml -- TID251 (subject packages never
-      # import each other), TID253 (an optional extra is never imported at module level) and ICN
-      # (the numpy/pandas aliases) -- plus the whole F family, are green across the package, so a
-      # finding here is always something the change under review introduced.
-      #
-      # F is gated and E/W are not, because the legacy backlog AGENTS.md asks be left alone is
-      # ~380 E501 line-length findings. F is a correctness family -- an unused import, an undefined
-      # name, a dropped assignment -- and was separable from the formatting one.
-      run: ruff check --select TID251,TID253,ICN,F optimalportfolios/
-
-    - name: Check docstring coverage
-      # Docstring coverage is at 100%, so a miss is always something the change under review
-      # introduced. interrogate only parses the AST, so this needs no project dependencies. The
-      # threshold and the papers/ exclusion live in [tool.interrogate] in pyproject.toml, and the
-      # exclusion resolves against the working directory -- run it from the repository root.
-      run: interrogate -v
-
-    - name: Audit the dependency tree for known vulnerabilities
-      # Every core dependency is declared as an open-ended floor (`>=`, no upper bound), so the
-      # installed set drifts forward on every fresh install and a newly-disclosed advisory would
-      # otherwise surface only when someone happened to look.
-      #
-      # `pip-audit <project_path>` resolves the dependency tree from pyproject.toml without
-      # installing it -- 35 packages at the time of writing -- rather than paying for the compiled
-      # scientific stack a second time.
-      #
-      # Hard-fails on purpose: the tree is clean today, so a finding here is either a new advisory
-      # or a dependency change under review. If a transitive advisory ever lands that this project
-      # cannot act on, prefer `--ignore-vuln <ID>` with a comment naming why over disabling the
-      # step, so the exception stays visible.
-      run: pip-audit .
-
   test:
     # The suite is pure-Python and NaN-aware pandas, but the scientific stack ships per-platform
     # wheels and pandas frequency/locale behaviour has bitten this kind of code before, so the
@@ -99,25 +43,26 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+    - name: Install uv and Python ${{ matrix.python-version }}
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
       with:
+        # uv supplies the interpreter as well as the installer, so there is no separate
+        # setup-python step. The version has to be passed explicitly: `.python-version` is
+        # gitignored, so there is no in-repo file for uv to discover.
         python-version: ${{ matrix.python-version }}
-        # Caches pip's download directory only. Resolution still hits the index every run, so the
-        # deliberately floating dependencies keep floating -- this saves the transfer and the
-        # wheel build, not the version choice.
-        cache: pip
-        cache-dependency-path: |
-          pyproject.toml
-          constraints.txt
+        # Creates and activates a .venv for the steps below, so `uv pip install`, `python` and
+        # `pytest` all address the same environment without an activation dance per runner.
+        activate-environment: true
+        # `enable-cache` defaults to `auto` -- on for push and pull_request on GitHub-hosted
+        # runners -- and the default `cache-dependency-glob` already covers pyproject.toml and
+        # constraints.txt. The cache holds downloaded and built wheels, not a resolution, so the
+        # deliberately floating cells keep floating.
 
     - name: Install the package and its dev extra
-      # `--upgrade pip` is load-bearing, not habit: pyproject.toml declares PEP 639 `license` and
-      # `license-files`, so the built metadata is Metadata-Version 2.4, which the pip shipped with
-      # the older interpreters in this matrix does not understand.
-      run: |
-        python -m pip install --upgrade pip
-        pip install ${{ matrix.primary && '-c constraints.txt' || '' }} -e ".[dev]"
+      # No pip bootstrap step: pyproject.toml declares PEP 639 `license` and `license-files`, so
+      # the built metadata is Metadata-Version 2.4. The pip shipped with the older interpreters in
+      # this matrix cannot read that and had to be upgraded first; uv reads it natively.
+      run: uv pip install ${{ matrix.primary && '-c constraints.txt' || '' }} -e ".[dev]"
 
     - name: Verify the public import surface
       # bash on every runner: the default shell on windows-latest is PowerShell, which parses this
@@ -163,17 +108,16 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-    - name: Set up Python
-      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+    - name: Install uv and Python
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
       with:
         python-version: "3.12"
-        cache: pip
-        cache-dependency-path: pyproject.toml
+        activate-environment: true
 
     - name: Install the core package only
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e . pytest
+      # A fresh venv per run, so the absence asserted below is a property of the dependency tree
+      # rather than of a leftover environment.
+      run: uv pip install -e . pytest
 
     - name: Assert the optional extras are absent
       shell: bash

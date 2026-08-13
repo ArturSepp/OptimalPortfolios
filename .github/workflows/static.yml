@@ -1,0 +1,94 @@
+name: Static
+
+# Every push to every branch, not just main and not just branches with a PR open. These gates
+# cost seconds and need no install, so there is no reason to make a contributor open a PR to
+# find out that an import is unused -- the earliest possible signal is the useful one.
+#
+# `pull_request` stays because a push to a fork does not run here: PRs into this repository
+# routinely come from a fork, and that event is the only way this workflow sees them. The job
+# guard below keeps same-repo branches from running twice over.
+on:
+  push:
+  pull_request:
+    branches: [main]
+
+# Keyed on `github.workflow`, so this workflow's runs only ever cancel each other -- the CI
+# matrix in ci.yml is a separate group and is unaffected. Superseding a run matters more now
+# that every branch push starts one, so cancellation is keyed on the ref rather than the event:
+# any branch cancels its own in-flight run, and only `main` keeps every run it starts.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  static:
+    # ruff, interrogate and pip-audit gate the repository without installing it -- no project
+    # install, no compiled scientific stack -- so they are separated from ci.yml entirely rather
+    # than riding along with a 16-cell test matrix they share nothing with. They are one job of
+    # three steps, not three jobs: a failure still names which gate broke, but the checkout
+    # happens once.
+    #
+    # Each step runs through `uvx`, which provisions the tool into a throwaway environment on
+    # demand. There is deliberately no interpreter-setup step and no install step: `uvx` fetches
+    # the Python too.
+    #
+    # On `push` this always runs. On `pull_request` it runs only for a PR from a fork, because a
+    # same-repo PR branch has already been gated by the push to that branch and would otherwise
+    # be checked twice per commit. A skipped job reports success, so this stays usable as a
+    # required check.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      with:
+        # Sets UV_PYTHON, which is what the `uvx` environments below resolve against. Pinned
+        # rather than left to uv's default because `pip-audit` resolves the dependency tree under
+        # this interpreter, and environment markers make that answer version-dependent. Note that
+        # `.python-version` is gitignored, so there is no in-repo file to inherit this from.
+        python-version: "3.12"
+        # `enable-cache` defaults to `auto`, which is on for push and pull_request on
+        # GitHub-hosted runners, and the default `cache-dependency-glob` already covers
+        # pyproject.toml and constraints.txt. Left at the defaults on purpose.
+
+    - name: Check stack invariants and the F family
+      # The three stack invariants configured in pyproject.toml -- TID251 (subject packages never
+      # import each other), TID253 (an optional extra is never imported at module level) and ICN
+      # (the numpy/pandas aliases) -- plus the whole F family, are green across the package, so a
+      # finding here is always something the change under review introduced.
+      #
+      # F is gated and E/W are not, because the legacy backlog AGENTS.md asks be left alone is
+      # ~380 E501 line-length findings. F is a correctness family -- an unused import, an undefined
+      # name, a dropped assignment -- and was separable from the formatting one.
+      #
+      # `--from` pins the minor series rather than an exact version, so a tool release cannot
+      # change the verdict on unchanged code. Same for the two steps below.
+      run: uvx --from "ruff~=0.16.0" ruff check --select TID251,TID253,ICN,F optimalportfolios/
+
+    - name: Check docstring coverage
+      # Docstring coverage is at 100%, so a miss is always something the change under review
+      # introduced. interrogate only parses the AST, so this needs no project dependencies. The
+      # threshold and the papers/ exclusion live in [tool.interrogate] in pyproject.toml, and the
+      # exclusion resolves against the working directory -- run it from the repository root.
+      run: uvx --from "interrogate>=1.7" interrogate -v
+
+    - name: Audit the dependency tree for known vulnerabilities
+      # Every core dependency is declared as an open-ended floor (`>=`, no upper bound), so the
+      # installed set drifts forward on every fresh install and a newly-disclosed advisory would
+      # otherwise surface only when someone happened to look.
+      #
+      # `pip-audit <project_path>` resolves the dependency tree from pyproject.toml without
+      # installing it -- 35 packages at the time of writing -- rather than paying for the compiled
+      # scientific stack a second time.
+      #
+      # Hard-fails on purpose: the tree is clean today, so a finding here is either a new advisory
+      # or a dependency change under review. If a transitive advisory ever lands that this project
+      # cannot act on, prefer `--ignore-vuln <ID>` with a comment naming why over disabling the
+      # step, so the exception stays visible.
+      run: uvx --from "pip-audit~=2.10.1" pip-audit .
