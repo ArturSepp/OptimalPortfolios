@@ -113,9 +113,12 @@ def _estimate_rolling_regression_alphas(prices: pd.DataFrame,
                 continue  # no beta estimated yet (pre-warmup) -> skip this period
             x_t = x_.loc[date1, :]
             y_t = y_.loc[date1, :]
-            if x_t.isna().any() or y_t.isna().any():
-                continue  # incomplete period on either grid -> skip, do not fabricate
+            if x_t.isna().any():
+                continue  # an incomplete factor vector cannot residualise any manager
             betas_t = estimated_betas[beta_date].loc[y_.columns, :]
+            # Missing manager returns propagate asset by asset. Dropping the whole
+            # date here would shorten every manager's history to the latest common
+            # observation in its cadence bucket.
             excess_returns[date1] = y_t - betas_t @ x_t
         excess_returns = pd.DataFrame.from_dict(excess_returns, orient='index')
         if annualise and not excess_returns.empty:

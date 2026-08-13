@@ -140,12 +140,13 @@ def test_periods_before_the_first_beta_are_skipped_not_fabricated() -> None:
     assert excess.index.min() > asset_returns.index[20]
 
 
-def test_a_period_with_a_missing_observation_is_skipped_not_fabricated() -> None:
-    """a gap on either grid drops the period, rather than residualising a NaN return
+def test_a_missing_asset_observation_does_not_drop_the_other_managers() -> None:
+    """a gap stays local to its manager instead of deleting the whole cross-section.
 
-    A missing price makes both the return ending in the gap and the one starting from it NaN.
-    Carrying those through would put a NaN into the smoothed alpha for the rest of the sample;
-    the module drops them instead, so the affected dates are simply absent from the result.
+    A missing price makes both the return ending in the gap and the one starting from it NaN for
+    ``fund_a``. Those two cells stay NaN, while ``fund_b`` retains its valid residuals on both
+    dates. Dropping the dates would silently shorten every manager's alpha history to the latest
+    common starting date in its cadence bucket.
     """
     prices, factor_prices = make_prices(), make_factor_prices()
     asset_returns = qis.to_returns(prices=prices, is_log_returns=True, drop_first=True,
@@ -160,10 +161,10 @@ def test_a_period_with_a_missing_observation_is_skipped_not_fabricated() -> None
 
     gap_date = prices.index[10]
     following = asset_returns.index[list(asset_returns.index).index(gap_date) + 1]
-    dropped = set(asset_returns.index[1:]) - set(excess.index)
-    assert dropped == {gap_date, following}
-    # what survives carries no NaN at all — the skip is a drop, not a hole
-    assert excess.notna().all().all()
+    assert set(excess.index) == set(asset_returns.index[1:])
+    assert excess.loc[[gap_date, following], 'fund_a'].isna().all()
+    assert excess.loc[[gap_date, following], 'fund_b'].notna().all()
+    assert excess.drop(columns='fund_a').notna().all().all()
 
 
 def test_the_beta_is_resolved_as_of_rather_than_by_exact_timestamp() -> None:

@@ -79,6 +79,11 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
 
 ### Fixed
 
+- Kept a missing manager return local to that manager in the rolling regression-alpha signal,
+  instead of deleting the same date from every manager in its reporting-cadence bucket. The old
+  row-wide guard shortened all histories to the latest common starting date and could silently
+  suppress otherwise valid optimiser alpha observations.
+- Rewrote the extras section of `docs/installation.rst`, which documented two extras that do not
 - Rewrote the extras section of `docs/installation.rst`, which documented two extras that do not
   exist. It described a `clustering` extra and told users to install it "when using the `mcf`
   cluster matcher" — but that matcher's NetworkX backend was replaced by a SciPy bipartite
