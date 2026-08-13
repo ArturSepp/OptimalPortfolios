@@ -100,10 +100,18 @@ jobs:
     # re-exports, and it runs in `core-install` as well as here, so the inline version was
     # strictly weaker in a job the suite already covers. That file's docstring records the move.
     # Add public-surface contracts there, not back into this workflow.
+    #
+    # The multiasset_saa.py smoke test has moved to examples.yml, which runs that example and the
+    # four other offline ones on all three runners instead of on this one primary cell, and puts
+    # the twenty-one network-bound examples on a schedule. Executing examples is not this
+    # workflow's job.
 
-    - name: Smoke-test the offline multi-asset example
-      if: matrix.primary
-      run: uv run python optimalportfolios/examples/backtests/multiasset_saa.py
+    # There is deliberately no "the optional extras are absent" assertion in this workflow. That
+    # check belongs to the dependency graph, not to a test run, and it lives once in audit.yml.
+    # Asserting it per-cell here re-derived the same fact twelve times a push, and a locked
+    # environment can only ever report what was true when the lock was written -- the case worth
+    # catching, a core dependency taking an optional module on as a hard requirement, appears in a
+    # *fresh* resolution, which is what audit.yml runs daily.
 
     - name: Run the test suite
       # On the primary cell only, coverage is measured and gated. The floor lives in
@@ -115,82 +123,3 @@ jobs:
       # on another runner would otherwise fail the gate there for a reason that has nothing to do
       # with coverage regressing.
       run: uv run pytest ${{ matrix.primary && '--cov=optimalportfolios --cov-report=term-missing' || '' }}
-
-  core-install:
-    # The suite must stay green without the optional extras: no test may need data, network or a
-    # Bloomberg terminal. Without this job the constraint is a convention, and it has already been
-    # broken twice by a module-scope yfinance import.
-    #
-    # All three runners, not one. An earlier revision of this branch narrowed it to ubuntu on the
-    # argument that "no optional extra is installed" is a property of the dependency graph and so
-    # is platform-invariant. That argument is wrong: environment markers are evaluated per
-    # platform, wheel availability differs, and a transitive dependency can be pulled in on one OS
-    # and not another -- so the resolved core set is genuinely a per-platform question.
-    #
-    # `test` does not subsume this job, though the gap is narrower than it was. Now that `[dev]`
-    # is pytest and pytest-cov alone, that matrix does run the suite on something close to a core
-    # environment -- but "close" is the whole problem. It syncs an extra rather than none, it
-    # asserts nothing about what is importable, and `[dev]` is one dependency edit away from
-    # dragging an optional package back in. That is exactly how this broke twice before. This job
-    # is the standing guard: zero extras by construction, and an explicit assertion rather than an
-    # inference from what happens to be declared today.
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-
-    steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-    - name: Install uv and Python
-      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
-      with:
-        python-version: "3.12"
-
-    - name: Sync the core environment
-      # A bare `uv sync` is exactly the core install: it takes no extras, and `lint` is a
-      # non-default dependency-group, so neither the optional extras nor the tools are present.
-      run: uv sync --locked
-
-    - name: Assert the optional extras are absent
-      # The runtime half of TID253, checked on the environment that was actually built, on each of
-      # the three platforms. Ruff proves no *first-party* module imports these at module scope, but
-      # it has per-file ignores and cannot see a transitive arrival -- a core dependency taking one
-      # of them on as a hard requirement passes the lint and lands in what users get from a bare
-      # `pip install optimalportfolios`. That has already broken this project twice.
-      #
-      # The list is read from `banned-module-level-imports` in pyproject.toml rather than repeated
-      # here: repeating it is how this step came to check three of the seven names, leaving plotly,
-      # pyarrow, psycopg2 and sqlalchemy unguarded.
-      #
-      # This asks the import system, not a requirements file, so it answers the question that
-      # matters on this specific runner -- markers and wheel availability have already been
-      # resolved by the time it runs. The complementary check in audit.yml resolves a *fresh* core
-      # tree daily and catches drift this locked environment cannot show; neither subsumes the
-      # other.
-      shell: bash
-      run: |
-        uv run --no-sync python - <<'PY'
-        import importlib.util, sys, tomllib
-
-        with open("pyproject.toml", "rb") as fh:
-            cfg = tomllib.load(fh)
-        banned = cfg["tool"]["ruff"]["lint"]["flake8-tidy-imports"]["banned-module-level-imports"]
-        assert banned, "the ban list is empty; this check would assert nothing"
-
-        present = [m for m in banned if importlib.util.find_spec(m) is not None]
-        if present:
-            sys.exit(
-                "optional modules are importable in a core install: " + ", ".join(present)
-                + "\nEither a core dependency took one on as a hard requirement, or a dependency "
-                  "edit moved it out of an extra."
-            )
-        print(f"core install clean: none of the {len(banned)} banned modules are importable")
-        PY
-
-    - name: Run the test suite on a core install
-      # `--with pytest` layers the runner on top of the synced environment instead of installing
-      # it into it, so the thing under test stays a core install exactly. pytest brings only
-      # iniconfig, packaging and pluggy, none of which is an optional extra.
-      run: uv run --with pytest pytest

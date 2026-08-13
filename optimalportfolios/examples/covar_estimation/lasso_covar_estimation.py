@@ -116,7 +116,7 @@ def run_local_test(local_test: LocalTests):
 
         # ── 4. HCGL ──
         model_hcgl = LassoModel(
-            model_type=LassoModelType.GROUP_LASSO_CLUSTERS,
+            model_type=LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
             **lasso_params,
         ).fit(x=x, y=y)
         betas_hcgl = print_beta_and_r2('HCGL (Group LASSO + Clusters)', model_hcgl)
@@ -136,7 +136,7 @@ def run_local_test(local_test: LocalTests):
         # using FactorCovarEstimator with mixed-frequency asset returns
 
         lasso_model = LassoModel(
-            model_type=LassoModelType.GROUP_LASSO_CLUSTERS,
+            model_type=LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
             **lasso_params,
         )
 

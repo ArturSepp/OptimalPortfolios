@@ -122,7 +122,7 @@ def run_local_test(local_test: LocalTests):
         asset_prices = prices.iloc[:, 2:]
 
         lasso_model = LassoModel(
-            model_type=LassoModelType.GROUP_LASSO_CLUSTERS,
+            model_type=LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
             reg_lambda=1e-5, span=36, warmup_period=12)
         estimator = FactorCovarEstimator(
             lasso_model=lasso_model,

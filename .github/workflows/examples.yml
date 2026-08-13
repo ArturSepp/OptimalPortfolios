@@ -1,0 +1,136 @@
+name: Examples
+
+# `examples/` is the one part of the tree nothing else executes. It is excluded from wheels,
+# dropped by `[tool.coverage.run] omit`, and never collected by pytest, so an example can reference
+# an API that no longer exists and stay broken indefinitely. Ruff does not close the gap either:
+# the rot these scripts attract is attribute-level rather than name-level -- an enum member that
+# was renamed upstream is still a valid attribute access. That is not hypothetical. This workflow
+# was added after `LassoModelType.GROUP_LASSO_CLUSTERS` was found broken in two examples, a shipped
+# docstring and three documents.
+#
+# Triggers are unconditional rather than filtered on `examples/**`, because an example breaks far
+# more often from a change to the package it calls than from an edit to itself.
+on:
+  push:
+  pull_request:
+  # For the network lane below, which is the only job that reads this trigger. Offset from the
+  # hour because scheduled jobs queue heavily at :00, and an hour after audit.yml so the two do
+  # not contend. GitHub runs `schedule` only from the default branch, and disables it after 60
+  # days of repository inactivity.
+  schedule:
+    - cron: "41 5 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  MPLBACKEND: Agg
+
+jobs:
+  offline:
+    # The five examples that need no network, on all three runners. This job gates.
+    #
+    # It syncs the *core* environment -- no extras at all -- which makes the run a stronger claim
+    # than "the examples work here": it shows they work for someone who ran a plain
+    # `pip install optimalportfolios`. An example that quietly starts needing an optional extra
+    # fails this job rather than passing on a fatter environment than a user has.
+    #
+    # 3.12 only. Unlike the test matrix, what is being checked is that a script still lines up
+    # with the API it calls, and that does not vary by interpreter; the three runners are here
+    # because the *paths and backends* do.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Install uv and Python
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      with:
+        python-version: "3.12"
+
+    - name: Sync the core environment
+      run: uv sync --locked
+
+    - name: Run the offline examples
+      # The lane is derived, not listed. `run_examples.py` walks each example's intra-`examples`
+      # import closure and calls it network-bound if `yfinance` is reachable at all -- thirteen of
+      # them touch the network only through `examples/data/universe.py`, and a hand-kept list of
+      # five paths would be wrong the first time someone adds an example. The script fails on an
+      # empty lane, so a classification bug cannot report success by running nothing.
+      run: uv run --no-sync python .github/scripts/run_examples.py --lane offline
+
+  network:
+    # The twenty-one examples that download from Yahoo Finance, on a schedule, advisory only.
+    #
+    # These are not on the pull-request path on purpose. `examples/data/universe.py` pulls 15
+    # tickers back to 2003 and `sp500_universe.py` pulls the whole index, so gating a PR on them
+    # would mean ~63 live downloads per run and a check that fails on Yahoo's availability far
+    # more often than on anything in the diff. A check that is usually red for reasons outside
+    # the change is one people learn to ignore, which costs more than it buys.
+    #
+    # On the job-level `if`: static.yml carries a comment explaining why a guard there was unsound,
+    # and the distinction matters. A skipped job reports *success*, so a guard is only safe on a
+    # job that must never gate anything. This one qualifies twice over -- it is excluded from the
+    # PR path by this condition, and `continue-on-error` means even a real failure does not fail
+    # the run. Do not add this job to branch protection; if you ever want it to gate, delete both
+    # mechanisms rather than trusting the guard.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    continue-on-error: true
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Install uv and Python
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      with:
+        python-version: "3.12"
+
+    - name: Sync with the data extra
+      # `data` is the extra these examples actually need; syncing `--all-extras` would install
+      # jupyter and the reporting stack to run scripts that use neither.
+      run: uv sync --locked --extra data
+
+    - name: Run the network examples
+      # `--jobs 4` rather than the default: these are all hitting one host, and Yahoo rate-limits.
+      # Serialising entirely would take too long; four is a compromise that has to be tuned by
+      # observation, not derived.
+      #
+      # `tee` because the step's own outcome is swallowed by `continue-on-error`, and the summary
+      # step below is what makes a real failure visible without opening the log.
+      id: run
+      shell: bash
+      run: |
+        set -o pipefail
+        uv run --no-sync python .github/scripts/run_examples.py \
+          --lane network --jobs 4 | tee "$RUNNER_TEMP/network.log"
+
+    - name: Summarise
+      # Runs whatever the step above did. `continue-on-error` turns a failed job green in the UI,
+      # so without this the whole point of the lane -- noticing rot -- would depend on someone
+      # opening a passing run's logs, which nobody does.
+      if: ${{ !cancelled() }}
+      shell: bash
+      run: |
+        {
+          echo "## Network examples"
+          echo
+          if [ "${{ steps.run.outcome }}" = "success" ]; then
+            echo "All network examples passed."
+          else
+            echo "**Some network examples failed.** This lane is advisory: the cause is often"
+            echo "Yahoo Finance rather than this repository. Check the failures below against a"
+            echo "local run before treating them as rot."
+          fi
+          echo
+          echo '```'
+          grep -E "^  (PASS|FAIL)|passed in" "$RUNNER_TEMP/network.log" || echo "no results parsed"
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"

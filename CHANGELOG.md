@@ -51,8 +51,35 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
   and runs in `core-install` as well as the matrix, so the inline check was strictly weaker in a
   job the suite already covers.
 
+- Added `examples.yml`, which executes the example scripts — the one part of the tree nothing else
+  runs, since `examples/` is excluded from wheels, dropped by `[tool.coverage.run] omit` and never
+  collected by pytest. Two lanes, classified by `.github/scripts/run_examples.py` walking each
+  example's import closure rather than from a hand-kept list: the 5 offline examples gate pull
+  requests on all three runners against a *core* install (~10s), and the 21 that download from
+  Yahoo Finance run daily, advisory-only. Gating a PR on 63 live downloads would fail on Yahoo's
+  availability more often than on the diff.
+- Removed the `core-install` job and the `multiasset_saa.py` smoke test from `ci.yml`.
+  `core-install` existed to show the suite passes with no optional extras, which mattered while
+  `[dev]` pulled in `optimalportfolios[data]`; now that `[dev]` is pytest and pytest-cov over the
+  core tree, all twelve cells of `test` establish that directly — a module-scope import of an
+  optional backend fails collection there exactly as it would in a bare core install. The one
+  thing it uniquely guarded, `[dev]` regaining a dependency, moved to `audit.yml`. The example
+  smoke test moved to `examples.yml`, which runs it and four others on three runners rather than
+  on one cell.
+- Consolidated the optional-module absence check into `audit.yml` alone. It had been asserted per
+  matrix cell in `ci.yml` and again in `core-install`, re-deriving one fact up to fifteen times a
+  push, and neither could see the case worth catching: both sync from `uv.lock`, and a locked
+  environment reports what was true when the lock was written. `audit.yml` now resolves two fresh
+  trees — core, and core plus `[dev]` — and fails if either contains a banned module.
+
 ### Fixed
 
+- Fixed `LassoModelType.GROUP_LASSO_CLUSTERS`, which no longer exists — it is
+  `HIERARCHICAL_CLUSTER_GROUP_LASSO`. The stale name appeared in two examples, a docstring in
+  shipped code (`covar_estimation/factor_covar_estimator.py`), `covar_estimation/README.md`,
+  `docs/alphas_module_readme.md` and a `_local.py` dispatcher. Nothing caught it: no test executes
+  `examples/`, and to a linter an enum member that was renamed upstream is a valid attribute
+  access. `papers/` is left as-is per AGENTS.md.
 - Pinned the three gating tools exactly instead of to a series: `ruff==0.16.2`,
   `interrogate==1.7.0` and `pip-audit==2.10.1`, the last moved out of a `uvx --from` range in
   `audit.yml` into a new `audit` dependency-group. `~=0.16.0` admits any patch release, and a ruff

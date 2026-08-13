@@ -171,7 +171,7 @@ in the `factorlasso` package:
 |--------|------------------|---------|--------|
 | Standard LASSO | `LASSO` | λ ‖β - β₀‖₁ | Independent per element |
 | Group LASSO | `GROUP_LASSO` | Σ_g λ √(\|g\|/G) ‖β_g - β₀_g‖₂ | User-defined asset groups |
-| HCGL | `GROUP_LASSO_CLUSTERS` | Same as Group LASSO | Hierarchical clustering from correlation |
+| HCGL | `HIERARCHICAL_CLUSTER_GROUP_LASSO` | Same as Group LASSO | Hierarchical clustering from correlation |
 
 All methods support:
 - **Sign constraints** on factor loadings (non-negative, non-positive, zero, free)
@@ -275,7 +275,7 @@ covar_dict = estimator.fit_rolling_covars(prices=prices, time_period=time_period
 
 ```python
 lasso_model = opt.LassoModel(
-    model_type=opt.LassoModelType.GROUP_LASSO_CLUSTERS,
+    model_type=opt.LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
     reg_lambda=1e-5, span=36, warmup_period=12)
 
 estimator = opt.FactorCovarEstimator(

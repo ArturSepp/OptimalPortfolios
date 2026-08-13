@@ -8,8 +8,12 @@
 /outputs/
 
 .idea/
-Lib/
-Scripts/
+# Anchored to the repository root: these are the layout a root-level virtualenv creates, per the
+# comment at the top of this file. Unanchored they matched at any depth, and since git sets
+# core.ignorecase on macOS and Windows, `Scripts/` also swallowed `.github/scripts/` there while
+# tracking it normally on Linux -- a file present in CI but invisible on the author's machine.
+/Lib/
+/Scripts/
 dist/
 
 __pycache__/
