@@ -62,7 +62,7 @@ def print_beta_and_r2(label: str, model: LassoModel) -> pd.DataFrame:
     print(f"  {label}")
     print(f"{'=' * 60}")
     print(betas.to_string(float_format='{:.4f}'.format))
-    print(f"\nR²:\n{r2.to_string(float_format='{:.4f}'.format)}")
+    print(f"\nR2:\n{r2.to_string(float_format='{:.4f}'.format)}")
     return betas
 
 
@@ -196,13 +196,13 @@ def run_local_test(local_test: LocalTests):
         )
 
         # ── Print covariance matrices ──
-        print("\n── All Monthly ──")
+        print("\n-- All Monthly --")
         print(covar_all_monthly.y_covar)
-        print("\n── Mixed Frequency (ME / ME / QE) ──")
+        print("\n-- Mixed Frequency (ME / ME / QE) --")
         print(covar_mixed_freq.y_covar)
-        print("\n── All Weekly ──")
+        print("\n-- All Weekly --")
         print(covar_all_weekly.y_covar)
-        print("\n── Weekly factors, mixed asset freq ──")
+        print("\n-- Weekly factors, mixed asset freq --")
         print(covar_weekly_mixed.y_covar)
 
         # ── Heatmap comparison ──

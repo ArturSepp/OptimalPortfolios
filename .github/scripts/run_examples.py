@@ -27,6 +27,17 @@ An example is `network` if `yfinance` is reachable from it -- directly, or throu
 intra-`examples` imports. Everything else is `offline`. The walk is over the AST, so it costs
 nothing and needs no imports to succeed.
 
+A note on `UnicodeEncodeError`
+-----------------------------
+Examples run here with their output captured, so the child's stdout is a pipe rather than a
+console. On Windows that changes the encoding: Python writes to a console through the Unicode
+console API, but falls back to the locale encoding (cp1252) for a pipe, so a `print()` containing
+box-drawing characters or mathematical symbols raises where the same script is fine interactively.
+That is a real defect rather than an artifact -- it is what any user gets from
+`python example.py > out.txt` -- so the fix belongs in the example, and this runner deliberately
+does not set `PYTHONIOENCODING` to paper over it. Keep printed output ASCII; docstrings and
+comments are unconstrained, since they never reach the stream.
+
 Usage:
     python .github/scripts/run_examples.py --lane offline [--jobs N] [--timeout SECONDS]
     python .github/scripts/run_examples.py --list
@@ -163,8 +174,13 @@ def run_one(path: Path, timeout: int) -> Tuple[Path, bool, float, str]:
     # runner. conftest.py does this for the suite, but nothing imports conftest here.
     env.setdefault("MPLBACKEND", "Agg")
     try:
+        # `errors="replace"` matters on Windows and is not cosmetic. `text=True` decodes the
+        # child's output as UTF-8, but a child writing to a pipe there encodes with the locale
+        # codec, so an em-dash arrives as the single byte 0x97 -- invalid UTF-8. Without this the
+        # *runner* dies with a UnicodeDecodeError while the example it was reporting on had
+        # succeeded, turning a green example into an unreadable harness traceback.
         proc = subprocess.run([sys.executable, str(path)], cwd=REPO_ROOT, env=env,
-                              capture_output=True, text=True, timeout=timeout)
+                              capture_output=True, text=True, errors="replace", timeout=timeout)
         ok = proc.returncode == 0
         detail = "" if ok else _last_error_line(proc.stdout + proc.stderr)
     except subprocess.TimeoutExpired:

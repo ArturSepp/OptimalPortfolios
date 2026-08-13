@@ -76,9 +76,9 @@ def print_solution(label: str,
     port_vol = np.sqrt(compute_portfolio_variance(weights, covar))
     budget_mae = np.mean(np.abs(rc_norm - budget))
 
-    print(f"\n{'─' * 50}")
+    print(f"\n{'-' * 50}")
     print(f"  {label}")
-    print(f"{'─' * 50}")
+    print(f"{'-' * 50}")
     for i, t in enumerate(tickers):
         print(f"  {t:10s}  weight={weights[i]:7.4f}  RC={rc_norm[i]:7.4f}  target={budget[i]:5.2f}")
     print(f"  Portfolio vol:   {port_vol:.4%}")
@@ -185,11 +185,11 @@ def run_example():
     print(f"  The {1 - vol_ccd / vol_scipy:.0%} vol reduction comes entirely from")
     print("  exploiting the negative correlations via the hedge asset.")
     print("  scipy misses this because its non-convex objective has")
-    print("  a local minimum at hedge weight ≈ 0.")
+    print("  a local minimum at hedge weight ~= 0.")
     print("")
     print("  Lesson: always use a convex reformulation (CCD) for risk")
     print("  budgeting. The naive SSE formulation is unreliable whenever")
-    print("  the correlation structure creates multiple local minima —")
+    print("  the correlation structure creates multiple local minima --")
     print("  which is common in multi-asset portfolios with hedging assets.")
 
 
