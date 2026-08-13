@@ -13,30 +13,40 @@ backtesting. Optional extras add integrations that are not needed by every
 user:
 
 ``data``
-   The free-data loader backed by yfinance.
+   The free-data loader backed by yfinance. This is what the example scripts
+   under ``optimalportfolios/examples/`` need; the test suite does not.
 
-``clustering``
-   The default minimum-cost-flow matcher used to keep risk-cluster labels
-   stable through time. Install it when using the ``mcf`` cluster matcher; the
-   ``hungarian`` matcher remains available in the core install.
+``reports``
+   The pybloqs backend for HTML and PDF report rendering.
+
+``all``
+   Both runtime integrations: ``data`` and ``reports``.
 
 ``dev``
-   The test, coverage, lint, and docstring-quality tools used by contributors.
-   It also includes the ``data`` and ``clustering`` extras so the complete test
-   suite can run.
+   Pytest and pytest-cov — the test suite and nothing else. The suite collects
+   the same tests with or without the runtime extras, so ``dev`` deliberately
+   does not pull them in. To run the examples as well, install ``[dev,data]``.
+
+``docs``
+   The Sphinx toolchain used to build this documentation.
 
 Install an extra by placing its name in square brackets:
 
 .. code-block:: console
 
-   pip install "optimalportfolios[clustering]"
+   pip install "optimalportfolios[all]"
    pip install -e ".[dev]"
-
-Additional ``reports`` and ``jupyter`` extras provide the pybloqs report backend
-and notebook tooling respectively. The ``all`` extra installs the ``data``,
-``reports``, ``jupyter``, and ``clustering`` runtime integrations. Documentation
-contributors can install the Sphinx toolchain with:
-
-.. code-block:: console
-
    pip install -e ".[docs]"
+
+The runtime integration extras, ``data`` and ``reports``, correspond to features
+that import their dependencies. There is no ``jupyter`` extra: nothing here
+imports jupyter, notebook or jupyterlab, so install a notebook stack alongside
+the package rather than through it. The ``dev`` and ``docs`` extras remain
+contributor toolchains. There is no ``clustering`` extra either — the ``mcf``
+risk-lineage matcher once needed NetworkX, but it now uses a SciPy bipartite
+assignment and runs on a core install, and the cluster-lineage analytics
+themselves live in ``factorlasso``, a core dependency.
+
+The lint tools are not an extra at all. ``ruff`` and ``interrogate`` gate the
+repository rather than support the suite, so they live in the ``lint``
+dependency-group, which never ships to a user and is not synced by default.

@@ -24,6 +24,7 @@ __pycache__/
 
 # Byte-compiled / optimized / DLL files
 docs/figures/
+docs/generated/
 
 *.py[cod]
 *$py.class

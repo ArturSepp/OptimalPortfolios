@@ -388,17 +388,21 @@ SciPy >=1.12, pandas >=2.2, Matplotlib >=3.8, seaborn >=0.13, openpyxl >=3.1,
 PyYAML >=6.0, CVXPY >=1.3, quadprog >=0.1.11, `qis` >=5.7 and
 `factorlasso` >=0.14.0. `pyproject.toml` is the source of truth.
 
-Optional extras keep network-data, reporting and notebook integrations out of the core
+Optional extras keep network-data and reporting integrations out of the core
 installation. The default risk-lineage matcher is implemented with core NumPy/SciPy code.
 
 | Extra | Adds |
 | --- | --- |
 | `data` | `yfinance` for free-data example loaders. |
 | `reports` | `pybloqs` for HTML/PDF report backends. |
-| `jupyter` | Jupyter, Notebook and JupyterLab. |
 | `docs` | Sphinx, Furo and MyST for documentation builds. |
 | `dev` | Pytest and pytest-cov — the test suite and nothing else. |
-| `all` | All runtime integrations: `data`, `reports` and `jupyter`. |
+| `all` | All runtime integrations: `data` and `reports`. |
+
+The runtime integration extras, `data` and `reports`, correspond to features that import their
+dependencies. There is no `jupyter` extra: nothing here imports jupyter, notebook or jupyterlab,
+and the repository contains no notebook. Install a notebook stack alongside this package if you
+want one. The `dev` and `docs` extras remain contributor toolchains.
 
 `dev` is deliberately minimal: the suite collects the same 1277 tests with or without the
 optional extras, so nothing else belongs in it. The lint tools are not an extra at all — they

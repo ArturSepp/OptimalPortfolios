@@ -67,7 +67,27 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
   which can detect dependency drift without a repository event. The example smoke test moved to
   `examples.yml`, which runs it and four others on three runners rather than on one cell.
 
+### Removed
+
+- Removed the `jupyter` extra (`jupyter`, `notebook`, `jupyterlab`) and dropped it from `[all]`,
+  which is now `[data,reports]`. Nothing in this package imports any of the three and the
+  repository contains no notebook, so the extra declared notebook tooling rather than a runtime
+  integration. It also pulled the unused notebook stack into the daily `--all-extras` audit.
+  Users who want a notebook should install one alongside the package. The remaining runtime
+  integration extras, `data` and `reports`, correspond to features that import their dependencies;
+  `dev` and `docs` remain contributor toolchains.
+
 ### Fixed
+
+- Rewrote the extras section of `docs/installation.rst`, which documented two extras that do not
+  exist. It described a `clustering` extra and told users to install it "when using the `mcf`
+  cluster matcher" — but that matcher's NetworkX backend was replaced by a SciPy bipartite
+  assignment in 6.13.0 and the analytics moved to `factorlasso`, so `mcf` has run on a core
+  install ever since; the advice sent users after a package that no longer exists to enable
+  something already working. It also claimed `[dev]` bundles `data` and `clustering` plus the lint
+  and docstring tools, none of which has been true since `[dev]` was narrowed to pytest and
+  pytest-cov and the lint tools moved to the `lint` dependency-group. The page now lists the five
+  real extras and states why `jupyter` and `clustering` are absent.
 
 - Added an opt-in strict mode to the shared rolling-solver NaN filter, and enabled it for objective
   vectors in the quadratic, maximum-Sharpe and alpha optimisers. Non-finite expected returns or
@@ -118,9 +138,10 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
   resolution — the newest tree resolvable on Linux/CPython 3.12 — not every version the
   open-ended floors permit. The lock was a path trigger whose content no step read; it is now
   audited directly, which is the tree a pin can strand on a vulnerable version.
-- Widened `pip-audit` from the core tree to every extra. A bare `pip-audit .` audits only the 11
-  core dependencies and silently omits the optional ones, leaving the user-facing `data`,
-  `reports` and `jupyter` extras ungated; the audited set goes from 35 packages to 168.
+- Widened `pip-audit` from the core tree to every extra. A bare `pip-audit .` audits only the core
+  dependencies and silently omits the optional ones, leaving user-facing integrations and
+  contributor toolchains ungated. The audit continues to cover every remaining extra after the
+  unused `jupyter` convenience extra was removed.
 - Widened the optional-module absence check from three of the seven names ruff bans at module
   level to all of them, and derived the list from `banned-module-level-imports` rather than
   restating it. It runs against the three installed 3.12 environments in `ci.yml` and fresh daily

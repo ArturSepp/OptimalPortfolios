@@ -71,12 +71,11 @@ docs = [
     "myst-parser>=2.0",
 ]
 
-jupyter = [
-    "jupyter>=1.0.0",
-    "notebook>=6.5.0",
-    "jupyterlab>=3.0.0",
-]
-
+# There is no `jupyter` extra. It declared jupyter, notebook and jupyterlab, none of which this
+# package imports and none of which any file here needs: the repository contains no notebook.
+# It also pulled the unused notebook stack into `[all]` and the daily `--all-extras` audit.
+# Install notebook tooling alongside the package when needed.
+#
 # Test dependencies only, and nothing else. The lint tools are not here: they gate the repository
 # rather than support the suite, they are never imported by a test, and installing them into all
 # twelve matrix cells bought nothing. They live in the `lint` dependency-group below.
@@ -126,7 +125,7 @@ audit = [
 ]
 
 all = [
-    "optimalportfolios[data,reports,jupyter]",
+    "optimalportfolios[data,reports]",
 ]
 
 [project.urls]
