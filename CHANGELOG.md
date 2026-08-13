@@ -45,6 +45,11 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
   every pull request and on pushes to branches in this repository, `audit.yml` on a daily schedule,
   and `ci.yml` for the jobs that install the package. Moved both installers onto uv, dropping
   `actions/setup-python`.
+- Removed the inline public-import-surface step from `ci.yml`. It imported five public names and
+  asserted that one of the nine factorlasso re-exports was its source object;
+  `optimalportfolios/tests/public_api_test.py` checks every public name and all nine re-exports,
+  and runs in `core-install` as well as the matrix, so the inline check was strictly weaker in a
+  job the suite already covers.
 
 ### Fixed
 

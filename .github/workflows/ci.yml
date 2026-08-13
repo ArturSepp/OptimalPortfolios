@@ -94,21 +94,12 @@ jobs:
           sleep "$delay"
         done
 
-    - name: Verify the public import surface
-      # bash on every runner: the default shell on windows-latest is PowerShell, which parses this
-      # multi-line quoted argument differently.
-      shell: bash
-      run: |
-        uv run python -c "
-        from optimalportfolios import (
-            PortfolioObjective, Constraints, GroupLowerUpperConstraints,
-            FactorCovarEstimator, EwmaCovarEstimator
-        )
-        from factorlasso import LassoModel as FL_LassoModel
-        from optimalportfolios import LassoModel as OP_LassoModel
-        assert FL_LassoModel is OP_LassoModel, 'factorlasso re-export mismatch'
-        print('imports and factorlasso integration OK')
-        "
+    # There is no inline import-surface step here any more. It imported five public names and
+    # asserted that one of the nine factorlasso re-exports was the same object as its source;
+    # `optimalportfolios/tests/public_api_test.py` checks every public name and all nine
+    # re-exports, and it runs in `core-install` as well as here, so the inline version was
+    # strictly weaker in a job the suite already covers. That file's docstring records the move.
+    # Add public-surface contracts there, not back into this workflow.
 
     - name: Smoke-test the offline multi-asset example
       if: matrix.primary
