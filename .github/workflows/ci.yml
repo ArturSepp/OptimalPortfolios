@@ -134,10 +134,15 @@ jobs:
     # argument that "no optional extra is installed" is a property of the dependency graph and so
     # is platform-invariant. That argument is wrong: environment markers are evaluated per
     # platform, wheel availability differs, and a transitive dependency can be pulled in on one OS
-    # and not another -- so the resolved core set is genuinely a per-platform question. Nor can the
-    # `test` matrix stand in for it, whatever it costs: `[dev]` depends on `optimalportfolios[data]`
-    # and therefore installs yfinance on purpose, so no cell of that matrix can establish that an
-    # optional package is *absent*. This job is the only place that fact is checked at all.
+    # and not another -- so the resolved core set is genuinely a per-platform question.
+    #
+    # `test` does not subsume this job, though the gap is narrower than it was. Now that `[dev]`
+    # is pytest and pytest-cov alone, that matrix does run the suite on something close to a core
+    # environment -- but "close" is the whole problem. It syncs an extra rather than none, it
+    # asserts nothing about what is importable, and `[dev]` is one dependency edit away from
+    # dragging an optional package back in. That is exactly how this broke twice before. This job
+    # is the standing guard: zero extras by construction, and an explicit assertion rather than an
+    # inference from what happens to be declared today.
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

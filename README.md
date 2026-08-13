@@ -389,8 +389,7 @@ PyYAML >=6.0, CVXPY >=1.3, quadprog >=0.1.11, `qis` >=5.7 and
 `factorlasso` >=0.14.0. `pyproject.toml` is the source of truth.
 
 Optional extras keep network-data, reporting and notebook integrations out of the core
-installation. The default risk-lineage matcher is implemented with core NumPy/SciPy code;
-NetworkX is retained only by the development extra as an independent test oracle.
+installation. The default risk-lineage matcher is implemented with core NumPy/SciPy code.
 
 | Extra | Adds |
 | --- | --- |
@@ -398,8 +397,13 @@ NetworkX is retained only by the development extra as an independent test oracle
 | `reports` | `pybloqs` for HTML/PDF report backends. |
 | `jupyter` | Jupyter, Notebook and JupyterLab. |
 | `docs` | Sphinx, Furo and MyST for documentation builds. |
-| `dev` | Pytest, coverage, Ruff, Interrogate and the NetworkX matcher oracle, plus `data`. |
+| `dev` | Pytest and pytest-cov — the test suite and nothing else. |
 | `all` | All runtime integrations: `data`, `reports` and `jupyter`. |
+
+`dev` is deliberately minimal: the suite collects the same 1276 tests with or without the
+optional extras, so nothing else belongs in it. The lint tools are not an extra at all — they
+live in the `lint` dependency-group, which never ships to a user. To run the examples under
+`optimalportfolios/examples/`, which do use `yfinance`, install `[dev,data]` or `[all]`.
 
 For example:
 

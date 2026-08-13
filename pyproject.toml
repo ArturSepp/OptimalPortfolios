@@ -77,14 +77,25 @@ jupyter = [
     "jupyterlab>=3.0.0",
 ]
 
-# Test dependencies only. The lint tools are not here: they gate the repository rather than
-# support the suite, they are never imported by a test, and installing them into all twelve
-# matrix cells bought nothing. They live in the `lint` dependency-group below.
+# Test dependencies only, and nothing else. The lint tools are not here: they gate the repository
+# rather than support the suite, they are never imported by a test, and installing them into all
+# twelve matrix cells bought nothing. They live in the `lint` dependency-group below.
+#
+# Two entries were removed for the same reason -- neither enabled a single test. Collection is
+# 1276 tests with them and 1276 without:
+#
+#   * `optimalportfolios[data]` was here for the *examples*, not the suite. No test imports
+#     yfinance; the eleven files that do all live under `optimalportfolios/examples/`, which is
+#     excluded from wheels and never collected. Keeping it here meant every cell of the test
+#     matrix installed yfinance, so no cell could establish that an optional package is absent --
+#     the matrix silently contradicted the constraint `core-install` exists to enforce.
+#   * `networkx` was orphaned by 981f7e0, which moved the risk-lineage analytics to FactorLasso.
+#     It has no reference anywhere in this repository.
+#
+# To run the examples, install the extra they actually need: `[dev,data]`, or `[all]`.
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
-    "networkx>=3.0",
-    "optimalportfolios[data]",
 ]
 
 [dependency-groups]
@@ -219,6 +230,6 @@ omit = ["*/tests/*", "*/examples/*", "papers/*", "*/reports/*"]
 # regress silently, and it is raised as tests land.
 #
 # Measure on a `[dev]` install, which is what the 3.12 leg of the `test` job in ci.yml does.
-# NetworkX remains a development dependency solely for independent matcher cross-checks; the
-# production `mcf` matcher and its regression tests run in a core install.
+# That is now pytest and pytest-cov over the core tree: the suite collects the same 1276 tests
+# with or without the optional extras, so the measured scope does not depend on them.
 fail_under = 99

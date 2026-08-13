@@ -68,11 +68,19 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
   an earlier revision of this branch on the claim that the resolved dependency set is
   platform-invariant. It is not: environment markers are evaluated per platform, wheel
   availability differs, and a transitive dependency can arrive on one OS and not another. The
-  `test` matrix cannot substitute, because `[dev]` depends on `optimalportfolios[data]` and so
-  installs yfinance deliberately — no cell of it can establish that an optional package is absent.
-  The assertion now checks all seven `banned-module-level-imports` names, read from
-  `pyproject.toml` rather than restated, and asks the import system on the environment actually
-  built.
+  `test` matrix does not substitute for it: it syncs an extra rather than none, asserts nothing
+  about what is importable, and is one dependency edit away from pulling an optional package back
+  in — which is how this broke twice. The assertion now checks all seven
+  `banned-module-level-imports` names, read from `pyproject.toml` rather than restated, and asks
+  the import system on the environment actually built.
+- Reduced the `dev` extra to `pytest` and `pytest-cov`. It also carried `networkx` and
+  `optimalportfolios[data]`; neither enabled a single test, with collection at 1276 either way.
+  The `data` extra was there for the examples rather than the suite — no test imports yfinance,
+  and the eleven files that do live under `optimalportfolios/examples/`, which is excluded from
+  wheels and never collected — so every cell of the test matrix was installing yfinance for
+  nothing, and could not have established that an optional package was absent. `networkx` was
+  orphaned in 6.16.0 when the risk-lineage analytics moved to FactorLasso and has no reference
+  left in the repository. Run the examples with `[dev,data]` or `[all]`.
 - Added a second `pip-audit` pass over `uv export --locked --all-extras`, and narrowed the stated
   contract of the first. `uv pip compile --all-extras --python-version 3.12` audits one
   resolution — the newest tree resolvable on Linux/CPython 3.12 — not every version the
