@@ -171,17 +171,17 @@ optimalportfolios/
 │   ├── portfolio_funcs.py         # Risk contributions, diversification ratio
 │   ├── weights_drift.py           # apply_drift_to_weights_0
 │   └── gaussian_mixture.py        # Gaussian mixture fitting (numpy/scipy EM)
-├── reports/                       # Performance reporting
-│   ├── marginal_backtest.py       # Marginal asset contribution analysis
-│   ├── portfolio_result_plots.py  # Optimisation result plots
-│   └── portfolio_result_pybloqs.py  # Optional HTML/PDF result reports
-└── examples/                      # Worked examples — see docs/examples_readme.md
-    ├── data/                      # Shared universe fixtures
-    ├── solvers/                   # One demo per single-objective solver
-    ├── backtests/                 # End-to-end rolling workflows
-    ├── comparisons/               # A-vs-B sweeps (incl. drift_policy)
-    ├── covar_estimation/          # Covariance estimator demos
-    └── alphas/                    # Alpha signal profiling demos
+└── reports/                       # Performance reporting
+    ├── marginal_backtest.py       # Marginal asset contribution analysis
+    ├── portfolio_result_plots.py  # Optimisation result plots
+    └── portfolio_result_pybloqs.py  # Optional HTML/PDF result reports
+examples/                          # Repository-only worked examples
+├── data/                          # Shared universe fixtures
+├── solvers/                       # One demo per single-objective solver
+├── backtests/                     # End-to-end rolling workflows
+├── comparisons/                   # A-vs-B sweeps (incl. drift_policy)
+├── covar_estimation/              # Covariance estimator demos
+└── alphas/                        # Alpha signal profiling demos
 # factorlasso (pip install factorlasso)
 #   └── LassoModel, solve_lasso_cvx_problem, solve_group_lasso_cvx_problem
 #       Sign-constrained LASSO/Group LASSO/HCGL solver (domain-agnostic)
@@ -406,8 +406,8 @@ want one. The `dev` and `docs` extras remain contributor toolchains.
 
 `dev` is deliberately minimal: the suite collects the same 1277 tests with or without the
 optional extras, so nothing else belongs in it. The lint tools are not an extra at all — they
-live in the `lint` dependency-group, which never ships to a user. To run the examples under
-`optimalportfolios/examples/`, which do use `yfinance`, install `[dev,data]` or `[all]`.
+live in the `lint` dependency-group, which never ships to a user. To run the repository-root
+`examples/`, which do use `yfinance`, install `[dev,data]` or `[all]`.
 
 For example:
 
@@ -751,7 +751,7 @@ Under (A), the optimiser believes it's hitting the 0.08/quarter cap but is
 actually trading 0.085/quarter — the budget is **leaky**. Under (B), realised
 trading sits at 0.070/quarter, comfortably under the cap. Cost drag drops by
 17.5% relative for the same nominal constraint. See
-[`examples/comparisons/drift_policy.py`](optimalportfolios/examples/comparisons/drift_policy.py)
+[`examples/comparisons/drift_policy.py`](examples/comparisons/drift_policy.py)
 for the reproducible demonstration.
 
 **Toggling for legacy comparisons.** To reproduce pre-v5.3.1 behaviour
@@ -785,18 +785,18 @@ examples/
 
 ### Recommended reading order for newcomers
 
-1. [`examples/data/universe.py`](optimalportfolios/examples/data/universe.py) — understand the shared fixture.
-2. [`examples/backtests/minimal_backtest.py`](optimalportfolios/examples/backtests/minimal_backtest.py) — see one full workflow end-to-end.
-3. [`examples/solvers/min_variance.py`](optimalportfolios/examples/solvers/min_variance.py) — minimal solver demo with both single-date and rolling forms.
-4. [`examples/solvers/minimum_tracking_error.py`](optimalportfolios/examples/solvers/minimum_tracking_error.py) — covariance-closest feasible portfolio relative to a benchmark.
-5. [`examples/solvers/tracking_error.py`](optimalportfolios/examples/solvers/tracking_error.py) — the production TAA pattern (alpha + benchmark + TE constraint).
-6. [`examples/comparisons/optimisers.py`](optimalportfolios/examples/comparisons/optimisers.py) — see how objectives differ on the same universe.
+1. [`examples/data/universe.py`](examples/data/universe.py) — understand the shared fixture.
+2. [`examples/backtests/minimal_backtest.py`](examples/backtests/minimal_backtest.py) — see one full workflow end-to-end.
+3. [`examples/solvers/min_variance.py`](examples/solvers/min_variance.py) — minimal solver demo with both single-date and rolling forms.
+4. [`examples/solvers/minimum_tracking_error.py`](examples/solvers/minimum_tracking_error.py) — covariance-closest feasible portfolio relative to a benchmark.
+5. [`examples/solvers/tracking_error.py`](examples/solvers/tracking_error.py) — the production TAA pattern (alpha + benchmark + TE constraint).
+6. [`examples/comparisons/optimisers.py`](examples/comparisons/optimisers.py) — see how objectives differ on the same universe.
 
 ### Highlighted demos
 
 #### Optimal portfolio backtest
 
-See script [`optimalportfolios/examples/backtests/minimal_backtest.py`](optimalportfolios/examples/backtests/minimal_backtest.py).
+See script [`examples/backtests/minimal_backtest.py`](examples/backtests/minimal_backtest.py).
 
 ```python
 import pandas as pd
@@ -806,7 +806,7 @@ import qis as qis
 
 from optimalportfolios import (compute_rolling_optimal_weights, PortfolioObjective,
                                Constraints, EwmaCovarEstimator)
-from optimalportfolios.examples.data.universe import fetch_minimal_universe_data
+from examples.data.universe import fetch_minimal_universe_data
 
 
 # 1. fetch universe (8 ETFs across 6 asset-class groups)
@@ -851,8 +851,8 @@ qis.save_figs_to_pdf(figs=figs, file_name=f"{portfolio_data.nav.name}_portfolio_
                      orientation='landscape', local_path="output/")
 ```
 
-[![image info](optimalportfolios/examples/figures/example_portfolio_factsheet1.PNG)](optimalportfolios/examples/figures/example_portfolio_factsheet1.PNG)
-[![image info](optimalportfolios/examples/figures/example_portfolio_factsheet2.PNG)](optimalportfolios/examples/figures/example_portfolio_factsheet2.PNG)
+[![image info](examples/figures/example_portfolio_factsheet1.PNG)](examples/figures/example_portfolio_factsheet1.PNG)
+[![image info](examples/figures/example_portfolio_factsheet2.PNG)](examples/figures/example_portfolio_factsheet2.PNG)
 
 #### Customised reporting
 
@@ -875,33 +875,33 @@ def run_customised_reporting(portfolio_data) -> plt.Figure:
     return fig
 ```
 
-[![image info](optimalportfolios/examples/figures/example_customised_report.PNG)](optimalportfolios/examples/figures/example_customised_report.PNG)
+[![image info](examples/figures/example_customised_report.PNG)](examples/figures/example_customised_report.PNG)
 
 #### Parameter sensitivity backtest
 
 Cross-sectional backtests test the sensitivity of an optimisation method to
 estimation or solver parameters.
 
-See [`optimalportfolios/examples/comparisons/parameter_sensitivity.py`](optimalportfolios/examples/comparisons/parameter_sensitivity.py).
+See [`examples/comparisons/parameter_sensitivity.py`](examples/comparisons/parameter_sensitivity.py).
 
-[![image info](optimalportfolios/examples/figures/max_diversification_span.PNG)](optimalportfolios/examples/figures/max_diversification_span.PNG)
+[![image info](examples/figures/max_diversification_span.PNG)](examples/figures/max_diversification_span.PNG)
 
 #### Multi-optimiser cross-backtest
 
 Multiple optimisation methods can be analysed using
 `compute_rolling_optimal_weights()`.
 
-See [`optimalportfolios/examples/comparisons/optimisers.py`](optimalportfolios/examples/comparisons/optimisers.py).
+See [`examples/comparisons/optimisers.py`](examples/comparisons/optimisers.py).
 
-[![image info](optimalportfolios/examples/figures/multi_optimisers_backtest.PNG)](optimalportfolios/examples/figures/multi_optimisers_backtest.PNG)
+[![image info](examples/figures/multi_optimisers_backtest.PNG)](examples/figures/multi_optimisers_backtest.PNG)
 
 #### Multi-covariance-estimator backtest
 
 Multiple covariance estimators can be backtested for the same optimisation method.
 
-See [`optimalportfolios/examples/comparisons/covar_estimators.py`](optimalportfolios/examples/comparisons/covar_estimators.py).
+See [`examples/comparisons/covar_estimators.py`](examples/comparisons/covar_estimators.py).
 
-[![image info](optimalportfolios/examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)](optimalportfolios/examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)
+[![image info](examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)](examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)
 
 #### Drift-policy comparison (new in v5.3.1)
 
@@ -911,7 +911,7 @@ turnover budget. Shows that under the legacy convention the realised turnover
 exceeds the optimiser's apparent turnover by ~23%; under the new default the
 two agree.
 
-See [`optimalportfolios/examples/comparisons/drift_policy.py`](optimalportfolios/examples/comparisons/drift_policy.py).
+See [`examples/comparisons/drift_policy.py`](examples/comparisons/drift_policy.py).
 
 #### Optimal allocation to cryptocurrencies
 

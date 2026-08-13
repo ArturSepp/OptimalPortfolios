@@ -14,7 +14,7 @@ import qis as qis
 from optimalportfolios import (PortfolioObjective, backtest_rolling_optimal_portfolio,
                                Constraints, GroupLowerUpperConstraints,
                                EwmaCovarEstimator)
-from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
+from examples.data.universe import fetch_benchmark_universe_data
 
 
 # Resolve the figures directory relative to this file, not the current working

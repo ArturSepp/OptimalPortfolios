@@ -1,8 +1,9 @@
-# `optimalportfolios.examples`
+# Examples
 
-Scripts illustrating every solver, covariance estimator, and end-to-end workflow in the package.
-The unattended examples run as `python -m optimalportfolios.examples.<path>` or by executing the
-script directly; `*_local.py` diagnostics require local CSV data or a Bloomberg terminal.
+Repository-root scripts illustrating every solver, covariance estimator, and end-to-end workflow
+in the package. Run them from the repository root as `python -m examples.<path>` so their shared
+`examples.data` imports resolve consistently; `*_local.py` diagnostics require local CSV data or
+a Bloomberg terminal.
 
 ## Layout
 

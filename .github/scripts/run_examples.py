@@ -1,5 +1,5 @@
 """
-run the example scripts under optimalportfolios/examples, in parallel, and report what broke.
+run the root-level example scripts in parallel, and report what broke.
 
 Why this exists at all
 ----------------------
@@ -54,10 +54,10 @@ from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-EXAMPLES_ROOT = REPO_ROOT / "optimalportfolios" / "examples"
+EXAMPLES_ROOT = REPO_ROOT / "examples"
 
 # The package path `examples` lives at, used to turn an import statement back into a file.
-EXAMPLES_PACKAGE = "optimalportfolios.examples"
+EXAMPLES_PACKAGE = "examples"
 
 # The module whose presence anywhere in an example's import closure makes it network-bound. It is
 # the only optional extra the examples reach for; if that changes, add to this set rather than
@@ -167,7 +167,7 @@ def classify(examples: List[Path]) -> Dict[Path, str]:
 
 
 def run_one(path: Path, timeout: int) -> Tuple[Path, bool, float, str]:
-    """execute one example in its own interpreter; never raise, always report."""
+    """execute one example module in its own interpreter; never raise, always report."""
     started = time.time()
     env = dict(os.environ)
     # The examples call plt.show(); Agg makes that a no-op rather than a block on a headless
@@ -179,7 +179,7 @@ def run_one(path: Path, timeout: int) -> Tuple[Path, bool, float, str]:
         # codec, so an em-dash arrives as the single byte 0x97 -- invalid UTF-8. Without this the
         # *runner* dies with a UnicodeDecodeError while the example it was reporting on had
         # succeeded, turning a green example into an unreadable harness traceback.
-        proc = subprocess.run([sys.executable, str(path)], cwd=REPO_ROOT, env=env,
+        proc = subprocess.run([sys.executable, "-m", _module_name(path)], cwd=REPO_ROOT, env=env,
                               capture_output=True, text=True, errors="replace", timeout=timeout)
         ok = proc.returncode == 0
         detail = "" if ok else _last_error_line(proc.stdout + proc.stderr)

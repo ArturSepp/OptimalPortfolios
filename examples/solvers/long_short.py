@@ -7,7 +7,7 @@ import qis as qis
 
 # package
 from optimalportfolios import compute_rolling_optimal_weights, PortfolioObjective, Constraints, EwmaCovarEstimator
-from optimalportfolios.examples.data.universe import fetch_minimal_universe_data
+from examples.data.universe import fetch_minimal_universe_data
 import optimalportfolios.local_path as lp
 
 

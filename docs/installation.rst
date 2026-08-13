@@ -14,7 +14,7 @@ user:
 
 ``data``
    The free-data loader backed by yfinance. This is what the example scripts
-   under ``optimalportfolios/examples/`` need; the test suite does not.
+   under the repository-root ``examples/`` tree need; the test suite does not.
 
 ``reports``
    The pybloqs backend for HTML and PDF report rendering.

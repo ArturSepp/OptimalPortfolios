@@ -12,7 +12,7 @@ from optimalportfolios import (Constraints, GroupLowerUpperConstraints,
                                rolling_maximise_alpha_over_tre,
                                wrapper_maximise_alpha_over_tre)
 
-from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
+from examples.data.universe import fetch_benchmark_universe_data
 
 
 def run_etf_tracking_portfolio(prices: pd.DataFrame,

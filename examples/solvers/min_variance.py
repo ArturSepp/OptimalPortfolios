@@ -1,5 +1,5 @@
 """
-example of constrained risk-budgeting portfolio (equal or specified risk contributions) solved via CCD/ADMM
+example of minimum-variance portfolio via quadratic optimisation; one-step and rolling backtest variants
 """
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -8,10 +8,10 @@ from enum import Enum
 
 from optimalportfolios import (Constraints, GroupLowerUpperConstraints, EwmaCovarEstimator,
                                compute_tre_turnover_stats,
-                               wrapper_risk_budgeting,
-                               rolling_risk_budgeting)
+                               wrapper_quadratic_optimisation,
+                               rolling_quadratic_optimisation)
 
-from optimalportfolios.examples.data.universe import fetch_benchmark_universe_data
+from examples.data.universe import fetch_benchmark_universe_data
 
 
 class LocalTests(Enum):
@@ -41,7 +41,7 @@ def run_local_test(local_test: LocalTests):
 
     constraints = Constraints(is_long_only=True,
                                min_weights=pd.Series(0.0, index=prices.columns),
-                               max_weights=pd.Series(1.0, index=prices.columns),
+                               max_weights=pd.Series(0.2, index=prices.columns),
                                weights_0=benchmark_weights,
                                group_lower_upper_constraints=group_lower_upper_constraints)
 
@@ -51,10 +51,9 @@ def run_local_test(local_test: LocalTests):
         pd_covar = pd.DataFrame(52.0 * qis.compute_masked_covar_corr(data=returns, is_covar=True),
                                 index=prices.columns, columns=prices.columns)
         print(f"pd_covar=\n{pd_covar}")
-
-        weights = wrapper_risk_budgeting(pd_covar=pd_covar,
-                                         constraints=constraints,
-                                         weights_0=benchmark_weights)
+        weights, _ = wrapper_quadratic_optimisation(pd_covar=pd_covar,
+                                                 constraints=constraints,
+                                                 weights_0=benchmark_weights)
 
         df_weight = pd.concat([benchmark_weights.rename('benchmark'), weights.rename('portfolio')], axis=1)
         print(f"weights=\n{df_weight}")
@@ -71,15 +70,13 @@ def run_local_test(local_test: LocalTests):
 
     elif local_test == LocalTests.ROLLING_OPTIMISATION:
         # optimise using last available universe as inputs
-        time_period = qis.TimePeriod('31Dec2016', '15Mar2026')
+        time_period = qis.TimePeriod('31Jan2007', '17Apr2025')
         rebalancing_costs = 0.0003
         covar_estimator = EwmaCovarEstimator()
         covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
-        risk_budget = pd.Series(1.0/len(prices.columns), index=prices.columns)
-        weights = rolling_risk_budgeting(prices=prices,
-                                         constraints=constraints,
-                                         covar_dict=covar_dict,
-                                         risk_budget=risk_budget)
+        weights = rolling_quadratic_optimisation(prices=prices,
+                                                 constraints=constraints,
+                                                 covar_dict=covar_dict)
         print(weights)
 
         portfolio_dict = {'Optimal Portfolio': weights,
@@ -102,7 +99,7 @@ def run_local_test(local_test: LocalTests):
                                                              add_grouped_cum_pnl=False,
                                                              **kwargs)
         qis.save_figs_to_pdf(figs=figs,
-                             file_name="risk parity portfolio", orientation='landscape',
+                             file_name="min variance portfolio", orientation='landscape',
                              local_path=lp.get_output_path())
 
 
