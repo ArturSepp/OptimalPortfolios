@@ -84,6 +84,21 @@ def test_nan_variance_assets_are_removed_and_vectors_follow() -> None:
     assert vectors['means'].to_dict() == {'A': 1.0, 'B': 2.0, 'D': 4.0}
 
 
+def test_non_finite_vector_assets_are_removed_from_every_aligned_input() -> None:
+    """NaN or infinite solver vectors exclude their asset before reaching a backend."""
+    covar, _, _ = _universe()
+    means = pd.Series([1.0, np.nan, 3.0, 4.0], index=TICKERS)
+    alphas = pd.Series([0.1, 0.2, np.inf, 0.4], index=TICKERS)
+
+    filtered, vectors = filter_covar_and_vectors_for_nans(
+        pd_covar=covar, vectors={'means': means, 'alphas': alphas},
+        drop_non_finite_vectors=True)
+
+    assert list(filtered.index) == ['A', 'D']
+    assert vectors['means'].to_dict() == {'A': 1.0, 'D': 4.0}
+    assert vectors['alphas'].to_dict() == {'A': 0.1, 'D': 0.4}
+
+
 def test_tiny_variances_are_clamped_and_kept_not_dropped() -> None:
     """
     the documented distinction: NaN is removed, near-zero is floored.
@@ -137,11 +152,24 @@ def test_inclusion_indicators_remove_assets() -> None:
     assert list(filtered.index) == ['A', 'C', 'D']
 
 
-def test_a_vector_that_is_not_a_series_is_rejected() -> None:
-    """a raw array cannot be reindexed onto tickers, so it is refused rather than mis-aligned."""
+def test_invalid_strict_vectors_are_rejected_and_none_is_ignored() -> None:
+    """Strict filtering ignores None but rejects unaligned or non-numeric vectors."""
     covar, _, _ = _universe()
     with pytest.raises(TypeError):
         filter_covar_and_vectors_for_nans(pd_covar=covar, vectors={'means': np.array([1.0, 2.0])})
+    with pytest.raises(TypeError, match="vector must be pd.Series"):
+        filter_covar_and_vectors_for_nans(
+            pd_covar=covar, vectors={'means': np.array([1.0, 2.0])},
+            drop_non_finite_vectors=True)
+    with pytest.raises(TypeError, match="must contain numeric values"):
+        filter_covar_and_vectors_for_nans(
+            pd_covar=covar, vectors={'means': pd.Series(['a', 'b', 'c', 'd'], index=TICKERS)},
+            drop_non_finite_vectors=True)
+
+    filtered, vectors = filter_covar_and_vectors_for_nans(
+        pd_covar=covar, vectors={'means': None}, drop_non_finite_vectors=True)
+    assert list(filtered.index) == TICKERS
+    assert vectors == {}
 
 
 def test_zero_variance_assets_are_dropped_by_the_positional_filter() -> None:

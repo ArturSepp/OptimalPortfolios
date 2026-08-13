@@ -146,7 +146,8 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
     clean_covar, good_vectors = filter_covar_and_vectors_for_nans(
         pd_covar=pd_covar,
         vectors=vectors,
-        inclusion_indicators=inclusion_indicators
+        inclusion_indicators=inclusion_indicators,
+        drop_non_finite_vectors=means is not None,
     )
     if means is not None:
         means_np = good_vectors['means'].to_numpy()

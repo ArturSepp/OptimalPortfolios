@@ -400,7 +400,7 @@ installation. The default risk-lineage matcher is implemented with core NumPy/Sc
 | `dev` | Pytest and pytest-cov — the test suite and nothing else. |
 | `all` | All runtime integrations: `data`, `reports` and `jupyter`. |
 
-`dev` is deliberately minimal: the suite collects the same 1276 tests with or without the
+`dev` is deliberately minimal: the suite collects the same 1277 tests with or without the
 optional extras, so nothing else belongs in it. The lint tools are not an extra at all — they
 live in the `lint` dependency-group, which never ships to a user. To run the examples under
 `optimalportfolios/examples/`, which do use `yfinance`, install `[dev,data]` or `[all]`.
@@ -1018,14 +1018,14 @@ The flat `examples/` layout has been replaced with six purpose-folders:
 | `examples.universe` | `examples.data.universe` |
 | `examples.optimal_portfolio_backtest` | `examples.backtests.minimal_backtest` |
 | `examples.solve_risk_budgets_balanced_portfolio` | `examples.backtests.balanced_risk_budgets` |
-| `examples.computation_of_tracking_error` | `examples.backtests.tracking_error_decomposition` |
+| `examples.computation_of_tracking_error` | `examples.backtests.tracking_error_decomposition_local` |
 | `examples.multi_optimisers_backtest` | `examples.comparisons.optimisers` |
 | `examples.multi_covar_estimation_backtest` | `examples.comparisons.covar_estimators` |
 | `examples.parameter_sensitivity_backtest` | `examples.comparisons.parameter_sensitivity` |
 | `examples.risk_budgeting_pyrb_vs_scipy` | `examples.comparisons.risk_budgeting_ccd_vs_scipy` |
-| `examples.sp500_minvar` | `examples.comparisons.sp500_minvar_spans` |
+| `examples.sp500_minvar` | `examples.comparisons.sp500_minvar_spans_local` |
 | `examples.long_short_optimisation` | `examples.solvers.long_short` |
-| `examples.sp500_universe` | `examples.data.sp500_universe` |
+| `examples.sp500_universe` | `examples.data.sp500_universe_local` |
 
 The new layout adds an [examples guide](optimalportfolios/docs/examples_readme.md)
 indexing every demo. Six wrong docstrings in `solvers/` corrected

@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 # A push to a PR branch makes the run already in flight for that branch pointless: this workflow
-# is 15 jobs, so cancelling it is the single largest saving available here. Runs on `main` are
+# is 12 jobs, so cancelling it is the single largest saving available here. Runs on `main` are
 # keyed per-ref and never cancel each other.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,8 +25,8 @@ jobs:
     # wheels and pandas frequency/locale behaviour has bitten this kind of code before, so the
     # matrix runs every supported Python on all three runners.
     #
-    # `primary` marks the one cell -- ubuntu/3.12 -- that syncs `--locked` from uv.lock, runs the
-    # offline example and gates coverage. It is set through `include` so the pinned and floating
+    # `primary` marks the one cell -- ubuntu/3.12 -- that syncs `--locked` from uv.lock and gates
+    # coverage. It is set through `include` so the pinned and floating
     # legs are one step each instead of two near-identical pairs; the remaining cells leave it
     # unset, which is falsy in an expression.
     runs-on: ${{ matrix.os }}
@@ -97,21 +97,37 @@ jobs:
     # There is no inline import-surface step here any more. It imported five public names and
     # asserted that one of the nine factorlasso re-exports was the same object as its source;
     # `optimalportfolios/tests/public_api_test.py` checks every public name and all nine
-    # re-exports, and it runs in `core-install` as well as here, so the inline version was
-    # strictly weaker in a job the suite already covers. That file's docstring records the move.
+    # re-exports on every matrix cell, so the inline version was strictly weaker in a job the
+    # suite already covers. That file's docstring records the move.
     # Add public-surface contracts there, not back into this workflow.
     #
     # The multiasset_saa.py smoke test has moved to examples.yml, which runs that example and the
     # four other offline ones on all three runners instead of on this one primary cell, and puts
-    # the twenty-one network-bound examples on a schedule. Executing examples is not this
+    # the eighteen network-bound examples on a schedule. Executing examples is not this
     # workflow's job.
 
-    # There is deliberately no "the optional extras are absent" assertion in this workflow. That
-    # check belongs to the dependency graph, not to a test run, and it lives once in audit.yml.
-    # Asserting it per-cell here re-derived the same fact twelve times a push, and a locked
-    # environment can only ever report what was true when the lock was written -- the case worth
-    # catching, a core dependency taking an optional module on as a hard requirement, appears in a
-    # *fresh* resolution, which is what audit.yml runs daily.
+    - name: Assert optional modules are absent
+      # `[dev]` is only pytest and pytest-cov over the core tree. Check the actual 3.12 environment
+      # on all three operating systems so platform-specific markers or wheels cannot make an
+      # optional backend arrive unnoticed. audit.yml complements this locked/floating install
+      # check with a fresh Linux resolution each day, which is what detects dependency drift while
+      # the repository is quiet.
+      if: matrix.python-version == '3.12'
+      shell: bash
+      run: |
+        uv run --no-sync python - <<'PY'
+        import importlib.util
+        import tomllib
+
+        with open("pyproject.toml", "rb") as fh:
+            config = tomllib.load(fh)
+        banned = config["tool"]["ruff"]["lint"]["flake8-tidy-imports"][
+            "banned-module-level-imports"
+        ]
+        leaked = [name for name in banned if importlib.util.find_spec(name) is not None]
+        assert not leaked, f"optional modules leaked into the dev-over-core environment: {leaked}"
+        print(f"optional-module absence confirmed: {len(banned)}/{len(banned)}")
+        PY
 
     - name: Run the test suite
       # On the primary cell only, coverage is measured and gated. The floor lives in

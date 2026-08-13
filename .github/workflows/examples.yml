@@ -67,12 +67,12 @@ jobs:
       run: uv run --no-sync python .github/scripts/run_examples.py --lane offline
 
   network:
-    # The twenty-one examples that download from Yahoo Finance, on a schedule, advisory only.
+    # The eighteen examples that download from Yahoo Finance, on a schedule, advisory only.
     #
     # These are not on the pull-request path on purpose. `examples/data/universe.py` pulls 15
-    # tickers back to 2003 and `sp500_universe.py` pulls the whole index, so gating a PR on them
-    # would mean ~63 live downloads per run and a check that fails on Yahoo's availability far
-    # more often than on anything in the diff. A check that is usually red for reasons outside
+    # tickers back to 2003, so gating a PR on them would mean dozens of live downloads per run and
+    # a check that fails on Yahoo's availability far more often than on anything in the diff. A
+    # check that is usually red for reasons outside
     # the change is one people learn to ignore, which costs more than it buys.
     #
     # On the job-level `if`: static.yml carries a comment explaining why a guard there was unsound,

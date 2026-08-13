@@ -18,8 +18,11 @@ from enum import Enum
 from optimalportfolios.alphas import (profile_carry,
                                       profile_alpha_signals,
                                       ProfileSignal,
+                                      compute_momentum_alpha,
+                                      compute_low_beta_alpha,
                                       compute_alpha_rank_analysis_table,
                                       generate_alpha_profile_report)
+from optimalportfolios.alphas.signals.carry import compute_ra_carry_alpha
 
 
 def compute_trailing_dividend_yield(tickers: list) -> pd.DataFrame:
@@ -79,13 +82,21 @@ def run_local_test(local_test: LocalTests = LocalTests.JOINT_PROFILE) -> None:
     perf_params = qis.PerfParams(freq='ME')
 
     if local_test == LocalTests.JOINT_PROFILE:
+        carry_scores, _ = compute_ra_carry_alpha(
+            prices=prices, carry=carry, returns_freq='ME', vol_span=13)
+        low_beta_scores, _ = compute_low_beta_alpha(
+            prices=prices, benchmark_price=benchmark_price, returns_freq='ME')
+        momentum_scores, _ = compute_momentum_alpha(
+            prices=prices, benchmark_price=benchmark_price, returns_freq='ME')
+
         # rank each signal's top third, equal-weighted, vs equal-weight-all, rebalanced quarterly
         multi_portfolio_data = profile_alpha_signals(
             prices=prices,
-            signals=[ProfileSignal.CARRY, ProfileSignal.LOW_BETA, ProfileSignal.MOMENTUM],
-            benchmark_price=benchmark_price,
-            carry=carry,
-            returns_freq='ME',
+            alpha_scores={
+                ProfileSignal.CARRY.value: carry_scores,
+                ProfileSignal.LOW_BETA.value: low_beta_scores,
+                ProfileSignal.MOMENTUM.value: momentum_scores,
+            },
             quantile=1.0 / 3.0,
             rebalancing_freq='QE',
             time_period=time_period)

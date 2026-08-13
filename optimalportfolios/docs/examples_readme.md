@@ -1,8 +1,8 @@
 # `optimalportfolios.examples`
 
-Runnable scripts illustrating every solver, covariance estimator, and end-to-end
-workflow in the package. Each file runs as `python -m optimalportfolios.examples.<path>`
-or by executing the script directly; outputs go to figures and/or local PDFs.
+Scripts illustrating every solver, covariance estimator, and end-to-end workflow in the package.
+The unattended examples run as `python -m optimalportfolios.examples.<path>` or by executing the
+script directly; `*_local.py` diagnostics require local CSV data or a Bloomberg terminal.
 
 ## Layout
 
@@ -14,7 +14,7 @@ examples/
 ├── comparisons/           A-vs-B examples (covar / optimiser / parameter / config)
 ├── covar_estimation/      covariance estimator demos (EWMA, LASSO, GLASSO, factor model)
 ├── alphas/                alpha signal profiling demos (rank-based profiler)
-└── sp500_universe.py      S&P 500 universe loader (kept at top level for assignment refs)
+└── data/sp500_universe_local.py  local S&P 500 universe builder and loader
 ```
 
 The folder split follows three orthogonal axes:
@@ -38,11 +38,11 @@ import path.
 |---|---|
 | `universe.py` | Two helpers for example demos. `fetch_benchmark_universe_data()` returns a 15-ETF universe across 5 asset classes (Equities, Bonds, IG, HY, Commodities) with asset-class loadings and benchmark weights — used by most `solvers/`, `backtests/`, and `comparisons/` files. `fetch_minimal_universe_data()` returns a compact 8-ETF universe with a 3-tuple `(prices, benchmark_prices, group_data)` — used by `backtests/minimal_backtest` and `solvers/long_short`. Both helpers fetch via `yfinance`. |
 
-**Companion fixture at top level (intentionally not moved):**
+**Local S&P 500 fixture:**
 
 | File | Purpose |
 |---|---|
-| `sp500_universe.py` | S&P 500 historical constituents with point-in-time inclusion indicators from [fja05680/sp500](https://github.com/fja05680/sp500). Kept at the top level because external assignment material references its path. |
+| `sp500_universe_local.py` | Builds and loads local S&P 500 historical constituents with point-in-time inclusion indicators from [fja05680/sp500](https://github.com/fja05680/sp500). Its Yahoo and Bloomberg variants persist CSVs outside the repository, so the unattended examples workflow skips it. |
 
 ---
 
@@ -77,7 +77,7 @@ Full SAA-style workflows: load universe → estimate covariance → run rolling 
 |---|---|
 | `minimal_backtest.py` | Smallest end-to-end example: defines a universe, runs `compute_rolling_optimal_weights` for one objective, prints/plots NAVs. Best starting point for new users. |
 | `balanced_risk_budgets.py` | Illustrates `solve_for_risk_budgets_from_given_weights`: given a static 60/40 weight, back out the equivalent risk-budget portfolio and compare weights vs risk contributions. Useful for translating between mandate languages (weight-based ↔ risk-based). |
-| `tracking_error_decomposition.py` | Computes per-asset *tracking-error contributions* of a portfolio vs benchmark. Two modes: marginal TE contributions (sum to total TE) and independent (diagonal) TE contributions. Decomposition tool, not a solver demo. |
+| `tracking_error_decomposition_local.py` | Computes per-asset *tracking-error contributions* of a portfolio vs benchmark from a locally persisted Dow 30 panel. Two modes: marginal TE contributions (sum to total TE) and independent (diagonal) TE contributions. |
 
 ---
 
@@ -93,7 +93,7 @@ calibrating production parameters.
 | `covar_estimators.py` | EWMA vs LASSO vs Group LASSO factor covariance, with and without vol-normalisation. Same optimiser throughout. |
 | `parameter_sensitivity.py` | One-method, multiple parameter values (e.g. carra grid, span grid). Backtester sensitivity panel. |
 | `risk_budgeting_ccd_vs_scipy.py` | Two implementations of constrained risk budgeting: the internal CCD/ADMM and a naive SciPy SLSQP. Demonstrates why the convex reformulation is the production backend. |
-| `sp500_minvar_spans.py` | Min-variance on S&P 500 across EWMA spans of 26 / 52 / 104 / 208 weeks (half-lives 6m / 1y / 2y / 4y). Imports `load_sp500_universe_yahoo` from the top-level `sp500_universe.py`. |
+| `sp500_minvar_spans_local.py` | Min-variance on a locally persisted S&P 500 panel across EWMA spans of 26 / 52 / 104 / 208 weeks (half-lives 6m / 1y / 2y / 4y). Imports `load_sp500_universe_yahoo` from `data/sp500_universe_local.py`. |
 | `drift_policy.py` | Compares `OptimiserConfig.use_drifted_weights_0 = True` (production default, B) vs `False` (legacy, A) using `rolling_quadratic_optimisation` with a binding L1 turnover budget. Shows that under (A) the realised turnover exceeds the optimiser's apparent turnover by ~20%; under (B) the two agree. |
 
 ---
@@ -157,14 +157,14 @@ scripts referencing the old paths, update as follows:
 | `examples.universe` | `examples.data.universe` |
 | `examples.optimal_portfolio_backtest` | `examples.backtests.minimal_backtest` |
 | `examples.solve_risk_budgets_balanced_portfolio` | `examples.backtests.balanced_risk_budgets` |
-| `examples.computation_of_tracking_error` | `examples.backtests.tracking_error_decomposition` |
+| `examples.computation_of_tracking_error` | `examples.backtests.tracking_error_decomposition_local` |
 | `examples.multi_optimisers_backtest` | `examples.comparisons.optimisers` |
 | `examples.multi_covar_estimation_backtest` | `examples.comparisons.covar_estimators` |
 | `examples.parameter_sensitivity_backtest` | `examples.comparisons.parameter_sensitivity` |
 | `examples.risk_budgeting_pyrb_vs_scipy` | `examples.comparisons.risk_budgeting_ccd_vs_scipy` |
-| `examples.sp500_minvar` | `examples.comparisons.sp500_minvar_spans` |
+| `examples.sp500_minvar` | `examples.comparisons.sp500_minvar_spans_local` |
 | `examples.long_short_optimisation` | `examples.solvers.long_short` |
-| `examples.sp500_universe` | unchanged (deliberately kept at top level) |
+| `examples.sp500_universe` | `examples.data.sp500_universe_local` |
 | `alphas.profile.profile_alpha_signals` | `examples.alphas.profile_alpha_signals` |
 
 The last row is a different kind of move: that file was never library code, only an example that happened to sit inside the `alphas` package. It also shadowed the exported function of the same name.

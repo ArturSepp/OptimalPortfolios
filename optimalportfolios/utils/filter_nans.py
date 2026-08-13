@@ -30,13 +30,14 @@ def filter_covar_and_vectors(covar: np.ndarray,
 def filter_covar_and_vectors_for_nans(pd_covar: pd.DataFrame,
                                       vectors: Dict[str, pd.Series] = None,
                                       inclusion_indicators: pd.Series = None,
-                                      variance_floor: float = (0.001) ** 2
+                                      variance_floor: float = (0.001) ** 2,
+                                      drop_non_finite_vectors: bool = False,
                                       ) -> Tuple[pd.DataFrame, Optional[Dict[str, pd.Series]]]:
     """Filter out assets with NaN variance and clamp near-zero variances to a floor.
 
-    Assets with NaN variance are removed. Assets with near-zero but valid variance
-    (e.g., cash instruments) have their diagonal clamped to variance_floor to ensure
-    numerical stability in the optimizer without excluding them from allocation.
+    Assets with NaN variance are removed. When ``drop_non_finite_vectors`` is true, an asset with
+    a non-finite aligned solver vector is removed as well. Assets with near-zero but valid variance
+    (e.g., cash instruments) have their diagonal clamped to ``variance_floor``.
 
     variance_floor default of 0.001² = 1e-6 corresponds to ~10bps annualized vol,
     which is a reasonable lower bound for any tradeable instrument. You can pass a different value
@@ -48,6 +49,9 @@ def filter_covar_and_vectors_for_nans(pd_covar: pd.DataFrame,
         inclusion_indicators: Optional binary Series (1=include, 0=exclude) for asset filtering.
         variance_floor: Minimum diagonal variance for included assets. Assets below this
             threshold are clamped (not removed). Default corresponds to ~10bps annualized vol.
+        drop_non_finite_vectors: If true, require every supplied vector to contain a finite numeric
+            value for an asset. Use for objective vectors such as means and alphas; leave false for
+            inputs whose caller validates or fills missing values under a different contract.
 
     Returns:
         Tuple of (filtered covariance DataFrame, filtered vectors dict or None).
@@ -59,6 +63,18 @@ def filter_covar_and_vectors_for_nans(pd_covar: pd.DataFrame,
 
     # identify assets with valid (non-NaN) variance
     is_good_asset = ~np.isnan(variances)
+
+    if drop_non_finite_vectors and vectors is not None:
+        for key, vector in vectors.items():
+            if vector is None:
+                continue
+            if not isinstance(vector, pd.Series):
+                raise TypeError(f"vector must be pd.Series not type={type(vector)}")
+            aligned = vector.reindex(index=pd_covar.columns)
+            try:
+                is_good_asset &= np.isfinite(aligned.to_numpy(dtype=float))
+            except (TypeError, ValueError) as exc:
+                raise TypeError(f"vector {key!r} must contain numeric values") from exc
 
     # apply inclusion indicators if provided
     if inclusion_indicators is not None:

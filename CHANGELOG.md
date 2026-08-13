@@ -8,7 +8,7 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 **Coverage floor raised (2026-08-13):** `fail_under` rises from `95` to `99`; measured coverage
-over the scope narrowed in 6.17.0 is 99.03%, on a suite grown from 1145 to 1276 tests. The
+over the scope narrowed in 6.17.0 is 99.09%, on a suite grown from 1145 to 1277 tests. The
 floor rises whenever measured coverage rises, and lowering it requires a dated note here.
 
 ### Added
@@ -41,45 +41,51 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
   in the workflow (`ruff~=0.16.0`), so a contributor's ruff and CI's ruff could disagree about the
   same file. CI now takes its versions from the group. The group is not an extra and is not synced
   by default, so it reaches neither a user install nor the test matrix.
-- Split CI into three workflows by what each check depends on: `static.yml` (ruff, interrogate) on
-  every pull request and on pushes to branches in this repository, `audit.yml` on a daily schedule,
-  and `ci.yml` for the jobs that install the package. Moved both installers onto uv, dropping
-  `actions/setup-python`.
+- Split CI into four workflows by what each check depends on: `static.yml` (ruff, interrogate) on
+  every pull request and repository branch push, `audit.yml` on a daily schedule and dependency
+  changes, `examples.yml` for unattended examples, and `ci.yml` for the test matrix. Moved the
+  installer onto uv, dropping `actions/setup-python`.
 - Removed the inline public-import-surface step from `ci.yml`. It imported five public names and
   asserted that one of the nine factorlasso re-exports was its source object;
-  `optimalportfolios/tests/public_api_test.py` checks every public name and all nine re-exports,
-  and runs in `core-install` as well as the matrix, so the inline check was strictly weaker in a
-  job the suite already covers.
+  `optimalportfolios/tests/public_api_test.py` checks every public name and all nine re-exports on
+  every matrix cell, so the inline check was strictly weaker in a job the suite already covers.
 
 - Added `examples.yml`, which executes the example scripts — the one part of the tree nothing else
   runs, since `examples/` is excluded from wheels, dropped by `[tool.coverage.run] omit` and never
   collected by pytest. Two lanes, classified by `.github/scripts/run_examples.py` walking each
-  example's import closure rather than from a hand-kept list: the 5 offline examples gate pull
-  requests on all three runners against a *core* install (~10s), and the 21 that download from
-  Yahoo Finance run daily, advisory-only. Gating a PR on 63 live downloads would fail on Yahoo's
-  availability more often than on the diff.
+  example's import closure rather than from a hand-kept list: 5 offline examples gate pull
+  requests on all three runners against a *core* install, and 18 that download from Yahoo Finance
+  run daily, advisory-only. Three local-data or Bloomberg diagnostics were renamed `*_local.py`
+  and are excluded from both lanes, leaving 23 unattended examples.
 - Removed the `core-install` job and the `multiasset_saa.py` smoke test from `ci.yml`.
   `core-install` existed to show the suite passes with no optional extras, which mattered while
   `[dev]` pulled in `optimalportfolios[data]`; now that `[dev]` is pytest and pytest-cov over the
-  core tree, all twelve cells of `test` establish that directly — a module-scope import of an
-  optional backend fails collection there exactly as it would in a bare core install. The one
-  thing it uniquely guarded, `[dev]` regaining a dependency, moved to `audit.yml`. The example
-  smoke test moved to `examples.yml`, which runs it and four others on three runners rather than
-  on one cell.
-- Consolidated the optional-module absence check into `audit.yml` alone. It had been asserted per
-  matrix cell in `ci.yml` and again in `core-install`, re-deriving one fact up to fifteen times a
-  push, and neither could see the case worth catching: both sync from `uv.lock`, and a locked
-  environment reports what was true when the lock was written. `audit.yml` now resolves two fresh
-  trees — core, and core plus `[dev]` — and fails if either contains a banned module.
+  core tree, all twelve cells of `test` establish that directly. The Python 3.12 cell on each
+  operating system also asserts that all seven banned optional modules are absent, retaining the
+  platform-specific dependency guarantee without running the complete suite twice. `audit.yml`
+  complements that installed-environment check with scheduled fresh core and `[dev]` resolutions,
+  which can detect dependency drift without a repository event. The example smoke test moved to
+  `examples.yml`, which runs it and four others on three runners rather than on one cell.
 
 ### Fixed
 
+- Added an opt-in strict mode to the shared rolling-solver NaN filter, and enabled it for objective
+  vectors in the quadratic, maximum-Sharpe and alpha optimisers. Non-finite expected returns or
+  alphas now exclude their asset before reaching CVXPY, while constraint validators and callers
+  with an explicit zero-fill contract retain their prior behaviour. This repairs the live
+  optimiser and target-return examples while preserving their full histories.
 - Fixed `LassoModelType.GROUP_LASSO_CLUSTERS`, which no longer exists — it is
   `HIERARCHICAL_CLUSTER_GROUP_LASSO`. The stale name appeared in two examples, a docstring in
   shipped code (`covar_estimation/factor_covar_estimator.py`), `covar_estimation/README.md`,
   `docs/alphas_module_readme.md` and a `_local.py` dispatcher. Nothing caught it: no test executes
   `examples/`, and to a linter an enum member that was renamed upstream is a valid attribute
   access. `papers/` is left as-is per AGENTS.md.
+- Rewrote `examples/alphas/profile_alpha_signals.py` for the current `alpha_scores` mapping API;
+  it now computes carry, low-beta and momentum through their canonical signal functions before
+  passing the three named panels to the joint profiler.
+- Renamed the tracking-error decomposition, S&P 500 span sweep and S&P 500 universe builder to
+  `*_local.py`, because each requires persisted local CSV data or a Bloomberg terminal and cannot
+  run unattended. The S&P 500 resource path now uses `pathlib` instead of doubled separators.
 - Pinned the three gating tools exactly instead of to a series: `ruff==0.16.2`,
   `interrogate==1.7.0` and `pip-audit==2.10.1`, the last moved out of a `uvx --from` range in
   `audit.yml` into a new `audit` dependency-group. `~=0.16.0` admits any patch release, and a ruff
@@ -96,17 +102,11 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
   errors against `files.pythonhosted.org`. uv's own per-request retries do not cover a resolver
   that gives up mid-flight, so the retry wraps the command: three attempts with 15s and 45s
   backoff.
-- Restored the three-OS `core-install` matrix and its optional-extras assertion, both dropped by
-  an earlier revision of this branch on the claim that the resolved dependency set is
-  platform-invariant. It is not: environment markers are evaluated per platform, wheel
-  availability differs, and a transitive dependency can arrive on one OS and not another. The
-  `test` matrix does not substitute for it: it syncs an extra rather than none, asserts nothing
-  about what is importable, and is one dependency edit away from pulling an optional package back
-  in — which is how this broke twice. The assertion now checks all seven
-  `banned-module-level-imports` names, read from `pyproject.toml` rather than restated, and asks
-  the import system on the environment actually built.
+- Preserved the three-OS optional-dependency guarantee after removing the duplicate core suite:
+  the Python 3.12 test cells now check all seven `banned-module-level-imports` names in the actual
+  Linux, Windows and macOS environments, while the daily audit independently resolves fresh trees.
 - Reduced the `dev` extra to `pytest` and `pytest-cov`. It also carried `networkx` and
-  `optimalportfolios[data]`; neither enabled a single test, with collection at 1276 either way.
+  `optimalportfolios[data]`; neither enabled a single test, with collection at 1277 either way.
   The `data` extra was there for the examples rather than the suite — no test imports yfinance,
   and the eleven files that do live under `optimalportfolios/examples/`, which is excluded from
   wheels and never collected — so every cell of the test matrix was installing yfinance for
@@ -123,8 +123,8 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
   `reports` and `jupyter` extras ungated; the audited set goes from 35 packages to 168.
 - Widened the optional-module absence check from three of the seven names ruff bans at module
   level to all of them, and derived the list from `banned-module-level-imports` rather than
-  restating it. It now runs against a fresh daily resolution in `audit.yml`, where a transitive
-  arrival is visible, instead of against a locked environment where it cannot be.
+  restating it. It runs against the three installed 3.12 environments in `ci.yml` and fresh daily
+  core and `[dev]` resolutions in `audit.yml`.
 
 - Made soft tracking error ignore a populated hard tracking-error budget during both the solve
   and post-solve validation, instead of rejecting an optimal soft solution and silently falling

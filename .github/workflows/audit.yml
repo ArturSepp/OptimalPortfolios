@@ -121,11 +121,11 @@ jobs:
       # one scheduled run into two. `!cancelled()` rather than `always()`, so a cancelled run
       # still cancels the step.
       if: ${{ !cancelled() }}
-      # This is the *only* place the repository asserts that the optional modules stay out of the
-      # core tree. It was briefly checked in ci.yml as well -- per matrix cell, and again in
-      # core-install -- which re-derived one fact up to fifteen times a push and still could not
-      # see the case that matters, because both of those sync from uv.lock and a locked
-      # environment reports what was true when the lock was written.
+      # This is the drift half of the optional-module contract. ci.yml asks the import system in
+      # the environments it actually built on Linux, Windows and macOS; this step instead resolves
+      # fresh core and dev trees every day. The two checks answer different questions: the matrix
+      # catches platform-specific arrivals in the tested environment, while this catches a
+      # dependency changing upstream while the repository is quiet.
       #
       # It is the runtime half of TID253. Ruff proves no first-party module imports an optional
       # backend at module scope, but it cannot see a *transitive* arrival: a core dependency
@@ -134,10 +134,9 @@ jobs:
       # broken this project twice, via a module-scope yfinance import. Only a fresh resolution can
       # show it, and only a schedule runs one when no commit has been made.
       #
-      # It belongs here rather than in ci.yml because it is a drift signal. ci.yml syncs from
-      # uv.lock, and a locked environment cannot show drift by construction -- it reports whatever
-      # was true when the lock was written. Only a fresh resolution can, and this workflow already
-      # runs one daily.
+      # It belongs here as well as in ci.yml because it is a drift signal. A locked environment
+      # cannot show drift by construction, and even the floating CI cells run only on repository
+      # activity. Only a scheduled fresh resolution can report a transitive arrival with no commit.
       #
       # Resolves two trees and checks both against the same `banned-module-level-imports` list
       # ruff gates with, read from pyproject.toml rather than restated -- restating it is how the
@@ -145,11 +144,9 @@ jobs:
       #
       #   core   the bare tree, which is what `pip install optimalportfolios` gives a user.
       #   dev    the tree the ci.yml test matrix installs. `[dev]` is meant to be pytest and
-      #          pytest-cov over that same core tree, and the matrix is only evidence that the
-      #          suite passes without optional extras for as long as that holds. It carried
-      #          `optimalportfolios[data]` until recently, which put yfinance in all twelve cells;
-      #          when ci.yml stopped syncing a zero-extras environment of its own, this became the
-      #          check that would notice it coming back.
+      #          pytest-cov over that same core tree. It carried `optimalportfolios[data]` until
+      #          recently, which put yfinance in all twelve cells; checking the resolved tree here
+      #          catches that dependency edit even before an environment is installed.
       run: |
         uv pip compile --python-version 3.12 --quiet \
           pyproject.toml -o "$RUNNER_TEMP/requirements-core.txt"

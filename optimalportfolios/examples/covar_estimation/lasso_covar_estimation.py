@@ -98,7 +98,7 @@ def run_local_test(local_test: LocalTests):
             model_type=LassoModelType.LASSO,
             **qis.update_kwargs(lasso_params, dict(reg_lambda=0.0)),
         ).fit(x=x, y=y)
-        betas_full = print_beta_and_r2('Multivariate Regression (λ=0)', model_full)
+        betas_full = print_beta_and_r2('Multivariate Regression (lambda=0)', model_full)
 
         # ── 2. Independent LASSO ──
         model_lasso = LassoModel(

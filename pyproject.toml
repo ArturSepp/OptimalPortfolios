@@ -82,7 +82,7 @@ jupyter = [
 # twelve matrix cells bought nothing. They live in the `lint` dependency-group below.
 #
 # Two entries were removed for the same reason -- neither enabled a single test. Collection is
-# 1276 tests with them and 1276 without:
+# 1277 tests with them and 1277 without:
 #
 #   * `optimalportfolios[data]` was here for the *examples*, not the suite. No test imports
 #     yfinance; the eleven files that do all live under `optimalportfolios/examples/`, which is
@@ -230,6 +230,6 @@ omit = ["*/tests/*", "*/examples/*", "papers/*", "*/reports/*"]
 # regress silently, and it is raised as tests land.
 #
 # Measure on a `[dev]` install, which is what the 3.12 leg of the `test` job in ci.yml does.
-# That is now pytest and pytest-cov over the core tree: the suite collects the same 1276 tests
+# That is now pytest and pytest-cov over the core tree: the suite collects the same 1277 tests
 # with or without the optional extras, so the measured scope does not depend on them.
 fail_under = 99

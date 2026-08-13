@@ -128,7 +128,8 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
         Portfolio weights and the structured solver outcome.
     """
     vectors = dict(means=means)
-    clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar, vectors=vectors)
+    clean_covar, good_vectors = filter_covar_and_vectors_for_nans(
+        pd_covar=pd_covar, vectors=vectors, drop_non_finite_vectors=True)
 
     if optimiser_config.apply_total_to_good_ratio:
         total_to_good_ratio = len(pd_covar.columns) / len(clean_covar.columns)

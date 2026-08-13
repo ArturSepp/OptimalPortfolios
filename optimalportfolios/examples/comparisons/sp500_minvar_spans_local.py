@@ -84,7 +84,7 @@ def run_local_test(local_test: LocalTests):
     """Run local tests for product_development and debugging purposes."""
 
     import optimalportfolios.local_path as lp
-    from optimalportfolios.examples.data.sp500_universe import load_sp500_universe_yahoo
+    from optimalportfolios.examples.data.sp500_universe_local import load_sp500_universe_yahoo
 
     if local_test == LocalTests.CROSS_BACKTEST:
 
