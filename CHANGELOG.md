@@ -79,6 +79,16 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
 
 ### Fixed
 
+- Rewrote the extras section of `docs/installation.rst`, which documented two extras that do not
+  exist. It described a `clustering` extra and told users to install it "when using the `mcf`
+  cluster matcher" — but that matcher's NetworkX backend was replaced by a SciPy bipartite
+  assignment in 6.13.0 and the analytics moved to `factorlasso`, so `mcf` has run on a core
+  install ever since; the advice sent users after a package that no longer exists to enable
+  something already working. It also claimed `[dev]` bundles `data` and `clustering` plus the lint
+  and docstring tools, none of which has been true since `[dev]` was narrowed to pytest and
+  pytest-cov and the lint tools moved to the `lint` dependency-group. The page now lists the five
+  real extras and states why `jupyter` and `clustering` are absent.
+
 - Added an opt-in strict mode to the shared rolling-solver NaN filter, and enabled it for objective
   vectors in the quadratic, maximum-Sharpe and alpha optimisers. Non-finite expected returns or
   alphas now exclude their asset before reaching CVXPY, while constraint validators and callers
