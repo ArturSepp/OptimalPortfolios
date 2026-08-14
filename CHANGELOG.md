@@ -7,14 +7,8 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [6.18.0] - 2026-08-14
-
-**Coverage floor raised (2026-08-13):** `fail_under` rises from `95` to `99`; measured coverage
-over the scope narrowed in 6.17.0 is 99.09%, on a suite grown from 1145 to 1277 tests. The
-floor rises whenever measured coverage rises, and lowering it requires a dated note here.
-
 **Coverage floor raised to 100% (2026-08-14):** `fail_under` rises from `99` to `100`; measured
-coverage is 100.00% on 1316 tests, up from 99.09% on 1277. It is no longer a ratchet — at 100% an
+coverage is 100.00% on 1320 tests, up from 99.09% on 1277. It is no longer a ratchet — at 100% an
 uncovered line is always something the change under review introduced, the same argument the 100%
 `interrogate` bar rests on. Five lines carry `# pragma: no cover`, each with a comment at the site:
 two defensive raises in `risk_budgeting_solver.py` that only a pinned solver pathology would reach,
@@ -31,39 +25,6 @@ is now kept only to report the true figure when the gate fails.
 
 ### Added
 
-- A `wheel` job in `ci.yml`, the only check that runs against the built artifact rather than the
-  editable installation. A subpackage or data file missing from the packaging declarations can
-  still escape tests that execute against the `src/` tree. The job builds the wheel, asserts it carries
-  its test modules and the offline fixture, installs it with no extras plus pytest, and runs
-  `pytest --pyargs optimalportfolios` from outside the checkout — the post-install check AGENTS.md
-  documents for users, which nothing had been running. It is what makes shipping the tests inside
-  the wheel load-bearing.
-- Tests taking line coverage from 99.18% to 99.80%, 44 uncovered lines to 11. `FactorCovarEstimator`'s
-- Made the shipped `conftest.py`'s backend selection testable, by extracting it from a module-level
-  `if` into `configure_matplotlib_backend`. As inline code it only ran when `MPLBACKEND` happened to
-  be unset, so its coverage depended on where the suite ran — covered locally, uncovered on a runner
-  where `ci.yml` sets the variable itself, which failed the 100% gate on CI while passing everywhere
-  else. It also meant CI never executed the mechanism the file exists to provide for
-  `pytest --pyargs optimalportfolios` users. Both outcomes are now asserted against a synthetic
-  mapping, including an empty `MPLBACKEND=` counting as unset rather than as a backend named `''`.
-- Tests taking line coverage to 100.00%, from 44 uncovered lines to 0. `FactorCovarEstimator`'s
-  two shared-interface entry points, `fit_current_covar` and `fit_rolling_covars`, had no coverage at
-  all — the existing suites call the factor-specific variants — so every caller that treats a factor
-  model as a plain `CovarEstimator` was untested; `residual_var_weight` is now pinned to scale only
-  the idiosyncratic diagonal. Added with them: the config guards that refuse a cadence with no
-  configured span, partially supplied precomputed clusters, an external cluster map missing an asset,
-  a rolling window starting before the model's warmup, and an unparseable recluster frequency; the
-  EWMA estimator's vol-normalised variant on both entry points, its open-ended `time_period`, and its
-  empty-schedule guard; and the utility fallbacks for a filtered companion vector, a defaulted risk
-  budget, a zero-variance portfolio and an unsliceable `prev_date`. The final eleven lines: the
-  diversification solve without its total-to-good ratio, the long-short target-return solve, the
-  factorisation's reconstruction guard, a period whose factor vector is incompletely observed, and
-  the reset of the drift anchor after an infeasible first rebalance — plus the five `pragma`
-  exclusions above. Two of those five were found to be dead code rather than merely hard to reach:
-  `risk_budgeting.py` seeds `x0` behind `is_use_avg_rc`, which is assigned the literal `True` and
-  never reassigned, and `factor_covar_estimator.py` guards against an estimation date missing from
-  a schedule that `include_end_date=True` already guarantees. Both are left in place with the
-  reason recorded at the site, since removing either is a numerical decision rather than a cleanup.
 - Tests for the LASSO sign-constraint layer reported as `derived_signs`, which had none. The path
   collects `LassoModel.derived_signs_` per frequency, concatenates and reindexes onto the target
   asset universe, and its central invariant lived only in a comment: the reindex must not fill NaN,
@@ -73,6 +34,47 @@ is now kept only to report the true figure when the gate fails.
   alignment to `y_betas`, that the reported signs match the betas actually fitted, the NaN-versus-zero
   distinction for an unfitted asset, the explicit `factors_beta_loading_signs` entry point, and the
   `_CFCD_SUPPORTS_DERIVED_SIGNS` compatibility shim.
+- Tests taking line coverage to 100.00%, from 50 uncovered lines to 0. `FactorCovarEstimator`'s two
+  shared-interface entry points, `fit_current_covar` and `fit_rolling_covars`, had no coverage at
+  all — the existing suites call the factor-specific variants — so every caller that treats a factor
+  model as a plain `CovarEstimator` was untested; `residual_var_weight` is now pinned to scale only
+  the idiosyncratic diagonal. Added with them: the config guards that refuse a cadence with no
+  configured span, partially supplied precomputed clusters, an external cluster map missing an asset,
+  a rolling window starting before the model's warmup, and an unparseable recluster frequency; the
+  EWMA estimator's vol-normalised variant on both entry points, its open-ended `time_period`, and its
+  empty-schedule guard; the utility fallbacks for a filtered companion vector, a defaulted risk
+  budget, a zero-variance portfolio and an unsliceable `prev_date`; the diversification solve without
+  its total-to-good ratio; the long-short target-return solve; the factorisation's reconstruction
+  guard; a period whose factor vector is incompletely observed; and the reset of the drift anchor
+  after an infeasible first rebalance. Two of the five `pragma` exclusions were found to be dead code
+  rather than merely hard to reach: `risk_budgeting.py` seeds `x0` behind `is_use_avg_rc`, which is
+  assigned the literal `True` and never reassigned, and `factor_covar_estimator.py` guards against an
+  estimation date missing from a schedule that `include_end_date=True` already guarantees. Both are
+  left in place with the reason recorded at the site, since removing either is a numerical decision
+  rather than a cleanup.
+- Made the shipped `conftest.py`'s backend selection testable, by extracting it from a module-level
+  `if` into `configure_matplotlib_backend`. As inline code it only ran when `MPLBACKEND` happened to
+  be unset, so its coverage depended on where the suite ran — covered locally, uncovered on a runner
+  where `ci.yml` sets the variable itself, which failed the 100% gate on CI while passing everywhere
+  else. It also meant CI never executed the mechanism the file exists to provide for
+  `pytest --pyargs optimalportfolios` users. Both outcomes are now asserted against a synthetic
+  mapping, including an empty `MPLBACKEND=` counting as unset rather than as a backend named `''`.
+
+## [6.18.0] - 2026-08-14
+
+**Coverage floor raised (2026-08-13):** `fail_under` rises from `95` to `99`; measured coverage
+over the scope narrowed in 6.17.0 is 99.09%, on a suite grown from 1145 to 1277 tests. The
+floor rises whenever measured coverage rises, and lowering it requires a dated note here.
+
+### Added
+
+- A `wheel` job in `ci.yml`, the only check that runs against the built artifact rather than the
+  editable installation. A subpackage or data file missing from the packaging declarations can
+  still escape tests that execute against the `src/` tree. The job builds the wheel, asserts it carries
+  its test modules and the offline fixture, installs it with no extras plus pytest, and runs
+  `pytest --pyargs optimalportfolios` from outside the checkout — the post-install check AGENTS.md
+  documents for users, which nothing had been running. It is what makes shipping the tests inside
+  the wheel load-bearing.
 - Tests for the three signal-backtest factsheet builders in `alphas/backtest_alphas.py`,
   including a sweep assertion on the recorded target weights rather than on the leg labels,
   which are derived from the sweep values and would look correct even if the span never
