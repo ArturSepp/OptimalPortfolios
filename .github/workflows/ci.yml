@@ -181,8 +181,11 @@ jobs:
         import glob
         import zipfile
 
-        wheel = sorted(glob.glob("dist/*.whl"))[-1]
-        names = zipfile.ZipFile(wheel).namelist()
+        wheels = glob.glob("dist/*.whl")
+        assert len(wheels) == 1, f"expected exactly one wheel, found: {wheels}"
+        wheel = wheels[0]
+        with zipfile.ZipFile(wheel) as archive:
+            names = archive.namelist()
         tests = [n for n in names if "/tests/" in n and n.endswith(".py")]
         fixture = "optimalportfolios/tests/data/multiasset_returns.csv"
 
