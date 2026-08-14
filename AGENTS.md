@@ -66,7 +66,7 @@ Every file matching pytest's default patterns — `*_test.py` **and** `test_*.py
 
 ```bash
 uv sync --extra dev                                      # editable install, versions from uv.lock
-uv run pytest                                            # run the test suite (1277 tests, ~3 min)
+uv run pytest                                            # run the test suite (1283 tests, ~3 min)
 uv run pytest src/optimalportfolios/optimization/tests/constraints_test.py -v
 uv run --only-group lint ruff check src/optimalportfolios/  # lint (papers/ is excluded)
 uv run --only-group lint interrogate                     # docstring coverage, must stay at 100%
@@ -104,8 +104,8 @@ It has two lanes, and the split is **derived rather than listed**: `.github/scri
 
 That `network` job carries a job-level `if`, which `static.yml` deliberately does not. The distinction matters: a skipped job reports *success*, so a guard is only ever safe on a job that must never gate. That one qualifies twice — excluded from the PR path by the condition, and `continue-on-error` on top. Do not add it to branch protection.
 
-Line coverage measured **99.09%** on the 1277-test dev suite. The
-ubuntu/3.12 matrix entry gates `pytest --cov=optimalportfolios` at `fail_under = 99`; this floor rises
+Line coverage measured **99.18%** on the 1283-test dev suite. The
+ubuntu/3.12 matrix entry gates `pytest --cov=optimalportfolios` at `fail_under = 99.1`; this floor rises
 whenever measured coverage rises, and lowering it requires a dated `CHANGELOG.md` note.
 The measured scope is not the whole package: `[tool.coverage.run] omit` drops `reports/` alongside
 `tests/`, `examples/` and `papers/`, because the reporting layer renders through `qis` and `pybloqs`
@@ -113,7 +113,7 @@ and is reviewed by eye rather than by assertion. Put anything with a numerical c
 `reports/`, where it is measured. Measure on a `[dev]` install.
 
 `[dev]` is pytest and pytest-cov, and nothing else. It previously also carried `networkx` and
-`optimalportfolios[data]`; neither enabled a single test — collection is 1277 either way. The
+`optimalportfolios[data]`; neither enabled a single test — collection is 1283 either way. The
 `data` extra was there for the **examples**, not the suite: no test imports yfinance, and the
 eleven files that do all live under root-level `examples/`, which is excluded from distributions
 and never collected. `networkx` was orphaned when the risk-lineage analytics moved to FactorLasso
