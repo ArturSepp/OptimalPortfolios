@@ -8,7 +8,7 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 **Coverage floor raised to 100% (2026-08-14):** `fail_under` rises from `99` to `100`; measured
-coverage is 100.00% on 1320 tests, up from 99.09% on 1277. It is no longer a ratchet — at 100% an
+coverage is 100.00% on 1321 tests, up from 99.09% on 1277. It is no longer a ratchet — at 100% an
 uncovered line is always something the change under review introduced, the same argument the 100%
 `interrogate` bar rests on. Five lines carry `# pragma: no cover`, each with a comment at the site:
 two defensive raises in `risk_budgeting_solver.py` that only a pinned solver pathology would reach,
@@ -38,7 +38,12 @@ is now kept only to report the true figure when the gate fails.
   shared-interface entry points, `fit_current_covar` and `fit_rolling_covars`, had no coverage at
   all — the existing suites call the factor-specific variants — so every caller that treats a factor
   model as a plain `CovarEstimator` was untested; `residual_var_weight` is now pinned to scale only
-  the idiosyncratic diagonal. Added with them: the config guards that refuse a cadence with no
+  the idiosyncratic diagonal, and verified a second way — the fitted decomposition is extracted and
+  the assembled matrix checked entry by entry against `β Σ_x β' + w·D`, summed over factor pairs
+  explicitly rather than through `@`, at a weight that is neither 0 nor 1. Comparing two assembled
+  matrices with each other cannot see an error made the same way in both: a 2% error in the factor
+  block, and a `w²` mis-scaling of the residual diagonal, both pass the off-diagonal comparison and
+  both fail the reference. Added with them: the config guards that refuse a cadence with no
   configured span, partially supplied precomputed clusters, an external cluster map missing an asset,
   a rolling window starting before the model's warmup, and an unparseable recluster frequency; the
   EWMA estimator's vol-normalised variant on both entry points, its open-ended `time_period`, and its
