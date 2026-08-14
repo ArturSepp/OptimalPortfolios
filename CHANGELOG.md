@@ -13,6 +13,14 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
 
 ### Added
 
+- A `wheel` job in `ci.yml`, the only check that runs against the built artifact rather than the
+  working directory. The layout is flat rather than `src/`, so the twelve test cells resolve
+  `import optimalportfolios` to the checkout and a subpackage or data file missing from the
+  packaging declarations reaches PyPI unnoticed. The job builds the wheel, asserts it still carries
+  its test modules and the offline fixture, installs it with no extras plus pytest, and runs
+  `pytest --pyargs optimalportfolios` from outside the checkout — the post-install check AGENTS.md
+  documents for users, which nothing had been running. It is what makes shipping the tests inside
+  the wheel load-bearing.
 - Tests for the three signal-backtest factsheet builders in `alphas/backtest_alphas.py`,
   including a sweep assertion on the recorded target weights rather than on the leg labels,
   which are derived from the sweep values and would look correct even if the span never
