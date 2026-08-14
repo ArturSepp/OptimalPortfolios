@@ -41,12 +41,46 @@ and section you are reading.
 ```bash
 git clone https://github.com/ArturSepp/OptimalPortfolios.git
 cd OptimalPortfolios
-pip install -e ".[dev]"
-pytest
-ruff check --select TID251,TID253,ICN,F src/optimalportfolios/
-interrogate -v
-pytest --cov=optimalportfolios --cov-report=term-missing
-pip-audit .
+uv sync --extra dev                                      # editable install, versions from uv.lock
+uv run --locked pytest                                   # 1277 tests, ~3 min
+uv run --locked --only-group lint ruff check --select TID251,TID253,ICN,F src/optimalportfolios/
+uv run --locked --only-group lint interrogate -v         # docstring coverage, must stay at 100%
+uv run --locked pytest --cov=optimalportfolios --cov-report=term-missing   # floor is fail_under = 99
+```
+
+The two lint commands are the exact invocations `static.yml` gates with. The coverage command is
+what the ubuntu/3.12 cell of `ci.yml` runs, with `--locked` added — that cell enforces the lock on
+its `uv sync` step instead, so the effect is the same.
+
+`--locked` fails rather than re-resolving if `uv.lock` has drifted from `pyproject.toml`. That is
+the point: a dependency edit that has not been re-locked fails here, on your machine, instead of
+on the pinned CI cell. If you are deliberately changing dependencies, run `uv lock` first (or drop
+the flag until you do).
+
+`ruff` and `interrogate` are reached through `--only-group lint` rather than from the `dev`
+extra, and that is deliberate: they are declared once in the `lint` dependency-group, which is
+also where the workflow takes its versions from, so a local `ruff` and CI's `ruff` cannot
+disagree about the same file. `--only-group` installs that group alone — not the project, not the
+compiled scientific stack. A plain `pip install -e ".[dev]"` gives you `pytest` and `pytest-cov`
+only; it will **not** put `ruff` or `interrogate` on your path, because a pip extra does not
+install a PEP 735 dependency-group. It also resolves fresh rather than from `uv.lock`, so it is
+not what CI gates the pinned cell against.
+
+Note that `ruff check` is run with an explicit `--select`. Running it bare applies the `E`/`W`
+families configured in `pyproject.toml`, which report a deliberate backlog of ~380 `E501`
+line-length findings in the older modules. Fix only the lines your change touches; a
+repository-wide reflow is not wanted.
+
+The dependency audit is not a source gate — its answer depends on the advisory database rather
+than on your diff — so it runs daily in `audit.yml` and on pull requests only when
+`pyproject.toml` or `uv.lock` change. If your change touches either, run the same two-tree form
+the workflow uses rather than a bare `pip-audit .`, which covers the core tree alone and silently
+omits every optional extra:
+
+```bash
+uv export --locked --all-extras --no-emit-project --quiet \
+  --format requirements-txt -o "${TMPDIR:-/tmp}/requirements-audit.txt"
+uv run --locked --only-group audit pip-audit -r "${TMPDIR:-/tmp}/requirements-audit.txt"
 ```
 
 To verify a built or downloaded wheel in a clean environment, install the wheel and `pytest`,
