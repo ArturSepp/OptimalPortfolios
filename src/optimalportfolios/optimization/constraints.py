@@ -68,6 +68,23 @@ def compute_eligible_rebalancing_bounds(
 
     Raises:
         ValueError: If an aligned current minimum exceeds its current maximum.
+
+    Wide candidate bounds of [0, 1] are narrowed to the current/model corridor, so a proposal can
+    hold or move toward the model but never overshoot it. Asset `b` is already at its model weight
+    and is pinned; `d` is in neither portfolio, so its indicator is 0 and its corridor is empty:
+
+    >>> import pandas as pd
+    >>> assets = ['a', 'b', 'c', 'd']
+    >>> current = pd.Series([0.5, 0.3, 0.0, 0.0], index=assets)
+    >>> model = pd.Series([0.2, 0.3, 0.5, 0.0], index=assets)
+    >>> lower, upper, indicators = compute_eligible_rebalancing_bounds(
+    ...     current, model, pd.Series(0.0, index=assets), pd.Series(1.0, index=assets))
+    >>> lower.tolist()
+    [0.2, 0.3, 0.0, 0.0]
+    >>> upper.tolist()
+    [0.5, 0.3, 0.5, 0.0]
+    >>> indicators.tolist()
+    [1, 1, 1, 0]
     """
     index = current_weights.index
     current = current_weights.reindex(index).fillna(0.0).astype(float)

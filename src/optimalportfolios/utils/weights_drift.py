@@ -69,6 +69,29 @@ def apply_drift_to_weights_0(
         or weights_0 unchanged when any gate fails. NaN values in the
         returned Series are replaced with the corresponding weights_0 entry
         (asset treated as flat over the period).
+
+    A 50/50 book where one leg gains 10% and the other loses 10% has NAV growth of exactly
+    1.0, so the drifted weights are the gross positions themselves:
+
+    >>> import pandas as pd
+    >>> prices = pd.DataFrame({'a': [100.0, 110.0], 'b': [100.0, 90.0]},
+    ...                       index=pd.DatetimeIndex(['2024-01-31', '2024-02-29']))
+    >>> weights_0 = pd.Series([0.5, 0.5], index=['a', 'b'])
+    >>> prev_date, date = pd.Timestamp('2024-01-31'), pd.Timestamp('2024-02-29')
+    >>> apply_drift_to_weights_0(weights_0, prices, prev_date, date).tolist()
+    [0.55, 0.45]
+
+    The toggle is a true passthrough -- this is the pre-v5.3.1 behaviour, where the previous
+    target is reused without drifting:
+
+    >>> apply_drift_to_weights_0(weights_0, prices, prev_date, date,
+    ...                          use_drifted_weights_0=False).tolist()
+    [0.5, 0.5]
+
+    So is every failure gate, which is what makes the call safe to make unconditionally:
+
+    >>> apply_drift_to_weights_0(weights_0, prices, None, date).tolist()
+    [0.5, 0.5]
     """
     # --- gates (silent fallback on failure) ---
     if not use_drifted_weights_0:

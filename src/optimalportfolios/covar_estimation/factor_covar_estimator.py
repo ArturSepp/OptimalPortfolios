@@ -102,21 +102,27 @@ class FactorCovarEstimator(CovarEstimator):
         demean: If True, subtract rolling mean before covariance estimation.
 
     Example:
-        >>> estimator = FactorCovarEstimator(
+        Not executed as a doctest: an HCGL fit costs roughly four seconds even on a two-asset
+        panel, which is not a cost worth paying in every cell of the CI matrix for a docstring.
+        `EwmaCovarEstimator` carries the runnable version of this interface, and
+        `src/optimalportfolios/covar_estimation/tests/` covers this estimator directly.
+
+        >>> from factorlasso import LassoModel, LassoModelType  # doctest: +SKIP
+        >>> estimator = FactorCovarEstimator(  # doctest: +SKIP
         ...     lasso_model=LassoModel(model_type=LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
         ...                            reg_lambda=1e-5, span=36),
         ...     factor_returns_freq='ME',
         ...     rebalancing_freq='QE',
         ... )
         >>> # Shared interface — plain covar dict
-        >>> covar_dict = estimator.fit_rolling_covars(
+        >>> covar_dict = estimator.fit_rolling_covars(  # doctest: +SKIP
         ...     risk_factor_prices=factors, asset_returns_dict=returns_dict,
         ...     time_period=time_period)
         >>> # Factor-specific — full decomposition
-        >>> rolling_data = estimator.fit_rolling_factor_covars(
+        >>> rolling_data = estimator.fit_rolling_factor_covars(  # doctest: +SKIP
         ...     risk_factor_prices=factors, asset_returns_dict=returns_dict,
         ...     time_period=time_period)
-        >>> r2_panel = rolling_data.get_r2()
+        >>> r2_panel = rolling_data.get_r2()  # doctest: +SKIP
     """
     lasso_model: Optional[LassoModel] = None
     factor_returns_freq: str = 'W-WED'

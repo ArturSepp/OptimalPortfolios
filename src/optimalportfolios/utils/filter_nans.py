@@ -55,6 +55,32 @@ def filter_covar_and_vectors_for_nans(pd_covar: pd.DataFrame,
 
     Returns:
         Tuple of (filtered covariance DataFrame, filtered vectors dict or None).
+
+    A NaN variance drops the asset, and every supplied vector loses the same entry, which is
+    what keeps a solver's covariance and its alphas on one universe:
+
+    >>> import numpy as np
+    >>> import pandas as pd
+    >>> assets = ['a', 'b', 'c']
+    >>> covar = pd.DataFrame([[0.04, 0.0, 0.0], [0.0, np.nan, 0.0], [0.0, 0.0, 0.09]],
+    ...                      index=assets, columns=assets)
+    >>> good, vectors = filter_covar_and_vectors_for_nans(
+    ...     covar, vectors={'alphas': pd.Series([1.0, 2.0, 3.0], index=assets)})
+    >>> good.columns.tolist()
+    ['a', 'c']
+    >>> vectors['alphas'].tolist()
+    [1.0, 3.0]
+
+    A near-zero variance is the other half of the contract: a cash-like instrument is clamped to
+    the floor and *kept*, not dropped.
+
+    >>> covar = pd.DataFrame([[0.04, 0.0, 0.0], [0.0, 1e-12, 0.0], [0.0, 0.0, 0.09]],
+    ...                      index=assets, columns=assets)
+    >>> good, _ = filter_covar_and_vectors_for_nans(covar)
+    >>> good.columns.tolist()
+    ['a', 'b', 'c']
+    >>> np.diag(good.to_numpy()).tolist()
+    [0.04, 1e-06, 0.09]
     """
     assert pd_covar.index.equals(pd_covar.columns), "pd_covar index and columns must match"
 
