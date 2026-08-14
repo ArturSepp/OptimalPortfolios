@@ -13,13 +13,17 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 over the scope narrowed in 6.17.0 is 99.09%, on a suite grown from 1145 to 1277 tests. The
 floor rises whenever measured coverage rises, and lowering it requires a dated note here.
 
-**Coverage floor raised (2026-08-14):** `fail_under` rises from `99` to `99.1`; measured coverage
-is 99.18% on 1283 tests, after the `derived_signs` path below took the uncovered count from 50
-lines to 44. This also required setting `[tool.coverage.report] precision = 2`: coverage.py rounds
-the measured total to `precision` places *before* comparing it against `fail_under`, so at the
-default precision of 0 any fractional floor is unreachable — 99.18% rounds to 99, and the run fails
-against a floor of 99.1 that it actually clears. The ratchet could not have moved in sub-percent
-steps without it, and a single uncovered line is now worth 0.02%.
+**Coverage floor raised (2026-08-14):** `fail_under` rises from `99` to `99.7`; measured coverage
+is 99.80% on 1310 tests, after the `derived_signs` path below took the uncovered count from 50
+lines to 44 and the estimator, guard and utility tests below took it from 44 to 11.
+
+This also required setting `[tool.coverage.report] precision = 2`: coverage.py rounds the measured
+total to `precision` places *before* comparing it against `fail_under`, so at the default precision
+of 0 any fractional floor is unreachable — 99.18% rounds to 99, and the run fails against a floor of
+99.1 that it actually clears. The ratchet could not have moved in sub-percent steps without it, and
+a single uncovered line is now worth 0.02%. The floor is set to `99.7` rather than `99.8` for a
+related reason: pytest-cov compares the *unrounded* total, and the true figure is 99.7962%, so a
+floor of 99.8 would fail a run that the displayed 99.80% says clears it.
 
 ### Added
 
@@ -30,6 +34,16 @@ steps without it, and a single uncovered line is now worth 0.02%.
   `pytest --pyargs optimalportfolios` from outside the checkout — the post-install check AGENTS.md
   documents for users, which nothing had been running. It is what makes shipping the tests inside
   the wheel load-bearing.
+- Tests taking line coverage from 99.18% to 99.80%, 44 uncovered lines to 11. `FactorCovarEstimator`'s
+  two shared-interface entry points, `fit_current_covar` and `fit_rolling_covars`, had no coverage at
+  all — the existing suites call the factor-specific variants — so every caller that treats a factor
+  model as a plain `CovarEstimator` was untested; `residual_var_weight` is now pinned to scale only
+  the idiosyncratic diagonal. Added with them: the config guards that refuse a cadence with no
+  configured span, partially supplied precomputed clusters, an external cluster map missing an asset,
+  a rolling window starting before the model's warmup, and an unparseable recluster frequency; the
+  EWMA estimator's vol-normalised variant on both entry points, its open-ended `time_period`, and its
+  empty-schedule guard; and the utility fallbacks for a filtered companion vector, a defaulted risk
+  budget, a zero-variance portfolio and an unsliceable `prev_date`.
 - Tests for the LASSO sign-constraint layer reported as `derived_signs`, which had none. The path
   collects `LassoModel.derived_signs_` per frequency, concatenates and reindexes onto the target
   asset universe, and its central invariant lived only in a comment: the reindex must not fill NaN,
