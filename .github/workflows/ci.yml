@@ -111,7 +111,7 @@ jobs:
 
     # There is no inline import-surface step here any more. It imported five public names and
     # asserted that one of the nine factorlasso re-exports was the same object as its source;
-    # `optimalportfolios/tests/public_api_test.py` checks every public name and all nine
+    # `src/optimalportfolios/tests/public_api_test.py` checks every public name and all nine
     # re-exports on every matrix cell, so the inline version was strictly weaker in a job the
     # suite already covers. That file's docstring records the move.
     # Add public-surface contracts there, not back into this workflow.
@@ -156,11 +156,10 @@ jobs:
       run: uv run pytest ${{ matrix.primary && '--cov=optimalportfolios --cov-report=term-missing' || '' }}
 
   wheel:
-    # The twelve `test` cells all run the suite against the *working directory*: this project uses
-    # a flat rather than a src layout, so `import optimalportfolios` resolves to the checkout and
-    # never to a built artifact. A subpackage missing from `[tool.setuptools.packages.find]`, or a
-    # data file missing from `[tool.setuptools.package-data]` and MANIFEST.in, is invisible to all
-    # of them and reaches PyPI intact.
+    # The twelve `test` cells use the editable installation from the `src/` tree, not the wheel
+    # that users receive. A subpackage missing from `[tool.setuptools.packages.find]`, or a data
+    # file missing from `[tool.setuptools.package-data]` and MANIFEST.in, can therefore remain
+    # invisible to all of them and reach PyPI intact.
     #
     # This job closes that gap, and is the reason the test packages are shipped inside the wheel
     # rather than kept in a top-level `tests/` directory: it builds the wheel, installs it into a
@@ -226,9 +225,9 @@ jobs:
           "$(ls dist/*.whl)" pytest
 
     - name: Run the shipped suite against the installed wheel
-      # `cd` out of the checkout first, and this is the whole point of the job: from the repository
-      # root, `optimalportfolios/` on `sys.path` shadows the installed package and the run would
-      # test the source tree again. `--pyargs` then resolves the name through the import system.
+      # `cd` out of the checkout first so neither repository paths nor project configuration can
+      # influence package discovery. `--pyargs` then resolves the name through the clean wheel
+      # environment's import system.
       #
       # Running outside the repository also means pytest never finds pyproject.toml, so neither
       # `testpaths` nor `addopts` apply -- the package name is passed explicitly for that reason.

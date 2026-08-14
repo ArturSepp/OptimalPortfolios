@@ -12,7 +12,7 @@ function from passing by always returning a constant.
 Seeded and self-contained: partitions are written out by hand, no estimator runs.
 
 Run:
-    pytest optimalportfolios/alphas/signals/tests/align_rolling_clusters_test.py
+    pytest src/optimalportfolios/alphas/signals/tests/align_rolling_clusters_test.py
 """
 # packages
 import pandas as pd

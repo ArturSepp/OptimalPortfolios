@@ -187,7 +187,7 @@ papers/**/*.synctex.gz
 papers/**/*.run.xml
 
 # papers and reference source documents - not redistributable
-papers/cluster_lineage_2026
+/papers/cluster_lineage_2026/
 papers/achievable_sharpe_faj_2026/
 /papers/convexity_premium/
 papers/cluster_lineage_2026/data/
