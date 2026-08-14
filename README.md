@@ -946,12 +946,13 @@ Portfolios", *The Journal of Portfolio Management*, 52(4), 86-120.
 
 ## Updates
 
-#### August 2026, Versions 6.8.0–6.17.0 released
+#### August 2026, Versions 6.8.0–6.18.0 released
 
-The recent 6.x series through 6.17.0 added several production analytics that are now part of the current API:
+The recent 6.x series through 6.18.0 added several production analytics that are now part of the current API:
 
 | Release | Analytics and behavior added |
 | --- | --- |
+| 6.18.0 | Adopted the standard `src/` package layout without changing installed imports or the public API; strengthened built-wheel, static, dependency-audit and examples gates; and raised measured line coverage to 99%. |
 | 6.17.0 | Remediated the JOSS dry-run audit with portable paths, substantive generated API pages and importable version metadata; repaired flat factorlasso covariance plots; and refreshed the MATF-CMA custom eleven-factor replication snapshot. |
 | 6.16.0 | Replaced the default risk-lineage matcher's NetworkX runtime dependency with a deterministic sparse SciPy assignment, then moved canonical lineage analytics to factorlasso 0.14; the former OptimalPortfolios module is a deprecated compatibility shim. |
 | 6.15.0 | Added declarative causal cluster smoothing, preserved FCGL/HCGL semantics for externally supplied partitions, and raised the factorlasso floor to 0.13.0. |
@@ -1216,7 +1217,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={OptimalPortfolios: Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python},
   year={2026},
-  version={6.17.0},
+  version={6.18.0},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

@@ -7,6 +7,8 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.18.0] - 2026-08-14
+
 **Coverage floor raised (2026-08-13):** `fail_under` rises from `95` to `99`; measured coverage
 over the scope narrowed in 6.17.0 is 99.09%, on a suite grown from 1145 to 1277 tests. The
 floor rises whenever measured coverage rises, and lowering it requires a dated note here.
