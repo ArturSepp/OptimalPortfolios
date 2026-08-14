@@ -5,7 +5,7 @@
 [![PyPI](https://img.shields.io/pypi/v/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/)
 [![Python](https://img.shields.io/pypi/pyversions/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
-[![CI](https://github.com/ArturSepp/OptimalPortfolios/actions/workflows/test.yml/badge.svg)](https://github.com/ArturSepp/OptimalPortfolios/actions)
+[![CI](https://github.com/ArturSepp/OptimalPortfolios/actions/workflows/ci.yml/badge.svg)](https://github.com/ArturSepp/OptimalPortfolios/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/optimalportfolios/badge/?version=latest)](https://optimalportfolios.readthedocs.io/en/latest/)
 [![Downloads](https://static.pepy.tech/badge/optimalportfolios)](https://pepy.tech/project/optimalportfolios)
 [![Monthly](https://static.pepy.tech/badge/optimalportfolios/month)](https://pepy.tech/project/optimalportfolios)
@@ -140,7 +140,7 @@ src/optimalportfolios/
 │   ├── ewma_covar_estimator.py    # EwmaCovarEstimator
 │   ├── factor_covar_estimator.py  # FactorCovarEstimator (uses factorlasso)
 │   ├── risk_model_adapter.py      # Canonical qis.RiskModel adapter
-│   ├── risk_labelling.py          # Cluster and factor risk labelling
+│   ├── risk_labelling.py          # Deprecated shim; canonical lineage is in factorlasso
 │   └── covar_reporting.py         # Rolling covariance diagnostics
 ├── optimization/                  # Portfolio optimisation
 │   ├── constraints.py             # Constraints, GroupLowerUpperConstraints
