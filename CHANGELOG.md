@@ -30,6 +30,14 @@ steps without it, and a single uncovered line is now worth 0.02%.
   alignment to `y_betas`, that the reported signs match the betas actually fitted, the NaN-versus-zero
   distinction for an unfitted asset, the explicit `factors_beta_loading_signs` entry point, and the
   `_CFCD_SUPPORTS_DERIVED_SIGNS` compatibility shim.
+- A `wheel` job in `ci.yml`, the only check that runs against the built artifact rather than the
+  working directory. The layout is flat rather than `src/`, so the twelve test cells resolve
+  `import optimalportfolios` to the checkout and a subpackage or data file missing from the
+  packaging declarations reaches PyPI unnoticed. The job builds the wheel, asserts it still carries
+  its test modules and the offline fixture, installs it with no extras plus pytest, and runs
+  `pytest --pyargs optimalportfolios` from outside the checkout — the post-install check AGENTS.md
+  documents for users, which nothing had been running. It is what makes shipping the tests inside
+  the wheel load-bearing.
 - Tests for the three signal-backtest factsheet builders in `alphas/backtest_alphas.py`,
   including a sweep assertion on the recorded target weights rather than on the leg labels,
   which are derived from the sweep values and would look correct even if the span never
@@ -49,6 +57,13 @@ steps without it, and a single uncovered line is now worth 0.02%.
 
 ### Changed
 
+- Declared `permissions: {contents: read}` in all four workflows. They previously carried no
+  `permissions:` block at all, so every job inherited the repository's default `GITHUB_TOKEN`
+  scope — up to write access on contents, issues and packages — across sixteen jobs that only check
+  out a tree and run a tool. No step in any workflow uses the token: there is no `gh` call, no
+  artifact upload, no PR comment and no push, and the network lane's report is a `$GITHUB_STEP_SUMMARY`
+  file write, which needs no permission. Declared at workflow level so a new job inherits the
+  restriction rather than the default.
 - Moved the repository-only worked examples from `optimalportfolios/examples/` to root-level
   `examples/`, making them visible beside the package while keeping them out of wheels and sdists.
   Example and local-diagnostic imports, documentation links, the workflow runner, and packaging,
