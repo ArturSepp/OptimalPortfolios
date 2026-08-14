@@ -14,9 +14,8 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
 ### Added
 
 - A `wheel` job in `ci.yml`, the only check that runs against the built artifact rather than the
-  working directory. The layout is flat rather than `src/`, so the twelve test cells resolve
-  `import optimalportfolios` to the checkout and a subpackage or data file missing from the
-  packaging declarations reaches PyPI unnoticed. The job builds the wheel, asserts it still carries
+  editable installation. A subpackage or data file missing from the packaging declarations can
+  still escape tests that execute against the `src/` tree. The job builds the wheel, asserts it carries
   its test modules and the offline fixture, installs it with no extras plus pytest, and runs
   `pytest --pyargs optimalportfolios` from outside the checkout — the post-install check AGENTS.md
   documents for users, which nothing had been running. It is what makes shipping the tests inside
@@ -40,6 +39,10 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
 
 ### Changed
 
+- Adopted the standard `src/` layout proposed in issue #60, moving the import package to
+  `src/optimalportfolios/` while preserving the `optimalportfolios` import name and public API.
+  Packaging, tests, linting, coverage, documentation and CI now resolve the new source root; the
+  clean-wheel job continues to verify the actual distribution independently of the editable install.
 - Declared `permissions: {contents: read}` in all four workflows. They previously carried no
   `permissions:` block at all, so every job inherited the repository's default `GITHUB_TOKEN`
   scope — up to write access on contents, issues and packages — across sixteen jobs that only check
@@ -66,7 +69,7 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
   installer onto uv, dropping `actions/setup-python`.
 - Removed the inline public-import-surface step from `ci.yml`. It imported five public names and
   asserted that one of the nine factorlasso re-exports was its source object;
-  `optimalportfolios/tests/public_api_test.py` checks every public name and all nine re-exports on
+  `src/optimalportfolios/tests/public_api_test.py` checks every public name and all nine re-exports on
   every matrix cell, so the inline check was strictly weaker in a job the suite already covers.
 
 - Added `examples.yml`, which executes the example scripts — the one part of the tree nothing else

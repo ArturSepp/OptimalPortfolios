@@ -1,7 +1,7 @@
 """pybloqs reporting for a ``PortfolioOptimisationResult``.
 
 Dedicated to the optional ``reports`` backend and not reachable from
-``optimalportfolios/__init__.py``, so ``pybloqs`` is imported at module level
+``src/optimalportfolios/__init__.py``, so ``pybloqs`` is imported at module level
 here by documented exception.
 """
 

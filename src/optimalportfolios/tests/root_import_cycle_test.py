@@ -1,7 +1,7 @@
 """
 Library modules do not import the top-level ``optimalportfolios`` package at module scope.
 
-``optimalportfolios/__init__.py`` star-imports subpackages in sequence. A library module that
+``src/optimalportfolios/__init__.py`` star-imports subpackages in sequence. A library module that
 imports through that package root can therefore re-enter a partially initialized module, and
 whether the requested name is already bound depends on the order of those star imports.
 

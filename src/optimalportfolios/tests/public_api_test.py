@@ -2,7 +2,7 @@
 enforcement tests for the public surface of optimalportfolios.
 
 The package has no ``__all__``: its public surface is whatever the wildcard imports in
-``optimalportfolios/__init__.py`` happen to leave in the namespace. That is a contract nobody
+``src/optimalportfolios/__init__.py`` happen to leave in the namespace. That is a contract nobody
 wrote down, so these tests write down the parts of it that can be checked cheaply.
 
 Four properties, each of which has a failure mode that is silent today:

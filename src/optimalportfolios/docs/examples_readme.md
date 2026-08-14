@@ -114,7 +114,7 @@ Useful as inputs / diagnostics for the backtest examples above.
 
 ## `alphas/` — signal profiling demos
 
-Demos of the rank-based alpha profiler in `optimalportfolios/alphas/profile/`. The profiler holds
+Demos of the rank-based alpha profiler in `src/optimalportfolios/alphas/profile/`. The profiler holds
 the top quantile of assets ranked by a signal, equal-weighted, against an equal-weight-all
 benchmark — no optimiser and no covariance — so what it reports is the selection power of the
 signal on its own. The [alphas module README](../alphas/README.md) documents the API.
