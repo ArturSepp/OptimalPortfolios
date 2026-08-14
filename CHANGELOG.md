@@ -39,6 +39,13 @@ is now kept only to report the true figure when the gate fails.
   documents for users, which nothing had been running. It is what makes shipping the tests inside
   the wheel load-bearing.
 - Tests taking line coverage from 99.18% to 99.80%, 44 uncovered lines to 11. `FactorCovarEstimator`'s
+- Made the shipped `conftest.py`'s backend selection testable, by extracting it from a module-level
+  `if` into `configure_matplotlib_backend`. As inline code it only ran when `MPLBACKEND` happened to
+  be unset, so its coverage depended on where the suite ran — covered locally, uncovered on a runner
+  where `ci.yml` sets the variable itself, which failed the 100% gate on CI while passing everywhere
+  else. It also meant CI never executed the mechanism the file exists to provide for
+  `pytest --pyargs optimalportfolios` users. Both outcomes are now asserted against a synthetic
+  mapping, including an empty `MPLBACKEND=` counting as unset rather than as a backend named `''`.
 - Tests taking line coverage to 100.00%, from 44 uncovered lines to 0. `FactorCovarEstimator`'s
   two shared-interface entry points, `fit_current_covar` and `fit_rolling_covars`, had no coverage at
   all — the existing suites call the factor-specific variants — so every caller that treats a factor
