@@ -1,5 +1,15 @@
 name: Static
 
+# Least privilege, declared rather than inherited; see the fuller note in ci.yml. This job checks
+# out the tree and runs ruff and interrogate over it -- no token use of any kind -- so `contents:
+# read` is the entire requirement, and without this block it would instead inherit the repository's
+# default `GITHUB_TOKEN` scope.
+#
+# The every-push trigger below makes this the most frequently started workflow in the repository,
+# which is a reason to keep its token narrow rather than a reason to skip the declaration.
+permissions:
+  contents: read
+
 # Two triggers, both unconditional, and deliberately overlapping.
 #
 # `pull_request` is the gate: it is the event a required status check is resolved against, and it

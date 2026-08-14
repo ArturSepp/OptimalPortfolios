@@ -1,5 +1,16 @@
 name: Examples
 
+# Least privilege, declared rather than inherited; see the fuller note in ci.yml. Both lanes check
+# out the tree, install, and run example scripts. The network lane additionally writes a report to
+# `$GITHUB_STEP_SUMMARY`, which is a file write on the runner and needs no permission -- so
+# `contents: read` covers this workflow too.
+#
+# This one has the strongest case of the four: the network lane executes example code that
+# downloads from Yahoo Finance, on a schedule, unattended. Whatever that code does, it should not do
+# it holding a writable repository token.
+permissions:
+  contents: read
+
 # `examples/` is the one part of the tree nothing else executes. It is excluded from wheels,
 # dropped by `[tool.coverage.run] omit`, and never collected by pytest, so an example can reference
 # an API that no longer exists and stay broken indefinitely. Ruff does not close the gap either:

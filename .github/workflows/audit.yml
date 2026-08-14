@@ -1,5 +1,14 @@
 name: Audit
 
+# Least privilege, declared rather than inherited; see the fuller note in ci.yml. This workflow
+# resolves dependency trees and runs pip-audit over them, and installs nothing -- it never touches
+# the token -- so `contents: read` covers the checkout and nothing else is needed.
+#
+# Worth stating for the scheduled trigger in particular: a daily run is the one that fires with no
+# one watching, so it should hold the narrowest scope of the four, not the ambient default.
+permissions:
+  contents: read
+
 # The audit's verdict is a function of two things -- the dependency floors in pyproject.toml and
 # the state of the advisory database -- and neither is the source tree. That cuts both ways, and
 # is why this is not a step in static.yml on the every-push trigger:
