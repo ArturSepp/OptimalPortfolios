@@ -1,5 +1,20 @@
 name: CI
 
+# Least privilege, declared rather than inherited. Without this block every job runs with the
+# repository's *default* `GITHUB_TOKEN` scope, which on a repository configured for read-write
+# defaults is write access to contents, issues, packages and more -- handed to twelve matrix cells
+# that only check out a tree and run pytest.
+#
+# Nothing in this workflow uses the token: no `gh` call, no artifact upload, no PR comment, no push.
+# `contents: read` is what `actions/checkout` needs and is therefore the whole requirement. Declared
+# at workflow level so a new job inherits the restriction instead of the default.
+#
+# This matters most for `pull_request`, which is the trigger that runs contributor-authored changes
+# to workflow-adjacent files. Scope is the containment; add a permission to the one job that needs
+# it if that ever changes, never here.
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]

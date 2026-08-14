@@ -32,6 +32,13 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
 
 ### Changed
 
+- Declared `permissions: {contents: read}` in all four workflows. They previously carried no
+  `permissions:` block at all, so every job inherited the repository's default `GITHUB_TOKEN`
+  scope — up to write access on contents, issues and packages — across sixteen jobs that only check
+  out a tree and run a tool. No step in any workflow uses the token: there is no `gh` call, no
+  artifact upload, no PR comment and no push, and the network lane's report is a `$GITHUB_STEP_SUMMARY`
+  file write, which needs no permission. Declared at workflow level so a new job inherits the
+  restriction rather than the default.
 - Moved the repository-only worked examples from `optimalportfolios/examples/` to root-level
   `examples/`, making them visible beside the package while keeping them out of wheels and sdists.
   Example and local-diagnostic imports, documentation links, the workflow runner, and packaging,
