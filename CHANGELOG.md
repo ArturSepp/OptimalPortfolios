@@ -40,6 +40,18 @@ floor rises whenever measured coverage rises, and lowering it requires a dated n
 
 ### Changed
 
+- Retried the uv/Python installation in `ci.yml`'s test matrix, which was the one download in that
+  job left unprotected. `uv sync` has wrapped itself in a three-attempt loop since the transport
+  failures observed on `files.pythonhosted.org`, but the step *before* it fetches the uv binary from
+  GitHub Releases and the interpreter from python-build-standalone, so the same class of DNS or CDN
+  blip killed the whole matrix cell before a test ran. It cannot use that loop — the loop is shell
+  in a `run:` step and this is a `uses:` step — so it takes the GitHub-native form instead: a first
+  attempt marked `continue-on-error`, and a second guarded on `steps.install-uv.outcome`. The retry
+  carries no `continue-on-error` of its own, so a cell whose toolchain never installed still goes
+  red rather than falling through to a sync that cannot run. Two attempts rather than the sync's
+  three: this step pulls a few fixed artifacts from two hosts and `setup-uv` already retries its own
+  HTTP requests, where the sync resolves an entire dependency tree over a much longer window.
+
 - Declared `permissions: {contents: read}` in all four workflows. They previously carried no
   `permissions:` block at all, so every job inherited the repository's default `GITHUB_TOKEN`
   scope — up to write access on contents, issues and packages — across sixteen jobs that only check

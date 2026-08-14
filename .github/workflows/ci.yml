@@ -58,7 +58,27 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+    # Installing uv is a download too, and it fails the same way `uv sync` does: this step fetches
+    # the uv binary from GitHub Releases and the interpreter from python-build-standalone, so a DNS
+    # or CDN blip kills the whole matrix cell before a single test runs. It gets the same treatment
+    # as the sync below -- retried, not left to chance.
+    #
+    # It cannot use the same `for` loop, though. That loop is shell inside a `run:` step, and this
+    # is a `uses:` step; an action cannot be invoked from bash. The GitHub-native equivalent is a
+    # first attempt marked `continue-on-error` (which records an `outcome` without failing the job)
+    # and a second attempt guarded on that outcome. Hence two steps that are otherwise identical.
+    #
+    # Two attempts rather than the sync's three, because the failure profile differs: this step
+    # pulls a handful of fixed artifacts from two hosts, where the sync resolves and downloads the
+    # whole dependency tree from PyPI over a much longer window. `setup-uv` also retries its own
+    # HTTP requests internally, so a second invocation is aimed at the case its retries gave up on.
+    #
+    # The action is idempotent: re-running it re-resolves and re-installs from scratch, so a first
+    # attempt that failed halfway -- uv installed but the interpreter missing -- is repaired rather
+    # than compounded.
     - name: Install uv and Python ${{ matrix.python-version }}
+      id: install-uv
+      continue-on-error: true
       uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
       with:
         # uv supplies the interpreter as well as the installer, so there is no separate
@@ -69,6 +89,15 @@ jobs:
         # runners -- and the default `cache-dependency-glob` already covers pyproject.toml and
         # uv.lock. The cache holds downloaded and built wheels, not a resolution, so the
         # deliberately floating cells keep floating.
+
+    - name: Retry installing uv and Python ${{ matrix.python-version }}
+      # Carries no `continue-on-error`, so this one fails the job. That is the point: the guard is
+      # on the *retry*, not on the outcome, and a cell whose toolchain never installed must go red
+      # rather than skip to a sync that cannot run.
+      if: steps.install-uv.outcome == 'failure'
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      with:
+        python-version: ${{ matrix.python-version }}
 
     - name: Sync the environment
       # The pinned and floating legs differ by one flag rather than by a whole step.
