@@ -81,7 +81,7 @@ docs = [
 # twelve matrix cells bought nothing. They live in the `lint` dependency-group below.
 #
 # Two entries were removed for the same reason -- neither enabled a single test. Collection is
-# 1277 tests with them and 1277 without:
+# 1283 tests with them and 1283 without:
 #
 #   * `optimalportfolios[data]` was here for the *examples*, not the suite. No test imports
 #     yfinance; the eleven files that do all live under root-level `examples/`, which is
@@ -229,6 +229,13 @@ omit = ["*/tests/*", "*/examples/*", "papers/*", "*/reports/*"]
 # regress silently, and it is raised as tests land.
 #
 # Measure on a `[dev]` install, which is what the 3.12 leg of the `test` job in ci.yml does.
-# That is now pytest and pytest-cov over the core tree: the suite collects the same 1277 tests
+# That is now pytest and pytest-cov over the core tree: the suite collects the same 1283 tests
 # with or without the optional extras, so the measured scope does not depend on them.
-fail_under = 99
+#
+# `precision` is load-bearing, not cosmetic. coverage.py rounds the measured total to `precision`
+# decimal places *before* comparing it with `fail_under`, so at the default precision of 0 a
+# fractional floor can never be met: 99.18% rounds to 99, and 99 < 99.1 fails the run even though
+# the real total clears the floor. Two decimals is what lets this ratchet move in sub-percent
+# steps, which is the only way it can move at all now that a single uncovered line is worth 0.02%.
+precision = 2
+fail_under = 99.1

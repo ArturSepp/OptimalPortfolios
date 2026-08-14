@@ -11,8 +11,25 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 over the scope narrowed in 6.17.0 is 99.09%, on a suite grown from 1145 to 1277 tests. The
 floor rises whenever measured coverage rises, and lowering it requires a dated note here.
 
+**Coverage floor raised (2026-08-14):** `fail_under` rises from `99` to `99.1`; measured coverage
+is 99.18% on 1283 tests, after the `derived_signs` path below took the uncovered count from 50
+lines to 44. This also required setting `[tool.coverage.report] precision = 2`: coverage.py rounds
+the measured total to `precision` places *before* comparing it against `fail_under`, so at the
+default precision of 0 any fractional floor is unreachable — 99.18% rounds to 99, and the run fails
+against a floor of 99.1 that it actually clears. The ratchet could not have moved in sub-percent
+steps without it, and a single uncovered line is now worth 0.02%.
+
 ### Added
 
+- Tests for the LASSO sign-constraint layer reported as `derived_signs`, which had none. The path
+  collects `LassoModel.derived_signs_` per frequency, concatenates and reindexes onto the target
+  asset universe, and its central invariant lived only in a comment: the reindex must not fill NaN,
+  because NaN means "no sign requirement on this cell" while `0.0` means "beta forced to zero".
+  Adding `.fillna(0.0)` there imposes a hard constraint on an asset the model never saw, and every
+  downstream covariance still assembles cleanly — nothing reported it. Six tests now pin the frame's
+  alignment to `y_betas`, that the reported signs match the betas actually fitted, the NaN-versus-zero
+  distinction for an unfitted asset, the explicit `factors_beta_loading_signs` entry point, and the
+  `_CFCD_SUPPORTS_DERIVED_SIGNS` compatibility shim.
 - Tests for the three signal-backtest factsheet builders in `alphas/backtest_alphas.py`,
   including a sweep assertion on the recorded target weights rather than on the leg labels,
   which are derived from the sweep values and would look correct even if the span never
