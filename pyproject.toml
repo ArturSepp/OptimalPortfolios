@@ -81,7 +81,7 @@ docs = [
 # twelve matrix cells bought nothing. They live in the `lint` dependency-group below.
 #
 # Two entries were removed for the same reason -- neither enabled a single test. Collection is
-# 1310 tests with them and 1310 without:
+# 1316 tests with them and 1316 without:
 #
 #   * `optimalportfolios[data]` was here for the *examples*, not the suite. No test imports
 #     yfinance; the eleven files that do all live under root-level `examples/`, which is
@@ -226,17 +226,25 @@ source = ["optimalportfolios"]
 omit = ["*/tests/*", "*/examples/*", "papers/*", "*/reports/*"]
 
 [tool.coverage.report]
-# A ratchet, not a target: the floor sits just under the measured level so coverage cannot
-# regress silently, and it is raised as tests land.
+# The floor is now the measured level: 100%. It stopped being a ratchet when it arrived, and the
+# argument for pinning it here is the one already made for `interrogate` — at 100% an uncovered
+# line is always something the change under review introduced, so the gate needs no judgement
+# about how much of a drop is acceptable.
+#
+# Five lines are excluded by `# pragma: no cover`, each with a comment naming why at the site:
+# two defensive raises in the risk-budgeting solver that only a pinned solver pathology would
+# reach, and three branches that are dead as written. Adding a sixth exclusion is a reviewable
+# decision; silently lowering this number is not the way to make a red run green.
 #
 # Measure on a `[dev]` install, which is what the 3.12 leg of the `test` job in ci.yml does.
-# That is now pytest and pytest-cov over the core tree: the suite collects the same 1310 tests
+# That is now pytest and pytest-cov over the core tree: the suite collects the same 1316 tests
 # with or without the optional extras, so the measured scope does not depend on them.
 #
-# `precision` is load-bearing, not cosmetic. coverage.py rounds the measured total to `precision`
-# decimal places *before* comparing it with `fail_under`, so at the default precision of 0 a
-# fractional floor can never be met: 99.18% rounds to 99, and 99 < 99.1 fails the run even though
-# the real total clears the floor. Two decimals is what lets this ratchet move in sub-percent
-# steps, which is the only way it can move at all now that a single uncovered line is worth 0.02%.
+# `precision` is not load-bearing at a floor of 100 — coverage.py never rounds a total *up* to
+# 100% while lines are missing, so a single uncovered line in 5392 reports 99% and fails the gate
+# at either precision (verified both ways). It is kept for two smaller reasons: it is what let the
+# floor be raised in sub-percent steps on the way here (at precision 0 the total is rounded before
+# the comparison, so a fractional `fail_under` like 99.1 could never be met), and it reports the
+# true figure rather than a rounded one when the gate does fail.
 precision = 2
-fail_under = 99.7
+fail_under = 100

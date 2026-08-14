@@ -396,3 +396,35 @@ def test_the_verbose_config_prints_per_date_diagnostics(capsys) -> None:
     printed = capsys.readouterr().out
     assert 'date=' in printed
     assert 'pd_covar=' in printed
+
+
+def test_an_infeasible_first_rebalance_resets_the_drift_anchor() -> None:
+    """A zero solve clears ``weights_0`` so the next date starts cold rather than drifting zeros.
+
+    An infeasible solve at the first date has no prior weights to fall back on and returns zeros.
+    Carrying those zeros forward would make them the anchor the next rebalance drifts from, so the
+    subsequent solve would be warm-started and turnover-constrained against a portfolio that was
+    never held. The reset is what keeps the following dates equal to a clean solve.
+    """
+    tickers = pd.Index(['A', 'B', 'C'])
+    correlation = np.array([[1.0, 0.3, 0.1], [0.3, 1.0, 0.2], [0.1, 0.2, 1.0]])
+    vols = np.array([0.10, 0.15, 0.22])
+    covar = pd.DataFrame(correlation * np.outer(vols, vols), index=tickers, columns=tickers)
+    dates = pd.date_range('2024-01-31', periods=3, freq='ME')
+    prices = pd.DataFrame(
+        100.0, index=pd.date_range('2023-01-31', periods=40, freq='ME'), columns=tickers)
+    alphas = pd.DataFrame(0.02, index=dates, columns=tickers)
+    yields = pd.DataFrame([[0.03, 0.02, 0.04]] * len(dates), index=dates, columns=tickers)
+    config = OptimiserConfig(verbose=False, diagnose_infeasibility=False)
+    common = dict(prices=prices, alphas=alphas, yields=yields,
+                  constraints=Constraints(is_long_only=True),
+                  covar_dict={date: covar for date in dates}, optimiser_config=config)
+
+    # first date is impossible: no yield combination reaches a 500% return
+    with_failure = rolling_maximise_alpha_with_target_return(
+        target_returns=pd.Series([5.0, 0.035, 0.035], index=dates), **common)
+    all_feasible = rolling_maximise_alpha_with_target_return(
+        target_returns=pd.Series([0.035, 0.035, 0.035], index=dates), **common)
+
+    assert np.all(with_failure.iloc[0].to_numpy() == 0.0), 'the first solve was expected to fail'
+    pd.testing.assert_frame_equal(with_failure.iloc[1:], all_feasible.iloc[1:], atol=1e-8)

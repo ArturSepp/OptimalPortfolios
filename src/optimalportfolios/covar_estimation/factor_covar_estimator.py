@@ -284,7 +284,12 @@ class FactorCovarEstimator(CovarEstimator):
                 )
                 final_date = pd.Timestamp(estimation_date)
                 if final_date not in schedule:
-                    schedule = sorted([*schedule, final_date])
+                    # Not covered, and currently unreachable: the schedule above is generated with
+                    # include_end_date=True and estimation_date as the end, so qis always returns
+                    # it whether or not the date falls on the rebalancing grid. Kept as a guard in
+                    # case that flag or its semantics change -- the lookups below index the
+                    # smoother output by final_date and would raise if it were ever absent.
+                    schedule = sorted([*schedule, final_date])  # pragma: no cover
                 rolling_clusters = compute_rolling_smoothed_clusters(
                     y=returns,
                     estimation_dates=schedule,

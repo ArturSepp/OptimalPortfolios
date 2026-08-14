@@ -245,3 +245,33 @@ def test_a_longer_smoothing_span_produces_a_calmer_alpha() -> None:
     _, slow = compute_managers_alpha(prices=prices, risk_factor_prices=factor_prices,
                                      estimated_betas=betas, returns_freq='ME', alpha_span=24)
     assert slow.diff().abs().mean().mean() < fast.diff().abs().mean().mean()
+
+
+def test_period_with_an_incomplete_factor_vector_is_skipped() -> None:
+    """A period whose factor returns are not fully observed contributes no residual.
+
+    The factor prices here begin a year after the manager returns, so the earliest periods have a
+    beta available but no complete factor vector to residualise against. Those periods are dropped
+    rather than residualised against a partly-NaN vector, which would leave NaN alphas that survive
+    the EWMA and reappear as a gap in the signal.
+    """
+    dates = pd.date_range('2020-01-31', periods=36, freq='ME')
+    rng = np.random.default_rng(11)
+    managers = ['M1', 'M2']
+    factors = ['F1', 'F2']
+    prices = pd.DataFrame(
+        100.0 * np.exp(np.cumsum(rng.normal(0.004, 0.03, (len(dates), 2)), axis=0)),
+        index=dates, columns=managers)
+    late_dates = dates[12:]
+    factor_prices = pd.DataFrame(
+        100.0 * np.exp(np.cumsum(rng.normal(0.004, 0.03, (len(late_dates), 2)), axis=0)),
+        index=late_dates, columns=factors)
+    betas = {dates[1]: pd.DataFrame(0.5, index=managers, columns=factors)}
+
+    alpha, _ = compute_managers_alpha(prices=prices, risk_factor_prices=factor_prices,
+                                      estimated_betas=betas, returns_freq='ME')
+
+    assert not alpha.empty
+    assert len(alpha.index) < len(dates) - 1, 'no period was skipped; the fixture proves nothing'
+    assert alpha.index.min() >= late_dates[0], 'a pre-factor period produced an alpha'
+    assert np.all(np.isfinite(alpha.to_numpy()))

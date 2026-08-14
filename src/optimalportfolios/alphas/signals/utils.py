@@ -201,7 +201,10 @@ def score_within_clusters(
         for cluster_id, tickers in clusters_t.groupby(clusters_t).groups.items():
             cols = [c for c in tickers if c in row_values.index]
             if not cols:
-                continue
+                # Not covered, and unreachable as written: `clusters_t` was already filtered to
+                # `all_cols` above, and `row_values.index` is exactly `all_cols`, so every group
+                # produced by the groupby has at least one member that survives this filter.
+                continue  # pragma: no cover
 
             if len(cols) <= min_cluster_size:
                 # small cluster: normalize using global statistics

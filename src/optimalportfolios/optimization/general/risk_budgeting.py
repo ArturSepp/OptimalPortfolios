@@ -387,7 +387,12 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
         avg_portfolio_rc = pd.DataFrame.from_dict(portfolio_rc, orient='index').mean(axis=0)
         x0 = avg_portfolio_rc.to_numpy()
     else:
-        x0 = given_weights.to_numpy()
+        # Not covered, and unreachable as written: `is_use_avg_rc` is assigned the literal True
+        # directly above and is never reassigned anywhere in the package, so this branch is dead.
+        # Left in place rather than deleted because it records the alternative seeding -- the raw
+        # target weights instead of their average risk contributions -- which is a numerical
+        # choice, not a refactor to make silently.
+        x0 = given_weights.to_numpy()  # pragma: no cover
 
     enforce_min_max = np.where(np.greater(given_weights_np, 0.0), 1.0, 0.0)
     min_rbs = min_risk_budget * enforce_min_max
