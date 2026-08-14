@@ -52,7 +52,10 @@ def _find_root() -> Path | None:
     for candidate in Path(__file__).resolve().parents:
         if (candidate / "pyproject.toml").is_file() and (candidate / "README.md").is_file():
             return candidate
-    return None
+    # Not covered by design: reached only when this package is imported from an installed wheel
+    # rather than a checkout, and coverage is measured on the primary checkout cell. The `wheel`
+    # job is what exercises this line, and that job deliberately does not measure coverage.
+    return None  # pragma: no cover
 
 
 @pytest.fixture(scope="session")
@@ -66,7 +69,9 @@ def root() -> Path:
     this fixture always resolves.
     """
     found = _find_root()
-    if found is None:
+    # Same reason as the `return None` above: the skip is the `wheel` job's path, not the
+    # coverage cell's.
+    if found is None:  # pragma: no cover
         pytest.skip("no repository checkout: running against an installed wheel")
     return found
 
