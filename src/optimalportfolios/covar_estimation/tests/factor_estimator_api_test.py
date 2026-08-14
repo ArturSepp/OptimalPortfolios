@@ -13,7 +13,7 @@ import pandas as pd
 import pytest
 import qis
 
-from factorlasso import LassoModel, LassoModelType
+from factorlasso import LassoModel, LassoModelType, VarianceColumns
 
 from optimalportfolios.covar_estimation.factor_covar_estimator import FactorCovarEstimator
 
@@ -90,6 +90,52 @@ def test_residual_var_weight_scales_only_the_idiosyncratic_diagonal() -> None:
     np.testing.assert_allclose(
         full.to_numpy()[off_diagonal], factor_only.to_numpy()[off_diagonal],
         rtol=1e-10, atol=1e-14,
+    )
+
+
+def test_assembled_covar_matches_an_independent_decomposition_reference() -> None:
+    """Second pass on the whole formula: rebuild ``Σ_y = β Σ_x β' + w·D`` from the fitted parts.
+
+    The test above compares two *assembled* matrices with each other. That pins the shape of the
+    ``residual_var_weight`` effect — diagonal only — but never checks either matrix against the
+    decomposition it came from, so a wrong factor block or a mis-scaled diagonal that is wrong in
+    both calls the same way survives it. Here the decomposition is extracted and the covariance
+    recomputed entry by entry, summing over factor pairs explicitly rather than through ``@``, so
+    the reference shares no code path with the matrix product the estimator uses. The weight is
+    neither 0 nor 1, which is the only setting where ``w·D`` and ``D`` are distinguishable.
+    """
+    factors, returns = _inputs()
+    estimator = _estimator()
+    weight = 0.35
+
+    covar = estimator.fit_current_covar(
+        factors, returns, assets=ASSETS, residual_var_weight=weight,
+    )
+    data = estimator.fit_current_factor_covars(factors, returns, assets=ASSETS)
+
+    betas = data.y_betas.loc[ASSETS, :]
+    x_covar = data.x_covar.loc[betas.columns, betas.columns]
+    residual_vars = data.y_variances.loc[ASSETS, VarianceColumns.RESIDUAL_VARS.value]
+    assert (residual_vars > 0.0).all(), "a zero residual diagonal would make w untestable"
+
+    reference = np.zeros((len(ASSETS), len(ASSETS)))
+    for i, asset_i in enumerate(ASSETS):
+        for j, asset_j in enumerate(ASSETS):
+            reference[i, j] = sum(
+                betas.at[asset_i, f_k] * x_covar.at[f_k, f_l] * betas.at[asset_j, f_l]
+                for f_k in betas.columns for f_l in betas.columns
+            )
+        reference[i, i] += weight * residual_vars[asset_i]
+
+    np.testing.assert_allclose(covar.to_numpy(), reference, rtol=1e-10, atol=1e-14)
+
+    # The weight has to be read, not merely accepted: an implementation ignoring it would add the
+    # unweighted D, and the assembled matrix must not match that reference either.
+    unweighted = reference.copy()
+    residual_gap = (1.0 - weight) * residual_vars.to_numpy()
+    np.fill_diagonal(unweighted, np.diag(unweighted) + residual_gap)
+    assert not np.allclose(covar.to_numpy(), unweighted, rtol=1e-6, atol=1e-14), (
+        "w·D is indistinguishable from D here, so this fixture cannot detect a dropped weight"
     )
 
 
