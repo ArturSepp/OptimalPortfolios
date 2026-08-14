@@ -42,7 +42,7 @@ and section you are reading.
 git clone https://github.com/ArturSepp/OptimalPortfolios.git
 cd OptimalPortfolios
 uv sync --extra dev                                      # editable install, versions from uv.lock
-uv run --locked pytest                                   # 1277 tests, ~3 min
+uv run --locked pytest                                   # the full suite; a few minutes
 uv run --locked --only-group lint ruff check --select TID251,TID253,ICN,F src/optimalportfolios/
 uv run --locked --only-group lint interrogate -v         # docstring coverage, must stay at 100%
 uv run --locked pytest --cov=optimalportfolios --cov-report=term-missing   # floor is fail_under = 99
@@ -78,10 +78,34 @@ the workflow uses rather than a bare `pip-audit .`, which covers the core tree a
 omits every optional extra:
 
 ```bash
-uv export --locked --all-extras --no-emit-project --quiet \
-  --format requirements-txt -o "${TMPDIR:-/tmp}/requirements-audit.txt"
-uv run --locked --only-group audit pip-audit -r "${TMPDIR:-/tmp}/requirements-audit.txt"
+uv pip compile --all-extras --python-version 3.12 --quiet pyproject.toml -o /tmp/requirements-fresh.txt
+uv run --locked --only-group audit --python 3.12 pip-audit -r /tmp/requirements-fresh.txt
+uv export --locked --all-extras --no-emit-project --quiet --format requirements-txt -o /tmp/requirements-locked.txt
+uv run --locked --only-group audit --python 3.12 pip-audit -r /tmp/requirements-locked.txt
 ```
+
+The same four commands under Windows PowerShell:
+
+```powershell
+uv pip compile --all-extras --python-version 3.12 --quiet pyproject.toml -o "$env:TEMP\requirements-fresh.txt"
+uv run --locked --only-group audit --python 3.12 pip-audit -r "$env:TEMP\requirements-fresh.txt"
+uv export --locked --all-extras --no-emit-project --quiet --format requirements-txt -o "$env:TEMP\requirements-locked.txt"
+uv run --locked --only-group audit --python 3.12 pip-audit -r "$env:TEMP\requirements-locked.txt"
+```
+
+The two trees answer different questions, which is why the workflow runs both. The `uv pip compile`
+tree is what a *fresh* install resolves to today from the floors in `pyproject.toml`; the
+`uv export --locked` tree is the exact pinned set `uv sync --locked` installs, and a pin can sit on
+a vulnerable version long after the floor would resolve past it. `--no-emit-project` drops the
+local package, which has no release for `pip-audit` to look up.
+
+Two differences from the workflow, both because your machine is not the runner. `--python 3.12` is
+spelled out on the `pip-audit` calls: the requirements files are resolved for CPython 3.12, and
+`pip-audit` resolves them again against the interpreter it is running on, so on any other version
+it fails on a pin it cannot satisfy rather than reporting a finding. The runner is already 3.12,
+so `audit.yml` does not need the flag. And `--only-group` reinstalls the project virtualenv with
+that group alone; the next `uv run --locked pytest` syncs the development environment back, but do
+not be surprised by the reinstall.
 
 To verify a built or downloaded wheel in a clean environment, install the wheel and `pytest`,
 then run the supported post-install check:
