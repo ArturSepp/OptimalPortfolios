@@ -91,7 +91,7 @@ jobs:
       # the same build. `--only-group` installs that group and nothing else -- not the project,
       # not the compiled scientific stack -- and `--locked` fails rather than silently re-resolving
       # if uv.lock has drifted from pyproject.toml.
-      run: uv run --locked --only-group lint ruff check --select TID251,TID253,ICN,F optimalportfolios/
+      run: uv run --locked --only-group lint ruff check --select TID251,TID253,ICN,F src/optimalportfolios/
 
     - name: Check docstring coverage
       # Runs even when the ruff step above failed. These are two independent gates that share a

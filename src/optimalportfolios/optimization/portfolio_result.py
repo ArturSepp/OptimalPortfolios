@@ -1,7 +1,7 @@
 """
 Portfolio optimisation result container with risk attribution.
 
-optimalportfolios/optimization/portfolio_result.py
+src/optimalportfolios/optimization/portfolio_result.py
 
 Convention:
     y_betas is (N x M) with index=assets, columns=factors.

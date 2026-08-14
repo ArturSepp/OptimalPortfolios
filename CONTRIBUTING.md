@@ -43,7 +43,7 @@ git clone https://github.com/ArturSepp/OptimalPortfolios.git
 cd OptimalPortfolios
 pip install -e ".[dev]"
 pytest
-ruff check --select TID251,TID253,ICN,F optimalportfolios/
+ruff check --select TID251,TID253,ICN,F src/optimalportfolios/
 interrogate -v
 pytest --cov=optimalportfolios --cov-report=term-missing
 pip-audit .

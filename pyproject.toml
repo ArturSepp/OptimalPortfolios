@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optimalportfolios"
-version = "6.17.0"
+version = "6.18.0"
 description = "Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python"
 readme = "README.md"
 license = "MIT"
@@ -136,6 +136,7 @@ Issues = "https://github.com/ArturSepp/OptimalPortfolios/issues"
 Changelog = "https://github.com/ArturSepp/OptimalPortfolios/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
+where = ["src"]
 include = ["optimalportfolios*"]
 exclude = ["examples*", "docs*", "papers*"]
 
@@ -144,7 +145,7 @@ optimalportfolios = ["*.yaml"]
 "optimalportfolios.tests.data" = ["*.csv"]
 
 [tool.pytest.ini_options]
-testpaths = ["optimalportfolios"]
+testpaths = ["src/optimalportfolios"]
 addopts = "-ra -q --tb=short"
 
 # `papers/` reproduces published code and is left exactly as-is.
@@ -201,8 +202,8 @@ pandas = "pd"
 "__init__.py" = ["F401", "F403"]
 # examples are documentation and run top to bottom
 "examples/**" = ["TID253"]
-# module dedicated to the pybloqs backend; not reachable from optimalportfolios/__init__.py
-"optimalportfolios/reports/portfolio_result_pybloqs.py" = ["TID253"]
+# module dedicated to the pybloqs backend; not reachable from src/optimalportfolios/__init__.py
+"src/optimalportfolios/reports/portfolio_result_pybloqs.py" = ["TID253"]
 # module dedicated to the plotly backend in the private rosaa tree. The layer is a leaf that
 # nothing above it imports at module level, so a core install never reaches this import.
 "rosaa/universe_profiler/figures.py" = ["TID253"]

@@ -15,7 +15,7 @@ module provides the bricks; the application builds the house.
 ## Architecture
 
 ```
-optimalportfolios/alphas/
+src/optimalportfolios/alphas/
 ├── signals/
 │   ├── momentum.py                    # compute_momentum_alpha()
 │   ├── momentum_cluster.py            # compute_momentum_cluster_alpha()

@@ -1,7 +1,7 @@
 """
 Portfolio optimisation result plotting functions.
 
-optimalportfolios/optimization/portfolio_result_plots.py
+src/optimalportfolios/reports/portfolio_result_plots.py
 
 Plotting utilities for PortfolioOptimisationResult.
 Requires: matplotlib, seaborn, qis.
