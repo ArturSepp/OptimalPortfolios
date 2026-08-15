@@ -53,7 +53,8 @@ def _find_root() -> Path | None:
     Keyed on ``pyproject.toml`` alone. Pairing it with ``README.md`` would conflate two different
     situations: no checkout at all, and a checkout whose README is missing. The second is then
     reported as the first, which is misleading -- so each file is checked where it is needed, and
-    the tests that read the README skip on their own terms.
+    a checkout whose README is missing fails at the point the README is read rather than
+    disappearing behind this function's skip.
     """
     for candidate in Path(__file__).resolve().parents:
         if (candidate / "pyproject.toml").is_file():

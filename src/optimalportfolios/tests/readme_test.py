@@ -98,18 +98,20 @@ def _run_readme_script(code: str, cwd, timeout: float = EXECUTION_TIMEOUT_SECOND
 
 @pytest.fixture
 def readme(root: Path) -> Path:
-    """The repository README, or a skip when the file is absent.
+    """The repository README, which must exist once a checkout has been found.
 
-    Deliberately not one of the fail-closed guards below. Those reject a README that is present
-    but parses to nothing -- fences renamed, reflowed, or all marked ``+SKIP`` -- which is a
-    regression this harness exists to catch. A README that is not there at all is a different
-    case: there is nothing to execute and nothing to diff against, so there is no claim to make.
+    Fails rather than skips, and the installed-wheel case is already handled one level up: outside
+    a checkout ``_find_root`` finds no ``pyproject.toml`` and the ``root`` fixture skips before a
+    README is ever requested. So by the time this fixture runs there is a checkout, and a checkout
+    whose README is missing is a broken repository rather than a case with nothing to claim --
+    the documentation contract this harness holds has lost its subject. Reporting that as a skip
+    would retire the gate silently, which is what the fail-closed guards below exist to prevent.
     """
     path = root / "README.md"
-    # Unreachable in a checkout, for the same reason as the `root` fixture's own skip: `_find_root`
-    # only returns a directory that holds a README, and coverage is measured on the checkout cell.
-    if not path.is_file():  # pragma: no cover
-        pytest.skip(f"no README.md at {path}")
+    assert path.is_file(), (
+        f"no README.md at {path}. A checkout that has a pyproject.toml but no README is a broken "
+        f"documentation contract, not a case this harness has nothing to say about."
+    )
     return path
 
 
