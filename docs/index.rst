@@ -1,9 +1,10 @@
-OptimalPortfolios
-=================
+optimalportfolios: production portfolio construction and rolling backtesting
+============================================================================
 
-OptimalPortfolios is a Python implementation of portfolio construction and
-backtesting workflows, from alpha signals and covariance estimation through
-constrained optimisation and performance reporting.
+``optimalportfolios`` provides production multi-asset portfolio construction
+and rolling backtesting in Python. It connects point-in-time covariance and
+alpha estimation with constrained optimisation, rebalancing, transaction
+costs, and performance reporting.
 
 The package is the reference implementation of the ROSAA framework published
 in *The Journal of Portfolio Management* (Sepp, Ossa and Kastenholz, 2026).
@@ -11,7 +12,7 @@ in *The Journal of Portfolio Management* (Sepp, Ossa and Kastenholz, 2026).
 Overview
 --------
 
-OptimalPortfolios implements the full path from raw prices to a backtested
+``optimalportfolios`` implements the full path from raw prices to a backtested
 portfolio:
 
 #. **Alpha signals** -- momentum, carry, low-beta, residual momentum, and
@@ -40,10 +41,26 @@ Papers
   `SSRN 6785958
   <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6785958>`_.
 
+Project links
+-------------
+
+* `PyPI <https://pypi.org/project/optimalportfolios/>`_
+* `Source repository <https://github.com/ArturSepp/OptimalPortfolios>`_
+* `Issue tracker <https://github.com/ArturSepp/OptimalPortfolios/issues>`_
+* `Changelog
+  <https://github.com/ArturSepp/OptimalPortfolios/blob/main/CHANGELOG.md>`_
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents
 
    installation
    quickstart
+   rolling_backtests
+   minimum_tracking_error
+   risk_budgeting
+   turnover_and_transaction_costs
+   mixed_frequency_data
+   incomplete_histories
+   covariance_estimators
    api

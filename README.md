@@ -1,6 +1,8 @@
-# OptimalPortfolios (`optimalportfolios`)
+# `optimalportfolios` — production portfolio construction and rolling backtesting
 
-**Production-grade multi-asset portfolio construction and backtesting in Python — from covariance estimation to rolling optimisation to factsheet reporting, in a single pipeline that handles real-world data**
+**Production multi-asset portfolio construction and rolling backtesting in Python — from
+point-in-time covariance and alpha estimation through constrained optimisation, rebalancing,
+transaction costs, and reporting.**
 
 [![PyPI](https://img.shields.io/pypi/v/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/)
 [![Python](https://img.shields.io/pypi/pyversions/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/)

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "optimalportfolios"
 version = "6.18.0"
-description = "Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python"
+description = "Production multi-asset portfolio construction and rolling backtesting in Python"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE.txt"]

@@ -7,6 +7,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- Aligned the PyPI summary, README, and documentation identity around production multi-asset
+  portfolio construction and rolling backtesting, replacing the generic implementation summary.
+
 ## [6.18.0] - 2026-08-14
 
 **Coverage floor raised (2026-08-13):** `fail_under` rises from `95` to `99`; measured coverage
