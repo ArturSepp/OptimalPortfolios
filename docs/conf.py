@@ -6,7 +6,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-project = "OptimalPortfolios"
+project = "optimalportfolios"
 author = "Artur Sepp"
 copyright = "2026, Artur Sepp"
 
@@ -28,4 +28,12 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "furo"
+html_baseurl = "https://optimalportfolios.readthedocs.io/en/latest/"
+html_title = "optimalportfolios — production portfolio construction and rolling backtesting"
+html_short_title = "optimalportfolios"
 html_static_path = ["_static"]
+html_theme_options = {
+    "source_repository": "https://github.com/ArturSepp/OptimalPortfolios/",
+    "source_branch": "main",
+    "source_directory": "docs/",
+}

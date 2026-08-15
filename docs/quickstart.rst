@@ -1,56 +1,43 @@
 Quickstart
 ==========
 
-This example uses the committed monthly multi-asset fixture, so it runs
-offline. It estimates rolling EWMA covariance matrices, constructs a long-only
-maximum-diversification portfolio, and backtests it with 10 basis points of
-rebalancing cost.
+The authoritative `production quickstart
+<https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/getting_started/production_quickstart.py>`_
+uses the monthly multi-asset fixture shipped in the wheel, so it needs no
+network access, credentials, or repository-local data. After a plain install,
+run it from a checkout or copy the script anywhere::
 
-.. code-block:: python
+   pip install optimalportfolios
+   python examples/getting_started/production_quickstart.py
 
-   import qis
+For a zero-setup trial, `open the same workflow in Colab
+<https://colab.research.google.com/github/ArturSepp/OptimalPortfolios/blob/main/examples/getting_started/production_quickstart.ipynb>`_.
+The thin notebook installs the latest released package from PyPI and prints
+its version before running the cell mechanically checked against the script
+below. It carries no saved outputs and adds no Jupyter dependency to the
+package.
 
-   from optimalportfolios import (
-       Constraints,
-       EwmaCovarEstimator,
-       PortfolioObjective,
-       compute_rolling_optimal_weights,
-   )
-   from optimalportfolios.tests.data.multiasset import load_multiasset_data
+It selects six assets over a fixed 2010--2022 price window. The first five
+years warm up a 24-month EWMA covariance estimator; quarterly portfolio
+decisions run from March 2015 through September 2022. The portfolio minimizes
+variance subject to long-only and 35% per-asset limits. Each decision is
+implemented at the next monthly observation, and the backtest charges 10 basis
+points per unit traded.
 
-   prices = load_multiasset_data().prices.iloc[-120:, :4]
-   time_period = qis.TimePeriod(prices.index[0], prices.index[-1])
+.. literalinclude:: ../examples/getting_started/production_quickstart.py
+   :language: python
+   :linenos:
 
-   estimator = EwmaCovarEstimator(
-       returns_freq="ME", span=24, rebalancing_freq="QE"
-   )
-   covar_dict = estimator.fit_rolling_covars(
-       prices=prices, time_period=time_period
-   )
-   weights = compute_rolling_optimal_weights(
-       prices=prices,
-       portfolio_objective=PortfolioObjective.MAX_DIVERSIFICATION,
-       constraints=Constraints(is_long_only=True),
-       time_period=time_period,
-       covar_dict=covar_dict,
-   )
-
-   portfolio = qis.backtest_model_portfolio(
-       prices=prices.loc[weights.index[0]:],
-       weights=weights,
-       rebalancing_costs=0.001,
-       ticker="MaxDiv",
-   )
-   print(portfolio.nav.tail())
-
-Weights decided at a rebalancing date are applied to the following holding
-period. Returns in this example are simple monthly returns, and covariance
-matrices are annualised from that frequency.
+The estimator converts the monthly prices to log returns, estimates an
+annualised covariance matrix using only information available at each
+rebalance, and never fits on a later holding period. The script prints its
+input dates, rolling-weight dimensions, final weights, final NAV, and measured
+runtime, and writes no generated output.
 
 What to change first
 --------------------
 
-* **The objective.** Swap ``PortfolioObjective.MAX_DIVERSIFICATION`` for any
+* **The objective.** Swap ``PortfolioObjective.MIN_VARIANCE`` for any
   other ``PortfolioObjective`` member; the rest of the call is unchanged.
 * **The constraints.** ``Constraints`` carries long-only, leverage, group
   bounds, turnover, and tracking-error limits in one object shared by every
@@ -58,3 +45,6 @@ What to change first
 * **The covariance estimator.** Replace ``EwmaCovarEstimator`` with
   ``FactorCovarEstimator`` to use the HCGL sparse factor model instead of an
   EWMA covariance matrix.
+* **The rebalance cadence.** Change ``rebalancing_freq="QE"`` to another
+  pandas-compatible frequency such as ``"YE"``; retain an implementation lag
+  appropriate for the decision and price timestamps.

@@ -1,12 +1,15 @@
-# OptimalPortfolios (`optimalportfolios`)
+# `optimalportfolios` — production portfolio construction and rolling backtesting
 
-**Production-grade multi-asset portfolio construction and backtesting in Python — from covariance estimation to rolling optimisation to factsheet reporting, in a single pipeline that handles real-world data**
+**Production multi-asset portfolio construction and rolling backtesting in Python — from
+point-in-time covariance and alpha estimation through constrained optimisation, rebalancing,
+transaction costs, and reporting.**
 
 [![PyPI](https://img.shields.io/pypi/v/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/)
 [![Python](https://img.shields.io/pypi/pyversions/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
 [![CI](https://github.com/ArturSepp/OptimalPortfolios/actions/workflows/test.yml/badge.svg)](https://github.com/ArturSepp/OptimalPortfolios/actions)
 [![Documentation Status](https://readthedocs.org/projects/optimalportfolios/badge/?version=latest)](https://optimalportfolios.readthedocs.io/en/latest/)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ArturSepp/OptimalPortfolios/blob/main/examples/getting_started/production_quickstart.ipynb)
 [![Downloads](https://static.pepy.tech/badge/optimalportfolios)](https://pepy.tech/project/optimalportfolios)
 [![Monthly](https://static.pepy.tech/badge/optimalportfolios/month)](https://pepy.tech/project/optimalportfolios)
 
@@ -81,36 +84,26 @@ on live multi-asset portfolios.
 
 ### Quick-start: offline rolling backtest
 
-```python
-import qis
-from optimalportfolios import (
-    Constraints,
-    EwmaCovarEstimator,
-    PortfolioObjective,
-    compute_rolling_optimal_weights,
-)
-from optimalportfolios.tests.data.multiasset import load_multiasset_data
+The [production quickstart](examples/getting_started/production_quickstart.py) is the authoritative
+source for the first-use workflow. It runs entirely offline on the multi-asset fixture shipped in
+the wheel and writes no files:
 
-prices = load_multiasset_data().prices.iloc[-120:, :4]
-time_period = qis.TimePeriod(prices.index[0], prices.index[-1])
-
-# estimate covariance → optimise → get rolling weights
-estimator = EwmaCovarEstimator(returns_freq='ME', span=24, rebalancing_freq='QE')
-covar_dict = estimator.fit_rolling_covars(prices=prices, time_period=time_period)
-weights = compute_rolling_optimal_weights(prices=prices,
-                                          portfolio_objective=PortfolioObjective.MAX_DIVERSIFICATION,
-                                          constraints=Constraints(is_long_only=True),
-                                          time_period=time_period,
-                                          covar_dict=covar_dict)
-
-# backtest with transaction costs
-portfolio = qis.backtest_model_portfolio(prices=prices.loc[weights.index[0]:], weights=weights,
-                                         rebalancing_costs=0.001, ticker='MaxDiv')
+```bash
+pip install optimalportfolios
+python examples/getting_started/production_quickstart.py
 ```
 
-The committed multi-asset fixture keeps this example offline. The same pipeline
-supports price panels with NaNs and different start dates, while preserving
-roll-forward estimation (no hindsight bias) and drift-aware turnover accounting.
+For a zero-setup trial, [open the mechanically checked mirror in
+Colab](https://colab.research.google.com/github/ArturSepp/OptimalPortfolios/blob/main/examples/getting_started/production_quickstart.ipynb).
+The notebook installs the latest PyPI release, prints its version, and adds no notebook dependency
+to the package.
+
+The script uses a documented six-asset slice, a point-in-time 24-month EWMA covariance estimator,
+quarterly constrained minimum-variance weights, a one-month implementation lag, and 10 basis
+points of transaction costs. It prints the data range, rolling-weight dimensions, final weights,
+final NAV, and measured runtime. The
+[rendered quickstart documentation](https://optimalportfolios.readthedocs.io/en/latest/quickstart.html)
+includes this same file directly, so the example and documentation cannot drift.
 
 ### Design scope
 
@@ -400,9 +393,9 @@ installation. The default risk-lineage matcher is implemented with core NumPy/Sc
 | `all` | All runtime integrations: `data` and `reports`. |
 
 The runtime integration extras, `data` and `reports`, correspond to features that import their
-dependencies. There is no `jupyter` extra: nothing here imports jupyter, notebook or jupyterlab,
-and the repository contains no notebook. Install a notebook stack alongside this package if you
-want one. The `dev` and `docs` extras remain contributor toolchains.
+dependencies. There is no `jupyter` extra: the package imports none of the Jupyter stack, and the
+repository-only Colab quickstart uses Google's hosted runtime. Install notebook tooling separately
+for local notebooks. The `dev` and `docs` extras remain contributor toolchains.
 
 `dev` is deliberately minimal: the suite collects the same 1321 tests with or without the
 optional extras, so nothing else belongs in it. The lint tools are not an extra at all — they
@@ -946,12 +939,13 @@ Portfolios", *The Journal of Portfolio Management*, 52(4), 86-120.
 
 ## Updates
 
-#### August 2026, Versions 6.8.0–6.18.0 released
+#### August 2026, Versions 6.8.0–6.19.0 released
 
-The recent 6.x series through 6.18.0 added several production analytics that are now part of the current API:
+The recent 6.x series through 6.19.0 added several production analytics that are now part of the current API:
 
 | Release | Analytics and behavior added |
 | --- | --- |
+| 6.19.0 | Added practitioner workflow documentation, a neutral package comparison, an authoritative offline production quickstart, and a drift-checked Colab entry point; no numerical or public-API behavior changed. |
 | 6.18.0 | Adopted the standard `src/` package layout without changing installed imports or the public API; strengthened built-wheel, static, dependency-audit and examples gates; and raised measured line coverage to 99%. |
 | 6.17.0 | Remediated the JOSS dry-run audit with portable paths, substantive generated API pages and importable version metadata; repaired flat factorlasso covariance plots; and refreshed the MATF-CMA custom eleven-factor replication snapshot. |
 | 6.16.0 | Replaced the default risk-lineage matcher's NetworkX runtime dependency with a deterministic sparse SciPy assignment, then moved canonical lineage analytics to factorlasso 0.14; the former OptimalPortfolios module is a deprecated compatibility shim. |
@@ -1179,6 +1173,13 @@ This package is part of an open-source Python stack for quantitative finance —
 
 Dependency links within the stack: `optimalportfolios` builds on `qis` and `factorlasso`; `trendfollowing` builds on `qis`.
 
+## Acknowledgments
+
+- [Thomas Schmelzer](https://github.com/tschm), creator of
+  [Jebel-Quant/rhiza](https://github.com/Jebel-Quant/rhiza), for substantial contributions to test
+  coverage, cross-platform CI/CD, dependency auditing, example validation, packaging, and
+  built-wheel verification.
+
 ## License
 
 MIT — see [LICENSE.txt](LICENSE.txt).
@@ -1217,7 +1218,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={OptimalPortfolios: Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python},
   year={2026},
-  version={6.18.0},
+  version={6.19.0},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

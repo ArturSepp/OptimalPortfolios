@@ -64,6 +64,27 @@ is now kept only to report the true figure when the gate fails.
   else. It also meant CI never executed the mechanism the file exists to provide for
   `pytest --pyargs optimalportfolios` users. Both outcomes are now asserted against a synthetic
   mapping, including an empty `MPLBACKEND=` counting as unset rather than as a backend named `''`.
+## [6.19.0] - 2026-08-15
+
+This release improves documentation, discovery, and first-use onboarding. It does not change the
+public API, optimisation logic, covariance estimation, or rolling-backtest mechanics.
+
+### Added
+
+- Added seven practitioner guides covering rolling backtests, minimum tracking error, risk
+  budgeting, turnover and transaction costs, mixed-frequency data, incomplete histories, and
+  covariance estimators, with expanded generated API navigation.
+- Added a dated, source-backed package comparison and workflow choice guide covering
+  `optimalportfolios`, PyPortfolioOpt, Riskfolio-Lib, and skfolio.
+- Added one authoritative, wheel-data-backed production quickstart that runs a constrained rolling
+  backtest entirely offline; README and Sphinx now point to the same executable script.
+- Added a thin Colab entry point that installs the latest PyPI release and mirrors the production
+  quickstart, plus a cross-platform CI check for source drift, saved outputs, and required links.
+
+### Changed
+
+- Aligned the PyPI summary, README, and documentation identity around production multi-asset
+  portfolio construction and rolling backtesting, replacing the generic implementation summary.
 
 ## [6.18.0] - 2026-08-14
 

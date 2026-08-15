@@ -9,6 +9,7 @@ signatures and docstrings.
    :toctree: generated
 
    optimalportfolios.AlphasData
+   optimalportfolios.ClusterSmootherType
    optimalportfolios.ConstraintEnforcementType
    optimalportfolios.ConstraintResidual
    optimalportfolios.Constraints
@@ -29,12 +30,14 @@ signatures and docstrings.
    optimalportfolios.PortfolioObjective
    optimalportfolios.PortfolioOptimisationResult
    optimalportfolios.ProfileSignal
+   optimalportfolios.RollingClusterData
    optimalportfolios.RollingFactorCovarData
    optimalportfolios.UniverseData
    optimalportfolios.VarianceColumns
    optimalportfolios.align_rolling_clusters
    optimalportfolios.alphas
    optimalportfolios.apply_drift_to_weights_0
+   optimalportfolios.apply_partition_distance_bonus
    optimalportfolios.backtest_alpha_rank_portfolio
    optimalportfolios.backtest_rolling_optimal_portfolio
    optimalportfolios.build_risk_model
@@ -60,6 +63,7 @@ signatures and docstrings.
    optimalportfolios.compute_returns_from_prices
    optimalportfolios.compute_risk_contributions
    optimalportfolios.compute_rolling_optimal_weights
+   optimalportfolios.compute_rolling_smoothed_clusters
    optimalportfolios.compute_top_quantile_equal_weights
    optimalportfolios.compute_tre_turnover_stats
    optimalportfolios.config
@@ -121,6 +125,7 @@ signatures and docstrings.
    optimalportfolios.signal_diagnostics_panel
    optimalportfolios.solve_analytic_log_opt
    optimalportfolios.solve_for_risk_budgets_from_given_weights
+   optimalportfolios.smooth_similarity_ewma
    optimalportfolios.universe
    optimalportfolios.utils
    optimalportfolios.wrapper_max_return_target_vol
