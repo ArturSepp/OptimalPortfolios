@@ -7,6 +7,63 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+**Coverage floor raised to 100% (2026-08-14):** `fail_under` rises from `99` to `100`; measured
+coverage is 100.00% on 1321 tests, up from 99.09% on 1277. It is no longer a ratchet — at 100% an
+uncovered line is always something the change under review introduced, the same argument the 100%
+`interrogate` bar rests on. Five lines carry `# pragma: no cover`, each with a comment at the site:
+two defensive raises in `risk_budgeting_solver.py` that only a pinned solver pathology would reach,
+and three branches that are dead as written.
+
+Getting there needed `[tool.coverage.report] precision = 2`, because the intermediate floors were
+fractional and unreachable without it: coverage.py rounds the measured total to `precision` places
+*before* comparing it against `fail_under`, so at the default precision of 0 a real 99.18% rounded
+to 99 and failed a floor of 99.1 that it actually cleared. A second rounding trap sits on the other
+side — pytest-cov compares the *unrounded* total — so a floor of 99.8 rejected a run displaying
+99.80% whose true figure was 99.7962%. Neither trap applies at a floor of 100, and coverage.py does
+not round a total up to 100% while lines are missing (checked at both precisions), so `precision`
+is now kept only to report the true figure when the gate fails.
+
+### Added
+
+- Tests for the LASSO sign-constraint layer reported as `derived_signs`, which had none. The path
+  collects `LassoModel.derived_signs_` per frequency, concatenates and reindexes onto the target
+  asset universe, and its central invariant lived only in a comment: the reindex must not fill NaN,
+  because NaN means "no sign requirement on this cell" while `0.0` means "beta forced to zero".
+  Adding `.fillna(0.0)` there imposes a hard constraint on an asset the model never saw, and every
+  downstream covariance still assembles cleanly — nothing reported it. Six tests now pin the frame's
+  alignment to `y_betas`, that the reported signs match the betas actually fitted, the NaN-versus-zero
+  distinction for an unfitted asset, the explicit `factors_beta_loading_signs` entry point, and the
+  `_CFCD_SUPPORTS_DERIVED_SIGNS` compatibility shim.
+- Tests taking line coverage to 100.00%, from 50 uncovered lines to 0. `FactorCovarEstimator`'s two
+  shared-interface entry points, `fit_current_covar` and `fit_rolling_covars`, had no coverage at
+  all — the existing suites call the factor-specific variants — so every caller that treats a factor
+  model as a plain `CovarEstimator` was untested; `residual_var_weight` is now pinned to scale only
+  the idiosyncratic diagonal, and verified a second way — the fitted decomposition is extracted and
+  the assembled matrix checked entry by entry against `β Σ_x β' + w·D`, summed over factor pairs
+  explicitly rather than through `@`, at a weight that is neither 0 nor 1. Comparing two assembled
+  matrices with each other cannot see an error made the same way in both: a 2% error in the factor
+  block, and a `w²` mis-scaling of the residual diagonal, both pass the off-diagonal comparison and
+  both fail the reference. Added with them: the config guards that refuse a cadence with no
+  configured span, partially supplied precomputed clusters, an external cluster map missing an asset,
+  a rolling window starting before the model's warmup, and an unparseable recluster frequency; the
+  EWMA estimator's vol-normalised variant on both entry points, its open-ended `time_period`, and its
+  empty-schedule guard; the utility fallbacks for a filtered companion vector, a defaulted risk
+  budget, a zero-variance portfolio and an unsliceable `prev_date`; the diversification solve without
+  its total-to-good ratio; the long-short target-return solve; the factorisation's reconstruction
+  guard; a period whose factor vector is incompletely observed; and the reset of the drift anchor
+  after an infeasible first rebalance. Two of the five `pragma` exclusions were found to be dead code
+  rather than merely hard to reach: `risk_budgeting.py` seeds `x0` behind `is_use_avg_rc`, which is
+  assigned the literal `True` and never reassigned, and `factor_covar_estimator.py` guards against an
+  estimation date missing from a schedule that `include_end_date=True` already guarantees. Both are
+  left in place with the reason recorded at the site, since removing either is a numerical decision
+  rather than a cleanup.
+- Made the shipped `conftest.py`'s backend selection testable, by extracting it from a module-level
+  `if` into `configure_matplotlib_backend`. As inline code it only ran when `MPLBACKEND` happened to
+  be unset, so its coverage depended on where the suite ran — covered locally, uncovered on a runner
+  where `ci.yml` sets the variable itself, which failed the 100% gate on CI while passing everywhere
+  else. It also meant CI never executed the mechanism the file exists to provide for
+  `pytest --pyargs optimalportfolios` users. Both outcomes are now asserted against a synthetic
+  mapping, including an empty `MPLBACKEND=` counting as unset rather than as a backend named `''`.
 ## [6.19.0] - 2026-08-15
 
 This release improves documentation, discovery, and first-use onboarding. It does not change the

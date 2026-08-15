@@ -371,3 +371,23 @@ def test_idempotent_when_drift_immediately_followed_by_identical_call():
     )
     assert np.all(np.isfinite(out2.values))
     assert (out2.abs() < 10).all()
+
+
+def test_uncomparable_prev_date_falls_back_to_the_prior_weights() -> None:
+    """A prev_date the price index cannot be sliced by returns weights_0 unchanged.
+
+    ``prices.loc[:prev_date]`` raises rather than returning an empty frame when the label is not
+    order-comparable with a DatetimeIndex. The drift step is an optimisation-time convenience, so
+    it degrades to the undrifted target instead of failing the whole rebalancing.
+    """
+    dates = pd.date_range('2025-01-31', periods=2, freq='ME')
+    prices = _build_prices([[100.0, 100.0], [110.0, 95.0]], dates, ['A', 'B'])
+    w0 = pd.Series({'A': 0.5, 'B': 0.5})
+
+    drifted = apply_drift_to_weights_0(
+        weights_0=w0, prices=prices,
+        prev_date='not-a-date',
+        date=dates[-1],
+    )
+
+    pd.testing.assert_series_equal(drifted, w0)

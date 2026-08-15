@@ -371,5 +371,60 @@ def test_tre_turnover_stats_match_public_risk_model_on_seeded_psd_covariances() 
         )
 
 
+def test_filter_drops_a_bad_asset_from_the_companion_vectors_too() -> None:
+    """A vector supplied alongside the covariance is filtered to the same surviving assets.
+
+    The vectors are expected returns, alpha or weight bounds indexed by asset. If the covariance
+    loses an asset and a vector does not, every downstream ``covar @ vector`` misaligns by one
+    position, which still computes and still returns a plausible-looking number.
+    """
+    tickers = pd.Index(['A', 'B', 'C'])
+    covar = np.diag([0.04, np.nan, 0.09])
+    vectors = {'means': pd.Series([0.1, 0.2, 0.3], index=tickers)}
+
+    clean_covar, good_vectors = filter_covar_and_vectors(
+        covar=covar, tickers=tickers, vectors=vectors,
+    )
+
+    assert list(clean_covar.columns) == ['A', 'C']
+    assert list(good_vectors['means'].index) == ['A', 'C']
+    pd.testing.assert_series_equal(
+        good_vectors['means'], vectors['means'].loc[['A', 'C']],
+    )
+
+
+def test_risk_contribution_table_defaults_the_budget_to_zeros() -> None:
+    """Omitting ``risk_budget`` yields a zero column rather than a missing one."""
+    tickers = pd.Index(['A', 'B'])
+    clean_covar = pd.DataFrame(np.diag([0.04, 0.09]), index=tickers, columns=tickers)
+    weights = pd.Series([0.6, 0.4], index=tickers)
+
+    table = portfolio_funcs.compute_portfolio_risk_contribution_outputs(
+        weights=weights, clean_covar=clean_covar,
+    )
+
+    assert (table['Risk Budget'] == 0.0).all()
+    assert list(table.index) == list(tickers)
+
+
+def test_risk_contributions_of_a_zero_variance_portfolio_are_zero_not_nan() -> None:
+    """A portfolio with no variance returns zeros instead of dividing by zero.
+
+    Reached whenever weights are all zero — a degenerate optimiser result, which the backtest
+    layer is expected to carry rather than crash on. Without the guard every contribution is NaN
+    and silently poisons the reported statistics.
+    """
+    tickers = pd.Index(['A', 'B'])
+    covar = pd.DataFrame(np.diag([0.04, 0.09]), index=tickers, columns=tickers)
+
+    contributions = portfolio_funcs.compute_risk_contributions(
+        weights=pd.Series(0.0, index=tickers), covar=covar,
+    )
+
+    assert list(contributions.index) == list(tickers)
+    assert (contributions == 0.0).all()
+    assert not contributions.isna().any()
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

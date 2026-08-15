@@ -353,8 +353,13 @@ def solve_constrained_risk_budgeting(covar: np.ndarray,
     lam_0 = float(np.sqrt(x_start @ covar @ x_start))  # σ(x_inverse_vol), paper Remark 7
     sum_0 = float(np.sum(solve_at(lam_0)))
     if sum_0 <= 0.0:
-        raise ValueError(f"risk-budgeting solve degenerate at lambda={lam_0!r}: "
-                         f"sum(x)={sum_0!r}; check covar and budgets")
+        # Not covered: reaching this needs the inner QP to return a non-positive-sum solution at
+        # a lambda seeded from sigma(x_inverse_vol), which no admissible covariance and budget
+        # pair produces. A test would have to pin a specific solver's pathology, so it would fail
+        # on a cvxpy or quadprog bump rather than on a defect here.
+        raise ValueError(  # pragma: no cover
+            f"risk-budgeting solve degenerate at lambda={lam_0!r}: "
+            f"sum(x)={sum_0!r}; check covar and budgets")
     lam_est = lam_0 / sum_0
     f_est = f(lam_est)
     if abs(f_est) <= SUM_ABS_TOL:
@@ -382,8 +387,12 @@ def solve_constrained_risk_budgeting(covar: np.ndarray,
             lam_lo *= 0.5
             f_lo = f(lam_lo)
     if f_lo > 0.0 or f_hi < 0.0:
-        raise ValueError(f"cannot bracket lambda_star: f({lam_lo!r})={f_lo!r}, "
-                         f"f({lam_hi!r})={f_hi!r}; check constraint feasibility")
+        # Not covered: f is increasing in lambda, so after MAX_BRACKET_EXPANSIONS doublings this
+        # needs the residual to hold one sign across a range spanning many orders of magnitude.
+        # Same objection as above -- any fixture that got here would be pinned to solver internals.
+        raise ValueError(  # pragma: no cover
+            f"cannot bracket lambda_star: f({lam_lo!r})={f_lo!r}, "
+            f"f({lam_hi!r})={f_hi!r}; check constraint feasibility")
 
     # Brent root-finding on the bracket; f is deterministic (cold start per λ)
     lambda_star = float(brentq(f, lam_lo, lam_hi, xtol=ROOT_XTOL))

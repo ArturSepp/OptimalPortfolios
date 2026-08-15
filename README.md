@@ -397,7 +397,7 @@ dependencies. There is no `jupyter` extra: the package imports none of the Jupyt
 repository-only Colab quickstart uses Google's hosted runtime. Install notebook tooling separately
 for local notebooks. The `dev` and `docs` extras remain contributor toolchains.
 
-`dev` is deliberately minimal: the suite collects the same 1277 tests with or without the
+`dev` is deliberately minimal: the suite collects the same 1321 tests with or without the
 optional extras, so nothing else belongs in it. The lint tools are not an extra at all — they
 live in the `lint` dependency-group, which never ships to a user. To run the repository-root
 `examples/`, which do use `yfinance`, install `[dev,data]` or `[all]`.
