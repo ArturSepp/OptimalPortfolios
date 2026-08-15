@@ -166,7 +166,7 @@ extend-select = ["TID251", "TID253", "ICN"]
 # CI gates TID251,TID253,ICN,F. All four are green on the whole package, so a finding is always
 # something the change under review introduced.
 #
-# `E` and `W` stay ungated because of the ~380 E501 line-length findings in the older modules.
+# `E` and `W` stay ungated because of the 216 E501 line-length findings in the older modules.
 # Those are a deliberate backlog: fix the lines your change touches, and do not reflow the
 # repository. `F` was separated from them because it is a correctness family — an unused
 # import, an undefined name, a dropped assignment — not a formatting preference.
@@ -231,17 +231,27 @@ omit = ["*/tests/*", "*/examples/*", "papers/*", "*/reports/*"]
 # line is always something the change under review introduced, so the gate needs no judgement
 # about how much of a drop is acceptable.
 #
-# Five lines are excluded by `# pragma: no cover`, each with a comment naming why at the site:
+# Eight lines are excluded by `# pragma: no cover`, each with a comment naming why at the site:
 # two defensive raises in the risk-budgeting solver that only a pinned solver pathology would
-# reach, and three branches that are dead as written. Adding a sixth exclusion is a reviewable
-# decision; silently lowering this number is not the way to make a red run green.
+# reach, three branches that are dead as written, and three that are reachable only from an
+# environment this cell is not -- `__init__.py`'s `PackageNotFoundError` fallback wants an
+# uninstalled source tree, and the two in `conftest.py` want an installed wheel with no checkout
+# around it, which is the `wheel` job in ci.yml and deliberately measures nothing. Adding a ninth
+# exclusion is a reviewable decision; silently lowering this number is not the way to make a red
+# run green.
+#
+# Two notes for anyone reconciling that count against the tool. The eight pragmas suppress ten
+# *statement* lines, because two of them sit on multi-line statements. And `coverage json` reports
+# fourteen excluded lines, not ten: the remaining four are the `...` bodies of the two abstract
+# methods in `covar_estimation/covar_estimator.py`, which coverage excludes by itself with no
+# pragma present. Eight is the number of decisions taken here; fourteen is the tool's total.
 #
 # Measure on a `[dev]` install, which is what the 3.12 leg of the `test` job in ci.yml does.
 # That is now pytest and pytest-cov over the core tree: the suite collects the same 1336 tests
 # with or without the optional extras, so the measured scope does not depend on them.
 #
 # `precision` is not load-bearing at a floor of 100 — coverage.py never rounds a total *up* to
-# 100% while lines are missing, so a single uncovered line in 5398 reports 99% and fails the gate
+# 100% while lines are missing, so a single uncovered line in 5412 reports 99% and fails the gate
 # at either precision (verified both ways). It is kept for two smaller reasons: it is what let the
 # floor be raised in sub-percent steps on the way here (at precision 0 the total is rounded before
 # the comparison, so a fractional `fail_under` like 99.1 could never be met), and it reports the

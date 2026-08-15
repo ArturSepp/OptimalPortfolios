@@ -108,12 +108,19 @@ Line coverage is **100.00%** on the 1336-test dev suite, and the ubuntu/3.12 mat
 `pytest --cov=optimalportfolios` at `fail_under = 100`. This is no longer a ratchet: at 100% an
 uncovered line is always something the change under review introduced, which is the same argument
 the 100% `interrogate` bar rests on. Lowering the floor requires a dated `CHANGELOG.md` note.
-Five lines carry `# pragma: no cover`, each with a comment at the site naming why — two defensive
-raises in `risk_budgeting_solver.py` that only a pinned solver pathology would reach, and three
+Eight lines carry `# pragma: no cover`, each with a comment at the site naming why — two defensive
+raises in `risk_budgeting_solver.py` that only a pinned solver pathology would reach; three
 branches that are dead as written (`risk_budgeting.py` seeds from a literal `True`,
 `factor_covar_estimator.py` guards a schedule that `include_end_date=True` already guarantees, and
-`alphas/signals/utils.py` filters a group that was already filtered). Adding a sixth is a
-reviewable decision; it is not the way to make a red run green.
+`alphas/signals/utils.py` filters a group that was already filtered); and three that are reachable
+only from an environment this cell is not — `__init__.py`'s `PackageNotFoundError` fallback wants
+an uninstalled source tree, and `conftest.py`'s `_find_root` miss and the `root` fixture's skip
+want an installed wheel with no checkout around it, which is the `wheel` job's path and measures
+no coverage. Adding a ninth is a reviewable decision; it is not the way to make a red run green.
+Reconciling that count against the tool needs two facts: the eight pragmas suppress ten *statement*
+lines, two of them sitting on multi-line statements, and `coverage json` reports fourteen excluded
+lines because it also excludes, with no pragma present, the `...` bodies of the two abstract
+methods in `covar_estimation/covar_estimator.py`.
 The measured scope is not the whole package: `[tool.coverage.run] omit` drops `reports/` alongside
 `tests/`, `examples/` and `papers/`, because the reporting layer renders through `qis` and `pybloqs`
 and is reviewed by eye rather than by assertion. Put anything with a numerical contract outside
@@ -132,7 +139,7 @@ and has no reference left in this repository. To run the examples, install what 
 - Test files are named `*_test.py` and live in a `tests/` directory inside the subpackage under test.
 - Line length 100 (`ruff`, rules `E`, `F`, `W`); `papers/` is excluded from linting on purpose. `I` is deliberately not selected anywhere in the stack: imports group the scientific stack before project packages, which isort's ordering contradicts.
 - **Ruff is configured in `[tool.ruff]` in `pyproject.toml`**, alongside pytest, coverage and interrogate. `pyproject.toml` is the stack's single configuration home; do not add a `ruff.toml`, which Ruff would read in preference and silently shadow this config.
-- **Four rule sets are enforced by ruff rather than written down**: the three stack invariants below and the whole `F` family. All are green on the package, so a finding is always something you just introduced. `E`/`W` stay ungated because of the ~380 `E501` line-length findings in the older modules:
+- **Four rule sets are enforced by ruff rather than written down**: the three stack invariants below and the whole `F` family. All are green on the package, so a finding is always something you just introduced. `E`/`W` stay ungated because of the 216 `E501` line-length findings in the older modules:
   - `TID251` fails an import of `trendfollowing`, `privateassets`, `stochvolmodels`, `goal_based_allocation` or `vanilla_option_pricers`. This package depends on `qis` and `factorlasso` and on nothing else in the stack; subject packages never import each other. `qis` and `factorlasso` are of course not banned — they are declared dependencies, and importing them is the point.
   - `TID253` fails a **module-level** import of an optional extra (`yfinance`, `pandas_datareader`, `pybloqs`, `plotly`, `pyarrow`, `psycopg2`, `sqlalchemy`); the same import inside a function passes, which is the pattern the collection note above requires. `examples/**` and `src/optimalportfolios/reports/portfolio_result_pybloqs.py` are named in `per-file-ignores` — add to that list only for a module `src/optimalportfolios/__init__.py` cannot reach.
   - `ICN` pins `import numpy as np` and `import pandas as pd`. Ruff's default alias map is replaced rather than extended, so `matplotlib` stays free to be both `mpl` and `plt`.
@@ -254,6 +261,6 @@ Then: commit, tag `v<version>`, build and publish to PyPI, and cut a GitHub Rele
 ## Known issues
 
 - The previous `CLAUDE.md` described version 4.1.1 and a black/isort/flake8/mypy toolchain; the project has since moved to `ruff` and this file supersedes it.
-- `ruff check src/optimalportfolios/` reports 429 baseline findings: 378 `E501` line-length, and the small `W292`/`E702`/`E712`/`W291`/`E402` remainder. CI gates TID251/TID253/ICN **and `F`**, all green; `E`/`W` remain ungated by policy. Fix only the lines your specific change touches; a repository-wide reflow is not wanted.
+- `ruff check src/optimalportfolios/` reports 225 baseline findings: 216 `E501` line-length, 8 `E712` true-false-comparison and 1 `E402` module-import-not-at-top-of-file. CI gates TID251/TID253/ICN **and `F`**, all green; `E`/`W` remain ungated by policy. Fix only the lines your specific change touches; a repository-wide reflow is not wanted. The `W` family is now clean — the 14 `W291`/`W292` findings were auto-fixed in #72 — so `W` findings a run reports are yours.
 - **`F401` in an `__init__.py` is a re-export, not an unused import.** `F401` and `F403` are therefore off for `"__init__.py"` in `[tool.ruff.lint.per-file-ignores]`, rather than answered file by file with `# noqa`. That keeps the rule this package has always followed: a subpackage's public surface is the imports in its own `__init__.py`, and adding a name to it is one edit — no `__all__` or other second list to maintain beside the import. Never `ruff --fix` F401 across `__init__.py` with that ignore removed: it would delete the re-exports and break `from optimalportfolios import Constraints` for every consumer.
 - **The offline multiasset fixture is live test infrastructure, not an unused artifact.** `src/optimalportfolios/tests/data/multiasset_returns.csv`, loaded by `optimalportfolios.tests.data.multiasset.load_multiasset_data`, feeds three collected suites: `src/optimalportfolios/optimization/tests/rolling_dispatcher_test.py`, `src/optimalportfolios/utils/tests/portfolio_funcs_properties_test.py` and `src/optimalportfolios/covar_estimation/tests/covar_properties_test.py`. Treat the CSV and loader as frozen test data: do not modify, move or delete them without updating those suites, and expect numerical assertions to change if the data changes. (An earlier version of this file wrongly described the fixture as unused.)
