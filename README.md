@@ -105,6 +105,62 @@ final NAV, and measured runtime. The
 [rendered quickstart documentation](https://optimalportfolios.readthedocs.io/en/latest/quickstart.html)
 includes this same file directly, so the example and documentation cannot drift.
 
+#### A minimal executable example
+
+The script above remains the authoritative first-use workflow. The shorter version below exists so
+that the README's own code is executed rather than trusted:
+
+```python
+import qis
+from optimalportfolios import (
+    Constraints,
+    EwmaCovarEstimator,
+    PortfolioObjective,
+    compute_rolling_optimal_weights,
+)
+from optimalportfolios.tests.data.multiasset import load_multiasset_data
+
+prices = load_multiasset_data().prices.iloc[-120:, :4]
+time_period = qis.TimePeriod(prices.index[0], prices.index[-1])
+
+# estimate covariance → optimise → get rolling weights
+estimator = EwmaCovarEstimator(returns_freq='ME', span=24, rebalancing_freq='QE')
+covar_dict = estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+weights = compute_rolling_optimal_weights(prices=prices,
+                                          portfolio_objective=PortfolioObjective.MAX_DIVERSIFICATION,
+                                          constraints=Constraints(is_long_only=True),
+                                          time_period=time_period,
+                                          covar_dict=covar_dict)
+
+# backtest with transaction costs
+portfolio = qis.backtest_model_portfolio(prices=prices.loc[weights.index[0]:], weights=weights,
+                                         rebalancing_costs=0.001, ticker='MaxDiv')
+
+print(f"assets: {list(weights.columns)}")
+print(f"rebalance dates: {len(weights.index)}")
+print(f"long only: {bool((weights >= -1e-6).all().all())}")
+print(f"fully invested: {bool(weights.sum(axis=1).round(6).eq(1.0).all())}")
+print(f"nav name: {portfolio.nav.name}")
+```
+
+```result
+assets: ['Global Bonds', 'Global IG Bonds', 'US Treasuries', 'US TIPs']
+rebalance dates: 39
+long only: True
+fully invested: True
+nav name: MaxDiv
+```
+
+`readme_test.py` executes the block above and diffs its output against that
+`result` fence, so this example cannot drift from what the package actually
+does. Structural facts are asserted rather than weights: a solver-version change
+may move an allocation by 1e-9, but it must not change the rebalance schedule,
+break long-only, or stop the book being fully invested.
+
+The committed multi-asset fixture keeps this example offline. The same pipeline
+supports price panels with NaNs and different start dates, while preserving
+roll-forward estimation (no hindsight bias) and drift-aware turnover accounting.
+
 ### Design scope
 
 The optimisation solvers use quadratic and conic objective functions (variance,
@@ -256,7 +312,7 @@ Pipeline: **raw signal → score → alpha**.
 
 **Momentum** (`compute_momentum_alpha`) — EWMA-filtered risk-adjusted excess returns relative to a benchmark, converted to cross-sectional scores.
 
-```python
+```python +SKIP
 from optimalportfolios.alphas import compute_momentum_alpha
 
 score, raw_momentum = compute_momentum_alpha(
@@ -266,7 +322,7 @@ score, raw_momentum = compute_momentum_alpha(
 
 **Low Beta** (`compute_low_beta_alpha`) — EWMA regression beta to benchmark, negated and cross-sectionally scored ("betting against beta").
 
-```python
+```python +SKIP
 from optimalportfolios.alphas import compute_low_beta_alpha
 
 score, raw_beta = compute_low_beta_alpha(
@@ -276,7 +332,7 @@ score, raw_beta = compute_low_beta_alpha(
 
 **Managers Alpha** (`compute_managers_alpha`) — factor model regression residuals using pre-estimated betas from `FactorCovarEstimator`, EWMA-smoothed and cross-sectionally scored.
 
-```python
+```python +SKIP
 from optimalportfolios.alphas import compute_managers_alpha
 
 score, raw_alpha = compute_managers_alpha(
@@ -306,7 +362,7 @@ groups. `align_rolling_clusters()` removes arbitrary cluster-label renumbering t
 
 All signal functions accept `returns_freq` as a string (uniform) or a `pd.Series` (per-asset frequency). When mixed, the function groups by frequency, computes per group, and merges.
 
-```python
+```python +SKIP
 # equities monthly, alternatives quarterly
 returns_freq = pd.Series({'SPY': 'ME', 'EZU': 'ME', 'HF_Macro': 'QE', 'PE': 'QE'})
 long_span = {'ME': 12, 'QE': 4}  # one calendar year at both cadences
@@ -321,7 +377,7 @@ mapping key raises instead of silently applying another frequency's horizon.
 
 `AlphasData` holds the combined alpha scores and all intermediate components:
 
-```python
+```python +SKIP
 from optimalportfolios.alphas import AlphasData
 
 data = AlphasData(alpha_scores=combined, momentum_score=mom, beta_score=beta)
@@ -397,7 +453,7 @@ dependencies. There is no `jupyter` extra: the package imports none of the Jupyt
 repository-only Colab quickstart uses Google's hosted runtime. Install notebook tooling separately
 for local notebooks. The `dev` and `docs` extras remain contributor toolchains.
 
-`dev` is deliberately minimal: the suite collects the same 1321 tests with or without the
+`dev` is deliberately minimal: the suite collects the same 1336 tests with or without the
 optional extras, so nothing else belongs in it. The lint tools are not an extra at all — they
 live in the `lint` dependency-group, which never ships to a user. To run the repository-root
 `examples/`, which do use `yfinance`, install `[dev,data]` or `[all]`.
@@ -444,7 +500,7 @@ and rolling schedule management).
 portfolio optimisation. The recommended workflow is to estimate covariance
 matrices first, then pass them as `covar_dict` to any solver:
 
-```python
+```python +SKIP
 from optimalportfolios import (
     EwmaCovarEstimator,
     FactorCovarEstimator,
@@ -530,7 +586,7 @@ optimisation constraints in solver-independent way.
 
 The following inputs for various constraints are implemented.
 
-```python
+```python +SKIP
 @dataclass(frozen=True)
 class Constraints:
     is_long_only: bool = True
@@ -569,7 +625,7 @@ of the supplied style scores. Sector and style constraints can be applied simult
 
 Dataclass `GroupLowerUpperConstraints` implements asset class loading and min and max allocations
 
-```python
+```python +SKIP
 @dataclass
 class GroupLowerUpperConstraints:
     """
@@ -582,7 +638,7 @@ class GroupLowerUpperConstraints:
 
 Constraints are updated on the wrapper level to include the valid tickers
 
-```python
+```python +SKIP
 aligned_constraints = constraints.update_with_valid_tickers(valid_tickers=valid_tickers)
 ```
 
@@ -751,7 +807,7 @@ for the reproducible demonstration.
 exactly (e.g. to validate against published backtest numbers from earlier
 papers or reports), set:
 
-```python
+```python +SKIP
 from optimalportfolios import OptimiserConfig
 
 cfg = OptimiserConfig(use_drifted_weights_0=False)
@@ -791,7 +847,7 @@ examples/
 
 See script [`examples/backtests/minimal_backtest.py`](examples/backtests/minimal_backtest.py).
 
-```python
+```python +SKIP
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -852,7 +908,7 @@ qis.save_figs_to_pdf(figs=figs, file_name=f"{portfolio_data.nav.name}_portfolio_
 Portfolio data class `PortfolioData` is implemented in
 [QIS package](https://github.com/ArturSepp/QuantInvestStrats).
 
-```python
+```python +SKIP
 def run_customised_reporting(portfolio_data) -> plt.Figure:
     with sns.axes_style("darkgrid"):
         fig, axs = plt.subplots(3, 1, figsize=(12, 12), tight_layout=True)

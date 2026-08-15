@@ -6,8 +6,23 @@ moving average covariance estimation. Supports vol-normalised returns
 and shrinkage toward identity.
 
 Usage:
+    >>> import numpy as np
+    >>> import pandas as pd
+    >>> dates = pd.date_range('2020-01-01', periods=260, freq='W-WED')
+    >>> drift = np.exp(0.0004 * np.arange(260))
+    >>> prices = pd.DataFrame({'A': 100.0 * drift,
+    ...                        'B': 100.0 * drift * (1.0 + 0.02 * np.sin(np.arange(260) / 8.0)),
+    ...                        'C': 100.0 / drift}, index=dates)
     >>> estimator = EwmaCovarEstimator(returns_freq='W-WED', span=52, rebalancing_freq='QE')
-    >>> covar_dict = estimator.fit_rolling_covars(prices=prices, time_period=time_period)
+    >>> covar = estimator.fit_current_covar(prices=prices)
+    >>> covar.shape
+    (3, 3)
+    >>> list(covar.columns)
+    ['A', 'B', 'C']
+    >>> bool(np.allclose(covar, covar.T))  # a covariance matrix is symmetric
+    True
+    >>> bool((np.diag(covar) > 0.0).all())  # and carries positive variances
+    True
 
 Returns are sampled at ``returns_freq`` and the estimator reports
 ``Σ_annual = annualisation_factor × Σ_EWMA``; weights are not part of this layer.
@@ -85,9 +100,27 @@ class EwmaCovarEstimator(CovarEstimator):
         demean: If True, subtract EWMA rolling mean before estimation.
 
     Example:
+        >>> import numpy as np
+        >>> import pandas as pd
+        >>> import qis
+        >>> dates = pd.date_range('2020-01-01', periods=260, freq='W-WED')
+        >>> drift = np.exp(0.0004 * np.arange(260))
+        >>> prices = pd.DataFrame({'A': 100.0 * drift, 'B': 100.0 / drift}, index=dates)
         >>> estimator = EwmaCovarEstimator(returns_freq='W-WED', span=52, rebalancing_freq='QE')
+
+        One matrix per rebalancing date in the period, keyed by that date:
+
+        >>> time_period = qis.TimePeriod(dates[104], dates[-1])
         >>> covar_dict = estimator.fit_rolling_covars(prices=prices, time_period=time_period)
-        >>> current = estimator.fit_current_covar(prices=prices)
+        >>> len(covar_dict)
+        12
+        >>> all(covar.shape == (2, 2) for covar in covar_dict.values())
+        True
+
+        `fit_current_covar` is the same estimate at the end of the panel only:
+
+        >>> estimator.fit_current_covar(prices=prices).shape
+        (2, 2)
     """
     returns_freq: str = 'W-WED'
     span: int = 52

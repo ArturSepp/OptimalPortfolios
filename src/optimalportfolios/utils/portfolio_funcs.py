@@ -64,7 +64,16 @@ def compute_tre_turnover_stats(covar: np.ndarray,
 
 
 def calculate_diversification_ratio(w: np.ndarray, covar: np.ndarray) -> float:
-    """Return the weighted average asset vol over the portfolio vol."""
+    """Return the weighted average asset vol over the portfolio vol.
+
+    The ratio is 1.0 when there is nothing to diversify and rises as correlation falls. With
+    uncorrelated unit variances, weights of 0.6 and 0.8 give a portfolio vol of 1.0 against a
+    weighted average asset vol of 1.4:
+
+    >>> import numpy as np
+    >>> float(calculate_diversification_ratio(np.array([0.6, 0.8]), np.eye(2)))
+    1.4
+    """
     avg_weighted_vol = np.sqrt(np.diag(covar)) @ w.T
     portfolio_vol = np.sqrt(compute_portfolio_variance(w, covar))
     diversification_ratio = avg_weighted_vol/portfolio_vol
@@ -97,6 +106,16 @@ def round_weights_to_pct(weights: pd.Series, decimals: int = 2) -> pd.Series:
     """
     Map portfolio weights from [0,1] to percentage [0,100] with rounding
     that preserves the sum to exactly 100.0 using largest remainder method.
+
+    Naive rounding of three near-equal weights gives 99.99; the largest remainder takes the
+    bump, so the reported allocation always adds to exactly 100:
+
+    >>> import pandas as pd
+    >>> pct = round_weights_to_pct(pd.Series([0.3333, 0.3333, 0.3334], index=['a', 'b', 'c']))
+    >>> pct.tolist()
+    [33.33, 33.33, 33.34]
+    >>> float(pct.sum())
+    100.0
     """
     scaled = weights * 100.0
     floored = np.floor(scaled * 10**decimals) / 10**decimals
@@ -126,6 +145,25 @@ def compute_risk_contributions(weights: pd.Series, covar: pd.DataFrame) -> pd.Se
     Returns:
         Series of risk contributions (fraction of portfolio variance,
         sums to 1.0), indexed by covar's assets.
+
+    Equal weights on equal, uncorrelated variances split the risk evenly:
+
+    >>> import pandas as pd
+    >>> covar = pd.DataFrame([[0.04, 0.0], [0.0, 0.04]], index=['a', 'b'], columns=['a', 'b'])
+    >>> compute_risk_contributions(pd.Series([0.5, 0.5], index=['a', 'b']), covar).tolist()
+    [0.5, 0.5]
+
+    An asset outside the covariance universe is dropped rather than raising, which is what lets
+    a joint-universe weight vector be scored against a TAA-only covariance:
+
+    >>> compute_risk_contributions(pd.Series([0.5, 0.5, 9.0], index=['a', 'b', 'z']),
+    ...                            covar).tolist()
+    [0.5, 0.5]
+
+    A zero portfolio has no variance to attribute, so the guard returns zeros:
+
+    >>> compute_risk_contributions(pd.Series([0.0, 0.0], index=['a', 'b']), covar).tolist()
+    [0.0, 0.0]
     """
     assets = covar.index
     w = weights.reindex(assets).fillna(0.0).values

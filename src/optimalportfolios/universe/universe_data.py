@@ -14,20 +14,37 @@ Typical workflow:
     4. Generate reports using optimised weights and universe metadata (reports module)
 
 Example:
-    >>> from optimalportfolios.universe import UniverseData, MetadataField
-    >>>
-    >>> # Load from CSV
-    >>> universe = UniverseData.load(file_name='global_saa', local_path='./universe')
-    >>>
-    >>> # Or construct directly
+    >>> import pandas as pd
+    >>> from optimalportfolios.universe import UniverseData
+    >>> assets = ['EM Equity', 'EM Bonds', 'DM Equity']
+    >>> prices_df = pd.DataFrame(100.0, index=pd.date_range('2024-01-31', periods=6, freq='ME'),
+    ...                          columns=assets)
+    >>> metadata_df = pd.DataFrame({'name': ['EM Eq', 'EM Bd', 'DM Eq'],
+    ...                             'asset_class': ['Equity', 'Bonds', 'Equity'],
+    ...                             'currency': ['USD', 'USD', 'USD']}, index=assets)
+
+    Construct directly:
+
     >>> universe = UniverseData(prices=prices_df, metadata=metadata_df)
-    >>>
-    >>> # Subset to specific assets
+    >>> universe.prices.columns.tolist()
+    ['EM Equity', 'EM Bonds', 'DM Equity']
+
+    Or subset a broader dataset, which carries the metadata rows with it:
+
     >>> em_universe = UniverseData.from_selection(
     ...     prices=prices_df,
     ...     metadata=metadata_df,
-    ...     assets=['EM Equity', 'EM Bonds', 'EM FX'],
+    ...     assets=['EM Equity', 'EM Bonds'],
     ... )
+    >>> em_universe.prices.columns.tolist()
+    ['EM Equity', 'EM Bonds']
+    >>> em_universe.metadata.index.tolist()
+    ['EM Equity', 'EM Bonds']
+
+    Loading reads `<local_path>/<file_name>.csv` from disk, so it is not exercised here:
+
+    >>> universe = UniverseData.load(file_name='global_saa',
+    ...                             local_path='./universe')  # doctest: +SKIP
 
 The metadata DataFrame must contain columns defined by a MetadataField enum.
 The default enum requires 'asset_class' and 'currency' columns, but callers
