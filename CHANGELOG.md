@@ -7,6 +7,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- Added a dated, source-backed package comparison and workflow choice guide covering
+  `optimalportfolios`, PyPortfolioOpt, Riskfolio-Lib, and skfolio.
+
 ### Changed
 
 - Aligned the PyPI summary, README, and documentation identity around production multi-asset

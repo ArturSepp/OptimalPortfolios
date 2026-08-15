@@ -63,4 +63,5 @@ Project links
    mixed_frequency_data
    incomplete_histories
    covariance_estimators
+   package_comparison
    api
