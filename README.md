@@ -393,9 +393,9 @@ installation. The default risk-lineage matcher is implemented with core NumPy/Sc
 | `all` | All runtime integrations: `data` and `reports`. |
 
 The runtime integration extras, `data` and `reports`, correspond to features that import their
-dependencies. There is no `jupyter` extra: nothing here imports jupyter, notebook or jupyterlab,
-and the repository contains no notebook. Install a notebook stack alongside this package if you
-want one. The `dev` and `docs` extras remain contributor toolchains.
+dependencies. There is no `jupyter` extra: the package imports none of the Jupyter stack, and the
+repository-only Colab quickstart uses Google's hosted runtime. Install notebook tooling separately
+for local notebooks. The `dev` and `docs` extras remain contributor toolchains.
 
 `dev` is deliberately minimal: the suite collects the same 1277 tests with or without the
 optional extras, so nothing else belongs in it. The lint tools are not an extra at all — they

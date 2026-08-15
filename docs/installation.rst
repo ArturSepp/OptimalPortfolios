@@ -40,9 +40,10 @@ Install an extra by placing its name in square brackets:
 
 The runtime integration extras, ``data`` and ``reports``, correspond to features
 that import their dependencies. There is no ``jupyter`` extra: nothing here
-imports jupyter, notebook or jupyterlab, so install a notebook stack alongside
-the package rather than through it. The ``dev`` and ``docs`` extras remain
-contributor toolchains. There is no ``clustering`` extra either — the ``mcf``
+imports jupyter, notebook or jupyterlab. The repository-only Colab quickstart
+uses Google's hosted runtime; install notebook tooling separately for local
+notebooks. The ``dev`` and ``docs`` extras remain contributor toolchains. There
+is no ``clustering`` extra either — the ``mcf``
 risk-lineage matcher once needed NetworkX, but it now uses a SciPy bipartite
 assignment and runs on a core install, and the cluster-lineage analytics
 themselves live in ``factorlasso``, a core dependency.

@@ -72,9 +72,9 @@ docs = [
 ]
 
 # There is no `jupyter` extra. It declared jupyter, notebook and jupyterlab, none of which this
-# package imports and none of which any file here needs: the repository contains no notebook.
-# It also pulled the unused notebook stack into `[all]` and the daily `--all-extras` audit.
-# Install notebook tooling alongside the package when needed.
+# package imports. The repository-only Colab quickstart installs the released package into the
+# hosted runtime and needs no notebook dependency here. The old extra pulled an unused notebook
+# stack into `[all]` and the daily `--all-extras` audit; install local notebook tooling separately.
 #
 # Test dependencies only, and nothing else. The lint tools are not here: they gate the repository
 # rather than support the suite, they are never imported by a test, and installing them into all
