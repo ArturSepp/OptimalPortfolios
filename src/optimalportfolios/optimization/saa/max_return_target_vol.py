@@ -182,7 +182,7 @@ def wrapper_max_return_target_vol(pd_covar: pd.DataFrame,
 
     # wire vol budget into constraints based on benchmark presence
     if benchmark_weights is not None:
-        constraints1 = constraints.update_with_valid_tickers(context=context, 
+        constraints1 = constraints.update_with_valid_tickers(context=context,
             valid_tickers=valid_tickers,
             total_to_good_ratio=total_to_good_ratio,
             weights_0=weights_0,
@@ -193,7 +193,7 @@ def wrapper_max_return_target_vol(pd_covar: pd.DataFrame,
             **constraints1._to_dict(),
             'tracking_err_vol_constraint': target_vol})
     else:
-        constraints1 = constraints.update_with_valid_tickers(context=context, 
+        constraints1 = constraints.update_with_valid_tickers(context=context,
             valid_tickers=valid_tickers,
             total_to_good_ratio=total_to_good_ratio,
             weights_0=weights_0,
