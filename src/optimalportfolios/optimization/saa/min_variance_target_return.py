@@ -193,7 +193,7 @@ def wrapper_min_variance_target_return(pd_covar: pd.DataFrame,
         warnings.warn(f"NaN expected returns for {nan_er}, setting to 0 in return constraint")
         er_clean = er_clean.fillna(0.0)
 
-    constraints1 = constraints.update_with_valid_tickers(context=context, 
+    constraints1 = constraints.update_with_valid_tickers(context=context,
         valid_tickers=valid_tickers,
         total_to_good_ratio=total_to_good_ratio,
         weights_0=weights_0,

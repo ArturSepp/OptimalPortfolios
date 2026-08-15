@@ -45,7 +45,7 @@ uv sync --extra dev                                      # editable install, ver
 uv run --locked pytest                                   # the full suite; a few minutes
 uv run --locked --only-group lint ruff check --select TID251,TID253,ICN,F src/optimalportfolios/
 uv run --locked --only-group lint interrogate -v         # docstring coverage, must stay at 100%
-uv run --locked pytest --cov=optimalportfolios --cov-report=term-missing   # floor is fail_under = 99
+uv run --locked pytest --cov=optimalportfolios --cov-report=term-missing   # floor is fail_under = 100
 ```
 
 The two lint commands are the exact invocations `static.yml` gates with. The coverage command is
