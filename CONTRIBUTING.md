@@ -41,13 +41,71 @@ and section you are reading.
 ```bash
 git clone https://github.com/ArturSepp/OptimalPortfolios.git
 cd OptimalPortfolios
-pip install -e ".[dev]"
-pytest
-ruff check --select TID251,TID253,ICN,F src/optimalportfolios/
-interrogate -v
-pytest --cov=optimalportfolios --cov-report=term-missing
-pip-audit .
+uv sync --extra dev                                      # editable install, versions from uv.lock
+uv run --locked pytest                                   # the full suite; a few minutes
+uv run --locked --only-group lint ruff check --select TID251,TID253,ICN,F src/optimalportfolios/
+uv run --locked --only-group lint interrogate -v         # docstring coverage, must stay at 100%
+uv run --locked pytest --cov=optimalportfolios --cov-report=term-missing   # floor is fail_under = 99
 ```
+
+The two lint commands are the exact invocations `static.yml` gates with. The coverage command is
+what the ubuntu/3.12 cell of `ci.yml` runs, with `--locked` added — that cell enforces the lock on
+its `uv sync` step instead, so the effect is the same.
+
+`--locked` fails rather than re-resolving if `uv.lock` has drifted from `pyproject.toml`. That is
+the point: a dependency edit that has not been re-locked fails here, on your machine, instead of
+on the pinned CI cell. If you are deliberately changing dependencies, run `uv lock` first (or drop
+the flag until you do).
+
+`ruff` and `interrogate` are reached through `--only-group lint` rather than from the `dev`
+extra, and that is deliberate: they are declared once in the `lint` dependency-group, which is
+also where the workflow takes its versions from, so a local `ruff` and CI's `ruff` cannot
+disagree about the same file. `--only-group` installs that group alone — not the project, not the
+compiled scientific stack. A plain `pip install -e ".[dev]"` gives you `pytest` and `pytest-cov`
+only; it will **not** put `ruff` or `interrogate` on your path, because a pip extra does not
+install a PEP 735 dependency-group. It also resolves fresh rather than from `uv.lock`, so it is
+not what CI gates the pinned cell against.
+
+Note that `ruff check` is run with an explicit `--select`. Running it bare applies the `E`/`W`
+families configured in `pyproject.toml`, which report a deliberate backlog of ~215 `E501`
+line-length findings in the older modules. Fix only the lines your change touches; a
+repository-wide reflow is not wanted.
+
+The dependency audit is not a source gate — its answer depends on the advisory database rather
+than on your diff — so it runs daily in `audit.yml` and on pull requests only when
+`pyproject.toml` or `uv.lock` change. If your change touches either, run the same two-tree form
+the workflow uses rather than a bare `pip-audit .`, which covers the core tree alone and silently
+omits every optional extra:
+
+```bash
+uv pip compile --all-extras --python-version 3.12 --quiet pyproject.toml -o /tmp/requirements-fresh.txt
+uv run --locked --only-group audit --python 3.12 pip-audit -r /tmp/requirements-fresh.txt
+uv export --locked --all-extras --no-emit-project --quiet --format requirements-txt -o /tmp/requirements-locked.txt
+uv run --locked --only-group audit --python 3.12 pip-audit -r /tmp/requirements-locked.txt
+```
+
+The same four commands under Windows PowerShell:
+
+```powershell
+uv pip compile --all-extras --python-version 3.12 --quiet pyproject.toml -o "$env:TEMP\requirements-fresh.txt"
+uv run --locked --only-group audit --python 3.12 pip-audit -r "$env:TEMP\requirements-fresh.txt"
+uv export --locked --all-extras --no-emit-project --quiet --format requirements-txt -o "$env:TEMP\requirements-locked.txt"
+uv run --locked --only-group audit --python 3.12 pip-audit -r "$env:TEMP\requirements-locked.txt"
+```
+
+The two trees answer different questions, which is why the workflow runs both. The `uv pip compile`
+tree is what a *fresh* install resolves to today from the floors in `pyproject.toml`; the
+`uv export --locked` tree is the exact pinned set `uv sync --locked` installs, and a pin can sit on
+a vulnerable version long after the floor would resolve past it. `--no-emit-project` drops the
+local package, which has no release for `pip-audit` to look up.
+
+Two differences from the workflow, both because your machine is not the runner. `--python 3.12` is
+spelled out on the `pip-audit` calls: the requirements files are resolved for CPython 3.12, and
+`pip-audit` resolves them again against the interpreter it is running on, so on any other version
+it fails on a pin it cannot satisfy rather than reporting a finding. The runner is already 3.12,
+so `audit.yml` does not need the flag. And `--only-group` reinstalls the project virtualenv with
+that group alone; the next `uv run --locked pytest` syncs the development environment back, but do
+not be surprised by the reinstall.
 
 To verify a built or downloaded wheel in a clean environment, install the wheel and `pytest`,
 then run the supported post-install check:
