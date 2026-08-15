@@ -25,6 +25,7 @@ PDF. Merging them into the executed script would only assert that undefined name
 import re
 import subprocess  # nosec B404
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -95,9 +96,25 @@ def _run_readme_script(code: str, cwd, timeout: float = EXECUTION_TIMEOUT_SECOND
         )
 
 
-def test_readme_runs(logger, root):
+@pytest.fixture
+def readme(root: Path) -> Path:
+    """The repository README, or a skip when the file is absent.
+
+    Deliberately not one of the fail-closed guards below. Those reject a README that is present
+    but parses to nothing -- fences renamed, reflowed, or all marked ``+SKIP`` -- which is a
+    regression this harness exists to catch. A README that is not there at all is a different
+    case: there is nothing to execute and nothing to diff against, so there is no claim to make.
+    """
+    path = root / "README.md"
+    # Unreachable in a checkout, for the same reason as the `root` fixture's own skip: `_find_root`
+    # only returns a directory that holds a README, and coverage is measured on the checkout cell.
+    if not path.is_file():  # pragma: no cover
+        pytest.skip(f"no README.md at {path}")
+    return path
+
+
+def test_readme_runs(logger, root, readme):
     """Execute README code blocks and compare output to documented results."""
-    readme = root / "README.md"
     logger.info("Reading README from %s", readme)
     readme_text = readme.read_text(encoding="utf-8")
     all_code_blocks = CODE_BLOCK.findall(readme_text)
@@ -153,9 +170,8 @@ def test_readme_runs(logger, root):
 class TestReadmeTestEdgeCases:
     """Edge cases for README code block testing."""
 
-    def test_readme_code_is_syntactically_valid(self, root):
+    def test_readme_code_is_syntactically_valid(self, readme):
         """Python code blocks in README should be syntactically valid (skipped blocks excluded)."""
-        readme = root / "README.md"
         content = readme.read_text(encoding="utf-8")
         all_code_blocks = CODE_BLOCK.findall(content)
 
