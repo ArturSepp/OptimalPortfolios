@@ -13,6 +13,8 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `optimalportfolios`, PyPortfolioOpt, Riskfolio-Lib, and skfolio.
 - Added one authoritative, wheel-data-backed production quickstart that runs a constrained rolling
   backtest entirely offline; README and Sphinx now point to the same executable script.
+- Added a thin Colab entry point that installs the latest PyPI release and mirrors the production
+  quickstart, plus a cross-platform CI check for source drift, saved outputs, and required links.
 
 ### Changed
 

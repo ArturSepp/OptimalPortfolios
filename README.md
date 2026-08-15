@@ -9,6 +9,7 @@ transaction costs, and reporting.**
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
 [![CI](https://github.com/ArturSepp/OptimalPortfolios/actions/workflows/test.yml/badge.svg)](https://github.com/ArturSepp/OptimalPortfolios/actions)
 [![Documentation Status](https://readthedocs.org/projects/optimalportfolios/badge/?version=latest)](https://optimalportfolios.readthedocs.io/en/latest/)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ArturSepp/OptimalPortfolios/blob/main/examples/getting_started/production_quickstart.ipynb)
 [![Downloads](https://static.pepy.tech/badge/optimalportfolios)](https://pepy.tech/project/optimalportfolios)
 [![Monthly](https://static.pepy.tech/badge/optimalportfolios/month)](https://pepy.tech/project/optimalportfolios)
 
@@ -83,14 +84,19 @@ on live multi-asset portfolios.
 
 ### Quick-start: offline rolling backtest
 
-The [production quickstart](examples/getting_started/production_quickstart.py) is the single
-executable source for the first-use workflow. It runs entirely offline on the multi-asset fixture
-shipped in the wheel and writes no files:
+The [production quickstart](examples/getting_started/production_quickstart.py) is the authoritative
+source for the first-use workflow. It runs entirely offline on the multi-asset fixture shipped in
+the wheel and writes no files:
 
 ```bash
 pip install optimalportfolios
 python examples/getting_started/production_quickstart.py
 ```
+
+For a zero-setup trial, [open the mechanically checked mirror in
+Colab](https://colab.research.google.com/github/ArturSepp/OptimalPortfolios/blob/main/examples/getting_started/production_quickstart.ipynb).
+The notebook installs the latest PyPI release, prints its version, and adds no notebook dependency
+to the package.
 
 The script uses a documented six-asset slice, a point-in-time 24-month EWMA covariance estimator,
 quarterly constrained minimum-variance weights, a one-month implementation lag, and 10 basis

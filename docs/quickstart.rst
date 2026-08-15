@@ -10,6 +10,13 @@ run it from a checkout or copy the script anywhere::
    pip install optimalportfolios
    python examples/getting_started/production_quickstart.py
 
+For a zero-setup trial, `open the same workflow in Colab
+<https://colab.research.google.com/github/ArturSepp/OptimalPortfolios/blob/main/examples/getting_started/production_quickstart.ipynb>`_.
+The thin notebook installs the latest released package from PyPI and prints
+its version before running the cell mechanically checked against the script
+below. It carries no saved outputs and adds no Jupyter dependency to the
+package.
+
 It selects six assets over a fixed 2010--2022 price window. The first five
 years warm up a 24-month EWMA covariance estimator; quarterly portfolio
 decisions run from March 2015 through September 2022. The portfolio minimizes
