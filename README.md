@@ -83,36 +83,21 @@ on live multi-asset portfolios.
 
 ### Quick-start: offline rolling backtest
 
-```python
-import qis
-from optimalportfolios import (
-    Constraints,
-    EwmaCovarEstimator,
-    PortfolioObjective,
-    compute_rolling_optimal_weights,
-)
-from optimalportfolios.tests.data.multiasset import load_multiasset_data
+The [production quickstart](examples/getting_started/production_quickstart.py) is the single
+executable source for the first-use workflow. It runs entirely offline on the multi-asset fixture
+shipped in the wheel and writes no files:
 
-prices = load_multiasset_data().prices.iloc[-120:, :4]
-time_period = qis.TimePeriod(prices.index[0], prices.index[-1])
-
-# estimate covariance → optimise → get rolling weights
-estimator = EwmaCovarEstimator(returns_freq='ME', span=24, rebalancing_freq='QE')
-covar_dict = estimator.fit_rolling_covars(prices=prices, time_period=time_period)
-weights = compute_rolling_optimal_weights(prices=prices,
-                                          portfolio_objective=PortfolioObjective.MAX_DIVERSIFICATION,
-                                          constraints=Constraints(is_long_only=True),
-                                          time_period=time_period,
-                                          covar_dict=covar_dict)
-
-# backtest with transaction costs
-portfolio = qis.backtest_model_portfolio(prices=prices.loc[weights.index[0]:], weights=weights,
-                                         rebalancing_costs=0.001, ticker='MaxDiv')
+```bash
+pip install optimalportfolios
+python examples/getting_started/production_quickstart.py
 ```
 
-The committed multi-asset fixture keeps this example offline. The same pipeline
-supports price panels with NaNs and different start dates, while preserving
-roll-forward estimation (no hindsight bias) and drift-aware turnover accounting.
+The script uses a documented six-asset slice, a point-in-time 24-month EWMA covariance estimator,
+quarterly constrained minimum-variance weights, a one-month implementation lag, and 10 basis
+points of transaction costs. It prints the data range, rolling-weight dimensions, final weights,
+final NAV, and measured runtime. The
+[rendered quickstart documentation](https://optimalportfolios.readthedocs.io/en/latest/quickstart.html)
+includes this same file directly, so the example and documentation cannot drift.
 
 ### Design scope
 

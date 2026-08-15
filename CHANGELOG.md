@@ -11,6 +11,8 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Added a dated, source-backed package comparison and workflow choice guide covering
   `optimalportfolios`, PyPortfolioOpt, Riskfolio-Lib, and skfolio.
+- Added one authoritative, wheel-data-backed production quickstart that runs a constrained rolling
+  backtest entirely offline; README and Sphinx now point to the same executable script.
 
 ### Changed
 

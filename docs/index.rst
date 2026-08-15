@@ -9,6 +9,10 @@ costs, and performance reporting.
 The package is the reference implementation of the ROSAA framework published
 in *The Journal of Portfolio Management* (Sepp, Ossa and Kastenholz, 2026).
 
+For a first end-to-end result, run the :doc:`quickstart`: it uses wheel-shipped
+data to estimate rolling covariance, compute constrained weights, and backtest
+them with transaction costs entirely offline.
+
 Overview
 --------
 
