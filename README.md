@@ -1173,6 +1173,13 @@ This package is part of an open-source Python stack for quantitative finance —
 
 Dependency links within the stack: `optimalportfolios` builds on `qis` and `factorlasso`; `trendfollowing` builds on `qis`.
 
+## Acknowledgments
+
+- [Thomas Schmelzer](https://github.com/tschm), creator of
+  [Jebel-Quant/rhiza](https://github.com/Jebel-Quant/rhiza), for substantial contributions to test
+  coverage, cross-platform CI/CD, dependency auditing, example validation, packaging, and
+  built-wheel verification.
+
 ## License
 
 MIT — see [LICENSE.txt](LICENSE.txt).
