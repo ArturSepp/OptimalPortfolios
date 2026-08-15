@@ -20,6 +20,7 @@ from factorlasso import ClusterSmootherType, LassoModel, LassoModelType
 
 from optimalportfolios.covar_estimation.factor_covar_estimator import (
     FactorCovarEstimator,
+    _fit_lasso_frequency,
     _model_for_frequency,
     estimate_lasso_factor_covar_data,
 )
@@ -118,6 +119,60 @@ def test_configured_cadence_span_is_used_by_the_estimation_routine() -> None:
     )
 
     assert list(covar_data.y_betas.index) == ASSETS
+
+
+def test_fixed_frequency_helper_matches_direct_lasso_fit() -> None:
+    """The extracted cadence fit returns the same components as direct FactorLasso fitting."""
+    factors, returns = _inputs()
+    asset_returns = returns["ME"]
+    actual_model = _model(span_freq_dict={"ME": 18})
+    reference_model = _model(span_freq_dict={"ME": 18})
+
+    actual = _fit_lasso_frequency(
+        freq="ME",
+        asset_returns=asset_returns,
+        risk_factor_prices=factors,
+        lasso_model=actual_model,
+        verbose=False,
+    )
+
+    factor_prices = factors.reindex(index=asset_returns.index, method="ffill").ffill()
+    factor_returns = qis.to_returns(
+        prices=factor_prices,
+        is_log_returns=True,
+        is_first_zero=False,
+        drop_first=False,
+        freq=None,
+    )
+    reference_model.fit(x=factor_returns, y=asset_returns, verbose=False, span=18)
+    reference = reference_model.estimation_result_
+
+    pd.testing.assert_frame_equal(actual.betas, reference_model.estimated_betas)
+    pd.testing.assert_series_equal(
+        actual.ewma_variances,
+        pd.Series(reference.ss_total, index=asset_returns.columns),
+    )
+    pd.testing.assert_series_equal(
+        actual.residual_variances,
+        pd.Series(reference.ss_res, index=asset_returns.columns),
+    )
+    pd.testing.assert_series_equal(
+        actual.alphas,
+        pd.Series(reference.alpha, index=asset_returns.columns),
+    )
+    pd.testing.assert_series_equal(
+        actual.r2,
+        pd.Series(reference.r2, index=asset_returns.columns),
+    )
+    pd.testing.assert_series_equal(actual.clusters, reference_model.clusters)
+    np.testing.assert_array_equal(actual.linkage, reference_model.linkage)
+    assert actual.cutoff == reference_model.cutoff
+    pd.testing.assert_frame_equal(
+        actual.residuals,
+        asset_returns - factor_returns @ reference_model.estimated_betas.T,
+    )
+    assert actual.derived_signs is reference_model.derived_signs_ is None
+    pd.testing.assert_frame_equal(actual_model.estimated_betas, actual.betas)
 
 
 # --- precomputed cluster inputs ------------------------------------------------------------
