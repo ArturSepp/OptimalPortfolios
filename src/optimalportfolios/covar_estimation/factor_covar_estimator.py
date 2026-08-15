@@ -77,6 +77,92 @@ def _validate_recluster_frequency(recluster_freq: str, rebalancing_freq: str) ->
         )
 
 
+@dataclass(frozen=True)
+class _FrequencyFitResult:
+    """Components produced by fitting one asset-return cadence."""
+
+    betas: pd.DataFrame
+    ewma_variances: pd.Series
+    residual_variances: pd.Series
+    alphas: pd.Series
+    r2: pd.Series
+    clusters: Optional[pd.Series]
+    linkage: Optional[np.ndarray]
+    cutoff: Optional[float]
+    residuals: pd.DataFrame
+    derived_signs: Optional[pd.DataFrame]
+
+
+def _fit_lasso_frequency(
+        *,
+        freq: str,
+        asset_returns: pd.DataFrame,
+        risk_factor_prices: pd.DataFrame,
+        lasso_model: LassoModel,
+        verbose: bool,
+        precomputed_clusters: Optional[Dict[str, pd.Series]] = None,
+        precomputed_linkages: Optional[Dict[str, np.ndarray]] = None,
+        precomputed_cutoffs: Optional[Dict[str, float]] = None,
+) -> _FrequencyFitResult:
+    """Fit one return cadence and collect its unannualised factor-model components."""
+    factor_prices = risk_factor_prices.reindex(index=asset_returns.index, method='ffill').ffill()
+    factor_returns = qis.to_returns(
+        prices=factor_prices,
+        is_log_returns=True,
+        is_first_zero=False,
+        drop_first=False,
+        freq=None,
+    )
+
+    if lasso_model.span_freq_dict is not None:
+        if freq not in lasso_model.span_freq_dict:
+            raise KeyError(f"no span for freq={freq} in lasso_model.span_freq_dict")
+        span = lasso_model.span_freq_dict[freq]
+    else:
+        span = lasso_model.span
+
+    use_precomputed = precomputed_clusters is not None and freq in precomputed_clusters
+    external_clusters = None
+    if use_precomputed:
+        external_clusters = precomputed_clusters[freq].reindex(asset_returns.columns)
+        if external_clusters.isna().any():
+            missing = external_clusters[external_clusters.isna()].index.tolist()
+            raise ValueError(
+                f"precomputed_clusters[{freq!r}] is missing assignments "
+                f"for {len(missing)} assets: {missing}"
+            )
+
+    # Preserve the public function's fitted-state contract: callers receive their original
+    # LassoModel back with the final cadence's fit attached. A fresh model copy would be a separate
+    # numerical and behavioural change, even though clustering schedules use that pattern safely.
+    fit_model = lasso_model
+    fit_model.fit(
+        x=factor_returns,
+        y=asset_returns,
+        verbose=verbose,
+        span=span,
+        external_clusters=external_clusters,
+        external_linkage=precomputed_linkages[freq] if use_precomputed else None,
+        external_cutoff=precomputed_cutoffs[freq] if use_precomputed else None,
+    )
+
+    estimation_result = fit_model.estimation_result_
+    linkage = precomputed_linkages[freq] if use_precomputed else fit_model.linkage
+    cutoff = precomputed_cutoffs[freq] if use_precomputed else fit_model.cutoff
+    return _FrequencyFitResult(
+        betas=fit_model.estimated_betas,
+        ewma_variances=pd.Series(estimation_result.ss_total, index=asset_returns.columns),
+        residual_variances=pd.Series(estimation_result.ss_res, index=asset_returns.columns),
+        alphas=pd.Series(estimation_result.alpha, index=asset_returns.columns),
+        r2=pd.Series(estimation_result.r2, index=asset_returns.columns),
+        clusters=fit_model.clusters,
+        linkage=linkage,
+        cutoff=cutoff,
+        residuals=asset_returns - factor_returns @ fit_model.estimated_betas.T,
+        derived_signs=fit_model.derived_signs_,
+    )
+
+
 @dataclass
 class FactorCovarEstimator(CovarEstimator):
     """
@@ -502,102 +588,19 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
         x_covar *= factor_scale_an
 
     # 2. estimate betas and diagnostics per frequency
-    betas_freqs: Dict[str, pd.DataFrame] = {}       # each is (N_freq x M)
-    ewma_vars_freqs: Dict[str, pd.Series] = {}
-    residual_vars_freqs: Dict[str, pd.Series] = {}
-    alphas_freqs: Dict[str, pd.Series] = {}
-    r2_freqs: Dict[str, pd.Series] = {}
-    clusters_freqs: Dict[str, pd.Series] = {}       # per-freq cluster assignment
-    linkages_freqs: Dict[str, np.ndarray] = {}      # per-freq scipy linkage matrix
-    cutoffs_freqs: Dict[str, float] = {}            # per-freq dendrogram cutoff
-    residuals_freqs: Dict[str, pd.DataFrame] = {}
-    # Solver-facing sign-constraint matrix (N_freq x M) for each freq —
-    # only populated when the fitted LASSO actually applied a sign layer
-    # (auto-derived, explicit, or both). Otherwise the freq's entry stays
-    # absent and the post-loop merge drops to None if no freq populated.
-    derived_signs_freqs: Dict[str, pd.DataFrame] = {}
-
-    for freq in asset_returns_dict.keys():
-        y = asset_returns_dict[freq]
-        x_prices = risk_factor_prices.reindex(index=y.index, method='ffill').ffill()
-        x = qis.to_returns(prices=x_prices, is_log_returns=True, is_first_zero=False, drop_first=False, freq=None)
-
-        if lasso_model.span_freq_dict is not None:
-            if freq in lasso_model.span_freq_dict.keys():
-                span_f = lasso_model.span_freq_dict[freq]
-            else:
-                raise KeyError(f"no span for freq={freq} in lasso_model.span_freq_dict")
-        else:
-            span_f = lasso_model.span
-
-        # Decide whether to run native clustering or swap in external groups.
-        use_precomputed = (
-            precomputed_clusters is not None
-            and freq in precomputed_clusters
-        )
-        if use_precomputed:
-            # Reindex external clusters to the current fit universe. Any
-            # asset without an assignment is a hard error — silently
-            # dropping would shrink the fit universe unexpectedly.
-            external_clusters = precomputed_clusters[freq].reindex(y.columns)
-            if external_clusters.isna().any():
-                missing = external_clusters[external_clusters.isna()].index.tolist()
-                raise ValueError(
-                    f"precomputed_clusters[{freq!r}] is missing assignments "
-                    f"for {len(missing)} assets: {missing}"
-                )
-            # Preserve FCGL/HCGL semantics; factorlasso skips discovery and
-            # feeds these memberships into the configured penalty blocks.
-            fit_model = lasso_model
-        else:
-            fit_model = lasso_model
-
-        # fit() returns self; estimated_betas is (N x M) DataFrame
-        fit_model.fit(
-            x=x,
-            y=y,
+    frequency_results = {
+        freq: _fit_lasso_frequency(
+            freq=freq,
+            asset_returns=asset_returns,
+            risk_factor_prices=risk_factor_prices,
+            lasso_model=lasso_model,
             verbose=verbose,
-            span=span_f,
-            external_clusters=external_clusters if use_precomputed else None,
-            external_linkage=precomputed_linkages[freq] if use_precomputed else None,
-            external_cutoff=precomputed_cutoffs[freq] if use_precomputed else None,
+            precomputed_clusters=precomputed_clusters,
+            precomputed_linkages=precomputed_linkages,
+            precomputed_cutoffs=precomputed_cutoffs,
         )
-
-        # estimated_betas: index=assets, columns=factors (N x M)
-        betas_freqs[freq] = fit_model.estimated_betas
-
-        # Diagnostics from LassoEstimationResult stored on model
-        result = fit_model.estimation_result_
-        ewma_vars_freqs[freq] = pd.Series(result.ss_total, index=y.columns)
-        residual_vars_freqs[freq] = pd.Series(result.ss_res, index=y.columns)
-        alphas_freqs[freq] = pd.Series(result.alpha, index=y.columns)
-        r2_freqs[freq] = pd.Series(result.r2, index=y.columns)
-
-        # Clusters are populated uniformly by LassoModel.fit() for both
-        # HCGL and GROUP_LASSO modes (see patch to lasso_estimator.py).
-        # For precomputed mode, apply the caller-supplied linkage/cutoff
-        # so the saved CurrentFactorCovarData carries consistent dendrogram
-        # metadata from the reference run.
-        clusters_freqs[freq] = fit_model.clusters
-        if use_precomputed:
-            linkages_freqs[freq] = precomputed_linkages[freq]
-            cutoffs_freqs[freq] = precomputed_cutoffs[freq]
-        else:
-            linkages_freqs[freq] = fit_model.linkage
-            cutoffs_freqs[freq] = fit_model.cutoff
-
-        # Solver-facing sign matrix that was actually applied during this
-        # freq's fit. LassoModel.derived_signs_ is set whenever
-        # auto_sign_constraints=True and/or factors_beta_loading_signs is
-        # supplied; it's None when no sign layer was active. Capture per
-        # freq so the merge later mirrors the same (N_freq x M) → (N x M)
-        # concat+reindex pattern used for betas.
-        if fit_model.derived_signs_ is not None:
-            derived_signs_freqs[freq] = fit_model.derived_signs_
-
-        # in-sample residuals: y - x @ beta' where beta is (N x M)
-        # x is (T x M), beta.T is (M x N), result is (T x N)
-        residuals_freqs[freq] = y - x @ betas_freqs[freq].T
+        for freq, asset_returns in asset_returns_dict.items()
+    }
 
     # 3. annualise and merge across frequencies
     asset_last_betas = []
@@ -608,18 +611,19 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
     residuals = []
     derived_signs_list: List[pd.DataFrame] = []
     for freq in asset_returns_dict.keys():
-        asset_last_betas.append(betas_freqs[freq])  # (N_freq x M)
+        result = frequency_results[freq]
+        asset_last_betas.append(result.betas)  # (N_freq x M)
         idio_var_scaler = qis.get_annualisation_conversion_factor(from_freq=freq, to_freq='YE')
-        last_ewma_vars.append(idio_var_scaler * ewma_vars_freqs[freq])
-        last_residual_vars.append(idio_var_scaler * residual_vars_freqs[freq])
-        last_alphas.append(idio_var_scaler * alphas_freqs[freq])
-        last_r2.append(r2_freqs[freq])
-        residuals.append(idio_var_scaler * residuals_freqs[freq])
+        last_ewma_vars.append(idio_var_scaler * result.ewma_variances)
+        last_residual_vars.append(idio_var_scaler * result.residual_variances)
+        last_alphas.append(idio_var_scaler * result.alphas)
+        last_r2.append(result.r2)
+        residuals.append(idio_var_scaler * result.residuals)
         # derived_signs: only freqs that actually got a sign layer contribute.
         # Unlike betas (always emitted by every freq), signs may be absent
         # entirely if auto_sign_constraints=False and no explicit
         # factors_beta_loading_signs was passed.
-        sub = derived_signs_freqs.get(freq)
+        sub = result.derived_signs
         if sub is not None:
             derived_signs_list.append(sub)
 
@@ -651,11 +655,12 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
     linkage_frames = []
     cutoff_values: Dict[str, float] = {}
     for freq in asset_returns_dict.keys():
-        s = clusters_freqs.get(freq)
+        result = frequency_results[freq]
+        s = result.clusters
         if s is not None:
             cluster_series_list.append(s.astype(str).radd(f"{freq}:"))
 
-        L = linkages_freqs.get(freq)
+        L = result.linkage
         if L is not None:
             linkage_frames.append(pd.DataFrame(
                 L,
@@ -666,7 +671,7 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
                 ),
             ))
 
-        c = cutoffs_freqs.get(freq)
+        c = result.cutoff
         if c is not None:
             cutoff_values[freq] = float(c)
 
