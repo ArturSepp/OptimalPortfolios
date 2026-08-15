@@ -69,6 +69,12 @@ jobs:
     - name: Sync the core environment
       run: uv sync --locked
 
+    - name: Check the Colab notebook mirror
+      # The notebook carries one cell tagged `d6-source`; this standard-library check compares it
+      # byte-for-byte with the authoritative Python quickstart and rejects saved execution output.
+      # It also preserves the released-package install, runtime version, and required links.
+      run: uv run --no-sync python .github/scripts/check_quickstart_notebook.py
+
     - name: Run the offline examples
       # The lane is derived, not listed. `run_examples.py` walks each example's intra-`examples`
       # import closure and calls it network-bound if `yfinance` is reachable at all -- thirteen of
