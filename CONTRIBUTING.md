@@ -67,7 +67,7 @@ install a PEP 735 dependency-group. It also resolves fresh rather than from `uv.
 not what CI gates the pinned cell against.
 
 Note that `ruff check` is run with an explicit `--select`. Running it bare applies the `E`/`W`
-families configured in `pyproject.toml`, which report a deliberate backlog of ~380 `E501`
+families configured in `pyproject.toml`, which report a deliberate backlog of ~215 `E501`
 line-length findings in the older modules. Fix only the lines your change touches; a
 repository-wide reflow is not wanted.
 
