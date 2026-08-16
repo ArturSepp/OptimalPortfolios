@@ -26,6 +26,8 @@ from typing import Tuple
 # project
 from optimalportfolios.alphas.signals.carry import (compute_ra_carry_alpha,
                                                    compute_ra_carry_cluster_alpha)
+from optimalportfolios.alphas.signals.classic_momentum import (
+    compute_classic_momentum_alpha, compute_classic_momentum_cluster_alpha)
 from optimalportfolios.alphas.signals.low_beta import (compute_low_beta_alpha,
                                                       compute_low_beta_cluster_alpha)
 from optimalportfolios.alphas.signals.momentum import (compute_momentum_alpha,
@@ -71,6 +73,8 @@ def _signal_cases():
             benchmark_price=benchmark, short_span=None, vol_span=13, **common, **k), 'long_span', 12),
         ('momentum_vol', lambda **k: compute_momentum_alpha(
             benchmark_price=benchmark, short_span=None, long_span=12, **common, **k), 'vol_span', 13),
+        ('classic_momentum', lambda **k: compute_classic_momentum_alpha(
+            skip_periods=1, **common, **k), 'lookback_periods', 12),
         ('low_beta', lambda **k: compute_low_beta_alpha(
             benchmark_price=benchmark, **common, **k), 'beta_span', 12),
         ('residual_momentum', lambda **k: compute_residual_momentum_alpha(
@@ -221,6 +225,9 @@ def _cluster_cases():
         ('momentum', lambda freq, **k: compute_momentum_cluster_alpha(
             prices=prices, benchmark_price=benchmark, returns_freq=freq,
             short_span=None, vol_span=13, **k), 'long_span', 12),
+        ('classic_momentum', lambda freq, **k: compute_classic_momentum_cluster_alpha(
+            prices=prices, returns_freq=freq, skip_periods=1, **k),
+         'lookback_periods', 12),
         ('low_beta', lambda freq, **k: compute_low_beta_cluster_alpha(
             prices=prices, benchmark_price=benchmark, returns_freq=freq, **k), 'beta_span', 12),
         ('residual_momentum', lambda freq, **k: compute_residual_momentum_cluster_alpha(

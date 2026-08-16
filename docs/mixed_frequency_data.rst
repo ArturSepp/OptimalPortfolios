@@ -48,7 +48,7 @@ independent contemporaneous samples.
 Signal horizons
 ---------------
 
-Momentum, low-beta, and residual-momentum signals accept a per-asset
+Risk-adjusted momentum, classic momentum, low-beta, and residual-momentum signals accept a per-asset
 ``returns_freq`` Series.  Horizon parameters accept a mapping by cadence, so a
 calendar-year momentum horizon can be represented by 12 monthly observations
 and four quarterly observations:
@@ -60,6 +60,18 @@ and four quarterly observations:
        returns_freq=return_frequencies,
        long_span={"ME": 12, "QE": 4},
        vol_span={"ME": 13, "QE": 4},
+   )
+
+Classic momentum uses the same cadence mapping but interprets its parameters as
+an exact observation count and hard skip rather than EWMA spans:
+
+.. code-block:: python
+
+   scores, raw_signal = opt.compute_classic_momentum_alpha(
+       prices=prices,
+       returns_freq=return_frequencies,
+       lookback_periods={"ME": 12, "QE": 4},
+       skip_periods={"ME": 1, "QE": 1},
    )
 
 The per-cadence signals are computed separately, merged in the original asset

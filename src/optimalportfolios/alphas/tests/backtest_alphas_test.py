@@ -19,6 +19,8 @@ in the single-signal one, because those orderings are not the same and both are 
 for how the factsheet labels its benchmark.
 """
 # packages
+import inspect
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import pytest
@@ -28,6 +30,7 @@ from optimalportfolios.alphas.backtest_alphas import (
     AlphaSignal,
     CrossBacktestParam,
     backtest_alpha_signals,
+    compute_signal_scores,
     cross_backtest_alpha_signals,
     multi_backtest_alpha_signals,
 )
@@ -55,6 +58,31 @@ def universe() -> dict:
                 time_period=qis.TimePeriod('2015-01-01', '2019-12-31'))
 
 
+def test_classic_parameters_are_appended_to_existing_public_signatures() -> None:
+    """Adding classic momentum must not shift any existing positional argument."""
+    existing_parameters = {
+        compute_signal_scores: [
+            'prices', 'alpha_signal', 'group_data', 'benchmark_price', 'returns_freq',
+            'mom_long_span', 'mom_short_span', 'beta_span', 'vol_span', 'momentum_span',
+        ],
+        backtest_alpha_signals: [
+            'prices', 'group_data', 'group_order', 'rebalancing_costs', 'benchmark_prices',
+            'time_period', 'alpha_signal', 'mom_long_span', 'mom_short_span', 'beta_span',
+            'momentum_span', 'rebalancing_freq', 'returns_freq',
+        ],
+        multi_backtest_alpha_signals: [
+            'prices', 'group_data', 'group_order', 'rebalancing_costs', 'benchmark_prices',
+            'time_period', 'mom_long_span', 'mom_short_span', 'beta_span', 'momentum_span',
+            'rebalancing_freq', 'returns_freq',
+        ],
+    }
+    for function, existing in existing_parameters.items():
+        parameters = list(inspect.signature(function).parameters)
+        assert parameters == existing + [
+            'classic_lookback_periods', 'classic_skip_periods'
+        ]
+
+
 # --------------------------------------------------------------------------- #
 # backtest_alpha_signals
 # --------------------------------------------------------------------------- #
@@ -67,7 +95,7 @@ def test_a_single_signal_backtest_renders_a_factsheet(universe: dict) -> None:
 
 @pytest.mark.parametrize('alpha_signal', list(AlphaSignal))
 def test_every_signal_can_be_backtested(universe: dict, alpha_signal: AlphaSignal) -> None:
-    """All five signals reach the backtester, composites included.
+    """Every registered signal reaches the backtester, composites included.
 
     The two composite signals forward their smoothing span to ``compute_residual_momentum_alpha``
     as ``long_span``; passing it as ``momentum_span`` used to raise TypeError, so these signals

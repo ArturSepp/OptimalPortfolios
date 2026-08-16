@@ -64,6 +64,22 @@ is now kept only to report the true figure when the gate fails.
   else. It also meant CI never executed the mechanism the file exists to provide for
   `pytest --pyargs optimalportfolios` users. Both outcomes are now asserted against a synthetic
   mapping, including an empty `MPLBACKEND=` counting as unset rather than as a backend named `''`.
+
+## [6.20.0] - 2026-08-15
+
+This release separates classic fixed-window momentum from the existing risk-adjusted EWMA
+momentum signal without changing any existing signal defaults or numerical paths.
+
+### Added
+
+- Added `compute_classic_momentum_alpha` and `compute_classic_momentum_cluster_alpha` for an
+  exact fixed-window return sum with an explicit hard skip, including fixed-group, rolling-cluster,
+  and mixed-cadence scoring.
+- Added `compute_classic_momentum_from_returns` for callers that already hold a cadence-aligned
+  return panel and must preserve its missing-history mask exactly.
+- Added classic momentum to the alpha dispatcher and profiling layer as `ClassicMomentum` and
+  `profile_classic_momentum`, with public exports and offline regression coverage.
+
 ## [6.19.0] - 2026-08-15
 
 This release improves documentation, discovery, and first-use onboarding. It does not change the

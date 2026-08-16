@@ -19,8 +19,8 @@ Overview
 ``optimalportfolios`` implements the full path from raw prices to a backtested
 portfolio:
 
-#. **Alpha signals** -- momentum, carry, low-beta, residual momentum, and
-   reversal, with cross-sectional and within-cluster scoring.
+#. **Alpha signals** -- risk-adjusted and classic momentum, carry, low-beta,
+   residual momentum, and reversal, with cross-sectional and within-cluster scoring.
 #. **Covariance estimation** -- EWMA estimators and the HCGL sparse factor model
    supplied by `factorlasso <https://github.com/ArturSepp/factorlasso>`_.
 #. **Constrained optimisation** -- risk budgeting, maximum diversification,

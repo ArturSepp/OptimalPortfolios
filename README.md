@@ -178,8 +178,8 @@ function.
 src/optimalportfolios/
 ├── config.py                      # PortfolioObjective enum
 ├── alphas/                        # Alpha signal computation
-│   ├── signals/                   # momentum, carry, low_beta, residual momentum/reversal,
-│   │                              #   managers_alpha, rolling_ewma_mean
+│   ├── signals/                   # risk-adjusted/classic momentum, carry, low_beta,
+│   │                              #   residual momentum/reversal, managers_alpha, rolling_ewma_mean
 │   ├── profile/                   # Signal profiling
 │   ├── alpha_data.py              # AlphasData container
 │   ├── backtest_alphas.py         # Signal backtesting tool
@@ -292,8 +292,8 @@ raw market data and the `factorlasso` solver:
 
 Introduced in v4.1.1 and expanded through the 6.x releases, the `alphas` module
 provides standalone signal constructors with a consistent interface. The current
-set covers momentum, low beta, carry, managers alpha, residual momentum and
-residual reversal, plus rolling EWMA expected returns. Signal constructors handle
+set covers risk-adjusted and classic momentum, low beta, carry, managers alpha,
+residual momentum and residual reversal, plus rolling EWMA expected returns. Signal constructors handle
 single- and mixed-frequency universes, support fixed-group or time-varying-cluster
 cross-sectional scoring, and normally return both a dimensionless score and the
 raw signal for diagnostics.
@@ -310,7 +310,7 @@ Pipeline: **raw signal → score → alpha**.
 
 ### Available signals
 
-**Momentum** (`compute_momentum_alpha`) — EWMA-filtered risk-adjusted excess returns relative to a benchmark, converted to cross-sectional scores.
+**Risk-adjusted Momentum** (`compute_momentum_alpha`) — EWMA-filtered risk-adjusted excess returns relative to a benchmark, converted to cross-sectional scores.
 
 ```python +SKIP
 from optimalportfolios.alphas import compute_momentum_alpha
@@ -318,6 +318,17 @@ from optimalportfolios.alphas import compute_momentum_alpha
 score, raw_momentum = compute_momentum_alpha(
     prices=prices, benchmark_price=benchmark, returns_freq='ME',
     group_data=asset_class_groups, long_span=12)
+```
+
+**Classic Momentum** (`compute_classic_momentum_alpha`) — a fixed-window sum of log returns
+after a hard skip, with no benchmark subtraction, volatility scaling, mean adjustment, or EWMA
+filtering. The defaults implement monthly 12m-ex-1m momentum.
+
+```python
+from optimalportfolios.alphas import compute_classic_momentum_alpha
+
+score, raw_momentum = compute_classic_momentum_alpha(
+    prices=prices, returns_freq='ME', lookback_periods=12, skip_periods=1)
 ```
 
 **Low Beta** (`compute_low_beta_alpha`) — EWMA regression beta to benchmark, negated and cross-sectionally scored ("betting against beta").
@@ -354,7 +365,8 @@ signal, so recent benchmark-adjusted losers receive positive scores.
 **Rolling EWMA Means** (`estimate_rolling_ewma_means`) — point-in-time expected-return panels for
 mean-dependent rolling optimisers.
 
-Momentum, low-beta, carry, residual-momentum and residual-reversal constructors also provide
+Risk-adjusted momentum, classic momentum, low-beta, carry, residual-momentum and
+residual-reversal constructors also provide
 `*_cluster_alpha` variants that score within time-varying statistical clusters rather than fixed
 groups. `align_rolling_clusters()` removes arbitrary cluster-label renumbering through time.
 
@@ -995,12 +1007,13 @@ Portfolios", *The Journal of Portfolio Management*, 52(4), 86-120.
 
 ## Updates
 
-#### August 2026, Versions 6.8.0–6.19.0 released
+#### August 2026, Versions 6.8.0–6.20.0 released
 
-The recent 6.x series through 6.19.0 added several production analytics that are now part of the current API:
+The recent 6.x series through 6.20.0 added several production analytics that are now part of the current API:
 
 | Release | Analytics and behavior added |
 | --- | --- |
+| 6.20.0 | Added classic fixed-window momentum with a hard skip as standard, fixed-group and rolling-cluster constructors, while preserving the existing risk-adjusted momentum path. |
 | 6.19.0 | Added practitioner workflow documentation, a neutral package comparison, an authoritative offline production quickstart, and a drift-checked Colab entry point; no numerical or public-API behavior changed. |
 | 6.18.0 | Adopted the standard `src/` package layout without changing installed imports or the public API; strengthened built-wheel, static, dependency-audit and examples gates; and raised measured line coverage to 99%. |
 | 6.17.0 | Remediated the JOSS dry-run audit with portable paths, substantive generated API pages and importable version metadata; repaired flat factorlasso covariance plots; and refreshed the MATF-CMA custom eleven-factor replication snapshot. |
@@ -1274,7 +1287,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={OptimalPortfolios: Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python},
   year={2026},
-  version={6.19.0},
+  version={6.20.0},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

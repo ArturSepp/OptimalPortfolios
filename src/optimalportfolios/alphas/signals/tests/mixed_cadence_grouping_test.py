@@ -1,5 +1,5 @@
 """
-the mixed-cadence-with-groups branch, across all four signal modules.
+the mixed-cadence-with-groups branch, across all five signal modules.
 
 Every signal here dispatches on the *type* of ``returns_freq``: a string means one cadence for
 the whole universe, a Series means per-asset cadences computed separately and merged. Crossed
@@ -26,6 +26,7 @@ from optimalportfolios.alphas.signals.carry import (
     compute_ra_carry_alpha,
     compute_ra_carry_alphas,
 )
+from optimalportfolios.alphas.signals.classic_momentum import compute_classic_momentum_alpha
 from optimalportfolios.alphas.signals.low_beta import compute_low_beta_alpha
 from optimalportfolios.alphas.signals.momentum import compute_momentum_alpha
 from optimalportfolios.alphas.signals.residual_momentum import compute_residual_momentum_alpha
@@ -67,6 +68,9 @@ def call_signal(name: str, universe: dict, returns_freq, group_data) -> tuple:
     if name == 'momentum':
         return compute_momentum_alpha(benchmark_price=universe['benchmark_price'],
                                       long_span=SPANS, vol_span=SHORT_SPANS, **common)
+    if name == 'classic_momentum':
+        return compute_classic_momentum_alpha(
+            lookback_periods=SPANS, skip_periods=1, **common)
     if name == 'residual_momentum':
         return compute_residual_momentum_alpha(benchmark_price=universe['benchmark_price'],
                                                beta_span=SPANS, long_span=SPANS,
@@ -74,7 +78,7 @@ def call_signal(name: str, universe: dict, returns_freq, group_data) -> tuple:
     raise AssertionError(f"unknown signal {name!r}")
 
 
-SIGNALS = ['carry', 'low_beta', 'momentum', 'residual_momentum']
+SIGNALS = ['carry', 'classic_momentum', 'low_beta', 'momentum', 'residual_momentum']
 
 
 # --------------------------------------------------------------------------- #

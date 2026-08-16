@@ -15,6 +15,7 @@ from enum import Enum
 from typing import List, Optional
 
 from optimalportfolios.alphas.signals.momentum import compute_momentum_alpha
+from optimalportfolios.alphas.signals.classic_momentum import compute_classic_momentum_alpha
 from optimalportfolios.alphas.signals.low_beta import compute_low_beta_alpha
 from optimalportfolios.alphas.signals.residual_momentum import compute_residual_momentum_alpha
 
@@ -22,6 +23,7 @@ from optimalportfolios.alphas.signals.residual_momentum import compute_residual_
 class AlphaSignal(Enum):
     """Enumeration of alpha signals available for backtesting."""
     MOMENTUM = 'Momentum'
+    CLASSIC_MOMENTUM = 'ClassicMomentum'
     LOW_BETA = 'LowBeta'
     RESIDUAL_MOMENTUM = 'ResidualMomentum'
     MOMENTUM_AND_BETA = 'MomentumAndBeta'
@@ -38,6 +40,8 @@ def compute_signal_scores(prices: pd.DataFrame,
                           beta_span: int = 24,
                           vol_span: Optional[int] = 13,
                           momentum_span: int = 12,
+                          classic_lookback_periods: int = 12,
+                          classic_skip_periods: int = 1,
                           ) -> pd.DataFrame:
     """
     Compute cross-sectional alpha scores for a given signal type.
@@ -56,6 +60,8 @@ def compute_signal_scores(prices: pd.DataFrame,
         beta_span: Beta estimation EWMA span.
         vol_span: Vol normalisation span for momentum.
         momentum_span: EWMA span for residual momentum smoothing.
+        classic_lookback_periods: Included periods for classic momentum.
+        classic_skip_periods: Latest periods excluded from classic momentum.
 
     Returns:
         Cross-sectional scores (T × N).
@@ -69,6 +75,14 @@ def compute_signal_scores(prices: pd.DataFrame,
             long_span=mom_long_span,
             short_span=mom_short_span,
             vol_span=vol_span)
+
+    elif alpha_signal == AlphaSignal.CLASSIC_MOMENTUM:
+        scores, _ = compute_classic_momentum_alpha(
+            prices=prices,
+            returns_freq=returns_freq or 'ME',
+            group_data=group_data,
+            lookback_periods=classic_lookback_periods,
+            skip_periods=classic_skip_periods)
 
     elif alpha_signal == AlphaSignal.LOW_BETA:
         scores, _ = compute_low_beta_alpha(
@@ -147,7 +161,9 @@ def backtest_alpha_signals(prices: pd.DataFrame,
                            beta_span: int = 24,
                            momentum_span: int = 12,
                            rebalancing_freq: str = 'QE',
-                           returns_freq: Optional[str] = None
+                           returns_freq: Optional[str] = None,
+                           classic_lookback_periods: int = 12,
+                           classic_skip_periods: int = 1,
                            ) -> List[plt.Figure]:
     """
     Backtest a single alpha signal vs equal weight.
@@ -169,6 +185,8 @@ def backtest_alpha_signals(prices: pd.DataFrame,
         momentum_span: Residual momentum EWMA span.
         rebalancing_freq: Portfolio rebalancing frequency.
         returns_freq: Return frequency for signal computation.
+        classic_lookback_periods: Included periods for classic momentum.
+        classic_skip_periods: Latest periods excluded from classic momentum.
 
     Returns:
         List of factsheet figures.
@@ -177,6 +195,8 @@ def backtest_alpha_signals(prices: pd.DataFrame,
         prices=prices, alpha_signal=alpha_signal,
         group_data=group_data, returns_freq=returns_freq,
         mom_long_span=mom_long_span, mom_short_span=mom_short_span,
+        classic_lookback_periods=classic_lookback_periods,
+        classic_skip_periods=classic_skip_periods,
         beta_span=beta_span, momentum_span=momentum_span)
     signal_weights = qis.df_to_long_only_allocation_sum1(df=scores)
 
@@ -224,7 +244,9 @@ def multi_backtest_alpha_signals(prices: pd.DataFrame,
                                  beta_span: int = 24,
                                  momentum_span: int = 12,
                                  rebalancing_freq: str = 'QE',
-                                 returns_freq: Optional[str] = None
+                                 returns_freq: Optional[str] = None,
+                                 classic_lookback_periods: int = 12,
+                                 classic_skip_periods: int = 1,
                                  ) -> List[plt.Figure]:
     """
     Backtest all alpha signals side-by-side vs equal weight.
@@ -245,6 +267,8 @@ def multi_backtest_alpha_signals(prices: pd.DataFrame,
         momentum_span: Residual momentum EWMA span.
         rebalancing_freq: Portfolio rebalancing frequency.
         returns_freq: Return frequency for signal computation.
+        classic_lookback_periods: Included periods for classic momentum.
+        classic_skip_periods: Latest periods excluded from classic momentum.
 
     Returns:
         List of factsheet figures.
@@ -257,6 +281,8 @@ def multi_backtest_alpha_signals(prices: pd.DataFrame,
             prices=prices, alpha_signal=alpha_signal,
             group_data=group_data, returns_freq=returns_freq,
             mom_long_span=mom_long_span, mom_short_span=mom_short_span,
+            classic_lookback_periods=classic_lookback_periods,
+            classic_skip_periods=classic_skip_periods,
             beta_span=beta_span, momentum_span=momentum_span)
         weights[alpha_signal.value] = qis.df_to_long_only_allocation_sum1(df=scores)
 

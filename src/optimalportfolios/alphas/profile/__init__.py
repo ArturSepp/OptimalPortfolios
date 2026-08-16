@@ -13,6 +13,7 @@ from optimalportfolios.alphas.profile.core import (
 from optimalportfolios.alphas.profile.signal_profilers import (
     ProfileSignal,
     profile_momentum,
+    profile_classic_momentum,
     profile_low_beta,
     profile_residual_momentum,
     profile_carry,

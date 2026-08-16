@@ -17,6 +17,7 @@ from optimalportfolios.alphas.profile.signal_profilers import (
     ProfileSignal,
     profile_alpha_signals,
     profile_carry,
+    profile_classic_momentum,
     profile_low_beta,
     profile_momentum,
     profile_residual_momentum,
@@ -43,6 +44,13 @@ def test_profile_momentum_labels_its_leg_and_appends_the_benchmark(universe: tup
     prices, benchmark_price, _ = universe
     multi = profile_momentum(prices=prices, benchmark_price=benchmark_price)
     assert leg_tickers(multi) == ['momentum', 'Equal Weight']
+
+
+def test_profile_classic_momentum_labels_its_leg(universe: tuple) -> None:
+    """The classic wrapper reaches the fixed-window signal and labels its leg."""
+    prices, _, _ = universe
+    multi = profile_classic_momentum(prices=prices)
+    assert leg_tickers(multi) == ['classic_momentum', 'Equal Weight']
 
 
 def test_profile_low_beta_labels_its_leg(universe: tuple) -> None:
@@ -113,4 +121,4 @@ def test_profile_alpha_signals_rejects_an_empty_dict(universe: tuple) -> None:
 def test_profile_signal_values_are_stable_strings() -> None:
     """The enum is a str enum used as a label; its values are part of the interface."""
     assert [signal.value for signal in ProfileSignal] == [
-        'momentum', 'low_beta', 'residual_momentum', 'carry']
+        'momentum', 'classic_momentum', 'low_beta', 'residual_momentum', 'carry']

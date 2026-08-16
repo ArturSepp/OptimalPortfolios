@@ -23,6 +23,7 @@ import pandas as pd
 import pytest
 import qis
 # optimalportfolios
+import optimalportfolios.alphas.backtest_alphas as backtest_module
 from optimalportfolios.alphas.backtest_alphas import AlphaSignal, compute_signal_scores
 from optimalportfolios.alphas.signals.utils import (
     _global_zscore,
@@ -369,6 +370,31 @@ def test_compute_signal_scores_accepts_group_data() -> None:
     scores = compute_signal_scores(prices=prices, alpha_signal=AlphaSignal.MOMENTUM,
                                    group_data=groups, returns_freq='ME')
     assert list(scores.columns) == list(prices.columns)
+
+
+def test_classic_dispatch_forwards_lookback_and_skip(monkeypatch) -> None:
+    """Classic dispatcher parameters must reach the fixed-window constructor unchanged."""
+    captured = {}
+    panel = make_prices()
+
+    def fake_classic(**kwargs):
+        """Record the dispatch keywords and return a correctly shaped placeholder."""
+        captured.update(kwargs)
+        values = pd.DataFrame(0.0, index=panel.index, columns=panel.columns)
+        return values, values
+
+    monkeypatch.setattr(
+        backtest_module, 'compute_classic_momentum_alpha', fake_classic
+    )
+    compute_signal_scores(
+        prices=panel,
+        alpha_signal=AlphaSignal.CLASSIC_MOMENTUM,
+        classic_lookback_periods=9,
+        classic_skip_periods=2,
+    )
+
+    assert captured['lookback_periods'] == 9
+    assert captured['skip_periods'] == 2
 
 
 def test_compute_signal_scores_rejects_an_unrouted_signal() -> None:

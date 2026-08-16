@@ -5,6 +5,11 @@ from optimalportfolios.alphas.signals.momentum import (
     compute_momentum_alpha,
     compute_momentum_cluster_alpha,
 )
+from optimalportfolios.alphas.signals.classic_momentum import (
+    compute_classic_momentum_from_returns,
+    compute_classic_momentum_alpha,
+    compute_classic_momentum_cluster_alpha,
+)
 from optimalportfolios.alphas.signals.low_beta import (
     compute_low_beta_alpha,
     compute_low_beta_cluster_alpha,

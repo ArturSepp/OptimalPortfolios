@@ -7,6 +7,7 @@ by design: the value is in ``profile.core``; these just wire a named signal into
 signal the core doesn't have a wrapper for, compute the panel yourself and call the core directly.
 
     profile_momentum          -- risk-adjusted momentum
+    profile_classic_momentum  -- fixed-window momentum with a hard skip
     profile_low_beta          -- low-beta (beta-to-benchmark)
     profile_residual_momentum -- residual (benchmark-neutral) momentum
     profile_carry             -- risk-adjusted carry (needs a yield panel)
@@ -20,6 +21,7 @@ from typing import Dict, Optional
 
 # optimalportfolios
 from optimalportfolios.alphas.signals.momentum import compute_momentum_alpha
+from optimalportfolios.alphas.signals.classic_momentum import compute_classic_momentum_alpha
 from optimalportfolios.alphas.signals.low_beta import compute_low_beta_alpha
 from optimalportfolios.alphas.signals.residual_momentum import compute_residual_momentum_alpha
 from optimalportfolios.alphas.signals.carry import compute_ra_carry_alpha
@@ -29,6 +31,7 @@ from optimalportfolios.alphas.profile.core import backtest_alpha_rank_portfolio
 class ProfileSignal(str, Enum):
     """named signals the joint profiler can build from prices (+ optional carry)."""
     MOMENTUM = 'momentum'
+    CLASSIC_MOMENTUM = 'classic_momentum'
     LOW_BETA = 'low_beta'
     RESIDUAL_MOMENTUM = 'residual_momentum'
     CARRY = 'carry'
@@ -53,6 +56,26 @@ def profile_momentum(prices: pd.DataFrame,
         prices=prices, alpha_scores=scores, quantile=quantile,
         rebalancing_freq=rebalancing_freq, time_period=time_period,
         rebalancing_costs=rebalancing_costs, strategy_ticker='momentum')
+
+
+def profile_classic_momentum(prices: pd.DataFrame,
+                             returns_freq: str = 'ME',
+                             lookback_periods: int = 12,
+                             skip_periods: int = 1,
+                             group_data: Optional[pd.Series] = None,
+                             quantile: float = 1.0 / 3.0,
+                             rebalancing_freq: str = 'QE',
+                             time_period: qis.TimePeriod = None,
+                             rebalancing_costs: Optional[pd.Series] = None,
+                             ) -> qis.MultiPortfolioData:
+    """Profile fixed-window momentum with an explicit skipped-return interval."""
+    scores, _ = compute_classic_momentum_alpha(
+        prices=prices, returns_freq=returns_freq, group_data=group_data,
+        lookback_periods=lookback_periods, skip_periods=skip_periods)
+    return backtest_alpha_rank_portfolio(
+        prices=prices, alpha_scores=scores, quantile=quantile,
+        rebalancing_freq=rebalancing_freq, time_period=time_period,
+        rebalancing_costs=rebalancing_costs, strategy_ticker='classic_momentum')
 
 
 def profile_low_beta(prices: pd.DataFrame,
