@@ -9,15 +9,20 @@ import pybloqs as p
 import qis as qis
 from qis import TimePeriod, PerfParams, BenchmarkReturnsQuantilesRegime, PerfStat, PortfolioData
 
-from papers.crypto_allocation_risk_2023.load_prices import Assets, load_prices, load_risk_free_rate
+from papers.crypto_allocation_risk_2023.load_prices import (
+    Assets,
+    OUTPUT_PATH,
+    load_prices,
+    load_risk_free_rate,
+)
 from optimalportfolios.reports.marginal_backtest import OptimisationParams, OptimisationType, backtest_marginal_optimal_portfolios
 from optimalportfolios.reports.config import KWARGS_SUPTITLE, KWARGS_TITLE, KWARGS_FIG, KWARGS_TEXT
 
 PERF_PARAMS = PerfParams(freq_vol='ME', freq_reg='ME', freq_drawdown='ME', rates_data=load_risk_free_rate())
 REGIME_CLASSIFIER = BenchmarkReturnsQuantilesRegime(freq='QE')
 
-LOCAL_PATH = "C://Users//artur//OneDrive//analytics//outputs//"
-FIGURE_SAVE_PATH = LOCAL_PATH # "C://Users//artur//OneDrive//My Papers//Published Papers//CryptoAllocation. Zurich. Jan 2022//UpdatedFigures//"
+LOCAL_PATH = OUTPUT_PATH
+FIGURE_SAVE_PATH = OUTPUT_PATH
 
 SAVE_FIGS = False
 
@@ -103,6 +108,7 @@ def produce_article_backtests(time_period: TimePeriod,
     plot weights time series
     plot performance attribution
     """
+    LOCAL_PATH.mkdir(parents=True, exist_ok=True)
     crypto_assets = ['BTC', 'ETH']
     prices_alls = {}
     for crypto_asset in crypto_assets:
@@ -457,8 +463,9 @@ def produce_article_backtests(time_period: TimePeriod,
 
     b_report = p.VStack(vblocks)
     filename = f"Crypto_portfolios_backtests_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.pdf"
-    b_report.save(filename)
-    print(f"saved article report to {filename}")
+    report_file = LOCAL_PATH / filename
+    b_report.save(str(report_file))
+    print(f"saved article report to {report_file}")
     qis.save_df_to_excel(dfs_out, file_name=filename, local_path=LOCAL_PATH)
     print(f"saved article tables to {filename}.xls")
     plt.close('all')

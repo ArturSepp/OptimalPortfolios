@@ -11,7 +11,12 @@ import qis
 from qis import TimePeriod, PerfParams, BenchmarkReturnsQuantilesRegime, PerfStat
 
 import optimalportfolios.utils.gaussian_mixture as gm
-from papers.crypto_allocation_risk_2023.load_prices import Assets, load_prices, load_risk_free_rate
+from papers.crypto_allocation_risk_2023.load_prices import (
+    Assets,
+    OUTPUT_PATH,
+    load_prices,
+    load_risk_free_rate,
+)
 
 PERF_PARAMS = PerfParams(freq_vol='ME', freq_reg='ME', freq_drawdown='ME', rates_data=load_risk_free_rate())
 REGIME_CLASSIFIER = BenchmarkReturnsQuantilesRegime(freq='QE')
@@ -263,8 +268,10 @@ def run_local_test(local_test: LocalTests):
     These are integration tests that download real universe and generate reports.
     Use for quick verification during product_development.
     """
-    FIGURE_SAVE_PATH = "C://Users//artur//OneDrive//My Papers//Published Papers//CryptoAllocation. Zurich. Jan 2022//UpdatedFigures//"
+    FIGURE_SAVE_PATH = OUTPUT_PATH
     SAVE_FIGS = True
+    if SAVE_FIGS:
+        FIGURE_SAVE_PATH.mkdir(parents=True, exist_ok=True)
 
     end_date = '30Jun2023'
 

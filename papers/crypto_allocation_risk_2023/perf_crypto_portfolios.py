@@ -1,7 +1,7 @@
 """
 backtesting report for BTC portfolios
 to use pybloqs for pandas > 2.x
-locate file "...\Lib\site-packages\pybloqs\jinja\table.html"
+locate file "...\\Lib\\site-packages\\pybloqs\\jinja\\table.html"
 change line 44 from:
 {% for col_name, cell in row.iteritems() %}
 to:
@@ -19,7 +19,12 @@ import pybloqs as p
 import qis as qis
 from qis import TimePeriod, PerfParams, BenchmarkReturnsQuantilesRegime, PerfStat
 
-from papers.crypto_allocation_risk_2023.load_prices import Assets, load_prices, load_risk_free_rate
+from papers.crypto_allocation_risk_2023.load_prices import (
+    Assets,
+    OUTPUT_PATH,
+    load_prices,
+    load_risk_free_rate,
+)
 from optimalportfolios.reports.marginal_backtest import OptimisationType
 from optimalportfolios.reports.config import KWARGS_SUPTITLE, KWARGS_TITLE, KWARGS_FIG, KWARGS_TEXT
 from papers.crypto_allocation_risk_2023.backtest_portfolios_for_article import run_joint_backtest
@@ -27,8 +32,8 @@ from papers.crypto_allocation_risk_2023.backtest_portfolios_for_article import r
 PERF_PARAMS = PerfParams(freq_vol='ME', freq_reg='ME', freq_drawdown='ME', rates_data=load_risk_free_rate())
 REGIME_CLASSIFIER = BenchmarkReturnsQuantilesRegime(freq='QE')
 
-LOCAL_PATH = "C://Users//artur//OneDrive//analytics//outputs//"
-FIGURE_SAVE_PATH = "C://Users//artur//OneDrive//My Papers//Working Papers//CryptoAllocation. Zurich. Jan 2022//figs1//"
+LOCAL_PATH = OUTPUT_PATH
+FIGURE_SAVE_PATH = OUTPUT_PATH
 SAVE_FIGS = False
 
 
@@ -82,9 +87,12 @@ def report_backtest_all_optimisation_types(time_period: TimePeriod,
                                          **FIG_KWARGS)
         b_reports.append(p.Block(report))
     b_reports = p.VStack(b_reports, styles={"page-break-after": "always"})
-    filename = f"{LOCAL_PATH}{crypto_asset}_backtests_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.pdf"
-    b_reports.save(filename)
-    print(f"saved optimisation report to {filename}")
+    LOCAL_PATH.mkdir(parents=True, exist_ok=True)
+    report_file = LOCAL_PATH / (
+        f"{crypto_asset}_backtests_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.pdf"
+    )
+    b_reports.save(str(report_file))
+    print(f"saved optimisation report to {report_file}")
 
 
 def create_performance_attrib_table(time_period_dict: Dict[str, TimePeriod],
@@ -424,8 +432,9 @@ def backtest_constant_weight_portfolios(crypto_asset: str = 'BTC',
                                   heatmap_columns=[1, 2],
                                   ax=ax,
                                   **kwargs)
-    filename = f"{LOCAL_PATH}{crypto_asset}_constant_weight_backtests.pdf"
-    qis.save_figs_to_pdf(figs, file_name=filename)
+    LOCAL_PATH.mkdir(parents=True, exist_ok=True)
+    report_file = LOCAL_PATH / f"{crypto_asset}_constant_weight_backtests.pdf"
+    qis.save_figs_to_pdf(figs, file_name=str(report_file))
 
 
 class LocalTests(Enum):
