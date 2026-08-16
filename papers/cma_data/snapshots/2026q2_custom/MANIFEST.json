@@ -775,10 +775,10 @@
     }
   ],
   "file_sha256": {
-    "assets.csv": "3ec976997bc8e7e0b2484eace462c62d9539e872838d41685c5b0afaaaedceb9",
-    "betas.csv": "8146b915132c9e64a1622fe15a7cb2bec939e1a50a187ee612eaee34f6d14e74",
-    "factor_covar.csv": "473b98b4a59b029b623507ed15dd5c01be63b7448b1cc199f4d2388f847caf13",
-    "factor_premia.csv": "463d0c4f798909eee9b958b0af14f10fbc37f39fc507baade05a9f3487779c68",
+    "assets.csv": "e71b137a690638362348a124aa27bc915cd620e46eb408dab5e454e73d009b40",
+    "betas.csv": "33170c26b2b4d0b1da789a8d7a0c43b4fa97c34e9a558bec38f27b0e4a5ef30c",
+    "factor_covar.csv": "c8930811a14a021904ba13a7778a4366571c2245a9a7e140dee0e4a19b900bab",
+    "factor_premia.csv": "bce8415d20d20569f0eff94ec2e1e865a667f4216bceb813d678e943a05cd16a",
     "asset_excess_logreturns.csv": "f5e4afa0ae977e0d0e8245f7b3b7b9353fe976629f73be02df9238613739929c",
     "asset_total_returns.csv": "3980bad248f391a2fa44b25c1c8879ceccdc47290300d1265da2dfa925b729fd",
     "factor_navs.csv": "33ff6ec8bdcb1ff1a81f2ee5da90653cd7071a8bb28c6b281bdf9063c791ef5b"
