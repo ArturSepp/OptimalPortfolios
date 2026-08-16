@@ -60,14 +60,19 @@ for TAA tracking error) and the full model (D included, for SAA risk budgeting).
 
 ## Running the example
 
+From a repository checkout, install the data extra and run the script against the current source:
+
 ```bash
-pip install optimalportfolios yfinance qis
-python hcgl_covar_for_rolling_backtest.py
+uv sync --extra dev --extra data
+uv run --no-sync python papers/robust_optimisation_jpm_2026/hcgl_covar_for_rolling_backtest.py
 ```
 
 The script uses `yfinance` to download price data for a 6-asset multi-asset
 universe: SPY (US equities), EZU (Europe equities), EEM (EM equities),
 TLT (US Treasuries), HYG (High Yield), GLD (Gold).
+Those histories can be revised by the provider, so a fresh run reproduces the method but is not
+expected to reproduce the exact published numbers bit-for-bit. For an installed release rather than
+a checkout, use `pip install "optimalportfolios[data]"`.
 
 
 ## Code walkthrough

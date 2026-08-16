@@ -1,30 +1,50 @@
-Implementation of simulations for paper:
+# Optimal Allocation to Cryptocurrencies in Diversified Portfolios
 
-Sepp A. (2023) Optimal Allocation to Cryptocurrencies in Diversified Portfolios,
-Risk (October 2023, 1-6), Available at SSRN: https://ssrn.com/abstract=4217841
+This directory contains the simulations for:
 
-The analysis presented in the paper can be replicated or extended using this module
+Sepp A. (2023), "Optimal Allocation to Cryptocurrencies in Diversified Portfolios",
+*Risk*, October 2023, 1–6. [SSRN 4217841](https://ssrn.com/abstract=4217841).
 
-Implementation steps:
-1) Populate the time series of asset prices in the investable universe using
-```python 
-optimaportfolios/examples/crypto_allocation/load_prices.py
+## Environment
+
+From a repository checkout, install the optional data and reporting dependencies explicitly:
+
+```bash
+uv sync --extra dev --extra data --extra reports
 ```
 
-Price data for some assets can be fetched from local csv files, some can be generated on the fly 
+The scripts use the current checkout. They do not carry PEP 723 metadata that could silently install
+a released `optimalportfolios` version instead.
 
-Run
-```python 
-update_prices() 
+## Data
+
+The `data/` directory includes the CSV inputs that can be redistributed. Rebuilding the combined
+price file with `update_prices_with_yf()` additionally requires two licensed Société Générale index
+workbooks that the repository cannot ship:
+
+- `CTA_Historical.xlsx` — [SG CTA Index](https://wholesale.banking.societegenerale.com/en/prime-services-indices/)
+- `Macro_Trading_Index_Historical.xlsx` — [SG Macro Trading Index](https://wholesale.banking.societegenerale.com/fileadmin/indices_feeds/Macro_Trading_Index_Historical.xls)
+
+Place authorised `.xlsx` copies beside the CSV files in `data/`. The loader checks for both before
+starting any Yahoo download and reports their exact paths when either is absent. The Bloomberg route
+requires a Bloomberg terminal and `bbg-fetch`; it is not the public reproduction path.
+
+Yahoo price histories are downloaded at runtime and may be revised by the provider. A fresh download
+therefore reproduces the method, not necessarily the exact published values. The committed combined
+CSV files are the stable inputs for comparing the stored analysis.
+
+## Running the scripts
+
+```bash
+uv run --no-sync python papers/crypto_allocation_risk_2023/load_prices.py
+uv run --no-sync python papers/crypto_allocation_risk_2023/article_figures.py
+uv run --no-sync python papers/crypto_allocation_risk_2023/backtest_portfolios_for_article.py
 ```
 
-2) Generate article figures using unit tests in
- ```python 
-optimaportfolios/examples/crypto_allocation/article_figures.py
-```
+Generated reports default to the gitignored
+`outputs/crypto_allocation_risk_2023/` directory at the repository root. Override it without editing
+the scripts by setting `OPTIMALPORTFOLIOS_OUTPUT_DIR`; for example in PowerShell:
 
-3) Generate reports of simulated investment portfolios as reported in the article
- ```python 
-optimaportfolios/examples/crypto_allocation/backtest_portfolios_for_article.py
+```powershell
+$env:OPTIMALPORTFOLIOS_OUTPUT_DIR = 'D:\portfolio-reports\crypto'
 ```
-

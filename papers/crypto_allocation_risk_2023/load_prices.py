@@ -4,6 +4,7 @@ update_prices_with_bloomberg() must used with  Bloomberg open
 update_prices_with_yf() uses yfinance + some universe uploaded manually
 NB: CmcScraper stopped working so now only option is to use bloomberg
 """
+import os
 from pathlib import Path
 import pandas as pd
 import yfinance as yf
@@ -14,9 +15,13 @@ from enum import Enum
 # from cryptocmd import CmcScraper  its stopped working: todo - remove
 import qis as qis
 
-# add the local path to universe files
-LOCAL_PATH = Path(__file__).parent.joinpath('/papers/crypto_allocation_risk_2023/data//')
-print(LOCAL_PATH)
+# Repository data and generated-output locations. The output directory can be redirected without
+# editing the published script; its default is the repository's gitignored outputs/ tree.
+LOCAL_PATH = Path(__file__).resolve().parent / 'data'
+OUTPUT_PATH = Path(os.environ.get(
+    'OPTIMALPORTFOLIOS_OUTPUT_DIR',
+    Path(__file__).resolve().parents[2] / 'outputs' / 'crypto_allocation_risk_2023',
+)).expanduser().resolve()
 
 
 # universe sources
@@ -27,6 +32,19 @@ MACRO_PRICE = 'Macro_Trading_Index_Historical'  # Macro SCTas from https://whole
 
 PRICE_DATA_FILE = 'crypto_allocation_prices'
 PRICE_DATA_FILE_UPDATED = 'crypto_allocation_prices_updated'
+
+LICENSED_PRICE_FILES = (f'{CTA_PRICE}.xlsx', f'{MACRO_PRICE}.xlsx')
+
+
+def require_licensed_price_files() -> None:
+    """Fail clearly when the two non-redistributable SG workbooks are absent."""
+    missing = [name for name in LICENSED_PRICE_FILES if not (LOCAL_PATH / name).is_file()]
+    if missing:
+        names = ', '.join(missing)
+        raise FileNotFoundError(
+            f"Required licensed input file(s) are not redistributed: {names}. "
+            f"Place authorised .xlsx copies in {LOCAL_PATH}. See README.md for the sources."
+        )
 
 
 class Assets(Enum):
@@ -47,6 +65,7 @@ def update_prices_with_yf() -> pd.DataFrame:
     """
     generate price universe using yfinance
     """
+    require_licensed_price_files()
     btc = create_btc_price()
     eth = create_eth_price(btc_price=qis.load_df_from_csv(file_name=BTC_PRICES_FROM_2010, local_path=LOCAL_PATH).iloc[:, 0])
     bal = create_balanced_price()
