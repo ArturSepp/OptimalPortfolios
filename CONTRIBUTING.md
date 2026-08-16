@@ -52,6 +52,12 @@ The two lint commands are the exact invocations `static.yml` gates with. The cov
 what the ubuntu/3.12 cell of `ci.yml` runs, with `--locked` added — that cell enforces the lock on
 its `uv sync` step instead, so the effect is the same.
 
+The `Makefile` at the repository root wraps these as `make install`, `make test`, `make lint`,
+`make cover` and `make audit`, with `make uv` to install `uv` itself, `make clean` to clear build
+and cache artefacts, and `make help` to list them.
+The commands written out here remain the definition; the Makefile only repeats them verbatim. The
+flags are spelled out below rather than hidden behind the aliases because each one is load-bearing.
+
 `--locked` fails rather than re-resolving if `uv.lock` has drifted from `pyproject.toml`. That is
 the point: a dependency edit that has not been re-locked fails here, on your machine, instead of
 on the pinned CI cell. If you are deliberately changing dependencies, run `uv lock` first (or drop
