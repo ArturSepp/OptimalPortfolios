@@ -138,6 +138,13 @@ optimiser behaviour, covariance estimation, or backtest mechanics, please re-run
 relevant scripts and confirm the published tables still reproduce. If they do not,
 report the difference in the PR rather than updating the expected values.
 
+The public, offline CMA snapshot and manuscript-parity suites run in `replication.yml` on every
+push and pull request. Run the same gate locally with:
+
+```bash
+uv run --no-sync pytest papers/cma_data/tests papers/matf_cma_jpm_2026/replication/tests -q
+```
+
 ## Conduct
 
 Be civil and assume good faith. Technical disagreement is welcome; personal remarks are

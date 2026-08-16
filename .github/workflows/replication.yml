@@ -1,0 +1,43 @@
+name: Replication
+
+# The package test matrix deliberately collects only src/optimalportfolios. This separate gate
+# covers the public, offline subset of papers/: the shared CMA snapshot and the numerical parity
+# assertions for the manuscript that consumes it. Other paper projects require network or licensed
+# inputs and therefore remain manual.
+permissions:
+  contents: read
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  replication:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Install uv and Python 3.12
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      with:
+        python-version: '3.12'
+        enable-cache: true
+
+    - name: Install the locked development environment
+      run: uv sync --extra dev --locked
+
+    - name: Verify public paper snapshots and manuscript parity
+      run: >-
+        uv run --no-sync pytest
+        papers/cma_data/tests
+        papers/matf_cma_jpm_2026/replication/tests
+        -q
