@@ -158,6 +158,12 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# ruff
+# Ruff also writes a .gitignore containing `*` inside this directory, so the cache stays out
+# of git status without this line. Naming it here means the rule lives with the repository's
+# own ignores rather than depending on that behaviour.
+.ruff_cache/
+
 /dist/
 *.xml
 *.pyc
