@@ -10,6 +10,7 @@ and an ``OptimizationOutcome`` with report-ready ``ConstraintResidual`` records.
 
 Submodule structure:
     general/    - objective solvers, including minimum tracking error
+    risk_allocation/ - risk budgeting, group budgets, and hierarchical risk parity
     saa/        - strategic solvers with CMA inputs and return/volatility targets
     taa/        - tactical solvers with alpha signals, TE constraints and benchmarks
 """
@@ -55,6 +56,12 @@ from optimalportfolios.optimization.general import (
     wrapper_maximize_cara_mixture,
     opt_maximize_cara_mixture,
     opt_maximize_cara,
+)
+
+# risk allocation
+from optimalportfolios.optimization.risk_allocation import (
+    compute_group_risk_budgets,
+    compute_hierarchical_risk_parity_weights,
     rolling_risk_budgeting,
     wrapper_risk_budgeting,
     opt_risk_budgeting,

@@ -72,9 +72,40 @@ Single-date versus rolling use
 place to inspect achieved risk shares.  ``rolling_risk_budgeting`` repeats the
 solve on the dates in ``covar_dict``.  It aligns the covariance to the budget
 order, drifts prior weights using realised prices, and optionally freezes
-assets whose rebalancing indicator is zero.  The generic
+assets whose rebalancing indicator is zero.  ``risk_budget`` may be one static
+asset-indexed Series or a date-by-asset DataFrame.  With a DataFrame, the
+budget row is selected point in time at each covariance date.  The generic
 ``compute_rolling_optimal_weights`` dispatcher selects this path with
 ``PortfolioObjective.EQUAL_RISK_CONTRIBUTION``.
+
+Group risk budgets
+------------------
+
+``compute_group_risk_budgets`` converts any complete or partially classified
+partition into asset-level risk budgets.  For group size :math:`n_g` and
+exponent :math:`\alpha`, the aggregate and within-group budgets are
+
+.. math::
+
+   B_g = \frac{n_g^\alpha}{\sum_h n_h^\alpha}, \qquad
+   b_i = \frac{B_g}{n_g}.
+
+``group_size_exponent=0`` gives every available group equal aggregate risk;
+``1`` reproduces equal asset risk budgets; and ``0.5`` is the square-root-size
+compromise.  Group labels may be statistical clusters, sectors, or asset
+classes.  A membership DataFrame is transformed row by row without using
+future classifications.
+
+Hierarchical risk parity
+------------------------
+
+``compute_hierarchical_risk_parity_weights`` implements canonical recursive
+bisection for a labelled covariance matrix and a caller-supplied SciPy
+linkage.  Tree estimation deliberately remains outside OptimalPortfolios:
+FactorLasso can construct the linkage, while this package converts the tree
+into portfolio weights.  ``compute_group_risk_contributions`` aggregates the
+normalised Euler contributions of the resulting or any other portfolio over
+the supplied groups.
 
 Missing data, frozen assets, and feasibility
 --------------------------------------------
@@ -93,7 +124,7 @@ See also
 
 * :doc:`rolling_backtests`
 * :doc:`api` for ``wrapper_risk_budgeting``, ``rolling_risk_budgeting``, and
-  ``compute_risk_contributions``
+  the group-risk and HRP functions
 * `Canonical risk-budgeting example
   <https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/solvers/risk_budgeting.py>`_
   (network-data example)

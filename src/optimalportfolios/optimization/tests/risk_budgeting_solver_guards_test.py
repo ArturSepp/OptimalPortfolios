@@ -26,7 +26,7 @@ multiplier is NaN by contract, which callers must not read as a solve failure.
 import numpy as np
 import pytest
 # optimalportfolios
-from optimalportfolios.optimization.general.risk_budgeting_solver import (
+from optimalportfolios.optimization.risk_allocation.risk_budgeting_solver import (
     solve_constrained_risk_budgeting,
 )
 

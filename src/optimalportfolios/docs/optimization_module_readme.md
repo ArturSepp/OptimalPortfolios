@@ -68,7 +68,7 @@ CovarEstimator.fit_rolling_covars()
         ▼
 compute_rolling_optimal_weights(covar_dict, portfolio_objective, ...)
         │
-        ├── EQUAL_RISK_CONTRIBUTION  → general/risk_budgeting.py
+        ├── EQUAL_RISK_CONTRIBUTION  → risk_allocation/risk_budgeting.py
         ├── MAX_DIVERSIFICATION      → general/max_diversification.py
         ├── MIN_VARIANCE             → general/quadratic.py
         ├── QUADRATIC_UTILITY        → general/quadratic.py

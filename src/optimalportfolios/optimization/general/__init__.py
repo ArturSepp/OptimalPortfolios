@@ -32,7 +32,7 @@ from optimalportfolios.optimization.general.carra_mixture import (
     opt_maximize_cara,
 )
 
-from optimalportfolios.optimization.general.risk_budgeting import (
+from optimalportfolios.optimization.risk_allocation.risk_budgeting import (
     rolling_risk_budgeting,
     wrapper_risk_budgeting,
     opt_risk_budgeting,

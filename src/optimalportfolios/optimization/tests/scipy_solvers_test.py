@@ -24,7 +24,7 @@ import pytest
 from optimalportfolios import Constraints
 from optimalportfolios.optimization.general.carra_mixture import (
     carra_objective, carra_objective_exp, carra_objective_mixture, opt_maximize_cara)
-from optimalportfolios.optimization.general.risk_budgeting import (
+from optimalportfolios.optimization.risk_allocation.risk_budgeting import (
     opt_risk_budgeting_scipy, risk_budget_objective)
 
 TICKERS = ['growth', 'balanced', 'defensive']

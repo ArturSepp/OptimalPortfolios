@@ -49,7 +49,7 @@ References:
 # packages
 import pandas as pd
 import qis as qis
-from typing import Optional, Dict
+from typing import Optional, Dict, Union
 from optimalportfolios.alphas.signals.rolling_ewma_mean import estimate_rolling_ewma_means
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.optimization.config import OptimiserConfig
@@ -59,7 +59,9 @@ from optimalportfolios.optimization.general.max_diversification import (
 )
 from optimalportfolios.optimization.general.max_sharpe import rolling_maximize_portfolio_sharpe
 from optimalportfolios.optimization.general.quadratic import rolling_quadratic_optimisation
-from optimalportfolios.optimization.general.risk_budgeting import rolling_risk_budgeting
+from optimalportfolios.optimization.risk_allocation.risk_budgeting import (
+    rolling_risk_budgeting,
+)
 from optimalportfolios.config import PortfolioObjective
 
 
@@ -68,7 +70,7 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
                                     covar_dict: Dict[pd.Timestamp, pd.DataFrame],
                                     portfolio_objective: PortfolioObjective = PortfolioObjective.MAX_DIVERSIFICATION,
                                     time_period: qis.TimePeriod = None,
-                                    risk_budget: pd.Series = None,
+                                    risk_budget: Union[pd.Series, pd.DataFrame] = None,
                                     returns_freq: Optional[str] = 'W-WED',
                                     rebalancing_freq: str = 'QE',
                                     span: int = 52,
@@ -89,7 +91,8 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
         covar_dict: Pre-computed covariance matrices keyed by rebalancing date.
         portfolio_objective: Optimisation objective.
         time_period: Reporting period (MAX_CARA_MIXTURE only).
-        risk_budget: Target risk budgets (EQUAL_RISK_CONTRIBUTION only).
+        risk_budget: Static or date-varying target risk budgets
+            (EQUAL_RISK_CONTRIBUTION only).
         returns_freq: Return frequency for mean-dependent objectives.
         rebalancing_freq: Rebalancing frequency (MAX_CARA_MIXTURE only).
         span: EWMA span for mean estimation (MAXIMUM_SHARPE_RATIO,
@@ -169,7 +172,7 @@ def backtest_rolling_optimal_portfolio(prices: pd.DataFrame,
                                        covar_dict: Dict[pd.Timestamp, pd.DataFrame],
                                        perf_time_period: qis.TimePeriod = None,
                                        portfolio_objective: PortfolioObjective = PortfolioObjective.MAX_DIVERSIFICATION,
-                                       risk_budget: pd.Series = None,
+                                       risk_budget: Union[pd.Series, pd.DataFrame] = None,
                                        returns_freq: Optional[str] = 'W-WED',
                                        rebalancing_freq: str = 'QE',
                                        span: int = 52,
@@ -190,7 +193,8 @@ def backtest_rolling_optimal_portfolio(prices: pd.DataFrame,
         covar_dict: Pre-computed covariance matrices keyed by rebalancing date.
         perf_time_period: Reporting period for output weights.
         portfolio_objective: Optimisation objective.
-        risk_budget: Target risk budgets (EQUAL_RISK_CONTRIBUTION only).
+        risk_budget: Static or date-varying target risk budgets
+            (EQUAL_RISK_CONTRIBUTION only).
         returns_freq: Return frequency for mean-dependent objectives.
         rebalancing_freq: Rebalancing frequency (MAX_CARA_MIXTURE only).
         span: EWMA span for mean estimation.

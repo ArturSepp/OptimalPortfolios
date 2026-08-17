@@ -58,6 +58,17 @@ The separation means the LASSO solver can be used independently for any
 multi-output regression problem (genomics, macro-econometrics), while the
 portfolio-specific rolling pipeline stays in `optimalportfolios`.
 
+**Cluster-aware risk allocation.**
+Statistical clusters can be used after covariance estimation as an allocation
+structure rather than only as a modelling diagnostic. `compute_group_risk_budgets()`
+maps point-in-time clusters, sectors, or asset classes into asset-level risk
+budgets; `rolling_risk_budgeting()` accepts either one static budget Series or a
+date-by-asset budget panel; and `compute_hierarchical_risk_parity_weights()`
+implements canonical HRP from an externally supplied linkage. Cluster formation,
+distance transforms, De-PC1 diagnostics, and linkage estimation remain in
+[`factorlasso`](https://github.com/ArturSepp/factorlasso); OptimalPortfolios owns
+the conversion from that structure into portfolio weights and risk attribution.
+
 **Drift-aware rolling backtests (new in v5.3.1).**
 Turnover constraints and transaction-cost penalties act on the realised
 current holdings, not the previous target. This eliminates the "phantom
@@ -168,9 +179,9 @@ tracking error, Sharpe ratio, diversification ratio, CARA utility). The package
 does not implement non-quadratic risk measures (CVaR, MAD, drawdown constraints).
 For these, use Riskfolio-Lib or skfolio. The solver architecture (three-layer:
 mathematical / wrapper / rolling) makes it straightforward to add new solvers —
-each solver lives in its own module in `optimization/general`, `optimization/saa`,
-or `optimization/taa` and plugs into the rolling backtester via a single dispatch
-function.
+each solver lives in its own module in `optimization/general`,
+`optimization/risk_allocation`, `optimization/saa`, or `optimization/taa` and
+plugs into the rolling backtester via a single dispatch function.
 
 ## Package overview
 
@@ -203,9 +214,12 @@ src/optimalportfolios/
 │   │   ├── minimum_tracking_error.py  # closest feasible portfolio to benchmark
 │   │   ├── max_sharpe.py          # maximum Sharpe ratio
 │   │   ├── max_diversification.py # maximum diversification ratio
-│   │   ├── carra_mixture.py       # CARA utility under Gaussian mixture
-│   │   ├── risk_budgeting.py      # constrained risk budgeting
-│   │   └── risk_budgeting_solver.py  # internal CCD/ADMM solver (Richard-Roncalli 2019)
+│   │   └── carra_mixture.py       # CARA utility under Gaussian mixture
+│   ├── risk_allocation/           # Risk-based portfolio construction
+│   │   ├── risk_budgeting.py      # constrained and rolling risk budgeting
+│   │   ├── risk_budgeting_solver.py  # internal CCD/ADMM solver
+│   │   ├── group_risk_budgeting.py   # group-to-asset risk budgets
+│   │   └── hierarchical_risk_parity.py  # external-linkage HRP
 │   ├── saa/                       # Strategic solvers with return/vol targets
 │   │   ├── min_variance_target_return.py
 │   │   └── max_return_target_vol.py
@@ -245,7 +259,8 @@ examples/                          # Repository-only worked examples
 | Alpha evaluation | Rank-portfolio profiling, cross-backtests, `AlphasData`, IC/IR panels, component diagnostics and comparison tables. |
 | Covariance and dependence | Current/rolling EWMA and HCGL sparse factor covariance; Pearson, Spearman and Gerber dependence choices, configurable correlation-distance transforms through `factorlasso`, and current/rolling covariance diagnostic reports. |
 | Risk-cluster analytics | Persistent cluster lineage, births/deaths/splits/merges and report tables/figures through `analyze_risk_clusters()` and `run_risk_label_report()`. |
-| General optimisation | Minimum variance, quadratic utility, maximum Sharpe, maximum diversification, constrained risk budgeting, CARA Gaussian-mixture utility and minimum tracking error. |
+| General optimisation | Minimum variance, quadratic utility, maximum Sharpe, maximum diversification, CARA Gaussian-mixture utility and minimum tracking error. |
+| Risk allocation | Constrained risk budgeting, point-in-time group risk budgets, date-varying rolling budgets, group Euler-risk attribution and external-linkage hierarchical risk parity. |
 | SAA and TAA optimisation | Minimum variance at target return, maximum return at target volatility, alpha over tracking error and alpha at target portfolio return. |
 | Constraints and implementation | Instrument/group bounds, exposure, turnover, tracking error, target return/volatility, benchmark-relative sector/style/beta limits, frozen holdings and current-to-model eligibility corridors. |
 | Solver controls and diagnostics | One covariance factorization per compatible CVXPY solve, input-contract validation, structured `OptimizationOutcome`/`ConstraintResidual` output, infeasibility diagnosis and run-level warning summaries. |
@@ -265,7 +280,7 @@ constraints, prior-centered regularisation, and HCGL clustering. It provides
 `RollingFactorCovarData` (time-indexed collection). It knows nothing about
 finance, asset returns, frequencies, or rebalancing schedules.
 
-`optimalportfolios` adds two finance-specific layers on top:
+`optimalportfolios` adds two finance-specific covariance-integration layers on top:
 
 **`estimate_lasso_factor_covar_data()`** — the core estimation function in
 `covar_estimation/factor_covar_estimator.py`. It handles everything between
@@ -287,6 +302,83 @@ raw market data and the `factorlasso` solver:
   matrices, plug into any solver)
 * `fit_rolling_factor_covars()` → `RollingFactorCovarData` (full
   decomposition with betas, R², clusters, residuals over time)
+
+## Cluster-aware risk allocation
+
+The `optimization.risk_allocation` submodule separates three concepts that are
+often mixed together:
+
+1. **Cluster estimation** belongs to `factorlasso` and produces a flat partition
+   and hierarchical linkage.
+2. **Risk-budget design** converts a partition into asset-level target risk shares.
+3. **Portfolio allocation** converts risk budgets or a linkage into capital weights.
+
+This boundary means the same allocation functions work with statistical clusters,
+BICS/GICS sectors, asset classes, or any other labelled partition.
+
+### Group risk budgets
+
+For group `g` containing `n_g` classified assets, `compute_group_risk_budgets()`
+uses
+
+`B_g = n_g**alpha / sum_h(n_h**alpha)` and `b_i = B_g / n_g`.
+
+The useful settings are:
+
+| `group_size_exponent` | Aggregate group budget | Interpretation |
+| ---: | --- | --- |
+| `0.0` | Equal across available groups | Equal-cluster risk budgeting |
+| `0.5` | Proportional to square-root group size | Intermediate shrinkage |
+| `1.0` | Proportional to group size | Equal risk budget per classified asset |
+
+Unclassified assets receive zero budget. A membership DataFrame is evaluated
+independently by row, so only the point-in-time partition enters each rebalance.
+
+```python +SKIP
+import optimalportfolios as op
+
+# rows are rebalance dates; columns are assets; values are group labels
+risk_budget_panel = op.compute_group_risk_budgets(
+    groups=cluster_membership_panel,
+    group_size_exponent=0.0,
+)
+weights = op.rolling_risk_budgeting(
+    prices=prices,
+    constraints=constraints,
+    risk_budget=risk_budget_panel,
+    covar_dict=covar_dict,
+)
+
+# The same diagnostic also works for sectors or asset classes.
+group_risk = op.compute_group_risk_contributions(
+    weights=weights.loc[rebalance_date],
+    covar=covar_dict[rebalance_date],
+    groups=cluster_membership_panel.loc[rebalance_date],
+)
+```
+
+### Hierarchical risk parity
+
+`compute_hierarchical_risk_parity_weights()` takes a labelled covariance matrix
+and a SciPy-compatible linkage. It quasi-diagonalises the covariance using the
+linkage leaf order and applies inverse-variance recursive bisection. It does not
+estimate a tree, silently choose a distance transform, or impose additional
+portfolio constraints.
+
+```python +SKIP
+import factorlasso as fl
+import optimalportfolios as op
+
+clusters, linkage, cutoff = fl.compute_clusters_from_corr_matrix(corr)
+hrp_weights = op.compute_hierarchical_risk_parity_weights(
+    covar=covar,
+    linkage=linkage,
+)
+```
+
+This makes linkage sensitivity explicit: Ward, single, complete, average, and
+other supported linkage choices are configured in FactorLasso, while the HRP
+capital-allocation rule in OptimalPortfolios remains unchanged.
 
 ## Alpha signals module
 
@@ -407,9 +499,10 @@ See the [alphas module README](src/optimalportfolios/docs/alphas_module_readme.m
 
 1. [Why optimalportfolios](#why-optimalportfolios)
 2. [Package overview](#package-overview)
-3. [Alpha signals module](#alpha-signals-module)
-4. [Installation](#installation)
-5. [Portfolio Optimisers](#portfolio-optimisers)
+3. [Cluster-aware risk allocation](#cluster-aware-risk-allocation)
+4. [Alpha signals module](#alpha-signals-module)
+5. [Installation](#installation)
+6. [Portfolio Optimisers](#portfolio-optimisers)
    1. [Implementation structure](#1-implementation-structure)
    2. [Example of implementation for Maximum Diversification Solver](#2-example-of-implementation-for-maximum-diversification-solver)
    3. [Constraints](#3-constraints)
@@ -418,9 +511,9 @@ See the [alphas module README](src/optimalportfolios/docs/alphas_module_readme.m
    6. [Default parameters](#6-default-parameters)
    7. [Price time series data](#7-price-time-series-data)
    8. [Drift-aware rolling backtests (v5.3.1)](#8-drift-aware-rolling-backtests-v531)
-6. [Examples](#examples)
-7. [Updates](#updates)
-8. [Disclaimer](#disclaimer)
+7. [Examples](#examples)
+8. [Updates](#updates)
+9. [Disclaimer](#disclaimer)
 
 ## Installation
 
@@ -587,9 +680,9 @@ The logic of this layer is to facilitate the backtest of portfolio optimisation 
 time series of portfolio weights using a Markovian setup. These weights are applied for the backtest
 of the optimal portfolio and the underlying strategy.
 
-Solver modules live in `optimization/general`, `optimization/saa` or `optimization/taa`, according
-to whether their inputs are objective-driven, strategic return/risk targets or tactical alpha and
-benchmark inputs.
+Solver modules live in `optimization/general`, `optimization/risk_allocation`,
+`optimization/saa` or `optimization/taa`, according to whether their inputs are objective-driven,
+risk-allocation structures, strategic return/risk targets or tactical alpha and benchmark inputs.
 
 ### 3. Constraints
 
@@ -683,7 +776,7 @@ estimation and solver methods.
 | `PortfolioObjective` | Dispatcher route | Objective/backend |
 | --- | --- | --- |
 | `MAX_DIVERSIFICATION` | `rolling_maximise_diversification` | Maximum diversification ratio; SciPy SLSQP. |
-| `EQUAL_RISK_CONTRIBUTION` | `rolling_risk_budgeting` | Equal or specified risk budgets; internal CCD/ADMM. |
+| `EQUAL_RISK_CONTRIBUTION` | `rolling_risk_budgeting` | Static or date-varying risk budgets; internal CCD/ADMM. |
 | `MIN_VARIANCE` | `rolling_quadratic_optimisation` | Minimum variance; CVXPY QP. |
 | `QUADRATIC_UTILITY` | `rolling_quadratic_optimisation` | Expected return minus quadratic risk penalty; CVXPY QP. |
 | `MAXIMUM_SHARPE_RATIO` | `rolling_maximize_portfolio_sharpe` | Maximum Sharpe via Charnes-Cooper; CVXPY SOCP. |
@@ -700,6 +793,9 @@ target-return or target-volatility inputs not represented by `PortfolioObjective
 | Maximum alpha over tracking error | `rolling_maximise_alpha_over_tre` |
 | Maximum alpha at target portfolio return | `rolling_maximise_alpha_with_target_return` |
 
+HRP is intentionally not a `PortfolioObjective`: it is a direct single-date allocator driven by
+an external linkage rather than a constrained optimiser.
+
 `OptimiserConfig` centralises the current production controls: CVXPY solver selection,
 verbosity, drift-aware prior weights, pre-solve input validation, failed-solve infeasibility
 diagnosis, a maximum frozen-position constraint relaxation and covariance factorization. The
@@ -713,8 +809,8 @@ demo index.
 ### 5. Adding an optimiser
 
 1. Add the mathematical, wrapper and rolling entry points in the appropriate
-   `optimization/general`, `optimization/saa` or `optimization/taa` module, using the existing
-   CVXPY, SciPy or internal risk-budgeting backend.
+   `optimization/general`, `optimization/risk_allocation`, `optimization/saa` or
+   `optimization/taa` module, using the existing CVXPY, SciPy or internal risk-budgeting backend.
 2. For cross-sectional analysis, add new optimiser type
    to `config.py` and link implemented
    optimiser in wrapper function `compute_rolling_optimal_weights()` in
@@ -1007,12 +1103,13 @@ Portfolios", *The Journal of Portfolio Management*, 52(4), 86-120.
 
 ## Updates
 
-#### August 2026, Versions 6.8.0–6.20.0 released
+#### August 2026, Versions 6.8.0–6.21.0 released
 
-The recent 6.x series through 6.20.0 added several production analytics that are now part of the current API:
+The recent 6.x series through 6.21.0 added several production analytics that are now part of the current API:
 
 | Release | Analytics and behavior added |
 | --- | --- |
+| 6.21.0 | Added cluster-aware risk allocation, date-varying risk budgets, group Euler-risk attribution, external-linkage HRP, and verified inverse risk-budget calibration. |
 | 6.20.0 | Added classic fixed-window momentum with a hard skip as standard, fixed-group and rolling-cluster constructors, while preserving the existing risk-adjusted momentum path. |
 | 6.19.0 | Added practitioner workflow documentation, a neutral package comparison, an authoritative offline production quickstart, and a drift-checked Colab entry point; no numerical or public-API behavior changed. |
 | 6.18.0 | Adopted the standard `src/` package layout without changing installed imports or the public API; strengthened built-wheel, static, dependency-audit and examples gates; and raised measured line coverage to 99%. |
@@ -1287,7 +1384,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={OptimalPortfolios: Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python},
   year={2026},
-  version={6.20.0},
+  version={6.21.0},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

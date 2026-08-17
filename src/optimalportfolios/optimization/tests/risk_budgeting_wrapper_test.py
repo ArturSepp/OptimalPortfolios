@@ -9,10 +9,9 @@ the frozen positions back afterwards. None of that is arithmetic the solver chec
 
 The cases here are the inputs that layer is there to survive: a budget given as a dict rather
 than a Series, a covariance with nothing usable in it, a solve the ADMM refuses, and the
-inverse problem (``solve_for_risk_budgets_from_given_weights``) on a one-asset universe and on
-a search that does not converge. Each of them returns a portfolio rather than raising, which
-is the point — a backtest must survive one bad rebalancing date — and each of them therefore
-fails silently if the fallback is wrong.
+inverse problem (``solve_for_risk_budgets_from_given_weights``) on degenerate universes, a
+fixed-point calibration, and failed refinement. A rolling allocation survives one bad covariance
+date, while inverse calibration fails explicitly rather than turning a mandate into zero budgets.
 """
 # packages
 import logging
@@ -24,8 +23,10 @@ import pytest
 from optimalportfolios import Constraints
 from optimalportfolios.optimization.config import OptimiserConfig
 from optimalportfolios.optimization.constraints import GroupLowerUpperConstraints
-from optimalportfolios.optimization.general import risk_budgeting as risk_budgeting_module
-from optimalportfolios.optimization.general.risk_budgeting import (
+from optimalportfolios.optimization.risk_allocation import (
+    risk_budgeting as risk_budgeting_module,
+)
+from optimalportfolios.optimization.risk_allocation.risk_budgeting import (
     risk_budget_objective,
     solve_for_risk_budgets_from_given_weights,
     wrapper_risk_budgeting,
@@ -161,7 +162,7 @@ def test_a_solver_rejection_is_logged_and_falls_back(caplog) -> None:
     """
     unreachable = long_only(max_weights=pd.Series(0.2, index=TICKERS))
     with caplog.at_level(logging.WARNING,
-                         logger='optimalportfolios.optimization.general.risk_budgeting'):
+                         logger='optimalportfolios.optimization.risk_allocation.risk_budgeting'):
         weights = wrapper_risk_budgeting(pd_covar=COVAR_DF, constraints=unreachable,
                                          risk_budget=pd.Series(EQUAL_BUDGET),
                                          context='2024-03-31')
@@ -226,32 +227,154 @@ def test_a_one_asset_universe_skips_the_search_entirely() -> None:
     assert budgets.to_dict() == {TICKERS[0]: 1.0}
 
 
-def test_a_search_that_does_not_converge_reports_zero_budgets(monkeypatch, caplog) -> None:
-    """SLSQP failure is logged with its status and yields zeros rather than ``res.x``
+def test_a_good_fixed_point_skips_the_slow_slsqp_search(monkeypatch) -> None:
+    """a valid inverse budget is returned before the fragile SLSQP refinement
 
-    On failure SLSQP still returns an iterate, and it is one no constraint was enforced on —
-    it need not sum to one or stay inside the bounds. Passing it on would give a plausible-
-    looking budget vector that reproduces nothing. Non-convergence cannot be provoked from an
-    input (the objective is a full rolling backtest per evaluation), so it is injected.
+    The inverse objective runs a complete rolling risk-budget solve on every evaluation.
+    A bounded fixed-point iteration can recover this well-conditioned case directly, so the
+    generic search must not be called and must never replace a useful answer with zeros.
     """
+    def fail_if_called(*args, **kwargs):
+        """Make an unnecessary SLSQP refinement visible to the test."""
+        raise AssertionError('SLSQP should not run after fixed-point convergence')
+
+    monkeypatch.setattr(risk_budgeting_module, 'minimize', fail_if_called)
+    prices = make_prices()
+    covar_dict = make_covar_dict()
+    given = pd.Series([0.5, 0.3, 0.2], index=TICKERS)
+    budgets = solve_for_risk_budgets_from_given_weights(
+        prices=prices, given_weights=given, covar_dict=covar_dict)
+    realised = risk_budgeting_module.rolling_risk_budgeting(
+        prices=prices, constraints=Constraints(is_long_only=True),
+        risk_budget=budgets, covar_dict=covar_dict).mean(axis=0)
+    assert budgets.sum() == pytest.approx(1.0, abs=1e-10)
+    assert float(np.mean(np.abs(realised - given))) <= 1e-4
+    assert list(budgets.index) == TICKERS
+
+
+def test_fixed_point_applies_multiplicative_updates(monkeypatch) -> None:
+    """time-varying average weights are corrected before the second evaluation"""
+    given = np.array([0.5, 0.3, 0.2])
+    evaluations = iter([
+        (0.05, 0.1, np.array([0.4, 0.4, 0.2])),
+        (0.0, 0.0, given),
+    ])
+    monkeypatch.setattr(
+        risk_budgeting_module, '_evaluate_inverse_risk_budget',
+        lambda **_kwargs: next(evaluations))
+    budgets, mean_error, max_error, iteration = (
+        risk_budgeting_module._solve_inverse_risk_budget_fixed_point(
+            prices=make_prices(),
+            given_weights=given,
+            covar_dict=make_covar_dict(),
+            initial_risk_budgets=np.full(3, 1.0 / 3.0),
+            lower_bounds=np.full(3, 1e-4),
+            upper_bounds=np.full(3, 0.99)))
+    assert iteration == 2
+    assert mean_error == 0.0
+    assert max_error == 0.0
+    assert budgets.sum() == pytest.approx(1.0, abs=1e-12)
+    assert budgets[0] > budgets[1]
+
+
+def test_non_finite_forward_weights_stop_fixed_point_calibration(monkeypatch) -> None:
+    """a broken forward solve is retained as an explicit infinite calibration error"""
+    monkeypatch.setattr(
+        risk_budgeting_module, 'rolling_risk_budgeting',
+        lambda **_kwargs: pd.DataFrame(np.nan, index=REBALANCING_DATES, columns=TICKERS))
+    initial = np.full(3, 1.0 / 3.0)
+    budgets, mean_error, max_error, iteration = (
+        risk_budgeting_module._solve_inverse_risk_budget_fixed_point(
+            prices=make_prices(),
+            given_weights=np.array([0.5, 0.3, 0.2]),
+            covar_dict=make_covar_dict(),
+            initial_risk_budgets=initial,
+            lower_bounds=np.full(3, 1e-4),
+            upper_bounds=np.full(3, 0.99)))
+    np.testing.assert_allclose(budgets, initial, atol=1e-12)
+    assert np.isinf(mean_error)
+    assert np.isinf(max_error)
+    assert iteration == 0
+
+
+def test_inverse_budget_bounds_must_reach_full_investment() -> None:
+    """an infeasible upper-bound sum raises a direct configuration error"""
+    with pytest.raises(ValueError, match='bounds are infeasible'):
+        risk_budgeting_module._scale_to_box_simplex(
+            values=np.ones(3),
+            lower_bounds=np.zeros(3),
+            upper_bounds=np.full(3, 0.3))
+
+
+def test_inverse_target_weights_are_validated_before_calibration() -> None:
+    """negative target weights cannot enter the long-only inverse solver"""
+    with pytest.raises(ValueError, match='finite, non-negative'):
+        solve_for_risk_budgets_from_given_weights(
+            prices=make_prices(),
+            given_weights=pd.Series([1.1, -0.1, 0.0], index=TICKERS),
+            covar_dict=make_covar_dict())
+
+
+def test_one_weighted_asset_in_a_larger_panel_has_the_only_budget() -> None:
+    """the 0.99 generic cap does not make a one-leg allocation infeasible"""
+    budgets = solve_for_risk_budgets_from_given_weights(
+        prices=make_prices(),
+        given_weights=pd.Series([0.0, 1.0, 0.0], index=TICKERS),
+        covar_dict=make_covar_dict())
+    assert budgets.to_dict() == {'growth': 0.0, 'balanced': 1.0, 'defensive': 0.0}
+
+
+def test_slsqp_can_refine_a_fixed_point_outside_tolerance(monkeypatch) -> None:
+    """a valid SLSQP refinement is checked with the forward solver before return"""
+    candidate = np.array([0.4, 0.35, 0.25])
+    monkeypatch.setattr(
+        risk_budgeting_module, '_solve_inverse_risk_budget_fixed_point',
+        lambda **_kwargs: (candidate, 0.02, 0.04, 50))
+    monkeypatch.setattr(
+        risk_budgeting_module, '_evaluate_inverse_risk_budget',
+        lambda **_kwargs: (0.0, 0.0, np.array([0.5, 0.3, 0.2])))
+
+    class _Success:
+        """The shape of a successful ``scipy.optimize`` result."""
+        success = True
+        status = 0
+        message = 'Optimization terminated successfully'
+        x = candidate
+
+    def successful_minimize(objective, x0, **_kwargs):
+        """Exercise the nested objective before returning a valid result."""
+        assert objective(x0) == 0.0
+        return _Success()
+
+    monkeypatch.setattr(risk_budgeting_module, 'minimize', successful_minimize)
+    budgets = solve_for_risk_budgets_from_given_weights(
+        prices=make_prices(),
+        given_weights=pd.Series([0.5, 0.3, 0.2], index=TICKERS),
+        covar_dict=make_covar_dict())
+    np.testing.assert_allclose(budgets.to_numpy(), candidate, atol=1e-12)
+
+
+def test_failed_inverse_calibration_raises_instead_of_returning_zeros(monkeypatch) -> None:
+    """both solver diagnostics are reported when no candidate reproduces the target"""
+    candidate = np.array([0.4, 0.35, 0.25])
+    monkeypatch.setattr(
+        risk_budgeting_module, '_solve_inverse_risk_budget_fixed_point',
+        lambda **_kwargs: (candidate, 0.02, 0.04, 50))
+
     class _Failed:
         """The shape of a failed ``scipy.optimize`` result."""
         success = False
-        status = 4
-        message = 'Inequality constraints incompatible'
-        x = np.array([5.0, -2.0, 0.5])
+        status = 9
+        message = 'Iteration limit reached'
+        x = candidate
 
     monkeypatch.setattr(risk_budgeting_module, 'minimize',
                         lambda *args, **kwargs: _Failed())
-    with caplog.at_level(logging.WARNING,
-                         logger='optimalportfolios.optimization.general.risk_budgeting'):
-        budgets = solve_for_risk_budgets_from_given_weights(
-            prices=make_prices(), given_weights=pd.Series([0.5, 0.3, 0.2], index=TICKERS),
+    with pytest.raises(RuntimeError, match='No zero risk-budget fallback was returned'):
+        solve_for_risk_budgets_from_given_weights(
+            prices=make_prices(),
+            given_weights=pd.Series([0.5, 0.3, 0.2], index=TICKERS),
             covar_dict=make_covar_dict())
-    assert any('SLSQP did not converge' in record.getMessage()
-               for record in caplog.records)
-    np.testing.assert_allclose(budgets.to_numpy(), 0.0, atol=1e-12)
-    assert list(budgets.index) == TICKERS
 
 
 if __name__ == '__main__':

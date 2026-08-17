@@ -12,7 +12,9 @@ import yfinance as yf
 from typing import Dict, List, Tuple
 from enum import Enum
 from optimalportfolios import estimate_rolling_ewma_covar, rolling_risk_budgeting, Constraints
-from optimalportfolios.optimization.general.risk_budgeting import solve_for_risk_budgets_from_given_weights
+from optimalportfolios.optimization.risk_allocation.risk_budgeting import (
+    solve_for_risk_budgets_from_given_weights,
+)
 
 
 def plot_static_risk_budgets_vs_weights(prices: pd.DataFrame,

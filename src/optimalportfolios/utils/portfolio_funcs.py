@@ -175,3 +175,47 @@ def compute_risk_contributions(weights: pd.Series, covar: pd.DataFrame) -> pd.Se
     rc = w * mctr   # risk contribution (sums to port_var)
     rc_ratio = rc / port_var  # fraction of variance (sums to 1.0)
     return pd.Series(rc_ratio, index=assets)
+
+
+def compute_group_risk_contributions(weights: pd.Series,
+                                     covar: pd.DataFrame,
+                                     groups: pd.Series
+                                     ) -> pd.Series:
+    """Aggregate normalized Euler risk contributions over supplied groups.
+
+    Group labels can represent statistical clusters, sectors, asset classes, or any
+    other complete partition of the covariance universe. Contributions retain their
+    sign and reconcile to the asset-level total returned by
+    :func:`compute_risk_contributions`.
+
+    Args:
+        weights: Asset weights, which may cover a superset of the covariance assets.
+        covar: Labelled covariance matrix defining the risk universe.
+        groups: One group label for every covariance asset.
+
+    Returns:
+        Normalized group risk contributions in first-seen group order.
+
+    Raises:
+        TypeError: If ``groups`` is not a Series.
+        ValueError: If covariance or group labels cannot define a complete partition.
+    """
+    if not isinstance(groups, pd.Series):
+        raise TypeError("groups must be a pandas Series")
+    if covar.empty or covar.shape[0] != covar.shape[1]:
+        raise ValueError("covar must be non-empty and square")
+    if not covar.index.equals(covar.columns) or not covar.index.is_unique:
+        raise ValueError("covar index and columns must be identical unique asset labels")
+    if not groups.index.is_unique:
+        raise ValueError("group asset labels must be unique")
+
+    aligned_groups = groups.reindex(covar.index)
+    if aligned_groups.isna().any():
+        missing = aligned_groups.index[aligned_groups.isna()].tolist()
+        raise ValueError(
+            f"groups must classify every covariance asset; missing {missing[:5]}"
+        )
+    contributions = compute_risk_contributions(weights=weights, covar=covar)
+    grouped = contributions.groupby(aligned_groups, sort=False).sum()
+    grouped.name = "risk_contribution"
+    return grouped

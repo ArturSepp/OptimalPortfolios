@@ -17,7 +17,9 @@ from optimalportfolios.optimization.general.max_diversification import (
     rolling_maximise_diversification,
 )
 from optimalportfolios.optimization.general.max_sharpe import rolling_maximize_portfolio_sharpe
-from optimalportfolios.optimization.general.risk_budgeting import rolling_risk_budgeting
+from optimalportfolios.optimization.risk_allocation.risk_budgeting import (
+    rolling_risk_budgeting,
+)
 
 
 class OptimisationType(str, Enum):

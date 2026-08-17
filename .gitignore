@@ -7,6 +7,7 @@
 /.codex_tmp/
 /.claude/
 /.codex_analysis/
+/.codex_work/
 /outputs/
 
 .idea/
@@ -204,3 +205,4 @@ papers/matf_cma_jpm_2026/paper/figures/rates_factor_cmas.PNG
 papers/references/
 
 /agents/
+/.codex_spreadsheet_tmp

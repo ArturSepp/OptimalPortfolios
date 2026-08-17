@@ -1,4 +1,4 @@
-"""Regression tests for ``optimization.general.risk_budgeting_solver``.
+"""Regression tests for ``optimization.risk_allocation.risk_budgeting_solver``.
 
 Three layers of protection for the pyrb → internal-solver migration:
 
@@ -25,7 +25,7 @@ import numpy as np
 from enum import Enum
 
 # optimalportfolios
-from optimalportfolios.optimization.general.risk_budgeting_solver import (
+from optimalportfolios.optimization.risk_allocation.risk_budgeting_solver import (
     solve_constrained_risk_budgeting,
 )
 

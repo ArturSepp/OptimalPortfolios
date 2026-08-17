@@ -7,6 +7,12 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.21.0] - 2026-08-17
+
+This release adds cluster-aware risk allocation, point-in-time risk budgets, canonical
+hierarchical risk parity, and safer inverse risk-budget calibration while preserving the former
+direct risk-budgeting import paths.
+
 **Coverage floor raised to 100% (2026-08-14):** `fail_under` rises from `99` to `100`; measured
 coverage is 100.00% on 1321 tests, up from 99.09% on 1277. It is no longer a ratchet — at 100% an
 uncovered line is always something the change under review introduced, the same argument the 100%
@@ -25,6 +31,9 @@ is now kept only to report the true figure when the gate fails.
 
 ### Added
 
+- Added the ``optimization.risk_allocation`` namespace. It provides point-in-time group risk
+  budgets, date-varying budgets in ``rolling_risk_budgeting``, canonical HRP allocation from an
+  externally supplied linkage, and group-level Euler risk contributions.
 - Tests for the LASSO sign-constraint layer reported as `derived_signs`, which had none. The path
   collects `LassoModel.derived_signs_` per frequency, concatenates and reindexes onto the target
   asset universe, and its central invariant lived only in a comment: the reindex must not fill NaN,
@@ -64,6 +73,20 @@ is now kept only to report the true figure when the gate fails.
   else. It also meant CI never executed the mechanism the file exists to provide for
   `pytest --pyargs optimalportfolios` users. Both outcomes are now asserted against a synthetic
   mapping, including an empty `MPLBACKEND=` counting as unset rather than as a backend named `''`.
+
+### Changed
+
+- Moved the canonical risk-budgeting implementation from `optimization.general` to
+  `optimization.risk_allocation`; thin compatibility modules preserve the former direct imports.
+- Extended `rolling_risk_budgeting` and its generic dispatcher route to accept a date-by-asset
+  risk-budget panel in addition to one static asset-indexed Series.
+
+### Fixed
+
+- Replaced inverse risk-budget calibration's failed-SLSQP zero-vector fallback with bounded
+  fixed-point calibration followed by a verified SLSQP refinement. Invalid targets and candidates
+  that do not reproduce the requested average weights now fail explicitly instead of returning a
+  plausible-looking unusable budget.
 
 ## [6.20.0] - 2026-08-15
 
