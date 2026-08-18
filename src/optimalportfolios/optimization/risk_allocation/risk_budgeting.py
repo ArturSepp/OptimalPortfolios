@@ -50,7 +50,6 @@ from scipy.optimize import minimize
 from typing import Dict, Union
 
 from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance,
-                                                     compute_portfolio_risk_contributions,
                                                      compute_portfolio_risk_contribution_outputs)
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
@@ -354,7 +353,7 @@ def opt_risk_budgeting_scipy(covar: np.ndarray,
 def risk_budget_objective(x, pars) -> float:
     """Risk budget deviation objective for scipy minimisation."""
     covar, budget = pars[0], pars[1]
-    asset_rc = compute_portfolio_risk_contributions(x, covar)
+    asset_rc = qis.compute_portfolio_risk_contributions(w=x, covar=covar)
     sig_p = np.sqrt(compute_portfolio_variance(x, covar))
     if budget is not None:
         risk_target = np.where(np.isnan(budget), asset_rc, np.multiply(sig_p, budget))

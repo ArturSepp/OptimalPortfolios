@@ -32,13 +32,6 @@ from optimalportfolios.optimization.general.carra_mixture import (
     opt_maximize_cara,
 )
 
-from optimalportfolios.optimization.risk_allocation.risk_budgeting import (
-    rolling_risk_budgeting,
-    wrapper_risk_budgeting,
-    opt_risk_budgeting,
-    solve_for_risk_budgets_from_given_weights,
-)
-
 from optimalportfolios.optimization.general.minimum_tracking_error import (
     rolling_minimise_tracking_error,
     wrapper_minimise_tracking_error,

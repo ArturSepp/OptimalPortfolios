@@ -37,6 +37,7 @@ constant.
 .. code-block:: python
 
    import pandas as pd
+   import qis
    import optimalportfolios as opt
 
    assets = ["Equity", "Bonds", "Diversifier"]
@@ -57,7 +58,9 @@ constant.
        constraints=constraints,
        risk_budget=budgets,
    )
-   realised_budgets = opt.compute_risk_contributions(weights, covar)
+   realised_budgets = qis.compute_portfolio_risk_contribution_ratios(
+       weights=weights, covar=covar,
+   )
    print(pd.concat([weights.rename("weight"),
                     realised_budgets.rename("risk share")], axis=1))
 
@@ -103,7 +106,8 @@ Hierarchical risk parity
 bisection for a labelled covariance matrix and a caller-supplied SciPy
 linkage.  Tree estimation deliberately remains outside OptimalPortfolios:
 FactorLasso can construct the linkage, while this package converts the tree
-into portfolio weights.  ``compute_group_risk_contributions`` aggregates the
+into portfolio weights.  QIS owns covariance-implied attribution:
+``qis.compute_group_portfolio_risk_contribution_ratios`` aggregates the
 normalised Euler contributions of the resulting or any other portfolio over
 the supplied groups.
 

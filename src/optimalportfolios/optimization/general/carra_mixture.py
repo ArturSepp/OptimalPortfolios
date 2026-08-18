@@ -33,7 +33,7 @@ from scipy.optimize import minimize
 from typing import List
 
 from optimalportfolios.utils.gaussian_mixture import fit_gaussian_mixture
-from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance, compute_portfolio_risk_contributions)
+from optimalportfolios.utils.portfolio_funcs import compute_portfolio_variance
 from optimalportfolios.optimization.constraints import (Constraints, total_weight_constraint, long_only_constraint)
 from optimalportfolios.optimization.solver_diagnostics import validate_scipy_solution
 from optimalportfolios.optimization.config import OptimiserConfig
@@ -251,7 +251,7 @@ def opt_maximize_cara(means: np.ndarray,
     if is_print_log:
         print(f'return_p = {w_rb@means}, '
               f'sigma_p = {np.sqrt(compute_portfolio_variance(w_rb, covar))}, weights: {w_rb}, '
-              f'risk contrib.s: {compute_portfolio_risk_contributions(w_rb, covar).T} '
+              f'risk contrib.s: {qis.compute_portfolio_risk_contributions(w=w_rb, covar=covar).T} '
               f'sum of weights: {sum(w_rb)}')
     return w_rb
 

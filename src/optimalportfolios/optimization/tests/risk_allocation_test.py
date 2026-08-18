@@ -11,33 +11,14 @@ from optimalportfolios.optimization.risk_allocation import (
     compute_hierarchical_risk_parity_weights,
     rolling_risk_budgeting,
 )
-from optimalportfolios.optimization.general.risk_budgeting import (
-    rolling_risk_budgeting as legacy_rolling_risk_budgeting,
-)
-from optimalportfolios.optimization.general.risk_budgeting_solver import (
-    solve_constrained_risk_budgeting as legacy_risk_budgeting_solver,
-)
-from optimalportfolios.optimization.risk_allocation.risk_budgeting_solver import (
-    solve_constrained_risk_budgeting,
-)
-from optimalportfolios.utils import compute_group_risk_contributions
-
-
 ASSETS = ["a", "b", "c", "d", "e", "f"]
 
 
 def test_risk_allocation_primitives_are_available_from_the_package_root() -> None:
     """The new public functions follow the package's root re-export convention."""
     assert opt.compute_group_risk_budgets is compute_group_risk_budgets
-    assert opt.compute_group_risk_contributions is compute_group_risk_contributions
     assert (opt.compute_hierarchical_risk_parity_weights
             is compute_hierarchical_risk_parity_weights)
-
-
-def test_legacy_general_risk_budgeting_imports_remain_compatible() -> None:
-    """The canonical namespace move does not break existing direct imports."""
-    assert legacy_rolling_risk_budgeting is rolling_risk_budgeting
-    assert legacy_risk_budgeting_solver is solve_constrained_risk_budgeting
 
 
 def test_equal_group_risk_budgets_are_split_equally_inside_each_group() -> None:
@@ -112,19 +93,6 @@ def test_rolling_risk_budgeting_accepts_date_varying_budgets() -> None:
     )
     realised = weights.pow(2).div(weights.pow(2).sum(axis=1), axis=0)
     np.testing.assert_allclose(realised.to_numpy(), budgets.to_numpy(), atol=2e-4)
-
-
-def test_group_risk_contributions_reconcile_with_asset_contributions() -> None:
-    """Grouping normalized Euler contributions preserves their total exactly."""
-    assets = ASSETS[:3]
-    covar = pd.DataFrame(np.eye(3), index=assets, columns=assets)
-    weights = pd.Series([0.5, 0.25, 0.25], index=assets)
-    groups = pd.Series(["standalone", "pair", "pair"], index=assets)
-
-    actual = compute_group_risk_contributions(weights, covar, groups)
-    expected = pd.Series([2 / 3, 1 / 3], index=pd.Index(["standalone", "pair"]),
-                         name="risk_contribution")
-    pd.testing.assert_series_equal(actual, expected)
 
 
 def test_hrp_consumes_an_external_linkage_and_matches_recursive_bisection() -> None:
@@ -219,31 +187,6 @@ def test_rolling_risk_budget_validation_rejects_ambiguous_panels() -> None:
                 [[0.5, 0.5]], index=[pd.Timestamp("2024-02-29")], columns=assets
             ),
             **common,
-        )
-
-
-def test_group_risk_contribution_validation_requires_a_complete_partition() -> None:
-    """Group aggregation rejects malformed risk universes and incomplete classifications."""
-    assets = ASSETS[:2]
-    covar = pd.DataFrame(np.eye(2), index=assets, columns=assets)
-    weights = pd.Series([0.5, 0.5], index=assets)
-
-    with pytest.raises(TypeError, match="groups must be a pandas Series"):
-        compute_group_risk_contributions(weights, covar, ["x", "y"])  # type: ignore[arg-type]
-    with pytest.raises(ValueError, match="non-empty and square"):
-        compute_group_risk_contributions(weights, pd.DataFrame(), pd.Series(dtype=object))
-    with pytest.raises(ValueError, match="identical unique"):
-        compute_group_risk_contributions(
-            weights, covar.rename(columns={"b": "different"}),
-            pd.Series(["x", "y"], index=assets),
-        )
-    with pytest.raises(ValueError, match="asset labels must be unique"):
-        compute_group_risk_contributions(
-            weights, covar, pd.Series(["x", "y"], index=["a", "a"])
-        )
-    with pytest.raises(ValueError, match="classify every covariance asset"):
-        compute_group_risk_contributions(
-            weights, covar, pd.Series(["x"], index=["a"])
         )
 
 

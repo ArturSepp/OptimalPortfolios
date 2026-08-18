@@ -7,6 +7,21 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.21.1] - 2026-08-18
+
+### Changed
+
+- Consolidated covariance-implied Euler risk attribution in QIS. OptimalPortfolios now consumes
+  `qis.compute_portfolio_risk_contributions`, the normalized asset-ratio API, and the grouped-ratio
+  API. The duplicate `op.compute_risk_contributions` and
+  `op.compute_group_risk_contributions` functions were removed, and cluster-lineage replication
+  uses the grouped QIS function directly.
+- Removed the `optimization.general.risk_budgeting` and
+  `optimization.general.risk_budgeting_solver` compatibility modules. Risk budgeting is available
+  from the package root and its canonical `optimization.risk_allocation` namespace.
+- Raised the minimum QIS version from 5.7.0 to 5.11.1, which provides the canonical asset and
+  grouped covariance-implied risk-contribution APIs consumed by this release.
+
 ## [6.21.0] - 2026-08-17
 
 This release adds cluster-aware risk allocation, point-in-time risk budgets, canonical

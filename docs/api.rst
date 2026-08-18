@@ -48,7 +48,6 @@ signatures and docstrings.
    optimalportfolios.compute_eligible_rebalancing_bounds
    optimalportfolios.compute_gerber_matrix
    optimalportfolios.compute_group_risk_budgets
-   optimalportfolios.compute_group_risk_contributions
    optimalportfolios.compute_hierarchical_risk_parity_weights
    optimalportfolios.compute_classic_momentum_alpha
    optimalportfolios.compute_classic_momentum_cluster_alpha
@@ -67,7 +66,6 @@ signatures and docstrings.
    optimalportfolios.compute_residual_reversal_alpha
    optimalportfolios.compute_residual_reversal_cluster_alpha
    optimalportfolios.compute_returns_from_prices
-   optimalportfolios.compute_risk_contributions
    optimalportfolios.compute_rolling_optimal_weights
    optimalportfolios.compute_rolling_smoothed_clusters
    optimalportfolios.compute_top_quantile_equal_weights

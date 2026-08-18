@@ -53,16 +53,14 @@ Reference:
 """
 import numpy as np
 import pandas as pd
+import qis
 
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.optimization.risk_allocation.risk_budgeting import (
     opt_risk_budgeting,
     opt_risk_budgeting_scipy,
 )
-from optimalportfolios.utils.portfolio_funcs import (
-    compute_portfolio_risk_contributions,
-    compute_portfolio_variance,
-)
+from optimalportfolios.utils.portfolio_funcs import compute_portfolio_variance
 
 
 def print_solution(label: str,
@@ -71,7 +69,7 @@ def print_solution(label: str,
                    budget: np.ndarray,
                    tickers: list) -> None:
     """Print weights, risk contributions, vol, and budget tracking error."""
-    rc = compute_portfolio_risk_contributions(weights, covar)
+    rc = qis.compute_portfolio_risk_contributions(w=weights, covar=covar)
     rc_norm = rc / np.nansum(rc) if np.nansum(rc) > 0 else rc
     port_vol = np.sqrt(compute_portfolio_variance(weights, covar))
     budget_mae = np.mean(np.abs(rc_norm - budget))

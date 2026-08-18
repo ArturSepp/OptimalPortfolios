@@ -246,26 +246,6 @@ def test_portfolio_volatility_is_the_same_for_arrays_and_frames() -> None:
     assert from_arrays == pytest.approx(from_frames)
 
 
-def test_risk_contributions_sum_to_the_portfolio_volatility() -> None:
-    """
-    Euler's theorem: volatility is homogeneous of degree one in the weights, so the marginal
-    contributions add up to it exactly. A decomposition that does not sum to the whole is not a
-    decomposition, and it is reported beside the portfolio as though it were.
-    """
-    covar, sigma, weights = _universe()
-    contributions = portfolio_funcs.compute_portfolio_risk_contributions(weights, sigma)
-    assert contributions.sum() == pytest.approx(np.sqrt(weights @ sigma @ weights))
-
-
-def test_normalised_risk_contributions_sum_to_one() -> None:
-    """the labelled variant reports shares, so they total one and carry the tickers."""
-    covar, sigma, weights = _universe()
-    contributions = portfolio_funcs.compute_risk_contributions(pd.Series(weights, index=TICKERS),
-                                                               covar)
-    assert list(contributions.index) == TICKERS
-    assert float(contributions.sum()) == pytest.approx(1.0)
-
-
 def test_diversification_ratio_matches_its_definition() -> None:
     """w'σ / √(w'Σw), and it exceeds one whenever the assets are not perfectly correlated."""
     covar, sigma, weights = _universe()
@@ -405,25 +385,6 @@ def test_risk_contribution_table_defaults_the_budget_to_zeros() -> None:
 
     assert (table['Risk Budget'] == 0.0).all()
     assert list(table.index) == list(tickers)
-
-
-def test_risk_contributions_of_a_zero_variance_portfolio_are_zero_not_nan() -> None:
-    """A portfolio with no variance returns zeros instead of dividing by zero.
-
-    Reached whenever weights are all zero — a degenerate optimiser result, which the backtest
-    layer is expected to carry rather than crash on. Without the guard every contribution is NaN
-    and silently poisons the reported statistics.
-    """
-    tickers = pd.Index(['A', 'B'])
-    covar = pd.DataFrame(np.diag([0.04, 0.09]), index=tickers, columns=tickers)
-
-    contributions = portfolio_funcs.compute_risk_contributions(
-        weights=pd.Series(0.0, index=tickers), covar=covar,
-    )
-
-    assert list(contributions.index) == list(tickers)
-    assert (contributions == 0.0).all()
-    assert not contributions.isna().any()
 
 
 if __name__ == '__main__':

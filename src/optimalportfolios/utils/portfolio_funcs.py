@@ -5,20 +5,13 @@ from __future__ import division
 
 import numpy as np
 import pandas as pd
+import qis
 from typing import Tuple, Union, Optional
 
 
 def compute_portfolio_variance(w: np.ndarray, covar: np.ndarray) -> float:
     """Return the portfolio variance ``w' Sigma w``."""
     return w.T @ covar @ w
-
-
-def compute_portfolio_risk_contributions(w: np.ndarray, covar: np.ndarray) -> np.ndarray:
-    """Return per-asset risk contributions, which sum to the portfolio vol."""
-    portfolio_vol = np.sqrt(w.T @ covar @ w)
-    marginal_risk_contribution = covar @ w.T
-    rc = np.multiply(marginal_risk_contribution, w) / portfolio_vol
-    return rc
 
 
 def compute_portfolio_vol(covar: Union[np.ndarray, pd.DataFrame],
@@ -90,14 +83,14 @@ def compute_portfolio_risk_contribution_outputs(weights: pd.Series,
     zeros when it is not supplied.
     """
     weights = weights.loc[clean_covar.columns]
-    asset_rc = compute_portfolio_risk_contributions(weights.to_numpy(), clean_covar.to_numpy())
+    asset_rc = qis.compute_portfolio_risk_contributions(w=weights, covar=clean_covar)
     asset_rc_ratio = asset_rc / np.nansum(asset_rc)
     if risk_budget is None:
         risk_budget = pd.Series(0.0, index=clean_covar.columns)
     df = pd.concat([pd.Series(weights, index=clean_covar.columns, name='weights'),
-                    pd.Series(asset_rc, index=clean_covar.columns, name='risk contribution'),
+                    asset_rc.rename('risk contribution'),
                     risk_budget.rename('Risk Budget'),
-                    pd.Series(asset_rc_ratio, index=clean_covar.columns, name='asset_rc_ratio')
+                    asset_rc_ratio.rename('asset_rc_ratio')
                     ], axis=1, sort=False)
     return df
 
@@ -126,96 +119,3 @@ def round_weights_to_pct(weights: pd.Series, decimals: int = 2) -> pd.Series:
     bump_idx = remainders.nlargest(n_bumps).index
     floored.loc[bump_idx] += 10**(-decimals)
     return floored.round(decimals)
-
-
-def compute_risk_contributions(weights: pd.Series, covar: pd.DataFrame) -> pd.Series:
-    """Compute per-asset risk contribution as fraction of portfolio variance.
-
-    RC_i = w_i * (Sigma @ w)_i / (w' Sigma w)
-
-    The covariance matrix's index defines the asset universe. Weights are
-    reindexed to this universe (0-fill for missing assets, extra assets
-    in weights are ignored). This handles the case where model_backtest
-    weights are on the joint universe but covar is TAA-only.
-
-    Args:
-        weights: Asset weights (may be on a superset of covar's assets).
-        covar: Covariance matrix, indexed and columned by asset names.
-
-    Returns:
-        Series of risk contributions (fraction of portfolio variance,
-        sums to 1.0), indexed by covar's assets.
-
-    Equal weights on equal, uncorrelated variances split the risk evenly:
-
-    >>> import pandas as pd
-    >>> covar = pd.DataFrame([[0.04, 0.0], [0.0, 0.04]], index=['a', 'b'], columns=['a', 'b'])
-    >>> compute_risk_contributions(pd.Series([0.5, 0.5], index=['a', 'b']), covar).tolist()
-    [0.5, 0.5]
-
-    An asset outside the covariance universe is dropped rather than raising, which is what lets
-    a joint-universe weight vector be scored against a TAA-only covariance:
-
-    >>> compute_risk_contributions(pd.Series([0.5, 0.5, 9.0], index=['a', 'b', 'z']),
-    ...                            covar).tolist()
-    [0.5, 0.5]
-
-    A zero portfolio has no variance to attribute, so the guard returns zeros:
-
-    >>> compute_risk_contributions(pd.Series([0.0, 0.0], index=['a', 'b']), covar).tolist()
-    [0.0, 0.0]
-    """
-    assets = covar.index
-    w = weights.reindex(assets).fillna(0.0).values
-    cov = covar.values
-    port_var = float(w @ cov @ w)
-    if port_var <= 0:
-        return pd.Series(0.0, index=assets)
-    mctr = cov @ w  # marginal contribution to risk
-    rc = w * mctr   # risk contribution (sums to port_var)
-    rc_ratio = rc / port_var  # fraction of variance (sums to 1.0)
-    return pd.Series(rc_ratio, index=assets)
-
-
-def compute_group_risk_contributions(weights: pd.Series,
-                                     covar: pd.DataFrame,
-                                     groups: pd.Series
-                                     ) -> pd.Series:
-    """Aggregate normalized Euler risk contributions over supplied groups.
-
-    Group labels can represent statistical clusters, sectors, asset classes, or any
-    other complete partition of the covariance universe. Contributions retain their
-    sign and reconcile to the asset-level total returned by
-    :func:`compute_risk_contributions`.
-
-    Args:
-        weights: Asset weights, which may cover a superset of the covariance assets.
-        covar: Labelled covariance matrix defining the risk universe.
-        groups: One group label for every covariance asset.
-
-    Returns:
-        Normalized group risk contributions in first-seen group order.
-
-    Raises:
-        TypeError: If ``groups`` is not a Series.
-        ValueError: If covariance or group labels cannot define a complete partition.
-    """
-    if not isinstance(groups, pd.Series):
-        raise TypeError("groups must be a pandas Series")
-    if covar.empty or covar.shape[0] != covar.shape[1]:
-        raise ValueError("covar must be non-empty and square")
-    if not covar.index.equals(covar.columns) or not covar.index.is_unique:
-        raise ValueError("covar index and columns must be identical unique asset labels")
-    if not groups.index.is_unique:
-        raise ValueError("group asset labels must be unique")
-
-    aligned_groups = groups.reindex(covar.index)
-    if aligned_groups.isna().any():
-        missing = aligned_groups.index[aligned_groups.isna()].tolist()
-        raise ValueError(
-            f"groups must classify every covariance asset; missing {missing[:5]}"
-        )
-    contributions = compute_risk_contributions(weights=weights, covar=covar)
-    grouped = contributions.groupby(aligned_groups, sort=False).sum()
-    grouped.name = "risk_contribution"
-    return grouped

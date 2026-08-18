@@ -335,6 +335,7 @@ Unclassified assets receive zero budget. A membership DataFrame is evaluated
 independently by row, so only the point-in-time partition enters each rebalance.
 
 ```python +SKIP
+import qis
 import optimalportfolios as op
 
 # rows are rebalance dates; columns are assets; values are group labels
@@ -350,7 +351,7 @@ weights = op.rolling_risk_budgeting(
 )
 
 # The same diagnostic also works for sectors or asset classes.
-group_risk = op.compute_group_risk_contributions(
+group_risk = qis.compute_group_portfolio_risk_contribution_ratios(
     weights=weights.loc[rebalance_date],
     covar=covar_dict[rebalance_date],
     groups=cluster_membership_panel.loc[rebalance_date],
@@ -1103,12 +1104,13 @@ Portfolios", *The Journal of Portfolio Management*, 52(4), 86-120.
 
 ## Updates
 
-#### August 2026, Versions 6.8.0–6.21.0 released
+#### August 2026, Versions 6.8.0–6.21.1 released
 
-The recent 6.x series through 6.21.0 added several production analytics that are now part of the current API:
+The recent 6.x series through 6.21.1 added several production analytics that are now part of the current API:
 
 | Release | Analytics and behavior added |
 | --- | --- |
+| 6.21.1 | Consolidated covariance-implied Euler risk attribution in QIS 5.11.1 and removed the temporary risk-budgeting compatibility modules introduced during the 6.21.0 namespace migration. |
 | 6.21.0 | Added cluster-aware risk allocation, date-varying risk budgets, group Euler-risk attribution, external-linkage HRP, and verified inverse risk-budget calibration. |
 | 6.20.0 | Added classic fixed-window momentum with a hard skip as standard, fixed-group and rolling-cluster constructors, while preserving the existing risk-adjusted momentum path. |
 | 6.19.0 | Added practitioner workflow documentation, a neutral package comparison, an authoritative offline production quickstart, and a drift-checked Colab entry point; no numerical or public-API behavior changed. |
@@ -1384,7 +1386,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={OptimalPortfolios: Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python},
   year={2026},
-  version={6.21.0},
+  version={6.21.1},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

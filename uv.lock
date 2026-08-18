@@ -2180,7 +2180,7 @@ wheels = [
 
 [[package]]
 name = "optimalportfolios"
-version = "6.21.0"
+version = "6.21.1"
 source = { editable = "." }
 dependencies = [
     { name = "cvxpy", version = "1.7.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -2249,7 +2249,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "pyyaml", specifier = ">=6.0" },
-    { name = "qis", specifier = ">=5.7.0" },
+    { name = "qis", specifier = ">=5.11.1" },
     { name = "quadprog", specifier = ">=0.1.11" },
     { name = "scipy", specifier = ">=1.12.0" },
     { name = "seaborn", specifier = ">=0.13.0" },
@@ -2913,7 +2913,7 @@ wheels = [
 
 [[package]]
 name = "qis"
-version = "5.9.4"
+version = "5.11.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "matplotlib", version = "3.10.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -2932,9 +2932,9 @@ dependencies = [
     { name = "seaborn" },
     { name = "statsmodels" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/24/8e/19a0cbd9015c16a45ac046080668c0a1fad33f0647e7fca9e37da31d4f6d/qis-5.9.4.tar.gz", hash = "sha256:8c0a7e1ecd408351c2c809b914643dbe7bd952cedfd9fafdaa2c0832713eaf1d", size = 671011, upload-time = "2026-08-11T06:12:44.195Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/aa/88/93a4aa18ebd42a9ae01e5db98d066d645d66d8a35c9da75171611f86e22d/qis-5.11.1.tar.gz", hash = "sha256:34e43f551dab7db83e52d6c3555c86104eb19000b370128619ae7fe29511ed18", size = 614255, upload-time = "2026-08-18T04:59:20.602Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bf/c2/fc29345804f945fb5b2a3fa3116d3db25091b14d1fdf9625f08ff1fd3092/qis-5.9.4-py3-none-any.whl", hash = "sha256:615c1640a149d811b5aa7309ea047173a8443e2c7b94c656098604d8c7524bcc", size = 812669, upload-time = "2026-08-11T06:12:42.706Z" },
+    { url = "https://files.pythonhosted.org/packages/41/a4/bd0d26938932f56696aef4d559a7cb88d945885554454991053c6bd5983d/qis-5.11.1-py3-none-any.whl", hash = "sha256:d97ff502b297ddbe2cdfb663eb8058753d16632d70bb86ca42f45673277e1274", size = 716207, upload-time = "2026-08-18T04:59:18.986Z" },
 ]
 
 [[package]]

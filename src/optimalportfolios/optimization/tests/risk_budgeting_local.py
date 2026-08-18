@@ -4,6 +4,7 @@ Tests for risk budgeting portfolio optimisation.
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from qis import compute_portfolio_risk_contributions
 from enum import Enum
 
 from optimalportfolios.optimization.constraints import Constraints
@@ -12,7 +13,6 @@ from optimalportfolios.optimization.risk_allocation.risk_budgeting import (
     opt_risk_budgeting_scipy,
     wrapper_risk_budgeting,
     rolling_risk_budgeting,
-    compute_portfolio_risk_contributions,
     compute_portfolio_variance,
 )
 
