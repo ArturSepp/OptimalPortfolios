@@ -131,7 +131,3 @@ def test_a_non_series_assignment_raises() -> None:
     """the input shape is checked, with the offending type in the message."""
     with pytest.raises(ValueError, match='must be a pd.Series'):
         align_rolling_clusters({DATES[0]: {'A': 'QE:1'}})
-
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])

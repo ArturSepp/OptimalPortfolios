@@ -85,7 +85,3 @@ def test_citation_cff_date_released_is_iso():
     data = yaml.safe_load((ROOT / 'CITATION.cff').read_text(encoding='utf-8'))
     assert re.fullmatch(r'\d{4}-\d{2}-\d{2}', str(data['date-released'])), \
         f"date-released must be YYYY-MM-DD, got {data['date-released']!r}"
-
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])

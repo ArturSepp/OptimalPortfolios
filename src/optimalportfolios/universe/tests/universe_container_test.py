@@ -1,11 +1,11 @@
 """
 the ``UniverseData`` container: validation, accessors, selection, round-tripping, transforms.
 
-``universe_data_test.py`` is a ``run_local_test`` diagnostic needing the author's data, so the
-container itself had no collected tests. It is a frozen dataclass that validates on
-construction, and *the validation is the point*: every check exists because a misaligned
-universe otherwise fails much later, inside an optimiser, as a shape error with no clue which
-asset caused it. So each check gets a case that trips it.
+``optimalportfolios.universe.run_local.universe_data_run`` is a ``run_local`` diagnostic needing
+the author's data, so the container itself had no collected tests. It is a frozen dataclass that
+validates on construction, and *the validation is the point*: every check exists because a
+misaligned universe otherwise fails much later, inside an optimiser, as a shape error with no clue
+which asset caused it. So each check gets a case that trips it.
 
 Everything here is built in the test. The save/load round trip writes into pytest's ``tmp_path``
 rather than the repository or the author's data directory, so the suite stays offline and

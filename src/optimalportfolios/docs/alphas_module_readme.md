@@ -28,12 +28,19 @@ src/optimalportfolios/alphas/
 │   ├── carry.py                       # compute_ra_carry_alphas()
 │   ├── rolling_ewma_mean.py           # estimate_rolling_ewma_means()
 │   ├── utils.py                       # score_within_clusters()
-│   └── tests/
-│       └── signals_local.py
+│   ├── tests/
+│   │   └── <signal>_test.py           # offline pytest contracts
+│   └── run_local/
+│       └── signals_run.py             # source-checkout development runner
 ├── alpha_data.py                      # AlphasData container
 ├── backtest_alphas.py                 # Backtesting harness
+├── tests/                              # cross-cutting alpha pytest contracts
 └── README.md
 ```
+
+The signal development runner is invoked explicitly as
+`python -m optimalportfolios.alphas.signals.run_local.signals_run`. Its ``Locals`` enum lists the
+available scenarios; pytest never collects `_run.py` modules.
 
 ## Naming Conventions
 

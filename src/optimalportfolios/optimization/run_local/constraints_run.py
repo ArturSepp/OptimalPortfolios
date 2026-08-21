@@ -1,11 +1,11 @@
-"""Interactive product_development tests for the Constraints module.
+"""Interactive development diagnostics for the ``Constraints`` module.
 
-Enum-driven test runner for hands-on product_development and debugging.
-Each test prints detailed output so you can see exactly what the
+The enum-driven runner supports hands-on development and debugging.
+Each scenario prints detailed output so you can see exactly what the
 constraint objects look like and how the solver responds.
 
-Run all:    python constraints_dev_tests.py
-Run one:    python constraints_dev_tests.py BASIC_LONG_ONLY
+Select a ``Locals`` member in the ``__main__`` guard, then run:
+python -m optimalportfolios.optimization.run_local.constraints_run
 
 Universe: 10 assets, 3 groups (Equities/FixedIncome/Alternatives),
 5 sectors (Tech/Finance/Energy/Health/Other).
@@ -62,7 +62,7 @@ def _solve(w, objective, constraints, label=""):
     prob.solve(solver=cvx.SCS, verbose=False)
     weights = w.value
     if weights is None:
-        print(f"  ✗ Solver failed: {prob.status}")
+        print(f"  FAIL Solver failed: {prob.status}")
         return None
     print(f"  Status: {prob.status}")
     result = pd.Series(weights, index=TICKERS).round(4)
@@ -74,11 +74,11 @@ def _solve(w, objective, constraints, label=""):
 
 
 # ══════════════════════════════════════════════════════════════════════
-# Test definitions
+# Scenario definitions
 # ══════════════════════════════════════════════════════════════════════
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     # --- Basic constraint behaviour ---
     BASIC_LONG_ONLY = 1
     BASIC_MIN_MAX_WEIGHTS = 2
@@ -109,7 +109,7 @@ class LocalTests(Enum):
     PRINT_AND_CHECK = 70
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals) -> None:
 
 
     # ─────────────────────────────────────────────────────────────
@@ -117,7 +117,7 @@ def run_local_test(local_test: LocalTests):
     # ─────────────────────────────────────────────────────────────
 
     """Run one local diagnostic scenario for development and debugging."""
-    if local_test == LocalTests.BASIC_LONG_ONLY:
+    if local == Locals.BASIC_LONG_ONLY:
         print("Long-only min-variance: all weights should be >= 0, sum = 1")
         c = Constraints(is_long_only=True)
         w = cvx.Variable(N)
@@ -125,9 +125,9 @@ def run_local_test(local_test: LocalTests):
         weights = _solve(w, cvx.Minimize(cvx.quad_form(w, COVAR)), constraints)
         assert np.all(weights >= -1e-6), "Negative weights found"
         assert abs(weights.sum() - 1.0) < 1e-4, "Weights don't sum to 1"
-        print("  ✓ PASSED")
+        print("  PASSED")
 
-    elif local_test == LocalTests.BASIC_MIN_MAX_WEIGHTS:
+    elif local == Locals.BASIC_MIN_MAX_WEIGHTS:
         print("Min/max weight bounds: each weight in [0.05, 0.15]")
         c = Constraints(
             is_long_only=True,
@@ -139,9 +139,9 @@ def run_local_test(local_test: LocalTests):
         weights = _solve(w, cvx.Minimize(cvx.quad_form(w, COVAR)), constraints)
         assert np.all(weights >= 0.05 - 1e-4), f"Weight below min: {weights.min():.4f}"
         assert np.all(weights <= 0.15 + 1e-4), f"Weight above max: {weights.max():.4f}"
-        print("  ✓ PASSED")
+        print("  PASSED")
 
-    elif local_test == LocalTests.BASIC_EXPOSURE_BOUNDS:
+    elif local == Locals.BASIC_EXPOSURE_BOUNDS:
         print("Exposure bounds: total exposure in [0.60, 0.80]")
         c = Constraints(is_long_only=True, max_exposure=0.80, min_exposure=0.60)
         w = cvx.Variable(N)
@@ -149,9 +149,9 @@ def run_local_test(local_test: LocalTests):
         weights = _solve(w, cvx.Minimize(cvx.quad_form(w, COVAR)), constraints)
         print(f"  Total exposure: {weights.sum():.4f}")
         assert 0.60 - 1e-4 <= weights.sum() <= 0.80 + 1e-4
-        print("  ✓ PASSED")
+        print("  PASSED")
 
-    elif local_test == LocalTests.BASIC_TARGET_RETURN:
+    elif local == Locals.BASIC_TARGET_RETURN:
         print("Target return constraint: portfolio return >= 0.07")
         target = 0.07
         c = Constraints(
@@ -165,9 +165,9 @@ def run_local_test(local_test: LocalTests):
         achieved = EXPECTED_RETURNS.to_numpy() @ weights
         print(f"  Achieved return: {achieved:.4f} (target: {target})")
         assert achieved >= target - 1e-4
-        print("  ✓ PASSED")
+        print("  PASSED")
 
-    elif local_test == LocalTests.BASIC_MAX_VOL:
+    elif local == Locals.BASIC_MAX_VOL:
         print("Max portfolio vol constraint: vol <= 0.06")
         max_vol = 0.06
         c = Constraints(is_long_only=True, max_target_portfolio_vol_an=max_vol)
@@ -177,13 +177,13 @@ def run_local_test(local_test: LocalTests):
         vol = np.sqrt(weights @ COVAR @ weights)
         print(f"  Portfolio vol: {vol:.4f} (max: {max_vol})")
         assert vol <= max_vol + 1e-3
-        print("  ✓ PASSED")
+        print("  PASSED")
 
     # ─────────────────────────────────────────────────────────────
     # 10–13: Group allocation constraints
     # ─────────────────────────────────────────────────────────────
 
-    elif local_test == LocalTests.GROUP_ALLOCATION:
+    elif local == Locals.GROUP_ALLOCATION:
         print("Group allocation: Eq [0.30,0.50], FI [0.20,0.40], Alt [0.10,0.30]")
         gluc = GroupLowerUpperConstraints(
             group_loadings=GROUP_LOADINGS.copy(),
@@ -200,9 +200,9 @@ def run_local_test(local_test: LocalTests):
             alloc = weights[mask].sum()
             print(f"  {grp}: {alloc:.4f} in [{lo}, {hi}]")
             assert lo - 1e-4 <= alloc <= hi + 1e-4
-        print("  ✓ PASSED")
+        print("  PASSED")
 
-    elif local_test == LocalTests.GROUP_MERGE:
+    elif local == Locals.GROUP_MERGE:
         print("Merge two group constraint objects (non-overlapping)")
         gluc1 = GroupLowerUpperConstraints(
             group_loadings=GROUP_LOADINGS[["Equities"]].copy(),
@@ -217,9 +217,9 @@ def run_local_test(local_test: LocalTests):
         merged = merge_group_lower_upper_constraints(gluc1, gluc2)
         merged.print()
         assert set(merged.group_loadings.columns) == {"Equities", "FixedIncome"}
-        print("  ✓ PASSED")
+        print("  PASSED")
 
-    elif local_test == LocalTests.GROUP_DROP:
+    elif local == Locals.GROUP_DROP:
         print("Drop a group constraint")
         gluc = GroupLowerUpperConstraints(
             group_loadings=GROUP_LOADINGS.copy(),
@@ -229,9 +229,9 @@ def run_local_test(local_test: LocalTests):
         dropped = gluc.drop_constraint("FixedIncome")
         print(f"  Remaining groups: {dropped.group_loadings.columns.tolist()}")
         assert "FixedIncome" not in dropped.group_loadings.columns
-        print("  ✓ PASSED")
+        print("  PASSED")
 
-    elif local_test == LocalTests.GROUP_WITH_FRACTIONAL_LOADINGS:
+    elif local == Locals.GROUP_WITH_FRACTIONAL_LOADINGS:
         print("Fractional (non-binary) group loadings")
         loadings = pd.DataFrame(
             {"Factor1": [0.5, 0.3, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]},
@@ -249,13 +249,13 @@ def run_local_test(local_test: LocalTests):
         exposure = loadings["Factor1"].to_numpy() @ weights
         print(f"  Factor1 exposure: {exposure:.4f} in [0.10, 0.25]")
         assert 0.10 - 1e-4 <= exposure <= 0.25 + 1e-4
-        print("  ✓ PASSED")
+        print("  PASSED")
 
     # ─────────────────────────────────────────────────────────────
     # 20–22: Benchmark deviation constraints
     # ─────────────────────────────────────────────────────────────
 
-    elif local_test == LocalTests.SECTOR_DEVIATION:
+    elif local == Locals.SECTOR_DEVIATION:
         print("Sector deviation: max 5% active deviation per sector vs equal-weight BM")
         max_dev = 0.05
         bdc = BenchmarkDeviationConstraints(
@@ -270,11 +270,11 @@ def run_local_test(local_test: LocalTests):
         for col in SECTOR_LOADINGS.columns:
             mask = SECTOR_LOADINGS[col].to_numpy().astype(bool)
             dev = (weights[mask] - BENCHMARK_WEIGHTS.to_numpy()[mask]).sum()
-            status = "✓" if abs(dev) <= max_dev + 1e-3 else "✗"
-            print(f"  {status} {col}: active = {dev:+.4f} (bound: ±{max_dev})")
-        print("  ✓ PASSED")
+            status = "PASS" if abs(dev) <= max_dev + 1e-3 else "FAIL"
+            print(f"  {status} {col}: active = {dev:+.4f} (bound: +/-{max_dev})")
+        print("  PASSED")
 
-    elif local_test == LocalTests.SECTOR_DEVIATION_TIGHT:
+    elif local == Locals.SECTOR_DEVIATION_TIGHT:
         print("Tight sector deviation (0.1%): weights should be close to benchmark")
         max_dev = 0.001
         bdc = BenchmarkDeviationConstraints(
@@ -292,9 +292,9 @@ def run_local_test(local_test: LocalTests):
         )
         print(f"  Max sector active deviation: {max_active:.6f}")
         assert max_active <= max_dev + 1e-3
-        print("  ✓ PASSED")
+        print("  PASSED")
 
-    elif local_test == LocalTests.SECTOR_AND_STYLE_COMBINED:
+    elif local == Locals.SECTOR_AND_STYLE_COMBINED:
         print("Combined sector + style deviation constraints via Constraints class")
         c = Constraints(
             is_long_only=True,
@@ -321,13 +321,13 @@ def run_local_test(local_test: LocalTests):
             mask = GROUP_LOADINGS[col].to_numpy().astype(bool)
             dev = (weights[mask] - BENCHMARK_WEIGHTS.to_numpy()[mask]).sum()
             print(f"    {col}: {dev:+.4f}")
-        print("  ✓ PASSED")
+        print("  PASSED")
 
     # ─────────────────────────────────────────────────────────────
     # 30–31: Tracking error
     # ─────────────────────────────────────────────────────────────
 
-    elif local_test == LocalTests.TRACKING_ERROR_HARD:
+    elif local == Locals.TRACKING_ERROR_HARD:
         print("Hard tracking error constraint: TE vol <= 2%")
         te_limit = 0.02
         c = Constraints(
@@ -342,9 +342,9 @@ def run_local_test(local_test: LocalTests):
         te = np.sqrt(active @ COVAR @ active)
         print(f"  TE vol: {te:.4f} (limit: {te_limit})")
         assert te <= te_limit + 1e-3
-        print("  ✓ PASSED")
+        print("  PASSED")
 
-    elif local_test == LocalTests.TRACKING_ERROR_GROUP:
+    elif local == Locals.TRACKING_ERROR_GROUP:
         print("Group tracking error: per-group TE constraints")
         gte = GroupTrackingErrorConstraint(
             group_loadings=GROUP_LOADINGS.copy(),
@@ -359,13 +359,13 @@ def run_local_test(local_test: LocalTests):
         constraints = c.set_cvx_all_constraints(w=w, covar=COVAR)
         weights = _solve(w, cvx.Minimize(cvx.quad_form(w, COVAR)), constraints)
         print("  Per-group tracking errors computed successfully")
-        print("  ✓ PASSED")
+        print("  PASSED")
 
     # ─────────────────────────────────────────────────────────────
     # 40–41: Turnover
     # ─────────────────────────────────────────────────────────────
 
-    elif local_test == LocalTests.TURNOVER_HARD:
+    elif local == Locals.TURNOVER_HARD:
         print("Hard turnover constraint: L1 turnover <= 10%")
         w0 = pd.Series(0.10, index=TICKERS)
         to_limit = 0.10
@@ -376,9 +376,9 @@ def run_local_test(local_test: LocalTests):
         turnover = np.abs(weights - w0.to_numpy()).sum()
         print(f"  Turnover: {turnover:.4f} (limit: {to_limit})")
         assert turnover <= to_limit + 1e-3
-        print("  ✓ PASSED")
+        print("  PASSED")
 
-    elif local_test == LocalTests.TURNOVER_GROUP:
+    elif local == Locals.TURNOVER_GROUP:
         print("Group turnover: per-group L1 turnover limits")
         w0 = pd.Series(0.10, index=TICKERS)
         gtc = GroupTurnoverConstraint(
@@ -393,13 +393,13 @@ def run_local_test(local_test: LocalTests):
             mask = GROUP_LOADINGS[grp].to_numpy().astype(bool)
             to = np.abs(weights[mask] - w0.to_numpy()[mask]).sum()
             print(f"  {grp} turnover: {to:.4f} (limit: 0.05)")
-        print("  ✓ PASSED")
+        print("  PASSED")
 
     # ─────────────────────────────────────────────────────────────
     # 50: Full institutional scenario
     # ─────────────────────────────────────────────────────────────
 
-    elif local_test == LocalTests.FULL_INSTITUTIONAL:
+    elif local == Locals.FULL_INSTITUTIONAL:
         print("Full institutional setup: group bounds + sector dev + TE + turnover")
         w0 = pd.Series(0.10, index=TICKERS)
         c = Constraints(
@@ -433,13 +433,13 @@ def run_local_test(local_test: LocalTests):
         for grp in GROUP_LOADINGS.columns:
             mask = GROUP_LOADINGS[grp].to_numpy().astype(bool)
             print(f"    {grp}: {weights[mask].sum():.4f}")
-        print("  ✓ PASSED")
+        print("  PASSED")
 
     # ─────────────────────────────────────────────────────────────
     # 60–61: Update and filtering
     # ─────────────────────────────────────────────────────────────
 
-    elif local_test == LocalTests.UPDATE_VALID_TICKERS:
+    elif local == Locals.UPDATE_VALID_TICKERS:
         print("update() filters all sub-constraints to valid tickers")
         c = Constraints(
             is_long_only=True,
@@ -463,9 +463,9 @@ def run_local_test(local_test: LocalTests):
         print(f"  BDC shape:  {updated.sector_deviation_constraints.factor_loading_mat.shape}")
         assert updated.group_lower_upper_constraints.group_loadings.shape[0] == 6
         assert updated.sector_deviation_constraints.factor_loading_mat.shape[0] == 6
-        print("  ✓ PASSED")
+        print("  PASSED")
 
-    elif local_test == LocalTests.REBALANCING_INDICATORS:
+    elif local == Locals.REBALANCING_INDICATORS:
         print("Rebalancing indicators: freeze A3, A4 at current weights")
         w0 = pd.Series([0.15, 0.10, 0.05, 0.08, 0.10, 0.10, 0.10, 0.12, 0.10, 0.10], index=TICKERS)
         rebal = pd.Series([1, 1, 0, 0, 1, 1, 1, 1, 1, 1], index=TICKERS)
@@ -486,13 +486,13 @@ def run_local_test(local_test: LocalTests):
         assert abs(updated.min_weights.loc["A3"] - 0.05) < 1e-10
         assert abs(updated.max_weights.loc["A3"] - 0.05) < 1e-10
         assert abs(updated.min_weights.loc["A1"] - 0.0) < 1e-10
-        print("  ✓ PASSED")
+        print("  PASSED")
 
     # ─────────────────────────────────────────────────────────────
     # 70: Debug utilities
     # ─────────────────────────────────────────────────────────────
 
-    elif local_test == LocalTests.PRINT_AND_CHECK:
+    elif local == Locals.PRINT_AND_CHECK:
         print("Debug utilities: print_constraints + check_constraints_violation")
         c = Constraints(
             is_long_only=True,
@@ -508,7 +508,7 @@ def run_local_test(local_test: LocalTests):
         c.print_constraints(constraints)
         print("\n  --- check_constraints_violation output ---")
         c.check_constraints_violation(constraints)
-        print("  ✓ PASSED")
+        print("  PASSED")
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -517,4 +517,4 @@ def run_local_test(local_test: LocalTests):
 
 if __name__ == "__main__":
 
-    run_local_test(local_test=LocalTests.GROUP_ALLOCATION)
+    run_local(local=Locals.GROUP_ALLOCATION)

@@ -138,7 +138,16 @@ Changelog = "https://github.com/ArturSepp/OptimalPortfolios/blob/main/CHANGELOG.
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["optimalportfolios*"]
-exclude = ["examples*", "docs*", "papers*"]
+# Source-adjacent development runners stay importable from an editable checkout but are not part
+# of built distributions or the public package surface.
+exclude = [
+    "examples*",
+    "docs*",
+    "papers*",
+    "optimalportfolios.run_local*",
+    "optimalportfolios.*.run_local*",
+    "optimalportfolios.*.*.run_local*",
+]
 
 [tool.setuptools.package-data]
 optimalportfolios = ["*.yaml"]
@@ -146,6 +155,9 @@ optimalportfolios = ["*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["src/optimalportfolios"]
+# Package layout tests enforce the trailing form. The leading form remains discoverable only for
+# the out-of-scope paper replication modules, which are invoked by explicit path.
+python_files = ["*_test.py", "test_*.py"]
 addopts = "-ra -q --tb=short"
 cache_dir = "tmp/pytest-cache"
 
@@ -224,7 +236,7 @@ source = ["optimalportfolios"]
 # by eye, not by assertion. Measuring it only diluted the number the ratchet below defends, so it
 # is omitted rather than left as a permanent 4% drag. Anything with a numerical contract belongs
 # outside `reports/` and is measured.
-omit = ["*/tests/*", "*/examples/*", "papers/*", "*/reports/*"]
+omit = ["*/tests/*", "*/examples/*", "*/run_local/*", "papers/*", "*/reports/*"]
 
 [tool.coverage.report]
 # The floor is now the measured level: 100%. It stopped being a ratchet when it arrived, and the

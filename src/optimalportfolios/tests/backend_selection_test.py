@@ -11,8 +11,6 @@ where the suite runs, which is how this branch came to be covered locally and un
 where ``ci.yml`` sets ``MPLBACKEND`` itself.
 """
 
-import pytest
-
 from optimalportfolios.conftest import configure_matplotlib_backend
 
 
@@ -55,7 +53,3 @@ def test_the_real_environment_has_a_backend_by_the_time_tests_run() -> None:
     import os
 
     assert os.environ.get("MPLBACKEND"), "the shipped conftest left no backend selected"
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

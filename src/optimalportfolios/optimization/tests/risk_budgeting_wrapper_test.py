@@ -375,7 +375,3 @@ def test_failed_inverse_calibration_raises_instead_of_returning_zeros(monkeypatc
             prices=make_prices(),
             given_weights=pd.Series([0.5, 0.3, 0.2], index=TICKERS),
             covar_dict=make_covar_dict())
-
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])

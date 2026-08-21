@@ -29,8 +29,8 @@ def _print_portfolio_outputs(optimal_weights: np.ndarray,
           f"weights={np.array2string(optimal_weights, precision=2)}")
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     MIN_VAR = 1
     MAX_UTILITY = 2
     EFFICIENT_FRONTIER = 3
@@ -38,7 +38,7 @@ class LocalTests(Enum):
     REGIME_SHARPE = 6
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes.
 
     These are integration tests that download real universe and generate reports.
@@ -51,7 +51,7 @@ def run_local_test(local_test: LocalTests):
                       [-0.0075, 0.1**2]])
     constraints = Constraints()
 
-    if local_test == LocalTests.MIN_VAR:
+    if local == Locals.MIN_VAR:
 
         optimal_weights = cvx_quadratic_optimisation(portfolio_objective=PortfolioObjective.MIN_VARIANCE,
                                                      covar=covar,
@@ -62,7 +62,7 @@ def run_local_test(local_test: LocalTests):
                                 covar=covar,
                                 means=means)
 
-    elif local_test == LocalTests.MAX_UTILITY:
+    elif local == Locals.MAX_UTILITY:
 
         gamma = 5.0*np.trace(covar)
         optimal_weights = cvx_quadratic_optimisation(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
@@ -75,7 +75,7 @@ def run_local_test(local_test: LocalTests):
                                 covar=covar,
                                 means=means)
 
-    elif local_test == LocalTests.EFFICIENT_FRONTIER:
+    elif local == Locals.EFFICIENT_FRONTIER:
 
         portfolio_mus = []
         portfolio_vols = []
@@ -109,13 +109,15 @@ def run_local_test(local_test: LocalTests):
         portfolio_vol = pd.Series(portfolio_vols, index=lang_lambdas).rename('vol')
         portfolio_sharpe = pd.Series(portfolio_sharpes, index=lang_lambdas).rename('Sharpe')
         w_lambdas = pd.DataFrame(w_lambdas, index=lang_lambdas)
-        protfolio_data = pd.concat([portfolio_return, portfolio_vol, portfolio_sharpe, w_lambdas], axis=1)
+        protfolio_data = pd.concat(
+            [portfolio_return, portfolio_vol, portfolio_sharpe, w_lambdas], axis=1, sort=False
+        )
         print(protfolio_data)
         fig, axs = plt.subplots(2, 1, figsize=(15, 12))
         sns.lineplot(x='vol', y='mean', data=protfolio_data, ax=axs[0])
         sns.lineplot(data=protfolio_data[['mean', 'vol']], ax=axs[1])
 
-    elif local_test == LocalTests.SHARPE:
+    elif local == Locals.SHARPE:
 
         portfolio_mus = []
         portfolio_vols = []
@@ -151,7 +153,9 @@ def run_local_test(local_test: LocalTests):
         portfolio_return = pd.Series(portfolio_mus, index=lang_lambdas)
         portfolio_vol = pd.Series(portfolio_vols, index=lang_lambdas)
         portfolio_sharpe = pd.Series(portfolio_sharpes, index=lang_lambdas)
-        protfolio_data = pd.concat([portfolio_return, portfolio_vol, portfolio_sharpe], axis=1)
+        protfolio_data = pd.concat(
+            [portfolio_return, portfolio_vol, portfolio_sharpe], axis=1, sort=False
+        )
         print(protfolio_data)
 
         opt_sharpe_w = cvx_maximize_portfolio_sharpe(covar=covar,
@@ -163,7 +167,7 @@ def run_local_test(local_test: LocalTests):
                                 covar=covar,
                                 means=means)
 
-    elif local_test == LocalTests.REGIME_SHARPE:
+    elif local == Locals.REGIME_SHARPE:
 
         # case of two assets:
         # inputs:
@@ -214,4 +218,4 @@ def run_local_test(local_test: LocalTests):
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.MIN_VAR)
+    run_local(local=Locals.MIN_VAR)

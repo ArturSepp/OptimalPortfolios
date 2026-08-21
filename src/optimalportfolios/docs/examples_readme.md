@@ -2,8 +2,10 @@
 
 Repository-root scripts illustrating every solver, covariance estimator, and end-to-end workflow
 in the package. Run them from the repository root as `python -m examples.<path>` so their shared
-`examples.data` imports resolve consistently; `*_local.py` diagnostics require local CSV data or
-a Bloomberg terminal.
+`examples.data` imports resolve consistently. Component-level development runners do not live
+here; they are colocated with their production modules under `src/optimalportfolios/**/run_local/`.
+The few example files ending in `*_local.py` are broader workflows with local-data preconditions
+and are excluded from unattended execution.
 
 ## Layout
 
@@ -15,7 +17,7 @@ examples/
 ├── comparisons/           A-vs-B examples (covar / optimiser / parameter / config)
 ├── covar_estimation/      covariance estimator demos (EWMA, LASSO, GLASSO, factor model)
 ├── alphas/                alpha signal profiling demos (rank-based profiler)
-└── data/sp500_universe_local.py  local S&P 500 universe builder and loader
+└── data/                  shared loaders and local universe builders
 ```
 
 The folder split follows three orthogonal axes:
@@ -24,8 +26,25 @@ The folder split follows three orthogonal axes:
 - **How many configurations** it runs — a single one (`solvers/`, `backtests/`) or a sweep over several (`comparisons/`).
 - **Where the data comes from** — a shared fixture in `data/`, or a script-local download.
 
-Most files expose a `LocalTests` enum and a `run_local_test()` function so individual
-demos can be selected without editing code.
+## Examples versus development runners
+
+Automated package contracts live under `src/optimalportfolios/**/tests/` and end in `_test.py`.
+Development runners live beside the code they exercise under the nearest `run_local/` directory
+and end in `_run.py`. Run a selected default scenario explicitly:
+
+```bash
+python -m optimalportfolios.optimization.general.run_local.quadratic_run
+python -m optimalportfolios.alphas.signals.run_local.signals_run
+python -m optimalportfolios.utils.run_local.gaussian_mixture_run
+```
+
+Each runner exposes a `Locals` enum and a `run_local(local=...)` entry point. Shared development
+data lives under `optimalportfolios.run_local.data`; these source-checkout tools are excluded from
+built distributions.
+
+The three broader examples ending in `_local.py` remain here because they demonstrate complete
+workflows rather than the development of one package component. The unattended examples
+classifier excludes that suffix from both its offline and network lanes.
 
 ---
 

@@ -458,7 +458,3 @@ def test_min_variance_zero_fills_an_asset_with_no_expected_return() -> None:
     assert outcome.accepted
     assert np.isfinite(weights.to_numpy()).all()
     assert weights.sum() == pytest.approx(1.0, abs=1e-4)
-
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])

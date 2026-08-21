@@ -1,6 +1,4 @@
-"""
-Tests for return-maximising portfolio optimisation with volatility constraint.
-"""
+"""Local diagnostics for return maximisation with a volatility constraint."""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -45,8 +43,8 @@ def print_portfolio(label: str,
     print(f"  Weight sum:        {np.sum(weights):.4f}")
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     MAX_RETURN_ABS_VOL = 1
     MAX_RETURN_TE_BUDGET = 2
     HARD_VS_UTILITY = 3
@@ -54,7 +52,7 @@ class LocalTests(Enum):
     WRAPPER_WITH_NANS = 5
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes."""
 
     tickers = ['Equity', 'Bonds', 'Gold', 'HighYield']
@@ -69,7 +67,7 @@ def run_local_test(local_test: LocalTests):
     # expected returns (CMAs)
     expected_returns = pd.Series({'Equity': 0.06, 'Bonds': 0.02, 'Gold': 0.01, 'HighYield': 0.045})
 
-    if local_test == LocalTests.MAX_RETURN_ABS_VOL:
+    if local == Locals.MAX_RETURN_ABS_VOL:
         # maximise return subject to absolute vol budget (no benchmark)
         # as vol budget increases, portfolio tilts toward higher-return assets
         vol_budgets = [0.05, 0.08, 0.10, 0.15]
@@ -94,7 +92,7 @@ def run_local_test(local_test: LocalTests):
                 weights.values, covar, expected_returns.values, tickers
             )
 
-    elif local_test == LocalTests.MAX_RETURN_TE_BUDGET:
+    elif local == Locals.MAX_RETURN_TE_BUDGET:
         # maximise active return subject to tracking error budget
         benchmark = np.array([0.40, 0.30, 0.10, 0.20])
         te_budgets = [0.01, 0.03, 0.05, 0.10]
@@ -120,7 +118,7 @@ def run_local_test(local_test: LocalTests):
                 benchmark=benchmark
             )
 
-    elif local_test == LocalTests.HARD_VS_UTILITY:
+    elif local == Locals.HARD_VS_UTILITY:
         # compare hard vol constraint vs utility penalty at matched vol
         vol_budget = 0.08
 
@@ -170,7 +168,7 @@ def run_local_test(local_test: LocalTests):
         for i, t in enumerate(tickers):
             print(f"    {t:12s}  Δw = {w_hard.values[i] - best_w_util.values[i]:+.4f}")
 
-    elif local_test == LocalTests.VOL_FRONTIER:
+    elif local == Locals.VOL_FRONTIER:
         # trace return vs vol budget (efficient frontier via vol budgeting)
         constraints = Constraints(is_long_only=True,
                                   max_weights=pd.Series(0.5, index=tickers))
@@ -211,7 +209,7 @@ def run_local_test(local_test: LocalTests):
         axs[1].set_title('Weight Allocation vs Vol Budget')
         axs[1].legend(loc='upper left')
 
-    elif local_test == LocalTests.WRAPPER_WITH_NANS:
+    elif local == Locals.WRAPPER_WITH_NANS:
         # test NaN handling and edge cases
         constraints = Constraints(is_long_only=True,
                                   max_weights=pd.Series(0.5, index=tickers))
@@ -281,4 +279,4 @@ def run_local_test(local_test: LocalTests):
 
 
 if __name__ == '__main__':
-    run_local_test(local_test=LocalTests.MAX_RETURN_ABS_VOL)
+    run_local(local=Locals.MAX_RETURN_ABS_VOL)

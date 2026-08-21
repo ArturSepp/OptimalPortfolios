@@ -1004,7 +1004,3 @@ def test_run_diagnostics_includes_contract():
                        contract=InputContractSummary())
     s = d.summary()
     assert "solver outcomes" in s and "relaxations" in s and "input contract" in s
-
-
-if __name__ == "__main__":
-    raise SystemExit(pytest.main([__file__, "-v"]))

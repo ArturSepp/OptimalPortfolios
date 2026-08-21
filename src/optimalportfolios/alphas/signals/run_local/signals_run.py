@@ -1,20 +1,19 @@
-"""
-Tests for individual alpha signal functions (optimalportfolios.alphas.signals).
-"""
+"""Local diagnostics for individual functions in ``optimalportfolios.alphas.signals``."""
 import pandas as pd
 import matplotlib.pyplot as plt
 from enum import Enum
 import qis as qis
+from factorlasso import LassoModel, LassoModelType
 
 from optimalportfolios.alphas.signals.momentum import compute_momentum_alpha
 from optimalportfolios.alphas.signals.low_beta import compute_low_beta_alpha
 from optimalportfolios.alphas.signals.managers_alpha import compute_managers_alpha
 from optimalportfolios.alphas.signals.residual_momentum import compute_residual_momentum_alpha
-from optimalportfolios import LassoModel, LassoModelType, FactorCovarEstimator
+from optimalportfolios.covar_estimation.factor_covar_estimator import FactorCovarEstimator
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     MOMENTUM_SINGLE_FREQ = 1
     MOMENTUM_MIXED_FREQ = 2
     MOMENTUM_GROUPED = 3
@@ -27,20 +26,20 @@ class LocalTests(Enum):
     RESIDUAL_MOMENTUM_VS_MOMENTUM = 10
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes."""
 
     pd.set_option('display.max_rows', 500)
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
 
-    from examples.data.etf_prices_local import load_test_data
+    from optimalportfolios.run_local.data.etf_prices import load_test_data
     prices = load_test_data()
     prices = prices.loc['2005':, :]
     tickers = prices.columns.to_list()
     benchmark_price = prices.iloc[:, 0]
 
-    if local_test == LocalTests.MOMENTUM_SINGLE_FREQ:
+    if local == Locals.MOMENTUM_SINGLE_FREQ:
         score, raw = compute_momentum_alpha(
             prices=prices, benchmark_price=benchmark_price,
             returns_freq='ME', long_span=12)
@@ -57,7 +56,7 @@ def run_local_test(local_test: LocalTests):
                              var_format='{:.2f}',
                              legend_stats=qis.LegendStats.FIRST_AVG_LAST, ax=axs[1])
 
-    elif local_test == LocalTests.MOMENTUM_MIXED_FREQ:
+    elif local == Locals.MOMENTUM_MIXED_FREQ:
         mid = len(tickers) // 2
         returns_freq = pd.Series(
             ['ME'] * mid + ['QE'] * (len(tickers) - mid), index=tickers)
@@ -70,7 +69,7 @@ def run_local_test(local_test: LocalTests):
         print(f"Frequencies: {returns_freq.to_dict()}")
         print(f"\nScores (last 5):\n{score.tail().to_string(float_format='{:.3f}'.format)}")
 
-    elif local_test == LocalTests.MOMENTUM_GROUPED:
+    elif local == Locals.MOMENTUM_GROUPED:
         n = len(tickers)
         group_data = pd.Series(
             ['GroupA'] * (n // 2) + ['GroupB'] * (n - n // 2), index=tickers)
@@ -88,7 +87,7 @@ def run_local_test(local_test: LocalTests):
         print(f"\nGlobal (last 3):\n{score_global.tail(3).to_string(float_format='{:.3f}'.format)}")
         print(f"\nDifference:\n{(score_grouped - score_global).tail(3).to_string(float_format='{:.3f}'.format)}")
 
-    elif local_test == LocalTests.LOW_BETA_SINGLE_FREQ:
+    elif local == Locals.LOW_BETA_SINGLE_FREQ:
         score, raw_beta = compute_low_beta_alpha(
             prices=prices, benchmark_price=benchmark_price,
             returns_freq='ME', beta_span=12)
@@ -105,7 +104,7 @@ def run_local_test(local_test: LocalTests):
                              var_format='{:.2f}',
                              legend_stats=qis.LegendStats.FIRST_AVG_LAST, ax=axs[1])
 
-    elif local_test == LocalTests.LOW_BETA_MIXED_FREQ:
+    elif local == Locals.LOW_BETA_MIXED_FREQ:
         mid = len(tickers) // 2
         returns_freq = pd.Series(
             ['ME'] * mid + ['QE'] * (len(tickers) - mid), index=tickers)
@@ -117,7 +116,7 @@ def run_local_test(local_test: LocalTests):
         print("── Low Beta mixed freq ──")
         print(f"\nScores (last 5):\n{score.tail().to_string(float_format='{:.3f}'.format)}")
 
-    elif local_test == LocalTests.MANAGERS_ALPHA:
+    elif local == Locals.MANAGERS_ALPHA:
         risk_factor_prices = prices.iloc[:, :2]
         asset_prices = prices.iloc[:, 2:]
 
@@ -153,7 +152,7 @@ def run_local_test(local_test: LocalTests):
                              var_format='{:.2%}',
                              legend_stats=qis.LegendStats.FIRST_AVG_LAST, ax=axs[1])
 
-    elif local_test == LocalTests.RESIDUAL_MOMENTUM_SINGLE_FREQ:
+    elif local == Locals.RESIDUAL_MOMENTUM_SINGLE_FREQ:
         score, raw = compute_residual_momentum_alpha(
             prices=prices, benchmark_price=benchmark_price,
             returns_freq='ME', beta_span=12, momentum_span=12)
@@ -170,7 +169,7 @@ def run_local_test(local_test: LocalTests):
                              var_format='{:.4f}',
                              legend_stats=qis.LegendStats.FIRST_AVG_LAST, ax=axs[1])
 
-    elif local_test == LocalTests.RESIDUAL_MOMENTUM_MIXED_FREQ:
+    elif local == Locals.RESIDUAL_MOMENTUM_MIXED_FREQ:
         mid = len(tickers) // 2
         returns_freq = pd.Series(
             ['ME'] * mid + ['QE'] * (len(tickers) - mid), index=tickers)
@@ -183,7 +182,7 @@ def run_local_test(local_test: LocalTests):
         print(f"Frequencies: {returns_freq.to_dict()}")
         print(f"\nScores (last 5):\n{score.tail().to_string(float_format='{:.3f}'.format)}")
 
-    elif local_test == LocalTests.RESIDUAL_MOMENTUM_GROUPED:
+    elif local == Locals.RESIDUAL_MOMENTUM_GROUPED:
         n = len(tickers)
         group_data = pd.Series(
             ['GroupA'] * (n // 2) + ['GroupB'] * (n - n // 2), index=tickers)
@@ -203,7 +202,7 @@ def run_local_test(local_test: LocalTests):
         print(f"\nGlobal (last 3):\n{score_global.tail(3).to_string(float_format='{:.3f}'.format)}")
         print(f"\nDifference:\n{(score_grouped - score_global).tail(3).to_string(float_format='{:.3f}'.format)}")
 
-    elif local_test == LocalTests.RESIDUAL_MOMENTUM_VS_MOMENTUM:
+    elif local == Locals.RESIDUAL_MOMENTUM_VS_MOMENTUM:
         # compare total-return momentum vs residual momentum scores
         mom_score, mom_raw = compute_momentum_alpha(
             prices=prices, benchmark_price=benchmark_price,
@@ -242,4 +241,4 @@ def run_local_test(local_test: LocalTests):
 
 
 if __name__ == '__main__':
-    run_local_test(local_test=LocalTests.RESIDUAL_MOMENTUM_VS_MOMENTUM)
+    run_local(local=Locals.RESIDUAL_MOMENTUM_VS_MOMENTUM)

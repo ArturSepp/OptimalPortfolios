@@ -1,6 +1,4 @@
-"""
-Tests for minimum-variance portfolio optimisation with target return constraint.
-"""
+"""Local diagnostics for minimum-variance optimisation with a target-return constraint."""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -41,8 +39,8 @@ def print_portfolio(label: str,
     print(f"  Weight sum:        {np.sum(weights):.4f}")
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     MIN_VAR_TARGET_RETURN = 1
     MIN_VAR_WITH_BENCHMARK = 2
     HARD_VS_UTILITY = 3
@@ -50,7 +48,7 @@ class LocalTests(Enum):
     WRAPPER_WITH_NANS = 5
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes."""
 
     tickers = ['Equity', 'Bonds', 'Gold', 'HighYield']
@@ -65,7 +63,7 @@ def run_local_test(local_test: LocalTests):
     # expected returns (CMAs)
     expected_returns = pd.Series({'Equity': 0.06, 'Bonds': 0.02, 'Gold': 0.01, 'HighYield': 0.045})
 
-    if local_test == LocalTests.MIN_VAR_TARGET_RETURN:
+    if local == Locals.MIN_VAR_TARGET_RETURN:
         # solve at different return targets: as target increases, portfolio
         # shifts from low-vol assets toward higher-return (higher-vol) assets
         targets = [0.02, 0.03, 0.04, 0.05]
@@ -90,7 +88,7 @@ def run_local_test(local_test: LocalTests):
                 weights.values, covar, expected_returns.values, tickers
             )
 
-    elif local_test == LocalTests.MIN_VAR_WITH_BENCHMARK:
+    elif local == Locals.MIN_VAR_WITH_BENCHMARK:
         # minimise TE variance subject to return floor
         benchmark = np.array([0.40, 0.30, 0.10, 0.20])
         targets = [0.02, 0.035, 0.05]
@@ -116,7 +114,7 @@ def run_local_test(local_test: LocalTests):
                 benchmark=benchmark
             )
 
-    elif local_test == LocalTests.HARD_VS_UTILITY:
+    elif local == Locals.HARD_VS_UTILITY:
         # compare hard constraints vs utility (turnover penalty) formulation
         benchmark = np.array([0.40, 0.30, 0.10, 0.20])
         target = 0.035
@@ -162,7 +160,7 @@ def run_local_test(local_test: LocalTests):
         for i, t in enumerate(tickers):
             print(f"    {t:12s}  Δw = {w_hard.values[i] - w_util.values[i]:+.4f}")
 
-    elif local_test == LocalTests.RETURN_FRONTIER:
+    elif local == Locals.RETURN_FRONTIER:
         # trace portfolio vol vs target return (the risk-return tradeoff)
         constraints = Constraints(is_long_only=True,
                                   max_weights=pd.Series(0.5, index=tickers))
@@ -203,7 +201,7 @@ def run_local_test(local_test: LocalTests):
         axs[1].set_title('Weight Allocation vs Target Return')
         axs[1].legend(loc='upper left')
 
-    elif local_test == LocalTests.WRAPPER_WITH_NANS:
+    elif local == Locals.WRAPPER_WITH_NANS:
         # test NaN handling and edge cases
         constraints = Constraints(is_long_only=True,
                                   max_weights=pd.Series(0.5, index=tickers))
@@ -252,4 +250,4 @@ def run_local_test(local_test: LocalTests):
 
 
 if __name__ == '__main__':
-    run_local_test(local_test=LocalTests.MIN_VAR_TARGET_RETURN)
+    run_local(local=Locals.MIN_VAR_TARGET_RETURN)

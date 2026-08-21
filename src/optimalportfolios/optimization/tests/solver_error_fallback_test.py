@@ -142,7 +142,3 @@ def test_a_raising_backend_without_a_prior_portfolio_falls_back_to_the_benchmark
     assert not outcome.accepted
     np.testing.assert_allclose(np.asarray(outcome.weights, dtype=float),
                                BENCHMARK.to_numpy(), atol=1e-8)
-
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])

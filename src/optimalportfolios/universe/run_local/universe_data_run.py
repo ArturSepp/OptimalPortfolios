@@ -48,7 +48,7 @@ def fetch_universe_data(start_date: str = "2003-12-31") -> UniverseData:
     metadata = pd.concat([names,
                           group_data,
                           pd.Series('USD', index=group_data.index, name=MetadataField.CURRENCY)
-                          ], axis=1)
+                          ], axis=1, sort=False)
 
     universe_data = UniverseData(prices=prices, metadata=metadata, group_loadings_level1=group_loadings_level1)
 
@@ -69,29 +69,29 @@ def fetch_risk_factor_prices(start_date: str = "2003-12-31") -> pd.DataFrame:
 
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     CREATE_UNIVERSE_DATA = 1
     LOAD_UNIVERSE_DATA = 2
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes.
 
     These are integration tests that download real universe and generate reports.
     Use for quick verification during product_development.
     """
 
-    if local_test == LocalTests.CREATE_UNIVERSE_DATA:
+    if local == Locals.CREATE_UNIVERSE_DATA:
         universe_data = fetch_universe_data()
         print(universe_data)
         universe_data.save(file_name='universe_test', local_path=lp.get_output_path())
 
-    elif local_test == LocalTests.LOAD_UNIVERSE_DATA:
+    elif local == Locals.LOAD_UNIVERSE_DATA:
         universe_data = UniverseData.load(file_name='universe_test', local_path=lp.get_output_path())
         print(universe_data)
 
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.CREATE_UNIVERSE_DATA)
+    run_local(local=Locals.CREATE_UNIVERSE_DATA)

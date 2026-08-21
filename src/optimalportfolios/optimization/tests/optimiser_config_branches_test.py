@@ -110,7 +110,3 @@ def test_factorisation_succeeds_at_the_shipped_tolerance() -> None:
         factorization.factor @ factorization.factor.T, factorization.covar,
         rtol=1e-10, atol=1e-14,
     )
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

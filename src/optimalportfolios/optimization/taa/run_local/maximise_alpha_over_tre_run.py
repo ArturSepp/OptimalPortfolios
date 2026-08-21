@@ -1,6 +1,4 @@
-"""
-Tests for alpha-maximising portfolio optimisation with tracking error constraints.
-"""
+"""Local diagnostics for alpha maximisation with tracking-error constraints."""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -39,8 +37,8 @@ def print_portfolio(label: str,
     print(f"  Weight sum:       {np.sum(weights):.4f}")
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     HARD_CONSTRAINTS = 1
     UTILITY_PENALTIES = 2
     HARD_VS_UTILITY = 3
@@ -48,7 +46,7 @@ class LocalTests(Enum):
     WRAPPER_WITH_NANS = 5
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes."""
 
     tickers = ['Equity', 'Bonds', 'Gold', 'HighYield']
@@ -66,7 +64,7 @@ def run_local_test(local_test: LocalTests):
     # SAA benchmark: 40/30/10/20
     benchmark = np.array([0.40, 0.30, 0.10, 0.20])
 
-    if local_test == LocalTests.HARD_CONSTRAINTS:
+    if local == Locals.HARD_CONSTRAINTS:
         # solve at different TE budgets with hard constraints
         # as TE budget increases, the portfolio tilts further from benchmark
         te_budgets = [0.01, 0.03, 0.05, 0.10]
@@ -95,7 +93,7 @@ def run_local_test(local_test: LocalTests):
                 w, covar, alphas, benchmark, tickers
             )
 
-    elif local_test == LocalTests.UTILITY_PENALTIES:
+    elif local == Locals.UTILITY_PENALTIES:
         # solve with utility-based penalties at different lambda_TE
         # higher lambda_TE = more risk aversion = closer to benchmark
         lambda_tes = [0.5, 2.0, 10.0, 50.0]
@@ -124,7 +122,7 @@ def run_local_test(local_test: LocalTests):
                 w, covar, alphas, benchmark, tickers
             )
 
-    elif local_test == LocalTests.HARD_VS_UTILITY:
+    elif local == Locals.HARD_VS_UTILITY:
         # compare hard constraint vs utility formulation at matched TE levels
         # first solve with hard TE = 3%, then find utility lambda that matches
         te_budget = 0.03
@@ -174,7 +172,7 @@ def run_local_test(local_test: LocalTests):
         for i, t in enumerate(tickers):
             print(f"    {t:12s}  Δw = {diff[i]:+.4f}")
 
-    elif local_test == LocalTests.TE_FRONTIER:
+    elif local == Locals.TE_FRONTIER:
         # trace the active efficient frontier: alpha vs TE
         te_budgets = np.arange(0.005, 0.12, 0.005)
         results = []
@@ -232,7 +230,7 @@ def run_local_test(local_test: LocalTests):
         for i, t in enumerate(tickers):
             axs[2].axhline(sum(benchmark[:i+1]), color='grey', linestyle=':', linewidth=0.3)
 
-    elif local_test == LocalTests.WRAPPER_WITH_NANS:
+    elif local == Locals.WRAPPER_WITH_NANS:
         # test the wrapper with NaN handling, zero-alpha, and detailed output
         benchmark_s = pd.Series(benchmark, index=tickers)
         alphas_s = pd.Series(alphas, index=tickers)
@@ -300,4 +298,4 @@ def run_local_test(local_test: LocalTests):
 
 
 if __name__ == '__main__':
-    run_local_test(local_test=LocalTests.TE_FRONTIER)
+    run_local(local=Locals.TE_FRONTIER)

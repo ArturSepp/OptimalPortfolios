@@ -443,7 +443,3 @@ def test_analytic_log_opt_matches_the_solver_on_the_same_problem() -> None:
         portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
         means=mu, carra=gamma)[0], dtype=float)
     np.testing.assert_allclose(solved, analytic, atol=1e-6)
-
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
