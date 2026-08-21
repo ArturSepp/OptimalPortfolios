@@ -49,6 +49,29 @@
 %       (introduction); Section 3.2 closes with a back-reference instead.
 %   Exhibit plan: figure/table TODOs now carry F1-F6 / TA-TF identifiers
 %       mapping to agents/2026-08-17_claude_sol_todo_qf_baseline_exhibits.md.
+% Revision 3 (2026-08-21, W3 integration per ROADMAP_manuscript_finalisation
+% v3; all inserted numbers are gated F/G-stage values):
+%   - U1 signal and risk rows re-based to the gated G0 headline-window
+%     re-score (2026-08-21_sol_G0_report.md); the 2026-08-17 U1 signal
+%     quotations are RETIRED (source artifact lost 2026-08-14, G0
+%     reconciliation shows they are not reproducible).
+%   - Signal claim re-framed: volatility reduction is the cross-universe
+%     robust result (all four volatility CIs exclude zero; no return or
+%     Sharpe CI does). F6 + G0 intervals quoted in the text.
+%   - Calibration bridge table (TB) inserted from F1, with the
+%     calibration-transfer disclosure (adopted 0.0866 vs own-cell 0.1753).
+%   - Theory scorecard table (TD) inserted from F5; P2/P6/P7 verdict prose
+%     added; P4-revised verdict from F2; simulation results from F4.
+%   - Membership/interpretability numbers from F3; MCF paragraph drafted
+%     from the F3 report (owner review under W1).
+%   - Data availability statement replaced by the F10 draft (W2 sign-off).
+%   - REMAINING [TODO]s: exhibit inserts from finalisation/exhibits (TA, TC,
+%     TE/TF, figures F1-F6), U1 turnover cells and U1 budget-row re-scores
+%     (trace via exhibit_index.csv / table_existing_*.csv), and the owner
+%     items W1/W2 (title, mechanism passages, P4 proposition text,
+%     sign-offs, notation table).
+% W3 blocks are delimited by BEGIN/END marker comments where they replace
+% or extend revision-2 text inside otherwise unchanged passages.
 % Seam protocol: this whole file is one generated block, EXCEPT the central
 % claim in the introduction, which is owner-drafted text (marked %% OWNER).
 % Candidate mechanism sentences for owner rewrite are marked %% MECHANISM.
@@ -119,11 +142,13 @@ tuned rather than derived. We derive a distribution theory for the induced
 partition process (stationarity, an exact increment law, and a boundary-flip
 approximation) and we calibrate the smoothing threshold from the estimator's
 own noise floor. On three estimation panels the calibrated threshold cuts
-membership churn by up to 89\% at a bounded fidelity cost, and in three
-investment universes the stabilised clusters reduce the volatility of matched
-momentum portfolios by 0.7 to 2.4 percentage points against global-ranking
-controls \TODO{finalise abstract numbers after the bootstrap layer (Part B) and
-the theory scorecard (Part A)}. The smoothing parameter thereby stops being a
+membership churn by up to 89\% at a bounded fidelity cost, and the theory
+scorecard supports four predictions outright, two in revised form, and rejects
+one. In three investment universes the stabilised clusters reduce the
+volatility of matched momentum portfolios by 0.7 to 3.9 percentage points
+against ranking controls, and every volatility interval excludes zero under a
+block bootstrap while no return or Sharpe interval does. The smoothing
+parameter thereby stops being a
 tuning choice: a risk platform can set it from the span, the estimation
 frequency, and a tail estimate, and defend the setting as a
 statistical-evidence threshold.
@@ -279,9 +304,20 @@ adaptive: the current partition drives scores and budgets. Identity is a
 reporting overlay: a min-cost-flow matcher links clusters across dates into
 named tracks for lineage statistics and labelling, and it never feeds back into
 estimation or portfolio construction. All lineage statistics in this paper come
-from this overlay. \TODO{one-paragraph description of the min-cost-flow
-matcher, with the bridge-edge property, once the membership analysis of
-Section~\ref{sec:membership} is consolidated (Part A).}
+from this overlay.
+
+%% W3-BEGIN (MCF description drafted from the F3 report subsection,
+%% agents/2026-08-20_sol_F3_report.md; owner review under W1):
+The matcher builds a bipartite graph whose nodes are the fingerprinted
+clusters at each estimation date. Edges connect clusters at consecutive dates
+and across gaps of up to six dates, with gap edges discounted geometrically. A
+deterministic maximum-weight matching selects a vertex-disjoint cover of
+paths, and each predecessor-free path carries one persistent track identity.
+The bridge edges let a track survive a temporary split or merge, because the
+joint solve can route identity around the gap instead of handing it to the
+locally best consecutive match. Unmatched qualifying alternatives annotate
+splits and merges, and the remaining endpoints mark births and deaths.
+%% W3-END
 
 % ----------------------------------------------------------------------------
 \section{A distribution theory for rolling partitions}
@@ -498,12 +534,13 @@ and the expected churn per asset-year is
 where $A$ is the number of estimation dates per year.
 \end{proposition}
 
-% [TODO: P4 revision per owner ruling 10 (2026-08-17): restate the hysteresis
-% component with the per-panel proportionality constant absorbed into
-% sigma_i, consistent with the E3b constant-c ruling (c in [0.81, 2.15]).
-% The revised statement replaces the unscaled equality that stage E3b
-% rejected. Sol delivers the revised-prediction re-evaluation (Part A, P4
-% row); the owner approves the revised proposition text.]
+% [TODO: OWNER (W2): restate the hysteresis component with the per-panel
+% proportionality constant absorbed into sigma_i (owner ruling 10). The F2
+% re-evaluation is COMPLETE (agents/2026-08-20_sol_F2_report.md): with c
+% calibrated once on the baseline configuration, the revised prediction is
+% supported as a cross-configuration ordering (correlations 0.992 equity
+% full, 0.993 equity headline, 0.939 futures; fund rows descriptive), not as
+% an equality in levels. Only the proposition text awaits the owner.]
 
 % ----------------------------------------------------------------------------
 \section{The smoothing design problem and its calibration}
@@ -571,14 +608,57 @@ dependence on $k$ therefore discriminates between the two calibrations
 empirically.
 \end{corollary}
 
-% [TODO: calibration bridge table (Part A; exhibit TB of the Sol TODO file).
-% One table per estimation panel: N, k, measured kappa_hat, measured rho_bar,
-% implied delta*_lvl and delta*_inn, the adopted delta (equity cell 0.0866;
-% futures cell 0.0691), and the sweep knee location. This table replaces the
-% stale worked example of the 2026-08-13 draft (0.060 / 0.020 / swept 0.05),
-% which was computed at illustrative rho_bar = 0.5 and Gaussian kappa = 0
-% rather than at the measured panel values. Numbers from Sol's consolidation;
-% do not carry the old example forward.]
+%% W3-BEGIN (calibration bridge, exhibit TB; source:
+%% agents/2026-08-20_sol_F1_report.md, calibration_bridge.csv and
+%% frontier.csv; replaces the stale 2026-08-13 worked example):
+Table~\ref{tab:bridge} evaluates both calibrations at the measured panel
+inputs. The level calibration reproduces every adopted threshold on the theory
+panels, and the frontier knee of Section~\ref{sec:scorecard} sits at the
+calibrated value on three of the four frontiers.
+
+\begin{table}
+\begin{center}
+\tbl{The level calibration reproduces the adopted thresholds, and the
+frontier knee sits at the calibrated value on three of four panels. Inputs
+measured per panel: span $N$, estimation step $k$ in observation periods,
+excess kurtosis $\widehat{\kappa}$, and median within-cluster correlation
+$\bar{\rho}$; thresholds from equations \eqref{eq:deltalevel} and
+\eqref{eq:deltainnovation} at $z_{1-\alpha}=1$.}
+{\begin{tabular}{lrrrrrrrl}
+\toprule
+panel & $N$ & $k$ & $\widehat{\kappa}$ & $\bar{\rho}$
+ & $\delta^{*}_{\mathrm{lvl}}$ & $\delta^{*}_{\mathrm{inn}}$
+ & adopted $\delta$ & knee \\
+\colrule
+equities, weekly & 156 & 4.33 & 2.12 & 0.62 & 0.087 & 0.028 & 0.0866
+ & 0.0866 \\
+futures, weekly & 156 & 4.33 & 1.61 & 0.68 & 0.069 & 0.023 & 0.0691
+ & 0.0691 \\
+funds, monthly & 36 & 1 & 0.84 & 0.80 & 0.083 & 0.027 & 0.0830 & 0.0830 \\
+funds, quarterly & 12 & 1 & 1.29 & 0.79 & 0.161 & 0.089 & 0.1609 & 0.1609 \\
+\colrule
+U1 application, monthly & 36 & 1 & 2.12 & 0.64 & 0.175 & 0.058 & 0.0866
+ & --- \\
+U3 application, weekly & 156 & 4.33 & 1.61 & 0.68 & 0.069 & 0.023 & 0.0691
+ & --- \\
+\botrule
+\end{tabular}}
+\tabnote{The equity headline-window frontier places its knee at the fixed
+bonus 0.05 rather than the calibrated 0.0866; Section~\ref{sec:scorecard}
+reports the difference. Application rows state the operating cells of
+Section~\ref{sec:applications}; their thresholds are transferred, not
+recalibrated, as disclosed below.}
+\label{tab:bridge}
+\end{center}
+\end{table}
+
+The application rows make one transfer explicit. The adopted U1 threshold of
+0.0866 is the weekly equity-panel calibration transferred to the monthly
+span-36 application cell, whose own inputs imply a level threshold of 0.175.
+We disclose the transfer rather than recalibrating, because the operating
+points are frozen and the fidelity verdict of the adopted cell is quoted in
+Section~\ref{sec:membership}.
+%% W3-END
 
 \subsection{Membership, lineage, and interpretability under smoothing}
 \label{sec:membership}
@@ -601,12 +681,26 @@ headline window, while a quarterly-hold smoother reaches $1.33$ and a small
 fixed bonus of $0.02$ reaches $1.27$. The reduction is not free: at the
 calibrated bonus the sector-level taxonomy ARI moves by $-0.038$, which
 breaches the $0.03$ band, while the small fixed bonuses stay inside the band.
-\TODO{consolidated membership and interpretability exhibit (Part A; exhibit
-TC and figure F1 of the Sol TODO file): the churn-fidelity table across
-panels and configurations, the taxonomy-ARI-by-level peak table, track purity
-and persistence, and one case-study track per panel, from the cached E3b/E4
-outputs. The band verdict of every adopted operating point is quoted here,
-including the equity-cell and futures-cell adopted deltas.}
+
+%% W3-BEGIN (adopted-cell verdicts and interpretability; source:
+%% agents/2026-08-20_sol_F3_report.md, adopted_cell_verdicts.csv and
+%% interpretability.csv):
+We score the two adopted application cells against their own unsmoothed
+baselines, and both pass their bands. The monthly equity
+cell at the transferred threshold changes taxonomy ARI by at most 0.015
+against its own unsmoothed baseline, with a median cluster-count change of
+0.12. The futures cell at 0.0691 changes taxonomy ARI by at most 0.009 with
+no cluster-count change. Interpretability improves alongside stability.
+Smoothing lowers annualised label churn from 1.16 to 0.64 changes per
+asset-year on equities, from 0.54 to 0.10 on futures, and from 1.34 to 0.37
+on funds. Modal-taxonomy purity rises on every panel, from 0.53 to 0.56, from
+0.86 to 0.87, and from 0.69 to 0.73.
+%% W3-END
+\TODO{insert exhibit TC (churn and fidelity across panels and
+configurations) and figure F1 (churn through time) from
+finalisation/exhibits (F8). Band-verdict counts to re-trace: equities 6 of 8
+configurations PASS on the full window and 5 of 8 on the headline window,
+futures 8 of 8, funds 7 of 8 (F3 report).}
 
 \subsection{Testable implications}
 \label{sec:predictions}
@@ -646,11 +740,10 @@ under the GARCH specification, from equation \eqref{eq:garchkappa}.
 
 \begin{prediction}[Frequency scaling]
 \label{pred:frequency}
-% [TODO: restate P4 in its revised form per owner ruling 10: the per-panel
-% proportionality constant of Proposition 2 is absorbed, and the prediction
-% concerns the k-dependence of churn ratios relative to the absorbed-constant
-% baseline. The unscaled equality form was rejected on the equity and futures
-% panels (stage E3b) and the rejection is reported in Section 5.]
+% [TODO: OWNER (W2): restate P4 in its revised form per owner ruling 10 (the
+% per-panel constant absorbed; the prediction concerns the k-dependence of
+% churn ratios). The F2 re-evaluation is complete and its verdict is
+% reported in Section 5; only the prediction text awaits the owner.]
 Per-transition churn scales with the per-transition noise
 $\sqrt{1-\lambda^{k}}$ when estimation dates move from monthly to quarterly on
 the same panel, after absorbing a per-panel proportionality constant. The
@@ -722,53 +815,112 @@ such a table.}
 \subsection{The theory scorecard}
 \label{sec:scorecard}
 
-\TODO{Theory scorecard table (Part A; exhibit TD of the Sol TODO file, the
-paper's central theory exhibit, precedent: Ratliff-Crain et al.'s Table 1):
-one row per prediction with the test statistic, the measured value, the
-verdict, and a bootstrap confidence interval or permutation null where
-applicable. Sourced from the cached stability workbooks; assembled by Sol;
-numbers below are the already-gated headline values and must be re-traced
-through the scorecard before submission. Companion figures F2 (frontier knee
-with calibration overlays) and F4 (margin histograms and flip rates by margin
-decile) are specified in the Sol TODO file.}
+%% W3-BEGIN (theory scorecard, exhibit TD; source:
+%% agents/2026-08-21_sol_F5_report.md, theory_scorecard.csv; every value
+%% carries its artifact path and hash in the scorecard file):
+Table~\ref{tab:scorecard} reports one row per prediction with its test
+statistic, measured value, and verdict. Intervals are 95\% percentile
+intervals from a joint moving-block bootstrap with block length 6 and 2{,}000
+draws.
 
-The verdicts measured so far are as follows. Prediction~\ref{pred:margins} is
-supported: the cross-configuration correlation between predicted and realised
-churn is $0.86$ on the equity panel's full window and $0.87$ on its headline
-window, with per-panel values reported in the scorecard.
-% Provenance: agents/2026-08-14_sol_E3b_report.md, corrected
-% predicted-vs-realised correlations.
-Prediction~\ref{pred:kurtosis} holds in the absorbed-constant form: the
-per-panel baseline constant $c$ (realised churn over the Gaussian-predicted
-sum) ranges from $0.81$ on the futures panel to $2.15$ on the quarterly fund
-sleeve, and the theory treats $c$ as a panel-level constant rather than a
-prediction.
-% Provenance: agents/2026-08-14_sol_E3b_report.md, kurtosis proportionality
-% constants.
+\begin{table}
+\begin{center}
+\tbl{The scorecard supports four predictions outright, two in revised form,
+and rejects one. Panels are equities / futures / funds; equity values quote
+the full window with the headline window in parentheses where they differ.}
+{\begin{tabular}{llll}
+\toprule
+prediction & statistic & measured value & verdict \\
+\colrule
+P1 margins & predicted--realised churn corr.
+ & 0.863 (0.872) / 0.865 / 0.911 & supported \\
+P1 simulation & flat-cut corr.; Ward corr., MAE
+ & 0.980; 0.975, 0.033 & supported \\
+P2 knee & frontier knee vs calibration
+ & calibrated $\delta$ on 3 of 4 & supported \\
+P3 kurtosis & absorbed constants $c$
+ & 0.81 to 2.15 & supported, revised \\
+P4 equality & mean realised$-$predicted ratio gap
+ & 0.20 / 0.42 & rejected \\
+P4 revised & cross-config corr.\ at fixed $c$
+ & 0.992 (0.993) / 0.939 & supported, revised \\
+P5 invariance & max resid.-diagonality; Frobenius
+ & 0.014; 0.057 & supported \\
+P6 ergodicity & consec.-ARI subsample ranges
+ & above baseline on all panels & supported \\
+P7 turnover & reassignment delta per rebalance
+ & $-0.118$ / $-0.055$ / $-0.087$ & conj.\ rejected \\
+\botrule
+\end{tabular}}
+\tabnote{P1 interval endpoints: equities full $[0.851, 0.871]$, equities
+headline $[0.865, 0.878]$, futures $[0.814, 0.903]$, funds
+$[0.885, 0.931]$. P7 intervals exclude zero on all three panels. Ward
+carries no acceptance threshold: its measured accuracy is the result.}
+\label{tab:scorecard}
+\end{center}
+\end{table}
+
+The verdicts read as follows. Prediction~\ref{pred:margins} is supported: the
+cross-configuration correlation between predicted and realised churn is
+$0.86$ on the equity panel's full window and $0.87$ on its headline window,
+$0.86$ on futures, and $0.91$ on funds, each with an interval excluding zero.
+Prediction~\ref{pred:knee} is supported with one stated exception: the
+maximum-curvature knee sits at the calibrated threshold on three of the four
+frontiers, while the equity headline window places it at the fixed bonus
+$0.05$. Prediction~\ref{pred:kurtosis} holds in the absorbed-constant form:
+the per-panel baseline constant $c$ (realised churn over the
+Gaussian-predicted sum) ranges from $0.81$ on the futures panel to $2.15$ on
+the quarterly fund sleeve. The theory treats $c$ as a panel-level constant
+rather than a prediction.
 Prediction~\ref{pred:frequency} in its unscaled equality form is rejected:
 realised annualised churn ratios exceed the predicted ratios on every equity
 and futures configuration, with mean absolute gaps between $0.20$ and $0.42$.
-The revised form of the prediction absorbs the per-panel constant, and its
-re-evaluation on the cached panels is \TODO{Part A, P4 row: revised-prediction
-re-evaluation and verdict}. Prediction~\ref{pred:invariance} is supported: the
-maximal smoothed-versus-baseline residual-diagonality change is $0.014$ across
-all panels and configurations, an order of magnitude inside the $5\%$ guard.
-% Provenance: agents/2026-08-14_sol_E3b_report.md, validator output.
-Predictions~\ref{pred:knee}, \ref{pred:ergodicity}, and \ref{pred:turnover}
-are \TODO{Part A: frontier-knee exhibit (figure F2), ergodicity subsample
-table with bootstrap bands (folded into exhibit TD), and the
-turnover-attribution row consolidated from the cached backtest
-decompositions}.
+Its revised form is supported as an ordering: with $c$ calibrated once on the
+baseline configuration, the cross-configuration correlation between revised
+predictions and realised quarterly churn is $0.99$ on equities and $0.94$ on
+futures. Every quarterly level gap stays positive, and the fund panel is
+descriptive under the different-sleeve ruling.
+Prediction~\ref{pred:invariance} is supported: the maximal
+smoothed-versus-baseline residual-diagonality change is $0.014$ across all
+panels and configurations, an order of magnitude inside the $5\%$ guard.
+Prediction~\ref{pred:ergodicity} is supported: subsample consecutive-ARI
+ranges of the calibrated configurations sit above their baseline ranges on
+every panel ($0.92$--$0.97$ against $0.55$--$0.67$ on equities,
+$0.98$--$0.99$ against $0.89$--$0.95$ on futures, and $0.96$--$0.98$ against
+$0.79$--$0.83$ on funds). The crisis windows preserve the ordering.
+Prediction~\ref{pred:turnover} is rejected as a conjunction, and we report
+which clause fails. Reassignment-driven turnover falls with smoothing on
+every panel, with intervals excluding zero ($-0.118$, $-0.055$, and $-0.087$
+changes per rebalance). The invariance clause fails on the fund panel, where
+signal-driven turnover also moves ($-0.009$, interval excluding zero), and
+the equity net-return point estimate is negative. We keep the mechanism and
+drop the conjunction.
+%% W3-END
+\TODO{insert companion figures F2 (frontier knee with calibration overlays)
+and F4 (margin histograms and flip rates by margin decile) from
+finalisation/exhibits (F8); reference and interpret both here.}
 
 \subsection{Simulation study}
 \label{sec:simulation}
 
-\TODO{Simulation study (Part A, the one new computation): synthetic
-$G$-block panels with GARCH(1,1) volatility, verifying the flip probability
-\eqref{eq:flipprob} for the flat cut and its accuracy for Ward linkage.
-Produces the flip-approximation figure (F3 of the Sol TODO file) and the
-Ward-verification rows of exhibit TD. Design grid and seeds specified in the
-Sol roadmap.}
+%% W3-BEGIN (simulation results; source: agents/2026-08-21_sol_F4_report.md,
+%% simulation_results.csv and ward_verification.csv; 144 cells, 500 paths per
+%% cell, seeds 20260817 + cell index recorded in the output):
+We verify the flip approximation \eqref{eq:flipprob} on synthetic $G$-block
+panels with GARCH(1,1) volatility across 144 design cells: dimensions 50 and
+100, five and ten blocks, three separations, three volatility regimes, spans
+36 and 156, two estimation steps, and four hysteresis arms per method. For the proved flat-cut case in the Gaussian
+cells with separation at least $0.20$, the correlation between predicted and
+realised flip probabilities is $0.98$, and realised churn is non-increasing
+in the hysteresis strength in every one of the 144 cells. Ward linkage is
+the verification case and carries no acceptance threshold. Its measured
+correlation is $0.97$ with a mean absolute prediction error of $0.033$,
+against $0.009$ for the flat cut on the same rows. The approximation
+therefore transfers to Ward with a measured, roughly threefold, loss of
+per-cell accuracy and no loss of ordering.
+%% W3-END
+\TODO{insert figure F3 (predicted versus realised flip probability, flat cut
+and Ward) from finalisation/exhibits (F8); reference and interpret here.}
 
 % ----------------------------------------------------------------------------
 \section{The investment applications}
@@ -847,10 +999,11 @@ with bootstrap as the only addition.}
 \subsection{Signal evidence: peer-contained momentum scoring}
 \label{sec:signal}
 
-%% TOPIC-CANDIDATE
-Cluster-contained scoring improves the risk profile of momentum portfolios in
-all three universes and improves net returns in two. Table~\ref{tab:signal}
-reports the matched legs.
+%% TOPIC-CANDIDATE (re-based to the gated G0/F6 record in revision 3)
+Cluster-contained scoring lowers the volatility of matched momentum
+portfolios in all three universes, and the volatility reductions are the only
+deltas whose bootstrap intervals exclude zero. Table~\ref{tab:signal} reports
+the matched legs.
 
 \begin{table}
 \begin{center}
@@ -865,9 +1018,13 @@ the Sol TODO file.}}
 \toprule
 universe & leg & net return & volatility & Sharpe & turnover \\
 \colrule
-U1 & cluster score & $-3.29\%$ & $10.88\%$ & $-0.25$ & $2.56\times$ \\
-U1 & sector score & $-3.55\%$ & $10.21\%$ & $-0.30$ & $2.47\times$ \\
-U1 & global score & $-3.98\%$ & $12.80\%$ & $-0.25$ & $2.50\times$ \\
+% W3: U1 rows re-based to the gated G0 headline-window re-score
+% (agents/2026-08-21_sol_G0_report.md, u1_windowed_performance.csv). The
+% 2026-08-17 values are retired (lost source artifact; G0 reconciliation).
+% U1 turnover awaits the exhibit-index trace (F8 table_existing_signal.csv).
+U1 & cluster score & $-3.87\%$ & $9.17\%$ & $-0.38$ & \TODO{t/o} \\
+U1 & sector score & $-3.52\%$ & $10.36\%$ & $-0.29$ & \TODO{t/o} \\
+U1 & global score & $-3.94\%$ & $13.10\%$ & $-0.24$ & \TODO{t/o} \\
 \colrule
 U2 & cluster score & $5.48\%$ & $10.49\%$ & $0.56$ & $2.06\times$ \\
 U2 & global score & $5.46\%$ & $11.17\%$ & $0.53$ & $1.76\times$ \\
@@ -889,26 +1046,33 @@ global-score legs per universe, one panel per universe, referenced and
 interpreted here (QF precedent: the ESG paper's cumulative-factor-value
 figure and BABB's risk-return profile).}
 
-Against the matched global control, the cluster score adds 69 basis points of
-net return in U1 and 2 basis points in U2, and it gives up 60 basis points in
-U3. Volatility falls in every universe: by 1.9 percentage points in U1, 0.7 in
-U2, and 2.4 in U3. The Sharpe ratio rises by 0.03 in U2 and 0.09 in U3 and is
-economically unchanged in U1. Against the sector control in U1, the cluster
-score adds 27 basis points of net return and 0.05 of Sharpe at 0.7 percentage
-points more volatility. \TODO{Part B bootstrap: 95\% confidence intervals on
-the return, volatility, and Sharpe deltas for the four comparisons; quote the
-intervals in this paragraph and mark which deltas exclude zero.}
+%% W3-BEGIN (comparison deltas and intervals; sources: U1 rows
+%% agents/2026-08-21_sol_G0_report.md (u1_windowed_cis.csv), U2/U3 rows
+%% agents/2026-08-20_sol_F6_report.md (signal_cis.csv); joint moving-block
+%% bootstrap, block 6, 2,000 draws, 95\% percentile intervals):
+Volatility falls in every universe against the matched global control: by 3.9
+percentage points in U1 (interval $[-5.0, -2.8]$), 0.7 in U2
+($[-1.2, -0.1]$), and 2.4 in U3 ($[-3.3, -1.6]$), and all three intervals
+exclude zero. The return deltas are small and inconclusive: $+7$ basis points
+in U1, $+2$ in U2, and $-60$ in U3, with every interval covering zero. The
+Sharpe deltas are $-0.14$ in U1 ($[-0.34, +0.07]$), $+0.03$ in U2
+($[-0.09, +0.14]$), and $+0.09$ in U3 ($[-0.13, +0.30]$), and none excludes
+zero. Against the sector control in U1, the cluster score lowers volatility
+by 1.2 percentage points ($[-2.1, -0.3]$) at a return delta of $-35$ basis
+points and a Sharpe delta of $-0.09$, with only the volatility interval
+excluding zero.
+%% W3-END
 
 %% MECHANISM (candidate for owner rewrite): what the result is and is not.
 The supported claim is comparative and risk-focused. Standardising momentum
 inside endogenous correlation clusters prevents heterogeneous instruments from
 dominating one cross-sectional scale, and in the selected specifications this
-improves the Sharpe ratio in all three universes and reduces volatility
-everywhere. The evidence does not support an unconditional return claim: the
-U1 long-short book loses money outright over this sample under every scoring
-scheme, and the U3 cluster book trails its global control on raw return. The
-U1 result in particular is a statement about relative losses, and we report it
-as such.
+reduces volatility in every universe while leaving the return and Sharpe
+intervals covering zero. The evidence does not support an unconditional
+return or Sharpe claim: the U1 long-short book loses money outright over this
+sample under every scoring scheme, and the U3 cluster book trails its global
+control on raw return. The U1 result in particular is a statement about
+relative risk, and we report it as such.
 
 \subsection{Risk evidence: cluster-budgeted long-only allocation}
 \label{sec:risk}
@@ -935,11 +1099,16 @@ seven-exclusion universe) in the final caption; append bootstrap intervals
 \toprule
 universe & method & net return & volatility & Sharpe & turnover \\
 \colrule
-U1 & flat ERC & $7.51\%$ & $12.25\%$ & $0.66$ & $0.55\times$ \\
-U1 & cluster budgets, $\alpha=0.5$ & $6.81\%$ & $11.89\%$ & $0.62$ & $1.19\times$ \\
-U1 & equal-cluster budgets & $6.03\%$ & $11.61\%$ & $0.57$ & $2.02\times$ \\
-U1 & Rolling-Ward HRP & $7.68\%$ & $11.85\%$ & $0.69$ & $1.33\times$ \\
-U1 & single-linkage HRP & $7.58\%$ & $11.97\%$ & $0.67$ & $1.15\times$ \\
+% W3: the three G0-covered U1 legs re-based to the gated headline-window
+% re-score (agents/2026-08-21_sol_G0_report.md). The two budget rows and all
+% U1 turnover cells await the same-convention windowed values via the
+% exhibit-index trace (F8 table_existing_risk.csv) -- re-scoring of frozen
+% weights/NAVs only, no rerun. The retired full-range values must not return.
+U1 & flat ERC & $8.79\%$ & $13.27\%$ & $0.71$ & \TODO{t/o} \\
+U1 & cluster budgets, $\alpha=0.5$ & \TODO{tbd} & \TODO{tbd} & \TODO{tbd} & \TODO{t/o} \\
+U1 & equal-cluster budgets & \TODO{tbd} & \TODO{tbd} & \TODO{tbd} & \TODO{t/o} \\
+U1 & Rolling-Ward HRP & $9.00\%$ & $12.83\%$ & $0.74$ & \TODO{t/o} \\
+U1 & single-linkage HRP & $8.86\%$ & $12.95\%$ & $0.72$ & \TODO{t/o} \\
 \colrule
 U2 & flat ERC & $0.94\%$ & $1.61\%$ & $0.59$ & $0.36\times$ \\
 U2 & cluster budgets, $\alpha=0.5$ & $0.48\%$ & $1.30\%$ & $0.38$ & $0.39\times$ \\
@@ -987,22 +1156,29 @@ U3 & 9.4 & 16.2 & $21.7\%$ & $6.3\%$ \\
 through time (effective risk clusters or largest cluster-risk share, flat ERC
 against equal-cluster budgets), referenced and interpreted here.}
 
+%% W3-BEGIN (findings re-based to G0/F6 intervals; sources: U1 rows
+%% agents/2026-08-21_sol_G0_report.md, U3 rows
+%% agents/2026-08-20_sol_F6_report.md, risk_cis.csv):
 Two findings are universe-dependent and one is universal. Rolling-Ward HRP is
-the best performer in U1 (17 basis points of net return and 0.03 of Sharpe
-over flat ERC, and it beats single-linkage HRP on return, volatility, and
-Sharpe). Equal-cluster budgeting is the best performer in U3 (39 basis points
-and 0.18 of Sharpe over flat ERC). In U2 flat ERC remains superior, and the
-failure is informative: unconstrained HRP allocates 98.9\% to fixed-income
-funds with 2.5 effective assets, so its low volatility comes from
-concentration in near-duplicate low-volatility instruments rather than from
-diversification. The universal finding is the mechanism
+the best performer in U1: against flat ERC it adds 21 basis points of net
+return and 0.03 of Sharpe and it lowers volatility by 0.44 percentage points
+($[-0.87, -0.08]$). The volatility interval is the only one excluding zero.
+Rolling-Ward HRP also beats single-linkage HRP on return, volatility,
+and Sharpe, with every interval covering zero. Equal-cluster budgeting is the
+best performer in U3: it adds 39 basis points ($[+0.04, +0.77]$ percentage
+points, excluding zero) and 0.17 of Sharpe ($[-0.05, +0.37]$) over flat ERC.
+Volatility also rises by 0.15 percentage points ($[+0.01, +0.30]$, excluding
+zero), so the U3 gain is return at slightly higher risk. In U2 flat ERC
+remains superior, and the failure is informative: unconstrained HRP allocates
+98.9\% to fixed-income funds with 2.5 effective assets, so its low volatility
+comes from concentration in near-duplicate low-volatility instruments rather
+than from diversification. The universal finding is the mechanism
 (Table~\ref{tab:concentration}): equal-cluster budgeting raises the number of
 effective risk clusters by 52\% to 136\% and cuts the largest cluster-risk
 share in every universe. The cluster structure is an effective control layer
 for distributing risk across endogenous peer groups. Whether that mechanical
 diversification also raises realised Sharpe depends on universe composition.
-\TODO{Part B bootstrap: intervals for the three risk comparisons (U1 HRP vs
-ERC, U1 HRP vs single-linkage HRP, U3 equal-cluster vs ERC).}
+%% W3-END
 
 % ----------------------------------------------------------------------------
 \section{Robustness and limitations}
@@ -1012,15 +1188,18 @@ ERC, U1 HRP vs single-linkage HRP, U3 equal-cluster vs ERC).}
 %% TOPIC-CANDIDATE
 The robustness material comes from the selection grids that produced the
 frozen operating points, and we disclose it as such: these grids are the
-selection record, not independent confirmation. \TODO{Part B / Phase C
-consolidation, placed in Appendix~\ref{app:robustness} per the QF-baseline
-exhibit budget. Four sensitivity exhibits from existing caches: (i) the U2
-eligibility grid (no cutoff, USD 50m, USD 100m); (ii) the U1 minimum
-cluster-size grid; (iii) the U3 short-span sweep; (iv) the covariance
-frequency and span grids. Each exhibit is labelled with its selection role.
-No new runs; numbers traced through the rebuilt exhibit index. This section
-keeps a one-paragraph summary of what the grids show and points to the
-appendix tables.}
+selection record, not independent confirmation.
+%% W3-BEGIN (grid inventory; source: agents/2026-08-21_sol_F8_report.md,
+%% robustness-grid consolidation, byte-identical copies):
+Four grids are reported: the U2 eligibility grid across no cutoff, USD 50m,
+and USD 100m, the U1 minimum-cluster-size grid around the adopted value of
+10, the U3 short-span sweep around the adopted value of 3, and the covariance
+frequency and span grids around the adopted monthly span-36 equity cell.
+Appendix~\ref{app:robustness} reports each grid with its selection role
+stated on every non-selected row.
+%% W3-END
+\TODO{insert appendix tables TE and TF from finalisation/exhibits (F8) and
+add the one-paragraph reading of each grid from those tables.}
 
 \label{sec:limitations}
 %% TOPIC-CANDIDATE
@@ -1050,15 +1229,22 @@ We derived the distribution theory of Rolling-Ward partitions and turned the
 cluster-smoothing parameter into a designed quantity. The stationary law is
 inherited from the EWMA estimator, the increment law carries an effective
 sample size of exactly $N$, and membership churn is a boundary-flip
-phenomenon whose expected rate follows from the estimator's noise floor. The
-calibrated hysteresis threshold cuts membership churn by up to 89\% at a
-bounded and measured fidelity cost. In three investment universes the
-stabilised clusters reduce matched-portfolio volatility by 0.7 to 2.4
-percentage points in the signal application, and cluster risk budgets raise
-the number of effective risk clusters by 52\% to 136\% in the allocation
-application. \TODO{final quantified contribution list after the Part A
-scorecard and Part B intervals land; enumerate contributions with numbers per
-the house rule.}
+phenomenon whose expected rate follows from the estimator's noise floor.
+%% W3-BEGIN (quantified contributions; sources: F5 scorecard, F1 bridge,
+%% G0/F6 intervals, F4 simulation):
+The evidence supports four of the seven predictions outright and two in the
+revised absorbed-constant form, and it rejects the turnover conjunction while
+confirming its reassignment mechanism with intervals excluding zero on all
+three panels. The level calibration reproduces the adopted thresholds and
+locates the frontier knee on three of four panels, and the simulated flip
+approximation reaches a predicted-realised correlation of $0.98$ for the
+proved flat cut and $0.97$ for Ward. The calibrated hysteresis threshold cuts
+membership churn by up to 89\% at a bounded and measured fidelity cost. In
+the applications, the stabilised clusters lower matched signal-portfolio
+volatility by 0.7 to 3.9 percentage points with every interval excluding
+zero, and cluster risk budgets raise the number of effective risk clusters by
+52\% to 136\% in the allocation application.
+%% W3-END
 
 % ----------------------------------------------------------------------------
 % Notation table: [TODO: add after the model sections stabilise, per the
@@ -1101,17 +1287,28 @@ generative AI had not been used).}
 funding was obtained for this work.}
 
 \section*{Data availability statement}
-The equity and fund data underlying the point-in-time universes are
-proprietary (MSCI index constituents and Bloomberg fund data) and cannot be
-redistributed. The \texttt{factorlasso} package implementing Rolling-Ward
-clustering, the smoothing calibration, and the lineage analytics is publicly
-available, together with the replication harness for the simulation study and
-the futures exhibits. \TODO{owner sign-off; align with the Phase C
-public-reproduction ruling. The journal supports Open Science Badges (COS):
+%% W3-BEGIN (F10 draft statement from
+%% agents/2026-08-21_sol_F10_replication_statement.md, with its two
+%% semicolon sentences split per the house rule; owner sign-off under W2
+%% before submission):
+The empirical analysis uses licensed MSCI constituent data, Bloomberg-derived
+fund and futures data, and factor returns from the Ken French Data Library.
+The Ken French series are the only freely obtainable data input. The licensed
+MSCI and Bloomberg inputs cannot be redistributed, and researchers seeking to
+reproduce the empirical results must obtain the corresponding data licences
+and construct the documented point-in-time panels. The \texttt{factorlasso}
+implementation of Rolling-Ward clustering, smoothing calibration, and
+cluster-lineage analytics is publicly available. The paper-specific
+replication harness is available from the authors on request and provides the
+versioned scripts, frozen specifications, provenance records, deterministic
+seeds, and exhibit-building instructions needed to reproduce the analysis
+once the licensed inputs have been supplied. The request package does not
+contain or purport to provide the proprietary source data.
+%% W3-END
+\TODO{owner sign-off (W2). The journal supports Open Science Badges (COS):
 the Open Materials badge fits the code-public/data-proprietary split, and a
-deposited replication archive with a DOI (e.g.\ Zenodo, as for the CSDA
-paper) supports both this statement and the badge application, which is made
-on acceptance.}
+deposited replication archive with a DOI supports both this statement and
+the badge application, which is made on acceptance.}
 
 \bibliographystyle{rQUF}
 \bibliography{cluster_lineage_refs}

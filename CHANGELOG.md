@@ -7,6 +7,32 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.21.2] - 2026-08-21
+
+### Added
+
+- `score_within_clusters` accepts the optional `stability_pooling_type` and
+  `stability_weights` arguments for FactorLasso 0.16 cluster-stability pooling. The default
+  `None` path retains the existing implementation exactly and does not import the opt-in API.
+
+### Changed
+
+- Raised the FactorLasso dependency floor from 0.14.0 to 0.16.0, the first published version
+  providing the stability-pooling API used by the new opt-in scoring path.
+
+### Fixed
+
+- Enforced group turnover limits and the whole-portfolio turnover limit as independent hard
+  controls when both are configured; previously the presence of group limits silently disabled
+  the aggregate limit.
+- Preserved both turnover controls on the soft tracking-error fallback in
+  `cvx_maximise_alpha_with_target_return` instead of dropping the group constraint.
+
+### Repository
+
+- Stopped tracking `papers/matf_cma_jpm_2026/` and added one root-anchored ignore rule while
+  preserving the local manuscript workspace.
+
 ## [6.21.1] - 2026-08-18
 
 ### Changed

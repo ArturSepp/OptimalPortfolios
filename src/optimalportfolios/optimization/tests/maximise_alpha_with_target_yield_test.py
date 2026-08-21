@@ -39,7 +39,7 @@ import pandas as pd
 import pytest
 # optimalportfolios
 from optimalportfolios.optimization.config import OptimiserConfig
-from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.optimization.constraints import Constraints, GroupTurnoverConstraint
 from optimalportfolios.optimization.taa.maximise_alpha_with_target_yield import (
     cvx_maximise_alpha_with_target_return,
     rolling_maximise_alpha_with_target_return,
@@ -282,6 +282,45 @@ def test_the_soft_branch_keeps_turnover_hard_rather_than_double_counting_it() ->
     assert len(residuals) == 1
     assert residuals[0].hard
     assert residuals[0].passed
+
+
+def test_the_soft_branch_keeps_group_and_global_turnover_hard_together() -> None:
+    """A workbook group limit must not suppress the independent portfolio L1 limit."""
+    benchmark = pd.Series(0.25, index=TICKERS)
+    weights_0 = benchmark.copy()
+    group_turnover = GroupTurnoverConstraint(
+        group_loadings=pd.DataFrame(
+            {'A only': [1.0, 0.0, 0.0, 0.0]}, index=TICKERS),
+        group_max_turnover=pd.Series({'A only': 0.02}),
+    )
+    constraints = make_constraints(
+        asset_returns=yields_series(),
+        target_return=0.020,
+        benchmark_weights=benchmark,
+        tre_utility_weight=10.0,
+        turnover_utility_weight=5.0,
+        weights_0=weights_0,
+        turnover_constraint=0.04,
+        group_turnover_constraint=group_turnover,
+    )
+
+    outcome = cvx_maximise_alpha_with_target_return(
+        covar=covar_frame().to_numpy(),
+        alphas=alphas_series().to_numpy(),
+        constraints=constraints,
+        soft_tracking_error=True,
+    )
+
+    assert outcome.accepted
+    trade = outcome.weights - weights_0.to_numpy()
+    assert abs(trade[0]) <= 0.02 + 1e-6
+    assert np.abs(trade).sum() <= 0.04 + 1e-6
+    hard_turnover = [
+        residual for residual in outcome.constraint_residuals
+        if residual.constraint_type in ('turnover', 'group_turnover')
+    ]
+    assert hard_turnover
+    assert all(residual.hard and residual.passed for residual in hard_turnover)
 
 
 def test_the_soft_branch_warns_when_turnover_has_no_starting_weights() -> None:

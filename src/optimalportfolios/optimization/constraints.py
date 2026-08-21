@@ -1570,7 +1570,10 @@ class Constraints:
         if self.group_turnover_constraint is not None:
             constraints += self.group_turnover_constraint.set_group_turnover_constraints(
                 w=w, weights_0=self.weights_0)
-        elif self.turnover_constraint is not None:
+        # Group limits and the whole-portfolio limit are independent controls. Identity loadings
+        # can cap every name while ``turnover_constraint`` caps aggregate trading. The former
+        # ``elif`` silently disabled the portfolio cap whenever any group cap was present.
+        if self.turnover_constraint is not None:
             if self.weights_0 is None:
                 logger.debug("turnover constraint skipped because weights_0 is absent")
             else:

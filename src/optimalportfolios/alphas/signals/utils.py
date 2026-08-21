@@ -21,7 +21,10 @@ import numpy as np
 import pandas as pd
 import qis as qis
 from scipy.optimize import linear_sum_assignment
-from typing import Dict, List, Mapping, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Tuple, Union
+
+if TYPE_CHECKING:
+    from factorlasso import StabilityPoolingType
 
 
 def resolve_span(span: Optional[Union[int, Mapping[str, int]]],
@@ -114,6 +117,8 @@ def score_within_clusters(
         raw_signal: pd.DataFrame,
         rolling_clusters: Dict[pd.Timestamp, pd.Series],
         min_cluster_size: int = 3,
+        stability_pooling_type: Optional['StabilityPoolingType'] = None,
+        stability_weights: Optional[pd.DataFrame] = None,
 ) -> pd.DataFrame:
     """Apply cross-sectional scoring within time-varying clusters.
 
@@ -136,10 +141,27 @@ def score_within_clusters(
         min_cluster_size: Minimum cluster size for within-cluster scoring.
             Clusters with size <= min_cluster_size are scored using
             global statistics. Default 3.
+        stability_pooling_type: Optional FactorLasso stability-pooling mode.
+            ``None`` or ``NONE`` preserves the existing implementation exactly.
+        stability_weights: Causal dates-by-assets co-cluster weights. Required
+            only when stability pooling is enabled.
 
     Returns:
         Cross-sectional scores (T × N) scored within time-varying clusters.
     """
+    if stability_pooling_type is not None:
+        from factorlasso import StabilityPoolingType, score_with_stability_pooled_clusters
+
+        stability_pooling_type = StabilityPoolingType(stability_pooling_type)
+        if stability_pooling_type != StabilityPoolingType.NONE:
+            return score_with_stability_pooled_clusters(
+                raw_signal=raw_signal,
+                rolling_clusters=rolling_clusters,
+                stability_weights=stability_weights,
+                min_cluster_size=min_cluster_size,
+                pooling_type=stability_pooling_type,
+            )
+
     if not rolling_clusters:
         # no clusters available: fall back to global scoring
         return qis.df_to_cross_sectional_score(df=raw_signal)

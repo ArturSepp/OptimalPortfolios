@@ -167,6 +167,17 @@ and has no reference left in this repository. To run the examples, install what 
 - **Ensure Offline Execution:** Ensure all examples run on free data. Never add a hard dependency on Bloomberg data.
 - **Maintain Clean Commits:** Prevent backtest outputs, factsheets, or generated figures from being committed to version control.
 
+## Temporary workspace hygiene
+
+- Do not create `.pytest*` or `.codex*` work directories at the repository root. Pytest's cache
+  is configured under the ignored `tmp/` tree.
+- Use the operating-system temp directory when it is writable. If sandboxing requires a workspace
+  path, use a task-specific directory below `tmp/` and remove it after verification. In particular,
+  pass `--basetemp=tmp/pytest/<task-id>` only when pytest's default temp location is unavailable.
+- Generated previews, extracted attachments, dependency junctions and diagnostic scripts are
+  temporary artifacts. Keep them below `tmp/`, deliver intentional outputs elsewhere, and clean
+  the temporary tree before handing the task back.
+
 <!-- ===== SHARED AGENT CORE (consumer variant) — begin =====
      Generated from SHARED_AGENT_CORE.md in the maintainer's project knowledge. Do not hand-edit
      between these markers — propose the change to the maintainer instead. Variants: builder

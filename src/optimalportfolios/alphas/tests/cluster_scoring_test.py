@@ -339,6 +339,66 @@ def test_nan_cluster_assignments_are_dropped() -> None:
     assert scored.loc[SIGNAL_DATES[0], TICKERS[-1]] == 0.0
 
 
+def test_stability_pooling_off_is_byte_identical_on_a_production_shaped_panel() -> None:
+    """V0 must preserve every output byte of the existing scorer."""
+    from factorlasso import StabilityPoolingType, score_with_stability_pooled_clusters
+
+    raw = make_raw_signal()
+    clusters = {
+        SIGNAL_DATES[0]: pd.Series(['ME:1'] * 5 + ['QE:2'] * 3, index=TICKERS),
+        SIGNAL_DATES[2]: pd.Series(['ME:1'] * 4 + ['QE:2'] * 4, index=TICKERS),
+    }
+    weights = pd.DataFrame(0.25, index=SIGNAL_DATES, columns=TICKERS)
+    baseline = score_within_clusters(raw, clusters, min_cluster_size=3)
+    explicit_v0 = score_within_clusters(
+        raw,
+        clusters,
+        min_cluster_size=3,
+        stability_pooling_type=StabilityPoolingType.NONE,
+        stability_weights=weights,
+    )
+    factorlasso_v0 = score_with_stability_pooled_clusters(
+        raw,
+        clusters,
+        weights,
+        min_cluster_size=3,
+        pooling_type=StabilityPoolingType.NONE,
+    )
+
+    pd.testing.assert_frame_equal(explicit_v0, baseline, check_exact=True)
+    pd.testing.assert_frame_equal(factorlasso_v0, baseline, check_exact=True)
+    assert explicit_v0.to_numpy().tobytes() == baseline.to_numpy().tobytes()
+    assert factorlasso_v0.to_numpy().tobytes() == baseline.to_numpy().tobytes()
+
+
+@pytest.mark.parametrize(
+    'pooling_name',
+    [
+        'CLUSTER_VARIANCE',
+        'ASSET_VARIANCE',
+    ],
+)
+def test_unit_stability_is_exactly_the_existing_cluster_score(pooling_name) -> None:
+    """Every pooled variant at w=1 must reduce bit-for-bit to V0."""
+    from factorlasso import StabilityPoolingType
+
+    pooling_type = StabilityPoolingType[pooling_name]
+    raw = make_raw_signal(dates=SIGNAL_DATES[:1])
+    clusters = {SIGNAL_DATES[0]: pd.Series(['big'] * 5 + ['small'] * 3, index=TICKERS)}
+    weights = pd.DataFrame(1.0, index=SIGNAL_DATES[:1], columns=TICKERS)
+    baseline = score_within_clusters(raw, clusters, min_cluster_size=3)
+    actual = score_within_clusters(
+        raw,
+        clusters,
+        min_cluster_size=3,
+        stability_pooling_type=pooling_type,
+        stability_weights=weights,
+    )
+
+    pd.testing.assert_frame_equal(actual, baseline, check_exact=True)
+    assert actual.to_numpy().tobytes() == baseline.to_numpy().tobytes()
+
+
 # --------------------------------------------------------------------------- #
 # the signal dispatcher
 # --------------------------------------------------------------------------- #

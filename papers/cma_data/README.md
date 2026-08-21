@@ -39,8 +39,9 @@ the bootstrap window (quarterly assets carry NaN off-quarter).
 workbook name and sha256, the production config_snapshot rows, package
 versions, per-file sha256 (verified on every load).
 
-Pending addition: `providers.csv` (provider CMA vectors under neutral labels
-A–D plus Consensus; the name map stays untracked with the extractor).
+Local licensed input: `providers.csv` contains provider CMA vectors under neutral
+labels A–D. It is ignored together with its extractor and name map; consumers
+add the public Consensus vector in code.
 
 ## What ships publicly
 
@@ -54,7 +55,7 @@ selectively.
 | `asset_excess_logreturns.csv` | **no** | ~25 years of licensed index histories (MSCI, Bloomberg, ICE BofA, HFRI, Eurekahedge) |
 | `asset_total_returns.csv` | **no** | same; no current consumer |
 | `factor_navs.csv` | **no** | daily factor NAV histories; the same content was already untracked under its former path |
-| `providers.csv` (pending) | **no** | licensed provider vectors, gated on the per-provider provenance confirmation |
+| `providers.csv` | **no** | licensed provider vectors under neutral labels A–D; local extractor and name map are ignored |
 
 `loaders.py` treats every panel as OPTIONAL: it loads when present, is `None`
 when absent, and `PaperInputs.require_panel(name)` raises a message naming the
@@ -71,8 +72,9 @@ What that costs a public checkout, measured:
 | `asset_excess_logreturns` | `run_consistency_exhibits` (J4d) |
 | both | `run_bootstrap_q2` (J5) |
 
-Test suites stay green either way: `cma_data/tests` 12 passed, the JPM parity
-harness 16 passed with the panels and 15 passed + 1 skipped without them.
+Test suites stay green either way: `cma_data/tests` 14 passed, the JPM parity
+harness 17 passed with the licensed panels and 15 passed + 2 skipped without
+`factor_navs.csv` and `providers.csv`.
 
 To run the four gated scripts, place the panel at `snapshots/<tag>/<name>.csv`
 from the production extract; the manifest hash is verified on load, so a wrong

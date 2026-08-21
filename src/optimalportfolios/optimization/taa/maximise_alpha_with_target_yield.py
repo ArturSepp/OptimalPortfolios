@@ -315,7 +315,11 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
             turnover_utility_weight=None,
             group_turnover_constraint=None,
         )
-        solved_constraints = constraints_soft
+        solved_constraints = dataclasses.replace(
+            constraints,
+            tracking_err_vol_constraint=None,
+            turnover_utility_weight=None,
+        )
         objective_fun, constraints_ = constraints_soft.set_cvx_utility_objective_constraints(
             w=w,
             alphas=alphas,
@@ -323,8 +327,13 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
             covar_factorization=covar_factorization,
         )
         objective = cvx.Maximize(objective_fun)
-        # keep turnover HARD if a budget is set, mirroring set_cvx_all_constraints
-        if constraints.group_turnover_constraint is None and constraints.turnover_constraint is not None:
+        # Keep workbook group turnover and the whole-portfolio L1 budget HARD. The group object
+        # was removed above only to prevent the utility builder from treating it as a penalty.
+        # Both controls are independent and must be re-added explicitly on the soft-TE path.
+        if constraints.group_turnover_constraint is not None:
+            constraints_ += constraints.group_turnover_constraint.set_group_turnover_constraints(
+                w=w, weights_0=constraints.weights_0)
+        if constraints.turnover_constraint is not None:
             if constraints.weights_0 is None:
                 warnings.warn("weights_0 must be given for turnover constraint")
             elif constraints.turnover_costs is not None:

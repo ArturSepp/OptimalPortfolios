@@ -839,6 +839,31 @@ def test_constraints_cvxpy_target_return():
     assert achieved >= target - 1e-4
 
 
+def test_constraints_cvxpy_applies_group_and_global_turnover_together():
+    """A group turnover object must not suppress the whole-portfolio L1 cap."""
+    weights_0 = pd.Series(0.10, index=TICKERS)
+    name_loading = pd.DataFrame(
+        {'A1': [1.0] + [0.0] * (N - 1)},
+        index=TICKERS,
+    )
+    c = Constraints(
+        is_long_only=True,
+        weights_0=weights_0,
+        turnover_constraint=0.04,
+        group_turnover_constraint=GroupTurnoverConstraint(
+            group_loadings=name_loading,
+            group_max_turnover=pd.Series({'A1': 0.01}),
+        ),
+    )
+    w = cvx.Variable(N)
+    constraints = c.set_cvx_all_constraints(w=w, covar=COVAR)
+    objective = cvx.Maximize(2.0 * w[0] + w[1])
+    weights = _solve_and_get_weights(w, objective, constraints)
+
+    assert abs(weights[0] - weights_0.iloc[0]) <= 0.01 + 1e-4
+    assert np.abs(weights - weights_0.to_numpy()).sum() <= 0.04 + 1e-4
+
+
 def test_constraints_cvxpy_vol_bounds():
     """Max portfolio volatility constraint should be respected."""
     c = Constraints(

@@ -1,13 +1,14 @@
 # created by virtualenv automatically
-/quant_strats/
 /rosaa/
 /roadmap/
 /tmp/
 /.codex/
+/.codex-remote-attachments/
 /.codex_tmp/
 /.claude/
 /.codex_analysis/
 /.codex_work/
+/.pytest_tmp_*/
 /outputs/
 
 .idea/
@@ -220,10 +221,7 @@ papers/achievable_sharpe_faj_2026/
 /papers/cluster_lineage_2026/paper/**/*.log
 /papers/cluster_lineage_2026/paper/**/*.synctex.gz
 /papers/cluster_lineage_2026/paper/**/*.run.xml
-papers/matf_cma_jpm_2026/
-papers/matf_cma_jpm_2026/private/
-papers/matf_cma_jpm_2026/presentations/
-papers/matf_cma_jpm_2026/_to_delete/
+/papers/matf_cma_jpm_2026/
 
 # Placeholder exhibits that are not fit to publish.
 papers/matf_cma_jpm_2026/paper/figures/equity_factor_cmas.PNG
@@ -233,4 +231,4 @@ papers/matf_cma_jpm_2026/paper/figures/rates_factor_cmas.PNG
 papers/references/
 
 /agents/
-/.codex_spreadsheet_tmp
+/.codex_spreadsheet_tmp/
