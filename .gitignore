@@ -195,9 +195,31 @@ papers/**/*.run.xml
 
 # papers and reference source documents - not redistributable
 papers/achievable_sharpe_faj_2026/
-/papers/cluster_lineage_2026/
-papers/cluster_lineage_2026/data/
-papers/cluster_lineage_2026/msci_us/
+# Cluster-lineage manuscript sources are tracked; licensed inputs and generated artifacts are not.
+/papers/cluster_lineage_2026/*
+!/papers/cluster_lineage_2026/agents/
+!/papers/cluster_lineage_2026/agents/**
+!/papers/cluster_lineage_2026/paper/
+!/papers/cluster_lineage_2026/paper/**
+!/papers/cluster_lineage_2026/replication/
+!/papers/cluster_lineage_2026/replication/**
+/papers/cluster_lineage_2026/data/
+/papers/cluster_lineage_2026/msci_us/
+/papers/cluster_lineage_2026/**/__pycache__/
+/papers/cluster_lineage_2026/**/*.py[cod]
+/papers/cluster_lineage_2026/replication/recovery_bytecode/
+/papers/cluster_lineage_2026/paper/**/*.pdf
+/papers/cluster_lineage_2026/paper/**/*.aux
+/papers/cluster_lineage_2026/paper/**/*.out
+/papers/cluster_lineage_2026/paper/**/*.toc
+/papers/cluster_lineage_2026/paper/**/*.bbl
+/papers/cluster_lineage_2026/paper/**/*.blg
+/papers/cluster_lineage_2026/paper/**/*.nav
+/papers/cluster_lineage_2026/paper/**/*.snm
+/papers/cluster_lineage_2026/paper/**/*.bcf
+/papers/cluster_lineage_2026/paper/**/*.log
+/papers/cluster_lineage_2026/paper/**/*.synctex.gz
+/papers/cluster_lineage_2026/paper/**/*.run.xml
 papers/matf_cma_jpm_2026/
 papers/matf_cma_jpm_2026/private/
 papers/matf_cma_jpm_2026/presentations/
