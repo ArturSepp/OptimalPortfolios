@@ -9,7 +9,7 @@ ranking.
 Version snapshot
 ----------------
 
-This comparison was checked on **15 August 2026** against the current stable
+This comparison was checked on **21 August 2026** against the current stable
 releases on PyPI.
 
 .. list-table::
@@ -20,9 +20,9 @@ releases on PyPI.
      - Stable version
      - Release source
    * - ``optimalportfolios``
-     - 6.18.0
+     - 6.21.2
      - `PyPI release record
-       <https://pypi.org/project/optimalportfolios/6.18.0/>`_
+       <https://pypi.org/project/optimalportfolios/6.21.2/>`_
    * - PyPortfolioOpt
      - 1.6.0
      - `PyPI release record
@@ -47,7 +47,7 @@ cannot assemble the workflow around the package.
    :widths: 15 22 21 21 21
 
    * - Capability
-     - ``optimalportfolios`` 6.18.0
+     - ``optimalportfolios`` 6.21.2
      - PyPortfolioOpt 1.6.0
      - Riskfolio-Lib 7.3.0
      - skfolio 0.20.2
@@ -238,7 +238,7 @@ design centers rather than a quality ranking.
 How this comparison was made
 ----------------------------
 
-Versions came from the official PyPI JSON records on 15 August 2026.
+Versions came from the official PyPI JSON records on 21 August 2026.
 Capabilities were checked manually against the official documentation linked
 in each matrix cell.  Competitor packages were not installed or executed, and
 no speed, numerical-quality, dependency-size, popularity, or performance

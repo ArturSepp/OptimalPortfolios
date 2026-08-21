@@ -51,6 +51,8 @@ Project links
 * `PyPI <https://pypi.org/project/optimalportfolios/>`_
 * `Source repository <https://github.com/ArturSepp/OptimalPortfolios>`_
 * `Issue tracker <https://github.com/ArturSepp/OptimalPortfolios/issues>`_
+* `Governance, maintenance, and support
+  <https://github.com/ArturSepp/OptimalPortfolios/blob/main/GOVERNANCE.md>`_
 * `Changelog
   <https://github.com/ArturSepp/OptimalPortfolios/blob/main/CHANGELOG.md>`_
 
@@ -67,5 +69,6 @@ Project links
    mixed_frequency_data
    incomplete_histories
    covariance_estimators
+   software_design
    package_comparison
    api

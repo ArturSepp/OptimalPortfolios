@@ -182,6 +182,17 @@ dmypy.json
 # Compiled manuscripts: the source and its figures are tracked, the PDF is not.
 papers/**/*.pdf
 
+# The JOSS manuscript is built by joss-paper.yml and uploaded as a workflow artifact.
+/paper/paper.pdf
+/paper/paper.aux
+/paper/paper.bbl
+/paper/paper.bcf
+/paper/paper.blg
+/paper/paper.log
+/paper/paper.out
+/paper/paper.run.xml
+/paper/paper.tex
+
 # LaTeX build artifacts under papers/
 papers/**/*.aux
 papers/**/*.out
