@@ -1,6 +1,4 @@
-"""
-Tests for risk budgeting portfolio optimisation.
-"""
+"""Local diagnostics for risk-budgeting portfolio optimisation."""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -17,18 +15,18 @@ from optimalportfolios.optimization.risk_allocation.risk_budgeting import (
 )
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     RISK_PARITY_COMPARE = 1
     RISK_BUDGETING_WITH_BOUNDS = 2
     WRAPPER_RISK_BUDGETING = 3
     ROLLING_RISK_BUDGETING = 4
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes."""
 
-    if local_test == LocalTests.RISK_PARITY_COMPARE:
+    if local == Locals.RISK_PARITY_COMPARE:
         # three-asset case with negative correlations: compare scipy vs CCD/ADMM vs CCD/ADMM-with-bounds
         risk_budget = np.array([0.45, 0.45, 0.1])
         covar = np.array([[0.2 ** 2,       0.5*0.15*0.2, -0.01],
@@ -89,7 +87,7 @@ def run_local_test(local_test: LocalTests):
         print(f"CCD/ADMM MAE:         {np.mean(np.abs(rc_rb / np.nansum(rc_rb) - risk_budget)):.6f}")
         print(f"CCD/ADMM bounded MAE: {np.mean(np.abs(rc_rb_bounded / np.nansum(rc_rb_bounded) - risk_budget)):.6f}")
 
-    elif local_test == LocalTests.RISK_BUDGETING_WITH_BOUNDS:
+    elif local == Locals.RISK_BUDGETING_WITH_BOUNDS:
         # four-asset case: equal risk vs tilted budget, with and without weight caps
         n = 4
         vols = np.array([0.20, 0.15, 0.10, 0.25])
@@ -129,7 +127,7 @@ def run_local_test(local_test: LocalTests):
                 print(f"  Portfolio vol: {port_vol:.4%}  |  Budget MAE: {np.mean(np.abs(rc_norm - budget)):.6f}")
                 print()
 
-    elif local_test == LocalTests.WRAPPER_RISK_BUDGETING:
+    elif local == Locals.WRAPPER_RISK_BUDGETING:
         # test wrapper with NaN handling and zero-budget exclusion
         n = 4
         vols = np.array([0.20, 0.15, 0.10, 0.25])
@@ -189,9 +187,9 @@ def run_local_test(local_test: LocalTests):
         print("── Wrapper: detailed output ──")
         print(df_detail.to_string(float_format='{:.4f}'.format))
 
-    elif local_test == LocalTests.ROLLING_RISK_BUDGETING:
+    elif local == Locals.ROLLING_RISK_BUDGETING:
         import qis as qis
-        from examples.data.etf_prices_local import load_test_data
+        from optimalportfolios.run_local.data.etf_prices import load_test_data
         from optimalportfolios.covar_estimation.ewma_covar_estimator import EwmaCovarEstimator
 
         prices = load_test_data()
@@ -269,7 +267,7 @@ def run_local_test(local_test: LocalTests):
                              ax=axs[1])
 
         # performance comparison
-        navs = pd.concat([equal_portfolio.nav, tilted_portfolio.nav], axis=1)
+        navs = pd.concat([equal_portfolio.nav, tilted_portfolio.nav], axis=1, sort=True)
         qis.plot_time_series(df=navs,
                              var_format='{:.0f}',
                              legend_stats=qis.LegendStats.FIRST_AVG_LAST,
@@ -280,4 +278,4 @@ def run_local_test(local_test: LocalTests):
 
 
 if __name__ == '__main__':
-    run_local_test(local_test=LocalTests.RISK_PARITY_COMPARE)
+    run_local(local=Locals.RISK_PARITY_COMPARE)

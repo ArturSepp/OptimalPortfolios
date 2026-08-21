@@ -29,9 +29,10 @@ where a defect is needed. No network, no vendor data.
 # packages
 from typing import Callable, Dict
 
+import pytest
+
 import numpy as np
 import pandas as pd
-import pytest
 import qis
 
 # optimalportfolios
@@ -278,7 +279,3 @@ def test_without_inclusion_indicators_the_universe_is_not_inferred_from_prices()
         f'instruments with no price took only {dead_weight:.4f} of the portfolio. If the universe '
         f'is now inferred from prices this is better behaviour - update this test and the '
         f'CHANGELOG together')
-
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])

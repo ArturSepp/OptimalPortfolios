@@ -60,8 +60,3 @@ def test_no_library_module_imports_the_root_package() -> None:
         "library module imports the top-level package at module scope; import the defining "
         "module instead:\n" + '\n'.join(offenders)
     )
-
-
-if __name__ == '__main__':
-    for offender in find_root_package_imports():
-        print(offender)

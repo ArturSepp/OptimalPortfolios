@@ -9,19 +9,19 @@ from optimalportfolios.utils.portfolio_funcs import round_weights_to_pct
 
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     ROUND_WEIGHTS = 1
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes.
 
     These are integration tests that download real universe and generate reports.
     Use for quick verification during product_development.
     """
 
-    if local_test == LocalTests.ROUND_WEIGHTS:
+    if local == Locals.ROUND_WEIGHTS:
         weights = pd.Series({
             'Precious Metals': 0.069859331,
             'Real Estate Participations': 0.090140669,
@@ -44,4 +44,4 @@ def run_local_test(local_test: LocalTests):
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.ROUND_WEIGHTS)
+    run_local(local=Locals.ROUND_WEIGHTS)

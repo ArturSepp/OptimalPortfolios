@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-import pytest
 import cvxpy as cvx
 
 from optimalportfolios.optimization.constraints import (
@@ -160,7 +159,3 @@ def test_diagnose_flag_routes_rejected_solve_to_infeasibility_report(caplog):
     msgs = [r.getMessage() for r in caplog.records]
     assert any("REJECTED" in m for m in msgs)
     assert not any("infeasibility diagnosis" in m for m in msgs)
-
-
-if __name__ == "__main__":
-    raise SystemExit(pytest.main([__file__, "-v"]))

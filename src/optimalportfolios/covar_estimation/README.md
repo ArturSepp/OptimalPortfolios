@@ -20,8 +20,11 @@ covar_estimation/
 ├── factor_covar_estimator.py   # LASSO-based factor covariance (uses factorlasso)
 ├── covar_reporting.py          # Diagnostic plots (clusters, betas, R²)
 ├── utils.py                    # Shared utilities (returns computation)
-└── tests/
-    └── factor_covar_estimator_local.py
+├── tests/
+│   └── <estimator>_test.py     # offline pytest contracts
+└── run_local/
+    ├── ewma_covar_estimator_run.py
+    └── factor_covar_estimator_run.py
 
 # External (from factorlasso package):
 #   CurrentFactorCovarData      — single-date factor covariance decomposition
@@ -29,6 +32,11 @@ covar_estimation/
 #   VarianceColumns             — column name enum for y_variances DataFrame
 #   LassoModel                  — sparse factor model estimator (fit/predict/score)
 ```
+
+Run the automated estimator contracts with pytest. Invoke a development runner explicitly from
+the repository root, for example
+`python -m optimalportfolios.covar_estimation.run_local.ewma_covar_estimator_run`. Development
+runners remain source-checkout tools and are excluded from built distributions.
 
 ### Estimator hierarchy
 

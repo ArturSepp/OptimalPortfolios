@@ -18,15 +18,11 @@ Universe: 10 assets split into 3 groups
     - FixedIncome:  A5, A6, A7
     - Alternatives: A8, A9, A10
 
-Usage:
-    python test_constraints.py              # run all tests
-    python test_constraints.py <section>    # run one section (e.g. 1, 2, ...)
+Run with pytest; use ``-k`` expressions to select a constraint family during development.
 """
 from __future__ import annotations
 import logging
-import sys
 import warnings
-import traceback
 import numpy as np
 import pandas as pd
 import cvxpy as cvx
@@ -81,38 +77,6 @@ def _solve_and_get_weights(w: cvx.Variable, objective, constraints) -> np.ndarra
     if prob.status not in ("optimal", "optimal_inaccurate"):
         raise RuntimeError(f"Solver returned status: {prob.status}")
     return w.value
-
-
-# ──────────────────────────────────────────────────────────────────────
-# Test runner infrastructure
-# ──────────────────────────────────────────────────────────────────────
-_results = {"passed": 0, "failed": 0, "errors": []}
-
-
-def _run_test(name: str, fn):
-    """Run a single test function and track results."""
-    try:
-        fn()
-        _results["passed"] += 1
-        print(f"  PASS  {name}")
-    except Exception as e:
-        _results["failed"] += 1
-        _results["errors"].append((name, e))
-        print(f"  FAIL  {name}")
-        traceback.print_exc()
-        print()
-
-
-def _print_summary():
-    """Print the pass/fail tally and every captured error."""
-    total = _results["passed"] + _results["failed"]
-    print(f"\n{'='*60}")
-    print(f"Results: {_results['passed']}/{total} passed, {_results['failed']} failed")
-    if _results["errors"]:
-        print("\nFailed tests:")
-        for name, e in _results["errors"]:
-            print(f"  - {name}: {type(e).__name__}: {e}")
-    print(f"{'='*60}")
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -1125,134 +1089,3 @@ def test_update_group_lower_upper_constraints_add_new():
     )
     updated = c.update_group_lower_upper_constraints(new_gluc)
     assert updated.group_lower_upper_constraints is not None
-
-
-# ══════════════════════════════════════════════════════════════════════
-# Test runner
-# ══════════════════════════════════════════════════════════════════════
-
-SECTIONS = {
-    "1": (
-        "GroupLowerUpperConstraints",
-        [
-            ("construction_basic", test_gluc_construction_basic),
-            ("drops_zero_loading_columns", test_gluc_drops_zero_loading_columns),
-            ("all_zero_nullifies", test_gluc_all_zero_loadings_nullifies_constraints),
-            ("missing_allocation_warns", test_gluc_missing_allocation_index_warns),
-            ("cvxpy_constraints", test_gluc_cvxpy_constraints),
-            ("cvxpy_exposure_scaler", test_gluc_cvxpy_with_exposure_scaler),
-            ("update_filters_tickers", test_gluc_update_filters_tickers),
-            ("drop_constraint", test_gluc_drop_constraint),
-            ("copy_independence", test_gluc_copy_independence),
-            ("merge_no_overlap", test_gluc_merge_no_overlap),
-            ("merge_with_overlap", test_gluc_merge_with_overlap),
-            ("nan_min_allocation_skipped", test_gluc_nan_min_allocation_skipped),
-        ],
-    ),
-    "2": (
-        "BenchmarkDeviationConstraints",
-        [
-            ("construction_basic", test_bdc_construction_basic),
-            ("missing_columns_warns", test_bdc_missing_columns_warns),
-            ("none_max_deviation_raises", test_bdc_none_factor_max_deviation_raises),
-            ("cvxpy_enforces_bounds", test_bdc_cvxpy_constraints_enforce_deviation_bounds),
-            ("cvxpy_symmetric", test_bdc_cvxpy_constraints_symmetric),
-            ("update_filters_tickers", test_bdc_update_filters_tickers),
-            ("copy_independence", test_bdc_copy_independence),
-            ("zero_loading_skipped", test_bdc_zero_loading_group_skipped),
-            ("tight_deviation_near_bm", test_bdc_tight_deviation_produces_near_benchmark),
-        ],
-    ),
-    "3": (
-        "GroupTrackingErrorConstraint",
-        [
-            ("construction_vols", test_gte_construction_with_vols),
-            ("construction_utility", test_gte_construction_with_utility_weights),
-            ("no_constraint_raises", test_gte_no_constraint_raises),
-            ("cvxpy_constraints", test_gte_cvxpy_constraints),
-            ("utility_function", test_gte_utility_function),
-        ],
-    ),
-    "4": (
-        "GroupTurnoverConstraint",
-        [
-            ("construction", test_gtc_construction),
-            ("no_constraint_raises", test_gtc_no_constraint_raises),
-            ("cvxpy_constraints", test_gtc_cvxpy_constraints),
-            ("utility_function", test_gtc_utility_function),
-        ],
-    ),
-    "5": (
-        "Constraints",
-        [
-            ("feasible", test_constraints_feasible),
-            ("min_gt_max_raises", test_constraints_min_gt_max_raises),
-            ("long_only_neg_min_raises", test_constraints_long_only_negative_min_raises),
-            ("asset_max_below_group_min", test_constraints_asset_max_below_group_min_raises),
-            ("asset_min_above_group_max", test_constraints_asset_min_above_group_max_raises),
-            ("multiple_violations", test_constraints_multiple_violations),
-            ("update_filters_tickers", test_constraints_update_filters_tickers),
-            ("update_with_valid_tickers", test_constraints_update_with_valid_tickers_reindexes),
-            ("rebalancing_indicators", test_constraints_update_with_rebalancing_indicators),
-            ("copy_independence", test_constraints_copy_independence),
-            ("cvxpy_long_only", test_constraints_cvxpy_long_only),
-            ("cvxpy_exposure_bounds", test_constraints_cvxpy_exposure_bounds),
-            ("cvxpy_min_max_weights", test_constraints_cvxpy_min_max_weights),
-            ("cvxpy_tracking_error", test_constraints_cvxpy_tracking_error),
-            ("cvxpy_turnover", test_constraints_cvxpy_turnover),
-            ("cvxpy_target_return", test_constraints_cvxpy_target_return),
-            ("cvxpy_vol_bounds", test_constraints_cvxpy_vol_bounds),
-            ("cvxpy_with_deviations", test_constraints_cvxpy_with_deviation_constraints),
-            ("scipy_bounds_long_only", test_constraints_scipy_bounds_long_only),
-            ("scipy_bounds_with_weights", test_constraints_scipy_bounds_with_weights),
-            ("scipy_bounds_short", test_constraints_scipy_bounds_short_allowed),
-            ("scipy_constraints", test_constraints_scipy_constraints_generation),
-            ("pyrb_generation", test_constraints_pyrb_generation),
-            ("pyrb_no_groups", test_constraints_pyrb_no_groups),
-            ("utility_objective", test_constraints_utility_objective),
-            ("print_constraints", test_print_constraints_runs),
-            ("check_violation", test_check_constraints_violation_runs),
-        ],
-    ),
-    "6": (
-        "Edge cases",
-        [
-            ("fractional_loadings", test_fractional_group_loadings),
-            ("single_asset_group", test_single_asset_group),
-            ("no_covar_for_te_raises", test_constraints_no_covar_for_te_raises),
-            ("target_return_no_returns", test_constraints_target_return_without_returns_raises),
-            ("merge_gluc_via_constraints", test_update_group_lower_upper_constraints_merge),
-            ("add_new_gluc", test_update_group_lower_upper_constraints_add_new),
-        ],
-    ),
-}
-
-
-def run_section(key: str):
-    """Run every test in one section of ``SECTIONS``, printing a header."""
-    name, tests = SECTIONS[key]
-    print(f"\n{'━'*60}")
-    print(f"  Section {key}: {name}")
-    print(f"{'━'*60}")
-    for test_name, test_fn in tests:
-        _run_test(f"{name}.{test_name}", test_fn)
-
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("  Constraints Module — Comprehensive Test Suite")
-    print("=" * 60)
-
-    if len(sys.argv) > 1:
-        sections = sys.argv[1:]
-    else:
-        sections = sorted(SECTIONS.keys())
-
-    for s in sections:
-        if s in SECTIONS:
-            run_section(s)
-        else:
-            print(f"\nUnknown section: {s}. Available: {sorted(SECTIONS.keys())}")
-
-    _print_summary()
-    sys.exit(1 if _results["failed"] > 0 else 0)

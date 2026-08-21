@@ -17,12 +17,10 @@ Three layers of protection for the pyrb → internal-solver migration:
    scale, sum-to-one), the Remark-6 KKT condition on free assets, pinned-box
    and infeasible-box degeneracies, and input validation.
 
-Run headless: ``pytest risk_budgeting_solver_test.py``; or dispatch a single
-case via ``run_local_test`` under ``__main__``.
+Run with pytest and use ``-k`` to select paper-table, parity, or property cases.
 """
 # packages
 import numpy as np
-from enum import Enum
 
 # optimalportfolios
 from optimalportfolios.optimization.risk_allocation.risk_budgeting_solver import (
@@ -342,52 +340,3 @@ def test_malformed_bounds_raise_value_error_not_index_error():
             raise AssertionError(f"expected ValueError for bounds {bad_bounds.shape}")
         except ValueError as exc:
             assert "bounds must have shape" in str(exc)
-
-
-# -----------------------------------------------------------------------------
-# local dispatcher
-# -----------------------------------------------------------------------------
-
-class LocalTests(Enum):
-    """Groups of tests the local dispatcher can run."""
-    PAPER_TABLES = 1
-    PYRB_PARITY = 2
-    PROPERTIES = 3
-
-
-def run_local_test(local_test: LocalTests):
-    """Run local tests for development and debugging purposes."""
-    if local_test == LocalTests.PAPER_TABLES:
-        test_paper_table1_erc()
-        test_paper_table1_rb()
-        test_paper_table5_erc()
-        test_paper_table6_constrained_erc()
-        test_paper_table9_erc_unconstrained()
-        test_paper_table9_equity_floor()
-        test_paper_table9_two_rows()
-        print("paper tables: all passed")
-    elif local_test == LocalTests.PYRB_PARITY:
-        test_pyrb_parity_erc4()
-        test_pyrb_parity_rb4()
-        test_pyrb_parity_erc4_box()
-        test_pyrb_parity_erc8_one_row()
-        test_pyrb_parity_erc8_two_rows()
-        test_pyrb_parity_mixed10()
-        print("frozen pyrb parity: all passed")
-    elif local_test == LocalTests.PROPERTIES:
-        test_feasibility_and_kkt_mixed10()
-        test_kkt_box_only()
-        test_pinned_box_returns_pinned_vector()
-        test_infeasible_box_raises()
-        test_invalid_covar_raises()
-        test_zero_budget_asset_gets_zero_weight()
-        test_zero_sum_budgets_raise_cleanly()
-        test_negative_budget_raises()
-        test_malformed_bounds_raise_value_error_not_index_error()
-        print("properties: all passed")
-
-
-if __name__ == '__main__':
-    run_local_test(local_test=LocalTests.PAPER_TABLES)
-    run_local_test(local_test=LocalTests.PYRB_PARITY)
-    run_local_test(local_test=LocalTests.PROPERTIES)

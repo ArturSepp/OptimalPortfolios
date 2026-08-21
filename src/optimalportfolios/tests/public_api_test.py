@@ -200,7 +200,3 @@ def test_public_callable_is_introspectable(name: str) -> None:
         inspect.signature(obj)
     except (ValueError, TypeError) as e:
         pytest.fail(f"optimalportfolios.{name} has no readable signature: {e}")
-
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])

@@ -16,22 +16,22 @@ from optimalportfolios.utils.gaussian_mixture import (fit_gaussian_mixture,
                                                       estimate_rolling_mixture)
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     FIT1 = 1
     FIT2 = 2
     ROLLING_FIT = 3
     PLOT_MIXURE = 4
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes.
 
     These are integration tests that download real universe and generate reports.
     Use for quick verification during product_development.
     """
 
-    if local_test == LocalTests.FIT1:
+    if local == Locals.FIT1:
         size = 1000
         p1 = 0.8
         mu1, sigma1 = 0.0, 0.2
@@ -52,7 +52,7 @@ def run_local_test(local_test: LocalTests):
         print(params)
         plot_mixure1(x=x)
 
-    elif local_test == LocalTests.FIT2:
+    elif local == Locals.FIT2:
         size = 1000
         p1 = 0.8
         mu1, sigma1 = np.array([0, 0]), np.array([[0.2, 0.0], [0.0, 0.2]])
@@ -72,15 +72,15 @@ def run_local_test(local_test: LocalTests):
         print(params)
         plot_mixure2(x)
 
-    elif local_test == LocalTests.ROLLING_FIT:
-        from examples.data.etf_prices_local import load_test_data
+    elif local == Locals.ROLLING_FIT:
+        from optimalportfolios.run_local.data.etf_prices import load_test_data
         prices = load_test_data()
         prices = prices.loc['2000':, :]  # have at least 3 assets
         prices = prices['SPY'].dropna()
         means, sigmas, probs = estimate_rolling_mixture(prices=prices)
         print(means)
 
-    elif local_test == LocalTests.PLOT_MIXURE:
+    elif local == Locals.PLOT_MIXURE:
         import yfinance as yf
         prices = yf.download(tickers=['SPY', 'TLT'], start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].dropna()
         perf_params = qis.PerfParams(freq='W-WED')
@@ -116,4 +116,4 @@ def run_local_test(local_test: LocalTests):
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.PLOT_MIXURE)
+    run_local(local=Locals.PLOT_MIXURE)

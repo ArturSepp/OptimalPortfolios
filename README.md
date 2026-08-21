@@ -564,6 +564,13 @@ optional extras, so nothing else belongs in it. The lint tools are not an extra 
 live in the `lint` dependency-group, which never ships to a user. To run the repository-root
 `examples/`, which do use `yfinance`, install `[dev,data]` or `[all]`.
 
+Automated checks are package modules ending in `*_test.py`. Component development runners sit
+beside their owning analytics in `src/optimalportfolios/**/run_local/` and end in `_run.py`; invoke
+one explicitly, for example with
+`python -m optimalportfolios.optimization.general.run_local.quadratic_run`. They are not collected
+by pytest or included in built distributions. Repository-root `examples/` are reserved for larger
+analytical workflows.
+
 For example:
 
 ```
@@ -1273,7 +1280,7 @@ directly from the deleted module path
 * Within-group cross-sectional scoring via `group_data` parameter
 * `AlphasData` container moved from `utils/manager_alphas.py` to `alphas/alpha_data.py`
 * `backtest_alphas.py` moved from `reports/` to `alphas/` with fixed function names (typo corrections: `backtest_alpha_signas` → `backtest_alpha_signals`, etc.)
-* Comprehensive test suite in `alphas/tests/signals_local.py`
+* Comprehensive pytest suites in `alphas/signals/tests/*_test.py` and `alphas/tests/*_test.py`
 
 **Deprecated and removed:**
 

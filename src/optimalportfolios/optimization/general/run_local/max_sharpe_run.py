@@ -1,6 +1,4 @@
-"""
-Tests for maximum Sharpe ratio portfolio optimisation.
-"""
+"""Local diagnostics for maximum-Sharpe portfolio optimisation."""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,15 +10,15 @@ from optimalportfolios.optimization.general.max_sharpe import (
 from optimalportfolios.optimization.constraints import Constraints
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     MAXIMIZE_SHARPE = 1
     SHARPE_WITH_BOUNDS = 2
     WRAPPER_WITH_NANS = 3
     SHARPE_FRONTIER = 4
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes."""
 
     tickers = ['Equity', 'Bonds', 'Gold', 'HighYield']
@@ -35,7 +33,7 @@ def run_local_test(local_test: LocalTests):
     # expected returns (CMAs)
     means = pd.Series({'Equity': 0.06, 'Bonds': 0.02, 'Gold': 0.01, 'HighYield': 0.045})
 
-    if local_test == LocalTests.MAXIMIZE_SHARPE:
+    if local == Locals.MAXIMIZE_SHARPE:
         # basic max Sharpe with long-only constraint
         constraints = Constraints(is_long_only=True)
 
@@ -55,7 +53,7 @@ def run_local_test(local_test: LocalTests):
         print(f"Sharpe ratio:     {sharpe:.2f}")
         print(f"Sum of weights:   {weights.sum():.4f}")
 
-    elif local_test == LocalTests.SHARPE_WITH_BOUNDS:
+    elif local == Locals.SHARPE_WITH_BOUNDS:
         # max Sharpe with weight caps — compare uncapped vs capped
         constraints_uncapped = Constraints(is_long_only=True)
         constraints_capped = Constraints(is_long_only=True,
@@ -77,7 +75,7 @@ def run_local_test(local_test: LocalTests):
             print(f"Weights:\n{w.to_string(float_format='{:.4f}'.format)}")
             print(f"Return: {port_ret:.4%}  Vol: {port_vol:.4%}  Sharpe: {sharpe:.2f}")
 
-    elif local_test == LocalTests.WRAPPER_WITH_NANS:
+    elif local == Locals.WRAPPER_WITH_NANS:
         # test NaN handling
         constraints = Constraints(is_long_only=True,
                                   max_weights=pd.Series(0.5, index=tickers))
@@ -119,7 +117,7 @@ def run_local_test(local_test: LocalTests):
         sharpe_warm = (w_warm @ means) / np.sqrt(w_warm.values @ covar @ w_warm.values)
         print(f"Sharpe: {sharpe_warm:.2f}  Sum: {w_warm.sum():.4f}")
 
-    elif local_test == LocalTests.SHARPE_FRONTIER:
+    elif local == Locals.SHARPE_FRONTIER:
         # vary max weight cap and trace Sharpe ratio vs diversification
         caps = np.arange(0.25, 1.01, 0.05)
         results = []
@@ -162,4 +160,4 @@ def run_local_test(local_test: LocalTests):
 
 
 if __name__ == '__main__':
-    run_local_test(local_test=LocalTests.MAXIMIZE_SHARPE)
+    run_local(local=Locals.MAXIMIZE_SHARPE)

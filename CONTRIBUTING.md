@@ -52,6 +52,19 @@ The two lint commands are the exact invocations `static.yml` gates with. The cov
 what the ubuntu/3.12 cell of `ci.yml` runs, with `--locked` added — that cell enforces the lock on
 its `uv sync` step instead, so the effect is the same.
 
+Automated tests and development diagnostics use separate names and commands:
+
+```bash
+uv run pytest src/optimalportfolios/optimization/tests/constraints_test.py -v
+uv run python -m optimalportfolios.optimization.general.run_local.quadratic_run
+```
+
+Files ending in `*_test.py` are offline pytest modules and are included in the wheel. Component
+development runners live in the nearest source-adjacent `run_local/` directory and end in
+`*_run.py`; each exposes `Locals` and `run_local(local=...)`. They may plot, print, download data,
+or use local files, so pytest ignores them and built distributions exclude them. Reserve
+`examples/` for broader analytical workflows.
+
 `--locked` fails rather than re-resolving if `uv.lock` has drifted from `pyproject.toml`. That is
 the point: a dependency edit that has not been re-locked fails here, on your machine, instead of
 on the pinned CI cell. If you are deliberately changing dependencies, run `uv lock` first (or drop

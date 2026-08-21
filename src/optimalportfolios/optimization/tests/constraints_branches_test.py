@@ -752,7 +752,3 @@ def test_group_bounds_reach_the_cvx_problem_through_the_full_constraint_builder(
     solved = solve_under(w, emitted)
     assert solved is not None
     assert float(solved[:2].sum()) <= 0.3 + 1e-5, 'the group cap never reached the solver'
-
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])

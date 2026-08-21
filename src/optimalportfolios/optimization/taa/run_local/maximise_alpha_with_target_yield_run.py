@@ -1,6 +1,4 @@
-"""
-Tests for alpha-maximising portfolio optimisation with target return constraint.
-"""
+"""Local diagnostics for alpha maximisation with a target-yield constraint."""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,13 +8,13 @@ from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.optimization.taa.maximise_alpha_with_target_yield import  wrapper_maximise_alpha_with_target_return
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     ALPHA_TARGET_RETURN = 1
     ALPHA_FRONTIER = 2
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes."""
 
     tickers = ['Equity', 'Bonds', 'Gold', 'HighYield']
@@ -34,7 +32,7 @@ def run_local_test(local_test: LocalTests):
     # yields: carry / income component
     yields = pd.Series({'Equity': 0.02, 'Bonds': 0.035, 'Gold': 0.00, 'HighYield': 0.055})
 
-    if local_test == LocalTests.ALPHA_TARGET_RETURN:
+    if local == Locals.ALPHA_TARGET_RETURN:
         # solve at three different return targets to see how
         # the constraint shifts the portfolio from alpha-optimal
         # toward yield-heavy assets
@@ -68,7 +66,7 @@ def run_local_test(local_test: LocalTests):
             print(f"Portfolio vol:    {port_vol:.4%}")
             print(f"Sum:              {weights.sum():.4f}")
 
-    elif local_test == LocalTests.ALPHA_FRONTIER:
+    elif local == Locals.ALPHA_FRONTIER:
         # trace out the efficient frontier: for each target return level,
         # solve for max alpha and record the resulting portfolio metrics
         constraints = Constraints(is_long_only=True,
@@ -122,4 +120,4 @@ def run_local_test(local_test: LocalTests):
 
 
 if __name__ == '__main__':
-    run_local_test(local_test=LocalTests.ALPHA_TARGET_RETURN)
+    run_local(local=Locals.ALPHA_TARGET_RETURN)

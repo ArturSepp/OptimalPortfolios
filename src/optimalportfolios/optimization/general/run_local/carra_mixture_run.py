@@ -10,20 +10,20 @@ from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.optimization.general.carra_mixture import opt_maximize_cara, opt_maximize_cara_mixture
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     CARA = 1
     CARA_MIX = 2
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes.
 
     These are integration tests that download real universe and generate reports.
     Use for quick verification during product_development.
     """
 
-    if local_test == LocalTests.CARA:
+    if local == Locals.CARA:
         means = np.array([0.3, 0.1])
         covar = np.array([[0.2 ** 2, 0.01],
                           [0.01, 0.1 ** 2]])
@@ -31,7 +31,7 @@ def run_local_test(local_test: LocalTests):
         opt_maximize_cara(means=means, covar=covar, carra=10, is_exp=False, disp=True)
         opt_maximize_cara(means=means, covar=covar, carra=10, is_exp=True, disp=True)
 
-    elif local_test == LocalTests.CARA_MIX:
+    elif local == Locals.CARA_MIX:
         means = [np.array([0.05, -0.1]), np.array([0.05, 2.0])]
         covars = [np.array([[0.2 ** 2, 0.01],
                           [0.01, 0.2 ** 2]]),
@@ -47,4 +47,4 @@ def run_local_test(local_test: LocalTests):
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.CARA_MIX)
+    run_local(local=Locals.CARA_MIX)

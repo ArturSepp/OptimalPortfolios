@@ -188,7 +188,3 @@ class TestCompareSignalDiagnostics:
         assert out.index.name == 'signal'
         assert len(out) == 3
         assert 'beta' in out.columns
-
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])

@@ -1,6 +1,4 @@
-"""
-Tests for EWMA covariance matrix estimator.
-"""
+"""Local diagnostics for EWMA covariance estimation and span sensitivity."""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -13,8 +11,8 @@ from optimalportfolios.covar_estimation.ewma_covar_estimator import (
 )
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     CURRENT_COVAR = 1
     CURRENT_COVAR_SPAN_SENSITIVITY = 2
     CURRENT_COVAR_VOL_NORM = 3
@@ -22,19 +20,19 @@ class LocalTests(Enum):
     ROLLING_VS_STANDALONE = 5
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes."""
 
     pd.set_option('display.max_rows', 500)
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
 
-    from examples.data.etf_prices_local import load_test_data
+    from optimalportfolios.run_local.data.etf_prices import load_test_data
     prices = load_test_data()
     prices = prices.loc['2000':, :]
     tickers = prices.columns.to_list()
 
-    if local_test == LocalTests.CURRENT_COVAR:
+    if local == Locals.CURRENT_COVAR:
         # basic single-date EWMA covariance
         estimator = EwmaCovarEstimator(returns_freq='W-WED', span=52)
         covar = estimator.fit_current_covar(prices=prices)
@@ -51,7 +49,7 @@ def run_local_test(local_test: LocalTests):
         eigenvalues = np.linalg.eigvalsh(covar.values)
         print(f"\nMin eigenvalue: {eigenvalues.min():.2e} (should be >= 0)")
 
-    elif local_test == LocalTests.CURRENT_COVAR_SPAN_SENSITIVITY:
+    elif local == Locals.CURRENT_COVAR_SPAN_SENSITIVITY:
         # compare vols across different spans and frequencies
         configs = [
             ('Daily, span=60',    'B',     60),
@@ -73,7 +71,7 @@ def run_local_test(local_test: LocalTests):
         print("── Vol sensitivity to span and frequency ──")
         print(vol_df.to_string(float_format='{:.2%}'.format))
 
-    elif local_test == LocalTests.CURRENT_COVAR_VOL_NORM:
+    elif local == Locals.CURRENT_COVAR_VOL_NORM:
         # compare plain vs vol-normalised EWMA
         estimator_plain = EwmaCovarEstimator(returns_freq='W-WED', span=52,
                                               is_apply_vol_normalised_returns=False)
@@ -91,14 +89,16 @@ def run_local_test(local_test: LocalTests):
 
         comparison = pd.concat([vols_plain.rename('Plain'),
                                 vols_norm.rename('VolNorm'),
-                                (vols_norm / vols_plain).rename('Ratio')], axis=1)
+                                (vols_norm / vols_plain).rename('Ratio')],
+                               axis=1,
+                               sort=False)
 
         print("── Plain vs Vol-normalised EWMA ──")
         print(f"\nVols:\n{comparison.to_string(float_format='{:.4%}'.format)}")
         print("\nCorrelation difference (VolNorm - Plain):")
         print((corr_norm - corr_plain).to_string(float_format='{:.4f}'.format))
 
-    elif local_test == LocalTests.ROLLING_COVARS:
+    elif local == Locals.ROLLING_COVARS:
         # rolling estimation with vol time series
         estimator = EwmaCovarEstimator(returns_freq='W-WED', span=52, rebalancing_freq='QE')
         time_period = qis.TimePeriod('31Dec2004', prices.index[-1])
@@ -126,7 +126,7 @@ def run_local_test(local_test: LocalTests):
                              title='Rolling EWMA Vols (weekly, span=52, quarterly rebal)',
                              ax=ax)
 
-    elif local_test == LocalTests.ROLLING_VS_STANDALONE:
+    elif local == Locals.ROLLING_VS_STANDALONE:
         # verify that EwmaCovarEstimator.fit_rolling_covars matches
         # the standalone estimate_rolling_ewma_covar function
         time_period = qis.TimePeriod('31Dec2014', prices.index[-1])
@@ -161,4 +161,4 @@ def run_local_test(local_test: LocalTests):
 
 
 if __name__ == '__main__':
-    run_local_test(local_test=LocalTests.CURRENT_COVAR)
+    run_local(local=Locals.CURRENT_COVAR)

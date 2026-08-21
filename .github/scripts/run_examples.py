@@ -11,7 +11,7 @@ enum member that no longer exists is a perfectly valid attribute access to a lin
 
 Why the split into lanes
 ------------------------
-Of the 23 unattended examples, 18 need live Yahoo Finance data -- 7 import `yfinance` directly and
+Of the 24 unattended examples, 18 need live Yahoo Finance data -- 7 import `yfinance` directly and
 the rest reach it through `examples/data/universe.py`, whose `fetch_benchmark_universe_data()`
 downloads 15 tickers back to 2003. Gating a pull request on live downloads would fail on Yahoo's
 availability far more often than on this repository's code, and a check that is usually red for
@@ -64,8 +64,8 @@ EXAMPLES_PACKAGE = "examples"
 # reclassifying by hand.
 NETWORK_MODULES: Set[str] = {"yfinance"}
 
-# `*_local.py` are `run_local_test` diagnostic dispatchers that need local price data which is not
-# in the repository, and `__init__.py` is not an example. Neither is a runnable example here.
+# `*_local.py` are manual diagnostics whose local-data or interactive preconditions cannot be met
+# by an unattended runner, and `__init__.py` is not an example. Neither is runnable here.
 def _is_example(path: Path) -> bool:
     """a runnable example, as opposed to a local dispatcher or a package marker."""
     return (path.suffix == ".py"

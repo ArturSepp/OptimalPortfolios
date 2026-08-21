@@ -1,8 +1,9 @@
 """
 the hand-rolled EM mixture fitter in ``utils.gaussian_mixture``.
 
-``gaussian_mixture_test.py`` is a ``run_local_test`` diagnostic that plots and needs the
-author's price data, so it contributes no collected tests. This file covers the fitter itself.
+``optimalportfolios.utils.run_local.gaussian_mixture_run`` is a ``run_local`` diagnostic that plots
+and needs the author's price data, so it contributes no collected tests. This file covers the
+fitter itself.
 
 The module is a drop-in replacement for ``sklearn.mixture.GaussianMixture`` with
 ``covariance_type='full'`` — the package does not depend on scikit-learn, so the E-step,

@@ -17,27 +17,29 @@ optimization/
 │   ├── max_sharpe.py               #   MAXIMUM_SHARPE_RATIO (Charnes-Cooper)
 │   ├── max_diversification.py      #   MAX_DIVERSIFICATION
 │   ├── risk_budgeting.py           #   EQUAL_RISK_CONTRIBUTION
-│   └── carra_mixture.py            #   MAX_CARA_MIXTURE
+│   ├── carra_mixture.py            #   MAX_CARA_MIXTURE
+│   └── run_local/                  #   <solver>_run.py development runners
 ├── saa/                            # Strategic solvers: CMAs + return/vol targets
 │   ├── min_variance_target_return.py
-│   └── max_return_target_vol.py
+│   ├── max_return_target_vol.py
+│   └── run_local/
 ├── taa/                            # Tactical solvers: alphas + benchmark + TE
 │   ├── maximise_alpha_over_tre.py
-│   └── maximise_alpha_with_target_yield.py
-└── tests/                          # One test file per solver
-    ├── quadratic_local.py
-    ├── max_sharpe_local.py
-    ├── max_diversification_local.py
-    ├── risk_budgeting_local.py
-    ├── carra_mixture_local.py
-    ├── min_variance_target_return_local.py
-    ├── max_return_target_vol_local.py
-    ├── maximise_alpha_over_tre_local.py
-    ├── maximise_alpha_with_target_yield_local.py
-    ├── constraints_test.py
-    ├── test_constraints.py
-    └── constraints_dev_tests.py
+│   ├── maximise_alpha_with_target_yield.py
+│   └── run_local/
+├── risk_allocation/
+│   └── run_local/
+├── run_local/
+│   └── constraints_run.py
+└── tests/                          # Offline pytest modules only
+    └── <contract>_test.py
 ```
+
+Run automated contracts with pytest, for example
+`pytest src/optimalportfolios/optimization/tests/constraints_test.py -v`. Run a manual solver
+diagnostic explicitly from the repository root, for example
+`python -m optimalportfolios.optimization.general.run_local.quadratic_run`; these diagnostics may
+plot or use local data and are excluded from pytest and built distributions.
 
 ### Submodule roles
 
@@ -415,32 +417,26 @@ constraints.check_constraints_violation(constraint_list)
 
 ## Test pattern
 
-All test files in `tests/` follow a consistent structure:
+All Python test modules in `tests/` end in `_test.py` and expose ordinary pytest cases. Target a
+module, node, or keyword expression through pytest rather than adding an executable runner:
 
-```python
-class LocalTests(Enum):
-    SIMPLE_CASE = 1          # 2-4 asset synthetic covariance
-    WITH_BOUNDS = 2          # weight caps and group constraints
-    WRAPPER_WITH_NANS = 3    # NaN filtering and edge cases
-    FRONTIER = 4             # sweep over constraint parameter
-
-def run_local_test(local_test: LocalTests):
-    ...
-
-if __name__ == '__main__':
-    run_local_test(local_test=LocalTests.SIMPLE_CASE)
+```bash
+pytest src/optimalportfolios/optimization/tests/constraints_test.py -v
+pytest src/optimalportfolios/optimization/tests/constraints_test.py -k group -v
 ```
 
-When adding a new solver, create a matching test file with at least
-SIMPLE_CASE and WRAPPER_WITH_NANS cases.
+When adding a solver, add deterministic offline contracts in a matching `_test.py` module. Put
+plots, verbose solver demonstrations, and local-data workflows in the nearest `run_local/`
+directory as `<solver>_run.py`, where a `Locals` enum selects scenarios through `run_local()`.
 
 ### Constraint test files
 
-| File | Tests | Purpose |
-|------|-------|---------|
-| `constraints_test.py` | 5 | Original feasibility validation tests (enum-driven) |
-| `test_constraints.py` | 63 | Comprehensive automated suite covering all constraint classes, all backends, update/copy/merge logic. Run: `python test_constraints.py` or `python test_constraints.py <section>` (sections 1–6) |
-| `constraints_dev_tests.py` | 20 | Interactive development tests with detailed output. Run: `python constraints_dev_tests.py` or `python constraints_dev_tests.py SECTOR_DEVIATION` |
+| File | Purpose |
+|------|---------|
+| `constraints_test.py` | Core deterministic feasibility contracts for constraint classes and translations |
+| `constraints_branches_test.py` | Validation, warning, update, and branch coverage |
+| `specialised_constraints_test.py` | Group tracking-error, turnover, and deviation contracts |
+| `optimization/run_local/constraints_run.py` | Manual formatted constraint printing and visual inspection |
 
 
 ## References

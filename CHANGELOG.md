@@ -7,6 +7,14 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Repository
+
+- 2026-08-21: separated automated pytest modules from source-adjacent development runners.
+  Package tests use `_test.py` and contain no executable runners; component development tools use
+  the nearest `run_local/<subject>_run.py` with a `Locals` enum and `run_local(local=...)` entry
+  point. Package discovery excludes runners from built distributions, while `examples/` remains
+  reserved for larger analytical workflows. Layout and wheel checks enforce the boundary.
+
 ## [6.21.2] - 2026-08-21
 
 ### Added

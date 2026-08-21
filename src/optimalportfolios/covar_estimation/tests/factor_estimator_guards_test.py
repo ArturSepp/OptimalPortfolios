@@ -281,7 +281,3 @@ def test_invalid_recluster_frequency_is_refused() -> None:
 
     with pytest.raises(ValueError, match="invalid recluster_freq"):
         estimator.fit_rolling_factor_covars(factors, returns, period, assets=ASSETS)
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

@@ -200,17 +200,38 @@ jobs:
         wheel = wheels[0]
         with zipfile.ZipFile(wheel) as archive:
             names = archive.namelist()
-        tests = [n for n in names if "/tests/" in n and n.endswith(".py")]
+        test_modules = [n for n in names if "/tests/" in n and n.endswith("_test.py")]
+        support_modules = {
+            "optimalportfolios/tests/data/multiasset.py",
+            "optimalportfolios/tests/data_masks.py",
+        }
+        package_test_modules = {
+            n for n in names
+            if "/tests/" in n and n.endswith(".py") and not n.endswith("/__init__.py")
+        }
+        ambiguous_modules = package_test_modules - set(test_modules) - support_modules
+        development_modules = {
+            n for n in names if "/run_local/" in n or n.endswith("_run.py")
+        }
         fixture = "optimalportfolios/tests/data/multiasset_returns.csv"
 
-        assert tests, (
+        assert test_modules, (
             f"{wheel} ships no test modules: check [tool.setuptools.packages.find] in "
             "pyproject.toml, which must keep including the nested `tests` packages"
+        )
+        assert not ambiguous_modules, (
+            f"{wheel} ships non-pytest modules below tests/: {sorted(ambiguous_modules)}"
+        )
+        assert support_modules <= package_test_modules, (
+            f"{wheel} is missing test support modules: {sorted(support_modules - package_test_modules)}"
+        )
+        assert not development_modules, (
+            f"{wheel} ships source-checkout development runners: {sorted(development_modules)}"
         )
         assert fixture in names, (
             f"{wheel} is missing {fixture}: check [tool.setuptools.package-data] and MANIFEST.in"
         )
-        print(f"{wheel}: {len(tests)} test modules, offline fixture present")
+        print(f"{wheel}: {len(test_modules)} pytest modules, offline fixture present")
         PY
 
     - name: Install the wheel into a clean environment

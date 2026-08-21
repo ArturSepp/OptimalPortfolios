@@ -1,7 +1,6 @@
-"""
-Tests for EwmaCovarEstimator.
+"""Local diagnostics for ``EwmaCovarEstimator``.
 
-Two test cases verifying:
+Two development scenarios inspect:
 1. Internal consistency: fit_current_covar matches the last matrix from fit_rolling_covars
 2. Rolling output properties: PSD, shape, annualised vol range, rebalancing schedule
 """
@@ -14,26 +13,26 @@ import qis as qis
 from optimalportfolios.covar_estimation.ewma_covar_estimator import EwmaCovarEstimator
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     CURRENT_VS_ROLLING_LAST = 1
     ROLLING_COVAR_PROPERTIES = 2
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes."""
 
     pd.set_option('display.max_rows', 500)
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
 
-    from examples.data.etf_prices_local import load_test_data
+    from optimalportfolios.run_local.data.etf_prices import load_test_data
     prices = load_test_data()
     prices = prices.loc['2000':, :]
     tickers = prices.columns.to_list()
     n = len(tickers)
 
-    if local_test == LocalTests.CURRENT_VS_ROLLING_LAST:
+    if local == Locals.CURRENT_VS_ROLLING_LAST:
         """
         Verify that fit_current_covar produces the same matrix as the
         last entry from fit_rolling_covars when both see the same data.
@@ -67,7 +66,9 @@ def run_local_test(local_test: LocalTests):
         vols_current = pd.Series(np.sqrt(np.diag(current_covar.values)), index=tickers, name='Current')
         vols_rolling = pd.Series(np.sqrt(np.diag(last_rolling_covar.values)), index=tickers, name='Rolling Last')
         vol_comparison = pd.concat([vols_current, vols_rolling,
-                                    (vols_current - vols_rolling).rename('Diff')], axis=1)
+                                    (vols_current - vols_rolling).rename('Diff')],
+                                   axis=1,
+                                   sort=False)
 
         print("── Current vs Rolling Last ──")
         print(f"Last rolling date:  {last_date.strftime('%d%b%Y')}")
@@ -89,7 +90,7 @@ def run_local_test(local_test: LocalTests):
         else:
             print("\nRESULT: MISMATCH — investigate")
 
-    elif local_test == LocalTests.ROLLING_COVAR_PROPERTIES:
+    elif local == Locals.ROLLING_COVAR_PROPERTIES:
         """
         Verify structural properties of the rolling covariance output:
         1. All matrices are symmetric positive semi-definite (PSD)
@@ -201,7 +202,9 @@ def run_local_test(local_test: LocalTests):
                              legend_stats=qis.LegendStats.FIRST_AVG_LAST,
                              ax=axs[0])
         qis.plot_time_series(df=pd.concat([min_vol_series.rename('Min Vol'),
-                                           max_vol_series.rename('Max Vol')], axis=1),
+                                           max_vol_series.rename('Max Vol')],
+                                          axis=1,
+                                          sort=True),
                              title='Rolling annualised vol range',
                              var_format='{:.0%}',
                              legend_stats=qis.LegendStats.FIRST_AVG_LAST,
@@ -211,4 +214,4 @@ def run_local_test(local_test: LocalTests):
 
 
 if __name__ == '__main__':
-    run_local_test(local_test=LocalTests.ROLLING_COVAR_PROPERTIES)
+    run_local(local=Locals.ROLLING_COVAR_PROPERTIES)

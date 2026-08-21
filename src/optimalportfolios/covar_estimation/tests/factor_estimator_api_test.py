@@ -10,7 +10,6 @@ has to rebuild the nested ``LassoModel`` from its own dict form.
 
 import numpy as np
 import pandas as pd
-import pytest
 import qis
 
 from factorlasso import LassoModel, LassoModelType, VarianceColumns
@@ -188,7 +187,3 @@ def test_to_dict_tolerates_an_absent_lasso_model() -> None:
     config = _estimator(lasso_model=None).to_dict()
 
     assert config["lasso_model"] is None
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

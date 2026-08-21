@@ -1,10 +1,10 @@
 """
 the rolling wrappers around every optimiser, end to end over a synthetic panel.
 
-The per-solver test files in this directory are almost all ``run_local_test`` diagnostics —
-they plot, they need the author's price data, and they contribute no collected tests. What
-that leaves untested is the layer the package actually exposes: ``rolling_*``, which walks the
-rebalancing dates, drifts the previous weights, calls the solver and assembles the result.
+Manual per-solver ``run_local`` diagnostics live beside their owning optimisation modules because
+they may plot or need the author's price data. This module tests the package layer those
+diagnostics exercise interactively: ``rolling_*``, which walks the rebalancing dates, drifts the
+previous weights, calls the solver and assembles the result.
 
 Every case here builds its own three-asset panel and its own covariance dictionary, so the
 run is offline and deterministic. The universe is deliberately easy to solve — a positive

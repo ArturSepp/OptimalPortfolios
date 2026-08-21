@@ -385,7 +385,3 @@ def test_risk_contribution_table_defaults_the_budget_to_zeros() -> None:
 
     assert (table['Risk Budget'] == 0.0).all()
     assert list(table.index) == list(tickers)
-
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
