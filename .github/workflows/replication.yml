@@ -1,9 +1,8 @@
 name: Replication
 
 # The package test matrix deliberately collects only src/optimalportfolios. This separate gate
-# covers the public, offline subset of papers/: the shared CMA snapshot and the numerical parity
-# assertions for the manuscript that consumes it. Other paper projects require network or licensed
-# inputs and therefore remain manual.
+# covers the public, offline subset of papers/: the shared CMA snapshot. Paper projects that are
+# gitignored or require network or licensed inputs remain manual.
 permissions:
   contents: read
 
@@ -35,9 +34,8 @@ jobs:
     - name: Install the locked development environment
       run: uv sync --extra dev --locked
 
-    - name: Verify public paper snapshots and manuscript parity
+    - name: Verify the public CMA snapshot
       run: >-
         uv run --no-sync pytest
         papers/cma_data/tests
-        papers/matf_cma_jpm_2026/replication/tests
         -q
