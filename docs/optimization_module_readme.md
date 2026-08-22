@@ -1,8 +1,8 @@
 # Optimization Module
 
 Developer documentation for the portfolio optimisation solvers in
-`optimalportfolios`. For user-facing overview and quick start, see the
-[project README](examples_readme.md).
+`optimalportfolios`. For the repository's worked examples, see the
+[examples guide](examples_readme.md).
 
 ## Architecture
 

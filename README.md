@@ -499,7 +499,7 @@ The same layer includes rank-portfolio profiling (`profile_*`, `backtest_alpha_r
 diagnostics (`signal_diagnostics_panel`, `run_signal_diagnostics_per_component`,
 `compare_signal_diagnostics`).
 
-See the [alphas module README](src/optimalportfolios/docs/alphas_module_readme.md) for full documentation.
+See the [alpha signals guide](docs/alphas_module_readme.md) for full documentation.
 
 # Table of contents
 
@@ -816,7 +816,7 @@ validation, diagnosis, drift and factorization controls are enabled by default; 
 dedicated risk-budgeting backend ignore CVXPY-only settings.
 
 See examples in the [examples folder](#examples) and the
-[examples guide](src/optimalportfolios/docs/examples_readme.md) for the full
+[examples guide](docs/examples_readme.md) for the full
 demo index.
 
 ### 5. Adding an optimiser
@@ -940,7 +940,7 @@ weights = rolling_quadratic_optimisation(prices=prices, covar_dict=covar_dict,
 ## Examples
 
 The `examples/` folder is organised into six purpose-folders. The
-[examples README](src/optimalportfolios/docs/examples_readme.md) maps every demo to its
+[examples guide](docs/examples_readme.md) maps every demo to its
 role; the headlines are:
 
 ```
@@ -1207,7 +1207,7 @@ The flat `examples/` layout has been replaced with six purpose-folders:
 | `examples.long_short_optimisation` | `examples.solvers.long_short` |
 | `examples.sp500_universe` | `examples.data.sp500_universe_local` |
 
-The new layout adds an [examples guide](src/optimalportfolios/docs/examples_readme.md)
+The new layout adds an [examples guide](docs/examples_readme.md)
 indexing every demo. Six wrong docstrings in `solvers/` corrected
 (carra_mixture, max_diversification, max_sharpe, min_variance, risk_budgeting,
 tracking_error — all were boilerplate copies of "example of minimization of
@@ -1403,7 +1403,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
   year={2026},
-  version={6.21.3},
+  version={6.21.4},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

@@ -1,6 +1,6 @@
 # Examples
 
-Repository-root scripts illustrating every solver, covariance estimator, and end-to-end workflow
+The repository-root scripts illustrate every solver, covariance estimator, and end-to-end workflow
 in the package. Run them from the repository root as `python -m examples.<path>` so their shared
 `examples.data` imports resolve consistently. Component-level development runners do not live
 here; they are colocated with their production modules under `src/optimalportfolios/**/run_local/`.
@@ -136,7 +136,7 @@ Useful as inputs / diagnostics for the backtest examples above.
 Demos of the rank-based alpha profiler in `src/optimalportfolios/alphas/profile/`. The profiler holds
 the top quantile of assets ranked by a signal, equal-weighted, against an equal-weight-all
 benchmark — no optimiser and no covariance — so what it reports is the selection power of the
-signal on its own. The [alphas module README](../alphas/README.md) documents the API.
+signal on its own. The [alpha signals guide](alphas_module_readme.md) documents the API.
 
 | File | What it shows |
 |---|---|

@@ -1,4 +1,4 @@
-# Alphas Module — `optimalportfolios.alphas`
+# Alpha signals — `optimalportfolios.alphas`
 
 Alpha signal building blocks for the `optimalportfolios` package.
 
@@ -74,8 +74,7 @@ The module provides 8 signal functions across two scoring modes:
 "Equity", "Fixed Income") passed via `group_data: pd.Series`.
 
 **Cluster-scored** signals score within time-varying statistical clusters
-extracted from the HCGL/LASSO covariance estimator. See the
-[Cluster-Based Scoring](#cluster-based-scoring) section below.
+extracted from the HCGL/LASSO covariance estimator. See the Cluster-Based Scoring section below.
 
 
 ## Signal Functions

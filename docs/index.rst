@@ -62,10 +62,14 @@ Project links
 
    installation
    quickstart
+   examples_readme
    rolling_backtests
+   alphas_module_readme
+   optimization_module_readme
    minimum_tracking_error
    risk_budgeting
    turnover_and_transaction_costs
+   overlay_tail_floor
    mixed_frequency_data
    incomplete_histories
    covariance_estimators

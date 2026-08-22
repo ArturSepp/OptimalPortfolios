@@ -1,6 +1,6 @@
 # Overlay optimisation with a fixed core and linear side constraints
 
-This note documents a `Constraints` pattern for a common institutional problem:
+This guide documents a `Constraints` pattern for a common institutional problem:
 a core portfolio is held at a fixed weight, a sleeve of overlays is budgeted on
 top, and the allocation must satisfy a linear tail or exposure condition in
 addition to the usual bounds. The pattern needs no changes to the package: the

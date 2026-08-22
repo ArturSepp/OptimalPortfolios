@@ -7,6 +7,20 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.21.4] - 2026-08-22
+
+### Documentation
+
+- Consolidated the alpha, optimization, examples, and overlay guides under the canonical root
+  `docs/` tree and added all four to the Read the Docs navigation. Updated repository links and
+  removed the source-adjacent copies from built distributions.
+
+### Repository
+
+- Removed the empty `__init__.py` package markers from checkout-only `run_local/` directories.
+  The development runners remain importable as namespace packages and remain excluded from built
+  distributions.
+
 ## [6.21.3] - 2026-08-22
 
 ### Added
