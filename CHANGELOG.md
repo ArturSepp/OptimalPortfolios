@@ -84,11 +84,14 @@ hierarchical risk parity, and safer inverse risk-budget calibration while preser
 direct risk-budgeting import paths.
 
 **Coverage floor raised to 100% (2026-08-14):** `fail_under` rises from `99` to `100`; measured
-coverage is 100.00% on 1321 tests, up from 99.09% on 1277. It is no longer a ratchet — at 100% an
-uncovered line is always something the change under review introduced, the same argument the 100%
-`interrogate` bar rests on. Five lines carry `# pragma: no cover`, each with a comment at the site:
-two defensive raises in `risk_budgeting_solver.py` that only a pinned solver pathology would reach,
-and three branches that are dead as written.
+coverage was 100.00% on the then-current 1336-test suite, up from 99.09% on 1277. It is no longer a
+ratchet — at 100% an uncovered line is always something the change under review introduced, the same
+argument the 100% `interrogate` bar rests on. Eight lines carry `# pragma: no cover`, each with a
+comment at the site: two defensive raises in `optimization/risk_allocation/risk_budgeting_solver.py`
+that only a pinned solver pathology would reach; three branches that are dead as written; and three
+that are reachable only from an environment the measuring cell is not — `__init__.py`'s
+`PackageNotFoundError` fallback wants an uninstalled source tree, and the two in `conftest.py` want
+an installed wheel with no checkout around it. `AGENTS.md` carries the site-by-site account.
 
 Getting there needed `[tool.coverage.report] precision = 2`, because the intermediate floors were
 fractional and unreachable without it: coverage.py rounds the measured total to `precision` places
