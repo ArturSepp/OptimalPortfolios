@@ -27,18 +27,6 @@ Actual package dependencies within the stack: `optimalportfolios` depends on `qi
 
 Do not vendor or copy code between these packages. If functionality belongs in a sibling package, say so rather than reimplementing it here.
 
-### `rosaa` dependency floors
-
-`rosaa/` is gitignored and carries no `pyproject.toml`, so its floors have nowhere else to live and are recorded here. They are not advisory: each names a symbol or keyword `rosaa` calls that does not exist below the floor.
-
-| Package | Floor | What `rosaa` needs at it |
-|---|---|---|
-| `qis` | **>= 5.5.0** | `load_df_from_csv` / `load_df_dict_from_csv` take `float_precision`; the inputs store cannot round-trip a float exactly without it |
-| `factorlasso` | **>= 0.14.0** | Canonical cluster-lineage analytics live in `factorlasso.cluster_lineage`; it also includes the earlier per-frequency alpha forwarding required by rosaa |
-| `optimalportfolios` | **>= 6.8.0** | signal spans accept a per-cadence `Mapping[str, int]`; below it `product_config.SIGNALS` raises, since it passes dicts |
-
-`optimalportfolios 6.7.0` was tagged in `CITATION.cff` but never published — its `pyproject.toml` stayed at 6.6.0 — so a fresh `pip install optimalportfolios` before 6.8.0 gives a package `rosaa` cannot run on. Verified with `pip index versions optimalportfolios`, not from the changelog.
-
 ## Repository layout
 
 ```
