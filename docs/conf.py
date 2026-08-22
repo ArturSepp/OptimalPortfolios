@@ -27,6 +27,12 @@ napoleon_use_param = False
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
+# SSRN returns HTTP 403 to automated link-check clients even when the public pages are live.
+linkcheck_ignore = [
+    r"https://(?:www\.)?ssrn\.com/.*",
+    r"https://papers\.ssrn\.com/.*",
+]
+
 html_theme = "furo"
 html_baseurl = "https://optimalportfolios.readthedocs.io/en/latest/"
 html_title = "optimalportfolios — production portfolio construction and rolling backtesting"

@@ -7,6 +7,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Removed
+
+- Retired the contributor-only `dev` extra. Test dependencies now live in the PEP 735 `test`
+  dependency group and are installed with `uv sync --group test`.
+
 ## [6.21.4] - 2026-08-22
 
 ### Documentation

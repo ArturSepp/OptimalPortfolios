@@ -22,11 +22,6 @@ user:
 ``all``
    Both runtime integrations: ``data`` and ``reports``.
 
-``dev``
-   Pytest and pytest-cov — the test suite and nothing else. The suite collects
-   the same tests with or without the runtime extras, so ``dev`` deliberately
-   does not pull them in. To run the examples as well, install ``[dev,data]``.
-
 ``docs``
    The Sphinx toolchain used to build this documentation.
 
@@ -35,14 +30,24 @@ Install an extra by placing its name in square brackets:
 .. code-block:: console
 
    pip install "optimalportfolios[all]"
-   pip install -e ".[dev]"
    pip install -e ".[docs]"
+
+Contributor test dependencies use the PEP 735 ``test`` dependency group rather
+than a package extra. The suite collects the same tests with or without runtime
+extras:
+
+.. code-block:: console
+
+   uv sync --locked --group test
+   uv run --no-sync pytest
+
+To run examples as well, add ``--extra data`` to the sync command.
 
 The runtime integration extras, ``data`` and ``reports``, correspond to features
 that import their dependencies. There is no ``jupyter`` extra: nothing here
 imports jupyter, notebook or jupyterlab. The repository-only Colab quickstart
 uses Google's hosted runtime; install notebook tooling separately for local
-notebooks. The ``dev`` and ``docs`` extras remain contributor toolchains. There
+notebooks. The ``docs`` extra remains a contributor toolchain. There
 is no ``clustering`` extra either — the ``mcf``
 risk-lineage matcher once needed NetworkX, but it now uses a SciPy bipartite
 assignment and runs on a core install, and the cluster-lineage analytics

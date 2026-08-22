@@ -1,3 +1,4 @@
+# SHARED CI CORE v1.0 — T2 — synced 2026-08-22
 name: Static
 
 # Least privilege, declared rather than inherited; see the fuller note in ci.yml. This job checks
@@ -36,16 +37,17 @@ on:
 # any branch cancels its own in-flight run, and only `main` keeps every run it starts.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  MPLBACKEND: Agg
 
 jobs:
   static:
     # ruff and interrogate gate the source tree without installing it -- no project install, no
     # compiled scientific stack -- so they are separated from ci.yml entirely rather than riding
-    # along with a 13-job test matrix they share nothing with. They are one job of two steps, not
+    # along with a 15-job CI workflow they share nothing with. They are one job of two steps, not
     # two jobs: a failure still names which gate broke, but the checkout happens once.
     #
     # Both read the source and nothing else, which is what makes the every-push trigger above
@@ -60,12 +62,13 @@ jobs:
     # very PRs it declined to inspect. Whatever it costs to run twice, it is never correct to make
     # this job's absence indistinguishable from its passing.
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Install uv
-      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       with:
         # Sets UV_PYTHON, which is the interpreter the `lint` group is installed against. Pinned
         # rather than left to uv's default so a new Python release cannot change which ruff or

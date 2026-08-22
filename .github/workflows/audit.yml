@@ -1,3 +1,4 @@
+# SHARED CI CORE v1.0 — T2 — synced 2026-08-22
 name: Audit
 
 # Least privilege, declared rather than inherited; see the fuller note in ci.yml. This workflow
@@ -45,22 +46,24 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  MPLBACKEND: Agg
 
 jobs:
   audit:
     # Resolution only -- nothing is installed, so this stays seconds-long rather than paying for
     # the compiled scientific stack a second time.
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Install uv
-      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       with:
         # Environment markers make the resolved set version-dependent, so this is pinned rather
         # than left to uv's default. `.python-version` is gitignored, so there is no in-repo file
@@ -72,7 +75,7 @@ jobs:
       # Compiled rather than `pip-audit .`, because that form audits the *core* tree only -- 37
       # packages -- and silently omits every optional extra. `data` and `reports` are user-facing
       # (they are what `[all]` installs), so leaving them ungated defeated the point.
-      # `--all-extras` covers `dev` and `docs` too: those floors drift exactly like the rest.
+      # `--all-extras` covers `docs` too; the PEP 735 `test` group is resolved separately below.
       # The removed `jupyter` convenience extra no longer pulls an unused notebook stack into
       # this tree.
       #
@@ -132,7 +135,7 @@ jobs:
       if: ${{ !cancelled() }}
       # This is the drift half of the optional-module contract. ci.yml asks the import system in
       # the environments it actually built on Linux, Windows and macOS; this step instead resolves
-      # fresh core and dev trees every day. The two checks answer different questions: the matrix
+      # fresh core and test-group trees every day. The two checks answer different questions: the matrix
       # catches platform-specific arrivals in the tested environment, while this catches a
       # dependency changing upstream while the repository is quiet.
       #
@@ -152,17 +155,17 @@ jobs:
       # old assertion came to cover three of seven names.
       #
       #   core   the bare tree, which is what `pip install optimalportfolios` gives a user.
-      #   dev    the tree the ci.yml test matrix installs. `[dev]` is meant to be pytest and
+      #   test   the tree the ci.yml test matrix installs. The `test` group is pytest and
       #          pytest-cov over that same core tree. It carried `optimalportfolios[data]` until
-      #          recently, which put yfinance in all twelve cells; checking the resolved tree here
+      #          recently, which put yfinance in every matrix cell; checking the resolved tree here
       #          catches that dependency edit even before an environment is installed.
       run: |
         uv pip compile --python-version 3.12 --quiet \
           pyproject.toml -o "$RUNNER_TEMP/requirements-core.txt"
-        uv pip compile --extra dev --python-version 3.12 --quiet \
-          pyproject.toml -o "$RUNNER_TEMP/requirements-dev.txt"
+        uv pip compile --group test --python-version 3.12 --quiet \
+          pyproject.toml -o "$RUNNER_TEMP/requirements-test.txt"
         uv run --no-project python - "$RUNNER_TEMP/requirements-core.txt" \
-                                    "$RUNNER_TEMP/requirements-dev.txt" <<'PY'
+                                    "$RUNNER_TEMP/requirements-test.txt" <<'PY'
         import sys, tomllib
 
         def normalise(name):
@@ -198,8 +201,8 @@ jobs:
             ("core", sys.argv[1],
              "Either a core dependency took one on as a hard requirement, or a dependency edit "
              "moved it out of an extra."),
-            ("dev", sys.argv[2],
-             "`[dev]` is meant to be pytest and pytest-cov over the core tree. An optional extra "
+            ("test", sys.argv[2],
+             "The `test` group is meant to be pytest and pytest-cov over the core tree. An optional extra "
              "here means the ci.yml test matrix no longer shows the suite passes without one."),
         ):
             names = resolved(path)

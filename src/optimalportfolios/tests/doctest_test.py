@@ -38,7 +38,7 @@ import pytest
 SOURCE_FOLDER = "src"
 
 # The only modules allowed to be missing from this gate, each because a module-level import of an
-# optional extra makes them unimportable on the `[dev]` install CI measures on. Everything else
+# optional extra makes them unimportable on the test-group install CI measures on. Everything else
 # that fails to import is a broken first-party module and fails the test: warning and continuing
 # would let a module drop out of the doctest gate entirely while the run still reported success.
 #

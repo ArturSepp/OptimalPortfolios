@@ -105,4 +105,4 @@ See also
 * :doc:`incomplete_histories` for unpriced and frozen positions
 * :doc:`api` for ``Constraints`` and ``apply_drift_to_weights_0``
 * `qis portfolio backtester
-  <https://github.com/ArturSepp/QuantInvestStrats/blob/main/qis/portfolio/backtester.py>`_
+  <https://github.com/ArturSepp/QuantInvestStrats/blob/main/src/qis/portfolio/backtester.py>`_

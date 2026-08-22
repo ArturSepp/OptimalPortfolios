@@ -1,8 +1,9 @@
+# SHARED CI CORE v1.0 — T2 — synced 2026-08-22
 name: CI
 
 # Least privilege, declared rather than inherited. Without this block every job runs with the
 # repository's *default* `GITHUB_TOKEN` scope, which on a repository configured for read-write
-# defaults is write access to contents, issues, packages and more -- handed to twelve matrix cells
+# defaults is write access to contents, issues, packages and more -- handed to fourteen matrix cells
 # that only check out a tree and run pytest.
 #
 # Nothing in this workflow uses the token: no `gh` call, no artifact upload, no PR comment, no push.
@@ -22,7 +23,8 @@ on:
     branches: [main]
 
 # A push to a PR branch makes the run already in flight for that branch pointless: this workflow
-# is 12 jobs, so cancelling it is the single largest saving available here. Runs on `main` are
+# is 14 matrix jobs plus the wheel job, so cancelling it is the single largest saving available
+# here. Runs on `main` are
 # keyed per-ref and never cancel each other.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -38,18 +40,24 @@ jobs:
   test:
     # The suite is pure-Python and NaN-aware pandas, but the scientific stack ships per-platform
     # wheels and pandas frequency/locale behaviour has bitten this kind of code before, so the
-    # matrix runs every supported Python on all three runners.
+    # matrix runs every supported Python on all three runners except the documented Windows/3.14
+    # dependency-wheel exclusion below.
     #
     # `primary` marks the one cell -- ubuntu/3.12 -- that syncs `--locked` from uv.lock and gates
     # coverage. It is set through `include` so the pinned and floating
     # legs are one step each instead of two near-identical pairs; the remaining cells leave it
     # unset, which is falsy in an expression.
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        exclude:
+          # 3.14 excluded 2026-08-22: quadprog==0.1.13 provides no cp314 Windows wheel.
+          - os: windows-latest
+            python-version: "3.14"
         include:
           - os: ubuntu-latest
             python-version: "3.12"
@@ -59,7 +67,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Install uv and Python ${{ matrix.python-version }}
-      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       with:
         # uv supplies the interpreter as well as the installer, so there is no separate
         # setup-python step. The version has to be passed explicitly: `.python-version` is
@@ -77,7 +85,7 @@ jobs:
       # drifted from pyproject.toml, which is what stops a dependency edit landing without a
       # re-lock. Everywhere else `--upgrade` re-resolves from the floors and ignores the lock, so
       # the matrix keeps testing what a user installing today would actually get. That float is
-      # the point of the other eleven cells; pinning them would only test the lock twelve times.
+      # the point of the other thirteen cells; pinning them would only test the lock fourteen times.
       #
       # No pip bootstrap step: pyproject.toml declares PEP 639 `license` and `license-files`, so
       # the built metadata is Metadata-Version 2.4. The pip shipped with the older interpreters in
@@ -95,7 +103,7 @@ jobs:
       # `--locked` still downloads. Both take the same wrapper.
       shell: bash
       run: |
-        sync_cmd=(uv sync --extra dev ${{ matrix.primary && '--locked' || '--upgrade' }})
+        sync_cmd=(uv sync --group test ${{ matrix.primary && '--locked' || '--upgrade' }})
         for attempt in 1 2 3; do
           if "${sync_cmd[@]}"; then
             exit 0
@@ -122,7 +130,7 @@ jobs:
     # workflow's job.
 
     - name: Assert optional modules are absent
-      # `[dev]` is only pytest and pytest-cov over the core tree. Check the actual 3.12 environment
+      # The `test` group is only pytest and pytest-cov over the core tree. Check the actual 3.12 environment
       # on all three operating systems so platform-specific markers or wheels cannot make an
       # optional backend arrive unnoticed. audit.yml complements this locked/floating install
       # check with a fresh Linux resolution each day, which is what detects dependency drift while
@@ -140,7 +148,7 @@ jobs:
             "banned-module-level-imports"
         ]
         leaked = [name for name in banned if importlib.util.find_spec(name) is not None]
-        assert not leaked, f"optional modules leaked into the dev-over-core environment: {leaked}"
+        assert not leaked, f"optional modules leaked into the test-over-core environment: {leaked}"
         print(f"optional-module absence confirmed: {len(banned)}/{len(banned)}")
         PY
 
@@ -153,10 +161,10 @@ jobs:
       # Measured on one cell so the floor keeps one authoritative number. A platform-specific skip
       # on another runner would otherwise fail the gate there for a reason that has nothing to do
       # with coverage regressing.
-      run: uv run pytest ${{ matrix.primary && '--cov=optimalportfolios --cov-report=term-missing' || '' }}
+      run: uv run --no-sync pytest ${{ matrix.primary && '--cov=optimalportfolios --cov-report=term-missing' || '' }}
 
   wheel:
-    # The twelve `test` cells use the editable installation from the `src/` tree, not the wheel
+    # The fourteen `test` cells use the editable installation from the `src/` tree, not the wheel
     # that users receive. A subpackage missing from `[tool.setuptools.packages.find]`, or a data
     # file missing from `[tool.setuptools.package-data]` and MANIFEST.in, can therefore remain
     # invisible to all of them and reach PyPI intact.
@@ -168,23 +176,26 @@ jobs:
     # so running it here keeps it a guarantee rather than a claim.
     #
     # One runner, one interpreter: the wheel is `py3-none-any`, so its *contents* do not vary by
-    # platform, and the suite's platform behaviour is already covered twelve ways above. What this
+    # platform, and the suite's platform behaviour is already covered fourteen ways above. What this
     # job tests is packaging, which is the same everywhere.
     #
     # No `if:` guard. GitHub reports a conditionally skipped job as successful, so a guard on a job
     # that is meant to gate would let the check go green without the wheel ever being built.
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Install uv and Python
-      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       with:
         python-version: "3.12"
 
-    - name: Build the wheel
-      run: uv build --wheel --out-dir dist
+    - name: Build the wheel from the source distribution
+      run: |
+        uv build --sdist --clear --out-dir dist
+        uv build --wheel dist/*.tar.gz --out-dir dist
 
     - name: Assert the wheel carries its test packages and fixture
       # `pytest --pyargs` on a wheel with no tests in it exits 5 ("no tests collected"), which is a
@@ -235,7 +246,7 @@ jobs:
         PY
 
     - name: Install the wheel into a clean environment
-      # Core install plus pytest, and nothing else -- no `dev`, no `data`, no `reports`. This is
+      # Core install plus pytest, and nothing else -- no `test` group, `data`, or `reports`. This is
       # what `pip install optimalportfolios` gives a user, so a test that quietly needs an optional
       # extra fails here rather than in their terminal. It is also the module-level-optional-import
       # trap from the other side: such an import breaks *collection*, so it would fail this job even

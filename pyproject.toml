@@ -36,6 +36,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Office/Business :: Financial :: Investment",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -75,29 +76,15 @@ docs = [
 # package imports. The repository-only Colab quickstart installs the released package into the
 # hosted runtime and needs no notebook dependency here. The old extra pulled an unused notebook
 # stack into `[all]` and the daily `--all-extras` audit; install local notebook tooling separately.
-#
-# Test dependencies only, and nothing else. The lint tools are not here: they gate the repository
-# rather than support the suite, they are never imported by a test, and installing them into all
-# twelve matrix cells bought nothing. They live in the `lint` dependency-group below.
-#
-# Two entries were removed for the same reason -- neither enabled a single test. Collection is
-# 1336 tests with them and 1336 without:
-#
-#   * `optimalportfolios[data]` was here for the *examples*, not the suite. No test imports
-#     yfinance; the eleven files that do all live under root-level `examples/`, which is
-#     excluded from wheels and never collected. Keeping it here meant every cell of the test
-#     matrix installed yfinance, so no cell could establish that an optional package is absent --
-#     the matrix silently contradicted the constraint `core-install` exists to enforce.
-#   * `networkx` was orphaned by 981f7e0, which moved the risk-lineage analytics to FactorLasso.
-#     It has no reference anywhere in this repository.
-#
-# To run the examples, install the extra they actually need: `[dev,data]`, or `[all]`.
-dev = [
+
+[dependency-groups]
+# Test dependencies are contributor tooling, not a user-facing feature. Keeping them in a PEP 735
+# group prevents a `dev` extra from leaking into published dependency metadata.
+test = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
 ]
 
-[dependency-groups]
 # The versions CI gates with, stated once. These were previously declared twice -- as open
 # floors here (`ruff>=0.4`) and as the real pins in the workflow (`ruff~=0.16.0`) -- so a
 # contributor's local ruff and CI's ruff could disagree about the same file. A PEP 735 group is
@@ -259,8 +246,8 @@ omit = ["*/tests/*", "*/examples/*", "*/run_local/*", "papers/*", "*/reports/*"]
 # methods in `covar_estimation/covar_estimator.py`, which coverage excludes by itself with no
 # pragma present. Eight is the number of decisions taken here; fourteen is the tool's total.
 #
-# Measure on a `[dev]` install, which is what the 3.12 leg of the `test` job in ci.yml does.
-# That is now pytest and pytest-cov over the core tree: the suite collects the same 1336 tests
+# Measure with the `test` dependency group, which is what the 3.12 leg of ci.yml does.
+# That is now pytest and pytest-cov over the core tree: the suite collects the same 1407 tests
 # with or without the optional extras, so the measured scope does not depend on them.
 #
 # `precision` is not load-bearing at a floor of 100 — coverage.py never rounds a total *up* to

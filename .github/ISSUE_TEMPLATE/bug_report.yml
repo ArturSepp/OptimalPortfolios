@@ -31,7 +31,7 @@ body:
     attributes:
       label: Installation command
       description: "The exact command used to install optimalportfolios"
-      placeholder: "e.g. pip install -e \".[dev]\""
+      placeholder: "e.g. uv sync --locked --group test"
     validations:
       required: true
 
@@ -40,7 +40,7 @@ body:
     attributes:
       label: Extras installed
       description: "List the installed extras, or write none for a core install"
-      placeholder: "e.g. data, clustering; or none"
+      placeholder: "e.g. data, reports; or none"
     validations:
       required: true
 

@@ -1,4 +1,5 @@
-name: JOSS Paper
+# SHARED CI CORE v1.0 — T2 — synced 2026-08-22
+name: JOSS paper
 
 # This workflow is intentionally path-filtered: it validates and renders the manuscript, not the
 # Python package. It should not be made a required check for unrelated pull requests because GitHub
@@ -25,15 +26,17 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  MPLBACKEND: Agg
 
 jobs:
   check:
     name: Check (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -59,6 +62,7 @@ jobs:
     name: Build draft PDF
     needs: check
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -45,11 +45,11 @@ reports are documented in [GOVERNANCE.md](GOVERNANCE.md).
 ```bash
 git clone https://github.com/ArturSepp/OptimalPortfolios.git
 cd OptimalPortfolios
-uv sync --extra dev                                      # editable install, versions from uv.lock
-uv run --locked pytest                                   # the full suite; a few minutes
+uv sync --locked --group test                            # editable install, versions from uv.lock
+uv run --no-sync pytest                                  # the full suite; a few minutes
 uv run --locked --only-group lint ruff check --select TID251,TID253,ICN,F src/optimalportfolios/
 uv run --locked --only-group lint interrogate -v         # docstring coverage, must stay at 100%
-uv run --locked pytest --cov=optimalportfolios --cov-report=term-missing   # floor is fail_under = 100
+uv run --no-sync pytest --cov=optimalportfolios --cov-report=term-missing  # floor is fail_under = 100
 ```
 
 The two lint commands are the exact invocations `static.yml` gates with. The coverage command is
@@ -59,8 +59,8 @@ its `uv sync` step instead, so the effect is the same.
 Automated tests and development diagnostics use separate names and commands:
 
 ```bash
-uv run pytest src/optimalportfolios/optimization/tests/constraints_test.py -v
-uv run python -m optimalportfolios.optimization.general.run_local.quadratic_run
+uv run --no-sync pytest src/optimalportfolios/optimization/tests/constraints_test.py -v
+uv run --no-sync python -m optimalportfolios.optimization.general.run_local.quadratic_run
 ```
 
 Files ending in `*_test.py` are offline pytest modules and are included in the wheel. Component
@@ -74,14 +74,14 @@ the point: a dependency edit that has not been re-locked fails here, on your mac
 on the pinned CI cell. If you are deliberately changing dependencies, run `uv lock` first (or drop
 the flag until you do).
 
-`ruff` and `interrogate` are reached through `--only-group lint` rather than from the `dev`
-extra, and that is deliberate: they are declared once in the `lint` dependency-group, which is
+`ruff` and `interrogate` are reached through `--only-group lint` rather than from the `test`
+dependency group, and that is deliberate: they are declared once in the `lint` dependency-group, which is
 also where the workflow takes its versions from, so a local `ruff` and CI's `ruff` cannot
 disagree about the same file. `--only-group` installs that group alone — not the project, not the
-compiled scientific stack. A plain `pip install -e ".[dev]"` gives you `pytest` and `pytest-cov`
-only; it will **not** put `ruff` or `interrogate` on your path, because a pip extra does not
-install a PEP 735 dependency-group. It also resolves fresh rather than from `uv.lock`, so it is
-not what CI gates the pinned cell against.
+compiled scientific stack. The `test` group gives you `pytest` and `pytest-cov` only; it will
+**not** put `ruff` or `interrogate` on your path. PEP 735 groups are a contributor environment
+contract rather than installable package features, so use `uv sync --group test` instead of a pip
+extra.
 
 Note that `ruff check` is run with an explicit `--select`. Running it bare applies the `E`/`W`
 families configured in `pyproject.toml`, which report a deliberate backlog of ~215 `E501`

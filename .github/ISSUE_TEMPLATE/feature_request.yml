@@ -1,0 +1,47 @@
+name: Feature request
+description: Propose a focused addition within OptimalPortfolios' portfolio-construction boundary.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: research_task
+    attributes:
+      label: Research or user task
+      description: Describe the task before proposing an API.
+    validations:
+      required: true
+  - type: textarea
+    id: current_gap
+    attributes:
+      label: Current limitation
+      description: Explain why the public API and documented workflows do not already handle it.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Include timing, return, annualisation, missing-data, constraints, and dependency implications.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Alpha signals
+        - Covariance estimation
+        - Portfolio optimisation or constraints
+        - Rolling backtest or reporting
+        - Documentation or example
+        - Packaging or developer tooling
+    validations:
+      required: true
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Project boundary
+      options:
+        - label: This does not introduce look-ahead or change a numerical convention implicitly.
+          required: true
+        - label: I considered whether the functionality belongs in qis or factorlasso.
+          required: true
