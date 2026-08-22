@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it using the metadata from this file."
 type: software
-title: "OptimalPortfolios: Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python"
+title: "optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python"
 authors:
   - family-names: Sepp
     given-names: Artur
@@ -9,8 +9,8 @@ authors:
 repository-code: "https://github.com/ArturSepp/OptimalPortfolios"
 url: "https://pypi.org/project/optimalportfolios/"
 license: MIT
-version: 6.21.2
-date-released: "2026-08-21"
+version: 6.21.3
+date-released: "2026-08-22"
 keywords:
   - portfolio-optimization
   - backtesting

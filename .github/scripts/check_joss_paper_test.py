@@ -11,8 +11,8 @@ from check_joss_paper import MAX_WORDS, PaperCheckError, check_paper
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PAPER = ROOT / "paper" / "paper.md"
-BIBLIOGRAPHY = ROOT / "paper" / "paper.bib"
+PAPER = ROOT / "paper.md"
+BIBLIOGRAPHY = ROOT / "paper.bib"
 
 
 class JossPaperCheckTest(unittest.TestCase):

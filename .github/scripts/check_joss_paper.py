@@ -399,7 +399,7 @@ def check_paper(paper_path: Path, bibliography_path: Path | None = None) -> Chec
 def main(argv: list[str] | None = None) -> int:
     """Run the command-line paper check."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("paper", nargs="?", type=Path, default=Path("paper/paper.md"))
+    parser.add_argument("paper", nargs="?", type=Path, default=Path("paper.md"))
     parser.add_argument("--bibliography", type=Path, help="override the bibliography path")
     args = parser.parse_args(argv)
     try:

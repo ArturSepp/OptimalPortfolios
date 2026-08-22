@@ -1,10 +1,11 @@
 Choosing a portfolio optimization library
 ==========================================
 
-``optimalportfolios``, PyPortfolioOpt, Riskfolio-Lib, and skfolio overlap in
-portfolio construction, but they optimize for different workflows.  Choose by
-the path from inputs to decisions and evaluation, not by a universal package
-ranking.
+``optimalportfolios``, PyPortfolioOpt, Riskfolio-Lib, skfolio, and cvxportfolio
+overlap in portfolio construction, but they optimize for different workflows.
+Choose by the path from inputs to decisions and evaluation, not by a universal
+package ranking.  The capability matrix below compares the first four cell by
+cell; cvxportfolio is assessed at the design-center level in its own section.
 
 Version snapshot
 ----------------
@@ -34,6 +35,9 @@ releases on PyPI.
    * - skfolio
      - 0.20.2
      - `PyPI release record <https://pypi.org/project/skfolio/0.20.2/>`_
+   * - cvxportfolio
+     - 1.5.1
+     - `PyPI release record <https://pypi.org/project/cvxportfolio/1.5.1/>`_
 
 Capability matrix
 -----------------
@@ -226,6 +230,28 @@ Choose skfolio when portfolio estimators must participate in scikit-learn
 pipelines, hyperparameter selection, walk-forward or purged cross-validation,
 and multi-period out-of-sample comparison.
 
+cvxportfolio
+------------
+
+`cvxportfolio <https://github.com/cvxgrp/cvxportfolio>`_ implements the
+multi-period trading framework of Boyd, Busseti, Diamond, Kahn, Koh, Nystrup
+and Speth (2017), *Multi-Period Trading via Convex Optimization*: single- and
+multi-period optimization policies with transaction- and holding-cost models,
+executed against its own market simulator (checked against the
+`official documentation <https://www.cvxportfolio.com>`_ at version 1.5.1 on
+21 August 2026).  Its design center — a sequence of trading decisions with
+costs — is the nearest neighbor to ``optimalportfolios``, and the boundary is
+this: cvxportfolio optimizes a trading policy from return forecasts at a
+single frequency against its own simulator, while ``optimalportfolios``
+centers on heterogeneous multi-asset panels — mixed estimation and dealing
+cadences, incomplete histories, frozen positions, group and tracking-error
+constraints, risk-budgeting and allocation objectives — and delegates
+simulation and reporting to ``qis``.  Choose cvxportfolio when the problem is
+cost-aware trading of one liquid universe from return forecasts; choose
+``optimalportfolios`` when the problem is a production roll-forward over a
+heterogeneous allocation universe.  cvxportfolio is deliberately not scored
+cell by cell in the matrix above.
+
 The specialization of ``optimalportfolios`` is the state transition between
 successive decisions: estimates are dated, prior targets drift into current
 holdings, constraints can reflect eligibility or dealing windows, and the
@@ -240,7 +266,9 @@ How this comparison was made
 
 Versions came from the official PyPI JSON records on 21 August 2026.
 Capabilities were checked manually against the official documentation linked
-in each matrix cell.  Competitor packages were not installed or executed, and
+in each matrix cell.  cvxportfolio was assessed at the design-center level
+against its official documentation on the same date rather than cell by cell.
+Competitor packages were not installed or executed, and
 no speed, numerical-quality, dependency-size, popularity, or performance
 benchmark was attempted.
 
