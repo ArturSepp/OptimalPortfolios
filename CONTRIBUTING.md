@@ -36,6 +36,10 @@ Open an issue and describe what you are trying to do. Questions about methodolog
 welcome; where a question is really about the published papers, please say which paper
 and section you are reading.
 
+Support is best-effort and has no guaranteed response time. The maintainer decision model,
+maintenance expectations, release policy, and private route for sensitive security or conduct
+reports are documented in [GOVERNANCE.md](GOVERNANCE.md).
+
 ## Development setup
 
 ```bash

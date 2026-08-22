@@ -7,7 +7,7 @@ transaction costs, and reporting.**
 [![PyPI](https://img.shields.io/pypi/v/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/)
 [![Python](https://img.shields.io/pypi/pyversions/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
-[![CI](https://github.com/ArturSepp/OptimalPortfolios/actions/workflows/test.yml/badge.svg)](https://github.com/ArturSepp/OptimalPortfolios/actions)
+[![CI](https://github.com/ArturSepp/OptimalPortfolios/actions/workflows/ci.yml/badge.svg)](https://github.com/ArturSepp/OptimalPortfolios/actions)
 [![Documentation Status](https://readthedocs.org/projects/optimalportfolios/badge/?version=latest)](https://optimalportfolios.readthedocs.io/en/latest/)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ArturSepp/OptimalPortfolios/blob/main/examples/getting_started/production_quickstart.ipynb)
 [![Downloads](https://static.pepy.tech/badge/optimalportfolios)](https://pepy.tech/project/optimalportfolios)
@@ -19,10 +19,12 @@ transaction costs, and reporting.**
 
 ## Why optimalportfolios
 
-Most Python portfolio optimisation packages (PyPortfolioOpt, Riskfolio-Lib, skfolio)
-solve single-period allocation problems: given a covariance matrix and expected
-returns, find the optimal weights. This is useful for textbook exercises but
-insufficient for running a real multi-asset portfolio.
+PyPortfolioOpt, Riskfolio-Lib, and skfolio all provide substantial portfolio
+optimisation capabilities. Their documented design centres emphasize, respectively,
+compact classical allocation, breadth across risk measures and portfolio families,
+and scikit-learn-compatible model selection. `optimalportfolios` is organized around
+a different primary abstraction: a dated state transition from estimates and current
+holdings to constrained targets and realised backtests.
 
 **optimalportfolios solves the production problem end-to-end:**
 estimate covariance → compute alpha signals → optimise with constraints →
@@ -36,12 +38,11 @@ and illiquid positions.
 The package implements the full pipeline from the ROSAA framework: factor model
 covariance estimation (via [`factorlasso`](https://github.com/ArturSepp/factorlasso))
 → risk-budgeted SAA → alpha signal computation →
-TE-constrained TAA → rolling backtest. No other open-source package handles
-universes where equities rebalance monthly, alternatives rebalance quarterly,
-and private equity enters the allocation set only when sufficient return history
-is available. The constraint system (weight bounds, group allocation limits,
-tracking error budgets, turnover controls, rebalancing indicators for frozen
-positions) matches what real institutional PM teams need.
+TE-constrained TAA → rolling backtest. In this pipeline, equities can rebalance
+monthly while alternatives rebalance quarterly, and an asset can enter the
+allocation set only when sufficient return history is available. Weight bounds,
+group allocation limits, tracking error budgets, turnover controls, and rebalancing
+indicators for frozen positions share the same dated roll-forward state.
 
 **HCGL factor covariance estimation.**
 The Hierarchical Clustering Group LASSO factor model (published in JPM, 2026)
@@ -89,9 +90,9 @@ pre-filtering required.
 
 **Research-backed methodology.**
 The package is the reference implementation for the ROSAA framework published in
-*The Journal of Portfolio Management* (Sepp, Ossa, Kastenholz, 2026). The
-optimisation solvers, covariance estimators, and alpha signals are battle-tested
-on live multi-asset portfolios.
+*The Journal of Portfolio Management* (Sepp, Ossa, Kastenholz, 2026). Its
+optimisation solvers, covariance estimators, and alpha signals are covered by
+offline tests and public worked examples.
 
 ### Quick-start: offline rolling backtest
 
@@ -181,7 +182,11 @@ For these, use Riskfolio-Lib or skfolio. The solver architecture (three-layer:
 mathematical / wrapper / rolling) makes it straightforward to add new solvers —
 each solver lives in its own module in `optimization/general`,
 `optimization/risk_allocation`, `optimization/saa`, or `optimization/taa` and
-plugs into the rolling backtester via a single dispatch function.
+plugs into the rolling backtester via a single dispatch function. The
+[software-design guide](https://optimalportfolios.readthedocs.io/en/latest/software_design.html)
+explains these boundaries and the alternatives considered; the
+[package comparison](https://optimalportfolios.readthedocs.io/en/latest/package_comparison.html)
+records the versioned evidence for the field comparison.
 
 ## Package overview
 
@@ -1349,6 +1354,10 @@ This package is part of an open-source Python stack for quantitative finance —
 
 Dependency links within the stack: `optimalportfolios` builds on `qis` and `factorlasso`; `trendfollowing` builds on `qis`.
 
+Project decisions, maintenance expectations, release policy, and best-effort support routes are
+documented in [GOVERNANCE.md](GOVERNANCE.md). Contributions, bug reports, and methodology questions
+are welcome through the public repository as described in [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Acknowledgments
 
 - [Thomas Schmelzer](https://github.com/tschm), creator of
@@ -1390,11 +1399,11 @@ Available at <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6785958>
 If you use optimalportfolios in your research, please cite it as:
 
 ```
-@software{sepp2024optimalportfolios,
+@software{sepp2026optimalportfolios,
   author={Sepp, Artur},
-  title={OptimalPortfolios: Implementation of optimisation analytics for constructing and backtesting optimal portfolios in Python},
+  title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
   year={2026},
-  version={6.21.2},
+  version={6.21.3},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

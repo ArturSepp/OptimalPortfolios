@@ -7,6 +7,16 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.21.3] - 2026-08-22
+
+### Added
+
+- `tests/paper_claims_test.py` pins the JOSS manuscript's quantified drift-policy claim on the
+  shipped fixture: under a hard 3% per-rebalance turnover budget, `use_drifted_weights_0=False`
+  reports compliance while executed trades breach the budget at 71% of rebalances (peak 2.4x);
+  the default policy never exceeds it. Executed turnover is verified by two independent routes
+  (the `qis` simulator and an inline drifted-L1 recomputation).
+
 ### Repository
 
 - 2026-08-21: separated automated pytest modules from source-adjacent development runners.
@@ -14,6 +24,17 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   the nearest `run_local/<subject>_run.py` with a `Locals` enum and `run_local(local=...)` entry
   point. Package discovery excludes runners from built distributions, while `examples/` remains
   reserved for larger analytical workflows. Layout and wheel checks enforce the boundary.
+- JOSS paper: cvxportfolio added to the state of the field with the design-center boundary;
+  statement of need quantified from the shipped fixture (numbers pinned by
+  `paper_claims_test.py`); research impact statement carries the 2026 external-contribution
+  counts; bibliography gains Boyd et al. (2017) and the cvxportfolio software entry;
+  `sepp2026matf` carries `type = {Working paper}` so the rendered entry is marked; title
+  lowercased to `optimalportfolios:`; spelling unified to American.
+- `docs/package_comparison.rst`: cvxportfolio added to the version snapshot, a dedicated
+  design-center section, and the methodology note.
+- README: CI badge fixed to point at `ci.yml` (was `test.yml`, which does not exist); the
+  software citation block uses the JOSS paper title and the key `sepp2026optimalportfolios`.
+- `CITATION.cff`: title aligned with the JOSS paper title.
 
 ## [6.21.2] - 2026-08-21
 
