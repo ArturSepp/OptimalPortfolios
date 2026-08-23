@@ -204,7 +204,7 @@ src/optimalportfolios/
 │   ├── ewma_covar_estimator.py    # EwmaCovarEstimator
 │   ├── factor_covar_estimator.py  # FactorCovarEstimator (uses factorlasso)
 │   ├── risk_model_adapter.py      # Canonical qis.RiskModel adapter
-│   ├── risk_labelling.py          # Cluster and factor risk labelling
+│   ├── risk_labelling.py          # Deprecated shim; canonical lineage is in factorlasso
 │   └── covar_reporting.py         # Rolling covariance diagnostics
 ├── optimization/                  # Portfolio optimisation
 │   ├── constraints.py             # Constraints, GroupLowerUpperConstraints
