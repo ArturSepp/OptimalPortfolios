@@ -2180,7 +2180,7 @@ wheels = [
 
 [[package]]
 name = "optimalportfolios"
-version = "6.21.4"
+version = "6.21.5"
 source = { editable = "." }
 dependencies = [
     { name = "cvxpy", version = "1.7.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },

@@ -7,10 +7,35 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.21.5] - 2026-08-24
+
+### Added
+
+- Added public benchmark-beta utilities for factor-model and joint-covariance loadings, rolling
+  loading panels, and ex-ante beta on a portfolio-weight date grid. The covariance identity stays
+  parity-tested against the canonical `qis.RiskModel` implementation, and invalid non-finite
+  variances or loadings fail before they can understate reported beta.
+
+### Changed
+
+- Split the 1,915-line `optimization/constraints.py` implementation into focused private modules
+  for alignment, backend translation, benchmark constraints, CVXPY expressions and group
+  constraints. The 578-line facade preserves established imports, signatures, dataclass layouts,
+  logger names and numerical behaviour.
+- Moved the pure benchmark-beta loading helpers from the private constraint implementation to
+  `utils/benchmark_beta.py`; the original `optimization.constraints` imports remain identity
+  aliases for compatibility.
+
 ### Removed
 
 - Retired the contributor-only `dev` extra. Test dependencies now live in the PEP 735 `test`
   dependency group and are installed with `uv sync --group test`.
+
+### Repository
+
+- Added API-compatibility and backend-translation contracts for the constraint split, aligned the
+  CI and contributor guidance with the shared stack contract, and made the public paper
+  replication checks portable with repaired snapshot hashes.
 
 ## [6.21.4] - 2026-08-22
 

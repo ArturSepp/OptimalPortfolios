@@ -1,6 +1,13 @@
-"""Public API of the shared utilities: NaN filtering, portfolio statistics, weight
-rounding and drift.
+"""Public API of the shared utilities: benchmark beta, NaN filtering, portfolio
+statistics, weight rounding and drift.
 """
+
+from optimalportfolios.utils.benchmark_beta import (
+    compute_benchmark_beta_loadings,
+    compute_benchmark_beta_loadings_from_covar,
+    compute_benchmark_beta_loadings_ts,
+    compute_ex_ante_beta_ts,
+)
 
 from optimalportfolios.utils.filter_nans import (filter_covar_and_vectors,
                                                  filter_covar_and_vectors_for_nans)

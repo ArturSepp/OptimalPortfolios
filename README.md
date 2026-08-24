@@ -207,7 +207,12 @@ src/optimalportfolios/
 │   ├── risk_labelling.py          # Deprecated shim; canonical lineage is in factorlasso
 │   └── covar_reporting.py         # Rolling covariance diagnostics
 ├── optimization/                  # Portfolio optimisation
-│   ├── constraints.py             # Constraints, GroupLowerUpperConstraints
+│   ├── constraints.py             # Canonical public facade and Constraints aggregate
+│   ├── _constraint_alignment.py   # Universe alignment and frozen-bound relaxation
+│   ├── _constraint_backends.py    # CVXPY, SciPy and risk-budgeting translations
+│   ├── _constraint_benchmarks.py  # Benchmark-deviation and beta constraints
+│   ├── _constraint_expressions.py # Shared CVXPY risk and objective expressions
+│   ├── _constraint_groups.py      # Group allocation, TRE and turnover constraints
 │   ├── config.py                  # OptimiserConfig (incl. use_drifted_weights_0)
 │   ├── covar_factorization.py     # Stabilised covariance and square-root factor
 │   ├── solver_diagnostics.py      # Input contracts, outcomes, residuals and run summaries
@@ -234,6 +239,7 @@ src/optimalportfolios/
 │   ├── universe_data.py           # UniverseData: prices, metadata and group loadings
 │   └── universe_transforms.py     # e.g. copy with unsmoothed prices
 ├── utils/                         # Auxiliary analytics
+│   ├── benchmark_beta.py          # Benchmark-beta loadings and dated portfolio beta
 │   ├── filter_nans.py             # NaN-aware covariance/vector filtering
 │   ├── portfolio_funcs.py         # Risk contributions, diversification ratio
 │   ├── weights_drift.py           # apply_drift_to_weights_0
@@ -698,8 +704,12 @@ risk-allocation structures, strategic return/risk targets or tactical alpha and 
 
 ### 3. Constraints
 
-Dataclass `Constraints` in `optimization.constraints` implements
-optimisation constraints in solver-independent way.
+`optimization/constraints.py` remains the canonical public facade and owns the `Constraints`
+aggregate, which implements optimisation constraints in a solver-independent way. The
+underscore-prefixed modules shown above split alignment, backend translation, benchmark-relative
+constraints, shared expressions and group constraints without changing its public import paths.
+Pure benchmark-beta calculations live in `utils/benchmark_beta.py`; the historical imports from
+`optimization.constraints` remain aliases to the same function objects.
 
 The following inputs for various constraints are implemented.
 
@@ -1115,12 +1125,15 @@ Portfolios", *The Journal of Portfolio Management*, 52(4), 86-120.
 
 ## Updates
 
-#### August 2026, Versions 6.8.0–6.21.2 released
+#### August 2026, Versions 6.8.0–6.21.5 released
 
-The recent 6.x series through 6.21.2 added several production analytics that are now part of the current API:
+The recent 6.x series through 6.21.5 added several production analytics that are now part of the current API:
 
 | Release | Analytics and behavior added |
 | --- | --- |
+| 6.21.5 | Added public benchmark-beta utilities and decomposed the constraints implementation behind its compatibility-preserving facade, with exact API and backend-translation contracts. |
+| 6.21.4 | Consolidated the authored documentation tree and removed package markers from checkout-only development-runner directories. |
+| 6.21.3 | Separated shipped pytest modules from local development runners and prepared the JOSS submission artifacts. |
 | 6.21.2 | Added opt-in FactorLasso 0.16 cluster-stability pooling for within-cluster signals and fixed simultaneous enforcement of group and aggregate turnover limits, including the soft tracking-error target-return path. |
 | 6.21.1 | Consolidated covariance-implied Euler risk attribution in QIS 5.11.1 and removed the temporary risk-budgeting compatibility modules introduced during the 6.21.0 namespace migration. |
 | 6.21.0 | Added cluster-aware risk allocation, date-varying risk budgets, group Euler-risk attribution, external-linkage HRP, and verified inverse risk-budget calibration. |
@@ -1402,7 +1415,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
   year={2026},
-  version={6.21.4},
+  version={6.21.5},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

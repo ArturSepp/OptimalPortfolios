@@ -9,7 +9,12 @@ Developer documentation for the portfolio optimisation solvers in
 ```
 optimization/
 ├── config.py                       # OptimiserConfig dataclass
-├── constraints.py                  # Constraint specification and CVXPY/scipy/risk-budgeting translation
+├── constraints.py                  # Canonical public facade and Constraints aggregate
+├── _constraint_alignment.py        # Universe alignment and frozen-bound relaxation
+├── _constraint_backends.py         # CVXPY, SciPy and risk-budgeting translations
+├── _constraint_benchmarks.py       # Benchmark-deviation and beta constraint containers
+├── _constraint_expressions.py      # Shared CVXPY risk and objective expressions
+├── _constraint_groups.py           # Group allocation, TRE and turnover constraints
 ├── portfolio_result.py             # Result container
 ├── wrapper_rolling_portfolios.py   # Dispatcher: PortfolioObjective → solver routing
 ├── general/                        # Objective-driven solvers, no benchmark semantics
@@ -42,6 +47,12 @@ diagnostic explicitly from the repository root, for example
 plot or use local data and are excluded from pytest and built distributions.
 
 ### Submodule roles
+
+**constraints.py** — the canonical public facade and owner of the `Constraints` aggregate.
+The `_constraint_*.py` modules are internal implementation modules for alignment, backend
+translation, benchmark-relative constraints, shared expressions and group constraints. Pure
+benchmark-beta calculations live in `optimalportfolios.utils.benchmark_beta`; the facade retains
+the established constraint-module aliases.
 
 **general/** — solvers that take covariance (and optionally returns) as
 input and produce standalone allocations. No benchmark, no active overlay

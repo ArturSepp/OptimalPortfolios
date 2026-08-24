@@ -44,8 +44,12 @@ signatures and docstrings.
    optimalportfolios.calculate_diversification_ratio
    optimalportfolios.compare_signal_diagnostics
    optimalportfolios.compute_alpha_rank_analysis_table
+   optimalportfolios.compute_benchmark_beta_loadings
+   optimalportfolios.compute_benchmark_beta_loadings_from_covar
+   optimalportfolios.compute_benchmark_beta_loadings_ts
    optimalportfolios.compute_dependence_matrix
    optimalportfolios.compute_eligible_rebalancing_bounds
+   optimalportfolios.compute_ex_ante_beta_ts
    optimalportfolios.compute_gerber_matrix
    optimalportfolios.compute_group_risk_budgets
    optimalportfolios.compute_hierarchical_risk_parity_weights
