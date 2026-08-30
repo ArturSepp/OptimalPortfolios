@@ -50,12 +50,23 @@ _CFCD_SUPPORTS_DERIVED_SIGNS = (
 
 
 def _model_for_frequency(lasso_model: LassoModel, freq: str) -> LassoModel:
-    """Return clustering config with the effective span for one asset cadence."""
-    if lasso_model.span_freq_dict is None:
-        return lasso_model
-    if freq not in lasso_model.span_freq_dict:
-        raise KeyError(f"no span for freq={freq} in lasso_model.span_freq_dict")
-    return lasso_model.copy(kwargs={'span': lasso_model.span_freq_dict[freq]})
+    """Return fit configuration with beta and clustering spans for one cadence."""
+    overrides = {}
+    if lasso_model.span_freq_dict is not None:
+        if freq not in lasso_model.span_freq_dict:
+            raise KeyError(f"no span for freq={freq} in lasso_model.span_freq_dict")
+        overrides['span'] = lasso_model.span_freq_dict[freq]
+    cluster_span_map = getattr(
+        lasso_model, 'cluster_correlation_span_freq_dict', None
+    )
+    if cluster_span_map is not None:
+        if freq not in cluster_span_map:
+            raise KeyError(
+                f"no cluster correlation span for freq={freq} in "
+                "lasso_model.cluster_correlation_span_freq_dict"
+            )
+        overrides['cluster_correlation_span'] = cluster_span_map[freq]
+    return lasso_model.copy(kwargs=overrides) if overrides else lasso_model
 
 
 def _validate_recluster_frequency(recluster_freq: str, rebalancing_freq: str) -> None:
@@ -114,12 +125,11 @@ def _fit_lasso_frequency(
         freq=None,
     )
 
-    if lasso_model.span_freq_dict is not None:
-        if freq not in lasso_model.span_freq_dict:
-            raise KeyError(f"no span for freq={freq} in lasso_model.span_freq_dict")
-        span = lasso_model.span_freq_dict[freq]
-    else:
-        span = lasso_model.span
+    frequency_model = _model_for_frequency(lasso_model=lasso_model, freq=freq)
+    span = frequency_model.span
+    cluster_correlation_span = getattr(
+        frequency_model, 'cluster_correlation_span', None
+    )
 
     use_precomputed = precomputed_clusters is not None and freq in precomputed_clusters
     external_clusters = None
@@ -136,6 +146,9 @@ def _fit_lasso_frequency(
     # LassoModel back with the final cadence's fit attached. A fresh model copy would be a separate
     # numerical and behavioural change, even though clustering schedules use that pattern safely.
     fit_model = lasso_model
+    cluster_span_kwargs = {}
+    if hasattr(fit_model, 'cluster_correlation_span'):
+        cluster_span_kwargs['cluster_correlation_span'] = cluster_correlation_span
     fit_model.fit(
         x=factor_returns,
         y=asset_returns,
@@ -144,6 +157,7 @@ def _fit_lasso_frequency(
         external_clusters=external_clusters,
         external_linkage=precomputed_linkages[freq] if use_precomputed else None,
         external_cutoff=precomputed_cutoffs[freq] if use_precomputed else None,
+        **cluster_span_kwargs,
     )
 
     estimation_result = fit_model.estimation_result_

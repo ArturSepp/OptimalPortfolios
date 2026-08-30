@@ -553,8 +553,8 @@ git clone https://github.com/ArturSepp/OptimalPortfolios.git
 
 The core package supports Python >=3.10. Its current dependency floors are NumPy >=2.0,
 SciPy >=1.12, pandas >=2.2, Matplotlib >=3.8, seaborn >=0.13, openpyxl >=3.1,
-PyYAML >=6.0, CVXPY >=1.3, quadprog >=0.1.11, `qis` >=5.11.1 and
-`factorlasso` >=0.16.0. `pyproject.toml` is the source of truth.
+PyYAML >=6.0, CVXPY >=1.3, quadprog >=0.1.11, `qis` >=5.20.0 and
+`factorlasso` >=0.17.0. `pyproject.toml` is the source of truth.
 
 Optional extras keep network-data and reporting integrations out of the core
 installation. The default risk-lineage matcher is implemented with core NumPy/SciPy code.
@@ -1134,12 +1134,13 @@ Portfolios", *The Journal of Portfolio Management*, 52(4), 86-120.
 
 ## Updates
 
-#### August 2026, Versions 6.8.0–6.21.5 released
+#### August 2026, Versions 6.8.0–6.21.6 released
 
-The recent 6.x series through 6.21.5 added several production analytics that are now part of the current API:
+The recent 6.x series through 6.21.6 added several production analytics that are now part of the current API:
 
 | Release | Analytics and behavior added |
 | --- | --- |
+| 6.21.6 | Added independent per-frequency FactorLasso clustering spans and an offline comparison of the two HRP linkage conventions; raised the runtime floors to FactorLasso 0.17.0 and QIS 5.20.0. |
 | 6.21.5 | Added public benchmark-beta utilities and decomposed the constraints implementation behind its compatibility-preserving facade, with exact API and backend-translation contracts. |
 | 6.21.4 | Consolidated the authored documentation tree and removed package markers from checkout-only development-runner directories. |
 | 6.21.3 | Separated shipped pytest modules from local development runners and prepared the JOSS submission artifacts. |
@@ -1438,7 +1439,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
   year={2026},
-  version={6.21.5},
+  version={6.21.6},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

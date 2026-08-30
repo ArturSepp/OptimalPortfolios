@@ -7,6 +7,30 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.21.6] - 2026-08-30
+
+### Added
+
+- Added an offline comparison of the two hierarchical risk parity linkage conventions: the
+  Lopez de Prado square-input/profile-distance construction and the direct correlation-distance
+  construction used by FactorLasso and PyPortfolioOpt. The example holds the OptimalPortfolios
+  allocation routine fixed so that only the clustering geometry changes.
+
+### Changed
+
+- Factor covariance fitting now resolves optional per-frequency FactorLasso
+  ``cluster_correlation_span_freq_dict`` values independently from beta-estimation spans and
+  passes the resolved clustering span through both direct and rolling cluster fits. Models that
+  omit the new map retain the historical effective-beta-span fallback.
+- Raised the minimum FactorLasso version from 0.16.0 to 0.17.0 for independent clustering spans,
+  and the minimum QIS version from 5.11.1 to 5.20.0.
+
+### Repository
+
+- Added regression coverage for independent clustering-span selection and propagation through
+  current and rolling covariance estimation, and updated the derived example-lane documentation
+  for 25 unattended examples: 7 offline and 18 network-bound.
+
 ## [6.21.5] - 2026-08-24
 
 ### Added

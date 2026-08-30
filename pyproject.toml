@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optimalportfolios"
-version = "6.21.5"
+version = "6.21.6"
 description = "Production multi-asset portfolio construction and rolling backtesting in Python"
 readme = "README.md"
 license = "MIT"
@@ -53,8 +53,8 @@ dependencies = [
     "PyYAML>=6.0",
     "cvxpy>=1.3.0",
     "quadprog>=0.1.11",
-    "qis>=5.11.1",
-    "factorlasso>=0.16.0",
+    "qis>=5.20.0",
+    "factorlasso>=0.17.0",
 ]
 
 [project.optional-dependencies]
@@ -247,7 +247,7 @@ omit = ["*/tests/*", "*/examples/*", "*/run_local/*", "papers/*", "*/reports/*"]
 # pragma present. Eight is the number of decisions taken here; fourteen is the tool's total.
 #
 # Measure with the `test` dependency group, which is what the 3.12 leg of ci.yml does.
-# That is now pytest and pytest-cov over the core tree: the suite collects the same 1407 tests
+# That is now pytest and pytest-cov over the core tree: the suite collects the same 1479 tests
 # with or without the optional extras, so the measured scope does not depend on them.
 #
 # `precision` is not load-bearing at a floor of 100 — coverage.py never rounds a total *up* to

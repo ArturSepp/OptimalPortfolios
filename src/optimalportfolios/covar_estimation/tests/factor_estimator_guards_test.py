@@ -11,6 +11,8 @@ schedule on the estimation date, which needs an explicit append whenever that da
 on the rebalancing grid — a mid-month valuation being the ordinary case.
 """
 
+from types import SimpleNamespace
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -28,6 +30,28 @@ from optimalportfolios.covar_estimation.factor_covar_estimator import (
 
 FACTORS = ["F1", "F2", "F3"]
 ASSETS = [f"A{i}" for i in range(8)]
+
+
+class _CopyableSpanModel(SimpleNamespace):
+    """Minimal model specification for version-independent map-selection tests."""
+
+    def copy(self, kwargs=None):
+        """Return a fresh namespace with the requested scalar overrides."""
+        values = vars(self).copy()
+        values.update(kwargs or {})
+        return _CopyableSpanModel(**values)
+
+
+def _span_model(**overrides) -> _CopyableSpanModel:
+    """Return a lightweight model carrying both beta and clustering span maps."""
+    values = dict(
+        span=24,
+        span_freq_dict=None,
+        cluster_correlation_span=None,
+        cluster_correlation_span_freq_dict=None,
+    )
+    values.update(overrides)
+    return _CopyableSpanModel(**values)
 
 
 def _inputs() -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
@@ -82,6 +106,24 @@ def test_per_cadence_span_is_selected_for_the_frequency_being_fitted() -> None:
     assert model.span == 24, "the configured model must not be mutated"
 
 
+def test_beta_and_cluster_spans_are_selected_independently_by_cadence() -> None:
+    """Resolve the clustering map without changing either configured span map."""
+    model = _span_model(
+        span_freq_dict={"ME": 36, "QE": 12},
+        cluster_correlation_span_freq_dict={"ME": 24, "QE": 8},
+    )
+
+    monthly = _model_for_frequency(model, "ME")
+    quarterly = _model_for_frequency(model, "QE")
+
+    assert (monthly.span, monthly.cluster_correlation_span) == (36, 24)
+    assert (quarterly.span, quarterly.cluster_correlation_span) == (12, 8)
+    assert model.span == 24
+    assert model.cluster_correlation_span is None
+    assert model.span_freq_dict == {"ME": 36, "QE": 12}
+    assert model.cluster_correlation_span_freq_dict == {"ME": 24, "QE": 8}
+
+
 def test_cadence_without_a_configured_span_is_refused() -> None:
     """A frequency absent from ``span_freq_dict`` raises rather than borrowing another span.
 
@@ -91,6 +133,17 @@ def test_cadence_without_a_configured_span_is_refused() -> None:
     model = _model(span_freq_dict={"ME": 18})
 
     with pytest.raises(KeyError, match="no span for freq=QE"):
+        _model_for_frequency(model, "QE")
+
+
+def test_cadence_without_a_configured_cluster_span_is_refused() -> None:
+    """An explicit clustering map must cover every fitted asset cadence."""
+    model = _span_model(
+        span_freq_dict={"ME": 18, "QE": 6},
+        cluster_correlation_span_freq_dict={"ME": 24},
+    )
+
+    with pytest.raises(KeyError, match="no cluster correlation span for freq=QE"):
         _model_for_frequency(model, "QE")
 
 
@@ -121,12 +174,22 @@ def test_configured_cadence_span_is_used_by_the_estimation_routine() -> None:
     assert list(covar_data.y_betas.index) == ASSETS
 
 
+@pytest.mark.skipif(
+    not hasattr(LassoModel, 'cluster_correlation_span'),
+    reason='requires independent clustering-span support in FactorLasso',
+)
 def test_fixed_frequency_helper_matches_direct_lasso_fit() -> None:
     """The extracted cadence fit returns the same components as direct FactorLasso fitting."""
     factors, returns = _inputs()
     asset_returns = returns["ME"]
-    actual_model = _model(span_freq_dict={"ME": 18})
-    reference_model = _model(span_freq_dict={"ME": 18})
+    actual_model = _model(
+        span_freq_dict={"ME": 18},
+        cluster_correlation_span_freq_dict={"ME": 30},
+    )
+    reference_model = _model(
+        span_freq_dict={"ME": 18},
+        cluster_correlation_span_freq_dict={"ME": 30},
+    )
 
     actual = _fit_lasso_frequency(
         freq="ME",
@@ -144,7 +207,13 @@ def test_fixed_frequency_helper_matches_direct_lasso_fit() -> None:
         drop_first=False,
         freq=None,
     )
-    reference_model.fit(x=factor_returns, y=asset_returns, verbose=False, span=18)
+    reference_model.fit(
+        x=factor_returns,
+        y=asset_returns,
+        verbose=False,
+        span=18,
+        cluster_correlation_span=30,
+    )
     reference = reference_model.estimation_result_
 
     pd.testing.assert_frame_equal(actual.betas, reference_model.estimated_betas)
@@ -173,6 +242,34 @@ def test_fixed_frequency_helper_matches_direct_lasso_fit() -> None:
     )
     assert actual.derived_signs is reference_model.derived_signs_ is None
     pd.testing.assert_frame_equal(actual_model.estimated_betas, actual.betas)
+    assert actual_model.effective_span_ == 18
+    assert actual_model.effective_cluster_correlation_span_ == 30
+
+
+def test_fixed_frequency_helper_threads_cluster_span_to_supported_fit() -> None:
+    """Pass the selected cluster span when the model advertises that capability."""
+    factors, returns = _inputs()
+    model = _model()
+    model.cluster_correlation_span = 30
+    model.cluster_correlation_span_freq_dict = None
+    original_fit = model.fit
+    received = []
+
+    def compatible_fit(*args, cluster_correlation_span=None, **kwargs):
+        """Capture the new keyword, then run the installed FactorLasso fit."""
+        received.append(cluster_correlation_span)
+        return original_fit(*args, **kwargs)
+
+    model.fit = compatible_fit
+    _fit_lasso_frequency(
+        freq='ME',
+        asset_returns=returns['ME'],
+        risk_factor_prices=factors,
+        lasso_model=model,
+        verbose=False,
+    )
+
+    assert received == [30]
 
 
 # --- precomputed cluster inputs ------------------------------------------------------------

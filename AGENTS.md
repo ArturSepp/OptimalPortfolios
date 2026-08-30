@@ -54,7 +54,7 @@ Every package pytest module ends in `_test.py`, collects at least one test, and 
 
 ```bash
 uv sync --locked --group test                            # editable install, versions from uv.lock
-uv run --no-sync pytest                                  # run the test suite (1407 tests, ~4 min)
+uv run --no-sync pytest                                  # run the test suite (1479 tests, ~5 min)
 uv run --no-sync pytest src/optimalportfolios/optimization/tests/constraints_test.py -v
 uv run --only-group lint ruff check src/optimalportfolios/  # lint (papers/ is excluded)
 uv run --only-group lint interrogate                     # docstring coverage, must stay at 100%
@@ -94,11 +94,11 @@ data, network, or output preconditions cannot be supplied by an unattended runne
 
 `examples.yml` executes the example scripts, which nothing else does: `examples/` is excluded from wheels, dropped by `[tool.coverage.run] omit`, and never collected by pytest, so an example can call an API that no longer exists and stay broken indefinitely. Ruff does not close the gap either — the rot these attract is attribute-level, not name-level. The workflow was added after `LassoModelType.GROUP_LASSO_CLUSTERS` was found broken in two examples, a shipped docstring and three documents; an enum member that was renamed upstream is still a valid attribute access to a linter.
 
-It has two lanes, and the split is **derived rather than listed**: `.github/scripts/run_examples.py` walks each unattended example's intra-`examples` import closure and calls it network-bound if `yfinance` is reachable at all. Of 24 unattended examples, 18 are network-bound — 7 import it directly and the rest reach it through `examples/data/universe.py`, whose `fetch_benchmark_universe_data()` downloads 15 tickers back to 2003. The **offline** lane runs the other 6 on all three runners and gates pull requests; it syncs the *core* environment, so it shows the examples work for someone who ran a plain `pip install optimalportfolios`. The **network** lane runs the 18 on a daily schedule only, `continue-on-error`, with a step-summary report — gating a PR on dozens of live Yahoo downloads would fail on Yahoo's availability far more often than on the diff. Files named `*_local.py` are excluded from both lanes because their local-data or interactive preconditions cannot be met on a runner. The script fails on an empty lane, so a classification bug cannot report success by running nothing.
+It has two lanes, and the split is **derived rather than listed**: `.github/scripts/run_examples.py` walks each unattended example's intra-`examples` import closure and calls it network-bound if `yfinance` is reachable at all. Of 25 unattended examples, 18 are network-bound — 5 import it directly and the rest reach it through `examples/data/universe.py`, whose `fetch_benchmark_universe_data()` downloads 15 tickers back to 2003. The **offline** lane runs the other 7 on all three runners and gates pull requests; it syncs the *core* environment, so it shows the examples work for someone who ran a plain `pip install optimalportfolios`. The **network** lane runs the 18 on a daily schedule only, `continue-on-error`, with a step-summary report — gating a PR on dozens of live Yahoo downloads would fail on Yahoo's availability far more often than on the diff. Files named `*_local.py` are excluded from both lanes because their local-data or interactive preconditions cannot be met on a runner. The script fails on an empty lane, so a classification bug cannot report success by running nothing.
 
 That `network` job carries a job-level `if`, which `static.yml` deliberately does not. The distinction matters: a skipped job reports *success*, so a guard is only ever safe on a job that must never gate. That one qualifies twice — excluded from the PR path by the condition, and `continue-on-error` on top. Do not add it to branch protection.
 
-Line coverage is **100.00%** on the 1407-test test-group suite, and the ubuntu/3.12 matrix entry gates
+Line coverage is **100.00%** on the 1479-test test-group suite, and the ubuntu/3.12 matrix entry gates
 `pytest --cov=optimalportfolios` at `fail_under = 100`. This is no longer a ratchet: at 100% an
 uncovered line is always something the change under review introduced, which is the same argument
 the 100% `interrogate` bar rests on. Lowering the floor requires a dated `CHANGELOG.md` note.
@@ -121,7 +121,7 @@ and is reviewed by eye rather than by assertion. Put anything with a numerical c
 `reports/`, where it is measured. Measure with `uv sync --locked --group test`.
 
 The `test` group is pytest and pytest-cov, and nothing else. The former `dev` extra also carried `networkx` and
-`optimalportfolios[data]`; neither enabled a single test — collection is 1407 either way. The
+`optimalportfolios[data]`; neither enabled a single test — collection is 1479 either way. The
 `data` extra was there for the **examples**, not the suite: no test imports yfinance, and the
 eleven files that do all live under root-level `examples/`, which is excluded from distributions
 and never collected. `networkx` was orphaned when the risk-lineage analytics moved to FactorLasso

@@ -11,14 +11,14 @@ enum member that no longer exists is a perfectly valid attribute access to a lin
 
 Why the split into lanes
 ------------------------
-Of the 24 unattended examples, 18 need live Yahoo Finance data -- 7 import `yfinance` directly and
+Of the 25 unattended examples, 18 need live Yahoo Finance data -- 5 import `yfinance` directly and
 the rest reach it through `examples/data/universe.py`, whose `fetch_benchmark_universe_data()`
 downloads 15 tickers back to 2003. Gating a pull request on live downloads would fail on Yahoo's
 availability far more often than on this repository's code, and a check that is usually red for
 reasons outside the diff is a check people learn to ignore.
 
 So the network examples run on a schedule and advisory-only, while the offline ones gate. The
-classification is *derived*, not listed: a hand-maintained list of five paths would drift the
+classification is *derived*, not listed: a hand-maintained list of paths would drift the
 first time someone adds an example, and the point of this file is to notice drift.
 
 Classification

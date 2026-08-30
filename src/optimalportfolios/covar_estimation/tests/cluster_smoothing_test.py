@@ -184,6 +184,53 @@ def test_smoothed_current_fit_reconstructs_the_trailing_partition(
     )
 
 
+@pytest.mark.skipif(
+    not hasattr(LassoModel, 'cluster_correlation_span'),
+    reason='requires independent clustering-span support in FactorLasso',
+)
+def test_frequency_cluster_span_map_reaches_current_and_rolling_smoothers() -> None:
+    """Resolve beta and clustering maps independently on both smoothing paths."""
+    factors, returns = _inputs()
+    model = _model(
+        ClusterSmootherType.SIMILARITY_EWMA,
+        smoother_lambda=0.5,
+        span_freq_dict={'ME': 48},
+        cluster_correlation_span_freq_dict={'ME': 24},
+    )
+    estimator = FactorCovarEstimator(
+        lasso_model=model,
+        rebalancing_freq='ME',
+        factor_returns_freq='ME',
+        factor_covar_span=24,
+    )
+
+    with patch(
+            'optimalportfolios.covar_estimation.factor_covar_estimator.'
+            'compute_rolling_smoothed_clusters',
+            wraps=compute_rolling_smoothed_clusters,
+    ) as smoother:
+        estimator.fit_current_factor_covars(
+            factors,
+            returns,
+            estimation_date=factors.index[-1],
+        )
+        estimator.fit_rolling_factor_covars(
+            factors,
+            returns,
+            _period(factors),
+        )
+
+    assert len(smoother.call_args_list) == 2
+    selected_models = [
+        call.kwargs['lasso_model'] for call in smoother.call_args_list
+    ]
+    assert all(selected.span == 48 for selected in selected_models)
+    assert all(
+        selected.cluster_correlation_span == 24
+        for selected in selected_models
+    )
+
+
 def test_hold_frequency_must_be_coarser_than_rebalancing() -> None:
     """HOLD rejects an anchor that can recluster as often as the fit schedule."""
     factors, returns = _inputs()
