@@ -52,6 +52,7 @@ dependencies = [
     "openpyxl>=3.1.0",
     "PyYAML>=6.0",
     "cvxpy>=1.3.0",
+    "scs>=3.2.4.post1,!=3.3.0",
     "quadprog>=0.1.11",
     "qis>=5.20.0",
     "factorlasso>=0.17.0",

@@ -7,6 +7,12 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- Excluded SCS 3.3.0 after its wheels terminated CVXPY constraint solves on Linux and crashed them
+  on Windows. SCS 3.2.11 remains the latest compatible release until upstream ships a corrected
+  solver build.
+
 ## [6.21.6] - 2026-08-30
 
 ### Added
