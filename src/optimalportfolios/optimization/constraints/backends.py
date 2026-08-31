@@ -19,7 +19,7 @@ from cvxpy.atoms.affine.add_expr import AddExpression
 from cvxpy.atoms.affine.wraps import psd_wrap
 from cvxpy.constraints.nonpos import Inequality
 
-from optimalportfolios.optimization._constraint_expressions import (
+from optimalportfolios.optimization.constraints.expressions import (
     _cvx_factor_risk,
     add_term_to_objective_function,
     cvx_covar_variance,
@@ -27,7 +27,7 @@ from optimalportfolios.optimization._constraint_expressions import (
 from optimalportfolios.optimization.covar_factorization import CovarianceFactorization
 
 if TYPE_CHECKING:
-    from optimalportfolios.optimization.constraints import Constraints
+    from optimalportfolios.optimization.constraints.core import Constraints
 
 
 logger = logging.getLogger("optimalportfolios.optimization.constraints")
@@ -88,6 +88,233 @@ def set_cvx_exposure_constraints(
     return constraints
 
 
+def _set_cvx_target_return_constraints(
+        constraint_spec: Constraints,
+        w: cvx.Variable,
+) -> List:
+    """Compile the optional minimum-return row."""
+    if constraint_spec.target_return is None:
+        return []
+    if constraint_spec.asset_returns is None:
+        raise ValueError("asset_returns must be given for target_return constraint")
+    return [constraint_spec.asset_returns.to_numpy() @ w >= constraint_spec.target_return]
+
+
+def _set_cvx_portfolio_volatility_constraints(
+        constraint_spec: Constraints,
+        w: cvx.Variable,
+        covar: Union[np.ndarray, psd_wrap] = None,
+        covar_factorization: Optional[CovarianceFactorization] = None,
+) -> List:
+    """Compile the optional portfolio-volatility upper bound."""
+    if constraint_spec.max_target_portfolio_vol_an is None:
+        return []
+    if covar_factorization is not None:
+        portfolio_risk = _cvx_factor_risk(w, covar_factorization)
+        return [cvx.norm(portfolio_risk, 2)
+                <= constraint_spec.max_target_portfolio_vol_an]
+    if covar is None:
+        raise ValueError("covar must be given for portfolio volatility constraint")
+    return [cvx.quad_form(w, covar)
+            <= constraint_spec.max_target_portfolio_vol_an ** 2]
+
+
+def _set_cvx_group_turnover_constraints(
+        constraint_spec: Constraints,
+        w: cvx.Variable,
+) -> List:
+    """Compile hard group-turnover rows when configured."""
+    if constraint_spec.group_turnover_constraint is None:
+        return []
+    return constraint_spec.group_turnover_constraint.set_group_turnover_constraints(
+        w=w, weights_0=constraint_spec.weights_0)
+
+
+def _set_cvx_total_turnover_constraints(
+        constraint_spec: Constraints,
+        w: cvx.Variable,
+) -> List:
+    """Compile the independent whole-portfolio turnover row."""
+    if constraint_spec.turnover_constraint is None:
+        return []
+    if constraint_spec.weights_0 is None:
+        logger.debug("turnover constraint skipped because weights_0 is absent")
+        return []
+    if constraint_spec.turnover_costs is not None:
+        return [cvx.norm(
+            cvx.multiply(
+                constraint_spec.turnover_costs.to_numpy(),
+                w - constraint_spec.weights_0,
+            ),
+            1,
+        ) <= constraint_spec.turnover_constraint]
+    assert w.size == len(constraint_spec.weights_0.index)
+    return [cvx.norm(w - constraint_spec.weights_0, 1)
+            <= constraint_spec.turnover_constraint]
+
+
+def _set_cvx_group_tracking_error_constraints(
+        constraint_spec: Constraints,
+        w: cvx.Variable,
+        covar: Union[np.ndarray, psd_wrap] = None,
+        covar_factorization: Optional[CovarianceFactorization] = None,
+) -> List:
+    """Compile hard group tracking-error rows when configured."""
+    return constraint_spec.group_tracking_error_constraint.set_cvx_group_tre_constraints(
+        w=w,
+        benchmark_weights=constraint_spec.benchmark_weights,
+        covar=covar,
+        covar_factorization=covar_factorization,
+    )
+
+
+def _set_cvx_total_tracking_error_constraints(
+        constraint_spec: Constraints,
+        w: cvx.Variable,
+        covar: Union[np.ndarray, psd_wrap] = None,
+        covar_factorization: Optional[CovarianceFactorization] = None,
+) -> List:
+    """Compile the whole-portfolio tracking-error row when configured."""
+    if constraint_spec.benchmark_weights is None:
+        raise ValueError("benchmark_weights must be given for tracking error constraint")
+    active_weights = w - constraint_spec.benchmark_weights.to_numpy()
+    if covar_factorization is not None:
+        active_risk = _cvx_factor_risk(active_weights, covar_factorization)
+        return [cvx.norm(active_risk, 2)
+                <= constraint_spec.tracking_err_vol_constraint]
+    tracking_error_var = cvx_covar_variance(active_weights=active_weights, covar=covar)
+    return [tracking_error_var <= constraint_spec.tracking_err_vol_constraint ** 2]
+
+
+def _set_cvx_group_allocation_constraints(
+        constraint_spec: Constraints,
+        w: cvx.Variable,
+        exposure_scaler: cvx.Variable = None,
+) -> List:
+    """Compile hard group allocation floors and ceilings."""
+    if constraint_spec.group_lower_upper_constraints is None:
+        return []
+    return (
+        constraint_spec.group_lower_upper_constraints.set_cvx_group_lower_upper_constraints(
+            w=w, exposure_scaler=exposure_scaler)
+    )
+
+
+def _set_cvx_deviation_constraints(
+        deviation_constraint,
+        w: cvx.Variable,
+        benchmark_weights: pd.Series,
+) -> List:
+    """Compile one optional family of benchmark-deviation rows."""
+    if deviation_constraint is None:
+        return []
+    return deviation_constraint.set_cvx_constraints(
+        w=w, benchmark_weights=benchmark_weights)
+
+
+def _set_cvx_beta_constraints(
+        constraint_spec: Constraints,
+        w: cvx.Variable,
+) -> List:
+    """Compile the optional benchmark-beta range rows."""
+    if constraint_spec.benchmark_beta_constraint is None:
+        return []
+    return constraint_spec.benchmark_beta_constraint.set_cvx_beta_constraints(w=w)
+
+
+def _set_cvx_utility_hard_constraints(
+        constraint_spec: Constraints,
+        w: cvx.Variable,
+        exposure_scaler: cvx.Variable = None,
+) -> List:
+    """Compile mandate rows that remain hard under utility enforcement."""
+    constraints = constraint_spec.set_cvx_exposure_constraints(
+        w=w, exposure_scaler=exposure_scaler)
+    constraints += _set_cvx_target_return_constraints(constraint_spec, w)
+    constraints += _set_cvx_group_allocation_constraints(
+        constraint_spec, w, exposure_scaler=exposure_scaler)
+    constraints += _set_cvx_deviation_constraints(
+        constraint_spec.sector_deviation_constraints,
+        w,
+        constraint_spec.benchmark_weights,
+    )
+    constraints += _set_cvx_deviation_constraints(
+        constraint_spec.style_deviation_constraints,
+        w,
+        constraint_spec.benchmark_weights,
+    )
+    constraints += _set_cvx_beta_constraints(constraint_spec, w)
+    return constraints
+
+
+def _make_cvx_group_turnover_penalty(
+        constraint_spec: Constraints,
+        w: cvx.Variable,
+) -> Optional[cvx.Expression]:
+    """Build the optional group-turnover utility penalty."""
+    if constraint_spec.weights_0 is None:
+        logger.debug("group turnover utility skipped because weights_0 is absent")
+        return None
+    return constraint_spec.group_turnover_constraint.set_cvx_group_turnover_utility(
+        w=w, weights_0=constraint_spec.weights_0)
+
+
+def _make_cvx_total_turnover_penalty(
+        constraint_spec: Constraints,
+        w: cvx.Variable,
+) -> Optional[cvx.Expression]:
+    """Build the optional whole-portfolio turnover utility penalty."""
+    if constraint_spec.weights_0 is None:
+        logger.debug("turnover utility skipped because weights_0 is absent")
+        return None
+    if constraint_spec.turnover_costs is not None:
+        return -1.0 * constraint_spec.turnover_utility_weight * cvx.norm(
+            cvx.multiply(
+                constraint_spec.turnover_costs.to_numpy(),
+                w - constraint_spec.weights_0,
+            ),
+            1,
+        )
+    assert w.size == len(constraint_spec.weights_0.index)
+    return -1.0 * constraint_spec.turnover_utility_weight * cvx.norm(
+        w - constraint_spec.weights_0, 1)
+
+
+def _make_cvx_group_tracking_error_penalty(
+        constraint_spec: Constraints,
+        w: cvx.Variable,
+        covar: Union[np.ndarray, psd_wrap] = None,
+        covar_factorization: Optional[CovarianceFactorization] = None,
+) -> Optional[cvx.Expression]:
+    """Build the optional group tracking-error utility penalty."""
+    if constraint_spec.benchmark_weights is None:
+        raise ValueError(
+            "benchmark_weights must be given for group tracking error constraint")
+    return constraint_spec.group_tracking_error_constraint.set_cvx_group_tre_utility(
+        w=w,
+        benchmark_weights=constraint_spec.benchmark_weights,
+        covar=covar,
+        covar_factorization=covar_factorization,
+    )
+
+
+def _make_cvx_total_tracking_error_penalty(
+        constraint_spec: Constraints,
+        w: cvx.Variable,
+        covar: Union[np.ndarray, psd_wrap] = None,
+        covar_factorization: Optional[CovarianceFactorization] = None,
+) -> Optional[cvx.Expression]:
+    """Build the optional whole-portfolio tracking-error utility penalty."""
+    if constraint_spec.benchmark_weights is None:
+        raise ValueError("benchmark_weights must be given for tracking error constraint")
+    tracking_error_variance = cvx_covar_variance(
+        active_weights=w - constraint_spec.benchmark_weights.to_numpy(),
+        covar=covar,
+        covar_factorization=covar_factorization,
+    )
+    return -1.0 * constraint_spec.tre_utility_weight * tracking_error_variance
+
+
 def set_cvx_all_constraints(
         constraint_spec: Constraints,
         w: cvx.Variable,
@@ -117,84 +344,49 @@ def set_cvx_all_constraints(
     constraints = constraint_spec.set_cvx_exposure_constraints(
         w=w, exposure_scaler=exposure_scaler)
 
-    if constraint_spec.target_return is not None:
-        if constraint_spec.asset_returns is None:
-            raise ValueError("asset_returns must be given for target_return constraint")
-        constraints += [
-            constraint_spec.asset_returns.to_numpy() @ w >= constraint_spec.target_return]
-
-    if constraint_spec.max_target_portfolio_vol_an is not None:
-        if covar_factorization is not None:
-            portfolio_risk = _cvx_factor_risk(w, covar_factorization)
-            constraints += [
-                cvx.norm(portfolio_risk, 2) <= constraint_spec.max_target_portfolio_vol_an]
-        else:
-            if covar is None:
-                raise ValueError(
-                    "covar must be given for portfolio volatility constraint")
-            constraints += [
-                cvx.quad_form(w, covar) <= constraint_spec.max_target_portfolio_vol_an ** 2]
-    if constraint_spec.group_turnover_constraint is not None:
-        constraints += constraint_spec.group_turnover_constraint.set_group_turnover_constraints(
-            w=w, weights_0=constraint_spec.weights_0)
+    constraints += _set_cvx_target_return_constraints(constraint_spec, w)
+    constraints += _set_cvx_portfolio_volatility_constraints(
+        constraint_spec,
+        w,
+        covar=covar,
+        covar_factorization=covar_factorization,
+    )
+    constraints += _set_cvx_group_turnover_constraints(constraint_spec, w)
     # Group limits and the whole-portfolio limit are independent controls. Identity loadings
     # can cap every name while ``turnover_constraint`` caps aggregate trading. The former
     # ``elif`` silently disabled the portfolio cap whenever any group cap was present.
-    if constraint_spec.turnover_constraint is not None:
-        if constraint_spec.weights_0 is None:
-            logger.debug("turnover constraint skipped because weights_0 is absent")
-        else:
-            if constraint_spec.turnover_costs is not None:
-                constraints += [cvx.norm(cvx.multiply(constraint_spec.turnover_costs.to_numpy(),
-                                                       w - constraint_spec.weights_0), 1)
-                                <= constraint_spec.turnover_constraint]
-            else:
-                assert w.size == len(constraint_spec.weights_0.index)
-                constraints += [
-                    cvx.norm(w - constraint_spec.weights_0, 1)
-                    <= constraint_spec.turnover_constraint]
+    constraints += _set_cvx_total_turnover_constraints(constraint_spec, w)
 
+    # Group and whole-portfolio tracking-error limits are independent policy controls,
+    # matching the additive treatment of group and total turnover limits above.
     if constraint_spec.group_tracking_error_constraint is not None:
-        constraints += (
-            constraint_spec.group_tracking_error_constraint.set_cvx_group_tre_constraints(
-                w=w,
-                benchmark_weights=constraint_spec.benchmark_weights,
-                covar=covar,
-                covar_factorization=covar_factorization,
-            )
+        constraints += _set_cvx_group_tracking_error_constraints(
+            constraint_spec,
+            w,
+            covar=covar,
+            covar_factorization=covar_factorization,
         )
-    elif constraint_spec.tracking_err_vol_constraint is not None:
-        if constraint_spec.benchmark_weights is None:
-            raise ValueError("benchmark_weights must be given for tracking error constraint")
-        active_weights = w - constraint_spec.benchmark_weights.to_numpy()
-        if covar_factorization is not None:
-            active_risk = _cvx_factor_risk(
-                active_weights, covar_factorization)
-            constraints += [
-                cvx.norm(active_risk, 2) <= constraint_spec.tracking_err_vol_constraint]
-        else:
-            tracking_error_var = cvx_covar_variance(
-                active_weights=active_weights, covar=covar)
-            constraints += [
-                tracking_error_var <= constraint_spec.tracking_err_vol_constraint ** 2]
-
-    if constraint_spec.group_lower_upper_constraints is not None:
-        constraints += (
-            constraint_spec.group_lower_upper_constraints.set_cvx_group_lower_upper_constraints(
-                w=w, exposure_scaler=exposure_scaler)
+    if constraint_spec.tracking_err_vol_constraint is not None:
+        constraints += _set_cvx_total_tracking_error_constraints(
+            constraint_spec,
+            w,
+            covar=covar,
+            covar_factorization=covar_factorization,
         )
 
-    # add sector and style deviation constraints
-    if constraint_spec.sector_deviation_constraints is not None:
-        constraints += constraint_spec.sector_deviation_constraints.set_cvx_constraints(
-            w=w, benchmark_weights=constraint_spec.benchmark_weights)
-    if constraint_spec.style_deviation_constraints is not None:
-        constraints += constraint_spec.style_deviation_constraints.set_cvx_constraints(
-            w=w, benchmark_weights=constraint_spec.benchmark_weights)
-
-    # benchmark beta range: linear in w given per-date beta_loadings
-    if constraint_spec.benchmark_beta_constraint is not None:
-        constraints += constraint_spec.benchmark_beta_constraint.set_cvx_beta_constraints(w=w)
+    constraints += _set_cvx_group_allocation_constraints(
+        constraint_spec, w, exposure_scaler=exposure_scaler)
+    constraints += _set_cvx_deviation_constraints(
+        constraint_spec.sector_deviation_constraints,
+        w,
+        constraint_spec.benchmark_weights,
+    )
+    constraints += _set_cvx_deviation_constraints(
+        constraint_spec.style_deviation_constraints,
+        w,
+        constraint_spec.benchmark_weights,
+    )
+    constraints += _set_cvx_beta_constraints(constraint_spec, w)
 
     return constraints
 
@@ -235,79 +427,37 @@ def set_cvx_utility_objective_constraints(
     else:
         objective_fun = None
 
-    # Add group turnover penalty (takes precedence over portfolio-level)
+    # Utility mode intentionally gives group penalties precedence over aggregate turnover.
     if constraint_spec.group_turnover_constraint is not None:
-        if constraint_spec.weights_0 is None:
-            logger.debug("group turnover utility skipped because weights_0 is absent")
-        else:
-            term = constraint_spec.group_turnover_constraint.set_cvx_group_turnover_utility(
-                w=w, weights_0=constraint_spec.weights_0)
-            objective_fun = add_term_to_objective_function(objective_fun, term)
-
+        term = _make_cvx_group_turnover_penalty(constraint_spec, w)
+        objective_fun = add_term_to_objective_function(objective_fun, term)
     elif constraint_spec.turnover_utility_weight is not None:
-        if constraint_spec.weights_0 is None:
-            logger.debug("turnover utility skipped because weights_0 is absent")
-        else:
-            if constraint_spec.turnover_costs is not None:
-                term = -1.0 * constraint_spec.turnover_utility_weight * cvx.norm(
-                    cvx.multiply(
-                        constraint_spec.turnover_costs.to_numpy(),
-                        w - constraint_spec.weights_0,
-                    ),
-                    1,
-                )
-            else:
-                assert w.size == len(constraint_spec.weights_0.index)
-                term = -1.0 * constraint_spec.turnover_utility_weight * cvx.norm(
-                    w - constraint_spec.weights_0, 1)
-            objective_fun = add_term_to_objective_function(objective_fun, term)
+        term = _make_cvx_total_turnover_penalty(constraint_spec, w)
+        objective_fun = add_term_to_objective_function(objective_fun, term)
 
-    # Add group tracking error penalty (takes precedence over portfolio-level)
+    # Group tracking error likewise keeps precedence over the portfolio-level penalty.
     if constraint_spec.group_tracking_error_constraint is not None:
-        if constraint_spec.benchmark_weights is None:
-            raise ValueError(
-                "benchmark_weights must be given for group tracking error constraint")
-        else:
-            term = constraint_spec.group_tracking_error_constraint.set_cvx_group_tre_utility(
-                w=w,
-                benchmark_weights=benchmark_weights,
-                covar=covar,
-                covar_factorization=covar_factorization,
-            )
-            objective_fun = add_term_to_objective_function(objective_fun, term)
-
-    elif constraint_spec.tre_utility_weight is not None:
-        if benchmark_weights is None:
-            raise ValueError("benchmark_weights must be given for tracking error constraint")
-        tracking_error_variance = cvx_covar_variance(
-            active_weights=w - constraint_spec.benchmark_weights.to_numpy(),
+        term = _make_cvx_group_tracking_error_penalty(
+            constraint_spec,
+            w,
             covar=covar,
             covar_factorization=covar_factorization,
         )
-        term = -1.0 * constraint_spec.tre_utility_weight * tracking_error_variance
+        objective_fun = add_term_to_objective_function(objective_fun, term)
+    elif constraint_spec.tre_utility_weight is not None:
+        term = _make_cvx_total_tracking_error_penalty(
+            constraint_spec,
+            w,
+            covar=covar,
+            covar_factorization=covar_factorization,
+        )
         objective_fun = add_term_to_objective_function(objective_fun, term)
 
-    # Generate hard constraints (exposure, bounds, groups)
-    constraints = constraint_spec.set_cvx_exposure_constraints(
-        w=w, exposure_scaler=exposure_scaler)
-
-    if constraint_spec.target_return is not None:
-        if constraint_spec.asset_returns is None:
-            raise ValueError("asset_returns must be given for target_return constraint")
-        constraints += [
-            constraint_spec.asset_returns.to_numpy() @ w >= constraint_spec.target_return]
-
-    if constraint_spec.group_lower_upper_constraints is not None:
-        constraints += (
-            constraint_spec.group_lower_upper_constraints.set_cvx_group_lower_upper_constraints(
-                w=w, exposure_scaler=exposure_scaler)
-        )
-
-    # benchmark beta range stays a HARD bound under utility enforcement:
-    # it is a policy limit, linear in w given the per-date beta_loadings
-    # (the TRE/turnover terms above remain soft penalties)
-    if constraint_spec.benchmark_beta_constraint is not None:
-        constraints += constraint_spec.benchmark_beta_constraint.set_cvx_beta_constraints(w=w)
+    constraints = _set_cvx_utility_hard_constraints(
+        constraint_spec,
+        w,
+        exposure_scaler=exposure_scaler,
+    )
     return objective_fun, constraints
 
 

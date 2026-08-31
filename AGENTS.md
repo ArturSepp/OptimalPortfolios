@@ -54,8 +54,8 @@ Every package pytest module ends in `_test.py`, collects at least one test, and 
 
 ```bash
 uv sync --locked --group test                            # editable install, versions from uv.lock
-uv run --no-sync pytest                                  # run the test suite (1479 tests, ~5 min)
-uv run --no-sync pytest src/optimalportfolios/optimization/tests/constraints_test.py -v
+uv run --no-sync pytest                                  # run the test suite (1492 tests, ~5 min)
+uv run --no-sync pytest src/optimalportfolios/optimization/constraints/tests/constraints_test.py -v
 uv run --only-group lint ruff check src/optimalportfolios/  # lint (papers/ is excluded)
 uv run --only-group lint interrogate                     # docstring coverage, must stay at 100%
 ```

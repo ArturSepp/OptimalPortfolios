@@ -31,12 +31,11 @@ from optimalportfolios.optimization.constraints import (
     GroupLowerUpperConstraints,
     GroupTrackingErrorConstraint,
     GroupTurnoverConstraint,
-    _cvx_factor_risk,
-    _reindex_optional_series,
     compute_benchmark_beta_loadings_from_covar,
     merge_group_lower_upper_constraints,
 )
 from optimalportfolios.optimization.covar_factorization import factorize_covariance
+from optimalportfolios.optimization.constraints.expressions import _cvx_factor_risk
 
 TICKERS = ['growth', 'balanced', 'defensive']
 VOLS = np.array([0.22, 0.14, 0.06])
@@ -78,15 +77,6 @@ def test_the_factor_risk_expression_checks_its_own_dimensions() -> None:
     factorization = factorize_covariance(COVAR.to_numpy())
     with pytest.raises(ValueError, match='does not match the weight vector'):
         _cvx_factor_risk(cvx.Variable(5), factorization)
-
-
-def test_reindexing_an_optional_series_passes_absence_through() -> None:
-    """the realignment helper treats "not supplied" and "supplied and empty" differently"""
-    assert _reindex_optional_series(None, pd.Index(TICKERS)) is None
-    reindexed = _reindex_optional_series(pd.Series([1.0], index=['growth']),
-                                         pd.Index(TICKERS), fill_value=0.0)
-    assert list(reindexed.index) == TICKERS
-    assert reindexed['balanced'] == 0.0
 
 
 # --------------------------------------------------------------------------- #
@@ -373,6 +363,30 @@ def test_update_with_valid_tickers_carries_the_stored_universe_forward() -> None
     assert list(updated.group_turnover_constraint.group_loadings.index) == survivors
 
 
+def test_update_with_valid_tickers_aligns_beta_to_the_filtered_covariance() -> None:
+    """Production alignment drops and reorders beta loadings with covariance assets."""
+    beta_constraint = BenchmarkBetaConstraint(
+        beta_min=0.5,
+        beta_max=1.5,
+        beta_loadings=pd.Series(
+            [0.25, 1.25, 0.75],
+            index=['defensive', 'growth', 'balanced'],
+        ),
+    )
+    filtered_covar = COVAR.drop(index='defensive', columns='defensive').loc[
+        ['balanced', 'growth'], ['balanced', 'growth']
+    ]
+    updated = make_constraints(
+        benchmark_beta_constraint=beta_constraint,
+    ).update_with_valid_tickers(valid_tickers=filtered_covar.index.tolist())
+
+    expected = pd.Series([0.75, 1.25], index=filtered_covar.index)
+    pd.testing.assert_series_equal(
+        updated.benchmark_beta_constraint.beta_loadings,
+        expected,
+    )
+
+
 def test_update_with_valid_tickers_rescales_the_turnover_budget() -> None:
     """a turnover cap stated over the whole universe is widened for the surviving part
 
@@ -543,20 +557,6 @@ def test_a_volatility_cap_without_a_covariance_is_rejected() -> None:
     constraints = make_constraints(max_target_portfolio_vol_an=0.12)
     with pytest.raises(ValueError, match='covar must be given'):
         constraints.set_cvx_all_constraints(w=cvx.Variable(len(TICKERS)))
-
-
-def test_a_group_turnover_block_takes_precedence_over_the_portfolio_cap() -> None:
-    """with both stated, the group form is the one built — they are not additive"""
-    constraints = make_constraints(
-        weights_0=WEIGHTS_0, turnover_constraint=0.01,
-        group_turnover_constraint=GroupTurnoverConstraint(
-            group_loadings=GROUP_LOADINGS,
-            group_max_turnover=pd.Series({'risky': 1.0, 'safe': 1.0})))
-    w = cvx.Variable(len(TICKERS), nonneg=True)
-    emitted = constraints.set_cvx_all_constraints(w=w, covar=cvx.psd_wrap(COVAR.to_numpy()))
-    solved = solve_under(w, emitted)
-    # the 1% portfolio cap would have pinned the solve to weights_0; the group caps did not
-    assert not np.allclose(solved, WEIGHTS_0.to_numpy(), atol=1e-3)
 
 
 def test_a_turnover_cap_without_a_prior_portfolio_is_skipped(caplog) -> None:

@@ -59,7 +59,7 @@ its `uv sync` step instead, so the effect is the same.
 Automated tests and development diagnostics use separate names and commands:
 
 ```bash
-uv run --no-sync pytest src/optimalportfolios/optimization/tests/constraints_test.py -v
+uv run --no-sync pytest src/optimalportfolios/optimization/constraints/tests/constraints_test.py -v
 uv run --no-sync python -m optimalportfolios.optimization.general.run_local.quadratic_run
 ```
 

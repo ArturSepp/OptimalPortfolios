@@ -5,7 +5,7 @@ Each scenario prints detailed output so you can see exactly what the
 constraint objects look like and how the solver responds.
 
 Select a ``Locals`` member in the ``__main__`` guard, then run:
-python -m optimalportfolios.optimization.run_local.constraints_run
+python -m optimalportfolios.optimization.constraints.run_local.constraints_run
 
 Universe: 10 assets, 3 groups (Equities/FixedIncome/Alternatives),
 5 sectors (Tech/Finance/Energy/Health/Other).

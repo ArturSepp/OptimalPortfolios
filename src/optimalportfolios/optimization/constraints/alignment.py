@@ -8,22 +8,45 @@ objects or import the public constraints facade at runtime.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
-from optimalportfolios.optimization._constraint_groups import (
+from optimalportfolios.optimization.constraints.groups import (
     GroupLowerUpperConstraints,
     _copy_optional_series,
 )
 
 if TYPE_CHECKING:
-    from optimalportfolios.optimization.constraints import Constraints
+    from optimalportfolios.optimization.constraints.core import Constraints
 
 
 logger = logging.getLogger('optimalportfolios.optimization.constraints')
+
+
+_NESTED_TICKER_CONSTRAINT_FIELDS = (
+    "group_lower_upper_constraints",
+    "group_tracking_error_constraint",
+    "group_turnover_constraint",
+    "sector_deviation_constraints",
+    "style_deviation_constraints",
+    "benchmark_beta_constraint",
+)
+
+
+def align_nested_constraint_fields(
+        constraint_spec: Constraints,
+        valid_tickers: List[str],
+) -> dict:
+    """Align every nested ticker-indexed constraint block through one registry."""
+    aligned = {}
+    for field_name in _NESTED_TICKER_CONSTRAINT_FIELDS:
+        block = getattr(constraint_spec, field_name)
+        if block is not None:
+            aligned[field_name] = block.update(valid_tickers=valid_tickers)
+    return aligned
 
 
 def compute_eligible_rebalancing_bounds(
@@ -125,22 +148,6 @@ class RelaxationRecord:
     breached_tol: bool
 
 
-def _reindex_optional_series(s: Optional[pd.Series], index: pd.Index, fill_value: float = 0.0) -> Optional[pd.Series]:
-    """Reindex a Series to align with given index, filling missing values.
-
-    Args:
-        s: Series to reindex (may be None).
-        index: Target index to align to.
-        fill_value: Value for missing entries.
-
-    Returns:
-        Reindexed Series or None if input is None.
-    """
-    if s is None:
-        return None
-    return s.reindex(index=index, fill_value=fill_value)
-
-
 def build_valid_ticker_constraint_fields(
         constraint_spec: Constraints,
         valid_tickers: List[str],
@@ -181,7 +188,10 @@ def build_valid_ticker_constraint_fields(
         Dictionary of constraint fields aligned to ``valid_tickers``.
     """
     valid_index = pd.Index(valid_tickers)
-    self_dict = constraint_spec._to_dict()
+    self_dict = {
+        field.name: getattr(constraint_spec, field.name)
+        for field in fields(constraint_spec)
+    }
 
     # Update individual weight constraints — aligned to valid_tickers
     if constraint_spec.min_weights is not None:
@@ -192,16 +202,10 @@ def build_valid_ticker_constraint_fields(
             max_w = max_w.where(np.isclose(max_w, 1.0), other=total_to_good_ratio * max_w)
         self_dict['max_weights'] = max_w
 
-    # Update group constraints
-    if constraint_spec.group_lower_upper_constraints is not None:
-        self_dict['group_lower_upper_constraints'] = \
-            constraint_spec.group_lower_upper_constraints.update(valid_tickers=valid_tickers)
-    if constraint_spec.group_tracking_error_constraint is not None:
-        self_dict['group_tracking_error_constraint'] = \
-            constraint_spec.group_tracking_error_constraint.update(valid_tickers=valid_tickers)
-    if constraint_spec.group_turnover_constraint is not None:
-        self_dict['group_turnover_constraint'] = \
-            constraint_spec.group_turnover_constraint.update(valid_tickers=valid_tickers)
+    self_dict.update(align_nested_constraint_fields(
+        constraint_spec=constraint_spec,
+        valid_tickers=valid_tickers,
+    ))
 
     # Update turnover constraints with exposure scaling
     if constraint_spec.turnover_constraint is not None and total_to_good_ratio is not None:
@@ -357,13 +361,5 @@ def build_valid_ticker_constraint_fields(
                     group_min_allocation=new_gmin,
                     group_max_allocation=new_gmax,
                 )
-
-    # Update sector and style deviation constraints
-    if constraint_spec.sector_deviation_constraints is not None:
-        self_dict["sector_deviation_constraints"] = \
-            constraint_spec.sector_deviation_constraints.update(valid_tickers=valid_tickers)
-    if constraint_spec.style_deviation_constraints is not None:
-        self_dict["style_deviation_constraints"] = \
-            constraint_spec.style_deviation_constraints.update(valid_tickers=valid_tickers)
 
     return self_dict

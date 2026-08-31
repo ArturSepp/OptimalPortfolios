@@ -38,6 +38,10 @@ from typing import Dict, Optional, Union, Tuple
 
 from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 from optimalportfolios.optimization.constraints import Constraints
+from optimalportfolios.optimization.constraints.backends import (
+    _set_cvx_group_turnover_constraints,
+    _set_cvx_total_turnover_constraints,
+)
 from optimalportfolios.optimization.covar_factorization import factorize_covariance
 from optimalportfolios.optimization.solver_diagnostics import (
     OptimizationOutcome,
@@ -331,18 +335,12 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
         # was removed above only to prevent the utility builder from treating it as a penalty.
         # Both controls are independent and must be re-added explicitly on the soft-TE path.
         if constraints.group_turnover_constraint is not None:
-            constraints_ += constraints.group_turnover_constraint.set_group_turnover_constraints(
-                w=w, weights_0=constraints.weights_0)
+            constraints_ += _set_cvx_group_turnover_constraints(constraints, w)
         if constraints.turnover_constraint is not None:
             if constraints.weights_0 is None:
                 warnings.warn("weights_0 must be given for turnover constraint")
-            elif constraints.turnover_costs is not None:
-                constraints_ += [cvx.norm(cvx.multiply(
-                    constraints.turnover_costs.to_numpy(), w - constraints.weights_0.to_numpy()), 1)
-                    <= constraints.turnover_constraint]
             else:
-                constraints_ += [cvx.norm(w - constraints.weights_0.to_numpy(), 1)
-                                 <= constraints.turnover_constraint]
+                constraints_ += _set_cvx_total_turnover_constraints(constraints, w)
     else:
         # Hard path: active objective α'(w - w_b) when a benchmark is injected,
         # else absolute α'w. set_cvx_all_constraints enforces the hard TE

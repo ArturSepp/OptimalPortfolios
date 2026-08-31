@@ -7,11 +7,56 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [6.22.0] - 2026-08-31
+
+### Added
+
+- Added package-owned pure constraint analytics and backend capability contracts, with canonical
+  residual objects available from both `optimization.constraints` and the established package
+  roots.
+
+### Changed
+
+- Replaced the root constraint facade plus five `_constraint_*` implementation files with the
+  cohesive `optimization/constraints/` package. Established imports, dataclass layouts, method
+  signatures, logger names, and benchmark-beta aliases remain compatible.
+- Hard total and group tracking-error limits are now additive, matching total and group turnover
+  controls. Under utility enforcement, sector and style deviation limits remain hard mandate rows;
+  only tracking-error and turnover controls are softened.
+- The fail-first numerical references quantify those policy changes. With identity covariance and
+  loose per-name group limits, the former group-only compiler allowed total tracking error
+  `0.707107` against a `0.10` cap; both quadratic and factorized paths now close at or below `0.10`.
+  In the utility-mandate regression, previously omitted rows allowed sector/style deviations
+  `0.666667` and `1.0` against `0.05`; both are now at or below `0.05`.
+
+### Removed
+
+- Removed the private, test-only `_reindex_optional_series` helper and the unused private
+  `_STATUS_HARD_FAIL` status set.
+
 ### Fixed
 
+- Aligned benchmark-beta loadings to every filtered/reordered solver universe in the production
+  `update_with_valid_tickers()` path.
+- Kept distinct near-equal exposure limits as a band during post-solve validation, matching the
+  compiler's literal equality rule, and made SciPy acceptance audit the group rows it compiled.
+  The exposure regression now accepts a candidate summing to `1.0` inside the literal
+  `[1.0, 1.000005]` band at `1e-8` tolerance; the SciPy regression now rejects and falls back from
+  a `0.9` group exposure against a `0.5` cap instead of accepting it.
+- Validated hard and utility group tracking-error/turnover Series independently when both are
+  supplied, so an incomplete utility configuration is no longer hidden by a complete hard one.
 - Excluded SCS 3.3.0 after its wheels terminated CVXPY constraint solves on Linux and crashed them
   on Windows. SCS 3.2.11 remains the latest compatible release until upstream ships a corrected
   solver build.
+
+### Repository
+
+- Moved constraint-owned pytest modules and the manual constraint runner beside their package
+  owners, removed duplicate benchmark-beta parity coverage, and retained cross-solver diagnostics
+  under `optimization/tests/`.
+- Verified the numerical slice against 66 offline paper tests (14 CMA snapshot, 17 MATF manuscript
+  parity, and 35 FAJ replication tests). The robust-optimisation paper workflow has no offline
+  pytest suite and requires live `yfinance` data, so it remains a documented manual precondition.
 
 ## [6.21.6] - 2026-08-30
 

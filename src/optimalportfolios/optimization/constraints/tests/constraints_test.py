@@ -1,4 +1,4 @@
-"""Comprehensive tests for the optimalportfolios constraints module.
+"""Core integration tests for the optimalportfolios constraints module.
 
 Covers all constraint classes and their integration with CVXPY, SciPy, and PyRB
 solver backends. Organised into sections:
@@ -7,11 +7,9 @@ solver backends. Organised into sections:
        merge, drop, update, copy
     2. BenchmarkDeviationConstraints — construction, validation, CVXPY generation,
        update, copy
-    3. GroupTrackingErrorConstraint — construction, CVXPY constraint & utility
-    4. GroupTurnoverConstraint — construction, CVXPY constraint & utility
-    5. Constraints (main class) — __post_init__ feasibility, update methods,
+    3. Constraints (main class) — __post_init__ feasibility, update methods,
        CVXPY / SciPy / PyRB generation, deviation constraint integration
-    6. Edge cases — NaN handling, empty groups, misaligned indices
+    4. Edge cases — NaN handling, empty groups, misaligned indices
 
 Universe: 10 assets split into 3 groups
     - Equities:     A1, A2, A3, A4
@@ -30,7 +28,6 @@ import cvxpy as cvx
 from optimalportfolios.optimization.constraints import (
     Constraints,
     GroupLowerUpperConstraints,
-    GroupTrackingErrorConstraint,
     GroupTurnoverConstraint,
     BenchmarkDeviationConstraints,
     merge_group_lower_upper_constraints,
@@ -223,24 +220,6 @@ def test_gluc_copy_independence():
     assert gluc.group_loadings.iloc[0, 0] != 999.0, "Original was mutated by copy"
 
 
-def test_gluc_merge_no_overlap():
-    """Merging two non-overlapping group constraints."""
-    gluc1 = GroupLowerUpperConstraints(
-        group_loadings=GROUP_LOADINGS[["Equities"]].copy(),
-        group_min_allocation=pd.Series({"Equities": 0.20}),
-        group_max_allocation=pd.Series({"Equities": 0.60}),
-    )
-    gluc2 = GroupLowerUpperConstraints(
-        group_loadings=GROUP_LOADINGS[["FixedIncome"]].copy(),
-        group_min_allocation=pd.Series({"FixedIncome": 0.10}),
-        group_max_allocation=pd.Series({"FixedIncome": 0.50}),
-    )
-    merged = merge_group_lower_upper_constraints(gluc1, gluc2)
-    assert set(merged.group_loadings.columns) == {"Equities", "FixedIncome"}
-    assert merged.group_min_allocation.loc["Equities"] == 0.20
-    assert merged.group_max_allocation.loc["FixedIncome"] == 0.50
-
-
 def test_gluc_merge_with_overlap():
     """Merging with overlapping group names should add suffixes."""
     gluc1 = _make_gluc(group_min={"Equities": 0.20}, group_max={"Equities": 0.60})
@@ -304,29 +283,6 @@ def test_bdc_construction_basic():
     assert len(bdc.factor_max_deviation) == 5
 
 
-def test_bdc_missing_columns_warns():
-    """factor_max_deviation with entries not in factor_loading_mat should warn."""
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        BenchmarkDeviationConstraints(
-            factor_loading_mat=SECTOR_LOADINGS[["Tech", "Finance"]].copy(),
-            factor_max_deviation=pd.Series({"Tech": 0.05, "Finance": 0.05, "Ghost": 0.10}),
-        )
-    assert any("Ghost" in str(warning.message) for warning in w)
-
-
-def test_bdc_none_factor_max_deviation_raises():
-    """factor_max_deviation=None should raise ValueError."""
-    try:
-        BenchmarkDeviationConstraints(
-            factor_loading_mat=SECTOR_LOADINGS.copy(),
-            factor_max_deviation=None,
-        )
-        raise AssertionError("Expected ValueError was not raised")
-    except (ValueError, TypeError):
-        pass  # TypeError also acceptable since frozen dataclass may reject None
-
-
 def test_bdc_cvxpy_constraints_enforce_deviation_bounds():
     """CVXPY constraints should keep active sector deviations within bounds."""
     max_dev = 0.05
@@ -373,14 +329,6 @@ def test_bdc_update_filters_tickers():
     assert len(updated.factor_max_deviation) == len(bdc.factor_max_deviation)
 
 
-def test_bdc_copy_independence():
-    """copy() should return an independent object."""
-    bdc = _make_bdc()
-    copied = bdc.copy()
-    copied.factor_loading_mat.iloc[0, 0] = 999.0
-    assert bdc.factor_loading_mat.iloc[0, 0] != 999.0, "Original was mutated by copy"
-
-
 def test_bdc_zero_loading_group_skipped():
     """Groups with all-zero loadings should not generate constraints."""
     loadings = SECTOR_LOADINGS.copy()
@@ -417,125 +365,10 @@ def test_bdc_tight_deviation_produces_near_benchmark():
 
 
 # ══════════════════════════════════════════════════════════════════════
-# Section 3: GroupTrackingErrorConstraint
+# Section 3: Constraints (main class)
 # ══════════════════════════════════════════════════════════════════════
 
-def test_gte_construction_with_vols():
-    """Construction with group_tre_vols."""
-    gte = GroupTrackingErrorConstraint(
-        group_loadings=GROUP_LOADINGS.copy(),
-        group_tre_vols=pd.Series({"Equities": 0.02, "FixedIncome": 0.01, "Alternatives": 0.03}),
-    )
-    assert gte.group_tre_vols is not None
-
-
-def test_gte_construction_with_utility_weights():
-    """Construction with group_tre_utility_weights."""
-    gte = GroupTrackingErrorConstraint(
-        group_loadings=GROUP_LOADINGS.copy(),
-        group_tre_utility_weights=pd.Series({"Equities": 1.0, "FixedIncome": 0.5, "Alternatives": 2.0}),
-    )
-    assert gte.group_tre_utility_weights is not None
-
-
-def test_gte_no_constraint_raises():
-    """Neither vols nor utility_weights should raise ValueError."""
-    try:
-        GroupTrackingErrorConstraint(group_loadings=GROUP_LOADINGS.copy())
-        raise AssertionError("Expected ValueError was not raised")
-    except ValueError:
-        pass
-
-
-def test_gte_cvxpy_constraints():
-    """Generated tracking error constraints should be satisfiable."""
-    bm = pd.Series(0.10, index=TICKERS)
-    gte = GroupTrackingErrorConstraint(
-        group_loadings=GROUP_LOADINGS.copy(),
-        group_tre_vols=pd.Series({"Equities": 0.05, "FixedIncome": 0.05, "Alternatives": 0.05}),
-    )
-    w = cvx.Variable(N)
-    constraints = gte.set_cvx_group_tre_constraints(w=w, benchmark_weights=bm, covar=COVAR)
-    constraints += [cvx.sum(w) == 1.0, w >= 0]
-    objective = cvx.Minimize(cvx.quad_form(w, COVAR))
-    weights = _solve_and_get_weights(w, objective, constraints)
-    assert weights is not None
-    assert abs(weights.sum() - 1.0) < 1e-4
-
-
-def test_gte_utility_function():
-    """Utility function should return a valid CVXPY expression."""
-    bm = pd.Series(0.10, index=TICKERS)
-    gte = GroupTrackingErrorConstraint(
-        group_loadings=GROUP_LOADINGS.copy(),
-        group_tre_utility_weights=pd.Series({"Equities": 1.0, "FixedIncome": 0.5, "Alternatives": 2.0}),
-    )
-    w = cvx.Variable(N)
-    utility = gte.set_cvx_group_tre_utility(w=w, benchmark_weights=bm, covar=COVAR)
-    assert utility is not None
-
-
-# ══════════════════════════════════════════════════════════════════════
-# Section 4: GroupTurnoverConstraint
-# ══════════════════════════════════════════════════════════════════════
-
-def test_gtc_construction():
-    """Basic construction with group_max_turnover."""
-    gtc = GroupTurnoverConstraint(
-        group_loadings=GROUP_LOADINGS.copy(),
-        group_max_turnover=pd.Series({"Equities": 0.10, "FixedIncome": 0.10, "Alternatives": 0.10}),
-    )
-    assert gtc.group_max_turnover is not None
-
-
-def test_gtc_no_constraint_raises():
-    """Neither max_turnover nor utility_weights should raise ValueError."""
-    try:
-        GroupTurnoverConstraint(group_loadings=GROUP_LOADINGS.copy())
-        raise AssertionError("Expected ValueError was not raised")
-    except ValueError:
-        pass
-
-
-def test_gtc_cvxpy_constraints():
-    """Turnover constraints should limit weight changes per group."""
-    w0 = pd.Series(0.10, index=TICKERS)
-    gtc = GroupTurnoverConstraint(
-        group_loadings=GROUP_LOADINGS.copy(),
-        group_max_turnover=pd.Series({"Equities": 0.05, "FixedIncome": 0.05, "Alternatives": 0.05}),
-    )
-    w = cvx.Variable(N)
-    constraints = gtc.set_group_turnover_constraints(w=w, weights_0=w0)
-    constraints += [cvx.sum(w) == 1.0, w >= 0]
-    objective = cvx.Minimize(cvx.quad_form(w, COVAR))
-    weights = _solve_and_get_weights(w, objective, constraints)
-
-    # check turnover per group
-    for grp, max_to in [("Equities", 0.05), ("FixedIncome", 0.05), ("Alternatives", 0.05)]:
-        mask = GROUP_LOADINGS[grp].to_numpy().astype(bool)
-        group_turnover = np.abs(weights[mask] - w0.to_numpy()[mask]).sum()
-        assert group_turnover <= max_to + 1e-3, (
-            f"{grp} turnover {group_turnover:.4f} exceeds {max_to}"
-        )
-
-
-def test_gtc_utility_function():
-    """Utility function should return a valid CVXPY expression."""
-    w0 = pd.Series(0.10, index=TICKERS)
-    gtc = GroupTurnoverConstraint(
-        group_loadings=GROUP_LOADINGS.copy(),
-        group_turnover_utility_weights=pd.Series({"Equities": 1.0, "FixedIncome": 0.5, "Alternatives": 2.0}),
-    )
-    w = cvx.Variable(N)
-    utility = gtc.set_cvx_group_turnover_utility(w=w, weights_0=w0)
-    assert utility is not None
-
-
-# ══════════════════════════════════════════════════════════════════════
-# Section 5: Constraints (main class)
-# ══════════════════════════════════════════════════════════════════════
-
-# --- 5a. __post_init__ feasibility ---
+# --- 3a. __post_init__ feasibility ---
 
 def test_constraints_feasible():
     """Valid constraints should construct without error."""

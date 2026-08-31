@@ -56,10 +56,20 @@ import numpy as np
 import pandas as pd
 
 from optimalportfolios.optimization.constraints import (
-    ConstraintEnforcementType,
     Constraints,
     DroppedGroupRecord,
     RelaxationRecord,
+)
+from optimalportfolios.optimization.constraints.analytics import (
+    ConstraintResidual,
+    _budget_box_residuals,
+    _exposure_facts,
+    _group_allocation_residuals,
+    _iter_finite_group_bounds,
+    _optional_series_to_array,
+    _resolve_asset_index,
+    _static_reachability_findings,
+    evaluate_constraint_residuals,
 )
 from optimalportfolios.optimization.covar_factorization import CovarianceFactorization
 
@@ -70,23 +80,6 @@ logger = logging.getLogger(__name__)
 # failure (this includes None and any unknown/solver-specific string).
 _STATUS_OPTIMAL = "optimal"
 _STATUS_INACCURATE = {"optimal_inaccurate"}
-_STATUS_HARD_FAIL = {
-    "infeasible",
-    "unbounded",
-    "infeasible_inaccurate",
-    "unbounded_inaccurate",
-    "infeasible_or_unbounded",
-    "solver_error",
-}
-
-
-def _as_np(s: Optional[pd.Series], index: Sequence[str]) -> Optional[np.ndarray]:
-    """Reindex an optional pd.Series to ``index`` and return as float ndarray."""
-    if s is None:
-        return None
-    if isinstance(s, pd.Series):
-        return s.reindex(index=pd.Index(index)).to_numpy(dtype=float)
-    return np.asarray(s, dtype=float)
 
 
 def _compute_fallback(constraints: Constraints, tickers: Sequence[str], n: int) -> Tuple[np.ndarray, str]:
@@ -105,65 +98,14 @@ def _compute_fallback(constraints: Constraints, tickers: Sequence[str], n: int) 
     Returns:
         Finite fallback weights and the selected source label.
     """
-    w0 = _as_np(getattr(constraints, "weights_0", None), tickers)
+    w0 = _optional_series_to_array(getattr(constraints, "weights_0", None), tickers)
     if w0 is not None and w0.shape == (n,) and np.all(np.isfinite(w0)):
         return np.array(w0, dtype=float), "weights_0"
-    bench = _as_np(getattr(constraints, "benchmark_weights", None), tickers)
+    bench = _optional_series_to_array(
+        getattr(constraints, "benchmark_weights", None), tickers)
     if bench is not None and bench.shape == (n,) and np.all(np.isfinite(bench)):
         return np.array(bench, dtype=float), "benchmark_weights"
     return np.zeros(n), "zeros"
-
-
-def _budget_target(constraints: Constraints) -> Tuple[float, float, bool]:
-    """Return the exposure band and equality flag for ``constraints``.
-
-    Args:
-        constraints: Portfolio constraints containing min/max exposure.
-
-    Returns:
-        ``(min_exposure, max_exposure, is_equality)`` for the budget test.
-    """
-    max_exp = float(getattr(constraints, "max_exposure", 1.0))
-    min_exp = float(getattr(constraints, "min_exposure", max_exp))
-    return min_exp, max_exp, np.isclose(min_exp, max_exp)
-
-
-def _derive_tickers(constraints: Constraints, n: int) -> List[Any]:
-    """Derive best-effort asset labels for logging and Series alignment.
-
-    Args:
-        constraints: Constraints whose indexed Series may carry asset labels.
-        n: Number of numeric labels to create when no Series is available.
-
-    Returns:
-        Asset labels in solver-vector order.
-    """
-    for _attr in (
-            "benchmark_weights",
-            "max_weights",
-            "min_weights",
-            "weights_0",
-            "asset_returns",
-            "turnover_costs",
-    ):
-        _s = getattr(constraints, _attr, None)
-        if _s is not None and hasattr(_s, "index"):
-            return list(_s.index)
-
-    for _container_attr, _indexed_attr in (
-            ("group_lower_upper_constraints", "group_loadings"),
-            ("group_tracking_error_constraint", "group_loadings"),
-            ("group_turnover_constraint", "group_loadings"),
-            ("sector_deviation_constraints", "factor_loading_mat"),
-            ("style_deviation_constraints", "factor_loading_mat"),
-            ("benchmark_beta_constraint", "beta_loadings"),
-    ):
-        _container = getattr(constraints, _container_attr, None)
-        _indexed = getattr(_container, _indexed_attr, None)
-        if _indexed is not None and hasattr(_indexed, "index"):
-            return list(_indexed.index)
-    return list(range(n))
-
 
 def _validate_weight_vector(w: np.ndarray, constraints: Constraints, n: int,
                             tickers: Sequence[str], budget_atol: float,
@@ -189,33 +131,32 @@ def _validate_weight_vector(w: np.ndarray, constraints: Constraints, n: int,
     if w.shape != (n,) or not np.all(np.isfinite(w)):
         return False, (f"non-finite or wrong-shape weights (shape={w.shape}, "
                        f"n_nonfinite={int(np.sum(~np.isfinite(w)))})")
-    min_exp, max_exp, is_eq = _budget_target(constraints)
-    s = float(np.sum(w))
-    if is_eq:
-        if abs(s - max_exp) > budget_atol:
-            return False, (f"budget violated: sum(w)={s:.6g} vs target {max_exp:.6g} "
+    residuals = _budget_box_residuals(w, constraints, tickers)
+    exposure = residuals.exposure
+    if abs(residuals.budget_residual) > budget_atol:
+        if exposure.is_exact_equality:
+            return False, (f"budget violated: sum(w)={residuals.sum_weights:.6g} "
+                           f"vs target {exposure.maximum:.6g} "
                            f"(atol={budget_atol:g})")
-    else:
-        if s < min_exp - budget_atol or s > max_exp + budget_atol:
-            return False, (f"exposure band violated: sum(w)={s:.6g} not in "
-                           f"[{min_exp:.6g}, {max_exp:.6g}]")
+        return False, (
+            f"exposure band violated: sum(w)={residuals.sum_weights:.6g} not in "
+            f"[{exposure.minimum:.6g}, {exposure.maximum:.6g}]")
     if getattr(constraints, "is_long_only", False):
-        if w.min() < -bound_atol:
-            return False, f"long-only violated: min(w)={w.min():.6g}"
-    max_w = _as_np(getattr(constraints, "max_weights", None), tickers)
-    if max_w is not None:
-        over = float(np.max(w - max_w))
-        if over > bound_atol:
-            j = int(np.argmax(w - max_w))
-            return False, (f"max_weight violated by {over:.6g} at index {j} "
-                           f"(w={w[j]:.6g}, cap={max_w[j]:.6g})")
-    min_w = _as_np(getattr(constraints, "min_weights", None), tickers)
-    if min_w is not None:
-        under = float(np.min(w - min_w))
-        if under < -bound_atol:
-            j = int(np.argmin(w - min_w))
-            return False, (f"min_weight violated by {under:.6g} at index {j} "
-                           f"(w={w[j]:.6g}, floor={min_w[j]:.6g})")
+        if residuals.long_only_violation > bound_atol:
+            return False, (
+                f"long-only violated: min(w)={residuals.minimum_weight:.6g}")
+    if (residuals.maximum_overage is not None
+            and residuals.maximum_overage > bound_atol):
+        j = residuals.maximum_position
+        return False, (
+            f"max_weight violated by {residuals.maximum_overage:.6g} at index {j} "
+            f"(w={w[j]:.6g}, cap={residuals.maximum_weights[j]:.6g})")
+    if (residuals.minimum_difference is not None
+            and residuals.minimum_difference < -bound_atol):
+        j = residuals.minimum_position
+        return False, (
+            f"min_weight violated by {residuals.minimum_difference:.6g} at index {j} "
+            f"(w={w[j]:.6g}, floor={residuals.minimum_weights[j]:.6g})")
     return True, ""
 
 
@@ -254,21 +195,6 @@ class SolverDiagnostic:
     sum_w: float
     budget_residual: float
     max_box_violation: float
-
-
-@dataclass(frozen=True)
-class ConstraintResidual:
-    """One evaluated constraint with bounds, tolerance, and pass/fail state."""
-
-    constraint_type: str
-    name: str
-    actual: float
-    lower: Optional[float]
-    upper: Optional[float]
-    violation: float
-    tolerance: float
-    hard: bool
-    passed: bool
 
 
 @dataclass(frozen=True)
@@ -312,183 +238,6 @@ class OptimizationOutcome:
         ])
 
 
-def evaluate_constraint_residuals(
-        weights: np.ndarray,
-        constraints: Constraints,
-        covar: Optional[np.ndarray] = None,
-        covar_factorization: Optional[CovarianceFactorization] = None,
-        tolerance: float = 1e-4,
-) -> Tuple[ConstraintResidual, ...]:
-    """Evaluate solver and policy constraints on one weight vector.
-
-    The covariance is the stabilized solver covariance when a factorization is
-    supplied, ensuring the audit measures exactly the geometry enforced by the
-    optimizer. Soft utility terms are included with ``hard=False`` for
-    reporting but do not determine compliance.
-
-    Args:
-        weights: Candidate portfolio weights in aligned constraint order.
-        constraints: Ticker-aligned constraint set used by the solver.
-        covar: Covariance used when no factorization is available.
-        covar_factorization: Optional exact factorization used by the solver;
-            takes precedence over ``covar``.
-        tolerance: Default absolute tolerance for aggregate constraints.
-
-    Returns:
-        Immutable residual records for all applicable hard and soft terms.
-    """
-    w = np.asarray(weights, dtype=float).ravel()
-    tickers = _derive_tickers(constraints, len(w))
-    index = pd.Index(tickers)
-    utility = (
-        constraints.constraint_enforcement_type
-        == ConstraintEnforcementType.UTILITY_CONSTRAINTS
-    )
-    risk_covar = (
-        covar_factorization.covar
-        if covar_factorization is not None else covar
-    )
-    if risk_covar is not None:
-        risk_covar = np.asarray(risk_covar, dtype=float)
-
-    residuals: List[ConstraintResidual] = []
-
-    def add(kind: str, name: str, actual: float,
-            lower: Optional[float] = None,
-            upper: Optional[float] = None,
-            hard: bool = True,
-            atol: float = tolerance) -> None:
-        """Record one residual, deriving its violation from the supplied bounds."""
-        violation = 0.0
-        if lower is not None:
-            violation = max(violation, float(lower) - float(actual))
-        if upper is not None:
-            violation = max(violation, float(actual) - float(upper))
-        residuals.append(ConstraintResidual(
-            constraint_type=kind,
-            name=str(name),
-            actual=float(actual),
-            lower=None if lower is None else float(lower),
-            upper=None if upper is None else float(upper),
-            violation=max(0.0, float(violation)),
-            tolerance=float(atol),
-            hard=bool(hard),
-            passed=(not hard) or violation <= atol,
-        ))
-
-    min_exp, max_exp, _ = _budget_target(constraints)
-    add('exposure', 'total', float(w.sum()), min_exp, max_exp)
-    if constraints.is_long_only:
-        add('long_only', 'minimum_weight', float(w.min()), lower=0.0,
-            atol=1e-6)
-
-    min_w = _as_np(constraints.min_weights, index)
-    max_w = _as_np(constraints.max_weights, index)
-    for pos, ticker in enumerate(index):
-        if min_w is not None and np.isfinite(min_w[pos]):
-            add('instrument_weight', ticker, w[pos], lower=min_w[pos], atol=1e-6)
-        if max_w is not None and np.isfinite(max_w[pos]):
-            add('instrument_weight', ticker, w[pos], upper=max_w[pos], atol=1e-6)
-
-    if constraints.target_return is not None and constraints.asset_returns is not None:
-        actual_return = float(
-            constraints.asset_returns.reindex(index).fillna(0.0).to_numpy() @ w)
-        add('target_return', 'portfolio', actual_return,
-            lower=constraints.target_return)
-
-    if risk_covar is not None:
-        portfolio_var = max(float(w @ risk_covar @ w), 0.0)
-        portfolio_vol = float(np.sqrt(portfolio_var))
-        if constraints.max_target_portfolio_vol_an is not None:
-            add('portfolio_volatility', 'maximum', portfolio_vol,
-                upper=constraints.max_target_portfolio_vol_an, hard=not utility)
-
-    if constraints.weights_0 is not None:
-        w0 = constraints.weights_0.reindex(index).fillna(0.0).to_numpy(dtype=float)
-        trade = w - w0
-        if constraints.turnover_constraint is not None:
-            if constraints.turnover_costs is not None:
-                costs = constraints.turnover_costs.reindex(
-                    index).fillna(1.0).to_numpy()
-                actual_turnover = float(np.abs(costs * trade).sum())
-            else:
-                actual_turnover = float(np.abs(trade).sum())
-            add('turnover', 'total_l1', actual_turnover,
-                upper=constraints.turnover_constraint, hard=not utility)
-
-        group_turnover = constraints.group_turnover_constraint
-        if group_turnover is not None and group_turnover.group_max_turnover is not None:
-            loadings = group_turnover.group_loadings.reindex(index).fillna(0.0)
-            for group, limit in group_turnover.group_max_turnover.items():
-                if group not in loadings.columns or pd.isna(limit):
-                    continue
-                actual = float(np.abs(loadings[group].to_numpy() * trade).sum())
-                add('group_turnover', group, actual, upper=float(limit),
-                    hard=not utility)
-
-    benchmark = constraints.benchmark_weights
-    if benchmark is not None and risk_covar is not None:
-        benchmark_np = benchmark.reindex(index).fillna(0.0).to_numpy(dtype=float)
-        active = w - benchmark_np
-        total_tre = float(np.sqrt(max(float(active @ risk_covar @ active), 0.0)))
-        if constraints.tracking_err_vol_constraint is not None:
-            add('tracking_error', 'total', total_tre,
-                upper=constraints.tracking_err_vol_constraint, hard=not utility)
-        group_tre = constraints.group_tracking_error_constraint
-        if group_tre is not None and group_tre.group_tre_vols is not None:
-            loadings = group_tre.group_loadings.reindex(index).fillna(0.0)
-            for group, limit in group_tre.group_tre_vols.items():
-                if group not in loadings.columns or pd.isna(limit):
-                    continue
-                group_active = loadings[group].to_numpy() * active
-                actual = float(np.sqrt(max(
-                    float(group_active @ risk_covar @ group_active), 0.0)))
-                add('group_tracking_error', group, actual, upper=float(limit),
-                    hard=not utility)
-
-    group_bounds = constraints.group_lower_upper_constraints
-    if group_bounds is not None:
-        loadings = group_bounds.group_loadings.reindex(index).fillna(0.0)
-        for group in loadings.columns:
-            actual = float(loadings[group].to_numpy() @ w)
-            lower = (
-                group_bounds.group_min_allocation.get(group)
-                if group_bounds.group_min_allocation is not None else None
-            )
-            upper = (
-                group_bounds.group_max_allocation.get(group)
-                if group_bounds.group_max_allocation is not None else None
-            )
-            if lower is not None and pd.isna(lower):
-                lower = None
-            if upper is not None and pd.isna(upper):
-                upper = None
-            if lower is not None or upper is not None:
-                add('group_weight', group, actual, lower=lower, upper=upper)
-
-    for kind, deviation in (
-            ('sector_deviation', constraints.sector_deviation_constraints),
-            ('style_deviation', constraints.style_deviation_constraints)):
-        if deviation is None or benchmark is None:
-            continue
-        active = w - benchmark.reindex(index).fillna(0.0).to_numpy(dtype=float)
-        loadings = deviation.factor_loading_mat.reindex(index).fillna(0.0)
-        for group, limit in deviation.factor_max_deviation.items():
-            if group not in loadings.columns or pd.isna(limit):
-                continue
-            actual = float(loadings[group].to_numpy() @ active)
-            add(kind, group, abs(actual), upper=float(limit), hard=not utility)
-
-    beta_constraint = constraints.benchmark_beta_constraint
-    if beta_constraint is not None and beta_constraint.beta_loadings is not None:
-        actual_beta = float(
-            beta_constraint.beta_loadings.reindex(index).fillna(0.0).to_numpy() @ w)
-        add('benchmark_beta', 'portfolio', actual_beta,
-            lower=beta_constraint.beta_min, upper=beta_constraint.beta_max)
-
-    return tuple(residuals)
-
-
 _NAN_METRICS = {"sum_w": float("nan"), "budget_residual": float("nan"),
                 "max_box_violation": float("nan")}
 
@@ -509,25 +258,12 @@ def _weight_metrics(w: Optional[np.ndarray], constraints: Constraints,
     """
     if w is None or w.shape != (len(tickers),) or not np.all(np.isfinite(w)):
         return dict(_NAN_METRICS)
-    s = float(np.sum(w))
-    min_exp, max_exp, is_eq = _budget_target(constraints)
-    if is_eq or s > max_exp:
-        budget_residual = s - max_exp
-    elif s < min_exp:
-        budget_residual = s - min_exp
-    else:
-        budget_residual = 0.0
-    viol = 0.0
-    if getattr(constraints, "is_long_only", False):
-        viol = max(viol, float(-np.min(w)))
-    max_w = _as_np(getattr(constraints, "max_weights", None), tickers)
-    if max_w is not None:
-        viol = max(viol, float(np.max(w - max_w)))
-    min_w = _as_np(getattr(constraints, "min_weights", None), tickers)
-    if min_w is not None:
-        viol = max(viol, float(np.max(min_w - w)))
-    return {"sum_w": s, "budget_residual": float(budget_residual),
-            "max_box_violation": max(0.0, viol)}
+    residuals = _budget_box_residuals(w, constraints, tickers)
+    return {
+        "sum_w": residuals.sum_weights,
+        "budget_residual": residuals.budget_residual,
+        "max_box_violation": residuals.max_box_violation,
+    }
 
 
 def _emit_diag(level: int, message: str, context: str, solver: str,
@@ -628,7 +364,7 @@ def validate_solution(
         accepted; the outcome also carries solver, residual, fallback,
         constraint, and covariance audit data.
     """
-    tickers = _derive_tickers(constraints, n)
+    tickers = list(_resolve_asset_index(constraints, n_assets=n))
     tag = f"[{context}] " if context else ""
 
     def _result(weights: np.ndarray, accepted: bool, reason: str = '',
@@ -743,8 +479,9 @@ def validate_scipy_solution(
     CVXPY there is no ``problem.status``; the convergence signal is
     ``res.success`` plus ``res.status`` / ``res.message``. Rejects when scipy
     reports non-convergence, the weights are missing/non-finite, or the
-    budget / box constraints are violated, and on rejection falls back drifted
-    weights_0 → benchmark → zeros. scipy's status/message are logged.
+    budget, box, or compiled group-allocation constraints are violated, and on
+    rejection falls back drifted weights_0 → benchmark → zeros. scipy's
+    status/message are logged.
 
     Args:
         optimal_weights: ``res.x`` (passed explicitly so the caller controls
@@ -759,7 +496,7 @@ def validate_scipy_solution(
     Returns:
         (weights, is_valid) — ``weights`` is always finite and length ``n``.
     """
-    tickers = _derive_tickers(constraints, n)
+    tickers = list(_resolve_asset_index(constraints, n_assets=n))
     tag = f"[{context}] " if context else ""
     success = getattr(res, "success", None)
     status = getattr(res, "status", None)
@@ -785,6 +522,17 @@ def validate_scipy_solution(
         w, constraints, n, tickers, budget_atol=budget_atol, bound_atol=bound_atol)
     if not ok:
         return _reject(reason, w=w)
+    for residual in _group_allocation_residuals(
+            weights=w,
+            constraints=constraints,
+            index=tickers,
+            tolerance=1e-4):
+        if not residual.passed:
+            return _reject(
+                f"group allocation '{residual.name}' violated by "
+                f"{residual.violation:.6g}",
+                w=w,
+            )
     _emit_diag(logging.DEBUG,
                f"{tag}solver={solver} success={success} status={status}: accepted "
                f"(sum(w)={float(np.sum(w)):.6g}).",
@@ -834,7 +582,7 @@ def validate_rb_solution(
     Returns:
         (weights, is_valid) — ``weights`` is always finite and length ``n``.
     """
-    tickers = _derive_tickers(constraints, n)
+    tickers = list(_resolve_asset_index(constraints, n_assets=n))
     tag = f"[{context}] " if context else ""
 
     def _reject(reason: str, level: int = logging.ERROR,
@@ -1041,8 +789,8 @@ class SolverRejectionSummary(logging.Handler):
 
 class RelaxationSummary(logging.Handler):
     """Logging handler that tallies frozen-overhang group-bound relaxations over
-    a run from the structured ``RelaxationRecord`` records ``constraints.py``
-    attaches (``extra={"relaxation": ...}``).
+    a run from structured ``RelaxationRecord`` records emitted by the constraints
+    package (``extra={"relaxation": ...}``).
 
     The per-rebalance relaxation detail is emitted at INFO (so it lands in the
     file but does not flood the console); this handler aggregates it into one
@@ -1638,7 +1386,7 @@ def diagnose_solver_failure(problem_status: Optional[str], constraints: Constrai
         diagnose_infeasibility(constraints, covar=covar, solver=solver, context=context)
     elif covar is not None:
         tag = f"[{context}] " if context else ""
-        idx = _diag_asset_index(constraints)
+        idx = _resolve_asset_index(constraints)
         if idx is not None and np.asarray(covar).shape[0] == len(idx):
             logger.warning("%ssolver=%s status=%s: constraints were feasible; "
                            "running covariance conditioning check.",
@@ -1646,16 +1394,6 @@ def diagnose_solver_failure(problem_status: Optional[str], constraints: Constrai
             check_covar_conditioning(pd.DataFrame(np.asarray(covar, dtype=float),
                                                   index=idx, columns=idx),
                                      context=context)
-
-
-def _diag_asset_index(constraints: Constraints) -> Optional[pd.Index]:
-    """Return the asset index of the first indexed constraint bound, if any carries one."""
-    for fld in ("min_weights", "max_weights", "benchmark_weights"):
-        s = getattr(constraints, fld, None)
-        if isinstance(s, pd.Series):
-            return s.index
-    return None
-
 
 def diagnose_infeasibility(constraints: Constraints, covar: Optional[np.ndarray] = None,
                            solver: str = "CLARABEL", context: str = "",
@@ -1666,9 +1404,10 @@ def diagnose_infeasibility(constraints: Constraints, covar: Optional[np.ndarray]
     Keeps long-only and full investment HARD and puts a non-negative slack on
     every box and group bound, minimising the total slack (a linear program —
     no Σ, so far more robust than the original QP). The non-zero slacks are the
-    constraints that must give, sized by how much. If every slack is ~0 the
-    constraints were satisfiable and the infeasible status was numerical, not
-    structural — in that case the covariance conditioning is reported instead.
+    bounds in this box/group subset that must give, sized by how much. If every
+    slack is ~0, this subset is satisfiable; constraints outside the subset may
+    still explain the original status, so covariance conditioning is also
+    reported when available.
 
     Args:
         constraints: Aligned constraints to relax diagnostically.
@@ -1685,10 +1424,10 @@ def diagnose_infeasibility(constraints: Constraints, covar: Optional[np.ndarray]
     import cvxpy as cvx  # lazy: only needed when diagnosis actually runs
 
     tag = f"[{context}] " if context else ""
-    idx = _diag_asset_index(constraints)
+    idx = _resolve_asset_index(constraints)
     if idx is None:
-        logger.warning("%sinfeasibility diagnosis skipped: constraints carry no "
-                       "indexed bounds.", tag)
+        logger.warning("%sinfeasibility diagnosis skipped: box/group subset "
+                       "carries no indexed fields.", tag)
         return {}
     assets = [str(a) for a in idx]
     n = len(assets)
@@ -1698,8 +1437,9 @@ def diagnose_infeasibility(constraints: Constraints, covar: Optional[np.ndarray]
 
     # HARD: full investment (so the question is "which bounds must give to keep
     # full investment", not "drop full investment"). long-only is hard via nonneg.
-    max_exp = float(getattr(constraints, "max_exposure", 1.0) or 1.0)
-    min_exp = float(getattr(constraints, "min_exposure", 1.0) or 1.0)
+    exposure = _exposure_facts(constraints)
+    max_exp = exposure.maximum or 1.0
+    min_exp = exposure.minimum or 1.0
     hard = [cvx.sum(w) == max_exp] if max_exp == min_exp else \
            [cvx.sum(w) <= max_exp, cvx.sum(w) >= min_exp]
 
@@ -1709,7 +1449,7 @@ def diagnose_infeasibility(constraints: Constraints, covar: Optional[np.ndarray]
 
     maxw = getattr(constraints, "max_weights", None)
     if isinstance(maxw, pd.Series):
-        mw = maxw.reindex(idx).to_numpy(dtype=float)
+        mw = _optional_series_to_array(maxw, idx)
         s = cvx.Variable(n, nonneg=True)
         elastic.append(w <= mw + s)
         slack_vars.append(s)
@@ -1718,35 +1458,32 @@ def diagnose_infeasibility(constraints: Constraints, covar: Optional[np.ndarray]
 
     minw = getattr(constraints, "min_weights", None)
     if isinstance(minw, pd.Series):
-        mw = minw.reindex(idx).to_numpy(dtype=float)
+        mw = _optional_series_to_array(minw, idx)
         s = cvx.Variable(n, nonneg=True)
         elastic.append(w >= mw - s)
         slack_vars.append(s)
         for i in range(n):
             items.append(("box_min", assets[i], s, i, float(mw[i])))
 
-    gluc = getattr(constraints, "group_lower_upper_constraints", None)
-    if gluc is not None and getattr(gluc, "group_loadings", None) is not None:
-        loadings = gluc.group_loadings.reindex(index=idx).fillna(0.0)
-        gmin = getattr(gluc, "group_min_allocation", None)
-        gmax = getattr(gluc, "group_max_allocation", None)
-        for group in loadings.columns:
-            gl = loadings[group].to_numpy(dtype=float)
-            if not np.any(~np.isclose(gl, 0.0)):
-                continue
-            if gmin is not None and group in gmin.index and not np.isnan(gmin.loc[group]):
-                s = cvx.Variable(nonneg=True)
-                elastic.append(gl @ w >= float(gmin.loc[group]) - s)
-                slack_vars.append(s)
-                items.append(("group_min", str(group), s, None, float(gmin.loc[group])))
-            if gmax is not None and group in gmax.index and not np.isnan(gmax.loc[group]):
-                s = cvx.Variable(nonneg=True)
-                elastic.append(gl @ w <= float(gmax.loc[group]) + s)
-                slack_vars.append(s)
-                items.append(("group_max", str(group), s, None, float(gmax.loc[group])))
+    group_constraints = getattr(constraints, "group_lower_upper_constraints", None)
+    for bound in _iter_finite_group_bounds(group_constraints, index=idx):
+        loadings = bound.loadings.to_numpy(dtype=float)
+        if not np.any(~np.isclose(loadings, 0.0)):
+            continue
+        if bound.lower is not None:
+            slack = cvx.Variable(nonneg=True)
+            elastic.append(loadings @ w >= bound.lower - slack)
+            slack_vars.append(slack)
+            items.append(("group_min", str(bound.name), slack, None, bound.lower))
+        if bound.upper is not None:
+            slack = cvx.Variable(nonneg=True)
+            elastic.append(loadings @ w <= bound.upper + slack)
+            slack_vars.append(slack)
+            items.append(("group_max", str(bound.name), slack, None, bound.upper))
 
     if not slack_vars:
-        logger.warning("%sinfeasibility diagnosis: no box/group bounds to test.", tag)
+        logger.warning("%sinfeasibility diagnosis: box/group subset has no bounds "
+                       "to test.", tag)
         return {}
 
     try:
@@ -1790,9 +1527,10 @@ def diagnose_infeasibility(constraints: Constraints, covar: Optional[np.ndarray]
 
     if not rows:
         logger.warning(
-            "%sinfeasibility diagnosis: constraints are satisfiable (max slack "
-            "%.2e \u2264 tol); the infeasible status was numerical, not "
-            "structural \u2014 checking covariance conditioning.", tag, max_slack)
+            "%sinfeasibility diagnosis: box/group subset is satisfiable (max "
+            "slack %.2e \u2264 tol); another constraint or numerical conditioning "
+            "may explain the infeasible status \u2014 checking covariance conditioning.",
+            tag, max_slack)
         if covar is not None and np.asarray(covar).shape[0] == n:
             check_covar_conditioning(pd.DataFrame(np.asarray(covar, dtype=float),
                                                   index=idx, columns=idx),
@@ -1848,8 +1586,9 @@ def validate_solver_inputs(pd_covar: pd.DataFrame, constraints: Constraints,
                                CovarianceFactorization] = None) -> InputContractResult:
     """Validate solver inputs at the wrapper entry, before the solve.
 
-    Cheap, deterministic checks (run on every solve when enabled via
-    ``OptimiserConfig.validate_inputs``):
+    Cheap, deterministic checks run when a wrapper invokes this contract. The
+    alpha-over-tracking-error wrapper currently wires
+    ``OptimiserConfig.validate_inputs``:
 
     * covariance integrity — finite, square, dimension matches the constraints,
       symmetric to ``symmetry_atol``;
@@ -1866,8 +1605,9 @@ def validate_solver_inputs(pd_covar: pd.DataFrame, constraints: Constraints,
     Optional heavyweight check:
 
     * ``deep_feasibility`` — runs the elastic min-violation LP
-      (``diagnose_infeasibility``) as a definitive pre-flight, reporting exactly
-      which bounds must give. Off by default (one extra LP per solve).
+      (``diagnose_infeasibility``) over the box/group subset, reporting exactly
+      which represented bounds must give. Off by default (one extra LP per
+      solve); other constraint types remain outside this partial model.
 
     Findings are returned in :class:`InputContractResult` and emitted as ONE
     structured :class:`InputContractRecord` per solve (covar integrity at ERROR;
@@ -1904,7 +1644,7 @@ def validate_solver_inputs(pd_covar: pd.DataFrame, constraints: Constraints,
     mineig_v = float("nan")
     collinear_pair: Optional[Tuple[str, str]] = None
 
-    idx = _diag_asset_index(constraints)
+    idx = _resolve_asset_index(constraints)
     n = len(idx) if idx is not None else (pd_covar.shape[0] if pd_covar is not None else 0)
 
     def _record(ok: bool) -> InputContractRecord:
@@ -2001,67 +1741,17 @@ def validate_solver_inputs(pd_covar: pd.DataFrame, constraints: Constraints,
 
     # --- cheap structural feasibility ---
     if check_feasibility and idx is not None:
-        min_exp, max_exp, _is_eq = _budget_target(constraints)
-        max_w = _as_np(getattr(constraints, "max_weights", None), idx)
-        min_w = _as_np(getattr(constraints, "min_weights", None), idx)
-        if max_w is not None and float(np.sum(max_w)) < min_exp - bound_atol:
-            msg = (f"box caps sum to {float(np.sum(max_w)):.4f} < budget "
-                   f"{min_exp:.4f}: full investment is infeasible")
-            issues.append(msg)
-            structural.append(msg)
-        if min_w is not None and float(np.sum(min_w)) > max_exp + bound_atol:
-            msg = (f"box floors sum to {float(np.sum(min_w)):.4f} > budget "
-                   f"{max_exp:.4f}: constraints are infeasible")
-            issues.append(msg)
-            structural.append(msg)
+        for finding in _static_reachability_findings(
+                constraints, index=idx, atol=bound_atol):
+            issues.append(finding.message)
+            if finding.kind == "structural":
+                structural.append(finding.message)
+            elif finding.kind == "group":
+                groups.append((str(finding.name), finding.code))
+            elif finding.kind == "benchmark":
+                benchmarks.append((int(finding.position), finding.code))
 
-        # per-group reachability given the box
-        gluc = getattr(constraints, "group_lower_upper_constraints", None)
-        if gluc is not None and getattr(gluc, "group_loadings", None) is not None:
-            loadings = gluc.group_loadings.reindex(index=idx).fillna(0.0)
-            gmin = getattr(gluc, "group_min_allocation", None)
-            gmax = getattr(gluc, "group_max_allocation", None)
-            cap = max_w if max_w is not None else np.ones(len(idx))
-            floor = min_w if min_w is not None else np.zeros(len(idx))
-            for group in loadings.columns:
-                gl = loadings[group].to_numpy(dtype=float)
-                if not np.any(gl > 0):
-                    continue
-                reach_max = float(np.sum(gl * cap))
-                reach_min = float(np.sum(gl * floor))
-                if (gmin is not None and group in gmin.index
-                        and not np.isnan(gmin.loc[group])
-                        and float(gmin.loc[group]) > reach_max + bound_atol):
-                    issues.append(f"group '{group}' floor {float(gmin.loc[group]):.4f} "
-                                  f"> max reachable {reach_max:.4f} given box caps")
-                    groups.append((str(group), "floor_unreachable"))
-                if (gmax is not None and group in gmax.index
-                        and not np.isnan(gmax.loc[group])
-                        and float(gmax.loc[group]) < reach_min - bound_atol):
-                    issues.append(f"group '{group}' cap {float(gmax.loc[group]):.4f} "
-                                  f"< min forced {reach_min:.4f} given box floors")
-                    groups.append((str(group), "cap_too_low"))
-
-        # benchmark within its own bounds
-        bench = _as_np(getattr(constraints, "benchmark_weights", None), idx)
-        if bench is not None:
-            if max_w is not None and float(np.max(bench - max_w)) > bound_atol:
-                j = int(np.argmax(bench - max_w))
-                issues.append(f"benchmark weight {bench[j]:.4f} at index {j} exceeds "
-                              f"its cap {max_w[j]:.4f}")
-                benchmarks.append((j, "cap_exceeded"))
-            if min_w is not None and float(np.max(min_w - bench)) > bound_atol:
-                j = int(np.argmax(min_w - bench))
-                issues.append(f"benchmark weight {bench[j]:.4f} at index {j} below "
-                              f"its floor {min_w[j]:.4f}")
-                benchmarks.append((j, "below_floor"))
-            b_sum = float(np.sum(bench))
-            if b_sum < min_exp - bound_atol or b_sum > max_exp + bound_atol:
-                issues.append(f"benchmark sums to {b_sum:.4f}, outside budget band "
-                              f"[{min_exp:.4f}, {max_exp:.4f}]")
-                benchmarks.append((-1, "sum_out_of_band"))
-
-    # --- definitive elastic pre-flight (opt-in; diagnose_infeasibility logs WARNING) ---
+    # --- elastic box/group subset pre-flight (opt-in; emits WARNING) ---
     if deep_feasibility:
         covar_np = pd_covar.to_numpy(dtype=float)
         violations = diagnose_infeasibility(constraints, covar=covar_np,

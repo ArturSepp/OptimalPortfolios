@@ -3,8 +3,8 @@ the specialised constraint classes: group TRE, group turnover, deviation and bet
 
 ``constraints_test.py`` covers ``Constraints`` and ``GroupLowerUpperConstraints``. The four
 classes here — ``GroupTrackingErrorConstraint``, ``GroupTurnoverConstraint``,
-``BenchmarkDeviationConstraints`` and ``BenchmarkBetaConstraint`` — plus the two
-``compute_benchmark_beta_loadings*`` helpers had no collected tests at all.
+``BenchmarkDeviationConstraints`` and ``BenchmarkBetaConstraint`` — had no collected tests
+at all.
 
 They share a shape worth testing as one: each validates on construction, each has an
 ``update(valid_tickers)`` that realigns it when the solver drops assets, and each emits cvx
@@ -12,9 +12,9 @@ constraints. The realignment is the part that bites — an asset dropped for a N
 row has to disappear from every loadings matrix too, and a class that forgets silently
 applies a group bound computed over the wrong membership.
 
-Beta loadings get closed-form treatment: with ``beta(w) = c'w`` and a benchmark that *is* one
-of the assets, the loading on that asset must be 1.0. That is checkable arithmetic rather
-than a recorded number, and it is the property the constraint's whole meaning rests on.
+Pure benchmark-beta helper analytics live in
+``optimalportfolios/utils/tests/benchmark_beta_test.py``. This module uses their canonical
+joint-covariance helper only to construct loadings for ``BenchmarkBetaConstraint`` tests.
 """
 # packages
 import numpy as np
@@ -28,13 +28,11 @@ from optimalportfolios.optimization.constraints import (
     GroupLowerUpperConstraints,
     GroupTrackingErrorConstraint,
     GroupTurnoverConstraint,
-    compute_benchmark_beta_loadings,
-    compute_benchmark_beta_loadings_from_covar,
     merge_group_lower_upper_constraints,
 )
+from optimalportfolios.utils.benchmark_beta import compute_benchmark_beta_loadings_from_covar
 
 TICKERS = ['growth', 'balanced', 'defensive']
-FACTORS = ['Equity', 'Rates']
 VOLS = np.array([0.22, 0.14, 0.06])
 CORR = np.array([[1.00, 0.45, 0.15],
                  [0.45, 1.00, 0.25],
@@ -73,6 +71,16 @@ def test_group_tre_warns_when_a_group_has_no_bound() -> None:
     with pytest.warns(UserWarning, match='Missing in group_loadings.columns'):
         GroupTrackingErrorConstraint(group_loadings=GROUP_LOADINGS,
                                      group_tre_vols=pd.Series({'risky': 0.05}))
+
+
+def test_group_tre_validates_utility_weights_when_hard_bounds_are_also_present() -> None:
+    """both configured enforcement styles must cover every group independently"""
+    with pytest.warns(UserWarning, match='Missing in group_loadings.columns'):
+        GroupTrackingErrorConstraint(
+            group_loadings=GROUP_LOADINGS,
+            group_tre_vols=pd.Series({'risky': 0.05, 'safe': 0.03}),
+            group_tre_utility_weights=pd.Series({'risky': 1.0}),
+        )
 
 
 def test_group_tre_update_realigns_the_loadings_to_the_surviving_assets() -> None:
@@ -144,6 +152,16 @@ def test_group_turnover_warns_when_a_group_has_no_cap() -> None:
     with pytest.warns(UserWarning, match='Missing in self.group_loadings.columns'):
         GroupTurnoverConstraint(group_loadings=GROUP_LOADINGS,
                                 group_max_turnover=pd.Series({'risky': 0.10}))
+
+
+def test_group_turnover_validates_utility_weights_when_hard_caps_are_also_present() -> None:
+    """both configured enforcement styles must cover every group independently"""
+    with pytest.warns(UserWarning, match='Missing in self.group_loadings.columns'):
+        GroupTurnoverConstraint(
+            group_loadings=GROUP_LOADINGS,
+            group_max_turnover=pd.Series({'risky': 0.10, 'safe': 0.05}),
+            group_turnover_utility_weights=pd.Series({'risky': 1.0}),
+        )
 
 
 def test_group_turnover_update_realigns_the_loadings() -> None:
@@ -220,93 +238,10 @@ def test_deviation_copy_is_independent() -> None:
     assert original.factor_loading_mat.iloc[0, 0] == 1.0
 
 
-def test_deviation_update_realigns_the_loadings() -> None:
-    """dropped assets leave the loading matrix"""
-    aligned = make_deviation().update(valid_tickers=['growth', 'defensive'])
-    assert list(aligned.factor_loading_mat.index) == ['growth', 'defensive']
-
-
-def test_deviation_constraints_cap_the_active_group_exposure() -> None:
-    """the solve cannot deviate further than the stated band from the benchmark group"""
-    constraint = make_deviation(factor_max_deviation=pd.Series({'risky': 0.02, 'safe': 1.0}))
-    w = cvx.Variable(len(TICKERS), nonneg=True)
-    weights = solve_with(w, constraint.set_cvx_constraints(w=w, benchmark_weights=BENCHMARK),
-                         objective=lambda v: cvx.Maximize(v[0]))
-    assert weights is not None
-    benchmark_risky = BENCHMARK.to_numpy()[:2].sum()
-    assert abs(weights[:2].sum() - benchmark_risky) <= 0.02 + 1e-5
-
-
-def test_deviation_constraints_skip_an_unloaded_group() -> None:
-    """a group nothing loads on must not make the problem infeasible"""
-    loadings = GROUP_LOADINGS.copy()
-    loadings['empty'] = 0.0
-    constraint = BenchmarkDeviationConstraints(
-        factor_loading_mat=loadings,
-        factor_max_deviation=pd.Series({'risky': 0.5, 'safe': 0.5, 'empty': 0.0}))
-    w = cvx.Variable(len(TICKERS), nonneg=True)
-    weights = solve_with(w, constraint.set_cvx_constraints(w=w, benchmark_weights=BENCHMARK))
-    assert weights is not None
-
-
 def test_deviation_print_names_its_fields(capsys) -> None:
     """the diagnostic print must not raise"""
     make_deviation().print()
     assert capsys.readouterr().out != ''
-
-
-# --------------------------------------------------------------------------- #
-# benchmark beta loadings
-# --------------------------------------------------------------------------- #
-def test_beta_loadings_of_the_benchmark_itself_are_one() -> None:
-    """beta(w)=c'w, so a portfolio equal to the benchmark must have beta 1
-
-    With the benchmark's own factor loadings as the benchmark betas, the closed form
-    collapses to 1.0 — checkable arithmetic rather than a recorded number.
-    """
-    asset_betas = pd.DataFrame([[1.0, 0.0], [0.6, 0.3], [0.0, 1.0]],
-                               index=TICKERS, columns=FACTORS)
-    factor_covar = pd.DataFrame([[0.04, 0.001], [0.001, 0.0025]],
-                                index=FACTORS, columns=FACTORS)
-    benchmark_betas = asset_betas.loc['growth']
-    loadings = compute_benchmark_beta_loadings(
-        asset_betas=asset_betas, benchmark_betas=benchmark_betas,
-        factor_covar=factor_covar)
-    assert loadings['growth'] == pytest.approx(1.0)
-    assert list(loadings.index) == TICKERS
-
-
-def test_beta_loadings_shrink_with_benchmark_idiosyncratic_variance() -> None:
-    """idio variance enters the denominator only, so every loading falls"""
-    asset_betas = pd.DataFrame([[1.0, 0.0], [0.6, 0.3], [0.0, 1.0]],
-                               index=TICKERS, columns=FACTORS)
-    factor_covar = pd.DataFrame([[0.04, 0.001], [0.001, 0.0025]],
-                                index=FACTORS, columns=FACTORS)
-    kwargs = dict(asset_betas=asset_betas, benchmark_betas=asset_betas.loc['growth'],
-                  factor_covar=factor_covar)
-    pure = compute_benchmark_beta_loadings(**kwargs, benchmark_idio_var=0.0)
-    noisy = compute_benchmark_beta_loadings(**kwargs, benchmark_idio_var=0.02)
-    assert (noisy.to_numpy() < pure.to_numpy()).all()
-
-
-def test_beta_loadings_reject_a_degenerate_benchmark() -> None:
-    """a benchmark with zero variance has no beta, so this raises rather than dividing"""
-    asset_betas = pd.DataFrame([[1.0, 0.0], [0.6, 0.3], [0.0, 1.0]],
-                               index=TICKERS, columns=FACTORS)
-    with pytest.raises(ValueError, match='benchmark variance must be positive'):
-        compute_benchmark_beta_loadings(
-            asset_betas=asset_betas,
-            benchmark_betas=pd.Series([0.0, 0.0], index=FACTORS),
-            factor_covar=pd.DataFrame([[0.04, 0.001], [0.001, 0.0025]],
-                                      index=FACTORS, columns=FACTORS))
-
-
-def test_beta_loadings_from_a_joint_covariance_give_the_benchmark_beta_one() -> None:
-    """the covariance variant is the consistent one, and obeys the same identity"""
-    loadings = compute_benchmark_beta_loadings_from_covar(
-        covar=COVAR, benchmark_weights=BENCHMARK, asset_tickers=TICKERS)
-    assert list(loadings.index) == TICKERS
-    assert float(BENCHMARK.to_numpy() @ loadings.to_numpy()) == pytest.approx(1.0)
 
 
 # --------------------------------------------------------------------------- #

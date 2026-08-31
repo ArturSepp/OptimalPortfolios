@@ -49,10 +49,10 @@ nonzero `target_return` is handled as written.
 
 ## Verification
 
-After solving, `constraints.check_constraints_violation(weights)` confirms the
-bounds, and the floor can be checked directly as `a @ w >= b0`. Infeasible
-floors are reported by the solver ("status=infeasible") with a fallback to
-`weights_0` or zeros; a quick feasibility bound for a long-only sleeve with
-budget `W` is `max(a_sleeve) * W + a_core >= b0`.
+Keep the returned `OptimizationOutcome` and inspect `outcome.residuals_frame()`;
+`outcome.compliant` is true only when every hard residual passes. The linear floor can also be
+checked independently as `a @ w >= b0`. Infeasible floors are reported by the solver
+(`status=infeasible`) with a fallback to `weights_0` or zeros; a quick feasibility bound for a
+long-only sleeve with budget `W` is `max(a_sleeve) * W + a_core >= b0`.
 
 See `examples/solvers/overlay_tail_floor.py` for a runnable synthetic example.

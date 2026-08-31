@@ -19,59 +19,43 @@ turnover limits use the caller's units, with no resampling or annualisation in t
 optimiser objectives, covariance estimation, and performance reporting are owned elsewhere.
 """
 from __future__ import annotations, division
-import logging
 import copy as _copy
 import pandas as pd
 import numpy as np
 import cvxpy as cvx
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, replace
 from typing import List, Tuple, Optional, Union
 from cvxpy.atoms.affine.wraps import psd_wrap
 from cvxpy.atoms.affine.add_expr import AddExpression
 from cvxpy.constraints.nonpos import Inequality
 from enum import Enum
 
-from optimalportfolios.optimization._constraint_alignment import (
-    RelaxationRecord as RelaxationRecord,
-    _reindex_optional_series as _reindex_optional_series,
+from optimalportfolios.optimization.constraints.alignment import (
+    align_nested_constraint_fields,
     build_valid_ticker_constraint_fields,
-    compute_eligible_rebalancing_bounds as compute_eligible_rebalancing_bounds,
 )
-from optimalportfolios.optimization._constraint_backends import (
-    long_only_constraint as long_only_constraint,
-    make_max_constraint as make_max_constraint,
-    make_min_constraint as make_min_constraint,
+from optimalportfolios.optimization.constraints.analytics import (
+    _construction_group_reachability_errors,
+)
+from optimalportfolios.optimization.constraints.backends import (
     set_cvx_all_constraints as _set_cvx_all_constraints,
     set_cvx_exposure_constraints as _set_cvx_exposure_constraints,
     set_cvx_utility_objective_constraints as _set_cvx_utility_objective_constraints,
     set_pyrb_constraints as _set_pyrb_constraints,
     set_scipy_bounds as _set_scipy_bounds,
     set_scipy_constraints as _set_scipy_constraints,
-    total_weight_constraint as total_weight_constraint,
 )
-from optimalportfolios.optimization._constraint_benchmarks import (
+from optimalportfolios.optimization.constraints.benchmarks import (
     BenchmarkBetaConstraint,
     BenchmarkDeviationConstraints,
-    compute_benchmark_beta_loadings as compute_benchmark_beta_loadings,
-    compute_benchmark_beta_loadings_from_covar as compute_benchmark_beta_loadings_from_covar,
 )
-from optimalportfolios.optimization._constraint_expressions import (
-    _cvx_factor_risk as _cvx_factor_risk,
-    add_term_to_objective_function as add_term_to_objective_function,
-    cvx_covar_variance as cvx_covar_variance,
-)
-from optimalportfolios.optimization._constraint_groups import (
-    DroppedGroupRecord as DroppedGroupRecord,
+from optimalportfolios.optimization.constraints.groups import (
     GroupLowerUpperConstraints,
     GroupTrackingErrorConstraint,
     GroupTurnoverConstraint,
-    _copy_optional_series as _copy_optional_series,
     merge_group_lower_upper_constraints,
 )
 from optimalportfolios.optimization.covar_factorization import CovarianceFactorization
-
-
-logger = logging.getLogger(__name__)
 
 
 class ConstraintEnforcementType(Enum):
@@ -182,86 +166,12 @@ class Constraints:
                         f"is_long_only=True but min_weights < 0 for assets: {bad}"
                     )
 
-        # validate group constraint
-        if self.group_lower_upper_constraints is None:
-            return
-
-        gluc = self.group_lower_upper_constraints
-        loadings = gluc.group_loadings
-        errors = []
-
-        for group in loadings.columns:
-            group_loading = loadings[group]
-            members = group_loading.index[group_loading > 0]
-            if len(members) == 0:
-                continue
-
-            member_loadings = group_loading.loc[members]
-
-            # loading-weighted cumulative max of individual weights in group
-            if self.max_weights is not None:
-                group_max_sum = (self.max_weights.reindex(members, fill_value=1.0) * member_loadings).sum()
-            else:
-                upper = 1.0 if self.is_long_only else self.max_exposure
-                group_max_sum = (member_loadings * upper).sum()
-
-            # loading-weighted cumulative min of individual weights in group
-            if self.min_weights is not None:
-                group_min_sum = (self.min_weights.reindex(members, fill_value=0.0) * member_loadings).sum()
-            else:
-                lower = 0.0 if self.is_long_only else -self.max_exposure
-                group_min_sum = (member_loadings * lower).sum()
-
-            # Check 1: loading-weighted sum of asset max_weights must reach group min_allocation
-            if gluc.group_min_allocation is not None:
-                gmin = gluc.group_min_allocation.get(group, np.nan)
-                if not np.isnan(gmin) and group_max_sum < gmin - 1e-4:
-                    errors.append(
-                        f"Group '{group}': loading-weighted sum of asset max_weights ({group_max_sum:.4f}) "
-                        f"< group_min_allocation ({gmin:.4f}). "
-                        f"Increase max_weights for assets {members.tolist()} or lower group_min_allocation."
-                    )
-
-            # Check 2: loading-weighted sum of asset min_weights must stay under group max_allocation
-            if gluc.group_max_allocation is not None:
-                gmax = gluc.group_max_allocation.get(group, np.nan)
-                if not np.isnan(gmax) and group_min_sum > gmax + 1e-4:
-                    errors.append(
-                        f"Group '{group}': loading-weighted sum of asset min_weights ({group_min_sum:.4f}) "
-                        f"> group_max_allocation ({gmax:.4f}). "
-                        f"Lower min_weights for assets {members.tolist()} or increase group_max_allocation."
-                    )
-
-            # Check 3: single asset loading-weighted floor must not exceed group max
-            if gluc.group_max_allocation is not None and self.min_weights is not None:
-                gmax = gluc.group_max_allocation.get(group, np.nan)
-                if not np.isnan(gmax):
-                    for ticker in members:
-                        wmin = self.min_weights.get(ticker, 0.0)
-                        if not np.isnan(wmin):
-                            weighted_min = wmin * member_loadings.loc[ticker]
-                            if weighted_min > gmax + 1e-4:
-                                errors.append(
-                                    f"Asset '{ticker}': min_weight ({wmin:.4f}) x loading "
-                                    f"({member_loadings.loc[ticker]:.4f}) = {weighted_min:.4f} "
-                                    f"> group '{group}' max_allocation ({gmax:.4f}). "
-                                    f"Lower min_weight for '{ticker}' or increase group_max_allocation "
-                                    f"for '{group}'."
-                                )
-
+        errors = _construction_group_reachability_errors(self, atol=1e-4)
         if errors:
             raise ValueError(
                 f"Infeasible constraints detected ({len(errors)} violation(s)):\n"
                 + "\n".join(f"  [{i + 1}] {e}" for i, e in enumerate(errors))
             )
-
-    def _to_dict(self) -> dict:
-        """Convert to dict preserving original types (no recursive conversion).
-
-        Returns:
-            Dictionary of field name to field value.
-        """
-        return {f.name: getattr(self, f.name) for f in fields(self)}
 
     def copy(self, **overrides) -> Constraints:
         """Create a deep copy of all constraints, optionally overriding specific fields.
@@ -272,9 +182,7 @@ class Constraints:
         Returns:
             New Constraints instance (deep-copied, then overridden).
         """
-        self_dict = _copy.deepcopy(self)._to_dict()
-        self_dict.update(overrides)
-        return Constraints(**self_dict)
+        return replace(_copy.deepcopy(self), **overrides)
 
     def update_min_max_weights(
             self,
@@ -290,16 +198,16 @@ class Constraints:
         Returns:
             New Constraints instance with updated bounds.
         """
-        self_dict = self._to_dict()
+        overrides = {}
         if min_weights is not None:
             if self.min_weights is not None:
                 min_weights = min_weights.reindex(index=self.min_weights.index).fillna(0.0)
-            self_dict['min_weights'] = min_weights
+            overrides['min_weights'] = min_weights
         if max_weights is not None:
             if self.max_weights is not None:
                 max_weights = max_weights.reindex(index=self.max_weights.index).fillna(0.0)
-            self_dict['max_weights'] = max_weights
-        return Constraints(**self_dict)
+            overrides['max_weights'] = max_weights
+        return replace(self, **overrides)
 
     def update(self, valid_tickers: List[str], **kwargs) -> Constraints:
         """Update constraints with valid tickers and additional parameters.
@@ -311,28 +219,12 @@ class Constraints:
         Returns:
             New Constraints object with updated fields.
         """
-        self_dict = self._to_dict()
-        self_dict.update(kwargs)
-
-        if self.group_lower_upper_constraints is not None:
-            self_dict['group_lower_upper_constraints'] = \
-                self.group_lower_upper_constraints.update(valid_tickers=valid_tickers)
-        if self.group_tracking_error_constraint is not None:
-            self_dict['group_tracking_error_constraint'] = \
-                self.group_tracking_error_constraint.update(valid_tickers=valid_tickers)
-        if self.group_turnover_constraint is not None:
-            self_dict['group_turnover_constraint'] = \
-                self.group_turnover_constraint.update(valid_tickers=valid_tickers)
-        if self.sector_deviation_constraints is not None:
-            self_dict['sector_deviation_constraints'] = \
-                self.sector_deviation_constraints.update(valid_tickers=valid_tickers)
-        if self.style_deviation_constraints is not None:
-            self_dict['style_deviation_constraints'] = \
-                self.style_deviation_constraints.update(valid_tickers=valid_tickers)
-        if self.benchmark_beta_constraint is not None:
-            self_dict['benchmark_beta_constraint'] = \
-                self.benchmark_beta_constraint.update(valid_tickers=valid_tickers)
-        return Constraints(**self_dict)
+        overrides = dict(kwargs)
+        overrides.update(align_nested_constraint_fields(
+            constraint_spec=self,
+            valid_tickers=valid_tickers,
+        ))
+        return replace(self, **overrides)
 
     def update_group_lower_upper_constraints(
             self,
@@ -346,14 +238,13 @@ class Constraints:
         Returns:
             New Constraints object with updated group constraints.
         """
-        self_dict = self._to_dict()
         if self.group_lower_upper_constraints is not None:
-            self_dict['group_lower_upper_constraints'] = merge_group_lower_upper_constraints(
+            group_constraints = merge_group_lower_upper_constraints(
                 group_lower_upper_constraints1=self.group_lower_upper_constraints,
                 group_lower_upper_constraints2=group_lower_upper_constraints)
         else:
-            self_dict['group_lower_upper_constraints'] = group_lower_upper_constraints
-        return Constraints(**self_dict)
+            group_constraints = group_lower_upper_constraints
+        return replace(self, group_lower_upper_constraints=group_constraints)
 
     def update_with_valid_tickers(
             self,
@@ -393,7 +284,7 @@ class Constraints:
         Returns:
             New Constraints object with all Series aligned to valid_tickers.
         """
-        fields = build_valid_ticker_constraint_fields(
+        aligned_fields = build_valid_ticker_constraint_fields(
             constraint_spec=self,
             valid_tickers=valid_tickers,
             total_to_good_ratio=total_to_good_ratio,
@@ -406,7 +297,7 @@ class Constraints:
             max_relaxation_tol=max_relaxation_tol,
             relax_frozen_group_bounds=relax_frozen_group_bounds,
         )
-        return Constraints(**fields)
+        return replace(self, **aligned_fields)
 
     def set_cvx_exposure_constraints(self,
                                      w: cvx.Variable,

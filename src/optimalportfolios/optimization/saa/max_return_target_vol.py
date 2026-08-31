@@ -33,6 +33,8 @@ Reference:
     Available at https://www.pm-research.com/content/iijpormgmt/52/4/86
 """
 import warnings
+from dataclasses import replace
+
 import numpy as np
 import pandas as pd
 import cvxpy as cvx
@@ -42,6 +44,10 @@ from optimalportfolios.optimization.constraints import (
     ConstraintEnforcementType,
     Constraints,
     cvx_covar_variance,
+)
+from optimalportfolios.optimization.constraints.backends import (
+    _make_cvx_total_turnover_penalty,
+    _set_cvx_utility_hard_constraints,
 )
 from optimalportfolios.optimization.covar_factorization import factorize_covariance
 from optimalportfolios.optimization.solver_diagnostics import (
@@ -189,9 +195,10 @@ def wrapper_max_return_target_vol(pd_covar: pd.DataFrame,
             benchmark_weights=benchmark_weights,
             rebalancing_indicators=rebalancing_indicators)
         # override TE constraint with target_vol
-        constraints1 = Constraints(**{
-            **constraints1._to_dict(),
-            'tracking_err_vol_constraint': target_vol})
+        constraints1 = replace(
+            constraints1,
+            tracking_err_vol_constraint=target_vol,
+        )
     else:
         constraints1 = constraints.update_with_valid_tickers(context=context,
             valid_tickers=valid_tickers,
@@ -199,9 +206,10 @@ def wrapper_max_return_target_vol(pd_covar: pd.DataFrame,
             weights_0=weights_0,
             rebalancing_indicators=rebalancing_indicators)
         # absolute vol constraint
-        constraints1 = Constraints(**{
-            **constraints1._to_dict(),
-            'max_target_portfolio_vol_an': target_vol})
+        constraints1 = replace(
+            constraints1,
+            max_target_portfolio_vol_an=target_vol,
+        )
 
     alphas_np = er_clean.to_numpy()
 
@@ -360,17 +368,10 @@ def cvx_max_return_target_vol_utility(covar: np.ndarray,
                 objective_fun - constraints.tre_utility_weight * portfolio_variance)
 
         if constraints.weights_0 is not None and constraints.turnover_utility_weight is not None:
-            if constraints.turnover_costs is not None:
-                objective_fun = objective_fun - constraints.turnover_utility_weight * cvx.norm(
-                    cvx.multiply(constraints.turnover_costs.to_numpy(),
-                                 w - constraints.weights_0.to_numpy()), 1)
-            else:
-                objective_fun = objective_fun - constraints.turnover_utility_weight * cvx.norm(
-                    w - constraints.weights_0.to_numpy(), 1)
+            turnover_term = _make_cvx_total_turnover_penalty(constraints, w)
+            objective_fun = objective_fun + turnover_term
 
-        constraints_ = constraints.set_cvx_exposure_constraints(w=w)
-        if constraints.group_lower_upper_constraints is not None:
-            constraints_ += constraints.group_lower_upper_constraints.set_cvx_group_lower_upper_constraints(w=w)
+        constraints_ = _set_cvx_utility_hard_constraints(constraints, w)
 
     objective = cvx.Maximize(objective_fun)
 

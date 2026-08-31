@@ -66,6 +66,7 @@ Project links
    rolling_backtests
    alphas_module_readme
    optimization_module_readme
+   constraints
    minimum_tracking_error
    risk_budgeting
    turnover_and_transaction_costs

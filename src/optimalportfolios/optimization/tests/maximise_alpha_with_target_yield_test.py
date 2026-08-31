@@ -38,6 +38,7 @@ import numpy as np
 import pandas as pd
 import pytest
 # optimalportfolios
+import optimalportfolios.optimization.taa.maximise_alpha_with_target_yield as target_yield_solver
 from optimalportfolios.optimization.config import OptimiserConfig
 from optimalportfolios.optimization.constraints import Constraints, GroupTurnoverConstraint
 from optimalportfolios.optimization.taa.maximise_alpha_with_target_yield import (
@@ -284,8 +285,32 @@ def test_the_soft_branch_keeps_turnover_hard_rather_than_double_counting_it() ->
     assert residuals[0].passed
 
 
-def test_the_soft_branch_keeps_group_and_global_turnover_hard_together() -> None:
+def test_the_soft_branch_keeps_group_and_global_turnover_hard_together(monkeypatch) -> None:
     """A workbook group limit must not suppress the independent portfolio L1 limit."""
+    compilation_order = []
+    compile_group_turnover = target_yield_solver._set_cvx_group_turnover_constraints
+    compile_total_turnover = target_yield_solver._set_cvx_total_turnover_constraints
+
+    def record_group_turnover(*args, **kwargs):
+        """Record and delegate group-turnover compilation."""
+        compilation_order.append("group")
+        return compile_group_turnover(*args, **kwargs)
+
+    def record_total_turnover(*args, **kwargs):
+        """Record and delegate total-turnover compilation."""
+        compilation_order.append("total")
+        return compile_total_turnover(*args, **kwargs)
+
+    monkeypatch.setattr(
+        target_yield_solver,
+        "_set_cvx_group_turnover_constraints",
+        record_group_turnover,
+    )
+    monkeypatch.setattr(
+        target_yield_solver,
+        "_set_cvx_total_turnover_constraints",
+        record_total_turnover,
+    )
     benchmark = pd.Series(0.25, index=TICKERS)
     weights_0 = benchmark.copy()
     group_turnover = GroupTurnoverConstraint(
@@ -312,6 +337,7 @@ def test_the_soft_branch_keeps_group_and_global_turnover_hard_together() -> None
     )
 
     assert outcome.accepted
+    assert compilation_order == ["group", "total"]
     trade = outcome.weights - weights_0.to_numpy()
     assert abs(trade[0]) <= 0.02 + 1e-6
     assert np.abs(trade).sum() <= 0.04 + 1e-6

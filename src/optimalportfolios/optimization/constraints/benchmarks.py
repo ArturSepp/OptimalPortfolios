@@ -15,12 +15,6 @@ import numpy as np
 import pandas as pd
 from cvxpy.constraints.nonpos import Inequality
 
-from optimalportfolios.utils.benchmark_beta import (
-    compute_benchmark_beta_loadings as compute_benchmark_beta_loadings,
-    compute_benchmark_beta_loadings_from_covar as compute_benchmark_beta_loadings_from_covar,
-)
-
-
 @dataclass(frozen=True)
 class BenchmarkDeviationConstraints:
     """Constrain benchmark-relative sector, industry, or style exposures.

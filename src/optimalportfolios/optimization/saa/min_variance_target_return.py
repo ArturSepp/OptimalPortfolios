@@ -48,6 +48,10 @@ from optimalportfolios.optimization.constraints import (
     Constraints,
     cvx_covar_variance,
 )
+from optimalportfolios.optimization.constraints.backends import (
+    _make_cvx_total_turnover_penalty,
+    _set_cvx_utility_hard_constraints,
+)
 from optimalportfolios.optimization.covar_factorization import factorize_covariance
 from optimalportfolios.optimization.solver_diagnostics import (
     OptimizationOutcome,
@@ -372,24 +376,14 @@ def cvx_min_variance_target_return_utility(covar: np.ndarray,
     objective_fun = risk_expr
 
     if constraints.weights_0 is not None and constraints.turnover_utility_weight is not None:
-        if constraints.turnover_costs is not None:
-            turnover_term = constraints.turnover_utility_weight * cvx.norm(
-                cvx.multiply(constraints.turnover_costs.to_numpy(),
-                             w - constraints.weights_0.to_numpy()), 1)
-        else:
-            turnover_term = constraints.turnover_utility_weight * cvx.norm(
-                w - constraints.weights_0.to_numpy(), 1)
-        objective_fun = objective_fun + turnover_term
+        # The shared utility leaf returns a negative reward adjustment for maximization.
+        # Subtracting it preserves this solver's positive cost in a minimization objective.
+        turnover_term = _make_cvx_total_turnover_penalty(constraints, w)
+        objective_fun = objective_fun - turnover_term
 
     objective = cvx.Minimize(objective_fun)
 
-    constraints_ = constraints.set_cvx_exposure_constraints(w=w)
-
-    if constraints.target_return is not None and constraints.asset_returns is not None:
-        constraints_ += [constraints.asset_returns.to_numpy() @ w >= constraints.target_return]
-
-    if constraints.group_lower_upper_constraints is not None:
-        constraints_ += constraints.group_lower_upper_constraints.set_cvx_group_lower_upper_constraints(w=w)
+    constraints_ = _set_cvx_utility_hard_constraints(constraints, w)
 
     problem = cvx.Problem(objective, constraints_)
     try:

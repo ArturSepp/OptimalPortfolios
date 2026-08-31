@@ -114,6 +114,25 @@ def test_a_covariance_of_the_wrong_size_is_a_hard_failure() -> None:
     assert result.ok is False
 
 
+def test_a_nested_only_constraint_index_sets_the_expected_covariance_size() -> None:
+    """nested loadings determine asset order even without top-level indexed fields"""
+    loadings = pd.DataFrame({'all': 1.0}, index=TICKERS)
+    constraints = Constraints(
+        is_long_only=True,
+        group_lower_upper_constraints=GroupLowerUpperConstraints(
+            group_loadings=loadings,
+            group_min_allocation=pd.Series({'all': 0.0}),
+            group_max_allocation=pd.Series({'all': 1.0}),
+        ),
+    )
+
+    result = validate_solver_inputs(
+        pd_covar=COVAR_DF.iloc[:2, :2], constraints=constraints)
+
+    assert result.ok is False
+    assert 'covariance dim 2 != n_constraints 3' in issues_text(result)
+
+
 def test_an_asymmetric_covariance_is_reported() -> None:
     """asymmetry means the geometry the solver enforces is not the one supplied"""
     covar = COVAR_DF.copy()
@@ -357,9 +376,12 @@ def test_elastic_diagnosis_names_the_bound_that_must_give() -> None:
     assert sum(breaches.values()) == pytest.approx(0.4, abs=1e-3)
 
 
-def test_elastic_diagnosis_returns_nothing_when_the_constraints_are_satisfiable() -> None:
-    """a feasible set has no slack, which is how numerical infeasibility is told apart"""
-    assert diagnose_infeasibility(make_constraints(), covar=COVAR, context='fine') == {}
+def test_elastic_diagnosis_returns_nothing_when_its_subset_is_satisfiable(caplog) -> None:
+    """a feasible box/group subset has no slack without claiming the whole policy passes"""
+    with caplog.at_level(logging.WARNING):
+        result = diagnose_infeasibility(make_constraints(), covar=COVAR, context='fine')
+    assert result == {}
+    assert 'box/group subset is satisfiable' in caplog.text
 
 
 def test_elastic_diagnosis_skips_constraints_with_no_indexed_bounds(caplog) -> None:
@@ -419,7 +441,7 @@ def test_elastic_diagnosis_stops_when_there_is_nothing_to_relax(caplog) -> None:
     with caplog.at_level(logging.WARNING):
         result = diagnose_infeasibility(constraints, covar=COVAR, context='no-bounds')
     assert result == {}
-    assert 'no box/group bounds to test' in caplog.text
+    assert 'box/group subset has no bounds to test' in caplog.text
 
 
 def test_elastic_diagnosis_that_will_not_solve_reports_and_returns(caplog,
@@ -504,6 +526,29 @@ def test_residuals_pass_for_a_compliant_weight_vector() -> None:
                                               constraints=make_constraints(), covar=COVAR)
     assert len(residuals) > 0
     assert all(r.passed for r in residuals if r.hard)
+
+
+def test_budget_and_box_residual_order_is_stable() -> None:
+    """the analytics extraction preserves the report-facing residual row order"""
+    residuals = evaluate_constraint_residuals(
+        weights=np.array([0.4, 0.35, 0.25]),
+        constraints=make_constraints(),
+        covar=COVAR,
+    )
+
+    assert [
+        (residual.constraint_type, residual.name, residual.lower, residual.upper)
+        for residual in residuals
+    ] == [
+        ('exposure', 'total', 1.0, 1.0),
+        ('long_only', 'minimum_weight', 0.0, None),
+        ('instrument_weight', 'growth', 0.0, None),
+        ('instrument_weight', 'growth', None, 1.0),
+        ('instrument_weight', 'balanced', 0.0, None),
+        ('instrument_weight', 'balanced', None, 1.0),
+        ('instrument_weight', 'defensive', 0.0, None),
+        ('instrument_weight', 'defensive', None, 1.0),
+    ]
 
 
 def test_residuals_flag_a_breached_box_bound() -> None:

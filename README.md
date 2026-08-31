@@ -210,15 +210,17 @@ src/optimalportfolios/
 │   ├── risk_labelling.py          # Deprecated shim; canonical lineage is in factorlasso
 │   └── covar_reporting.py         # Rolling covariance diagnostics
 ├── optimization/                  # Portfolio optimisation
-│   ├── constraints.py             # Canonical public facade and Constraints aggregate
-│   ├── _constraint_alignment.py   # Universe alignment and frozen-bound relaxation
-│   ├── _constraint_backends.py    # CVXPY, SciPy and risk-budgeting translations
-│   ├── _constraint_benchmarks.py  # Benchmark-deviation and beta constraints
-│   ├── _constraint_expressions.py # Shared CVXPY risk and objective expressions
-│   ├── _constraint_groups.py      # Group allocation, TRE and turnover constraints
+│   ├── constraints/               # Canonical public facade and constraint owners
+│   │   ├── core.py                # Constraints aggregate and enforcement enum
+│   │   ├── alignment.py           # Universe alignment and frozen-bound relaxation
+│   │   ├── analytics.py           # Pure residual and feasibility analytics
+│   │   ├── backends.py            # CVXPY, SciPy and risk-budgeting translations
+│   │   ├── benchmarks.py          # Benchmark-deviation and beta constraints
+│   │   ├── expressions.py         # Shared CVXPY risk and objective expressions
+│   │   └── groups.py              # Group allocation, TRE and turnover constraints
 │   ├── config.py                  # OptimiserConfig (incl. use_drifted_weights_0)
 │   ├── covar_factorization.py     # Stabilised covariance and square-root factor
-│   ├── solver_diagnostics.py      # Input contracts, outcomes, residuals and run summaries
+│   ├── solver_diagnostics.py      # Input contracts, outcomes, fallback and run summaries
 │   ├── portfolio_result.py        # PortfolioOptimisationResult
 │   ├── wrapper_rolling_portfolios.py  # compute_rolling_optimal_weights()
 │   ├── general/                   # Objective-driven solvers
@@ -713,12 +715,13 @@ risk-allocation structures, strategic return/risk targets or tactical alpha and 
 
 ### 3. Constraints
 
-`optimization/constraints.py` remains the canonical public facade and owns the `Constraints`
-aggregate, which implements optimisation constraints in a solver-independent way. The
-underscore-prefixed modules shown above split alignment, backend translation, benchmark-relative
-constraints, shared expressions and group constraints without changing its public import paths.
-Pure benchmark-beta calculations live in `utils/benchmark_beta.py`; the historical imports from
-`optimization.constraints` remain aliases to the same function objects.
+`optimization/constraints/` is the canonical public facade and owns the `Constraints` aggregate,
+which implements optimisation constraints in a solver-independent way. Its owner modules separate
+alignment, pure analytics, backend translation, benchmark-relative constraints, shared expressions
+and group constraints without changing the public import path
+`optimalportfolios.optimization.constraints`. Pure benchmark-beta calculations live in
+`utils/benchmark_beta.py`; the historical constraint imports remain aliases to the same function
+objects.
 
 The following inputs for various constraints are implemented.
 
@@ -767,7 +770,7 @@ class GroupLowerUpperConstraints:
     """
     add constraints that each asset group is group_min_allocation <= sum group weights <= group_max_allocation
     """
-    group_loadings: pd.DataFrame  # columns=instruments, index=groups, data=1 if instrument in indexed group else 0
+    group_loadings: pd.DataFrame  # index=instruments, columns=groups; values are exposures
     group_min_allocation: pd.Series  # index=groups, data=group min allocation
     group_max_allocation: pd.Series  # index=groups, data=group max allocation
 ```
@@ -789,7 +792,7 @@ freeze illiquid positions for a given rebalance date, `update_with_valid_tickers
 pins their `min_weights` and `max_weights` to the current (drifted) `weights_0`.
 If the resulting group-loading sum exceeds `group_max_allocation` (or falls below
 `group_min_allocation`), the group bound is automatically relaxed for that
-rebalance and a `UserWarning` is emitted. This prevents `ValueError: Infeasible
+rebalance and a structured log record is emitted. This prevents `ValueError: Infeasible
 constraints detected` errors that would otherwise occur when illiquid sleeves
 drift over their group cap between low-frequency rebalances. The relaxation is
 audit-trailable: each event surfaces in logs with the group name, the original
@@ -830,8 +833,9 @@ an external linkage rather than a constrained optimiser.
 `OptimiserConfig` centralises the current production controls: CVXPY solver selection,
 verbosity, drift-aware prior weights, pre-solve input validation, failed-solve infeasibility
 diagnosis, a maximum frozen-position constraint relaxation and covariance factorization. The
-validation, diagnosis, drift and factorization controls are enabled by default; SciPy and the
-dedicated risk-budgeting backend ignore CVXPY-only settings.
+alpha-over-tracking-error wrapper currently consumes the validation and diagnosis switches; other
+wrappers retain those fields for configuration compatibility. SciPy and the dedicated
+risk-budgeting backend ignore CVXPY-only settings.
 
 See examples in the [examples folder](#examples) and the
 [examples guide](docs/examples_readme.md) for the full
@@ -1134,12 +1138,13 @@ Portfolios", *The Journal of Portfolio Management*, 52(4), 86-120.
 
 ## Updates
 
-#### August 2026, Versions 6.8.0–6.21.6 released
+#### August 2026, Versions 6.8.0–6.22.0 released
 
-The recent 6.x series through 6.21.6 added several production analytics that are now part of the current API:
+The recent 6.x series through 6.22.0 added several production analytics that are now part of the current API:
 
 | Release | Analytics and behavior added |
 | --- | --- |
+| 6.22.0 | Reorganized constraints into a cohesive package while preserving established imports, and corrected additive tracking-error enforcement, hard utility mandate rows, benchmark-beta alignment, and post-solve validation. |
 | 6.21.6 | Added independent per-frequency FactorLasso clustering spans and an offline comparison of the two HRP linkage conventions; raised the runtime floors to FactorLasso 0.17.0 and QIS 5.20.0. |
 | 6.21.5 | Added public benchmark-beta utilities and decomposed the constraints implementation behind its compatibility-preserving facade, with exact API and backend-translation contracts. |
 | 6.21.4 | Consolidated the authored documentation tree and removed package markers from checkout-only development-runner directories. |
@@ -1200,7 +1205,7 @@ private credit) over multiple TAA rebalance dates, the frozen positions can
 drift above their group's `group_max_allocation`. Previously
 `Constraints.__post_init__` raised `ValueError: Infeasible constraints
 detected`. The new behaviour automatically relaxes the offending bound by
-the overshoot amount with an audit-trail `UserWarning`, treating the
+the overshoot amount with an audit-trail structured log record, treating the
 rebalance as a one-period compliance waiver — the optimiser can no longer
 trade frozen assets, and the relaxed cap prevents tradable members from
 adding more on top of the inherited overhang.
@@ -1248,10 +1253,9 @@ return) replace the inline loaders previously duplicated across
   (e.g. validating against published numbers), pass
   `OptimiserConfig(use_drifted_weights_0=False)`.
 * If you previously caught `ValueError: Infeasible constraints detected`
-  from a long-running backtest of illiquid universes, those backtests will
-  now run to completion with `UserWarning` messages instead. Consider
-  capturing the warnings at the runner level and emitting a summary line
-  rather than per-event logs.
+  from a long-running backtest of illiquid universes, those backtests now emit
+  structured relaxation records instead. `RunDiagnostics` aggregates them into
+  a run-level summary.
 
 #### March 2026, Version 5.0.4 released
 
@@ -1439,7 +1443,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
   year={2026},
-  version={6.21.6},
+  version={6.22.0},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

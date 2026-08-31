@@ -14,6 +14,8 @@ from optimalportfolios.utils import benchmark_beta
 CONSTITUENTS = ['Equity', 'Bonds']
 BENCHMARK_WEIGHTS = pd.Series([0.6, 0.4], index=CONSTITUENTS)
 DATES = pd.date_range('2020-03-31', periods=4, freq='QE')
+TICKERS = ['growth', 'balanced', 'defensive']
+FACTORS = ['Equity', 'Rates']
 
 
 def _make_covar_dict(covar: pd.DataFrame) -> dict[pd.Timestamp, pd.DataFrame]:
@@ -30,6 +32,51 @@ def _make_benchmark_covar() -> pd.DataFrame:
         index=CONSTITUENTS,
         columns=CONSTITUENTS,
     )
+
+
+def test_beta_loadings_of_the_benchmark_itself_are_one() -> None:
+    """beta(w)=c'w, so a portfolio equal to the benchmark must have beta 1
+
+    With the benchmark's own factor loadings as the benchmark betas, the closed form
+    collapses to 1.0 — checkable arithmetic rather than a recorded number.
+    """
+    asset_betas = pd.DataFrame([[1.0, 0.0], [0.6, 0.3], [0.0, 1.0]],
+                               index=TICKERS, columns=FACTORS)
+    factor_covar = pd.DataFrame([[0.04, 0.001], [0.001, 0.0025]],
+                                index=FACTORS, columns=FACTORS)
+    benchmark_betas = asset_betas.loc['growth']
+    loadings = benchmark_beta.compute_benchmark_beta_loadings(
+        asset_betas=asset_betas, benchmark_betas=benchmark_betas,
+        factor_covar=factor_covar)
+    assert loadings['growth'] == pytest.approx(1.0)
+    assert list(loadings.index) == TICKERS
+
+
+def test_beta_loadings_shrink_with_benchmark_idiosyncratic_variance() -> None:
+    """idio variance enters the denominator only, so every loading falls"""
+    asset_betas = pd.DataFrame([[1.0, 0.0], [0.6, 0.3], [0.0, 1.0]],
+                               index=TICKERS, columns=FACTORS)
+    factor_covar = pd.DataFrame([[0.04, 0.001], [0.001, 0.0025]],
+                                index=FACTORS, columns=FACTORS)
+    kwargs = dict(asset_betas=asset_betas, benchmark_betas=asset_betas.loc['growth'],
+                  factor_covar=factor_covar)
+    pure = benchmark_beta.compute_benchmark_beta_loadings(
+        **kwargs, benchmark_idio_var=0.0)
+    noisy = benchmark_beta.compute_benchmark_beta_loadings(
+        **kwargs, benchmark_idio_var=0.02)
+    assert (noisy.to_numpy() < pure.to_numpy()).all()
+
+
+def test_beta_loadings_reject_a_degenerate_benchmark() -> None:
+    """a benchmark with zero variance has no beta, so this raises rather than dividing"""
+    asset_betas = pd.DataFrame([[1.0, 0.0], [0.6, 0.3], [0.0, 1.0]],
+                               index=TICKERS, columns=FACTORS)
+    with pytest.raises(ValueError, match='benchmark variance must be positive'):
+        benchmark_beta.compute_benchmark_beta_loadings(
+            asset_betas=asset_betas,
+            benchmark_betas=pd.Series([0.0, 0.0], index=FACTORS),
+            factor_covar=pd.DataFrame([[0.04, 0.001], [0.001, 0.0025]],
+                                      index=FACTORS, columns=FACTORS))
 
 
 def test_benchmark_has_beta_one_against_itself() -> None:

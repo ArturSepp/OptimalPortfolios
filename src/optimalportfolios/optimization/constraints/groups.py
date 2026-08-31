@@ -13,7 +13,7 @@ from cvxpy.atoms.affine.add_expr import AddExpression
 from cvxpy.atoms.affine.wraps import psd_wrap
 from cvxpy.constraints.nonpos import Inequality
 
-from optimalportfolios.optimization._constraint_expressions import (
+from optimalportfolios.optimization.constraints.expressions import (
     _cvx_factor_risk,
     add_term_to_objective_function,
     cvx_covar_variance,
@@ -302,12 +302,12 @@ class GroupTrackingErrorConstraint:
             if not this.all():
                 missing = self.group_loadings.columns[~this]
                 warnings.warn(f"Missing in group_loadings.columns: {missing}")
-        elif self.group_tre_utility_weights is not None:
+        if self.group_tre_utility_weights is not None:
             this = self.group_loadings.columns.isin(self.group_tre_utility_weights.index)
             if not this.all():
                 missing = self.group_loadings.columns[~this]
                 warnings.warn(f"Missing in group_loadings.columns: {missing}")
-        else:
+        if self.group_tre_vols is None and self.group_tre_utility_weights is None:
             raise ValueError("group_tre_vols or group_tre_utility_weights must be given")
 
     def update(self, valid_tickers: List[str]) -> GroupTrackingErrorConstraint:
@@ -443,12 +443,12 @@ class GroupTurnoverConstraint:
             if not this.all():
                 missing = self.group_loadings.columns[~this]
                 warnings.warn(f"Missing in self.group_loadings.columns: {missing}")
-        elif self.group_turnover_utility_weights is not None:
+        if self.group_turnover_utility_weights is not None:
             this = self.group_loadings.columns.isin(self.group_turnover_utility_weights.index)
             if not this.all():
                 missing = self.group_loadings.columns[~this]
                 warnings.warn(f"Missing in self.group_loadings.columns: {missing}")
-        else:
+        if self.group_max_turnover is None and self.group_turnover_utility_weights is None:
             raise ValueError("group_max_turnover or group_turnover_utility_weights must be given")
 
     def update(self, valid_tickers: List[str]) -> GroupTurnoverConstraint:

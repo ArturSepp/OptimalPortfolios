@@ -20,12 +20,18 @@ be compared against the forced-constraint answer for the same inputs.
 """
 # packages
 from typing import Dict
+import cvxpy as cvx
 import numpy as np
 import pandas as pd
 import pytest
 # optimalportfolios
+import optimalportfolios.optimization.saa.max_return_target_vol as max_return_solver
+import optimalportfolios.optimization.saa.min_variance_target_return as min_variance_solver
 from optimalportfolios import Constraints
-from optimalportfolios.optimization.constraints import ConstraintEnforcementType
+from optimalportfolios.optimization.constraints import (
+    ConstraintEnforcementType,
+    GroupLowerUpperConstraints,
+)
 from optimalportfolios.optimization.saa.max_return_target_vol import (
     cvx_max_return_target_vol_utility, rolling_max_return_target_vol,
     wrapper_max_return_target_vol)
@@ -90,6 +96,172 @@ def assert_investable(weights: np.ndarray) -> None:
     assert weights is not None
     assert np.all(weights >= -1e-6), "long-only penalised solve produced a short"
     assert weights.sum() == pytest.approx(1.0, abs=1e-5)
+
+
+def _composition_constraints(benchmark_weights: pd.Series = None) -> Constraints:
+    """Return constraints that expose SAA utility objective and hard-row composition."""
+    group_loadings = pd.DataFrame(
+        {"risky": [1.0, 1.0, 0.0]}, index=TICKERS)
+    return utility_constraints(
+        max_exposure=1.10,
+        min_exposure=0.80,
+        benchmark_weights=benchmark_weights,
+        weights_0=pd.Series([0.30, 0.30, 0.40], index=TICKERS),
+        turnover_costs=pd.Series([2.0, 0.5, 1.5], index=TICKERS),
+        turnover_utility_weight=1.75,
+        tre_utility_weight=2.50,
+        target_return=0.055,
+        asset_returns=pd.Series(ALPHAS, index=TICKERS),
+        max_target_portfolio_vol_an=0.01,
+        group_lower_upper_constraints=GroupLowerUpperConstraints(
+            group_loadings=group_loadings,
+            group_min_allocation=pd.Series({"risky": 0.30}),
+            group_max_allocation=pd.Series({"risky": 0.80}),
+        ),
+    )
+
+
+def _capture_problem(monkeypatch, solver_module, solve_call, probe: np.ndarray):
+    """Run a CVXPY entry point without a backend solve and return its compiled problem."""
+    captured = {}
+    sentinel = object()
+
+    def capture_solve(problem, **_kwargs):
+        """Record the problem and supply the requested probe as its variable value."""
+        captured["problem"] = problem
+        variables = problem.variables()
+        assert len(variables) == 1
+        variables[0].value = probe
+
+    monkeypatch.setattr(cvx.Problem, "solve", capture_solve)
+    monkeypatch.setattr(
+        solver_module,
+        "validate_solution",
+        lambda *_args, **_kwargs: sentinel,
+    )
+
+    assert solve_call() is sentinel
+    return captured["problem"]
+
+
+def _expected_composition_rows(
+        probe: np.ndarray,
+        include_target: bool,
+) -> list[tuple[object, object]]:
+    """Compute the SAA utility mandate-row sequence directly."""
+    weight_sum = float(np.sum(probe))
+    rows = [
+        (np.zeros(len(TICKERS)), probe),
+        (weight_sum, 1.10),
+        (0.80, weight_sum),
+        (np.zeros(len(TICKERS)), probe),
+        (probe, np.ones(len(TICKERS))),
+    ]
+    if include_target:
+        rows.append((0.055, float(ALPHAS @ probe)))
+    risky_weight = float(probe[0] + probe[1])
+    rows.extend([(0.30, risky_weight), (risky_weight, 0.80)])
+    return rows
+
+
+def _assert_compiled_rows(
+        rows: list,
+        expected: list[tuple[object, object]],
+) -> None:
+    """Assert compiled CVXPY row order and evaluated argument values."""
+    assert len(rows) == len(expected)
+    for row, (expected_left, expected_right) in zip(rows, expected):
+        np.testing.assert_allclose(
+            np.asarray(row.args[0].value, dtype=float),
+            np.asarray(expected_left, dtype=float),
+            rtol=0.0,
+            atol=1e-12,
+        )
+        np.testing.assert_allclose(
+            np.asarray(row.args[1].value, dtype=float),
+            np.asarray(expected_right, dtype=float),
+            rtol=0.0,
+            atol=1e-12,
+        )
+
+
+@pytest.mark.parametrize("has_benchmark", [False, True], ids=["absolute", "benchmark"])
+def test_max_return_utility_composition_matches_direct_formula(
+        monkeypatch,
+        has_benchmark: bool,
+) -> None:
+    """Max-return utility keeps its formula and every configured mandate row hard."""
+    probe = np.array([0.45, 0.25, 0.30])
+    benchmark = (
+        pd.Series([0.35, 0.35, 0.30], index=TICKERS)
+        if has_benchmark else None
+    )
+    constraints = _composition_constraints(benchmark)
+    problem = _capture_problem(
+        monkeypatch,
+        max_return_solver,
+        lambda: max_return_solver.cvx_max_return_target_vol_utility(
+            covar=COVAR,
+            alphas=ALPHAS,
+            constraints=constraints,
+            has_benchmark=has_benchmark,
+            factorize_covar=False,
+        ),
+        probe,
+    )
+
+    risk_weights = probe - benchmark.to_numpy() if has_benchmark else probe
+    alpha_weights = risk_weights if has_benchmark else probe
+    weight_change = probe - constraints.weights_0.to_numpy()
+    expected_objective = float(ALPHAS @ alpha_weights)
+    expected_objective -= 2.50 * float(risk_weights @ COVAR @ risk_weights)
+    expected_objective -= 1.75 * float(np.sum(np.abs(
+        constraints.turnover_costs.to_numpy() * weight_change)))
+
+    assert float(problem.objective.args[0].value) == pytest.approx(
+        expected_objective, abs=1e-12)
+    _assert_compiled_rows(
+        problem.constraints,
+        _expected_composition_rows(probe, include_target=True),
+    )
+
+
+@pytest.mark.parametrize("has_benchmark", [False, True], ids=["absolute", "benchmark"])
+def test_min_variance_utility_composition_matches_direct_formula(
+        monkeypatch,
+        has_benchmark: bool,
+) -> None:
+    """Min-variance utility keeps its absolute/active risk and positive turnover cost."""
+    probe = np.array([0.45, 0.25, 0.30])
+    benchmark = (
+        pd.Series([0.35, 0.35, 0.30], index=TICKERS)
+        if has_benchmark else None
+    )
+    constraints = _composition_constraints(benchmark)
+    problem = _capture_problem(
+        monkeypatch,
+        min_variance_solver,
+        lambda: min_variance_solver.cvx_min_variance_target_return_utility(
+            covar=COVAR,
+            constraints=constraints,
+            has_benchmark=has_benchmark,
+            factorize_covar=False,
+        ),
+        probe,
+    )
+
+    risk_weights = probe - benchmark.to_numpy() if has_benchmark else probe
+    weight_change = probe - constraints.weights_0.to_numpy()
+    expected_objective = float(risk_weights @ COVAR @ risk_weights)
+    expected_objective += 1.75 * float(np.sum(np.abs(
+        constraints.turnover_costs.to_numpy() * weight_change)))
+
+    assert float(problem.objective.args[0].value) == pytest.approx(
+        expected_objective, abs=1e-12)
+    _assert_compiled_rows(
+        problem.constraints,
+        _expected_composition_rows(probe, include_target=True),
+    )
 
 
 # --------------------------------------------------------------------------- #

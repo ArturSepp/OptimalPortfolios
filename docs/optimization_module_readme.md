@@ -9,12 +9,16 @@ Developer documentation for the portfolio optimisation solvers in
 ```
 optimization/
 ├── config.py                       # OptimiserConfig dataclass
-├── constraints.py                  # Canonical public facade and Constraints aggregate
-├── _constraint_alignment.py        # Universe alignment and frozen-bound relaxation
-├── _constraint_backends.py         # CVXPY, SciPy and risk-budgeting translations
-├── _constraint_benchmarks.py       # Benchmark-deviation and beta constraint containers
-├── _constraint_expressions.py      # Shared CVXPY risk and objective expressions
-├── _constraint_groups.py           # Group allocation, TRE and turnover constraints
+├── constraints/                    # Canonical public facade and constraint owners
+│   ├── core.py                     # Constraints aggregate and enforcement enum
+│   ├── alignment.py                # Universe alignment and frozen-bound relaxation
+│   ├── analytics.py                # Pure residual and feasibility analytics
+│   ├── backends.py                 # CVXPY, SciPy and risk-budgeting translations
+│   ├── benchmarks.py               # Benchmark-deviation and beta containers
+│   ├── expressions.py              # Shared CVXPY risk and objective expressions
+│   ├── groups.py                   # Group allocation, TRE and turnover constraints
+│   ├── run_local/                  # Manual constraint diagnostics
+│   └── tests/                      # Constraint-owned unit/API/translation contracts
 ├── portfolio_result.py             # Result container
 ├── wrapper_rolling_portfolios.py   # Dispatcher: PortfolioObjective → solver routing
 ├── general/                        # Objective-driven solvers, no benchmark semantics
@@ -34,22 +38,20 @@ optimization/
 │   └── run_local/
 ├── risk_allocation/
 │   └── run_local/
-├── run_local/
-│   └── constraints_run.py
 └── tests/                          # Offline pytest modules only
-    └── <contract>_test.py
+    └── <cross-solver-contract>_test.py
 ```
 
 Run automated contracts with pytest, for example
-`pytest src/optimalportfolios/optimization/tests/constraints_test.py -v`. Run a manual solver
+`pytest src/optimalportfolios/optimization/constraints/tests/constraints_test.py -v`. Run a manual solver
 diagnostic explicitly from the repository root, for example
 `python -m optimalportfolios.optimization.general.run_local.quadratic_run`; these diagnostics may
 plot or use local data and are excluded from pytest and built distributions.
 
 ### Submodule roles
 
-**constraints.py** — the canonical public facade and owner of the `Constraints` aggregate.
-The `_constraint_*.py` modules are internal implementation modules for alignment, backend
+**constraints/** — the canonical public facade and owner package for the `Constraints` aggregate.
+The owner modules separate core specifications, ticker alignment, pure analytics, backend
 translation, benchmark-relative constraints, shared expressions and group constraints. Pure
 benchmark-beta calculations live in `optimalportfolios.utils.benchmark_beta`; the facade retains
 the established constraint-module aliases.
@@ -159,6 +161,10 @@ argument, ensuring backward compatibility.
 
 ## Constraint system
 
+The formula-by-formula reference, backend matrix, alignment policy, residual analytics, and
+complete forced/utility examples live in the dedicated
+[Portfolio constraint guide](constraints.md). This section gives only the architectural summary.
+
 ### Why constraints are shared but objectives are not
 
 Portfolio optimisation has two components: an **objective function** (what
@@ -202,14 +208,12 @@ Constraints (shared)              Solvers (objective-specific)
 └───────────────────────┘
 ```
 
-Each solver calls `constraints.set_cvx_all_constraints(w, covar)` (or the
-SciPy/PyRB equivalent) to get the constraint set, then constructs its own
-objective function. This means:
+Each compatible solver calls a CVXPY, SciPy, or PyRB compiler for the subset it supports, then
+constructs its own objective function. This means:
 
-- Adding a new constraint type (e.g. `BenchmarkDeviationConstraints`)
-  automatically applies to **all** solvers
-- Adding a new solver only requires writing the objective — constraints
-  are inherited for free
+- Adding a new constraint type centralises its policy and translations, but each backend and
+  solver path must explicitly support it
+- Adding a new solver can reuse the shared compiler for its compatible constraint subset
 - The constraint object can be inspected, printed, and validated
   independently of any solver
 
@@ -224,9 +228,10 @@ constraints.set_scipy_constraints(covar)           # → (list of dicts, bounds)
 constraints.set_pyrb_constraints(covar)            # → (bounds, C, d) for the risk-budgeting solver
 ```
 
-The CVXPY backend supports the full constraint set. SciPy and PyRB support
-exposure bounds and group allocation constraints (no tracking error or
-turnover at the solver level — these are handled in the wrapper layer).
+The forced CVXPY backend supports the full constraint set. SciPy compiles long-only, net-exposure,
+instrument-box, and group-allocation rows. PyRB compiles instrument boxes and group allocations;
+the risk-budgeting solver owns full investment. Neither backend compiles return, volatility,
+tracking-error, turnover, deviation, or beta fields.
 
 
 ### `Constraints` — the main container
@@ -243,9 +248,10 @@ The central dataclass that holds all portfolio constraints. Immutable
 **Benchmark-relative constraints:**
 
 - `benchmark_weights` — reference portfolio for tracking error
-- `tracking_err_vol_constraint` — max annualised tracking error vol
+- `tracking_err_vol_constraint` — max tracking-error volatility in the covariance's units
 - `sector_deviation_constraints` — max active sector deviation vs benchmark
 - `style_deviation_constraints` — max active style deviation vs benchmark
+- `benchmark_beta_constraint` — range for absolute ex-ante benchmark beta
 
 **Turnover constraints:**
 
@@ -256,7 +262,8 @@ The central dataclass that holds all portfolio constraints. Immutable
 **Return/volatility targets:**
 
 - `target_return` / `asset_returns` — minimum portfolio return constraint
-- `max_target_portfolio_vol_an` — maximum annualised portfolio volatility
+- `max_target_portfolio_vol_an` — maximum portfolio volatility in the covariance's units; the
+  historical name does not annualise inputs
 
 **Group-level constraints:**
 
@@ -279,27 +286,28 @@ SAA and TAA solvers support two modes via `ConstraintEnforcementType`:
   constraints. The objective is purely linear or quadratic.
 
 - **`UTILITY_CONSTRAINTS`**: TE and turnover are penalised in the objective
-  with configurable weights (λ_TE, λ_TO). The return floor remains hard.
-  Always feasible, smoother weight transitions.
+  with configurable weights (λ_TE, λ_TO). Exposure/box, return, group-allocation,
+  sector/style-deviation and beta mandate rows remain hard. Utility penalties do
+  not guarantee feasibility when these mandate rows conflict.
 
 
-### Supported constraints summary
+### Backend and enforcement capabilities
 
-| Constraint | Parameter | Used by |
-|-----------|-----------|---------|
-| Long-only | `is_long_only` | All solvers |
-| Weight bounds | `min_weights`, `max_weights` | All solvers |
-| Full investment | Automatic (1'w = 1) | All solvers |
-| Group exposure | `group_lower_upper_constraints` | CVXPY, scipy, risk budgeting |
-| Sector deviation | `sector_deviation_constraints` | CVXPY solvers |
-| Style deviation | `style_deviation_constraints` | CVXPY solvers |
-| Tracking error | `tracking_err_vol_constraint` | SAA, TAA solvers |
-| Group TE | `group_tracking_error_constraint` | SAA, TAA solvers |
-| Turnover | `turnover_constraint` | SAA, TAA solvers |
-| Group turnover | `group_turnover_constraint` | SAA, TAA solvers |
-| Return target | `target_return` + `asset_returns` | SAA, TAA solvers |
-| Vol budget | `max_target_portfolio_vol_an` | SAA solvers |
-| Risk budget | Passed directly to solver | `risk_budgeting.py` |
+| Constraint family | CVXPY forced | CVXPY utility | SciPy | Risk budgeting |
+|---|---|---|---|---|
+| Exposure, long-only, box | Hard | Hard | Hard | Box bounds; full investment is solver policy |
+| Target return | Hard | Hard | Unsupported | Unsupported |
+| Portfolio volatility | Hard cap | No generic cap; solver-specific risk objective | Unsupported | Unsupported |
+| Total + group tracking error | Both hard | Soft; group penalty takes precedence | Unsupported | Unsupported |
+| Total + group turnover | Both hard | Soft; group penalty takes precedence | Unsupported | Unsupported |
+| Group allocation | Hard | Hard | Hard | Hard matrix rows |
+| Sector/style deviation | Hard | Hard | Unsupported | Unsupported |
+| Benchmark beta | Hard | Hard | Unsupported | Unsupported |
+
+“Unsupported” means the backend does not compile that field; it must not be inferred from a
+post-solve report. The utility mode deliberately softens only tracking error and turnover. A
+configured maximum-volatility field is a hard cap in forced mode; utility SAA formulations use a
+risk penalty and do not silently reinterpret that field as a cap.
 
 
 ### Constraint classes
@@ -329,6 +337,12 @@ gluc = GroupLowerUpperConstraints(
 
 Validation: `__post_init__` drops groups with all-zero loadings, reindexes
 allocation series, and warns on missing entries.
+
+Loading membership is deliberately operation-specific. Construction removes a column only when
+every loading is exactly zero (or every value is missing). Solver compilation treats a column as
+active when at least one loading is not numerically close to zero, so signed factor loadings remain
+valid. Frozen-position bound relaxation uses strictly positive loadings as membership; negative
+factor exposures therefore do not create a frozen-holding overhang waiver.
 
 Merge: `merge_group_lower_upper_constraints()` combines two constraint
 objects, handling overlapping group names with `_1`/`_2` suffixes.
@@ -405,25 +419,29 @@ producing clear error messages with specific remediation suggestions.
 
 ### NaN handling and universe filtering
 
-The wrapper layer calls `filter_covar_and_vectors_for_nans()` to remove
-assets with NaN or zero-variance entries. The `Constraints` object is
-updated via `update_with_valid_tickers()`, which subsets weight bounds,
-rescales group exposures by `total_to_good_ratio`, injects benchmark
-weights, and carries forward `weights_0` for warm-start. After solving,
-weights are reindexed to the full ticker set with excluded assets at zero.
+The wrapper layer calls `filter_covar_and_vectors_for_nans()` to remove assets with NaN or
+zero-variance entries. `update_with_valid_tickers()` aligns flat Series and every nested loading
+block, injects benchmark/current state, and can scale per-name maxima and the total turnover cap by
+`total_to_good_ratio`; it does not scale group bounds. After solving, weights are reindexed to the
+full ticker set with excluded assets at zero.
 
 
-### Debug utilities
+### Structured constraint inspection
 
-Two methods on `Constraints` for inspecting the CVXPY constraint stack:
+Solver outcomes carry the exact aligned specification and report-ready residual records:
 
 ```python
-# before solving: print each constraint's type, shape, and string form
-constraints.print_constraints(constraint_list)
-
-# after solving: check which constraints are binding or violated
-constraints.check_constraints_violation(constraint_list)
+outcome.residuals_frame()
+hard_breaches = [
+    residual
+    for residual in outcome.constraint_residuals
+    if residual.hard and not residual.passed
+]
 ```
+
+For an independently supplied candidate, call
+`evaluate_constraint_residuals(weights, constraints, covar=...)`. The legacy print helpers remain
+available for compatibility, but structured residuals are the supported analytical interface.
 
 
 ## Test pattern
@@ -432,8 +450,8 @@ All Python test modules in `tests/` end in `_test.py` and expose ordinary pytest
 module, node, or keyword expression through pytest rather than adding an executable runner:
 
 ```bash
-pytest src/optimalportfolios/optimization/tests/constraints_test.py -v
-pytest src/optimalportfolios/optimization/tests/constraints_test.py -k group -v
+pytest src/optimalportfolios/optimization/constraints/tests/constraints_test.py -v
+pytest src/optimalportfolios/optimization/constraints/tests/constraints_test.py -k group -v
 ```
 
 When adding a solver, add deterministic offline contracts in a matching `_test.py` module. Put
@@ -447,7 +465,7 @@ directory as `<solver>_run.py`, where a `Locals` enum selects scenarios through 
 | `constraints_test.py` | Core deterministic feasibility contracts for constraint classes and translations |
 | `constraints_branches_test.py` | Validation, warning, update, and branch coverage |
 | `specialised_constraints_test.py` | Group tracking-error, turnover, and deviation contracts |
-| `optimization/run_local/constraints_run.py` | Manual formatted constraint printing and visual inspection |
+| `constraints/run_local/constraints_run.py` | Manual formatted constraint printing and visual inspection |
 
 
 ## References
