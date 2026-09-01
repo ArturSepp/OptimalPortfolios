@@ -1,3 +1,13 @@
+## Python environment (mandatory)
+
+- Never create, use, or install packages into a Python virtual environment anywhere under `C:\Users\artur\OneDrive`.
+- Keep this repository's environment outside OneDrive at `C:\Python\OptimalPortfolios312`.
+- Use `C:\Python\OptimalPortfolios312\Scripts\python.exe` for Python, tests, linters, and package installation.
+- If it is missing, create it with `py -3.12 -m venv C:\Python\OptimalPortfolios312`.
+- Never run plain `uv sync` or plain `uv run` from this checkout: uv otherwise creates `<repo>\.venv` even when uv was launched through a Python executable under `C:\Python`.
+- If a uv project operation is required, first set `UV_PROJECT_ENVIRONMENT=C:\Python\OptimalPortfolios312`; for pip-style operations prefer `uv pip ... --python C:\Python\OptimalPortfolios312\Scripts\python.exe`.
+- If any OneDrive-local environment already exists, do not use it; report it for removal.
+
 # AGENTS.md
 
 Guidance for AI coding agents working in the **OptimalPortfolios** repository.
@@ -270,11 +280,3 @@ Then: commit, tag `v<version>`, build and publish to PyPI, and cut a GitHub Rele
 - `ruff check src/optimalportfolios/` reports 225 baseline findings: 216 `E501` line-length, 8 `E712` true-false-comparison and 1 `E402` module-import-not-at-top-of-file. CI gates TID251/TID253/ICN **and `F`**, all green; `E`/`W` remain ungated by policy. Fix only the lines your specific change touches; a repository-wide reflow is not wanted. The `W` family is now clean — the 14 `W291`/`W292` findings were auto-fixed in #72 — so `W` findings a run reports are yours.
 - **`F401` in an `__init__.py` is a re-export, not an unused import.** `F401` and `F403` are therefore off for `"__init__.py"` in `[tool.ruff.lint.per-file-ignores]`, rather than answered file by file with `# noqa`. That keeps the rule this package has always followed: a subpackage's public surface is the imports in its own `__init__.py`, and adding a name to it is one edit — no `__all__` or other second list to maintain beside the import. Never `ruff --fix` F401 across `__init__.py` with that ignore removed: it would delete the re-exports and break `from optimalportfolios import Constraints` for every consumer.
 - **The offline multiasset fixture is live test infrastructure, not an unused artifact.** `src/optimalportfolios/tests/data/multiasset_returns.csv`, loaded by `optimalportfolios.tests.data.multiasset.load_multiasset_data`, feeds three collected suites: `src/optimalportfolios/optimization/tests/rolling_dispatcher_test.py`, `src/optimalportfolios/utils/tests/portfolio_funcs_properties_test.py` and `src/optimalportfolios/covar_estimation/tests/covar_properties_test.py`. Treat the CSV and loader as frozen test data: do not modify, move or delete them without updating those suites, and expect numerical assertions to change if the data changes. (An earlier version of this file wrongly described the fixture as unused.)
-
-## Python environment
-
-- Keep this repository's Python environment outside OneDrive at `C:\Python\OptimalPortfolios312`.
-- Never create, use, or install packages into a repository-local `.venv`.
-- Use `C:\Python\OptimalPortfolios312\Scripts\python.exe` for all Python commands.
-- Run tools through that interpreter, for example `C:\Python\OptimalPortfolios312\Scripts\python.exe -m pytest` and `C:\Python\OptimalPortfolios312\Scripts\python.exe -m pip`.
-- If the environment is missing, create it with `py -3.12 -m venv C:\Python\OptimalPortfolios312`; do not create `.venv` under the repository.
