@@ -35,7 +35,7 @@ linkcheck_ignore = [
 
 html_theme = "furo"
 html_baseurl = "https://optimalportfolios.readthedocs.io/en/latest/"
-html_title = "optimalportfolios — production portfolio construction and rolling backtesting"
+html_title = "optimalportfolios - portfolio construction and rolling backtesting"
 html_short_title = "optimalportfolios"
 html_static_path = ["_static"]
 html_theme_options = {
