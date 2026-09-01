@@ -247,12 +247,12 @@ class FactorCovarEstimator(CovarEstimator):
         """
         Serialise estimator config to dictionary.
 
-        Handles nested ``LassoModel`` dataclass by reconstructing it from its dict
-        representation, ensuring round-trip compatibility.
+        Rebuilds the nested ``LassoModel`` from its public constructor parameters so
+        fitted-state fields never cross the configuration boundary.
         """
         this = asdict(self)
         if self.lasso_model is not None:
-            this['lasso_model'] = LassoModel(**this['lasso_model'])
+            this['lasso_model'] = LassoModel(**self.lasso_model.get_params())
         return this
 
     # ── Shared interface (CovarEstimator) ────────────────────────────────

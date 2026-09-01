@@ -182,6 +182,16 @@ def test_to_dict_rebuilds_the_nested_lasso_model() -> None:
     assert rebuilt.lasso_model.model_type == estimator.lasso_model.model_type
 
 
+def test_to_dict_excludes_nested_lasso_fit_state() -> None:
+    """Only constructor configuration crosses the estimator persistence boundary."""
+    estimator = _estimator()
+    estimator.lasso_model.x_ = pd.DataFrame({"F1": [1.0]})
+
+    config = estimator.to_dict()
+
+    assert config["lasso_model"].x_ is None
+
+
 def test_to_dict_tolerates_an_absent_lasso_model() -> None:
     """A config with no model serialises without attempting to rebuild one."""
     config = _estimator(lasso_model=None).to_dict()
