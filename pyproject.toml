@@ -119,7 +119,7 @@ all = [
 [project.urls]
 Homepage = "https://github.com/ArturSepp/OptimalPortfolios"
 Documentation = "https://optimalportfolios.readthedocs.io"
-Repository = "https://github.com/ArturSepp/OptimalPortfolios.git"
+Repository = "https://github.com/ArturSepp/OptimalPortfolios"
 Issues = "https://github.com/ArturSepp/OptimalPortfolios/issues"
 Changelog = "https://github.com/ArturSepp/OptimalPortfolios/blob/main/CHANGELOG.md"
 
