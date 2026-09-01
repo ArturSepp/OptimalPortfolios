@@ -190,6 +190,17 @@ explains these boundaries and the alternatives considered; the
 [package comparison](https://optimalportfolios.readthedocs.io/en/latest/package_comparison.html)
 records the versioned evidence for the field comparison.
 
+## When to use it — and when not
+
+Use `optimalportfolios` when you need a dated roll-forward pipeline from point-in-time covariance
+and alpha estimates to constrained targets, scheduled rebalancing, and drift-aware backtests with
+transaction costs across incomplete or mixed-frequency multi-asset panels.
+
+Choose another package when the core problem is a non-quadratic risk measure such as CVaR, MAD,
+or drawdown constraints; the package comparison points to Riskfolio-Lib and skfolio for those
+workflows. Use `factorlasso` directly when you need its standalone sparse multi-output factor-model
+estimator rather than portfolio construction.
+
 ## Package overview
 
 ```
