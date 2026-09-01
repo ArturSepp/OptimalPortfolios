@@ -208,6 +208,7 @@ papers/**/*.run.xml
 papers/achievable_sharpe_faj_2026/
 /papers/cluster_lineage_2026/
 /papers/matf_cma_jpm_2026/
+/papers/layer_attribution_2026/
 
 # Reference source documents (books, survey PDFs) are not redistributable.
 papers/references/
