@@ -1,5 +1,6 @@
 # SHARED CI CORE v1.0 — T2 — synced 2026-08-22
 name: CI
+run-name: ${{ github.event_name == 'schedule' && 'Dependency compatibility (live resolution)' || github.event.head_commit.message || github.event.pull_request.title || 'CI' }}
 
 # Least privilege, declared rather than inherited. Without this block every job runs with the
 # repository's *default* `GITHUB_TOKEN` scope, which on a repository configured for read-write
@@ -17,10 +18,15 @@ permissions:
   contents: read
 
 on:
+  # Live dependency drift belongs to a run whose cause names it. Push and pull-request runs use
+  # uv.lock exactly; this daily run exercises the newest versions allowed by pyproject.toml.
+  schedule:
+    - cron: "37 3 * * *"
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 # A push to a PR branch makes the run already in flight for that branch pointless: this workflow
 # is 14 matrix jobs plus the wheel job, so cancelling it is the single largest saving available
@@ -43,10 +49,9 @@ jobs:
     # matrix runs every supported Python on all three runners except the documented Windows/3.14
     # dependency-wheel exclusion below.
     #
-    # `primary` marks the one cell -- ubuntu/3.12 -- that syncs `--locked` from uv.lock and gates
-    # coverage. It is set through `include` so the pinned and floating
-    # legs are one step each instead of two near-identical pairs; the remaining cells leave it
-    # unset, which is falsy in an expression.
+    # `primary` marks the one cell -- ubuntu/3.12 -- that gates coverage. Dependency mode is
+    # selected by the event for the whole matrix: locked for change validation, floating for the
+    # scheduled compatibility run.
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
@@ -73,19 +78,20 @@ jobs:
         # setup-python step. The version has to be passed explicitly: `.python-version` is
         # gitignored, so there is no in-repo file for uv to discover.
         python-version: ${{ matrix.python-version }}
-        # `enable-cache` defaults to `auto` -- on for push and pull_request on GitHub-hosted
-        # runners -- and the default `cache-dependency-glob` already covers pyproject.toml and
-        # uv.lock. The cache holds downloaded and built wheels, not a resolution, so the
-        # deliberately floating cells keep floating.
+        # `enable-cache` defaults to `auto` -- on for these GitHub-hosted runners --
+        # and the default `cache-dependency-glob` already covers pyproject.toml and
+        # uv.lock. The cache holds downloaded and built wheels, not a resolution, so the scheduled
+        # compatibility run still resolves against the live index.
 
     - name: Sync the environment
-      # The pinned and floating legs differ by one flag rather than by a whole step.
+      # Push and pull-request runs install the lock exactly on every cell. That makes a commit's
+      # verdict a function of the commit: an upstream release cannot make an unrelated .gitignore
+      # or documentation change fail. `--locked` also fails when pyproject.toml and uv.lock drift,
+      # so a dependency edit cannot land without a reviewed re-lock.
       #
-      # `--locked` on the primary cell installs the lock exactly and *fails* if uv.lock has
-      # drifted from pyproject.toml, which is what stops a dependency edit landing without a
-      # re-lock. Everywhere else `--upgrade` re-resolves from the floors and ignores the lock, so
-      # the matrix keeps testing what a user installing today would actually get. That float is
-      # the point of the other thirteen cells; pinning them would only test the lock fourteen times.
+      # The daily schedule uses `--upgrade` on the same full matrix. It keeps the user-install
+      # compatibility signal, but a failure is now attributed to a run named "Dependency
+      # compatibility (live resolution)" rather than to whichever commit happened to push next.
       #
       # No pip bootstrap step: pyproject.toml declares PEP 639 `license` and `license-files`, so
       # the built metadata is Metadata-Version 2.4. The pip shipped with the older interpreters in
@@ -99,11 +105,15 @@ jobs:
       # outlast a DNS or CDN blip, and three attempts total still fails fast on a real error like
       # an unresolvable constraint, which loses ~1 minute rather than masking anything.
       #
-      # `--upgrade` cells resolve against the live index and so carry the whole exposure;
-      # `--locked` still downloads. Both take the same wrapper.
+      # Both modes still download, so both take the same transport-retry wrapper.
       shell: bash
       run: |
-        sync_cmd=(uv sync --group test ${{ matrix.primary && '--locked' || '--upgrade' }})
+        if [ "${{ github.event_name }}" = "schedule" ]; then
+          dependency_mode=--upgrade
+        else
+          dependency_mode=--locked
+        fi
+        sync_cmd=(uv sync --group test "$dependency_mode")
         for attempt in 1 2 3; do
           if "${sync_cmd[@]}"; then
             exit 0
@@ -132,9 +142,9 @@ jobs:
     - name: Assert optional modules are absent
       # The `test` group is only pytest and pytest-cov over the core tree. Check the actual 3.12 environment
       # on all three operating systems so platform-specific markers or wheels cannot make an
-      # optional backend arrive unnoticed. audit.yml complements this locked/floating install
-      # check with a fresh Linux resolution each day, which is what detects dependency drift while
-      # the repository is quiet.
+      # optional backend arrive unnoticed. The scheduled form of this workflow repeats the check
+      # against a live resolution, while audit.yml independently checks fresh Linux dependency
+      # trees and advisories each day.
       if: matrix.python-version == '3.12'
       shell: bash
       run: |
@@ -246,15 +256,26 @@ jobs:
         PY
 
     - name: Install the wheel into a clean environment
-      # Core install plus pytest, and nothing else -- no `test` group, `data`, or `reports`. This is
-      # what `pip install optimalportfolios` gives a user, so a test that quietly needs an optional
-      # extra fails here rather than in their terminal. It is also the module-level-optional-import
-      # trap from the other side: such an import breaks *collection*, so it would fail this job even
-      # though the ruff TID253 gate and the absence assertion above both look at the source.
+      # Push and pull-request runs export the locked core plus the test runner, then install the
+      # wheel itself without dependency resolution. This keeps the artifact check deterministic
+      # without adding any optional extra. The daily schedule intentionally performs the ordinary
+      # fresh wheel-plus-pytest install, so current user-install compatibility remains covered.
+      #
+      # This is also the module-level-optional-import trap from the consumer side: such an import
+      # breaks collection even though ruff and the source-environment assertion both pass.
       run: |
         uv venv --python 3.12 "$RUNNER_TEMP/wheelcheck-venv"
-        uv pip install --python "$RUNNER_TEMP/wheelcheck-venv/bin/python" \
-          "$(ls dist/*.whl)" pytest
+        if [ "${{ github.event_name }}" = "schedule" ]; then
+          uv pip install --python "$RUNNER_TEMP/wheelcheck-venv/bin/python" \
+            "$(ls dist/*.whl)" pytest
+        else
+          uv export --locked --group test --no-emit-project \
+            --output-file "$RUNNER_TEMP/wheelcheck-requirements.txt"
+          uv pip install --python "$RUNNER_TEMP/wheelcheck-venv/bin/python" \
+            --requirements "$RUNNER_TEMP/wheelcheck-requirements.txt"
+          uv pip install --python "$RUNNER_TEMP/wheelcheck-venv/bin/python" \
+            --no-deps "$(ls dist/*.whl)"
+        fi
 
     - name: Run the shipped suite against the installed wheel
       # `cd` out of the checkout first so neither repository paths nor project configuration can

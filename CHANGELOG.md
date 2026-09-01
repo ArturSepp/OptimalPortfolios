@@ -7,6 +7,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- Made push and pull-request CI deterministic from `uv.lock`, including the installed-wheel job,
+  while retaining the full live-dependency matrix as a clearly named daily compatibility run.
+
 ## [6.22.0] - 2026-08-31
 
 ### Added
