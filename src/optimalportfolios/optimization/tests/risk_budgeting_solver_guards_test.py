@@ -26,6 +26,7 @@ multiplier is NaN by contract, which callers must not read as a solve failure.
 import numpy as np
 import pytest
 # optimalportfolios
+import optimalportfolios.optimization.risk_allocation.risk_budgeting_solver as rb_solver
 from optimalportfolios.optimization.risk_allocation.risk_budgeting_solver import (
     solve_constrained_risk_budgeting,
 )
@@ -207,6 +208,23 @@ def test_the_solver_accepts_a_linear_inequality_block() -> None:
                                                   c_rows=c_rows, c_lhs=c_lhs)
     assert float(np.sum(weights)) == pytest.approx(1.0, abs=1e-5)
     assert float(weights[:2].sum()) <= 0.60 + 1e-5
+
+
+def test_admm_iteration_cap_raises_instead_of_returning_an_unfinished_iterate(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An exhausted ADMM solve must not masquerade as a converged solution."""
+    monkeypatch.setattr(rb_solver, 'MAX_ADMM_ITERS', 1)
+    monkeypatch.setattr(rb_solver, 'ADMM_TOL', -1.0)
+    c_rows = np.array([[1.0, 1.0, 0.0, 0.0]])
+
+    with pytest.raises(ValueError, match='ADMM did not converge after 1 iterations'):
+        solve_constrained_risk_budgeting(
+            covar=covar_matrix(),
+            budgets=equal_budgets(),
+            c_rows=c_rows,
+            c_lhs=np.array([0.60]),
+        )
 
 
 @pytest.mark.parametrize('c_rows, c_lhs', [

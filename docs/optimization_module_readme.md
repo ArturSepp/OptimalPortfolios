@@ -420,8 +420,10 @@ producing clear error messages with specific remediation suggestions.
 ### NaN handling and universe filtering
 
 The wrapper layer calls `filter_covar_and_vectors_for_nans()` to remove assets with NaN or
-zero-variance entries. `update_with_valid_tickers()` aligns flat Series and every nested loading
-block, injects benchmark/current state, and can scale per-name maxima and the total turnover cap by
+non-positive-variance entries. A caller may explicitly supply `variance_floor` to raise smaller
+positive diagonal entries after that filtering; no floor is applied by default.
+`update_with_valid_tickers()` aligns flat Series and every nested loading block, injects
+benchmark/current state, and can scale per-name maxima and the total turnover cap by
 `total_to_good_ratio`; it does not scale group bounds. After solving, weights are reindexed to the
 full ticker set with excluded assets at zero.
 

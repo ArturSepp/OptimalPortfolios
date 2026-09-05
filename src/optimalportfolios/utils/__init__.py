@@ -9,8 +9,7 @@ from optimalportfolios.utils.benchmark_beta import (
     compute_ex_ante_beta_ts,
 )
 
-from optimalportfolios.utils.filter_nans import (filter_covar_and_vectors,
-                                                 filter_covar_and_vectors_for_nans)
+from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 
 from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_vol,
                                                      compute_tre_turnover_stats)

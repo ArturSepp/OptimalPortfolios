@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optimalportfolios"
-version = "6.22.0"
+version = "7.0.0"
 description = "Production multi-asset portfolio construction and rolling backtesting in Python"
 readme = "README.md"
 license = "MIT"

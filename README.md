@@ -1149,6 +1149,13 @@ Portfolios", *The Journal of Portfolio Management*, 52(4), 86-120.
 
 ## Updates
 
+#### September 2026, Version 7.0.0 released
+
+Version 7.0.0 unifies covariance-universe filtering: non-positive and NaN variances are removed,
+while flooring smaller positive variances is now opt-in. It removes the duplicate public
+`filter_covar_and_vectors()` function and makes an ADMM iteration-limit failure explicit instead
+of returning an unfinished risk-budgeting iterate.
+
 #### August 2026, Versions 6.8.0–6.22.0 released
 
 The recent 6.x series through 6.22.0 added several production analytics that are now part of the current API:
@@ -1454,7 +1461,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
   year={2026},
-  version={6.22.0},
+  version={7.0.0},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

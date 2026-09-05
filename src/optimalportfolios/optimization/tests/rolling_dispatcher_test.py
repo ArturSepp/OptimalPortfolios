@@ -15,13 +15,11 @@ backtest is optimistic, and the error only appears out of sample. This is the te
 calls the most valuable one in the suite, and it is the reason the estimation frequency and the
 rebalancing frequency are separate arguments rather than one.
 
-**The investable universe comes from ``inclusion_indicators``, not from NaN prices.** With a
-delisted instrument in the panel and no inclusion indicators, the covariance estimator zero-fills
-the missing returns, the instrument looks riskless, and a minimum-variance optimiser allocates to
-it — measured here at 47.5% each for two dead instruments, 95% of the portfolio. Passing
-inclusion indicators removes them cleanly: zero weight on an instrument with no price, at every
-one of the 77 rebalancing dates. Both behaviours are pinned, because the first is a hazard a
-caller must know about and the second is the contract that avoids it.
+**The investable universe is explicit and covariance-valid.** Inclusion indicators remove an
+instrument directly. Independently, every optimiser removes assets whose estimated variance is
+non-positive or NaN. A missing price is not itself an exclusion signal, but a sufficiently long
+delisting in this fixture produces zero estimated variance and therefore zero weight. Both paths
+are pinned because neither may leave an invalid asset in a solver universe.
 
 The panel is the committed `multiasset` fixture, masked by ``optimalportfolios.tests.data_masks``
 where a defect is needed. No network, no vendor data.
@@ -255,18 +253,13 @@ def test_inclusion_indicators_keep_weight_off_dead_instruments() -> None:
     np.testing.assert_allclose(weights.sum(axis=1).to_numpy(), 1.0, atol=1e-6)
 
 
-def test_without_inclusion_indicators_the_universe_is_not_inferred_from_prices() -> None:
+def test_zero_variance_filter_removes_dead_instruments_without_indicators() -> None:
     """
-    pins today's contract, and the hazard that comes with it.
+    a zero-filled covariance row is invalid even when no explicit universe mask is supplied.
 
     Without inclusion indicators the covariance estimator zero-fills a delisted instrument's
-    returns. Zero returns look like zero variance, so a minimum-variance optimiser buys it: two
-    dead instruments took 47.5% each when this was written.
-
-    This asserts the package does *not* infer the universe from NaN prices. If that ever changes
-    it is an improvement, but a deliberate one — it moves every backtest that relied on the old
-    behaviour, so it needs a CHANGELOG entry and this test updated in the same commit, not a
-    silent pass.
+    returns. The resulting zero variance removes the asset before optimisation; this does not infer
+    eligibility from prices and callers should still pass indicators for an explicit live universe.
     """
     prices = _masked_panel()
     weights = _run('rolling_quadratic_optimisation', prices, _covars(prices))
@@ -275,7 +268,5 @@ def test_without_inclusion_indicators_the_universe_is_not_inferred_from_prices()
     dead = [t for t in prices.columns if t not in alive]
     assert dead, 'the delisting mask left nothing dead at the last rebalancing date'
     dead_weight = float(weights.loc[last, dead].sum())
-    assert dead_weight > 0.01, (
-        f'instruments with no price took only {dead_weight:.4f} of the portfolio. If the universe '
-        f'is now inferred from prices this is better behaviour - update this test and the '
-        f'CHANGELOG together')
+    assert dead_weight == pytest.approx(0.0, abs=1e-12)
+    assert float(weights.loc[last].sum()) == pytest.approx(1.0, abs=1e-6)

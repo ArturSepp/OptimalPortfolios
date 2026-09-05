@@ -213,9 +213,10 @@ def _admm_ccd_solve(covar: np.ndarray,
     current x), z-update (projection onto the polyhedron), and dual update
     u += x - z, with adaptive penalty φ (paper Appendix A.7). Stops when the
     max of squared step, primal residual ||x - z||² and dual residual
-    ||φ(z - z_prev)||² drops below ADMM_TOL. The returned x satisfies the box
-    exactly (enforced inside CCD) and C x <= d up to the primal residual,
-    i.e. O(sqrt(ADMM_TOL)) per row.
+    ||φ(z - z_prev)||² drops below ADMM_TOL. A converged x satisfies the
+    box exactly (enforced inside CCD) and C x <= d up to the primal residual,
+    i.e. O(sqrt(ADMM_TOL)) per row. Exhausting the iteration limit raises
+    rather than returning an unfinished iterate as a valid solution.
     """
     varphi = 1.0
     x = x0.copy()
@@ -237,7 +238,7 @@ def _admm_ccd_solve(covar: np.ndarray,
                   float(np.sum(r ** 2)),
                   float(np.sum(s ** 2)))
         if cvg <= ADMM_TOL:
-            break
+            return x
         # adaptive penalisation: rebalance primal vs dual residuals
         primal_err = float(np.sum(r ** 2))
         dual_err = float(np.sum(s ** 2))
@@ -247,7 +248,11 @@ def _admm_ccd_solve(covar: np.ndarray,
         elif dual_err > ADMM_PENALTY_RATIO * primal_err and varphi > ADMM_PENALTY_MIN:
             varphi /= ADMM_PENALTY_SCALE
             u = u * ADMM_PENALTY_SCALE
-    return x
+    raise ValueError(
+        f"ADMM did not converge after {MAX_ADMM_ITERS} iterations: "
+        f"convergence_metric={cvg:.6g}, primal_residual_sq={primal_err:.6g}, "
+        f"dual_residual_sq={dual_err:.6g}, penalty={varphi:.6g}"
+    )
 
 
 def solve_constrained_risk_budgeting(covar: np.ndarray,

@@ -94,7 +94,6 @@ signatures and docstrings.
    optimalportfolios.evaluate_constraint_residuals
    optimalportfolios.extract_rolling_clusters
    optimalportfolios.factorize_covariance
-   optimalportfolios.filter_covar_and_vectors
    optimalportfolios.filter_covar_and_vectors_for_nans
    optimalportfolios.fit_gaussian_mixture
    optimalportfolios.generate_alpha_profile_report

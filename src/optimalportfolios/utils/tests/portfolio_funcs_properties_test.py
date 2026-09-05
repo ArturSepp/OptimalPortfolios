@@ -16,12 +16,10 @@ Each formula is checked against its definition, with `Σ` the covariance, `w` th
     tracking error              √((w - w_b)'Σ(w - w_b))
     turnover                    Σ|w - w₀|
 
-The filter's contract is subtler and is where the NaN-aware claim in `AGENTS.md` is either kept
-or not: an asset with NaN variance is **removed**, while an asset with a genuine but tiny variance
-is **clamped** to a floor and kept. The distinction matters for real universes — the committed
-fixture's Cash instrument has an annualised volatility of about 5bps, below the 10bps floor, so it
-is exactly the case the clamp exists for. Dropping it instead would silently shrink the investable
-universe by one every time a low-volatility instrument appeared.
+The filter removes every asset with non-positive or NaN variance. A positive variance is retained
+unchanged unless the caller explicitly supplies a floor, in which case smaller surviving diagonal
+entries are raised to it. The committed fixture's Cash instrument has an annualised volatility of
+about 5bps, so it exercises that opt-in floor without weakening the invalid-asset rule.
 """
 # packages
 from typing import Tuple
@@ -35,12 +33,11 @@ import qis
 import optimalportfolios.utils.portfolio_funcs as portfolio_funcs
 from optimalportfolios.covar_estimation.ewma_covar_estimator import EwmaCovarEstimator
 from optimalportfolios.tests.data.multiasset import load_multiasset_data
-from optimalportfolios.utils.filter_nans import (filter_covar_and_vectors,
-                                                 filter_covar_and_vectors_for_nans)
+from optimalportfolios.utils.filter_nans import filter_covar_and_vectors_for_nans
 
 TICKERS = ['A', 'B', 'C', 'D']
 VOLS = np.array([0.10, 0.15, 0.20, 0.25])
-VARIANCE_FLOOR = 0.001 ** 2       # the module default: about 10bps of annualised volatility
+VARIANCE_FLOOR = 0.001 ** 2
 
 
 def _universe() -> Tuple[pd.DataFrame, np.ndarray, np.ndarray]:
@@ -99,13 +96,8 @@ def test_non_finite_vector_assets_are_removed_from_every_aligned_input() -> None
     assert vectors['alphas'].to_dict() == {'A': 0.1, 'D': 0.4}
 
 
-def test_tiny_variances_are_clamped_and_kept_not_dropped() -> None:
-    """
-    the documented distinction: NaN is removed, near-zero is floored.
-
-    Removing a low-volatility instrument would drop cash from a multi-asset universe whenever its
-    realised volatility dipped, changing the investable set without anything reporting it.
-    """
+def test_tiny_positive_variances_are_unchanged_without_an_explicit_floor() -> None:
+    """A positive variance remains valid and is not modified unless the caller requests a floor."""
     covar, sigma, _ = _universe()
     nearly_riskless = sigma.copy()
     nearly_riskless[3, 3] = 1e-10
@@ -113,7 +105,22 @@ def test_tiny_variances_are_clamped_and_kept_not_dropped() -> None:
     filtered, _ = filter_covar_and_vectors_for_nans(
         pd_covar=pd.DataFrame(nearly_riskless, index=TICKERS, columns=TICKERS))
 
-    assert list(filtered.index) == TICKERS, 'the near-zero variance asset was dropped, not clamped'
+    assert list(filtered.index) == TICKERS
+    assert filtered.loc['D', 'D'] == pytest.approx(1e-10)
+
+
+def test_an_explicit_variance_floor_clamps_tiny_positive_variances() -> None:
+    """A supplied floor changes small positive diagonals without removing their assets."""
+    covar, sigma, _ = _universe()
+    nearly_riskless = sigma.copy()
+    nearly_riskless[3, 3] = 1e-10
+
+    filtered, _ = filter_covar_and_vectors_for_nans(
+        pd_covar=pd.DataFrame(nearly_riskless, index=TICKERS, columns=TICKERS),
+        variance_floor=VARIANCE_FLOOR,
+    )
+
+    assert list(filtered.index) == TICKERS
     assert filtered.loc['D', 'D'] == pytest.approx(VARIANCE_FLOOR)
 
 
@@ -139,7 +146,9 @@ def test_clamping_preserves_positive_semi_definiteness() -> None:
     assert nearly_riskless[3, 3] < VARIANCE_FLOOR, 'the test input does not trigger the clamp'
 
     filtered, _ = filter_covar_and_vectors_for_nans(
-        pd_covar=pd.DataFrame(nearly_riskless, index=TICKERS, columns=TICKERS))
+        pd_covar=pd.DataFrame(nearly_riskless, index=TICKERS, columns=TICKERS),
+        variance_floor=VARIANCE_FLOOR,
+    )
     assert filtered.loc['D', 'D'] == pytest.approx(VARIANCE_FLOOR)
     assert np.linalg.eigvalsh(filtered.to_numpy()).min() >= -1e-14
 
@@ -172,21 +181,20 @@ def test_invalid_strict_vectors_are_rejected_and_none_is_ignored() -> None:
     assert vectors == {}
 
 
-def test_zero_variance_assets_are_dropped_by_the_positional_filter() -> None:
-    """
-    ``filter_covar_and_vectors`` is the stricter sibling: it drops zero variance as well as NaN.
-
-    Both are exported and they differ in exactly this, which is worth pinning so a caller reaching
-    for one does not get the other's behaviour.
-    """
+@pytest.mark.parametrize('variance_floor', [None, VARIANCE_FLOOR])
+def test_zero_variance_assets_are_always_dropped(variance_floor: float | None) -> None:
+    """An optional floor applies only after zero-variance assets have been removed."""
     covar, sigma, _ = _universe()
     degenerate = sigma.copy()
     degenerate[1, 1] = 0.0
-    filtered, _ = filter_covar_and_vectors(covar=degenerate, tickers=pd.Index(TICKERS))
+    filtered, _ = filter_covar_and_vectors_for_nans(
+        pd_covar=pd.DataFrame(degenerate, index=TICKERS, columns=TICKERS),
+        variance_floor=variance_floor,
+    )
     assert list(filtered.index) == ['A', 'C', 'D']
 
 
-def test_the_fixtures_cash_instrument_survives_the_filter() -> None:
+def test_the_fixtures_cash_instrument_survives_an_explicit_floor() -> None:
     """
     the clamp on real data rather than a constructed matrix.
 
@@ -212,7 +220,10 @@ def test_the_fixtures_cash_instrument_survives_the_filter() -> None:
         'exercising the clamp. Either the estimator or the fixture has changed')
 
     for date, covar in below_floor.items():
-        filtered, _ = filter_covar_and_vectors_for_nans(pd_covar=covar)
+        filtered, _ = filter_covar_and_vectors_for_nans(
+            pd_covar=covar,
+            variance_floor=VARIANCE_FLOOR,
+        )
         assert 'Cash' in filtered.index, f'Cash was dropped rather than clamped at {date.date()}'
         assert filtered.loc['Cash', 'Cash'] == pytest.approx(VARIANCE_FLOOR)
         assert len(filtered.index) == len(covar.index), (
@@ -362,8 +373,9 @@ def test_filter_drops_a_bad_asset_from_the_companion_vectors_too() -> None:
     covar = np.diag([0.04, np.nan, 0.09])
     vectors = {'means': pd.Series([0.1, 0.2, 0.3], index=tickers)}
 
-    clean_covar, good_vectors = filter_covar_and_vectors(
-        covar=covar, tickers=tickers, vectors=vectors,
+    clean_covar, good_vectors = filter_covar_and_vectors_for_nans(
+        pd_covar=pd.DataFrame(covar, index=tickers, columns=tickers),
+        vectors=vectors,
     )
 
     assert list(clean_covar.columns) == ['A', 'C']

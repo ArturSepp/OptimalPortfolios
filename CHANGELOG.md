@@ -7,10 +7,25 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [7.0.0] - 2026-09-05
+
 ### Changed
 
 - Made push and pull-request CI deterministic from `uv.lock`, including the installed-wheel job,
   while retaining the full live-dependency matrix as a clearly named daily compatibility run.
+- Unified covariance-universe filtering in `filter_covar_and_vectors_for_nans()`. Non-positive
+  and NaN variances are always removed; smaller positive variances are raised only when the caller
+  explicitly supplies `variance_floor`.
+
+### Removed
+
+- Removed the duplicate public `filter_covar_and_vectors()` function. Callers should pass a
+  labelled covariance DataFrame to `filter_covar_and_vectors_for_nans()`.
+
+### Fixed
+
+- Made ADMM risk budgeting raise an explicit failure with residual diagnostics when it exhausts
+  its iteration limit instead of returning an unfinished iterate.
 
 ## [6.22.0] - 2026-08-31
 
