@@ -7,14 +7,16 @@ group_max_allocation, ``__post_init__`` Check 2 raises ``Infeasible
 constraints``.
 
 The fix relaxes group_max_allocation upward (or group_min_allocation
-downward) for the offending group, emits a warning, and lets the
-optimisation proceed.
+downward) for the offending group, reports material waivers, and lets the
+optimisation proceed. Sub-basis-point corrections remain debug-only.
 """
 from __future__ import annotations
 
 import logging
 import warnings
 
+import cvxpy as cvx
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -84,7 +86,7 @@ def test_frozen_overshoot_raises_group_max(caplog):
     assert "group 'Alts'" in caplog.text
 
     # group_max_allocation for Alts was raised; Equity untouched.
-    # Frozen-min-sum within Alts = 0.20 + 0.21 + 0.20 = 0.61, so new cap ≈ 0.61 + tol.
+    # Frozen-min-sum within Alts = 0.20 + 0.21 + 0.20 = 0.61, plus solver cushion.
     new_gmax = new_constraints.group_lower_upper_constraints.group_max_allocation
     assert 0.60 < new_gmax['Alts'] < 0.62
     assert new_gmax['Equity'] == pytest.approx(0.70)
@@ -125,6 +127,55 @@ def test_frozen_undershoot_lowers_group_min(caplog):
     new_gmin = new_constraints.group_lower_upper_constraints.group_min_allocation
     assert 0.14 < new_gmin['Equity'] < 0.16
     assert new_gmin['Alts'] == pytest.approx(0.30)
+
+
+def test_sub_basis_point_frozen_undershoot_is_reconciled_without_reporting(caplog):
+    """A 0.179 bp shortfall is feasible but stays out of reportable logs."""
+    tickers = ['Equity', 'Other']
+    loadings = pd.DataFrame(
+        {'Equity': [1.0, 0.0]},
+        index=tickers,
+    )
+    gluc = GroupLowerUpperConstraints(
+        group_loadings=loadings,
+        group_min_allocation=pd.Series({'Equity': 0.40}),
+        group_max_allocation=pd.Series({'Equity': 1.00}),
+    )
+    constraints = Constraints(
+        is_long_only=True,
+        min_weights=pd.Series(0.0, index=tickers),
+        max_weights=pd.Series(1.0, index=tickers),
+        group_lower_upper_constraints=gluc,
+    )
+    frozen_equity = 0.40 - 0.0000179
+    drifted_w0 = pd.Series({
+        'Equity': frozen_equity,
+        'Other': 1.0 - frozen_equity,
+    })
+    rebal = pd.Series({'Equity': 0, 'Other': 0})
+
+    with caplog.at_level(
+            logging.INFO, logger="optimalportfolios.optimization.constraints"):
+        new_constraints = constraints.update_with_valid_tickers(
+            valid_tickers=tickers,
+            weights_0=drifted_w0,
+            rebalancing_indicators=rebal,
+            context="2003-04-30",
+        )
+
+    new_gmin = new_constraints.group_lower_upper_constraints.group_min_allocation
+    assert new_gmin['Equity'] == pytest.approx(frozen_equity - 1e-8)
+    assert "frozen-max undershoot" not in caplog.text
+    assert not any(hasattr(record, "relaxation") for record in caplog.records)
+
+    weights = cvx.Variable(len(tickers))
+    problem = cvx.Problem(
+        cvx.Minimize(cvx.sum_squares(weights - drifted_w0.to_numpy())),
+        new_constraints.set_cvx_all_constraints(w=weights),
+    )
+    problem.solve(solver='CLARABEL')
+    assert problem.status in (cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE)
+    np.testing.assert_allclose(weights.value, drifted_w0.to_numpy(), atol=1e-7)
 
 
 def test_no_overshoot_no_relaxation():
@@ -189,6 +240,67 @@ def test_no_freeze_no_relaxation():
     # min_weights stay at zero (not pinned), so group_min_sum = 0, no overshoot
     new_gmax = new_constraints.group_lower_upper_constraints.group_max_allocation
     assert new_gmax['Alts'] == pytest.approx(0.60)
+
+
+def test_no_freeze_does_not_repair_a_sub_basis_point_mandate_mismatch():
+    """A near-boundary input defect is not mistaken for frozen-position drift."""
+    tickers = ['Equity', 'Other']
+    loadings = pd.DataFrame({'Equity': [1.0, 0.0]}, index=tickers)
+    constraints = Constraints(
+        is_long_only=True,
+        min_weights=pd.Series(0.0, index=tickers),
+        max_weights=pd.Series([0.3999821, 1.0], index=tickers),
+        group_lower_upper_constraints=GroupLowerUpperConstraints(
+            group_loadings=loadings,
+            group_min_allocation=pd.Series({'Equity': 0.40}),
+            group_max_allocation=pd.Series({'Equity': 1.00}),
+        ),
+    )
+
+    updated = constraints.update_with_valid_tickers(valid_tickers=tickers)
+
+    group_min = updated.group_lower_upper_constraints.group_min_allocation
+    assert group_min['Equity'] == pytest.approx(0.40)
+
+
+def test_explicit_relaxation_limit_reports_sub_basis_point_reconciliation(caplog):
+    """An explicit tight policy limit overrides the default reporting threshold."""
+    from optimalportfolios.optimization.constraints import RelaxationRecord
+
+    tickers = ['Equity', 'Other']
+    loadings = pd.DataFrame({'Equity': [1.0, 0.0]}, index=tickers)
+    constraints = Constraints(
+        is_long_only=True,
+        min_weights=pd.Series(0.0, index=tickers),
+        max_weights=pd.Series(1.0, index=tickers),
+        group_lower_upper_constraints=GroupLowerUpperConstraints(
+            group_loadings=loadings,
+            group_min_allocation=pd.Series({'Equity': 0.40}),
+            group_max_allocation=pd.Series({'Equity': 1.00}),
+        ),
+    )
+    frozen_equity = 0.40 - 0.0000179
+    drifted_w0 = pd.Series({
+        'Equity': frozen_equity,
+        'Other': 1.0 - frozen_equity,
+    })
+
+    with caplog.at_level(
+            logging.INFO, logger="optimalportfolios.optimization.constraints"):
+        constraints.update_with_valid_tickers(
+            valid_tickers=tickers,
+            weights_0=drifted_w0,
+            rebalancing_indicators=pd.Series(0, index=tickers),
+            max_relaxation_tol=1e-6,
+        )
+
+    records = [
+        getattr(record, "relaxation", None) for record in caplog.records
+        if isinstance(getattr(record, "relaxation", None), RelaxationRecord)
+    ]
+    assert len(records) == 1
+    assert records[0].breached_tol is True
+    assert any(record.levelno == logging.ERROR for record in caplog.records)
 
 
 def test_pre_patch_failure_mode_now_passes():

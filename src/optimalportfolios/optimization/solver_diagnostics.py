@@ -561,10 +561,10 @@ def validate_rb_solution(
     ``converged`` flag is honoured when the caller can derive one. Budget and
     box feasibility are checked against ``constraints`` (risk-budgeting solves
     are fully invested, ``sum(w)=max_exposure``); the group inequality rows
-    ``c_rows @ w <= c_lhs`` are checked at ``group_atol`` when provided —
-    ``group_atol`` is set to the ADMM primal-residual scale (~1e-4), not
-    ``bound_atol``, because the ADMM z-projection enforces group rows only up
-    to its primal residual while the box is enforced exactly inside CCD.
+    ``c_rows @ w <= c_lhs`` are checked at ``group_atol`` when provided.
+    Its 1e-4 default is a conservative post-solve acceptance band; the ADMM
+    inner loop uses a tighter 1e-12 squared residual threshold, while the box
+    is enforced directly inside CCD.
     Falls back drifted weights_0 → benchmark → zeros on rejection.
 
     Args:
@@ -788,15 +788,13 @@ class SolverRejectionSummary(logging.Handler):
 
 
 class RelaxationSummary(logging.Handler):
-    """Logging handler that tallies frozen-overhang group-bound relaxations over
-    a run from structured ``RelaxationRecord`` records emitted by the constraints
-    package (``extra={"relaxation": ...}``).
+    """Logging handler that tallies reportable frozen-overhang relaxations.
 
-    The per-rebalance relaxation detail is emitted at INFO (so it lands in the
-    file but does not flood the console); this handler aggregates it into one
-    run-level line via ``.summary()`` — how many rebalances relaxed, which group
-    bounds relaxed most often, the largest single relaxation, and how many
-    breached the budget or the magnitude tolerance.
+    Material relaxations and explicit policy/budget breaches carry a structured
+    ``RelaxationRecord`` (``extra={"relaxation": ...}``) and are emitted at INFO
+    or ERROR. This handler aggregates those reportable records via ``.summary()``.
+    Sub-basis-point feasibility reconciliations are DEBUG-only and intentionally
+    absent from the compliance tally unless an explicit policy limit is breached.
     """
 
     def __init__(self) -> None:
@@ -1258,7 +1256,8 @@ def configure_run_logging(
         A :class:`RunDiagnostics` bundle when ``attach_summary`` is True;
         otherwise None. The bundle owns all aggregation handlers. Enabling it
     lifts the solver-diagnostics logger to DEBUG (so accepted solves are counted)
-    and the constraints logger to DEBUG (so relaxations and dropped groups are tallied)
+    and the constraints logger to DEBUG (so reportable relaxations and dropped
+    groups are tallied, while sub-material reconciliation remains observable)
     — neither is printed unless you lower ``console_level``. Call
     ``diagnostics.summary()`` for the combined report and
     ``diagnostics.check_fallback_gate(max_fraction=..., raise_on_breach=...)`` to
@@ -1313,8 +1312,8 @@ def configure_run_logging(
 
         relaxations = RelaxationSummary()
         relaxations._optimalportfolios_run_handler = True
-        # per-rebalance relaxations are emitted at INFO on the constraints logger;
-        # lift it to INFO so the summary tallies them (console keeps its level).
+        # Reportable relaxations carry structured records at INFO/ERROR; DEBUG also
+        # retains sub-material reconciliation details without tallying them.
         cons_logger = logging.getLogger("optimalportfolios.optimization.constraints")
         cons_logger.setLevel(logging.DEBUG)
         cons_logger.addHandler(relaxations)

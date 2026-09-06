@@ -49,7 +49,9 @@ class OptimiserConfig:
             relaxation escalates to an ERROR log when a single relaxation exceeds
             this magnitude (e.g. 0.02), surfacing a large silent widening that a
             small drift would not cause. None (default) applies no magnitude
-            bound; the relaxation is still logged (at INFO) and tallied.
+            bound. Relaxations of at least one basis point are logged at INFO and
+            tallied; smaller feasibility reconciliations remain at DEBUG unless
+            they breach this explicit limit or the total-exposure budget.
         factorize_covar: If True (default), compatible CVXPY solvers use one
             controlled eigendecomposition per solve and reuse the resulting
             covariance factor in objective and constraint risk expressions.

@@ -216,3 +216,4 @@ papers/references/
 /agents/
 /.codex_spreadsheet_tmp/
 src/optimalportfolios/run_local/data/test_prices.csv
+/Claude outputs/

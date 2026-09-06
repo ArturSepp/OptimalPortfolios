@@ -26,6 +26,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger('optimalportfolios.optimization.constraints')
 
 
+_FROZEN_BOUND_FEASIBILITY_EPS = 1e-8
+_FROZEN_BOUND_REPORTING_TOL = 1e-4
+
+
 _NESTED_TICKER_CONSTRAINT_FIELDS = (
     "group_lower_upper_constraints",
     "group_tracking_error_constraint",
@@ -232,11 +236,17 @@ def build_valid_ticker_constraint_fields(
     if target_return is not None:
         self_dict['target_return'] = target_return
 
-    # Apply rebalancing indicators to freeze certain positions
+    # Apply rebalancing indicators to freeze certain positions. Preserve the
+    # pre-freeze bounds so group reconciliation can be limited to mismatches
+    # introduced by the freeze, rather than repairing an invalid mandate.
+    pre_freeze_min_w = _copy_optional_series(self_dict.get('min_weights'))
+    pre_freeze_max_w = _copy_optional_series(self_dict.get('max_weights'))
+    frozen_mask = pd.Series(False, index=valid_index)
     resolved_weights_0 = self_dict.get('weights_0')
     if rebalancing_indicators is not None and resolved_weights_0 is not None:
         rebal = rebalancing_indicators.reindex(index=valid_index, fill_value=1.0)
         is_rebalanced = np.isclose(rebal, 1.0)
+        frozen_mask = pd.Series(~is_rebalanced, index=valid_index)
         # Frozen (non-rebalanced) assets inherit weights_0 as both their
         # lower and upper bound. For a long-only book that bound cannot be
         # negative, but a drifted weights_0 can carry a tiny negative from a
@@ -263,64 +273,86 @@ def build_valid_ticker_constraint_fields(
     # cannot trade frozen assets, so the only feasible resolution is
     # to relax the group bound for this rebalance.
     #
-    # We grant a one-period waiver: raise group_max_allocation to the
-    # frozen-min sum (or lower group_min_allocation to the frozen-max
-    # sum), with a small tolerance. A warning is emitted so the
-    # relaxation is visible in logs. The drift-induced overshoot is
-    # typically a few tens of basis points; for live-PMS-induced
-    # overshoots this is the equivalent of a compliance waiver.
+    # We grant a one-period waiver: raise group_max_allocation beyond the
+    # frozen-min sum (or lower group_min_allocation below the frozen-max
+    # sum) by a solver-feasibility cushion. This is deliberately separate
+    # from the one-basis-point reporting threshold: even a sub-material
+    # mismatch makes the exact CVX constraints infeasible, while only a
+    # material waiver belongs in the run-level compliance summary.
     gluc = self_dict.get('group_lower_upper_constraints')
     min_w = self_dict.get('min_weights')
     max_w = self_dict.get('max_weights')
-    if (relax_frozen_group_bounds and gluc is not None
+    if (relax_frozen_group_bounds and frozen_mask.any() and gluc is not None
             and (min_w is not None or max_w is not None)):
         loadings = gluc.group_loadings
         gmin = gluc.group_min_allocation
         gmax = gluc.group_max_allocation
         new_gmin = _copy_optional_series(gmin)
         new_gmax = _copy_optional_series(gmax)
-        tol = 1e-4
         relax_msgs = []
         relax_items = []
+        relax_violations = []
         for group in loadings.columns:
             group_loading = loadings[group]
             members = group_loading.index[group_loading > 0]
             if len(members) == 0:
                 continue
+            if not frozen_mask.reindex(members, fill_value=False).any():
+                continue
             member_loadings = group_loading.loc[members]
             # cap overshoot from frozen min
-            if gmax is not None and min_w is not None:
+            if gmax is not None and min_w is not None and pre_freeze_min_w is not None:
                 gmax_val = gmax.get(group, np.nan)
                 if not np.isnan(gmax_val):
                     group_min_sum = float(
                         (min_w.reindex(members, fill_value=0.0)
                          * member_loadings).sum())
-                    if group_min_sum > gmax_val + tol:
-                        new_gmax.loc[group] = group_min_sum + tol
+                    pre_freeze_group_min_sum = float(
+                        (pre_freeze_min_w.reindex(members, fill_value=0.0)
+                         * member_loadings).sum())
+                    violation = group_min_sum - float(gmax_val)
+                    if (
+                            violation > _FROZEN_BOUND_FEASIBILITY_EPS
+                            and pre_freeze_group_min_sum
+                            <= float(gmax_val) + _FROZEN_BOUND_FEASIBILITY_EPS
+                    ):
+                        reconciled_max = group_min_sum + _FROZEN_BOUND_FEASIBILITY_EPS
+                        new_gmax.loc[group] = reconciled_max
                         relax_msgs.append(
                             f"  group '{group}': group_max_allocation "
-                            f"{gmax_val:.4f} → {group_min_sum + tol:.4f} "
+                            f"{gmax_val:.4f} → {reconciled_max:.4f} "
                             f"(frozen-min overshoot)")
                         relax_items.append(
                             (str(group), "group_max", float(gmax_val),
-                             float(group_min_sum + tol)))
+                             float(reconciled_max)))
+                        relax_violations.append(violation)
             # floor undershoot from frozen max
-            if gmin is not None and max_w is not None:
+            if gmin is not None and max_w is not None and pre_freeze_max_w is not None:
                 gmin_val = gmin.get(group, np.nan)
                 if not np.isnan(gmin_val):
                     group_max_sum = float(
                         (max_w.reindex(members, fill_value=1.0)
                          * member_loadings).sum())
-                    if group_max_sum < gmin_val - tol:
-                        new_gmin.loc[group] = group_max_sum - tol
+                    pre_freeze_group_max_sum = float(
+                        (pre_freeze_max_w.reindex(members, fill_value=1.0)
+                         * member_loadings).sum())
+                    violation = float(gmin_val) - group_max_sum
+                    if (
+                            violation > _FROZEN_BOUND_FEASIBILITY_EPS
+                            and pre_freeze_group_max_sum
+                            >= float(gmin_val) - _FROZEN_BOUND_FEASIBILITY_EPS
+                    ):
+                        reconciled_min = group_max_sum - _FROZEN_BOUND_FEASIBILITY_EPS
+                        new_gmin.loc[group] = reconciled_min
                         relax_msgs.append(
                             f"  group '{group}': group_min_allocation "
-                            f"{gmin_val:.4f} → {group_max_sum - tol:.4f} "
+                            f"{gmin_val:.4f} → {reconciled_min:.4f} "
                             f"(frozen-max undershoot)")
                         relax_items.append(
                             (str(group), "group_min", float(gmin_val),
-                             float(group_max_sum - tol)))
-        if relax_msgs:
+                             float(reconciled_min)))
+                        relax_violations.append(violation)
+        if relax_items:
             _tag = f"[{context}] " if context else ""
             _msg = (
                 _tag + "Constraints.update_with_valid_tickers: relaxing group "
@@ -332,34 +364,45 @@ def build_valid_ticker_constraint_fields(
             max_relax = float(max(deltas)) if deltas else 0.0
             breached_budget = bool(
                 new_gmax is not None
-                and len(new_gmax[new_gmax > max_exposure + tol]) > 0)
+                and len(new_gmax[
+                    new_gmax > max_exposure + _FROZEN_BOUND_FEASIBILITY_EPS
+                ]) > 0)
             breached_tol = bool(
                 max_relaxation_tol is not None and max_relax > max_relaxation_tol)
-            record = RelaxationRecord(
-                context=context, items=tuple(relax_items),
-                total_relaxation=total_relaxation, max_relaxation=max_relax,
-                breached_budget=breached_budget, breached_tol=breached_tol)
-            if breached_tol:
-                _msg += (f"\n  max single relaxation {max_relax:.4f} exceeds "
-                         f"tolerance {max_relaxation_tol:.4f}")
-            # Per-rebalance detail at INFO (file); escalate to ERROR when the
-            # relaxation magnitude breaches the tolerance or the budget. A
-            # run-level RelaxationSummary aggregates these into one line.
-            _level = logging.ERROR if (breached_tol or breached_budget) else logging.INFO
-            logger.log(_level, _msg, extra={"relaxation": record})
+            is_material = bool(
+                max(relax_violations, default=0.0) >= _FROZEN_BOUND_REPORTING_TOL)
+            if is_material or breached_tol or breached_budget:
+                record = RelaxationRecord(
+                    context=context, items=tuple(relax_items),
+                    total_relaxation=total_relaxation, max_relaxation=max_relax,
+                    breached_budget=breached_budget, breached_tol=breached_tol)
+                if breached_tol:
+                    _msg += (f"\n  max single relaxation {max_relax:.4f} exceeds "
+                             f"tolerance {max_relaxation_tol:.4f}")
+                # Per-rebalance detail at INFO (file); escalate to ERROR when
+                # the relaxation breaches policy or the budget. A run-level
+                # RelaxationSummary aggregates these structured records.
+                _level = logging.ERROR if (breached_tol or breached_budget) else logging.INFO
+                logger.log(_level, _msg, extra={"relaxation": record})
+            else:
+                logger.debug(
+                    "%sConstraints.update_with_valid_tickers: reconciled "
+                    "sub-material frozen-position group mismatch(es): %s",
+                    _tag, relax_items)
             if breached_budget:
-                breached = new_gmax[new_gmax > max_exposure + tol]
+                breached = new_gmax[
+                    new_gmax > max_exposure + _FROZEN_BOUND_FEASIBILITY_EPS
+                ]
                 logger.error(
                     _tag + "Constraints.update_with_valid_tickers: frozen "
                     "overhang relaxed group_max above max_exposure "
                     "(%s) for %s; constraints are effectively "
                     "infeasible — the solve output must be "
                     "validated.", max_exposure, breached.to_dict())
-            self_dict['group_lower_upper_constraints'] = \
-                GroupLowerUpperConstraints(
-                    group_loadings=loadings,
-                    group_min_allocation=new_gmin,
-                    group_max_allocation=new_gmax,
-                )
+            self_dict['group_lower_upper_constraints'] = GroupLowerUpperConstraints(
+                group_loadings=loadings,
+                group_min_allocation=new_gmin,
+                group_max_allocation=new_gmax,
+            )
 
     return self_dict

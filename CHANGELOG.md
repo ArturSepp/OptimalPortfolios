@@ -7,6 +7,22 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [7.1.0] - 2026-09-06
+
+### Changed
+
+- Tightened the CCD and ADMM squared convergence thresholds from `1e-10` to `1e-12` so the
+  constrained risk-budgeting inner solve presents a stable weight path to the outer budget root.
+
+### Fixed
+
+- Reconciled freeze-induced group-bound mismatches down to a `1e-8` solver cushion while retaining
+  a separate one-basis-point reporting threshold. Sub-material corrections no longer make exact
+  CVXPY constraints infeasible and remain outside compliance summaries unless an explicit policy
+  or total-exposure limit is breached.
+- Added a banded inverse-risk-budget round trip that verifies inferred budgets reproduce target
+  weights under binding individual and group allocation limits.
+
 ## [7.0.0] - 2026-09-05
 
 ### Changed

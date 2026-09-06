@@ -252,6 +252,57 @@ def test_a_good_fixed_point_skips_the_slow_slsqp_search(monkeypatch) -> None:
     assert list(budgets.index) == TICKERS
 
 
+def test_inferred_budgets_reproduce_weights_inside_asset_and_group_bands(
+        monkeypatch) -> None:
+    """The CCD inverse solution survives a banded ADMM forward solve."""
+    def fail_if_called(*args, **kwargs):
+        """Make an unnecessary SLSQP refinement visible to the test."""
+        raise AssertionError('SLSQP should not run after fixed-point convergence')
+
+    monkeypatch.setattr(risk_budgeting_module, 'minimize', fail_if_called)
+    prices = make_prices()
+    covar_dict = make_covar_dict()
+    target = pd.Series([0.5, 0.3, 0.2], index=TICKERS)
+    budgets = solve_for_risk_budgets_from_given_weights(
+        prices=prices, given_weights=target, covar_dict=covar_dict)
+
+    min_weights = pd.Series([0.45, 0.25, 0.20], index=TICKERS)
+    max_weights = pd.Series([0.50, 0.35, 0.25], index=TICKERS)
+    group_loadings = pd.DataFrame(
+        {'risky': [1.0, 1.0, 0.0], 'safe': [0.0, 0.0, 1.0]}, index=TICKERS)
+    group_mins = pd.Series({'risky': 0.76, 'safe': 0.20})
+    group_maxs = pd.Series({'risky': 0.80, 'safe': 0.24})
+    groups = GroupLowerUpperConstraints(
+        group_loadings=group_loadings,
+        group_min_allocation=group_mins,
+        group_max_allocation=group_maxs)
+    constraints = long_only(
+        min_weights=min_weights,
+        max_weights=max_weights,
+        group_lower_upper_constraints=groups)
+
+    realised = risk_budgeting_module.rolling_risk_budgeting(
+        prices=prices,
+        constraints=constraints,
+        risk_budget=budgets,
+        covar_dict=covar_dict)
+    average = realised.mean(axis=0)
+    errors = (average - target).abs()
+    group_weights = realised @ group_loadings
+
+    assert budgets.sum() == pytest.approx(1.0, abs=1e-10)
+    assert float(errors.mean()) <= risk_budgeting_module._INVERSE_MEAN_WEIGHT_TOL
+    assert float(errors.max()) <= risk_budgeting_module._INVERSE_MAX_WEIGHT_TOL
+    assert realised.ge(min_weights - 1e-8).all().all()
+    assert realised.le(max_weights + 1e-8).all().all()
+    assert group_weights.ge(group_mins - 1e-8).all().all()
+    assert group_weights.le(group_maxs + 1e-8).all().all()
+    np.testing.assert_allclose(realised['growth'], max_weights['growth'], atol=1e-5)
+    np.testing.assert_allclose(realised['defensive'], min_weights['defensive'], atol=1e-5)
+    np.testing.assert_allclose(group_weights['risky'], group_maxs['risky'], atol=1e-5)
+    np.testing.assert_allclose(group_weights['safe'], group_mins['safe'], atol=1e-5)
+
+
 def test_fixed_point_applies_multiplicative_updates(monkeypatch) -> None:
     """time-varying average weights are corrected before the second evaluation"""
     given = np.array([0.5, 0.3, 0.2])

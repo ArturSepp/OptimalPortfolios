@@ -28,10 +28,10 @@ Algorithms:
       root-finding is noise-free.
 
 This module replaces the vendored pyrb package (github.com/jcrichard/pyrb,
-MIT licence), whose ConstrainedRiskBudgeting it reproduces to within ADMM
-tolerance (~5e-5 in weight space) with no numba dependency; the CCD inner loop
-uses rank-1 updates of Σx and σ²(x), so one cycle is O(n²). Parity against
-frozen pyrb baselines and against the paper's published tables is pinned in
+MIT licence), whose ConstrainedRiskBudgeting it reproduces within the historical
+parity band (~5e-5 in weight space) with no numba dependency; the CCD inner loop
+uses rank-1 updates of Σx and σ²(x), so one cycle is O(n²). Parity against frozen
+pyrb baselines and against the paper's published tables is pinned in
 optimization/tests/risk_budgeting_solver_test.py.
 
 The module is internal to optimalportfolios: the public entry point is
@@ -49,9 +49,9 @@ import quadprog
 from scipy.optimize import brentq
 from typing import Optional, Tuple
 
-# algorithm tolerances (values mirror the retired pyrb defaults for parity)
-CCD_TOL = 1e-10  # convergence on the squared CCD step ||x_k - x_{k-1}||²
-ADMM_TOL = 1e-10  # convergence on max of squared ADMM step / primal / dual residuals
+# Tight inner tolerances keep the lambda-to-weight map stable enough for the outer budget root.
+CCD_TOL = 1e-12  # convergence on the squared CCD step ||x_k - x_{k-1}||²
+ADMM_TOL = 1e-12  # convergence on max of squared ADMM step / primal / dual residuals
 MAX_CCD_CYCLES = 5000
 MAX_ADMM_ITERS = 5000
 ROOT_XTOL = 2e-12  # convergence on λ in the Brent root-finding
