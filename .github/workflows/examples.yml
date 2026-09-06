@@ -86,7 +86,7 @@ jobs:
       run: uv run --no-sync python .github/scripts/run_examples.py --lane offline
 
   network:
-    # The eighteen examples that download from Yahoo Finance, on a schedule, advisory only.
+    # The nineteen examples that download from Yahoo Finance, on a schedule, advisory only.
     #
     # These are not on the pull-request path on purpose. `examples/data/universe.py` pulls 15
     # tickers back to 2003, so gating a PR on them would mean dozens of live downloads per run and

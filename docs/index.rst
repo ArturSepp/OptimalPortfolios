@@ -74,6 +74,7 @@ Project links
    mixed_frequency_data
    incomplete_histories
    covariance_estimators
+   rolling_factor_covar_from_csv
    software_design
    package_comparison
    api

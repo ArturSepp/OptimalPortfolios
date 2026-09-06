@@ -127,6 +127,7 @@ Useful as inputs / diagnostics for the backtest examples above.
 |---|---|
 | `simulate_factor_returns.py` | Simulates a factor model (`Y = X β + ε`) with controllable correlation and noise structure. Used as ground truth for the LASSO estimator below. |
 | `lasso_covar_estimation.py` | Fits the LASSO / Group LASSO factor model on simulated and real data; compares to a vanilla EWMA covariance. Demonstrates `FactorCovarEstimator`. |
+| `rolling_factor_covar_from_csv.py` | Two-stage portable factor-risk workflow: fetches Yahoo proxies to six CSVs, then reloads the bundle without yfinance or ROSAA, estimates rolling HCGL covariance, validates the decomposition, and adapts it to `qis.RiskModel`. See {doc}`rolling_factor_covar_from_csv`. |
 | `demo_covar_different_estimation_freqs.py` | Same estimator, different return frequencies (D / W-WED / ME). Shows annualisation factor and sample-size trade-off. |
 
 ---
@@ -153,6 +154,7 @@ signal on its own. The [alpha signals guide](alphas_module_readme.md) documents 
 5. `solvers/tracking_error.py` — the production TAA pattern (alpha + benchmark + TE constraint).
 6. `comparisons/optimisers.py` — see how objectives differ on the same universe.
 7. `covar_estimation/lasso_covar_estimation.py` — when EWMA isn't enough, this is the next step.
+8. `covar_estimation/rolling_factor_covar_from_csv.py` — deliver a portable factor-risk model without private-package access.
 
 ---
 

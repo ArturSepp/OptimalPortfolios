@@ -9,6 +9,7 @@ on:
     branches: [main]
     paths:
       - docs/**
+      - examples/covar_estimation/rolling_factor_covar_from_csv.py
       - pyproject.toml
       - uv.lock
       - src/optimalportfolios/**
@@ -17,6 +18,7 @@ on:
     branches: [main]
     paths:
       - docs/**
+      - examples/covar_estimation/rolling_factor_covar_from_csv.py
       - pyproject.toml
       - uv.lock
       - src/optimalportfolios/**

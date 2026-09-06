@@ -11,8 +11,8 @@ enum member that no longer exists is a perfectly valid attribute access to a lin
 
 Why the split into lanes
 ------------------------
-Of the 25 unattended examples, 18 need live Yahoo Finance data -- 5 import `yfinance` directly and
-the rest reach it through `examples/data/universe.py`, whose `fetch_benchmark_universe_data()`
+Of the 26 unattended examples, 19 need live Yahoo Finance data -- 6 import `yfinance` directly and
+the other 13 reach it through `examples/data/universe.py`, whose `fetch_benchmark_universe_data()`
 downloads 15 tickers back to 2003. Gating a pull request on live downloads would fail on Yahoo's
 availability far more often than on this repository's code, and a check that is usually red for
 reasons outside the diff is a check people learn to ignore.

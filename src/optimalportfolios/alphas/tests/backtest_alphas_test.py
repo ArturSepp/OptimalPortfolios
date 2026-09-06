@@ -46,9 +46,9 @@ def close_figures():
 
 @pytest.fixture(scope='module')
 def universe() -> dict:
-    """A short window of the committed monthly universe plus the report inputs."""
+    """A decade of history covers the longest nested signal lookback in the sweep."""
     data = load_multiasset_data()
-    prices = data.prices.loc['2014':'2019', :]
+    prices = data.prices.loc['2010':'2019', :]
     group_data = data.group_data
     return dict(prices=prices,
                 group_data=group_data,

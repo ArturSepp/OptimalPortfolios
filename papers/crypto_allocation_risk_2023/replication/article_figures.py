@@ -11,7 +11,7 @@ import qis
 from qis import TimePeriod, PerfParams, BenchmarkReturnsQuantilesRegime, PerfStat
 
 import optimalportfolios.utils.gaussian_mixture as gm
-from papers.crypto_allocation_risk_2023.load_prices import (
+from papers.crypto_allocation_risk_2023.replication.load_prices import (
     Assets,
     OUTPUT_PATH,
     load_prices,

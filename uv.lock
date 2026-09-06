@@ -929,7 +929,7 @@ wheels = [
 
 [[package]]
 name = "factorlasso"
-version = "0.17.0"
+version = "0.18.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cvxpy", version = "1.7.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -944,9 +944,9 @@ dependencies = [
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
     { name = "scipy", version = "1.18.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cc/b9/4c176aded4ef9c6c9b20eddbe93af506071dc34af768e6b9184508602ec9/factorlasso-0.17.0.tar.gz", hash = "sha256:9f4358c950ff7125151d32d6207ddf0cddebdb7690de04b325995e1e3600e916", size = 264758, upload-time = "2026-08-29T19:43:19.36Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/01/61/9b54234e4ecf52b04899d8aaa773329467d6f57e9b300b643b3e101d5c8a/factorlasso-0.18.0.tar.gz", hash = "sha256:655bce0333423e826baab6f0cf0a07ea8a6b06a65677eea07c551921fe732da1", size = 275419, upload-time = "2026-09-01T05:13:00.081Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/c0/40e27209f5fcbc295927614d02edd8ea55c559eb30cb38efb278e232abb9/factorlasso-0.17.0-py3-none-any.whl", hash = "sha256:d2c0722aac2b0ffc6a2b54fb7cdc025be135505ae9a0d831b890e0748ce9dd01", size = 150089, upload-time = "2026-08-29T19:43:17.082Z" },
+    { url = "https://files.pythonhosted.org/packages/01/7c/225e214a5734e3cd28c9395f0e9571159b3f5f6145f772855d60caf59f10/factorlasso-0.18.0-py3-none-any.whl", hash = "sha256:d47f0acee5ac9ce56dc8c1c87231a2fc333b1fb500944323548c684e1bc4ef3d", size = 153250, upload-time = "2026-09-01T05:12:58.383Z" },
 ]
 
 [[package]]
@@ -2180,7 +2180,7 @@ wheels = [
 
 [[package]]
 name = "optimalportfolios"
-version = "7.1.0"
+version = "7.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "cvxpy", version = "1.7.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -2917,7 +2917,7 @@ wheels = [
 
 [[package]]
 name = "qis"
-version = "5.20.0"
+version = "5.22.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "matplotlib", version = "3.10.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -2936,9 +2936,9 @@ dependencies = [
     { name = "seaborn" },
     { name = "statsmodels" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b1/b4/65abc62f07350ab80398a8e3e4e153793e8f94a904d60a60df3dd8d55612/qis-5.20.0.tar.gz", hash = "sha256:36c9ff7375610cde015427f76f12a9f45c38d09a5b24666dc16f93bc54c0512e", size = 650219, upload-time = "2026-08-29T20:27:54.865Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d5/9c/04bd93c08e33a66592e2bf96368462ba2f55aafd935411c9eddddbcae786/qis-5.22.3.tar.gz", hash = "sha256:371fb52afd31b5603bfb754a8d42f46efb32759cb460c79af6dc407bfa7943e4", size = 772097, upload-time = "2026-09-06T16:38:51.147Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f5/7f/4bef81b711e610f26da42b8722c264dffdac1cd7c42d6cd48ed00b50b1c7/qis-5.20.0-py3-none-any.whl", hash = "sha256:5fbdb76e95e85d9b5591f981d93f26b93c42cb093474a15e1cfc81ed802b4109", size = 762734, upload-time = "2026-08-29T20:27:52.808Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/9b/dcd28f06b933e0d4ec18e7c50b7df468681b58e7781d59127a93033bcfd4/qis-5.22.3-py3-none-any.whl", hash = "sha256:13f7e20402b14ae6f709cf8e030d9e8d10bc8ca072d01ecd916aee38e9974631", size = 926768, upload-time = "2026-09-06T16:38:48.802Z" },
 ]
 
 [[package]]

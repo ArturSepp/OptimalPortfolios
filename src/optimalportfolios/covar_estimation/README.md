@@ -199,6 +199,27 @@ in a single O(T) pass, then extracts slices at rebalancing dates:
 where λ = 1 - 2/(span+1). Optional features:
 - **Vol-normalised returns** (DCC-like): normalise by rolling vol before estimation, then rescale
 
+## CSV-only factor-risk example
+
+[`examples/covar_estimation/rolling_factor_covar_from_csv.py`](../../../examples/covar_estimation/rolling_factor_covar_from_csv.py)
+shows the full public path without ROSAA. Its `fetch` stage downloads pedagogical Yahoo proxies,
+fully FX-hedges four asset-class factors into CHF, keeps USD/CHF as its own factor, and writes the
+native `qis.FactorsData` and `qis.FxRatesData` CSV layouts together with asset prices, asset
+metadata and model settings. Its separate `load` stage reads every input from those CSVs, converts
+asset returns into the same reference currency, and estimates `RollingFactorCovarData`. Replace
+the Yahoo factor NAV file with the delivered MATF panel while preserving its column and currency
+basis contract.
+
+```powershell
+python -m examples.covar_estimation.rolling_factor_covar_from_csv fetch --data-dir C:\data\risk_model_inputs
+python -m examples.covar_estimation.rolling_factor_covar_from_csv load --data-dir C:\data\risk_model_inputs
+```
+
+`RollingFactorCovarData` itself has no CSV persistence API: it is reconstructed from the
+CSV-loaded inputs. Each dated snapshot contains the betas, factor covariance and residual risk,
+and the example independently checks `B @ factor_covar @ B.T + diag(residual_var)` before adapting
+the result to `qis.RiskModel`.
+
 ## Data Containers (from factorlasso)
 
 ### `CurrentFactorCovarData`
@@ -211,9 +232,9 @@ Dataclass holding the factor model decomposition at a single date:
 | `y_betas` | (N × M) | Factor loadings β (index=assets, columns=factors) |
 | `y_variances` | (N × 4) | Per-asset diagnostics: ewma_var, residual_var, insample_alpha, r2 |
 | `residuals` | (T × N) | In-sample residuals ε_t = y_t - x_t β', annualised |
-| `clusters` | Dict[str, Series] | HCGL cluster assignments per frequency |
-| `linkages` | Dict[str, ndarray] | Dendrograms per frequency |
-| `cutoffs` | Dict[str, float] | Dendrogram cut thresholds |
+| `clusters` | Series | Asset-indexed HCGL assignments with frequency-prefixed labels |
+| `linkages` | DataFrame | Stacked dendrogram linkage rows with frequency-prefixed index |
+| `cutoffs` | Series | Dendrogram cut threshold indexed by frequency |
 
 Key methods:
 

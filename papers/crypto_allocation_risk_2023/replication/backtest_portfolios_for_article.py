@@ -9,7 +9,7 @@ import pybloqs as p
 import qis as qis
 from qis import TimePeriod, PerfParams, BenchmarkReturnsQuantilesRegime, PerfStat, PortfolioData
 
-from papers.crypto_allocation_risk_2023.load_prices import (
+from papers.crypto_allocation_risk_2023.replication.load_prices import (
     Assets,
     OUTPUT_PATH,
     load_prices,

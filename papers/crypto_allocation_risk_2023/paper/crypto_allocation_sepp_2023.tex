@@ -1,0 +1,496 @@
+\documentclass[pdftex,11pt,a4paper] {article}
+\usepackage{amsmath,amsfonts,amsthm,amssymb,amscd}
+\usepackage{latexsym}
+\usepackage[pdftex]{graphicx}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{multirow}
+\usepackage{enumitem}   
+\usepackage{bbm}
+%\usepackage{natbib} 
+%\bibliographystyle{agsm}
+
+\usepackage{caption}
+\captionsetup[figure]{font=tiny, labelfont=tiny}
+
+
+\usepackage{geometry}
+ \geometry{
+ a4paper,
+ total={165mm,245mm},
+ left=25mm,
+ top=25mm,
+ }
+
+\newtheorem{corollary}{Corollary}[section]
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{definition}{Definition}[section]
+\newtheorem{notations}{Notations}[section]
+\newtheorem{notation}{Notation}[section]
+\newtheorem{assumption}{Assumption}[section]
+\newtheorem*{remark}{Remark}%[section]
+
+
+%\parindent=0cm
+
+
+%\numberwithin{equation}{section}
+%\numberwithin{figure}{section}
+\def\bitcoinB{\leavevmode
+  {\setbox0=\hbox{\textsf{B}}%
+    \dimen0\ht0 \advance\dimen0 0.2ex
+    \ooalign{\hfil \box0\hfil\cr
+      \hfil\vrule height \dimen0 depth.2ex\hfil\cr
+    }%
+  }%
+}
+
+
+\usepackage[nodayofweek]{datetime}
+\newdate{date}{17}{08}{2023}
+\date{\displaydate{date}}
+
+\usepackage{hyperref}  %added
+\hypersetup{colorlinks=true,
+    linktoc=all,
+    linkcolor=blue,
+		citecolor=blue,
+		urlcolor=cyan,
+		bookmarksopen=true
+		}
+
+
+\begin{document}
+
+
+\title{Optimal Allocation to Cryptocurrencies in Diversified Portfolios}
+
+\author{Artur Sepp\thanks{Head of Quantitative Strategies, Clearstar Labs AG, artursepp@gmail.com}}
+
+\maketitle
+
+
+
+\begin{center}
+Published in Risk Magazine, October 2023, 1-6
+\end{center}
+
+
+
+\begin{abstract}
+We apply four quantitative methods for optimal allocation to Bitcoin and Ether cryptocurrencies within alternative and balanced portfolios including metrics for portfolio diversification, expected risk-returns, and skewness of returns distribution. Using roll-forward historical simulations, we show that all four allocation methods produce a persistent positive allocation to Bitcoin and Ether in alternative and balanced portfolios with a median allocation of about $2.7\%$. We conclude that core cryptocurrencies may provide positive contribution to risk-adjusted performances of broad investment portfolios. We emphasize the diversification benefits of cryptocurrencies as an asset class within broad risk-managed portfolios with systematic re-balancing.
+\end{abstract}\vspace*{-1.0\baselineskip}
+ 
+
+
+
+\section{Introduction}
+
+Cryptocurrencies have been acknowledged as an emerging asset class with a relatively low correlation to traditional asset classes. We refer to an excellent paper by Harvey \textit{et al} (2022) \cite{Harvey2022} for an overview of cryptocurrencies from the point of view of an institutional investor. A challenging question about investing into cryptocurrencies is the optimal allocation to Bitcoin, Ether and, generally, to a broad portfolio of cryptocurrencies given that their returns are characterized by high volatilities, changing correlations, and heavy tails (for related research, see Briere \textit{et al} (2015) \cite{Briere2015}, Platanakis \textit{et al} (2019) \cite{Platanakis2019}, Petukhina \textit{et al} (2021) \cite{Petukhina2021}, Ang \textit{et al} (2022) \cite{Ang2022})
+
+Ang \textit{et al} (2022) \cite{Ang2022} show that, given a small probability regime where Bitcoin may generate high returns, investors with preferences for positive skewness of portfolio returns should have portfolio exposure to Bitcoin. We extend the method of Ang \textit{et al}, as one of our allocation methods, to a multi-asset universe including Bitcoin and Ether. To avoid hindsight or discretion, we rely for four quantitative methods using rolling historical data without look-ahead bias. We generate in total 16 portfolios for alts and balanced mandates including an allocation to either Bitcoin or Ether. Encouragingly, all 16 portfolios have  non-zero allocation to cryptocurrencies in the period from Q1 2016 to Q2 2023.
+
+Bitcoin and Ether are core cryptocurrencies with the market cap dominance of $46\%$ and $20\%$ (as of June 2023), respectively. Bitcoin is the native token of the Bitcoin blockchain, which is used for transactions based on proof-of-work validation. Ether is the native token of the Ethereum blockchain. The Ethereum blockchain is based on the proof-of-stake (following an upgrade in September 2022) and it supports the deployment of smart contracts, which serve as base for many DeFi protocols and Layer 2 blockchains.
+
+Based on our feedback, few allocators consider an allocation to Bitcoin as unfavorable for ESG-guided mandates, because the proof-of-work requires a considerable amount of energy and thus it is not environmentally friendly. On the other hand, Ether is viewed as a growth asset without ESG restrictions, and Ether benefits from adoptation of blockchain technology and growth of Ethereum blockchain. A recent upgrade (April 2023) allows liquid staking of Ether to earn validators' rewards, which generates yield for holders of staked Ether and provides extra incentives of holding Ether over Bitcoin. In the light of these views, we include both Bitcoin and Ether as separate allocation opportunities to cryptocurrencies in our analysis.
+
+
+
+
+\section{Investment mandates}
+
+We consider generic portfolio allocation for the two types of investment mandates 
+to analyse marginal benefits of including cryptocurrencies in broad investment mandates with a multi-asset universe.
+
+\begin{enumerate}
+\item \textbf{Alternatives} (Alts) or unconstrained mandate that targets absolute returns by investing into alternative assets. This mandate is typical for high net worth private investors and family offices. 
+	
+	
+\item \textbf{Benchmarked} (Balanced) mandate which targets excess returns over a benchmark by allocating to a balanced equity/bond portfolio with additional overlay to alternative assets. Such a mandate is typical for institutional investors such as pension funds, insurance companies, and endowments. As the balanced benchmark we use the classic $60/40$ equity/bond portfolio\footnote{We proxy its performance using total performances of S\&P 500 ETF (SPY) and 10y US Treasuries ETF (IEF) with weights rebalanced quarterly.}. We fix the target weight of the balanced portfolio for this mandate to $75\%$ and assign $25\%$ allocation to alternative assets. As a result, we consider the modern $70\%/30\%$ approach for allocation portfolio of institutional mandates (see, for an example, McVey \textit{et al} (2022) \cite{McVey2022}) with $30\%$ allocation to bonds, $45\%$ to public equities and $25\%$ to alternative assets. 
+	
+\end{enumerate}
+
+
+For the universe of alternative assets, we consider the following assets\footnote{For private equity and real estate assets we use exchange traded funds tracking the performance of listed managers. We include instead hedge funds and systematic and discretionary macro as liquid overlays. We include an active commodity ETF as a proxy for an allocation to commodities. We include gold as a proxy for allocations to liquid "safe-haven" and FX assets.}\footnote{Python implementation of universe construction and portfolios simulations is available at \href{https://github.com/ArturSepp/OptimalPortfolios}{https://github.com/ArturSepp/OptimalPortfolios} so that interested readers can run their preferred investment universes.}:
+\begin{enumerate}
+
+\item \textbf{Hedge funds} (denoted by HFs) proxied using the performance data of HFRX Global Hedge Fund Index;
+
+\item \textbf{Private Equity} (PE) proxied using Invesco Global Listed Private Equity ETF (PSP);
+
+\item \textbf{Real Estate} (RE) proxied using iShares Global REIT ETF (REET);
+
+
+\item \textbf{Discretionary macro} (SG Macro) hedge funds using SG Macro Trading Index;
+	
+\item \textbf{Systematic macro} (SG CTA) hedge funds using SG CTA Index;
+
+
+\item \textbf{Commodities} using iShares GSCI Commodity Dynamic Roll Strategy ETF (COMT).
+
+\item \textbf{Gold} using SPDR Gold ETF (GLD).
+	
+	
+\end{enumerate}
+
+
+
+
+
+
+
+\section{Drivers for allocation to cryptocurrencies}
+
+We consider a few drivers that support the allocation to Bitcoin using on statistical properties of its returns (see Harvey \textit{et al} \cite{Harvey2022} for a review of supporting fundamental factors).
+
+
+\subsection{Historical performance}
+
+
+The time series of Bitcoin price is available from 19Jul2010 so that the first block of rolling 6 years of monthly data for our simulations is available from 31Mar2016. Accordingly, we report the performance of roll-forward simulations starting from the first (quarterly) allocation on 31Mar2016. In our opinion, investing in Bitcoin starting from year 2015 would be feasible for private investors and family offices through a few of crypto exchanges, including Coinbase, Kraken, Huobi, Bitfinex, Bitstamp, which are still active currently. Briere \textit{et al} (2015) \cite{Briere2015} is one of the first academic papers advocating Bitcoin for portfolio diversification. For institutional investors, investing in Bitcoin would be feasible from December 2017 when the CME launched trading in Bitcoin futures contracts. Ether became tradable on-chain on 7Aug2015\footnote{In our roll-forward simulations, we backfill Ether performance with Bitcoin performance prior to August 2015 to estimate Ether covariance with other asset classes. Actual allocations to Ether from its launch date are based using actual performance of Ether.} and it soon was listed on most of crypto exchanges. CME launched Ether futures in February 2021.
+
+
+
+In Table (\ref{perf_table}), we show the risk-adjusted performance of the benchmark $60/40$ equity/bond portfolio (denoted by 60/40), Bitcoin (BTC), and Ether (ETH) for the three periods. Curiously, Bitcoin produced an astonishing total return by factor of $\times$407,302 (the starting price of Bitcoin on 19Jul2010 is 0.08 and the closing price on 30Jun2023 is 30,477.25). Notably, Bitcoin and Ether returns are characterized with high volatility of monthly returns of $111\%$ and $128\%$, respectively. As a result, the difference between compounded annual return (denoted as P.a. return) and average log-return (denoted as An. log return) is high: $171\%$ vs $100\%$. We follow Ang \textit{et al} \cite{Ang2022} and consider log-returns through our analysis, because these account for the volatility drag. We compute the Sharpe ratio using average log-returns adjusted for 3m US Treasury bill rate, using it as the risk-free rate. Since inception, Bitcoin generated Sharpe ratio of $0.89$, which is actually slightly less than that of the $60/40$ portfolio. It is likely that a high leverage associated with volatile assets may have attracted a lot of speculation to cryptocurrencies. Over the most recent period, both Bitcoin and Ether outperformed the $60/40$ portfolio on risk-adjusted basis.\vspace*{-1.0\baselineskip}
+
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=0.8\textwidth, angle=0] {figs1/performance_table_crypto.PNG}\vspace*{-1.5\baselineskip}
+\end{center}
+\caption{Performance statistics of the investment universe: (A) shows statistics for 60/40 portfolio and Bitcoin from 19Jul2010 to 30Jun2023 and for Ether from 07Aug2015 to 30Jun2023; (B) and (C) shows statistics for the period from 31Mar2016 to 30Jun2023 and from 31Dec2019 to 30Jun2023, respectively. P.a. is the annualized compounded return, An. log return is the annualized average monthly log-return, Vol is the annualized volatility of monthly log-returns, Sharpe ratio is computed using average log-return adjusted by 3m US Treasury bill rate, Max DD is the maximum drawdown, Skewness is the skewness of monthly log-returns; Alpha and Beta, and R2 is the annualised intercept, slope, and the explanatory power of the linear regression of monthly returns using 60/40 balanced portfolio as the benchmark.}
+\normalsize
+\label{perf_table}
+\end{figure}
+
+
+
+Both Bitcoin and Ether have a small correlation 60/40 portfolio for the period from 31Mar2016 to 30Jun2023, as seen from small $R^{2}$s. For the most recent period, Bitcoin and Ether have $R^{2}$s of $32\%$ and $39\%$, which implies a correlation of $0.57$ and $0.62$, respectively. Betas of Bitcoin and Ether to the performance of 60/40 portfolio are rather high ($3.1$ and $4.5$) due to high volatility of their returns. Through all considered periods, Bitcoin and Ether delivered positive annualised alpha relative to the $60/40$ portfolio. Notable is the skewness of Bitcoin and Ether returns which is positive in the first period and still relatively higher compared to other asset classes in the recent period.
+
+
+\subsection{Rolling performance}
+
+Stellar performances of core cryptocurrencies, including Bitcoin and Ether, have been a major supporting factor. In Subplot (A) of Figure (\ref{annual_table}) we show Sharpe ratios for trailing holding periods with the period start given in the first column and the period end given in the first row. For an example, Sharpe ratio realized from the investment period from 31Dec2017 to 31Dec2022 is $0.05$. Clearly, most of large gains are attributed to periods prior to the end of 2017, when Bitcoin was little known to investment community. As a result, any historical analysis covering the early years of Bitcoin performance should be taken with caution.\vspace*{-1.0\baselineskip}
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=1.\textwidth, angle=0] {figs1/rolling_annual_table.PNG}\vspace*{-2.75\baselineskip}
+\end{center}
+\caption{Realized Sharpe ratios from the period start (given in the first column) to the period end (given in the first row). Subplot (A) shows Sharpe ratio using average monthly log-returns; Subplot (B) shows skewness of monthly returns.}\vspace*{-1.0\baselineskip}
+\label{annual_table}
+\end{figure}
+
+
+
+\subsection{Correlations}
+
+% (A) from 31 March 2016 to 31 December 2019, (B) from 31 December 2019 - 30 June 2023.
+
+A low correlation with traditional asset classes may support an allocation to cryptocurrencies within broad portfolios. In Figure (\ref{corr_table}) we show correlation matrices of monthly returns for the three periods: (A) from 19Jul2010 to 31Mar2016, (B) from 31Mar2016 to 30Jun2023 (the whole period of our historical performance evaluation), (C) from 31Dec2019 to 30Jun2023. We see that returns of Bitcoin and Ether were little correlated to 60/40 portfolio and other asset classes in the early period. While the correlation between Bitcoin and equities and bonds increased in the most recent period, Bitcoin's and Ether's correlations with returns of commodities and gold and macro funds have not changed significantly. Thus, the allocation to Bitcoin is still viable within a diversified portfolio of alternatives. We emphasize the importance of dynamic estimation of covariance matrices between cryptocurrencies and traditional and alternative assets for portfolio allocation.\vspace*{-0.75\baselineskip}
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=1.\textwidth, angle=0] {figs1/corr_table.PNG}\vspace*{-1.5\baselineskip}
+\end{center}
+\caption{Correlation matrix of monthly log-returns between assets in the investable universe for three periods.}\vspace*{-1.0\baselineskip}
+\label{corr_table}
+\end{figure}
+
+
+\subsection{Positive skewness of returns distribution}
+
+Positive skewness of returns of cryptocurrencies is a supporting factor for allocation to this asset class. Indeed, Ang \textit{et al} (2022) \cite{Ang2022} argue that for skewness-seeking investors the allocation to Bitcoin could be optimal even if cross-sectional mean return may be negative. However, we observe that the realized skewness of returns of Bitcoin has been declining along with the declining performance, as we show in Subplot (B) of Figure (\ref{annual_table}). 
+While in early years Bitcoin returns are characterized by high positive skewness, the skewness became negative in recent years. Still, the realized skewness of Bitcoin returns is higher than that of traditional asset classes.
+
+Ang \textit{et al} (2022) \cite{Ang2022} apply a two-state Normal mixture model to describe the profile of returns on Bitcoin and maximise the CARA utility for skewness-seeking investors using this mixture model. We extend the model of Ang \textit{et al} to multi-asset universe with $N$ assets including Bitcoin and Ether. We apply Gaussian Mixture model with $M$ clusters to describe the conditional distribution of asset returns given in Eq (\ref{eq:l2}). Within each cluster, the distribution of $N$-dimensional vector of asset returns is normal with vector of estimated means and covariance matrix. We employ Python module \texttt{sklearn.mixture} for the estimation of Gaussian Mixture model and, through cross-validation, we have concluded that using $3$ clusters is most robust to model the distribution of monthly returns of assets in our universe. In Figure (\ref{clusters}), we show the scatterplot of Bitcoin returns vs returns of the 60/40 portfolio and one-deviation ellipsoids of Gaussian distribution in estimated clusters.\vspace*{-0.75\baselineskip}
+
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=0.9\textwidth, angle=0] {figs1/clusters.PNG}
+\includegraphics[width=0.9\textwidth, angle=0] {figs1/params.PNG}\vspace*{-1.5\baselineskip}
+\end{center}
+\caption{Scatter plot and model clusters estimated using Gaussian mixture model. Subplots (A) and (B) show returns data from 19Jul2010 to 31Dec2017 and from 31Dec2017 to 30Jun2023, respectively. Subplots (C) and (D) show corresponding cluster parameters for Bitcoin.}\vspace*{-1.0\baselineskip}
+\label{clusters}
+\end{figure}
+
+We observe a similar "bliss" cluster with $3\%$ probability and large mean of $126\%$ for the whole period. For the recent period, the "bliss" cluster is transformed into a cluster with a lower mean of $28\%$ yet with a higher probability of $29\%$. Also, the means of the two other clusters are negative, so that the model implies $71\%$ probability of negative monthly returns of Bitcoin. Nevertheless, we show that with such a return distribution, Bitcoin still may provide benefits within a diversified portfolio. 
+
+
+
+
+Because of their positive skewness of realized returns (even though it has been declining), Bitcoin and Ether can attribute to potential gains from portfolio re-balancing. We show in Table (\ref{fig:attrib}), that all of the four considered allocation methods produce a positive attribution to Bitcoin and Ether for the past two year during which the total performances of both cryptocurrencies are negative. This example illustrates that it may be beneficial to have exposure to assets with positive skewness, such as Bitcoin and cryptocurrencies, in a broadly diversified portfolio. We emphasize that, to benefit from portfolio re-balancing gains, it is vital to follow a systematic approach for portfolio allocation with regular re-balancing.
+
+
+
+\section{Portfolio Allocation Methods}
+
+
+We consider four quantitative allocation methods for construction of optimal portfolios.
+\begin{enumerate}
+	\item \textbf{Risk} based methods which include portfolios constructed using equal risk contribution and with maximum diversification methods.
+	
+	\item \textbf{Risk-return} based methods which include portfolios constructed using maximum Sharpe ratio and maximum CARA-utility methods.
+\end{enumerate}
+
+
+For each allocation method, we evaluate the following portfolios given in table (\ref{tab:portfolios}). Portfolios 1, 2, 3 provide insights into the marginal contribution of including cryptocurrencies to investable universe alternative portfolios. Portfolios 4, 5 and 6 provide with insights into including cryptocurrencies to alternatives for blending with the 60/40 equity/bond portfolio. The marginal contribution of including cryptocurrencies is estimated using 4 portfolios with either BTC or ETH using 4 allocation methods, with total of 16 different portfolio schemes. This provides a sufficient depth for making insights.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|l|l|l|l|}
+\hline
+ & Portfolio & Core & Crypto \\ \hline
+1 & $100\%$ Alts w/o   crypto & Alts & None \\ \hline
+2 & $100\%$ Alts with BTC & Alts & BTC \\ \hline
+3 & $100\%$ Alts with ETH & Alts & ETH \\ \hline
+4 & $75\%/25\%$ Bal/Alts w/o crypto & $75\%/25\%$ Bal/Alts & None \\ \hline
+5 & $75\%/25\%$ Bal/Alts With BTC & $75\%/25\%$ Bal/Alts & BTC \\ \hline
+6 & $75\%/25\%$ Bal/Alts  With ETH & $75\%/25\%$ Bal/Alts & ETH \\ \hline
+\end{tabular}
+\caption{Simulated mandate portfolios with cryptocurrencies.}
+\label{tab:portfolios}\vspace*{-0.5\baselineskip}
+\end{table}
+
+We consider quarterly re-balancing for all portfolios with volume based costs of $50bp$ (reflecting higher costs for re-balancing alternatives and cryptocurrencies). Our historical simulations are based on the roll-forward basis to avoid the look-ahead bias. At each re-balancing quarter, we use 6 year window for estimating of the historical means and covariance matrices, and Gaussian mixture model using monthly returns up to the quarter. We assume that units of a portfolio in invested assets are implemented using end-of-quarter prices and invested units stay fixed until the next re-balancing quarter; quarterly returns of the portfolio are re-invested. The performance evaluation period for all portfolios is from 31Mar2016 to 30Jun2023.
+
+For risk-based methods we use the exponentially weighted moving average (EWMA) estimator for covariance matrix (Tsay (2005) \cite{Tsay2010}) to account for changes in the correlation structure of asset class returns:\vspace*{-0.5\baselineskip}
+\begin{equation}\label{eq:cm1}
+\begin{split}
+ \Sigma_{t}(\lambda) = \left(1-\lambda\right)  \mathbf{x}_{t} \mathbf{x}^{\intercal}_{t}    + \lambda   \Sigma_{t-1}(\lambda)\vspace*{-0.5\baselineskip}
+\end{split}
+\end{equation}
+where $\mathbf{x}_{t}$ is column vector of monthly log-returns sampled at time $t$ and $^{\intercal}$ denotes transpose. The half-life parameter $\lambda$ is specified using $\lambda=1-2/(span+1)$ with span set to $30$ (the number of monthly returns). Our results are little sensitive to using different specifications of the filter span. We also apply the spectral regularization of the covariance matrix method, see Kone (2021) \cite{Kone2021}.
+
+
+
+\subsection{Equal Risk Contribution}
+
+We consider the allocation problem to $n$ assets and we denote the column vector of asset weights by $\mathbf{w}$. Given covariance matrix $\mathbf{\Sigma}$ of asset return, the portfolio volatility is computed by:\vspace*{-0.5\baselineskip}
+\begin{equation}\label{eq:ew1}
+\begin{split}
+\sigma(\mathbf{w}) =  \sqrt{\mathbf{w}^{\intercal} \mathbf{\Sigma}\mathbf{w}}\vspace*{-1.0\baselineskip}
+\end{split}
+\end{equation}
+The portfolio risk can be decomposed as the sum of marginal risks:\vspace*{-0.5\baselineskip}
+\begin{equation}\label{eq:ew2}
+\begin{split}
+ \sigma(\mathbf{w}) & =  \sum^{N}_{n=1} w_{n} \frac{\partial \sigma(\mathbf{w})}{\partial w_{n}} = \sum^{N}_{n=1} w_{n} \frac{\left(\mathbf{\Sigma} \mathbf{w} \right)_{n} }{ \sigma(\mathbf{w}) }\equiv \sum^{N}_{n=1}  w_{n} c_{n}\vspace*{-1.0\baselineskip}
+\end{split}
+\end{equation}
+with $\mathbf{c}=\mathbf{\Sigma} \mathbf{w} / \sigma(\mathbf{w})$ being the vector of marginal risk contributions and $(\mathbf{c})_{n}$ being its $n$-th element.
+
+
+The equal risk contribution (ERC) portfolio assigns equal marginal risk contributions to all assets: $w_{n} c_{n} = w_{m} c_{m},  \ n, m = 1,...,N$. More generally, we define the vector of risk-budgets $\mathbf{b}$ and solve the portfolio problem, see Maillard \textit{et al} (2010) \cite{Maillard2010}:\vspace*{-0.5\baselineskip}
+\begin{equation}\label{eq:ew3}
+\begin{split}
+& w_{n} c_{n} = b_{n},  \ n = 1,...,N , \  \sum^{N}_{n=1} b_{n}=1,   \ \sum^{N}_{n=1} w_{n}=1\vspace*{-1.0\baselineskip}
+\end{split}
+\end{equation}
+
+For simulations of $100\%$ Alts portfolios, the risk budget is equally distributed among portfolio constituents. For $75\%/25\%$ balanced/alts portfolios, we set the risk budget of $75\%$ to the balanced portfolio\footnote{ERC method may be infeasible when imposing strict equality constraint for allocation weights, so that we impose the $75\%$ allocation weight for the balanced portfolio as the risk budget.\vspace*{-1.0\baselineskip}} and we distribute the remaining $25\%$ equally to alternative assets and cryptocurrencies. In Figure (\ref{erc}), we illustrate the risk-adjusted performance of the historical simulation of six portfolios computed using the ERC method. In Figure (\ref{fig:allweights}), we report the statistic of time series of portfolio weights to cryptocurrencies.\vspace*{-0.5\baselineskip}
+
+
+
+
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=0.7\textwidth, angle=0] {figs1/ratable_ERC.PNG}\vspace*{-1.5\baselineskip}
+\end{center}
+\caption{Historical roll-forward simulations of portfolios with equal risk contributions. Subplot (A) shows the statistics, using notation as in Figure (\ref{perf_table}), realised from 31Mar2016 to 30Jun2023, of risk-adjusted performances of 100\% balanced portfolio, $100\%$ alternatives portfolios with and without Bitcoin, $75\%/25\%$ balanced/alternatives equal risk portfolios with and without Bitcoin. Subplots (B) and (C) show the time series of performances and running drawdowns. Subplots (D) and (E) show the portfolio weights of $100\%$ alternatives portfolio and of $75\%/25\%$ balanced/alternatives portfolio, respectively, with both including Bitcoin.}
+\label{erc}
+\end{figure}
+
+
+We see that for $100\%$ Alts portfolio with Bitcoin and Ether, the median allocated weight is $1.5\%$ and $1.2\%$ and the marginal contribution to portfolio Sharpe ratio equals $+0.14$ ($=0.55-0.41$) and $+0.17$, respectively. For $75\%/25\%$ balanced/alts portfolio, the median weight of Bitcoin and Ether is $0.5\%$ and $0.3\%$ with the marginal improvement in Sharpe ratio equal to $+0.04$ and $+0.04$, respectively. The portfolio risk, measured by realized skewness and beta to the balanced portfolio is not materially impacted by including cryptocurrencies.
+
+
+
+\subsection{Maximum Diversification}
+
+The maximum diversification measure is the ratio between the volatility weighted sum of portfolio weights and the portfolio volatility, see Choueifaty-Coignard (2008) \cite{Choueifaty2008}:\vspace*{-0.5\baselineskip}
+\begin{equation}\label{eq:md1}
+\begin{split}
+ d(\mathbf{w}) & = \frac{ \sum^{N}_{n=1} \sqrt{(\mathbf{\Sigma})_{nn}} w_{n}  }{\sigma(\mathbf{w}) }\vspace*{-0.5\baselineskip}
+\end{split}
+\end{equation}
+When assets are uncorrelated, the diversification ratio is $1$. The ratio falls when correlations between portfolio constituents increase. In contrast to the ERC method, which always allocates a positive weight to an asset in the portfolio universe, the maximum diversification method may allocate zero weights to assets that are highly correlated with other assets.
+
+The optimization problem of maximizing the diversification measure is the following:\vspace*{-0.75\baselineskip}
+\begin{equation}\label{eq:md2}
+\begin{split}
+ \max_{\mathbf{w}} \left\{ d(\mathbf{w}) \right\}, \ \sum^{N}_{n=1} w_{n}=1,  \ 0 \leq \ w_{n}  \leq 1, \ n=1,...,N\vspace*{-0.5\baselineskip}
+\end{split}
+\end{equation}
+For $75\%/25\%$ Balanced/Alts portfolio, the allocation weight to the balanced portfolio is fixed to $75\%$ by adding corresponding constraint to the problem (\ref{eq:md2}).\vspace*{-0.5\baselineskip}
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=0.7\textwidth, angle=0] {figs1/ratable_MaxDiv.PNG}\vspace*{-1.5\baselineskip}
+\end{center}
+\caption{Historical roll-forward simulations of portfolios with maximum diversification. Subplots display the same outputs as in Figure (\ref{erc}).}
+\label{maxdiv}
+\end{figure}
+
+
+In Figures (\ref{maxdiv}) and (\ref{fig:allweights}), we show simulated roll-forward performances and statistics of allocated weights to cryptocurrencies, respectively. For $100\%$ alts portfolios, the median allocated weight to Bitcoin and Ether is $2.1\%$ and $1.6\%$, respectively, with marginal contribution to the portfolio Sharpe ratio of $0.14$ and $0.13$, respectively. For $75\%/25\%$ Balanced/Alts portfolio the median weight to Bitcoin and Ether is $3.4\%$ and $1.8\%$, with improvements in the portfolio Sharpe ratio of $0.13$ and $0.14$, respectively. Both allocations to cryptocurrencies are higher than those for ERC portfolios, because the maximum diversification method may cut allocations to assets with high correlations and increase to assets with lower correlation, which turns out beneficial for cryptocurrencies. The addition of cryptocurrencies does not impact portfolio drawdown and beta.
+
+
+
+\subsection{Sharpe Ratio Maximization}
+
+The optimization of portfolio Sharpe ratio takes into account the vector of expected asset returns, which we denote by $\mathbf{\mu}$. The portfolio objective is given by:\vspace*{-0.5\baselineskip}
+\begin{equation}\label{eq:sr1}
+\begin{split}
+  & \max_{\mathbf{w}} \left\{ f(\mathbf{w})   = \frac{\mathbf{\mu}^{\intercal}\mathbf{w}}{\sqrt{\mathbf{w}^{\intercal}\mathbf{\Sigma}\mathbf{w}}}    \right\}  \\
+	&   \sum^{N}_{n=1}w_{n}= 1 \ ,  0 \leq w_{n} \leq 1, \ n= 1,...,N\vspace*{-0.5\baselineskip}
+\end{split}
+\end{equation}
+For $75\%/25\%$ Balanced/Alts portfolio, we fix the weight of the balanced portfolio to $75\%$ by adding corresponding constraint to problem (\ref{eq:sr1}); the optimizer then allocates the rest of $25\%$ to alt assets to maximize the portfolio Sharpe ratio. We use rolling 6 years of historical returns and covariance matrices as inputs for roll-forward simulation of portfolios with maximum ex-ante Sharpe ratio. 
+
+
+In Figure (\ref{mv}) and Table (\ref{fig:allweights}), we show the simulated performances and statistics of optimal weights. For $100\%$ Alts portfolio, the median allocated weight to Bitcoin and Ether is $4.8\%$ and $2.8\%$, with the improvement of portfolio Sharpe ratio of $0.31$ and $0.51$, respectively. For blended Balanced/Alts portfolio, the median weight is $5.7\%$ and $2.2\%$ with the improvement of $0.25$ and $0.18$ for Bitcoin and Ether, respectively.\vspace*{-0.5\baselineskip}
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=0.7\textwidth, angle=0] {figs1/ratable_MaxSharpe.PNG}\vspace*{-1.5\baselineskip}
+\end{center}
+\caption{Historical roll-forward simulations of portfolios with maximum Sharpe ratio. Subplots display the same outputs as in Figure (\ref{erc}).}\vspace*{-\baselineskip}
+\label{mv}
+\end{figure}
+
+
+
+\subsection{CARA utility under the Gaussian mixture distribution}
+
+The maximization of constant absolute risk aversion (CARA) utility is based on the following portfolio objective (see, for an example, Back (2017) \cite{Back2017}):\vspace*{-0.25\baselineskip}
+\begin{equation}\label{eq:l1}
+%\begin{split}
+\max_{\mathbf{w}} \left\{ f(\mathbf{w})  \equiv -\mathbb{E}\left[ \exp\left\{-\gamma W_{T}(\mathbf{w})\right\}\right]\right\}\vspace*{-0.5\baselineskip}
+%\end{split}
+\end{equation}
+where $\gamma$ is the risk-aversion parameter, $W_{T}(\mathbf{w})$ is the portfolio value at time $T$ given current portfolio weights $\mathbf{w}$, and $\mathbb{E}$ is the expectation under the real-world probability measure.
+
+Interestingly, Ang \textit{et al} (2022) \cite{Ang2022} argue that investors seeking optimal portfolios with high positive skewness should maximize CARA utility because optimal CARA utility over-weights assets with a large positive third moment of return distribution. They suggest using $\gamma=0.5$ because it reproduces $60/40$ weights of equity/bond portfolio. They apply a two-state mixture distribution for modelling Bitcoin returns and consider investment universe of two assets with Bitcoin and $60/40$ equity/bond portfolio.
+
+We extend the model of Ang \textit{et al} to the allocation problem with $N$-asset using the Gaussian Mixture model with $M$ clusters. For each cluster the probability distribution of asset returns is multi-variate normal $\mathbf{N}(\mathbf{\mu}_{m}, \mathbf{\Sigma}_{m})$ with vector of means $\mathbf{\mu}_{m}$ and covariance matrix $\mathbf{\Sigma}_{m}$. As a result, the logarithm of the portfolio distribution under the real-world probability measure is a mixture of multivariate normals:\vspace*{-0.5\baselineskip}
+\begin{equation}\label{eq:l2}
+\begin{split}
+&\ln W_{1}(\mathbf{w}) - \ln W_{0} =  \sum^{M}_{m=1}p_{m}\mathbf{N}\left(\mathbf{\mu}^{\intercal}_{m}\mathbf{w} , \mathbf{w}^{\intercal}\mathbf{\Sigma}_{m}\mathbf{w}\right)\vspace*{-2\baselineskip}
+\end{split}
+\end{equation}
+where $p_{m}$ are the probability of $m$-th cluster. Accordingly, the problem (\ref{eq:l1}) under (\ref{eq:l2}) is given by:\vspace*{-0.5\baselineskip}
+\begin{equation}\label{eq:l3}
+\begin{split}
+  & \max_{\mathbf{w}} \left\{ f(\mathbf{w})   = - \sum^{M}_{m=1}p_{m} \exp\left\{ -\gamma\mathbf{\mu}^{\intercal}_{m}\mathbf{w} +  \frac{1}{2}\gamma^{2}\mathbf{w}^{\intercal}\mathbf{\Sigma}_{m}\mathbf{w} \right\}   \right\}\\
+	& \sum^{N}_{n=1}w_{n} = 1, \ 0\leq w_{n}  \leq 1,\ n = 1,..., N.\vspace*{-1.5\baselineskip}
+\end{split}
+\end{equation}
+To account for the time-varying structure of returns distribution, we use rolling window of 6 years for the estimation of Gaussian Mixture model every quarter.
+
+We can show that the objective in (\ref{eq:l3}) is convex which makes the optimization problem stable. For $75\%/25\%$ balanced/alts portfolio, the allocation weight to the balanced portfolio is fixed to $75\%$ by adding corresponding constrain to the problem (\ref{eq:l3}).\vspace*{-0.5\baselineskip}
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=0.7\textwidth, angle=0] {figs1/ratable_CARA-3.PNG}\vspace*{-1.5\baselineskip}
+\end{center}
+\caption{Historical roll-forward simulations of portfolios with maximum CARA utility under the Gaussian mixture distribution with 3 clusters using risk-aversion parameter $\gamma=0.5$. Subplots display the same outputs as in Figure (\ref{erc}).}\vspace*{-\baselineskip}
+\label{mixure}
+\end{figure}
+
+In Figure (\ref{mixure}) and Table (\ref{fig:allweights}), we show the simulated performances and allocations using the maximum CARA utility method with $\gamma=0.5$. For $100\%$ Alts portfolio, the median allocated weight is $26.1\%$ and $12.6\%$ with the improvement of the Sharpe ratio of $0.46$ and $0.41$. For $75\%/25\%$ Balanced/Alts portfolio, the median allocated weight is $24.1\%$ and $12.1\%$ with the improvement of $0.26$ and $0.27$, respectively. For $75\%/25\%$ balanced/alts portfolio, the allocated weight hits the maximum bound of $25\%$ allotted allocation for most of the simulation period, which highlight the benefits of positive skewness of cryptocurrencies. We see CARA portfolios including Bitcoin and Ether produce positive skewness of realized returns, as expected.
+
+
+
+\section{Discussion}
+
+\subsection{Optimal weights}
+In Figure (\ref{fig:allweights}), we show the statistics of time series of optimal weights to Bitcoin and Ether produced by the four implemented portfolio optimisers. ``Median'' column shows the cross-section median of optimal weights across all methods.
+
+It is notable that all four optimizers produced non-zero weights at all quarterly re-balancing for all portfolios, except for the last quarterly rebalancing of Ether using maximum Sharpe ratio method for $75\%/25\%$ portfolios. The optimization of CARA utility produced the highest allocation to Bitcoin and Ether for both $100\%$ alts and $75\%/25\%$ Balanced/Alts portfolios, because cryptocurrencies add most to the skewness of portfolio returns that is favorable for this method. As a result, including of Bitcoin or Ether to the investable universe is beneficial for diversification of broad portfolios.\vspace*{-0.75\baselineskip}
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=0.9\textwidth, angle=0] {figs1/combined_weights_table.PNG}\vspace*{-1.75\baselineskip}
+\end{center}
+\caption{Minimum, average, maximum, and last weight (as of last quarterly re-balancing on 30 June 2023) to Bitcoin by allocation methods computed using roll-forward simulations from 31 March 2016 to 30 June 2023. Subplot (A) shows the weight in 100\% Alts portfolio, Subplot (B) shows the weight in the 75\%/25\% Balanced/Alts portfolio. ERC is portfolio with equal risk contribution, MaxDiv is portfolio with maximum diversification, MaxSharpe is portfolio with maximum Sharpe ratio, CARA-3 is portfolio with maximum CARA utility under Gaussian mixture model with 3 clusters.}\vspace*{-\baselineskip}
+\label{fig:allweights}
+\end{figure}
+
+
+\subsection{Performance Attribution}
+
+It is intuitive that assets with positive skewness may increase returns of regularly re-balanced portfolios, because assets with higher excess performances are periodically sold while laggards are bought. We attribute portfolio returns from the $i$-th asset by computing it as $\sum_{t}w^{(i)}_{t-1}r^{(i)}_{t}$, where $w^{(i)}_{t-1}$ is asset weight at the start of $t$-th quarter and $r^{(i)}_{t}$ is asset return for $t$-th quarter. 
+
+
+In Figure (\ref{fig:attrib}) we show portfolio returns attribution of Bitcoin and Ether for all simulated portfolios. In the first line in blue, we show the total performance generated by Bitcoin and Ether for this period. We show the performance for the whole period of historical simulations and two recent sub-periods when the performance of the cryptocurrencies was negative (starting in 21Q1 and ending in 23Q1 for Bitcoin, and 21Q2-23Q1 for Ether).
+
+We see that both Bitcoin and Ether delivered positive contribution to portfolio returns, in particular, during a recent period when cryptocurrency total returns are negative. The positive contribution to the portfolio return can be attributed to re-balancing gains due to capitalizing on high excess quarterly returns on cryptocurrencies and, in opposite, due to topping-up the allocation to cryptocurrencies following their low quarterly returns relative to other asset classes.
+\vspace*{-0.5\baselineskip}
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=0.7\textwidth, angle=0] {figs1/perf_atrib_all.PNG}\vspace*{-1.5\baselineskip}
+\end{center}
+\caption{Performance attribution of portfolio returns to cryptocurrencies. The first line in blue shows the total performance of an allocated cryptocurrency, the next four lines show the performance attribution of this cryptocurrency for the respective allocation method.}\vspace*{-\baselineskip}
+\label{fig:attrib}
+\end{figure}
+
+
+
+\section{Conclusion}
+
+We have presented empirical evidence that it has been optimal to include Bitcoin and Ether to an investable universe for both alternative and blended portfolios. Given that high volatility and non-stationary of returns of cryptocurrencies, we emphasize the need for a robust portfolio allocation method with regular updates of portfolio inputs and re-balancing of portfolio weights. Our favorite allocation method is the optimiser of portfolio diversification metric along with the optimiser of the CARA utility under Gaussian mixture distribution for skewness-seeking investors.
+
+
+
+
+\begin{thebibliography}{99}
+
+
+\bibitem{Ang2022} Ang A., Morris T., Savi J., 2022. Asset Allocation with Crypto: Application of Preferences for Positive Skewness. SSRN \href{https://ssrn.com/abstract=4042239}{https://ssrn.com/abstract=4042239}
+
+
+\bibitem{Back2017} Back E. B., 2017. Asset Pricing and Portfolio Choice Theory. Oxford University Press
+
+
+\bibitem{Briere2015} Briere, M., K. Oosterlinck, and A. Szafarz. 2015. Virtual Currency, Tangible Return: Portfolio Diversification with Bitcoin. Journal of Asset Management 16, 365–373.
+
+
+
+
+\bibitem{Choueifaty2008} Choueifaty Y., Coignard Y., 2008. Towards maximum diversification. The Journal Of Portfolio Management, 35(1), 40-51
+
+
+\bibitem{Harvey2022} Harvey C. R., Zeid T. A., Draaisma T., Luk M., Neville H., Rzym A., Hemert O. T., 2022. An Investor’s Guide to Crypto. SSRN \href{https://ssrn.com/abstract=4124576}{https://ssrn.com/abstract=4124576}
+
+
+\bibitem{Kone2021} Kone N., 2021. Regularized Maximum Diversification Investment Strategy. Econometrics 9(1), 1-23
+
+
+\bibitem{Maillard2010} Maillard S., Roncalli T., Teïletche J., 2010. The Properties of Equally Weighted Risk Contribution Portfolios. The Journal of Portfolio Management 36(4), 60-70
+
+
+\bibitem{McVey2022} McVey H., Allouani R., Monmirel T., 2022. Regime Change: Enhancing the ‘Traditional’ Portfolio. KKR Insights 12(3), \href{https://www.kkr.com/global-perspectives/publications/regime-change-enhancing-the-traditional-portfolio}{https://www.kkr.com/global-perspectives/publications/regime-change-enhancing-the-traditional-portfolio}
+
+
+\bibitem{Petukhina2021} Petukhina, A., Trimborn, S., Härdle, W.K. and Elendner, H., 2021. Investing With Cryptocurrencies - Evaluating Their Potential for Portfolio Allocation Strategies. Quantitative Finance 21(11), pp. 1825-1853
+
+
+\bibitem{Platanakis2019} Platanakis, E., and A. Urquhart. 2019. Should Investors Include Bitcoin in Their Portfolios? A Portfolio Theory Approach. British Accounting Review 52(4):100837
+
+
+%\bibitem{Sepp2020} Sepp A., 2020. 60/40 Portfolios and the Need for Smart Diversification. HedgeNordic.
+%\href{https://hedgenordic.com/2020/06/60-40-portfolios-and-the-need-for-smart-diversification/}{https://hedgenordic.com/2020/06/60-40-portfolios-and-the-need-for-smart-diversification/}
+
+
+\bibitem{Tsay2010} Tsay R. S., 2010. Analysis of Financial Time Series. 3rd Ed. Wiley-Interscience
+
+\end{thebibliography}
+
+
+\end{document}
+
+
+
+

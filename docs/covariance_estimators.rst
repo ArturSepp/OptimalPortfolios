@@ -90,6 +90,8 @@ confirm that a matrix dated *t* uses no observation after *t*.
 See also
 --------
 
+* :doc:`rolling_factor_covar_from_csv` for the complete Yahoo-to-CSV and
+  CSV-to-HCGL pipeline, including a ROSAA-free MATF handoff contract
 * :doc:`mixed_frequency_data` and :doc:`incomplete_histories`
 * :doc:`api` for ``EwmaCovarEstimator`` and ``FactorCovarEstimator``
 * `Offline mixed-frequency covariance example

@@ -1,13 +1,12 @@
 """
 generate and load prices for portfolio allocation problem
-update_prices_with_bloomberg() must used with  Bloomberg open
+update_prices_with_bloomberg() requires an open Bloomberg Terminal
 update_prices_with_yf() uses yfinance + some universe uploaded manually
 NB: CmcScraper stopped working so now only option is to use bloomberg
 """
 import os
 from pathlib import Path
 import pandas as pd
-import yfinance as yf
 import matplotlib.pyplot as plt
 from typing import List, Literal, Union, Optional
 from enum import Enum
@@ -15,12 +14,21 @@ from enum import Enum
 # from cryptocmd import CmcScraper  its stopped working: todo - remove
 import qis as qis
 
-# Repository data and generated-output locations. The output directory can be redirected without
-# editing the published script; its default is the repository's gitignored outputs/ tree.
-LOCAL_PATH = Path(__file__).resolve().parent / 'data'
+from papers.crypto_allocation_risk_2023.replication.bloomberg_snapshot import (
+    DEFAULT_AS_OF,
+    DEFAULT_START_DATE,
+    create_bloomberg_snapshot,
+    load_bloomberg_prices,
+    load_bloomberg_risk_free,
+)
+
+# Repository data and generated-output locations. Replication code lives one level below the paper
+# root; data and outputs remain siblings of replication/.
+PAPER_ROOT = Path(__file__).resolve().parent.parent
+LOCAL_PATH = PAPER_ROOT / 'data'
 OUTPUT_PATH = Path(os.environ.get(
     'OPTIMALPORTFOLIOS_OUTPUT_DIR',
-    Path(__file__).resolve().parents[2] / 'outputs' / 'crypto_allocation_risk_2023',
+    PAPER_ROOT / 'outputs',
 )).expanduser().resolve()
 
 
@@ -65,6 +73,8 @@ def update_prices_with_yf() -> pd.DataFrame:
     """
     generate price universe using yfinance
     """
+    import yfinance as yf
+
     require_licensed_price_files()
     btc = create_btc_price()
     eth = create_eth_price(btc_price=qis.load_df_from_csv(file_name=BTC_PRICES_FROM_2010, local_path=LOCAL_PATH).iloc[:, 0])
@@ -97,43 +107,17 @@ def update_prices_with_yf() -> pd.DataFrame:
     return prices
 
 
-def update_prices_with_bloomberg() -> pd.DataFrame:
-    """
-    generate price universe using yfinance
-    """
-    from bbg_fetch import fetch_field_timeseries_per_tickers
-
-    btc = fetch_field_timeseries_per_tickers(tickers={'XBTUSD Curncy': Assets.BTC.value}).iloc[:, 0]
-    eth_bbg = fetch_field_timeseries_per_tickers(tickers={'XETUSD Curncy': Assets.ETH.value}).iloc[:, 0]
-    # bfill eth with bal
-    eth = qis.bfill_timeseries(df_newer=eth_bbg, df_older=btc, freq='D', is_prices=True)
-    bal = create_balanced_price()
-
-    # REET starts from Jul 08, 2014 - use IYR for backfill
-    iyr = yf.download('IYR', start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].rename(Assets.RE.value)
-    reet = yf.download('REET', start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].rename(Assets.RE.value)
-    re = qis.bfill_timeseries(df_newer=reet, df_older=iyr, is_prices=True)
-
-    # COMT starts from 2014-10-16, use GSG for backfill
-    coms0 = yf.download('GSG', start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].rename(Assets.COMS.value)
-    coms1 = yf.download('COMT', start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].rename(Assets.COMS.value)
-    coms = qis.bfill_timeseries(df_newer=coms1, df_older=coms0, is_prices=True)
-
-    # use bbg
-    hf = fetch_field_timeseries_per_tickers(tickers={'HFRXGL Index': Assets.HF.value}).iloc[:, 0]
-    cta = fetch_field_timeseries_per_tickers(tickers={'NEIXCTA Index': Assets.CTA.value}).iloc[:, 0]
-    macro = fetch_field_timeseries_per_tickers(tickers={'HFRIMDT Index': Assets.MACRO.value}).iloc[:, 0]
-
-    # etfs
-    gld = yf.download('GLD', start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].rename(Assets.GLD.value)
-    pe = yf.download('PSP', start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].rename(Assets.PE.value)
-
-    prices = pd.concat([bal, btc, eth, hf, pe, re, macro, cta, coms, gld], axis=1).sort_index()
-    # to business day frequency
-    prices = prices.asfreq('B', method='ffill').ffill()
-    qis.save_df_to_csv(prices, file_name=PRICE_DATA_FILE_UPDATED, local_path=LOCAL_PATH)
-
-    return prices
+def update_prices_with_bloomberg(
+        as_of: Union[pd.Timestamp, str] = DEFAULT_AS_OF,
+        start_date: Union[pd.Timestamp, str] = DEFAULT_START_DATE,
+        use_legacy_eth_proxy: bool = True,
+        ) -> pd.DataFrame:
+    """Create and load an immutable, fully Bloomberg-sourced paper snapshot."""
+    paths = create_bloomberg_snapshot(start_date=start_date, as_of=as_of)
+    return load_bloomberg_prices(
+        tag=paths.root.name,
+        use_legacy_eth_proxy=use_legacy_eth_proxy,
+    )
 
 
 def create_btc_price() -> pd.Series:
@@ -154,6 +138,8 @@ def create_eth_price(btc_price: pd.Series) -> pd.Series:
 
 
 def create_balanced_price() -> pd.Series:
+    import yfinance as yf
+
     spy = yf.download('SPY', start=None, end=None, ignore_tz=True)['Close'].rename('SPY')
     ief = yf.download('IEF', start=None, end=None, ignore_tz=True)['Close'].rename('IEF')
     prices = pd.concat([spy, ief], axis=1).dropna()
@@ -177,9 +163,20 @@ def fetch_cmc_price(ticker: str = 'ETH') -> pd.Series:
 
 def load_prices(assets: List[Assets] = None,
                 crypto_asset: Optional[Union[Literal['BTC', 'ETH'], str]] = 'BTC',
-                is_updated: bool = False
+                is_updated: bool = False,
+                snapshot_tag: Optional[str] = None,
+                use_legacy_eth_proxy: bool = True,
                 ) -> pd.DataFrame:
-    if is_updated:
+    if snapshot_tag is not None and is_updated:
+        raise ValueError("snapshot_tag and is_updated are mutually exclusive")
+    if crypto_asset not in (None, 'BTC', 'ETH'):
+        raise ValueError("crypto_asset must be 'BTC', 'ETH', or None")
+    if snapshot_tag is not None:
+        prices = load_bloomberg_prices(
+            tag=snapshot_tag,
+            use_legacy_eth_proxy=use_legacy_eth_proxy,
+        )
+    elif is_updated:
         prices = qis.load_df_from_csv(file_name=PRICE_DATA_FILE_UPDATED, local_path=LOCAL_PATH)
     else:
         prices = qis.load_df_from_csv(file_name=PRICE_DATA_FILE, local_path=LOCAL_PATH)
@@ -193,7 +190,12 @@ def load_prices(assets: List[Assets] = None,
     return prices
 
 
-def load_risk_free_rate() -> pd.Series:
+def load_risk_free_rate(snapshot_tag: Optional[str] = None) -> pd.Series:
+    """Load the Bloomberg snapshot rate, or the historical Yahoo input for legacy scripts."""
+    if snapshot_tag is not None:
+        return load_bloomberg_risk_free(tag=snapshot_tag)
+    import yfinance as yf
+
     return yf.download('^IRX', start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].dropna() / 100.0
 
 
@@ -235,6 +237,8 @@ def run_local_test(local_test: LocalTests):
         qis.plot_prices_with_dd(prices=prices)
 
     elif local_test == LocalTests.CREATE_BALANCED_PRICE:
+        import yfinance as yf
+
         price = create_balanced_price()
         print(price)
         bal = yf.download('AOR', start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].rename('AOR')
@@ -242,6 +246,8 @@ def run_local_test(local_test: LocalTests):
         qis.plot_prices_with_dd(prices=prices)
 
     elif local_test == LocalTests.CHECK_REAL_ESTATE:
+        import yfinance as yf
+
         assets = ['IYR', 'REZ', 'REET']
         prices = []
         for asset in assets:
@@ -250,7 +256,7 @@ def run_local_test(local_test: LocalTests):
         qis.plot_prices_with_dd(prices=prices)
 
     elif local_test == LocalTests.UPDATE_PRICES_WITH_BLOOMBERG:
-        prices = update_prices_with_bloomberg()
+        prices = update_prices_with_bloomberg(as_of=DEFAULT_AS_OF)
         qis.plot_prices_with_dd(prices=prices)
 
     plt.show()

@@ -7,6 +7,24 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [7.2.0] - 2026-09-06
+
+### Added
+
+- Added a portable rolling factor-covariance example and Sphinx guide that fetch Yahoo proxies,
+  persist the native QIS factor and FX containers to CSV, reload them without private-package
+  access, estimate HCGL covariance, verify the decomposition independently, and adapt it to
+  `qis.RiskModel`.
+- Added an auditable 2026 update pipeline for the 2023 *Risk* cryptocurrency-allocation article,
+  including immutable Bloomberg snapshot validation, implementation-parity checks, offline tests,
+  and the manuscript source. Licensed observations and generated reports remain gitignored.
+
+### Changed
+
+- Reorganized the cryptocurrency-allocation replication code under its paper-owned
+  `replication/` package and updated documentation and example-CI classification for the new
+  factor-covariance workflow.
+
 ## [7.1.0] - 2026-09-06
 
 ### Changed
