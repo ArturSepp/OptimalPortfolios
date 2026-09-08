@@ -51,7 +51,7 @@ dependencies = [
     "seaborn>=0.13.0",
     "openpyxl>=3.1.0",
     "PyYAML>=6.0",
-    "cvxpy>=1.3.0",
+    "cvxpy>=1.5.2",
     "scs>=3.2.4.post1,!=3.3.0",
     "quadprog>=0.1.11",
     "qis>=5.20.0",
@@ -180,6 +180,8 @@ extend-select = ["TID251", "TID253", "ICN"]
 "stochvolmodels".msg = "A1: subject packages never import each other."
 "goal_based_allocation".msg = "A1: subject packages never import each other."
 "vanilla_option_pricers".msg = "A1: subject packages never import each other."
+"bbg_fetch".msg = "A1: optimalportfolios has no declared dependency on bbg_fetch."
+"option_chain_analytics".msg = "A1: optimalportfolios has no declared dependency on option_chain_analytics."
 
 [tool.ruff.lint.flake8-tidy-imports]
 # A3: an optional extra is imported inside a function and guarded, never at module level, so a

@@ -1,10 +1,9 @@
-optimalportfolios: production portfolio construction and rolling backtesting
-============================================================================
+.. _optimalportfolios-production-portfolio-construction-and-rolling-backtesting:
 
-``optimalportfolios`` provides production multi-asset portfolio construction
-and rolling backtesting in Python. It connects point-in-time covariance and
-alpha estimation with constrained optimisation, rebalancing, transaction
-costs, and performance reporting.
+optimalportfolios
+=================
+
+Production multi-asset portfolio construction and rolling backtesting in Python.
 
 The package is the reference implementation of the ROSAA framework published
 in *The Journal of Portfolio Management* (Sepp, Ossa and Kastenholz, 2026).

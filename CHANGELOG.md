@@ -7,6 +7,27 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- Added explicit stack dependency and optional-import boundary checks, including
+  isolated maintainer adapters, plus a fresh Python 3.10 lowest-direct dependency CI lane.
+
+- Added tag-driven PyPI Trusted Publishing with release-identity and distribution
+  validation; creating a GitHub Release remains optional.
+
+### Changed
+
+- Aligned package summaries, software citations, README navigation, and documentation
+  landing pages with the canonical package identity and Read the Docs documentation.
+
+- Reorganized the README around installation, quickstart, capabilities, and workflows;
+  the executable README examples remain covered by the existing checks.
+
+### Fixed
+
+- Raised the CVXPY runtime floor to 1.5.2 after reproducing import failures in the
+  earlier allowed versions with the required NumPy 2.0 and supported SciPy versions.
+
 ## [7.2.0] - 2026-09-06
 
 ### Added
