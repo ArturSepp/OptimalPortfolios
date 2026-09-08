@@ -25,6 +25,9 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- Raised the SCS minimum to 3.2.4.post3 after the fresh Python 3.10 CI job reproduced a
+  NumPy 2.0 ABI failure in 3.2.4.post1; retained the existing 3.3.0 exclusion.
+
 - Raised the CVXPY runtime floor to 1.5.2 after reproducing import failures in the
   earlier allowed versions with the required NumPy 2.0 and supported SciPy versions.
 
