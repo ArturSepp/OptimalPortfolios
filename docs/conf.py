@@ -1,6 +1,8 @@
 """Sphinx configuration for the OptimalPortfolios documentation."""
 
 from pathlib import Path
+import tomllib
+import os
 import sys
 
 
@@ -9,6 +11,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 project = "optimalportfolios"
 author = "Artur Sepp"
 copyright = "2026, Artur Sepp"
+release = tomllib.loads(
+    (Path(__file__).resolve().parents[1] / "pyproject.toml").read_text(encoding="utf-8")
+)["project"]["version"]
+version = ".".join(release.split(".")[:2])
 
 extensions = [
     "myst_parser",
@@ -34,7 +40,10 @@ linkcheck_ignore = [
 ]
 
 html_theme = "furo"
-html_baseurl = "https://optimalportfolios.readthedocs.io/en/latest/"
+html_baseurl = (
+    os.environ.get("READTHEDOCS_CANONICAL_URL")
+    or "https://optimalportfolios.readthedocs.io/en/latest/"
+)
 html_title = "optimalportfolios - portfolio construction and rolling backtesting"
 html_short_title = "optimalportfolios"
 html_static_path = ["_static"]

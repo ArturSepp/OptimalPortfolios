@@ -7,6 +7,34 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- Added explicit stack dependency and optional-import boundary checks, including
+  isolated maintainer adapters, plus a fresh Python 3.10 lowest-direct dependency CI lane.
+
+- Added tag-driven PyPI Trusted Publishing with release-identity and distribution
+  validation; creating a GitHub Release remains optional.
+
+### Changed
+
+- Aligned package summaries, software citations, README navigation, and documentation
+  landing pages with the canonical package identity and Read the Docs documentation.
+
+- Reorganized the README around installation, quickstart, capabilities, and workflows;
+  the executable README examples remain covered by the existing checks.
+
+### Fixed
+
+- Made the missing-group-bound warning regression test compatible with pytest 7
+  by capturing both warnings together and asserting their exact messages and count.
+  The constraint implementation and expected constraint count are unchanged.
+
+- Raised the SCS minimum to 3.2.4.post3 after the fresh Python 3.10 CI job reproduced a
+  NumPy 2.0 ABI failure in 3.2.4.post1; retained the existing 3.3.0 exclusion.
+
+- Raised the CVXPY runtime floor to 1.5.2 after reproducing import failures in the
+  earlier allowed versions with the required NumPy 2.0 and supported SciPy versions.
+
 ## [7.2.0] - 2026-09-06
 
 ### Added

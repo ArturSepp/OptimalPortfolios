@@ -20,22 +20,34 @@ It is the reference implementation of the ROSAA framework published in *The Jour
 
 ## Ecosystem position
 
-This package is one of eight open-source Python libraries maintained at [github.com/ArturSepp](https://github.com/ArturSepp). Before implementing anything non-trivial, check whether it already exists in one of these:
+This package is one of ten public Python libraries maintained at
+[github.com/ArturSepp](https://github.com/ArturSepp). Check the owning package before
+adding a capability or copying code between repositories.
 
 | Package | Repository | Purpose |
 |---|---|---|
-| `qis` | QuantInvestStrats | Performance analytics, factsheets, visualisation |
-| `optimalportfolios` | OptimalPortfolios | Portfolio construction and backtesting |
-| `factorlasso` | factorlasso | Sparse factor models and factor covariance estimation |
-| `bbg-fetch` | BloombergFetch | Bloomberg data fetching |
-| `trendfollowing` | TrendFollowingSystems | Trend-following systems: closed-form theory and replication |
-| `goal-based-allocation` | GoalBasedAllocation | Dynamic MV allocation under regime-switching jump-diffusions |
-| `stochvolmodels` | StochVolModels | Stochastic volatility pricing analytics |
-| `vanilla-option-pricers` | VanillaOptionPricers | Vanilla option pricers and implied volatility fitters |
+| `qis` | QuantInvestStrats | performance analytics, backtesting, and factsheet reporting |
+| `optimalportfolios` | OptimalPortfolios | portfolio construction and rolling backtesting |
+| `factorlasso` | FactorLasso | sparse factor-model estimation |
+| `bbg-fetch` | BloombergFetch | Bloomberg data in pandas DataFrames |
+| `stochvolmodels` | StochVolModels | stochastic-volatility pricing and calibration |
+| `trendfollowing` | TrendFollowingSystems | closed-form trend-following analytics |
+| `privateassets` | PrivateAssets | multi-factor PME for private assets |
+| `goal-based-allocation` | GoalBasedAllocation | goal-based allocation under regime-switching jump-diffusions |
+| `vanilla-option-pricers` | VanillaOptionPricers | Numba-vectorised BSM and Bachelier pricing |
+| `option-chain-analytics` | OptionChainAnalytics | point-in-time option-chain data and queries |
 
-Actual package dependencies within the stack: `optimalportfolios` depends on `qis` and `factorlasso`; `trendfollowing` depends on `qis`; `stochvolmodels` has an optional `research` extra that pulls in `qis`. The others are independent.
+Core dependency edges: `optimalportfolios` consumes `qis` and `factorlasso`;
+`trendfollowing` and `privateassets` consume `qis`; `stochvolmodels` consumes
+`vanilla-option-pricers`; `option-chain-analytics` consumes `qis` and
+`vanilla-option-pricers`. The remaining packages have no core stack dependencies.
 
-Do not vendor or copy code between these packages. If functionality belongs in a sibling package, say so rather than reimplementing it here.
+Optional edges: PrivateAssets' `factors` extra adds `factorlasso`; StochVolModels'
+`research` extra adds `qis` and `option-chain-analytics`; OCA's `bloomberg` and `all`
+extras add `bbg-fetch`. Core imports must work without optional dependencies.
+OCA never imports StochVolModels or the private SigmaStrats consumer. Exact
+maintainer-tool exceptions are recorded in `.github/stack-policy.json`; they do
+not authorise adding those dependencies to core or importing them at package root.
 
 ## Repository layout
 
@@ -181,7 +193,7 @@ and has no reference left in this repository. To run the examples, install what 
 <!-- ===== SHARED AGENT CORE (consumer variant) — begin =====
      Generated from SHARED_AGENT_CORE.md in the maintainer's project knowledge. Do not hand-edit
      between these markers — propose the change to the maintainer instead. Variants: builder
-     (qis) / consumer / standalone. Last synced 2026-08-08, agent core v1.1. -->
+     (qis) / consumer / standalone. Last synced 2026-09-08, agent core v1.5 -->
 
 ## Domain invariants
 
@@ -206,11 +218,18 @@ This package consumes `qis` (analytics, backtesting, reporting) and `factorlasso
 covariance). Reimplementing a capability they export is a defect, not a convenience.
 Triggers — stop and check the export list before writing: backtest, rebalance, turnover,
 drawdown, Sharpe, volatility target, bootstrap, resample, unsmooth, covariance, correlation,
-regime, hedge ratio, factsheet, tracking error, risk contribution.
+regime, hedge ratio, factsheet, tracking error, realised tracking error, information ratio,
+benchmark beta, marginal contribution, risk contribution.
 
 - **The hard stop:** a `for` loop over dates accumulating a position, a weight or a P&L is
   `qis.backtest_model_portfolio`. The hand-rolled version gets drift adjustment wrong — `qis`
   holds *units* between rebalancings, not weights.
+- **Never hand-roll `d' Σ d`, a beta ratio, or a TE decomposition.** Ex-ante tracking error,
+  factor exposures, benchmark beta and marginal TE come from `qis.RiskModel`, built from
+  covariance-estimation output via `optimalportfolios.build_risk_model` (a plain
+  `{date: covar}` dict gives a covariance-only model); realised ex-post TE is
+  `qis.compute_ewma_realised_tracking_error` (EWMA series), and whole-sample TE/IR scalars are
+  `qis.compute_te_ir_errors`.
 - **Never invent a symbol.** If a function, class, or keyword argument is not in the export
   list, it does not exist. Check in one line —
   `python -c "import qis; print([n for n in dir(qis) if 'unsmooth' in n.lower()])"`;
@@ -273,7 +292,11 @@ A release touches three version locations. All three must agree, and `src/optima
 2. `version` and `date-released` in `CITATION.cff`
 3. the `@software` BibTeX entry in `README.md`
 
-Then: commit, tag `v<version>`, build and publish to PyPI, and cut a GitHub Release with the same tag. Do not bump versions as part of an unrelated change, and do not publish without the maintainer explicitly asking for a release.
+For an authorized publication: commit, tag the exact main-reachable source as `v<version>`,
+then build, verify and publish its artifacts. Frequent PyPI updates are supported. A GitHub
+Release page is optional and created only when requested. Local builds need no release, and
+development versions on main may be ahead of PyPI. Do not publish or bump versions for
+unrelated work.
 
 ## Known issues
 
