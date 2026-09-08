@@ -97,9 +97,13 @@ def test_a_group_with_no_stated_bound_is_skipped_with_a_warning() -> None:
     object.__setattr__(gluc, 'group_min_allocation', pd.Series({'risky': 0.1}))
     object.__setattr__(gluc, 'group_max_allocation', pd.Series({'risky': 0.9}))
     w = cvx.Variable(len(TICKERS), nonneg=True)
-    with pytest.warns(UserWarning, match='no group=safe in group_min_allocation'):
-        with pytest.warns(UserWarning, match='no group=safe in group_max_allocation'):
-            constraints = gluc.set_cvx_group_lower_upper_constraints(w=w)
+    with pytest.warns(UserWarning) as warning_records:
+        constraints = gluc.set_cvx_group_lower_upper_constraints(w=w)
+    assert all(issubclass(record.category, UserWarning) for record in warning_records)
+    assert [str(record.message) for record in warning_records] == [
+        'no group=safe in group_min_allocation, constraint skipped',
+        'no group=safe in group_max_allocation, constraint skipped',
+    ]
     # only the two 'risky' bounds were emitted
     assert len(constraints) == 2
 

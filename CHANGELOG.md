@@ -25,6 +25,10 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- Made the missing-group-bound warning regression test compatible with pytest 7
+  by capturing both warnings together and asserting their exact messages and count.
+  The constraint implementation and expected constraint count are unchanged.
+
 - Raised the SCS minimum to 3.2.4.post3 after the fresh Python 3.10 CI job reproduced a
   NumPy 2.0 ABI failure in 3.2.4.post1; retained the existing 3.3.0 exclusion.
 
