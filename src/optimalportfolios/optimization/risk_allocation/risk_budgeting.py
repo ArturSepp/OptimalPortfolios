@@ -1,20 +1,19 @@
 """
 Risk budgeting portfolio optimisation.
 
-Implements constrained risk budgeting (CRB) where each asset's contribution
-to portfolio risk matches a prescribed risk budget:
+Implements risk budgeting (RB), targeting each asset's prescribed risk contribution:
 
     RC_i(w) = w_i (Σw)_i / sqrt(w'Σw) = b_i * sqrt(w'Σw)
 
 where RC_i is asset i's risk contribution, b_i is the risk budget, and
-Σ is the covariance matrix. The optimisation finds weights w such that
-the risk contribution of each asset is proportional to its budget, subject
-to portfolio constraints (long-only, weight bounds, group exposures).
+Σ is the covariance matrix. Without binding constraints the optimisation reproduces
+these budgets. With binding bounds it minimizes log(sigma(w)) - sum(b_i log(w_i))
+on the fully invested feasible set; risk contributions need not equal the budgets.
 
-The primary solver is the internal CCD / ADMM-CCD implementation of
-Richard & Roncalli (2019) in ``risk_budgeting_solver.py``, which supports
-box bounds and linear inequality constraints on the weights. A scipy SLSQP
-fallback is also provided but not recommended for production use.
+The primary solver is the scale-consistent CCD / ADMM-CCD formulation in
+``risk_budgeting_solver.py``, which represents instrument bounds, group bounds
+and full investment jointly. The separate scipy SLSQP entry point is not an
+automatic fallback and is not recommended for production use.
 
 Special features:
     - Date-varying budgets: rolling allocation accepts either one static budget
@@ -172,7 +171,11 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
 
     1. **Zero risk budgets** (b_i = 0): asset excluded, receives zero weight.
     2. **Rebalancing indicators** (rebal_i = 0): asset frozen at previous weight.
-    3. **NaN/zero variance**: asset excluded via covariance filtering.
+    3. **NaN/non-positive variance**: asset excluded via covariance filtering.
+
+    Remaining positive variances are floored at ``0.001**2`` (0.1% volatility
+    for annualised covariance). Off-diagonal covariances are unchanged. This also
+    applies to rolling allocations and inverse calibration through this wrapper.
 
     Args:
         pd_covar: Covariance matrix (N x N) as DataFrame.
@@ -207,10 +210,11 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
     else:
         fixed_weights = None
 
-    # filter covariance for NaN/zero-variance assets
+    # Filter invalid assets and floor cash-like variances for risk budgeting only.
     vectors = dict(min_weights=constraints.min_weights, max_weights=constraints.max_weights, risk_budget=risk_budget)
-    clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar, vectors=vectors,
-                                                                  inclusion_indicators=inclusion_indicators)
+    clean_covar, good_vectors = filter_covar_and_vectors_for_nans(
+        pd_covar=pd_covar, vectors=vectors,
+        inclusion_indicators=inclusion_indicators, variance_floor=0.001**2)
 
     if len(clean_covar.columns) == 0:
         warnings.warn("wrapper_risk_budgeting: no valid assets in covariance matrix, returning zero weights")

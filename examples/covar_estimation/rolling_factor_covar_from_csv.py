@@ -457,7 +457,9 @@ def load_inputs_from_csv(data_dir: Path) -> CsvRiskModelInputs:
             f"missing metadata={missing_assets}, extra metadata={extra_assets}"
         )
     asset_metadata = asset_metadata.reindex(asset_prices.columns)
-    asset_metadata["hedge_ratio"] = pd.to_numeric(asset_metadata["hedge_ratio"])
+    asset_metadata["hedge_ratio"] = pd.to_numeric(
+        asset_metadata["hedge_ratio"]
+    ).astype(float)
     if not asset_metadata["hedge_ratio"].between(0.0, 1.0).all():
         raise ValueError("asset_metadata.csv hedge_ratio values must be between zero and one")
     for frequency in asset_metadata["return_frequency"].astype(str).unique():

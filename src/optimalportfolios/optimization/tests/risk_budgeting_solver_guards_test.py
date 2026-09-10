@@ -1,25 +1,21 @@
 """
 input validation and infeasibility detection in the constrained risk-budgeting solver.
 
-This solver minimises a log-barrier objective whose domain is the strictly positive orthant,
-then recovers the fully-invested solution by root-finding on the barrier multiplier. Both
-halves of that construction fail badly on inputs a portfolio caller can plausibly supply, and
-neither failure is loud on its own:
+The solver minimizes a quadratic/log objective on homogeneous portfolio bounds.
+Full investment and absolute bounds are checked jointly before the ADMM solve:
 
 - a zero or negative variance on the diagonal makes the risk contribution undefined, and a
   negative lower bound puts the barrier's ``log(x)`` outside its domain -- so those are
   rejected up front rather than left to produce NaNs mid-iteration;
 - a box whose lower bounds already sum above 1 (or whose upper bounds sum below 1) has no
-  fully-invested point at all, which the root-finder would otherwise chase to a bracketing
-  failure several hundred iterations later.
+  fully-invested point at all and must be rejected before any iterations.
 
 ``_validate_inputs`` deliberately runs on the *raw* inputs, before budget normalisation and
 before any slicing, because the caller's fallback contract is that every invalid input raises
 ``ValueError``. The tests below go through the public entry point rather than calling the
 private validator, so they exercise that ordering as well as the messages.
 
-The pinned-box short circuit and the bracketing failure are the two non-validation paths here.
-A fully pinned box is not solved at all -- the weights are determined -- and the returned
+A fully pinned box still checks group feasibility; its weights are determined and its
 multiplier is NaN by contract, which callers must not read as a solve failure.
 """
 # packages
@@ -167,7 +163,7 @@ def test_a_negative_lower_bound_raises_as_outside_the_barrier_domain() -> None:
 
 
 def test_lower_bounds_summing_above_one_are_infeasible() -> None:
-    """No fully-invested point exists, which the root-finder would otherwise chase for a while."""
+    """No fully-invested point exists, so iterations must not begin."""
     bounds = np.column_stack([np.full(N, 0.40), np.full(N, 0.60)])
     with pytest.raises(ValueError, match='sum of lower bounds exceeds 1'):
         solve_constrained_risk_budgeting(covar=covar_matrix(), budgets=equal_budgets(),

@@ -886,6 +886,23 @@ def test_input_contract_flags_benchmark_out_of_bounds():
     assert any("exceeds its cap" in s for s in res.issues)
 
 
+def test_zero_pinned_benchmark_diagnostic_is_not_an_allocation_violation():
+    """Reference weights on a zero-pinned asset retain the finding with clear context."""
+    from optimalportfolios.optimization.solver_diagnostics import validate_solver_inputs
+
+    idx = pd.Index(TICKERS)
+    caps = pd.Series([0.0, 0.4, 0.4, 0.4, 0.4], index=idx)
+    benchmark = pd.Series([0.6, 0.1, 0.1, 0.1, 0.1], index=idx)
+    c = Constraints(is_long_only=True, min_weights=pd.Series(0.0, index=idx),
+                    max_weights=caps, benchmark_weights=benchmark)
+    res = validate_solver_inputs(_diag_covar(), c, context='reference')
+    assert res.ok
+    assert any('reference-only' in s and str(idx[0]) in s for s in res.issues)
+    assert any('not an allocation violation' in s for s in res.issues)
+    pd.testing.assert_series_equal(c.max_weights, caps)
+    pd.testing.assert_series_equal(c.benchmark_weights, benchmark)
+
+
 def test_input_contract_deep_feasibility_runs_elastic(caplog):
     """``deep_feasibility`` runs the elastic pre-flight and reports its finding."""
     from optimalportfolios.optimization.solver_diagnostics import validate_solver_inputs

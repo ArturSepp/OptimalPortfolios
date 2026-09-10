@@ -426,13 +426,21 @@ def _static_reachability_findings(
             cap_differences = benchmark - maximum_weights
             if float(np.max(cap_differences)) > atol:
                 position = int(np.argmax(cap_differences))
+                reference_note = (
+                    f"; '{index[position]}' is pinned at zero in the portfolio: "
+                    "reference-only benchmark exposure, not an allocation violation"
+                    if maximum_weights[position] == 0.0
+                    and minimum_weights is not None and minimum_weights[position] == 0.0
+                    else ""
+                )
                 findings.append(_StaticReachabilityFinding(
                     kind="benchmark",
                     position=position,
                     code="cap_exceeded",
                     message=(
                         f"benchmark weight {benchmark[position]:.4f} at index "
-                        f"{position} exceeds its cap {maximum_weights[position]:.4f}"),
+                        f"{position} exceeds its cap {maximum_weights[position]:.4f}"
+                        f"{reference_note}"),
                 ))
         if minimum_weights is not None:
             floor_differences = minimum_weights - benchmark

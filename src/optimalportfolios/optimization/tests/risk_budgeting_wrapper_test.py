@@ -102,6 +102,44 @@ def test_a_zero_budget_asset_is_excluded_rather_than_solved_for() -> None:
 # --------------------------------------------------------------------------- #
 # a universe the covariance cannot describe
 # --------------------------------------------------------------------------- #
+@pytest.mark.parametrize('cash_variance', [1e-10, 0.001**2, 4e-6])
+def test_cash_variance_floor_matches_diagonal_risk_budget_solution(cash_variance) -> None:
+    """Cash-like risk budgeting matches the independent diagonal closed-form solution."""
+    variances = np.array([0.04, 0.01, cash_variance])
+    covar = pd.DataFrame(np.diag(variances), index=TICKERS, columns=TICKERS)
+    original = covar.copy(deep=True)
+    budgets = pd.Series([0.5, 0.49, 0.01], index=TICKERS)
+
+    weights = wrapper_risk_budgeting(
+        pd_covar=covar, constraints=long_only(), risk_budget=budgets)
+
+    expected = np.sqrt(budgets.to_numpy() / np.maximum(variances, 0.001**2))
+    expected /= expected.sum()
+    np.testing.assert_allclose(weights.to_numpy(), expected, atol=1e-6, rtol=0.0)
+    pd.testing.assert_frame_equal(covar, original)
+
+
+@pytest.mark.parametrize('invalid_variance', [0.0, -1e-8, np.nan])
+def test_cash_floor_preserves_covariances_and_excludes_invalid_assets(
+        monkeypatch, invalid_variance) -> None:
+    """Only eligible positive diagonal entries are floored before the solver sees them."""
+    covar = pd.DataFrame(
+        [[0.04, -1e-5, 0.0], [-1e-5, 1e-8, 0.0], [0.0, 0.0, invalid_variance]],
+        index=TICKERS, columns=TICKERS)
+    original = covar.copy(deep=True)
+
+    def check_solver_covariance(covar, **kwargs):
+        """Inspect the actual solver input after covariance-universe filtering."""
+        np.testing.assert_array_equal(covar, [[0.04, -1e-5], [-1e-5, 0.001**2]])
+        return np.array([0.4, 0.6])
+
+    monkeypatch.setattr(risk_budgeting_module, 'opt_risk_budgeting', check_solver_covariance)
+    weights = wrapper_risk_budgeting(
+        pd_covar=covar, constraints=long_only(), risk_budget=pd.Series(EQUAL_BUDGET))
+    np.testing.assert_array_equal(weights.to_numpy(), [0.4, 0.6, 0.0])
+    pd.testing.assert_frame_equal(covar, original)
+
+
 def test_a_covariance_with_no_usable_asset_returns_a_flat_zero_portfolio() -> None:
     """with nothing left to allocate to, the date produces no position and says so
 

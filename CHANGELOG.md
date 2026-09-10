@@ -7,6 +7,8 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [7.3.0] - 2026-09-10
+
 ### Added
 
 - Added explicit stack dependency and optional-import boundary checks, including
@@ -17,6 +19,10 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- Apply a `0.001**2` positive-variance floor in the risk-budgeting covariance wrapper,
+  including rolling allocations and inverse calibration. This corresponds to 0.1% volatility
+  on annualised covariance; off-diagonal covariances and other optimisers are unchanged.
+
 - Aligned package summaries, software citations, README navigation, and documentation
   landing pages with the canonical package identity and Read the Docs documentation.
 
@@ -24,6 +30,17 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   the executable README examples remain covered by the existing checks.
 
 ### Fixed
+
+- 2026-09-10: Replaced the constrained risk-budgeting absolute-bound lambda search
+  with a homogeneous quadratic/log ADMM formulation. Instrument and group bounds
+  now apply jointly to fully invested portfolio weights, including negatively
+  correlated hedge cases where the old search had no root. No ranges, risk budgets,
+  eligibility filters or fallback solver are changed. Unconstrained reproduction
+  remains unchanged within its historical band; allocations with binding constraints
+  deliberately change and are checked against an independent volatility/log conic
+  formulation. Historical constrained pyrb tables are retained as migration
+  comparators, not asserted as solutions to the corrected objective. Both CCD and
+  ADMM raise on iteration exhaustion; pinned portfolios still check group feasibility.
 
 - Made the missing-group-bound warning regression test compatible with pytest 7
   by capturing both warnings together and asserting their exact messages and count.

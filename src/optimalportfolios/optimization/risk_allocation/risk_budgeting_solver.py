@@ -1,70 +1,51 @@
 """
-Constrained risk budgeting solver.
+Scale-consistent constrained risk budgeting with joint portfolio bounds.
 
-Implements the logarithmic-barrier formulation of Richard J-C. and Roncalli T.
-(2019), "Constrained Risk Budgeting Portfolios" (SSRN 3331184), for the
-volatility risk measure R(x) = sqrt(x' Σ x):
+For a positive scale s = sum(y), portfolio weights are w = y / s. Solve
 
-    x*(λ) = argmin R(x) - λ Σ_i b_i ln(x_i)   s.t.  lo <= x <= hi, C x <= d
-    λ* such that Σ_i x*_i(λ*) = 1
+    min_y  0.5 y' Q y - lambda sum_i b_i log(y_i)
+    s.t.   lo s <= y <= hi s, C y <= d s.
 
-Algorithms:
-    - Cyclical coordinate descent (CCD) with per-coordinate box projection
-      (paper Algorithm 3) when only box bounds are present. Each coordinate
-      update is the positive root of α_i x² + β_i x + γ_i = 0 with
-          α_i = σ_i² + φ σ(x)
-          β_i = ((Σx)_i - x_i σ_i²) - φ v_i σ(x)
-          γ_i = -λ b_i σ(x)
-      where φ = 0 and v = 0 outside the ADMM x-update.
-    - ADMM with CCD x-update (paper Algorithm 4) when linear inequality rows
-      C x <= d are present. The z-update is the Euclidean projection onto
-      {z: C z <= d, lo <= z <= hi}, solved as a QP via quadprog. The penalty
-      φ adapts by the He-Yang-Wang scheme (paper Appendix A.7).
-    - Brent root-finding on λ with the bracket seeded by the scaling identity
-      of the unconstrained problem, x*(tλ) = t·x*(λ): one solve at
-      λ_0 = R(x_inverse_vol) (paper Remark 7) gives λ_est = λ_0 / Σx(λ_0),
-      exact when no constraint binds. Each λ evaluation solves from the same
-      cold start, so f(λ) = Σ_i x*_i(λ) - 1 is deterministic and the
-      root-finding is noise-free.
+Q is covariance rescaled by its largest diagonal entry; lambda is a positive
+numerical scale, not a portfolio-policy parameter. All constraint faces are
+homogeneous, so changing either scale leaves w unchanged. Normalization enforces
+full investment WITHOUT changing the instrument or group bounds.
 
-This module replaces the vendored pyrb package (github.com/jcrichard/pyrb,
-MIT licence), whose ConstrainedRiskBudgeting it reproduces within the historical
-parity band (~5e-5 in weight space) with no numba dependency; the CCD inner loop
-uses rank-1 updates of Σx and σ²(x), so one cycle is O(n²). Parity against frozen
-pyrb baselines and against the paper's published tables is pinned in
-optimization/tests/risk_budgeting_solver_test.py.
+Eliminating s gives the normalized objective log(sigma(w)) - sum_i b_i log(w_i).
+Without binding constraints its first-order conditions reproduce the requested
+risk budgets. With binding bounds, budgets are preferences, not exact attainable
+risk contributions. This is a deliberate correction of the absolute-bound
+lambda search: that search can lack a root on a feasible fully invested set, and
+can distinguish a group floor from the equivalent complementary group cap.
+See the scaling-compatibility issue in Richard & Roncalli (2019), section 5.2,
+https://arxiv.org/abs/1902.05710. Their absolute-bound constrained table values are
+not numerical references for this homogeneous formulation.
 
-The module is internal to optimalportfolios: the public entry point is
-``opt_risk_budgeting`` in optimization/risk_allocation/risk_budgeting.py.
+CCD solves the quadratic/log proximal objective by exact coordinate updates.
+ADMM projects onto the homogeneous instrument/group faces via quadprog.
+Only a converged feasible iterate is returned; no SLSQP fallback or mandate
+relaxation is used. The public entry point remains opt_risk_budgeting.
 
-Covariance is consumed in caller-supplied variance units; weights and budgets are dimensionless,
-budgets are normalised internally, and the returned weights sum to one without resampling or
-annualisation. The main internal entry point is ``solve_constrained_risk_budgeting``. Boundary:
-covariance estimation, portfolio-policy construction, and reporting are not implemented here.
+Covariance, asset eligibility, budgets, rebalancing and reporting are supplied by
+callers and are not changed here. This module performs no annualisation.
 """
-# packages
 import math
-import numpy as np
-import quadprog
-from scipy.optimize import brentq
 from typing import Optional, Tuple
 
-# Tight inner tolerances keep the lambda-to-weight map stable enough for the outer budget root.
-CCD_TOL = 1e-12  # convergence on the squared CCD step ||x_k - x_{k-1}||²
-ADMM_TOL = 1e-12  # convergence on max of squared ADMM step / primal / dual residuals
+import numpy as np
+import quadprog
+
+# Squared residuals in the dimensionless quadratic/log lift. The inner solve
+# must be more accurate than ADMM so a small proximal step is not false convergence.
+CCD_TOL = 1e-20
+ADMM_TOL = 1e-18
 MAX_CCD_CYCLES = 5000
 MAX_ADMM_ITERS = 5000
-ROOT_XTOL = 2e-12  # convergence on λ in the Brent root-finding
-SUM_ABS_TOL = 1e-10  # |Σx - 1| at which a λ iterate is accepted outright
-BRACKET_SEED_WIDTH = 1.25  # initial bracket [λ_est / w, λ_est · w] around the scaling estimate
-MAX_BRACKET_EXPANSIONS = 60
-DEFAULT_MAX_WEIGHT = 1e3  # upper bound when bounds is None (effectively unbounded)
-PINNED_BOX_ATOL = 1e-9  # lo == hi detection for fully pinned boxes
-FEASIBILITY_ATOL = 1e-6  # tolerance on sum(lo) <= 1 <= sum(hi)
+PINNED_BOX_ATOL = 1e-9
+FEASIBILITY_ATOL = 1e-8
 
-# ADMM adaptive penalisation, He, Yang and Wang (2000) / paper Appendix A.7
-ADMM_PENALTY_RATIO = 10.0  # residual imbalance ratio triggering a φ update
-ADMM_PENALTY_SCALE = 2.0  # multiplicative φ step τ
+ADMM_PENALTY_RATIO = 10.0
+ADMM_PENALTY_SCALE = 2.0
 ADMM_PENALTY_MIN = 1e-6
 ADMM_PENALTY_MAX = 1e6
 
@@ -118,291 +99,167 @@ def _validate_inputs(covar: np.ndarray,
 
 def _ccd_solve(covar: np.ndarray,
                budgets: np.ndarray,
-               lower_bounds: np.ndarray,
-               upper_bounds: np.ndarray,
                lambda_log: float,
                x0: np.ndarray,
-               varphi: float = 0.0,  # ADMM penalty φ; 0.0 outside the ADMM x-update
-               v_x: Optional[np.ndarray] = None,  # ADMM anchor v = z - u; None -> zeros
-               ) -> np.ndarray:
-    """cyclical coordinate descent for the box-constrained log-barrier problem.
+               varphi: float = 0.0,
+               v_x: Optional[np.ndarray] = None) -> np.ndarray:
+    """Solve the nonnegative quadratic/log proximal objective by exact CCD.
 
-    Solves min_x sqrt(x'Σx) + (φ/2)||x - v||²_σ-scaled - λ Σ_i b_i ln(x_i)
-    over lo <= x <= hi by coordinate-wise exact minimisation (paper Algorithm 3;
-    with φ > 0 it is the x-update of Algorithm 4). Σx and σ²(x) are maintained
-    by rank-1 updates per coordinate (O(n) each) and refreshed by a full O(n²)
-    recomputation once per cycle to bound floating-point drift.
-
-    Args:
-        covar: Covariance matrix ``Σ`` with shape ``(n, n)``.
-        budgets: Non-negative risk budgets ``b`` with shape ``(n,)``.
-        lower_bounds: Lower box bounds with shape ``(n,)``.
-        upper_bounds: Upper box bounds with shape ``(n,)``.
-        lambda_log: Log-barrier multiplier ``λ``.
-        x0: Starting point with shape ``(n,)``.
-        varphi: ADMM penalty ``φ``; zero outside the ADMM x-update.
-        v_x: ADMM anchor ``v = z - u``; zeros when ``None``.
-
-    Returns:
-        CCD fixed point, not normalised to sum one.
+    Each coordinate solves a*x_i**2 + beta*x_i - lambda*b_i = 0.
+    The rationalized positive root avoids cancellation for very small budgets.
+    Zero budgets contribute no logarithm and permit an exact zero position.
     """
-    n = covar.shape[0]
-    var = np.ascontiguousarray(np.diag(covar))
-    if v_x is None:
-        v_x = np.zeros(n)
-    lam_b = lambda_log * budgets  # hoisted γ coefficients
+    var = np.diag(covar)
+    v_x = np.zeros_like(x0) if v_x is None else v_x
+    lam_b = lambda_log * budgets
     x = x0.copy()
-    s_x = covar @ x  # Σx
-    sigma2 = float(x @ s_x)  # σ²(x)
     for _cycle in range(MAX_CCD_CYCLES):
-        x_prev = x.copy()
-        for i in range(n):
-            sigma_x = math.sqrt(sigma2) if sigma2 > 0.0 else 0.0
-            var_i = var[i]
-            x_i = x[i]
-            alpha = var_i + varphi * sigma_x
-            beta = (s_x[i] - x_i * var_i) - varphi * v_x[i] * sigma_x
-            gamma = -lam_b[i] * sigma_x
-            # positive root of α x² + β x + γ = 0; γ <= 0 so the discriminant >= β²
-            x_new = (-beta + math.sqrt(beta * beta - 4.0 * alpha * gamma)) / (2.0 * alpha)
-            x_new = min(max(x_new, lower_bounds[i]), upper_bounds[i])
-            delta = x_new - x_i
-            if delta != 0.0:
-                sigma2 += 2.0 * delta * s_x[i] + delta * delta * var_i
-                s_x += delta * covar[i]  # symmetric: row i == column i, contiguous access
-                x[i] = x_new
-        # refresh Σx and σ² against rank-1 drift once per cycle
+        previous = x.copy()
         s_x = covar @ x
-        sigma2 = float(x @ s_x)
-        if float(np.sum((x - x_prev) ** 2)) <= CCD_TOL:
-            break
-    return x
+        for i in range(len(x)):
+            alpha = var[i] + varphi
+            beta = s_x[i] - var[i] * x[i] - varphi * v_x[i]
+            discriminant = math.sqrt(beta * beta + 4.0 * alpha * lam_b[i])
+            if beta > 0.0:
+                value = 2.0 * lam_b[i] / (discriminant + beta)
+            else:
+                value = (discriminant - beta) / (2.0 * alpha)
+            s_x += (value - x[i]) * covar[i]
+            x[i] = value
+        step = float(np.sum((x - previous) ** 2))
+        if step <= CCD_TOL:
+            return x
+    raise ValueError(
+        f"CCD did not converge after {MAX_CCD_CYCLES} cycles: squared_step={step:.6g}")
 
 
 def _project_polyhedron(v: np.ndarray,
-                        c_rows: np.ndarray,
-                        c_lhs: np.ndarray,
-                        lower_bounds: np.ndarray,
-                        upper_bounds: np.ndarray
-                        ) -> np.ndarray:
-    """euclidean projection of v onto {z: C z <= d, lo <= z <= hi} via quadprog.
-
-    quadprog solves min (1/2) z'Pz - q'z s.t. G'z >= h; the projection uses
-    P = I, q = v, and stacks the inequality rows with both box faces.
-    """
-    n = len(v)
-    eye = np.eye(n)
-    g_mat = np.vstack([c_rows, -eye, eye])
-    h_vec = np.hstack([c_lhs, -lower_bounds, upper_bounds])
-    return quadprog.solve_qp(eye, np.ascontiguousarray(v, dtype=float),
-                             -g_mat.T, -h_vec, 0)[0]
+                        rows: np.ndarray,
+                        lhs: np.ndarray,
+                        full_investment: bool = False) -> np.ndarray:
+    """Project onto inequality faces, optionally with sum(w) = 1 as an equality."""
+    if full_investment:
+        rows = np.vstack([-np.ones(len(v)), rows])
+        lhs = np.hstack([-1.0, lhs])
+    return quadprog.solve_qp(
+        np.eye(len(v)), np.ascontiguousarray(v, dtype=float),
+        np.ascontiguousarray(-rows.T), -lhs, int(full_investment))[0]
 
 
 def _admm_ccd_solve(covar: np.ndarray,
                     budgets: np.ndarray,
-                    lower_bounds: np.ndarray,
-                    upper_bounds: np.ndarray,
-                    c_rows: np.ndarray,
-                    c_lhs: np.ndarray,
+                    rows: np.ndarray,
                     lambda_log: float,
-                    x0: np.ndarray
-                    ) -> np.ndarray:
-    """ADMM with CCD x-update for linear inequality constraints (paper Algorithm 4).
-
-    Iterates x-update (CCD on the φ-augmented problem, warm-started at the
-    current x), z-update (projection onto the polyhedron), and dual update
-    u += x - z, with adaptive penalty φ (paper Appendix A.7). Stops when the
-    max of squared step, primal residual ||x - z||² and dual residual
-    ||φ(z - z_prev)||² drops below ADMM_TOL. A converged x satisfies the
-    box exactly (enforced inside CCD) and C x <= d up to the primal residual,
-    i.e. O(sqrt(ADMM_TOL)) per row. Exhausting the iteration limit raises
-    rather than returning an unfinished iterate as a valid solution.
-    """
+                    x0: np.ndarray) -> np.ndarray:
+    """Solve the homogeneous constrained lift and return its feasible ADMM leg."""
     varphi = 1.0
     x = x0.copy()
     z = x.copy()
     u = np.zeros_like(x)
-    for _it in range(MAX_ADMM_ITERS):
+    lhs = np.zeros(len(rows))
+    for _iteration in range(MAX_ADMM_ITERS):
         z_prev = z
         x_prev = x
-        x = _ccd_solve(covar=covar, budgets=budgets,
-                       lower_bounds=lower_bounds, upper_bounds=upper_bounds,
-                       lambda_log=lambda_log, x0=x,
-                       varphi=varphi, v_x=z - u)
-        z = _project_polyhedron(v=x + u, c_rows=c_rows, c_lhs=c_lhs,
-                                lower_bounds=lower_bounds, upper_bounds=upper_bounds)
-        r = x - z  # primal residual
-        s = varphi * (z - z_prev)  # dual residual
-        u = u + r
-        cvg = max(float(np.sum((x - x_prev) ** 2)),
-                  float(np.sum(r ** 2)),
-                  float(np.sum(s ** 2)))
-        if cvg <= ADMM_TOL:
-            return x
-        # adaptive penalisation: rebalance primal vs dual residuals
+        x = _ccd_solve(covar, budgets, lambda_log, x, varphi, z - u)
+        z = _project_polyhedron(x + u, rows, lhs)
+        r = x - z
+        s = varphi * (z - z_prev)
+        u += r
         primal_err = float(np.sum(r ** 2))
         dual_err = float(np.sum(s ** 2))
+        cvg = max(float(np.sum((x - x_prev) ** 2)), primal_err, dual_err)
+        if cvg <= ADMM_TOL:
+            return z
         if primal_err > ADMM_PENALTY_RATIO * dual_err and varphi < ADMM_PENALTY_MAX:
             varphi *= ADMM_PENALTY_SCALE
-            u = u / ADMM_PENALTY_SCALE
+            u /= ADMM_PENALTY_SCALE
         elif dual_err > ADMM_PENALTY_RATIO * primal_err and varphi > ADMM_PENALTY_MIN:
             varphi /= ADMM_PENALTY_SCALE
-            u = u * ADMM_PENALTY_SCALE
+            u *= ADMM_PENALTY_SCALE
     raise ValueError(
         f"ADMM did not converge after {MAX_ADMM_ITERS} iterations: "
         f"convergence_metric={cvg:.6g}, primal_residual_sq={primal_err:.6g}, "
-        f"dual_residual_sq={dual_err:.6g}, penalty={varphi:.6g}"
-    )
+        f"dual_residual_sq={dual_err:.6g}, penalty={varphi:.6g}")
 
 
 def solve_constrained_risk_budgeting(covar: np.ndarray,
-                                     budgets: np.ndarray = None,  # risk budgets b; None -> equal
-                                     bounds: np.ndarray = None,  # (n, 2) [lower, upper] per asset
-                                     c_rows: np.ndarray = None,  # (p, n) inequality matrix C
-                                     c_lhs: np.ndarray = None,  # (p,) right-hand side d in C x <= d
-                                     ) -> Tuple[np.ndarray, float]:
-    """constrained risk budgeting portfolio with sum(x) = 1 via root-finding on λ.
-
-    Finds x*(λ*) with Σ_i x*_i = 1 where x*(λ) solves the log-barrier problem
-    min sqrt(x'Σx) - λ Σ_i b_i ln(x_i) over {lo <= x <= hi, C x <= d}. Routes
-    to plain CCD when c_rows is None and to ADMM-CCD otherwise. λ* is found by
-    Brent's method on a bracket seeded by the scaling identity
-    λ_est = λ_0 / Σx(λ_0) with λ_0 = σ(x_inverse_vol) (paper Remark 7),
-    expanding geometrically when the seed does not straddle the root; each
-    f(λ) evaluation is solved from the same cold start, so the root-finding is
-    deterministic.
-
-    A fully pinned box (lo == hi elementwise, Σ lo == 1) is short-circuited to
-    the pinned vector: f(λ) has no sign change in that case and the pinned
-    weights are the unique feasible point.
+                                     budgets: np.ndarray = None,
+                                     bounds: np.ndarray = None,
+                                     c_rows: np.ndarray = None,
+                                     c_lhs: np.ndarray = None) -> Tuple[np.ndarray, float]:
+    """Compute risk-budgeted weights on the jointly fully invested feasible set.
 
     Args:
-        covar: Covariance matrix ``Σ`` with shape ``(n, n)``.
-        budgets: Risk budgets ``b`` with shape ``(n,)``, normalised internally;
-            ``None`` selects equal budgets.
-        bounds: Per-asset ``[lower, upper]`` bounds with shape ``(n, 2)``;
-            ``None`` uses ``[0, 1e3]``. This is the first element returned by
-            ``Constraints.set_pyrb_constraints``.
-        c_rows: Linear inequality matrix ``C`` in ``C x <= d`` with shape ``(p, n)``.
-        c_lhs: Right-hand side ``d`` with shape ``(p,)``.
+        covar: Finite covariance matrix with strictly positive diagonal.
+        budgets: Nonnegative risk budgets; None selects equal budgets.
+        bounds: Per-instrument [lower, upper] portfolio weights; None is long-only.
+        c_rows: Optional linear inequality matrix C in C w <= d.
+        c_lhs: Optional right-hand side d.
 
     Returns:
-        Optimal weights, summing to one to root-finding precision, and barrier
-        multiplier ``λ* = R(x*)``. The multiplier is NaN for a pinned box.
+        Fully invested weights and portfolio volatility (the normalized
+        volatility/log multiplier); NaN multiplier for a completely pinned box.
 
     Raises:
-        ValueError: If inputs are invalid, the box is infeasible, or bracketing fails.
+        ValueError: Invalid inputs, infeasible joint constraints or nonconvergence.
     """
     covar = np.ascontiguousarray(covar, dtype=float)
     n = covar.shape[0]
-    if budgets is None:
-        budgets = np.ones(n) / n
-    else:
-        budgets = np.asarray(budgets, dtype=float)
-    if bounds is not None:
-        bounds = np.asarray(bounds, dtype=float)
+    budgets = np.ones(n) / n if budgets is None else np.asarray(budgets, dtype=float)
+    bounds = None if bounds is None else np.asarray(bounds, dtype=float)
+    c_rows = None if c_rows is None else np.asarray(c_rows, dtype=float)
+    c_lhs = None if c_lhs is None else np.asarray(c_lhs, dtype=float)
+    _validate_inputs(covar, budgets, bounds, c_rows, c_lhs)
+    budgets = budgets / budgets.sum()
+    lower = np.zeros(n) if bounds is None else bounds[:, 0]
+    # A fully invested long-only portfolio cannot put more than 100% in one asset.
+    upper = np.ones(n) if bounds is None else np.minimum(bounds[:, 1], 1.0)
+    if lower.sum() > 1.0 + FEASIBILITY_ATOL:
+        raise ValueError(f"infeasible box: sum of lower bounds exceeds 1: got {lower.sum()!r}")
+    if upper.sum() < 1.0 - FEASIBILITY_ATOL:
+        raise ValueError(f"infeasible box: sum of upper bounds is below 1: got {upper.sum()!r}")
+
+    eye = np.eye(n)
+    rows = np.vstack([-eye, eye])
+    lhs = np.hstack([-lower, upper])
     if c_rows is not None:
-        c_rows = np.asarray(c_rows, dtype=float)
-    if c_lhs is not None:
-        c_lhs = np.asarray(c_lhs, dtype=float)
-    # validate raw inputs before any normalisation or slicing so that every
-    # invalid input raises ValueError (the caller's fallback contract)
-    _validate_inputs(covar=covar, budgets=budgets, bounds=bounds,
-                     c_rows=c_rows, c_lhs=c_lhs)
-    budgets = budgets / np.sum(budgets)
-    if bounds is None:
-        lower_bounds = np.zeros(n)
-        upper_bounds = np.full(n, DEFAULT_MAX_WEIGHT)
-    else:
-        lower_bounds = np.ascontiguousarray(bounds[:, 0])
-        upper_bounds = np.ascontiguousarray(bounds[:, 1])
-
-    # box feasibility for sum(x) = 1; a fully pinned box short-circuits the solve
-    sum_lower = float(np.sum(lower_bounds))
-    sum_upper = float(np.sum(upper_bounds))
-    if sum_lower > 1.0 + FEASIBILITY_ATOL:
-        raise ValueError(f"infeasible box: sum of lower bounds exceeds 1: got {sum_lower!r}")
-    if sum_upper < 1.0 - FEASIBILITY_ATOL:
-        raise ValueError(f"infeasible box: sum of upper bounds is below 1: got {sum_upper!r}")
-    if np.allclose(lower_bounds, upper_bounds, atol=PINNED_BOX_ATOL):
-        return lower_bounds.copy(), np.nan
-
+        rows = np.vstack([rows, c_rows])
+        lhs = np.hstack([lhs, c_lhs])
     inv_vol = 1.0 / np.sqrt(np.diag(covar))
-    x_cold = inv_vol / np.sum(inv_vol) / 100.0  # cold start for every λ evaluation
+    start = inv_vol / inv_vol.sum()
+    # Check the ACTUAL weight feasible set, including 100%, before a cone solve.
+    try:
+        feasible = _project_polyhedron(start, rows, lhs, full_investment=True)
+    except ValueError as error:
+        raise ValueError(f"infeasible fully invested risk-budget constraints: {error}") from error
+    if np.all(np.abs(lower - upper) <= PINNED_BOX_ATOL):
+        return feasible, np.nan
 
-    cache = {'lam': None, 'x': None}
-
-    def solve_at(lambda_log: float) -> np.ndarray:
-        """Solve the log-barrier problem at ``lambda_log`` and cache the iterate."""
-        if c_rows is None:
-            x = _ccd_solve(covar=covar, budgets=budgets,
-                           lower_bounds=lower_bounds, upper_bounds=upper_bounds,
-                           lambda_log=lambda_log, x0=x_cold)
-        else:
-            x = _admm_ccd_solve(covar=covar, budgets=budgets,
-                                lower_bounds=lower_bounds, upper_bounds=upper_bounds,
-                                c_rows=c_rows, c_lhs=c_lhs,
-                                lambda_log=lambda_log, x0=x_cold)
-        cache['lam'] = lambda_log
-        cache['x'] = x
-        return x
-
-    def f(lambda_log: float) -> float:
-        """Budget residual ``sum(x(lambda)) - 1``, increasing in ``lambda_log``."""
-        return float(np.sum(solve_at(lambda_log))) - 1.0
-
-    # seed λ from the scaling identity of the unconstrained problem,
-    # x*(tλ) = t·x*(λ): after one solve at λ_0, λ_est = λ_0 / Σx(λ_0) is exact
-    # when no box or group constraint binds, and a tight starting guess otherwise
-    x_start = inv_vol / np.sum(inv_vol)
-    lam_0 = float(np.sqrt(x_start @ covar @ x_start))  # σ(x_inverse_vol), paper Remark 7
-    sum_0 = float(np.sum(solve_at(lam_0)))
-    if sum_0 <= 0.0:
-        # Not covered: reaching this needs the inner QP to return a non-positive-sum solution at
-        # a lambda seeded from sigma(x_inverse_vol), which no admissible covariance and budget
-        # pair produces. A test would have to pin a specific solver's pathology, so it would fail
-        # on a cvxpy or quadprog bump rather than on a defect here.
-        raise ValueError(  # pragma: no cover
-            f"risk-budgeting solve degenerate at lambda={lam_0!r}: "
-            f"sum(x)={sum_0!r}; check covar and budgets")
-    lam_est = lam_0 / sum_0
-    f_est = f(lam_est)
-    if abs(f_est) <= SUM_ABS_TOL:
-        return cache['x'], lam_est
-
-    # bracket λ* around the estimate; f(λ) = Σx(λ) - 1 is increasing in λ
-    lam_lo = lam_est / BRACKET_SEED_WIDTH
-    lam_hi = lam_est * BRACKET_SEED_WIDTH
-    if f_est < 0.0:
-        lam_lo, f_lo = lam_est, f_est
-        f_hi = f(lam_hi)
-        for _ in range(MAX_BRACKET_EXPANSIONS):
-            if f_hi >= 0.0:
-                break
-            lam_lo, f_lo = lam_hi, f_hi
-            lam_hi *= 2.0
-            f_hi = f(lam_hi)
+    # Fixed zero positions have no free risk budget, as in zero-budget exclusion.
+    # Do not fabricate positive positions to make the logarithm finite.
+    budgets = np.where(upper == 0.0, 0.0, budgets)
+    if budgets.sum() == 0.0:
+        raise ValueError("no positive risk budget remains outside zero-pinned positions")
+    budgets /= budgets.sum()
+    scaled_covar = covar / np.max(np.diag(covar))
+    lambda_log = float(start @ scaled_covar @ start)
+    if np.all(lower == 0.0) and np.all(upper == 1.0) and c_rows is None:
+        solution = _ccd_solve(scaled_covar, budgets, lambda_log, start)
     else:
-        lam_hi, f_hi = lam_est, f_est
-        f_lo = f(lam_lo)
-        for _ in range(MAX_BRACKET_EXPANSIONS):
-            if f_lo <= 0.0:
-                break
-            lam_hi, f_hi = lam_lo, f_lo
-            lam_lo *= 0.5
-            f_lo = f(lam_lo)
-    if f_lo > 0.0 or f_hi < 0.0:
-        # Not covered: f is increasing in lambda, so after MAX_BRACKET_EXPANSIONS doublings this
-        # needs the residual to hold one sign across a range spanning many orders of magnitude.
-        # Same objection as above -- any fixture that got here would be pinned to solver internals.
-        raise ValueError(  # pragma: no cover
-            f"cannot bracket lambda_star: f({lam_lo!r})={f_lo!r}, "
-            f"f({lam_hi!r})={f_hi!r}; check constraint feasibility")
-
-    # Brent root-finding on the bracket; f is deterministic (cold start per λ)
-    lambda_star = float(brentq(f, lam_lo, lam_hi, xtol=ROOT_XTOL))
-    if cache['lam'] == lambda_star:
-        x_final = cache['x']
-    else:
-        x_final = solve_at(lambda_star)
-    return x_final, lambda_star
+        # A w <= d, w = y/sum(y)  <=>  (A - d 1') y <= 0.
+        # Both instrument AND group bounds must scale; post-normalizing a solve
+        # with absolute bounds would change the original portfolio constraints.
+        cone_rows = rows - lhs[:, None]
+        norms = np.linalg.norm(cone_rows, axis=1)
+        cone_rows = cone_rows[norms > 0.0] / norms[norms > 0.0, None]
+        solution = _admm_ccd_solve(
+            scaled_covar, budgets, cone_rows, lambda_log, feasible)
+    total = float(solution.sum())
+    if not np.isfinite(total) or total <= 0.0:
+        raise ValueError(f"degenerate risk-budgeting scale: sum(y)={total!r}")
+    weights = solution / total
+    # This projection removes roundoff only; material violations remain failures.
+    if np.max(rows @ weights - lhs) > FEASIBILITY_ATOL:
+        raise ValueError("risk-budgeting solution violates the original portfolio bounds")
+    weights = _project_polyhedron(weights, rows, lhs, full_investment=True)
+    return weights, float(np.sqrt(weights @ covar @ weights))
