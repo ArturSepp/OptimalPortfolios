@@ -10,7 +10,7 @@ to provide for users of ``pytest --pyargs optimalportfolios``.
 import logging
 import os
 from pathlib import Path
-from typing import MutableMapping, Optional
+from typing import Iterator, MutableMapping, Optional
 
 import pytest
 
@@ -66,7 +66,7 @@ def _find_root() -> Path | None:
 
 
 @pytest.fixture(scope="session")
-def root() -> Path:
+def root() -> Iterator[Path]:
     """The repository checkout root.
 
     Skips rather than fails when there is no checkout. The `wheel` job in ci.yml installs the
@@ -80,7 +80,11 @@ def root() -> Path:
     # coverage cell's.
     if found is None:  # pragma: no cover
         pytest.skip("no repository checkout: running against an installed wheel")
-    return found
+    # Console-script pytest does not put the checkout root on sys.path, unlike
+    # python -m pytest. Repository-only tools need it for their deferred imports.
+    with pytest.MonkeyPatch.context() as patch:
+        patch.syspath_prepend(str(found))
+        yield found
 
 
 @pytest.fixture

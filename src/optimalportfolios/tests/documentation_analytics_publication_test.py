@@ -337,14 +337,14 @@ publish._install = interrupted
 publish.publish_bundle(Path(sys.argv[1]), root, Path(sys.argv[3]))
 """
     environment = dict(os.environ, PYTHONPATH=str(root))
-    killed = subprocess.run([sys.executable, '-c', code, str(bundle), str(root), str(review)],
+    killed = subprocess.run([sys.executable, '-B', '-c', code, str(bundle), str(root), str(review)],
                             cwd=root, env=environment, capture_output=True, text=True, timeout=90)
     assert killed.returncode == 73, killed.stdout + killed.stderr
     assert snapshot(root) != before
     backup, = backups(bundle)
     assert validator.read_json(backup / 'transaction.json')['status'] == 'publishing'
     restored = subprocess.run([
-        sys.executable, '-m', 'tools.docs_analytics.publish', '--repo-root', str(root),
+        sys.executable, '-B', '-m', 'tools.docs_analytics.publish', '--repo-root', str(root),
         '--rollback', str(backup)], cwd=root, env=environment, capture_output=True, text=True,
         timeout=90)
     assert restored.returncode == 0, restored.stdout + restored.stderr
