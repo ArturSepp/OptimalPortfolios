@@ -334,7 +334,7 @@ penalised coefficients to equal unpenalised least squares.
 
 - [OptimalPortfolios software citation](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 - [FactorLasso software and methodological references](https://github.com/ArturSepp/factorlasso/blob/main/CITATION.cff).
-  The [FCGL implementation](https://github.com/ArturSepp/factorlasso/blob/main/factorlasso/lasso_estimator.py)
+  The [FCGL implementation](https://github.com/ArturSepp/factorlasso/blob/main/src/factorlasso/lasso_estimator.py)
   defines the cluster-factor penalty, observation weights and residual diagnostics.
 - [QIS software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).
 - [VanillaOptionPricers](https://github.com/ArturSepp/VanillaOptionPricers): BSM values and forward Greeks.
