@@ -29,8 +29,13 @@ def replica(root, tooling, tmp_path):
     spec = deepcopy(registry.load_registry(root))
     repo = tmp_path / 'source'
     repo.mkdir()
-    (repo / 'README.md').write_bytes((root / 'README.md').read_bytes())
     (repo / 'docs').mkdir()
+    consumers = {document for asset in spec['assets'] for document in asset['documents']}
+    consumers.update(item['document'] for item in spec['non_analytics'])
+    for document in consumers:
+        path = repo / document
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes((root / document).read_bytes())
     names = {'pyproject.toml', 'uv.lock', 'AGENTS.md', 'src/optimalportfolios/example.py'}
     names.update(path for producer in spec['producers'].values()
                  for path in producer['legacy_sources'])

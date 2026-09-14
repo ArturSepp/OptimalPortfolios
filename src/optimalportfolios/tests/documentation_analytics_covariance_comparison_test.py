@@ -238,6 +238,8 @@ def test_complete_real_bundle_repeats_and_validates(root, producer, tmp_path, mo
     monkeypatch.setenv('AGENT_LOCAL_ROOT', str(tmp_path))
     plan = runner.build_plan(root)
     assert plan['generation_ready'] and not plan['generation_blockers']
+    published = root / 'examples/figures/analytics_manifest.json'
+    published_before = published.read_bytes() if published.exists() else None
     paths = [runner.generate(tmp_path / name, root) for name in ('first', 'second')]
     manifests = [json.loads((path / 'analytics_manifest.json').read_text(encoding='utf-8'))
                  for path in paths]
@@ -251,4 +253,4 @@ def test_complete_real_bundle_repeats_and_validates(root, producer, tmp_path, mo
     assert sum(len(item['diagnostics']['solves']) for item in a['producers'].values()) == 467
     for path in paths:
         validator.validate_bundle(path, root)
-    assert not (root / 'examples/figures/analytics_manifest.json').exists()
+    assert (published.read_bytes() if published.exists() else None) == published_before

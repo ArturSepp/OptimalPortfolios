@@ -1,9 +1,22 @@
+---
+myst:
+  html_meta:
+    description: >-
+      Contributor guide to OptimalPortfolios constraints: module ownership, ordered inputs,
+      backend compilation, feasibility residuals, and development checks.
+---
+
 # Optimization Constraints
+
+*[author / affiliation / date — placeholder]*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 This package owns the portfolio-constraint system used by `optimalportfolios`. It separates four
 concerns that must remain independently testable:
 
-1. immutable policy specifications;
+1. frozen policy specifications;
 2. point-in-time universe alignment and rebalancing policy;
 3. translation into supported solver backends;
 4. solver-independent feasibility and residual analytics.
@@ -20,8 +33,17 @@ from optimalportfolios.optimization.constraints import (
 )
 ```
 
+The five names above are also re-exported by `optimalportfolios`. The constraint facade
+exports additional types, including `BenchmarkBetaConstraint` and `RelaxationRecord`, that
+are not package-root exports. Use the [facade](./__init__.py) and its
+[compatibility tests](./tests/constraint_api_compatibility_test.py) to check an import.
+
 For every formula, backend capability, and full forced/utility example, see the
-[portfolio constraint guide](../../../../docs/constraints.md).
+[portfolio constraint guide](../../../../docs/constraints.md). That article is the calculation
+contract; this README explains where contributors maintain it. Generic portfolio risk analytics
+and reporting belong to [QIS](https://github.com/ArturSepp/QuantInvestStrats)
+([software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff)).
+Constraint residuals remain here because they describe the policy that a particular solve used.
 
 ## Folder map
 
@@ -55,19 +77,31 @@ constraints/
 
 ### Module ownership
 
+These modules are implementation owners; import supported names through the facade.
+
 | Module | Owns | Does not own |
 |---|---|---|
-| `core.py` | the frozen `Constraints` aggregate, enforcement enum, construction-time validation, and delegation methods | solver expressions or rolling state |
-| `alignment.py` | ticker alignment, current-to-model eligibility corridors, frozen positions, and logged group-bound waivers | mathematical residuals or solver objects |
-| `analytics.py` | pure reachability calculations and candidate-weight residual records | compilation, solving, mutation, or logging |
-| `backends.py` | compiler functions for CVXPY, SciPy, and PyRB | policy alignment or post-solve acceptance |
-| `benchmarks.py` | benchmark-deviation and beta range dataclasses | rolling beta estimation |
-| `expressions.py` | reusable CVXPY covariance-risk and objective-expression leaves | constraint policy |
-| `groups.py` | group allocation, group tracking-error, group turnover, merge behavior, and dropped-group records | whole-portfolio risk/trading policy |
-| `__init__.py` | the supported import surface | implementation logic |
+| [`core.py`](./core.py) | the frozen `Constraints` aggregate, enforcement enum, construction-time validation, and delegation methods | solver expressions or rolling state |
+| [`alignment.py`](./alignment.py) | ticker alignment, current-to-model eligibility corridors, frozen positions, and logged group-bound waivers | mathematical residuals or solver objects |
+| [`analytics.py`](./analytics.py) | pure reachability calculations and candidate-weight residual records | compilation, solving, mutation, or logging |
+| [`backends.py`](./backends.py) | compiler functions for CVXPY, SciPy, and PyRB | policy alignment or post-solve acceptance |
+| [`benchmarks.py`](./benchmarks.py) | benchmark-deviation and beta range dataclasses | rolling beta estimation |
+| [`expressions.py`](./expressions.py) | reusable CVXPY covariance-risk and objective-expression leaves | constraint policy |
+| [`groups.py`](./groups.py) | group allocation, group tracking-error, group turnover, merge behavior, and dropped-group records | whole-portfolio risk/trading policy |
+| [`__init__.py`](./__init__.py) | the supported import surface | implementation logic |
 
-Benchmark-beta loading calculations remain in `optimalportfolios.utils.benchmark_beta`; the
+Benchmark-beta loading calculations remain in
+[`optimalportfolios.utils.benchmark_beta`](../../utils/benchmark_beta.py); the
 constraint facade re-exports the two loading helpers used when configuring a solve.
+The [risk-budgeting solver](../risk_allocation/risk_budgeting_solver.py) owns the solve and its
+full-investment validation. The name `set_pyrb_constraints` identifies a compatibility
+matrix format; it does not imply that this module solves a risk-budgeting problem.
+
+`Constraints` is a frozen dataclass, but its contained pandas objects are mutable.
+Treat those objects as policy inputs. `copy(**overrides)` deep-copies existing state and
+returns a replacement; it does not align a new universe. See the
+[copy example](../../../../docs/constraints.md#converting-the-example-to-utility-mode).
+
 
 ## Constraint analytics
 
@@ -96,7 +130,12 @@ determine hard compliance,” not “is below the displayed soft reference limit
 
 ### `evaluate_constraint_residuals`
 
-Use `evaluate_constraint_residuals` to audit a candidate without invoking a solver:
+Use `evaluate_constraint_residuals` to audit a candidate without invoking a solver.
+This complete offline example retains the original three-asset inputs. Weights are fractions
+of portfolio capital. The diagonal covariance represents annual variance, so the tracking-error
+limit `0.04` means 4% annual volatility. The evaluator does not resample or annualize inputs.
+Turnover is the full L1 weight change over one trade, with no cost weights or half-turnover factor
+in this example. No dates or market-data observations are involved:
 
 ```python
 import numpy as np
@@ -122,7 +161,21 @@ candidate = np.array([0.60, 0.25, 0.15])
 records = evaluate_constraint_residuals(candidate, spec, covar=covar)
 frame = pd.DataFrame([vars(record) for record in records])
 hard_breaches = frame.loc[frame["hard"] & ~frame["passed"]]
+print(hard_breaches["constraint_type"].tolist())
+print(hard_breaches["violation"].round(2).tolist())
 ```
+
+Expected output:
+
+```text
+['instrument_weight', 'turnover']
+[0.05, 0.2]
+```
+
+The Equity weight exceeds its 55% cap by 5 percentage points. Moving from the current
+weights to the candidate trades 40% of capital on the full L1 convention, exceeding the
+20% cap by 20 percentage points. Annual tracking error is about 2.955%, below its 4% limit.
+The example finds violations; it does not optimize or repair the candidate.
 
 The evaluator emits applicable records in a deterministic order:
 
@@ -146,7 +199,12 @@ Only rows with enough state to evaluate are emitted:
 - tracking error additionally needs `benchmark_weights`;
 - turnover needs `weights_0`;
 - target return needs `asset_returns`;
+- sector/style deviations need their loading block and `benchmark_weights`;
 - beta needs injected `beta_loadings`.
+
+The candidate is positional: even a pandas Series is converted to a NumPy vector without
+using its labels to reorder weights. Align the specification, both covariance axes and the
+candidate before evaluation. See the continuation below.
 
 Omitting required analytical state omits that residual. It is not evidence that the omitted policy
 passed. Production wrappers avoid this ambiguity by carrying the exact aligned specification and
@@ -166,7 +224,11 @@ Under `UTILITY_CONSTRAINTS`, the evaluator marks these limit families soft:
 
 Exposure, long-only, boxes, target return, group allocation, sector/style deviations, and beta
 remain hard. The evaluator reports hard/soft policy; it does not reconstruct the solver objective
-or claim that an unsupported backend enforced a field.
+or claim that an unsupported backend enforced a field. In particular, generic utility compilation
+does not add a maximum-volatility cap, and group risk/trading penalties take precedence over
+their total counterparts. The diagnostic can still report both configured limits. Read the
+[utility contract](../../../../docs/constraints.md#utility-constraints) alongside the
+[backend capability matrix](../../../../docs/constraints.md#backend-capability-matrix).
 
 ### Shared analytical kernels
 
@@ -190,6 +252,69 @@ public imports:
 Keeping these calculations in one pure module prevents the compiler, constructor, and diagnostic
 layer from developing different definitions of exposure, group reachability, or violation size.
 
+## Ordered inputs and backend compilation
+
+Use `update_with_valid_tickers(...)` for the full alignment and rebalancing path.
+It aligns flat Series and nested loading blocks to one ordered universe; the shorter
+`update(valid_tickers, **kwargs)` only aligns nested blocks. Neither method dates the input data
+or establishes that a covariance estimate is point-in-time.
+
+Continue the candidate example to reorder the universe and freeze Gold at its current weight:
+
+```python
+solver_assets = ["Gold", "Equity", "Bond"]
+aligned = spec.update_with_valid_tickers(
+    valid_tickers=solver_assets,
+    weights_0=spec.weights_0,
+    rebalancing_indicators=pd.Series([0, 1, 1], index=solver_assets),
+    relax_frozen_group_bounds=False,
+)
+covar_frame = pd.DataFrame(covar, index=assets, columns=assets)
+aligned_covar = covar_frame.loc[solver_assets, solver_assets].to_numpy()
+aligned_candidate = pd.Series(candidate, index=assets).reindex(solver_assets).to_numpy()
+aligned_records = evaluate_constraint_residuals(
+    aligned_candidate, aligned, covar=aligned_covar,
+)
+print(aligned.min_weights.index.tolist())
+print([float(aligned.min_weights["Gold"]), float(aligned.max_weights["Gold"])])
+```
+
+Expected output is `['Gold', 'Equity', 'Bond']` followed by `[0.15, 0.15]`.
+Both box sides exist, so Gold is pinned at 15%; the other two breaches remain. The original
+`spec` retains its original order and bounds.
+
+Missing labels receive field-specific defaults; an explicit `NaN` generally survives reindexing.
+A missing maximum-weight label becomes zero, which can remove an asset from the feasible
+universe. Freezing only replaces box sides already configured, so both sides are needed for
+an exact pin. Consult the complete
+[alignment and freezing rules](../../../../docs/constraints.md#universe-alignment-and-rebalancing-policy).
+
+Frozen group-bound waivers are enabled by default. They modify the aligned policy and are
+logged; `max_relaxation_tol` controls log escalation, not a cap on the waiver. The example
+disables waivers explicitly and has no group constraints. See
+[frozen group-bound waivers](../../../../docs/constraints.md#frozen-group-bound-waivers).
+
+### Compiler entry points
+
+Compilation returns solver inputs; it does not solve or assess a returned allocation.
+
+| `Constraints` method | Returns | Integration rule |
+|---|---|---|
+| `set_cvx_all_constraints(w, covar, ...)` | CVXPY constraint list | Combine with a caller-owned objective for forced enforcement. |
+| `set_cvx_utility_objective_constraints(w, alphas, covar, ...)` | Utility expression, hard constraint list | Maximize the expression or combine it with the chosen solver's objective. |
+| `set_scipy_constraints(covar)` | Callback list, bounds array or `None` | Callbacks use nonnegative feasibility values; only supported families are compiled. |
+| `set_pyrb_constraints(covar)` | Bounds, group matrix, group right-hand side | The group pair can be `None`. Full investment belongs to the risk-budgeting solver. |
+
+A low-level call to `set_cvx_all_constraints` still compiles hard rows if the specification's
+enum is `UTILITY_CONSTRAINTS`. Select the compiler and enforcement policy together;
+changing the enum alone does not change that method's output.
+
+SciPy compiles boxes, net exposure and group allocation. The risk-budgeting matrix helper
+compiles boxes and group allocation. Fields outside those capabilities are not enforced.
+Use the [backend matrix](../../../../docs/constraints.md#backend-capability-matrix) and
+[full forced/utility examples](../../../../docs/constraints.md#worked-example) for the complete
+contract rather than inferring capabilities from fields on the shared dataclass.
+
 ## Solver-outcome integration
 
 The normal lifecycle is:
@@ -208,14 +333,18 @@ Constraints specification
                                       └── OptimizationOutcome
 ```
 
-`validate_solution` stores residuals, the exact aligned constraints, and the covariance
-factorization on `OptimizationOutcome`. Two outcome properties answer different questions:
+[`validate_solution`](../solver_diagnostics.py) stores residuals, the exact aligned constraints,
+and any supplied covariance factorization on `OptimizationOutcome`. The outcome is exported
+at the package root; the validator lives in `optimalportfolios.optimization.solver_diagnostics`.
+Two outcome attributes answer different questions:
 
 - `outcome.accepted` says whether the solver vector was used instead of a fallback;
 - `outcome.compliant` says whether every emitted hard residual passed.
 
 Use `outcome.residuals_frame()` for a report-ready table. A fallback is not presumed compliant,
 and solver status alone is never proof that the returned vector satisfies every mandate row.
+`compliant` checks only emitted hard rows; it also returns `True` for an empty residual tuple.
+Retain the input state and verify coverage before treating that flag as a mandate audit.
 
 ## Extending the subsystem
 
@@ -233,17 +362,55 @@ be measured after a solve, but it did not constrain that solve.
 
 ## Verification
 
-Run all constraint-owned contracts from the repository root:
+Use the external interpreter and C-local setup required by
+[AGENTS.md](https://github.com/ArturSepp/OptimalPortfolios/blob/main/AGENTS.md).
+Run checks from a C-local source export; the commands below assume that setup.
+
+| Work area | Existing checks |
+|---|---|
+| Public imports, signatures and serialization | [API compatibility](./tests/constraint_api_compatibility_test.py). |
+| Compiler rows and backend differences | [Compilation](./tests/backend_compilation_test.py), [translation contracts](./tests/constraint_translation_contract_test.py) and [SciPy group validation](./tests/scipy_group_validation_test.py). |
+| Universe alignment and frozen policy | [Rebalancing](./tests/rebalancing_constraints_test.py) and [frozen overshoots](./tests/frozen_overshoot_relaxation_test.py). |
+| Hard/soft mandates and residuals | [Utility policy](./tests/utility_mandate_policy_test.py), [tracking error](./tests/tracking_error_policy_test.py) and [solver diagnostics](../tests/solver_diagnostics_test.py). |
+| Public methodology and examples | [Constraint article tests](../../tests/constraints_documentation_test.py). |
+
+Run all constraint-owned contracts:
 
 ```powershell
-uv run --no-sync pytest src/optimalportfolios/optimization/constraints/tests -q
+python -m pytest src/optimalportfolios/optimization/constraints/tests -q
 ```
 
 For a focused core run:
 
 ```powershell
-uv run --no-sync pytest src/optimalportfolios/optimization/constraints/tests/constraints_test.py -v
+python -m pytest src/optimalportfolios/optimization/constraints/tests/constraints_test.py -v
 ```
 
-Manual formatting and inspection belong in `run_local/constraints_run.py`; production modules and
-public `__init__.py` files must not import `run_local`.
+Check this guide's source and the authoritative article's executable contracts:
+
+```text
+python tools/check_docs.py --files src/optimalportfolios/optimization/constraints/README.md
+python -m pytest src/optimalportfolios/tests/constraints_documentation_test.py
+```
+
+Manual formatting and inspection belong in
+[`run_local/constraints_run.py`](./run_local/constraints_run.py). It uses a fixed synthetic
+ten-asset universe and SCS through CVXPY, prints diagnostics, and defaults to
+`Locals.GROUP_ALLOCATION`. No data download is needed. Run it after the same setup:
+
+```text
+python -m optimalportfolios.optimization.constraints.run_local.constraints_run
+```
+
+The runner follows `Locals` / `run_local(local=...)` and is excluded from distributions.
+Production modules and public `__init__.py` files must not import `run_local`.
+Preserve numerical defaults, fixtures and seeds; proposed numerical corrections need independent
+references. Stale source docstrings, including alignment-scaling/waiver and PyRB wording,
+remain a separate reconciliation task.
+
+## References
+
+- [Portfolio constraints: complete methodology](../../../../docs/constraints.md).
+- [Software design and package boundaries](../../../../docs/software_design.md).
+- [OptimalPortfolios software citation](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
+- [QIS software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).

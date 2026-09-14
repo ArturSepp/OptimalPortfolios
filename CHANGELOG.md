@@ -7,6 +7,19 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [7.6.1] - 2026-09-14
+
+### Changed
+
+- Expanded and standardized methodology, package-comparison, software-design and
+  API documentation; completed the landing-page Markdown migration.
+- Clarified alpha, covariance-estimation and constraint docstrings without changing
+  executable portfolio calculations.
+- Published the six reviewed analytical previews with their integrity manifest
+  and added a documentation analytics gallery.
+- Added complete source-documentation, preview-integrity and offline analytics
+  checks to documentation CI; aligned Read the Docs with the reviewed lockfile.
+
 ## [7.6.0] - 2026-09-14
 
 ### Removed

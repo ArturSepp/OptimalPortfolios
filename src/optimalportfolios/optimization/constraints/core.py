@@ -1,22 +1,21 @@
-"""Portfolio optimization constraints for CVXPY, SciPy, and PyRB taa.
+"""Portfolio policy specifications and constraint-compiler entry points.
 
-This module provides a comprehensive framework for defining and enforcing portfolio
-constraints across multiple optimization backends. It supports individual asset
-constraints, group-based constraints, tracking error limits, and turnover controls.
-It also provides the current/model implementation corridor used to derive
-eligible instrument bounds and rebalancing indicators for live proposals.
+Constraints stores policy and delegates universe alignment and backend
+compilation to their owning modules. CVXPY supports the full constraint
+families; SciPy and the PyRB-compatible matrix format support subsets.
+The matrix helper supplies inputs to the risk-budgeting solver, not a solve.
 
-Compatible CVXPY risk expressions accept a precomputed
-``CovarianceFactorization``. When supplied, variance is expressed as a squared
-factor norm and hard upper-risk limits as second-order-cone constraints, so one
-controlled covariance decomposition is reused throughout a solve.
+Dataclasses are frozen, while their contained pandas objects remain mutable.
+Update methods return replacement instances; copy() deep-copies existing
+state before applying caller-supplied overrides.
 
-All dataclass containers are immutable (frozen=True). Mutation methods return new instances.
+Weights and exposure loadings are dimensionless. Risk limits use the square
+root of the supplied covariance units, and turnover uses weight-change units
+or their configured cost scaling. No method resamples or annualizes inputs.
 
-Weights, budgets, and exposure loadings are dimensionless; volatility, tracking-error, and
-turnover limits use the caller's units, with no resampling or annualisation in this module.
-``Constraints`` and the group-constraint dataclasses are the main entry points. Boundary:
-optimiser objectives, covariance estimation, and performance reporting are owned elsewhere.
+The complete mathematical, backend and alignment contract is in
+``docs/constraints.md`` in the source checkout. Portfolio objectives,
+covariance estimation and generic performance reporting are owned elsewhere.
 """
 from __future__ import annotations, division
 import copy as _copy
@@ -59,11 +58,18 @@ from optimalportfolios.optimization.covar_factorization import CovarianceFactori
 
 
 class ConstraintEnforcementType(Enum):
-    """Specification of tracking error and turnover constraint enforcement.
+    """Select the constraint policy used by supported solver wrappers and diagnostics.
+
+    The enum describes policy; it does not dispatch a low-level compiler.
+    Calling set_cvx_all_constraints() directly always builds hard rows.
+    Utility compilation retains hard mandate rows and uses supported risk/trading
+    terms in the objective; backend coverage still applies.
 
     Attributes:
-        FORCED_CONSTRAINTS: Constraints are hard limits enforced by solver.
-        UTILITY_CONSTRAINTS: Constraints are added as penalties to objective function.
+        FORCED_CONSTRAINTS: Enforce configured limits as hard solver rows where supported.
+        UTILITY_CONSTRAINTS: Treat turnover, tracking-error and maximum-volatility
+            diagnostics as soft. Generic utility compilation adds risk/trading
+            penalties but no maximum-volatility cap; solver objectives may differ.
     """
     FORCED_CONSTRAINTS = 1  # constraints are enforced for qp solver
     UTILITY_CONSTRAINTS = 2  # constraints are added as utility to the objective
@@ -71,43 +77,50 @@ class ConstraintEnforcementType(Enum):
 
 @dataclass(frozen=True)
 class Constraints:
-    """Comprehensive portfolio optimization constraints.
+    """Portfolio policy in an ordered asset universe.
 
-    Unified container for all portfolio constraints including exposure limits,
-    tracking error, turnover, group constraints, and target return/volatility.
-    Supports multiple optimization backends (CVXPY, SciPy, PyRB).
+    Backend compilers enforce their supported families; a populated field alone
+    does not establish backend coverage. SciPy compiles boxes, net exposure and
+    group allocation. The PyRB-compatible helper compiles boxes and group rows;
+    the risk-budgeting solver owns its full-investment contract.
 
-    Sector and style deviations share ``BenchmarkDeviationConstraints`` and both impose
-    ``|L_g.T @ (w - benchmark_weights)| <= d_g``. Sector loadings are normally binary
-    membership indicators, while style loadings are normally continuous factor exposures.
+    Sector and style deviations share BenchmarkDeviationConstraints. Sector
+    loadings are normally binary membership indicators; style loadings are
+    normally continuous exposures. Their units follow the loading scale.
 
-    Immutable: all mutation methods return new Constraints instances.
+    The dataclass is frozen, but contained pandas objects are mutable. Treat them
+    as policy inputs and use copy() or an update method to create replacements.
+    Align all vectors and both covariance axes before compiling or evaluating.
 
     Attributes:
-        is_long_only: Enforce non-negative weights (no short positions).
-        min_weights: Minimum weight per asset.
-        max_weights: Maximum weight per asset.
-        max_exposure: Maximum total portfolio exposure.
-        min_exposure: Minimum total portfolio exposure.
-        benchmark_weights: Benchmark portfolio weights for tracking error.
-        tracking_err_vol_constraint: Maximum tracking error volatility.
-        weights_0: Current portfolio weights for turnover calculations.
-        turnover_constraint: Maximum portfolio-level L1 turnover.
-        turnover_costs: Transaction costs per asset (scales turnover).
-        target_return: Minimum target portfolio return.
-        asset_returns: Expected returns for each asset.
-        max_target_portfolio_vol_an: Maximum annualized portfolio volatility.
-        constraint_enforcement_type: How tracking error/turnover constraints are enforced.
-        tre_utility_weight: Penalty weight for tracking error in utility optimization.
-        turnover_utility_weight: Penalty weight for turnover in utility optimization.
-        group_lower_upper_constraints: Group-level allocation constraints.
-        group_tracking_error_constraint: Group-level tracking error constraints.
-        group_turnover_constraint: Group-level turnover constraints.
-        sector_deviation_constraints: Benchmark-relative limits using normally binary sector
-            membership loadings; deviations are active sector weights.
-        style_deviation_constraints: Benchmark-relative limits using normally continuous style
-            loadings; deviation units follow the scaling of those loadings.
-        benchmark_beta_constraint: Benchmark-relative beta range constraint.
+        is_long_only: Require nonnegative weights where supported.
+        min_weights: Per-asset lower bounds in the ordered universe.
+        max_weights: Per-asset upper bounds in the ordered universe.
+        max_exposure: Upper bound on the sum of weights, not gross absolute exposure.
+        min_exposure: Lower bound on the sum of weights; exact equality with
+            max_exposure selects a single CVXPY exposure equality.
+        benchmark_weights: Benchmark weights for active risk and deviations.
+        tracking_err_vol_constraint: Total tracking-error limit in covariance-root units.
+        weights_0: Current implemented weights for trading and freezing.
+        turnover_constraint: Total L1 weight-change limit; no half-turnover factor.
+        turnover_costs: Per-asset scaling inside total L1 turnover; units must match
+            turnover_constraint. Group turnover uses its own loadings.
+        target_return: Minimum portfolio expected return where supported.
+        asset_returns: Per-asset expected returns in the same units as target_return.
+        max_target_portfolio_vol_an: Portfolio-volatility limit. It is annual only
+            when the supplied covariance is annualized; no conversion is applied.
+        constraint_enforcement_type: Wrapper/diagnostic policy; select the matching
+            low-level compiler when compiling directly.
+        tre_utility_weight: Total tracking-error penalty coefficient; an existing
+            group-TE object takes precedence in generic utility compilation.
+        turnover_utility_weight: Total turnover penalty coefficient; an existing
+            group-turnover object takes precedence in generic utility compilation.
+        group_lower_upper_constraints: Absolute group allocation limits.
+        group_tracking_error_constraint: Group tracking-error limits.
+        group_turnover_constraint: Group L1 turnover limits.
+        sector_deviation_constraints: Benchmark-relative limits on sector loadings.
+        style_deviation_constraints: Benchmark-relative limits on style loadings.
+        benchmark_beta_constraint: Benchmark-beta range with supplied beta loadings.
     """
     is_long_only: bool = True
     min_weights: pd.Series = None
@@ -133,18 +146,15 @@ class Constraints:
     benchmark_beta_constraint: Optional[BenchmarkBetaConstraint] = None
 
     def __post_init__(self):
-        """Validate that individual min/max weights are consistent with group constraints.
+        """Check selected instrument-box and group-reachability conditions.
 
-        The group constraint is: group_loading @ w >= group_min (and <= group_max),
-        where group_loading can be fractional (not necessarily binary).
-
-        Checks for three infeasibility conditions:
-            * Sum of loading-weighted asset upper bounds < group minimum → can't reach group floor
-            * Sum of loading-weighted asset lower bounds > group maximum → can't stay under group ceiling
-            * Single asset loading-weighted floor > group ceiling → immediate infeasibility
+        Per-name minimum/maximum consistency is checked when both Series have exactly
+        matching indexes. Long-only minima below -1e-10 are rejected. Group checks use
+        positive loadings and a 1e-4 tolerance; they do not establish feasibility of
+        every signed-loading, exposure, risk or trading combination.
 
         Raises:
-            ValueError: If any combination of individual and group constraints is infeasible.
+            ValueError: If a checked box or group-reachability condition fails.
         """
 
         # validate min/max weight consistency
@@ -174,13 +184,15 @@ class Constraints:
             )
 
     def copy(self, **overrides) -> Constraints:
-        """Create a deep copy of all constraints, optionally overriding specific fields.
+        """Deep-copy existing policy state, then apply overrides.
 
         Args:
-            **overrides: Field names and new values to replace.
+            **overrides: Fields to replace after the deep copy. Supplied replacement
+                objects are not themselves deep-copied by this method.
 
         Returns:
-            New Constraints instance (deep-copied, then overridden).
+            A new Constraints instance with constructor validation applied. This
+            operation does not align vectors or nested blocks to a new universe.
         """
         return replace(_copy.deepcopy(self), **overrides)
 
@@ -189,14 +201,17 @@ class Constraints:
             min_weights: Optional[pd.Series] = None,
             max_weights: Optional[pd.Series] = None,
     ) -> Constraints:
-        """Return a new Constraints with updated min/max weights, all other fields intact.
+        """Replace supplied box sides, retaining other policy fields.
 
         Args:
-            min_weights: New minimum weights (None keeps existing). Reindexed to existing index.
-            max_weights: New maximum weights (None keeps existing). Reindexed to existing index.
+            min_weights: New lower side; None retains the existing side. If a lower
+                side already exists, reindex to it and replace missing/NaN values by zero.
+            max_weights: New upper side; None retains the existing side. If an upper
+                side already exists, reindex to it and replace missing/NaN values by zero.
 
         Returns:
-            New Constraints instance with updated bounds.
+            A replacement Constraints instance. This is not a full-universe alignment
+            or a deep copy of unchanged pandas fields.
         """
         overrides = {}
         if min_weights is not None:
@@ -210,14 +225,19 @@ class Constraints:
         return replace(self, **overrides)
 
     def update(self, valid_tickers: List[str], **kwargs) -> Constraints:
-        """Update constraints with valid tickers and additional parameters.
+        """Align registered nested blocks and apply other field overrides.
+
+        Flat Series such as min_weights, weights_0 and benchmark_weights are not
+        automatically reindexed here. Use update_with_valid_tickers() for the full
+        alignment and rebalancing path.
 
         Args:
-            valid_tickers: List of tickers to retain in constraints.
-            **kwargs: Additional constraint parameters to update.
+            valid_tickers: Ordered universe passed to each existing nested block.
+            **kwargs: Replacement fields. Aligned nested blocks from the original
+                specification take precedence over overrides of those same fields.
 
         Returns:
-            New Constraints object with updated fields.
+            A replacement Constraints instance with constructor validation applied.
         """
         overrides = dict(kwargs)
         overrides.update(align_nested_constraint_fields(
@@ -259,30 +279,40 @@ class Constraints:
             max_relaxation_tol: Optional[float] = None,
             relax_frozen_group_bounds: bool = True,
     ) -> Constraints:
-        """Update constraints with valid tickers and rebalancing logic.
+        """Align policy inputs and apply the configured freezing and waiver rules.
 
-        All pd.Series fields are reindexed to valid_tickers to ensure aligned indices.
+        Flat Series and registered nested blocks follow valid_tickers order. Inserted
+        labels receive field-specific defaults; existing explicit NaNs generally
+        survive reindexing. The caller must supply data available at the decision date
+        and align the covariance and candidate separately.
 
-        Assets with rebalancing_indicators == 0 have fixed min/max weights at current weights,
-        effectively preventing trading in those positions.
+        A rebalancing indicator not numerically close to one freezes each configured
+        box side at the resolved current weight. Both sides must exist for an exact
+        pin. Long-only frozen bounds clip negative weights to zero. Optional group
+        waivers reconcile mismatches introduced by freezing and are logged; they do
+        not certify that the resulting mandate is feasible.
 
         Args:
-            valid_tickers: List of tickers to retain.
-            total_to_good_ratio: Scaling factor for constrained exposure.
-            weights_0: Current portfolio weights.
-            asset_returns: Expected asset returns.
-            benchmark_weights: Benchmark portfolio weights.
-            target_return: Target portfolio return.
-            rebalancing_indicators: Binary indicators (1=rebalance, 0=hold fixed).
-            context: Rebalance label used in any constraint-relaxation logs.
-            max_relaxation_tol: Optional maximum permitted relative relaxation
-                when fixed-position constraints must be reconciled.
-            relax_frozen_group_bounds: Whether frozen positions may widen group
-                allocation bounds. Disable for execution-policy projection,
-                where an infeasible selected trade set must remain visible.
+            valid_tickers: Ordered solver universe.
+            total_to_good_ratio: Optional multiplier for total turnover and per-name
+                maxima, except maxima close to 1.0. Exposure limits, minima and group
+                bounds are not scaled.
+            weights_0: Current weights; None retains and aligns the existing field.
+            asset_returns: Expected returns; None retains and aligns the existing field.
+            benchmark_weights: Benchmark weights; None retains and aligns the existing field.
+            target_return: Replacement minimum return; None retains the existing value.
+            rebalancing_indicators: Values close to one permit trading; other values
+                freeze configured box sides when current weights are available.
+                Missing labels are treated as tradable.
+            context: Rebalance label attached to any relaxation logs.
+            max_relaxation_tol: Optional absolute single-group-bound change threshold
+                for ERROR logging. It does not cap, reject or undo a waiver.
+            relax_frozen_group_bounds: Whether to reconcile eligible group-bound
+                mismatches introduced by freezing. False keeps the original group policy.
 
         Returns:
-            New Constraints object with all Series aligned to valid_tickers.
+            A replacement Constraints instance with aligned fields and constructor
+            validation applied. The original specification is not updated in place.
         """
         aligned_fields = build_valid_ticker_constraint_fields(
             constraint_spec=self,
@@ -303,16 +333,17 @@ class Constraints:
                                      w: cvx.Variable,
                                      exposure_scaler: cvx.Variable = None
                                      ) -> List[Inequality]:
-        """Generate CVXPY exposure constraints.
+        """Compile CVXPY long-only, net-exposure and instrument-box rows.
 
-        Creates constraints for long-only, total exposure, and individual weight bounds.
+        Exactly equal stored exposure limits produce an equality; otherwise both
+        sides are compiled. Inputs must already share the solver's asset order.
 
         Args:
-            w: Portfolio weight variable.
-            exposure_scaler: Optional exposure scaling for levered portfolios.
+            w: Ordered portfolio-weight variable.
+            exposure_scaler: Optional multiplier of exposure and box limits.
 
         Returns:
-            List of CVXPY inequality constraints.
+            A list of CVXPY constraints, including an equality when appropriate.
         """
         return _set_cvx_exposure_constraints(
             constraint_spec=self,
@@ -327,23 +358,27 @@ class Constraints:
             exposure_scaler: cvx.Variable = None,
             covar_factorization: Optional[CovarianceFactorization] = None,
     ) -> List:
-        """Generate all CVXPY constraints for portfolio optimization.
+        """Compile configured hard CVXPY rows without solving.
 
-        Comprehensive constraint generation for mean-variance and related optimization problems.
+        This method does not switch to utility compilation when the enforcement
+        enum changes. Group and total turnover/TE limits are independent hard rows.
+        Required analytical inputs must be supplied; total turnover is omitted when
+        weights_0 is absent.
 
         Args:
-            w: Portfolio weight variable.
-            covar: Covariance matrix (required for volatility/tracking error constraints).
-            exposure_scaler: Optional exposure scaling for levered portfolios.
-            covar_factorization: Optional precomputed covariance square root.
-                When supplied, volatility and tracking-error upper bounds use
-                norm constraints instead of quadratic forms.
+            w: Portfolio variable in aligned constraint order.
+            covar: Ordered covariance for configured volatility and tracking-error
+                rows when no factorization is supplied.
+            exposure_scaler: Optional scaling for exposure, boxes and group allocation;
+                it does not uniformly scale every policy family.
+            covar_factorization: Optional existing solver factorization. Its stabilized
+                covariance takes precedence and upper-risk rows use factor norms.
 
         Returns:
-            List of all CVXPY constraints.
+            A constraint list to combine with a caller-owned CVXPY objective.
 
         Raises:
-            ValueError: If required universe is missing for specified constraints.
+            ValueError: If a delegated compiler rejects missing required inputs.
         """
         return _set_cvx_all_constraints(
             constraint_spec=self,
@@ -361,25 +396,31 @@ class Constraints:
             exposure_scaler: cvx.Variable = None,
             covar_factorization: Optional[CovarianceFactorization] = None,
     ) -> Tuple[AddExpression, List[Inequality]]:
-        """Generate CVXPY utility objective with constraints added as utility penalties.
+        """Build the generic utility expression and remaining hard CVXPY rows.
 
-        Constructs objective function that combines alpha signals with soft penalties for
-        tracking error and turnover, rather than enforcing them as hard constraints.
+        Configured group risk/trading penalties take precedence over their total
+        counterparts. Exposure, boxes, target return, group allocation, benchmark
+        deviations and beta remain hard where configured. This generic method adds
+        no maximum-volatility cap. It neither solves nor dispatches on the enum.
 
         Args:
-            w: Portfolio weight variable.
-            alphas: Expected excess returns (alpha signals).
-            covar: Covariance matrix (required for tracking error penalties).
-            exposure_scaler: Optional exposure scaling for levered portfolios.
-            covar_factorization: Optional precomputed covariance square root.
-                When supplied, tracking-error variance is expressed as a
-                factorized sum of squares.
+            w: Portfolio variable in aligned constraint order.
+            alphas: Optional ordered alpha vector. Its active-return term requires
+                benchmark_weights.
+            covar: Ordered covariance for tracking-error penalties when no
+                factorization is supplied.
+            exposure_scaler: Optional multiplier for supported exposure, box and
+                group-allocation rows, not a uniform policy rescaling.
+            covar_factorization: Optional existing factorization whose stabilized
+                covariance is used for factorized risk penalties.
 
         Returns:
-            Tuple of (objective function expression, list of hard constraints).
+            Utility expression and hard constraint list. Maximize the expression or
+            combine it with the selected solver's objective. The expression can be
+            None when no alpha term or applicable penalty is constructed.
 
         Raises:
-            ValueError: If required universe is missing for specified penalties.
+            ValueError: If a delegated compiler rejects missing required inputs.
         """
         return _set_cvx_utility_objective_constraints(
             constraint_spec=self,
@@ -407,15 +448,18 @@ class Constraints:
         return _set_scipy_bounds(constraint_spec=self, covar=covar)
 
     def set_scipy_constraints(self, covar: np.ndarray) -> Tuple[List, np.ndarray]:
-        """Generate SciPy-compatible constraints (inequality form: constraint >= 0).
+        """Compile supported SciPy callbacks and bounds without solving.
 
-        Converts constraints to format expected by scipy.optimize.minimize.
+        The callbacks use nonnegative feasibility values and cover net exposure
+        and group allocation, plus long-only when no explicit minimum is supplied.
+        Boxes use set_scipy_bounds(). Other policy families are not compiled.
+        An exact exposure target remains two opposing inequalities.
 
         Args:
-            covar: Covariance matrix (used for bounds inference if needed).
+            covar: Ordered covariance used to infer the asset count for bounds.
 
         Returns:
-            Tuple of (constraint dictionaries, bounds array).
+            Constraint-dictionary list and bounds array, or None for unbounded boxes.
         """
         return _set_scipy_constraints(constraint_spec=self, covar=covar)
 
@@ -423,15 +467,19 @@ class Constraints:
             self,
             covar: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Generate PyRB-compatible constraints in matrix form (C*x <= d).
+        """Compile boxes and group rows in the PyRB-compatible matrix format.
 
-        Converts group constraints to matrix inequality form for risk budgeting taa.
+        The returned group matrix uses C*x <= d. Net-exposure bands, risk, return,
+        trading and benchmark-deviation limits are not compiled here. Full investment
+        is owned by the risk-budgeting solver and its validator.
 
         Args:
-            covar: Covariance matrix (used for bounds inference if needed).
+            covar: Ordered covariance used to infer the asset count for bounds.
 
         Returns:
-            Tuple of (bounds array, constraint matrix C, constraint vector d).
+            Bounds, group matrix C and right-hand-side vector d. Bounds can be None;
+            C and d are both None when there are no applicable group rows. The method
+            does not run a solver.
         """
         return _set_pyrb_constraints(constraint_spec=self, covar=covar)
 
@@ -439,10 +487,13 @@ class Constraints:
             self,
             constraints_list:  List[Inequality],
     ) -> None:
-        """
-            Print CVXPY constraints in a readable format for debugging and verification.
+        """Print CVXPY row representations, types and shapes for inspection.
 
-            constraints_list: List of CVXPY constraints to print e.g. outputs of set_cvx_exposure_constraints
+        Args:
+            constraints_list: Compiled CVXPY rows, including any exposure equality.
+
+        Returns:
+            None. Diagnostic text is written to standard output.
         """
         print("=== CVXPY constraints ===")
         for i, c in enumerate(constraints_list):
@@ -456,11 +507,18 @@ class Constraints:
             self,
             constraints_list: List[Inequality],
     ) -> None:
-        """
-            Check the violations of CVXPY constraints after optimization
-            after getting the optimal weights. This can help identify which constraints are binding and if there are any numerical issues.
+        """Print maximum CVXPY row violations at the current variable values.
 
-            constraints_list: List of CVXPY constraints to print e.g. outputs of set_cvx_exposure_constraints
+        This diagnostic reports numerical violations, not mandate acceptance or a
+        list of binding constraints. Use evaluate_constraint_residuals() and the
+        solver outcome for structured policy diagnostics.
+
+        Args:
+            constraints_list: Compiled rows whose variables have values, normally
+                after solving.
+
+        Returns:
+            None. Diagnostic text is written to standard output.
         """
         print("=== Check the Violations of CVXPY constraints ===")
         for i, c in enumerate(constraints_list):

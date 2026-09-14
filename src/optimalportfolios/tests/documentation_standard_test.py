@@ -281,3 +281,45 @@ def test_adopted_repository_pages_pass():
     """Exercise the committed inventory rather than only synthetic checker fixtures."""
     assert CHECKER['main']([]) == 0
 
+
+
+def test_source_all_checks_pending_pages_without_adopting_them(inventory_tree, capsys):
+    """CI checks every article while preserving independent adoption evidence."""
+    root, inventory = inventory_tree
+    assert CHECKER['main'](['--source-all']) == 1
+    assert 'Migrate human RST' in capsys.readouterr().out
+    (root / 'docs/legacy.rst').unlink()
+    path = root / 'docs/legacy.md'
+    path.write_text(HEADER, encoding='utf-8')
+    inventory['pages']['docs/legacy.md'] = inventory['pages'].pop('docs/legacy.rst')
+    save_inventory(root, inventory)
+    before = (root / 'tools/docs_inventory.json').read_bytes()
+    assert CHECKER['main'](['--source-all']) == 0
+    output = capsys.readouterr().out
+    assert 'PASS: 2 selected human pages' in output
+    assert 'PENDING (not adopted): 1' in output
+    assert (root / 'tools/docs_inventory.json').read_bytes() == before
+    assert CHECKER['main'](['--all']) == 1
+    assert 'Pending migration' in capsys.readouterr().out
+    path.write_text(HEADER + '\n$$broken$$\n', encoding='utf-8')
+    assert CHECKER['main']([]) == 0
+    capsys.readouterr()
+    assert CHECKER['main'](['--source-all']) == 1
+    assert 'own line' in capsys.readouterr().out
+    path.write_text(HEADER + '\n[Source](missing.py)\n', encoding='utf-8')
+    assert CHECKER['main'](['--source-all']) == 1
+    assert 'Missing local link target' in capsys.readouterr().out
+
+
+def test_source_all_cannot_be_combined_with_narrower_selections(inventory_tree):
+    """A mixed invocation must not silently narrow the all-source CI gate."""
+    for arguments in (['--source-all', '--all'],
+                      ['--source-all', '--files', 'docs/adopted.md']):
+        with pytest.raises(SystemExit) as error:
+            CHECKER['main'](arguments)
+        assert error.value.code == 2
+
+
+def test_all_repository_sources_pass_without_claiming_adoption():
+    """Check pending prose too, retaining the installed-wheel module-level skip."""
+    assert CHECKER['main'](['--source-all']) == 0

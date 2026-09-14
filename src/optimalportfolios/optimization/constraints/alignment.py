@@ -1,9 +1,14 @@
-"""Point-in-time alignment and rebalancing policy for portfolio constraints.
+"""Ordered-universe alignment and rebalancing policy for portfolio constraints.
 
-This internal module aligns immutable constraint specifications to the valid
-solver universe, freezes non-rebalanced positions, and records any one-period
-group-bound waiver required by frozen holdings. It does not construct solver
-objects or import the public constraints facade at runtime.
+This internal module builds replacement fields from frozen specifications,
+aligns flat Series and registered nested blocks, freezes configured box
+sides, and logs eligible one-period group waivers. It does not construct
+solver objects or determine which observations were available at a decision
+date; the caller supplies that point-in-time state.
+
+Constraints.update_with_valid_tickers() is the public entry point for full
+alignment. The complete policy contract is in docs/constraints.md in the
+source checkout.
 """
 from __future__ import annotations
 
@@ -44,7 +49,16 @@ def align_nested_constraint_fields(
         constraint_spec: Constraints,
         valid_tickers: List[str],
 ) -> dict:
-    """Align every nested ticker-indexed constraint block through one registry."""
+    """Return replacements for registered nested ticker-indexed blocks.
+
+    Args:
+        constraint_spec: Source specification. Flat Series are not processed here.
+        valid_tickers: Ordered universe passed to every existing nested block.
+
+    Returns:
+        A field mapping containing each registered nested field, with None for
+        absent blocks. No top-level Constraints instance is constructed.
+    """
     aligned = {}
     for field_name in _NESTED_TICKER_CONSTRAINT_FIELDS:
         block = getattr(constraint_spec, field_name)
@@ -61,12 +75,11 @@ def compute_eligible_rebalancing_bounds(
 ) -> Tuple[pd.Series, pd.Series, pd.Series]:
     """Build instrument bounds for trading a current portfolio toward a model.
 
-    The eligible interval is the current/model corridor, narrowed by projecting
-    the supplied current minimum and maximum weights into that corridor. An
-    instrument is eligible for rebalancing when either its current or model
-    weight is material. Consequently, a proposal can remain at the current
-    weight or move toward the model, but cannot overshoot the model or open an
-    instrument absent from both portfolios.
+    Project supplied minimum and maximum weights into the current/model
+    corridor. Candidate bounds can restrict that interval further, so retaining
+    the current weight is possible only when it lies within the returned bounds.
+    Neither corridor endpoint can be overshot. The rebalancing indicator is one
+    when either absolute current or model weight is greater than 1e-8.
 
     All inputs are aligned to ``current_weights.index`` and missing values are
     treated as zero.
@@ -82,11 +95,12 @@ def compute_eligible_rebalancing_bounds(
         and binary rebalancing indicators in that order.
 
     Raises:
-        ValueError: If an aligned current minimum exceeds its current maximum.
+        ValueError: If an aligned current minimum exceeds its maximum by more than 1e-12.
 
     Wide candidate bounds of [0, 1] are narrowed to the current/model corridor, so a proposal can
-    hold or move toward the model but never overshoot it. Asset `b` is already at its model weight
-    and is pinned; `d` is in neither portfolio, so its indicator is 0 and its corridor is empty:
+    hold or move toward the model but never overshoot it. Asset ``b`` is already at its model
+    weight and is pinned with indicator 1. Asset ``d`` is in neither portfolio; its indicator
+    is 0 and both bounds are zero:
 
     >>> import pandas as pd
     >>> assets = ['a', 'b', 'c', 'd']
@@ -137,12 +151,22 @@ def compute_eligible_rebalancing_bounds(
 
 @dataclass(frozen=True)
 class RelaxationRecord:
-    """Structured record of a frozen-overhang group-bound relaxation.
+    """Structured log payload describing frozen-position group waivers.
 
-    Attached to the log record under ``extra={"relaxation": ...}`` so a handler
-    can aggregate the per-rebalance relaxations into one run-level tally instead
-    of flooding the console. ``items`` is a tuple of (group, kind, old, new)
-    where ``kind`` is ``"group_max"`` or ``"group_min"``.
+    Attached to a log record under extra={"relaxation": record}. Reporting
+    thresholds control log severity and payload emission, not whether a waiver
+    is applied. Sub-material reconciliations can be logged at DEBUG without
+    this payload.
+
+    Attributes:
+        context: Caller-supplied rebalance label.
+        items: Tuple of (group, kind, old, new) changes; kind is "group_max" or "group_min".
+        total_relaxation: Sum of absolute bound changes, including feasibility cushions.
+        max_relaxation: Largest absolute bound change, in allocation/loading units.
+        breached_budget: Whether a resulting group ceiling exceeds max_exposure
+            by more than the feasibility cushion.
+        breached_tol: Whether max_relaxation exceeds a supplied max_relaxation_tol.
+            This changes logging severity; it does not reject the waiver.
     """
     context: str
     items: Tuple[Tuple[str, str, float, float], ...]
@@ -165,31 +189,43 @@ def build_valid_ticker_constraint_fields(
         max_relaxation_tol: Optional[float] = None,
         relax_frozen_group_bounds: bool = True,
 ) -> dict:
-    """Build ticker-aligned fields with the existing rebalancing policy.
+    """Build replacement fields for full universe alignment and rebalancing.
 
-    All pandas Series fields are reindexed to ``valid_tickers``. Assets with a
-    zero rebalancing indicator are frozen at current weights, and group bounds
-    may receive the same logged one-period waiver as
-    ``Constraints.update_with_valid_tickers``.
+    Reindex flat Series and registered nested blocks to valid_tickers. Inserted
+    labels use field-specific defaults; existing NaNs in flat Series generally
+    survive. This differs from compute_eligible_rebalancing_bounds(), which fills
+    missing values with zero.
+
+    Current weights and indicators can freeze existing box sides; both sides
+    must be configured for an exact pin. Values not close to one are frozen.
+    For long-only books, frozen bounds clip negative current weights to zero.
+
+    Eligible group waivers use positive loadings as membership and reconcile
+    mismatches introduced by freezing. They preserve pre-existing group/box
+    infeasibility. The feasibility cushion is 1e-8; the separate 1e-4 reporting
+    threshold tests the original mismatch. Logging records do not cap waivers.
 
     Args:
-        constraint_spec: Immutable constraint specification to align.
-        valid_tickers: List of tickers to retain.
-        total_to_good_ratio: Scaling factor for constrained exposure.
-        weights_0: Current portfolio weights.
-        asset_returns: Expected asset returns.
-        benchmark_weights: Benchmark portfolio weights.
-        target_return: Target portfolio return.
-        rebalancing_indicators: Binary indicators (1=rebalance, 0=hold fixed).
-        context: Rebalance label used in any constraint-relaxation logs.
-        max_relaxation_tol: Optional maximum permitted relative relaxation
-            when fixed-position constraints must be reconciled.
-        relax_frozen_group_bounds: Whether frozen positions may widen group
-            allocation bounds. Disable for execution-policy projection, where
-            an infeasible selected trade set must remain visible.
+        constraint_spec: Source specification; fields are not updated in place.
+        valid_tickers: Ordered solver universe.
+        total_to_good_ratio: Optional multiplier for total turnover and per-name
+            maxima, except maxima close to 1.0. Other limits are not scaled.
+        weights_0: Replacement current weights; None aligns the existing field.
+        asset_returns: Replacement expected returns; None aligns the existing field.
+        benchmark_weights: Replacement benchmark weights; None aligns the existing field.
+        target_return: Replacement minimum return; None retains the existing value.
+        rebalancing_indicators: Values close to one permit trading; others freeze
+            existing box sides when current weights are available. Missing labels
+            are filled with one.
+        context: Label attached to any relaxation logs.
+        max_relaxation_tol: Optional absolute single-group-bound change threshold
+            for ERROR logging. It does not cap, reject or undo a waiver.
+        relax_frozen_group_bounds: Whether to reconcile eligible group mismatches
+            introduced by freezing; False retains the existing group policy.
 
     Returns:
-        Dictionary of constraint fields aligned to ``valid_tickers``.
+        Field mapping for constructing a replacement Constraints instance.
+        This helper itself does not run the Constraints constructor or a solver.
     """
     valid_index = pd.Index(valid_tickers)
     self_dict = {

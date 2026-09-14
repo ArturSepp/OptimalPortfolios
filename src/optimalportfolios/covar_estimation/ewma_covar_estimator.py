@@ -1,9 +1,20 @@
-"""
-EWMA covariance matrix estimator.
+"""EWMA covariance estimation from sampled log-return prices.
 
-Concrete implementation of CovarEstimator using exponentially weighted
-moving average covariance estimation. Supports vol-normalised returns
-and shrinkage toward identity.
+QIS supplies the return, mean and covariance calculations; this module adds
+the estimator interface and selects current or scheduled covariance states.
+The ordinary kernel uses a zero-seeded exponentially weighted second moment.
+Optional volatility normalization selects a different QIS kernel; no
+shrinkage-to-identity parameter is implemented.
+
+Span counts return observations and sets decay as 1 - 2 / (span + 1).
+It is neither a half-life nor a hard lookback. Class outputs are annualized
+using the sampled return index; rebalancing_freq only selects output dates.
+The normalized-return kernel initializes volatility from the full supplied
+array, so selecting earlier tensor slices is not point-in-time safe.
+
+See docs/covariance_estimators.md in the source checkout for the methodology,
+units and timing qualifications. Portfolio weights, objectives and reports
+belong to downstream layers.
 
 Usage:
     >>> import numpy as np
@@ -23,11 +34,6 @@ Usage:
     True
     >>> bool((np.diag(covar) > 0.0).all())  # and carries positive variances
     True
-
-Returns are sampled at ``returns_freq`` and the estimator reports
-``Σ_annual = annualisation_factor × Σ_EWMA``; weights are not part of this layer.
-Main entry points are ``EwmaCovarEstimator`` and ``estimate_current_ewma_covar``. Boundary:
-portfolio objectives, constraints, and performance reporting are not implemented here.
 """
 from __future__ import annotations
 
@@ -49,22 +55,37 @@ def estimate_current_ewma_covar(prices: pd.DataFrame,
                                 apply_an_factor: bool = True,
                                 **kwargs
                                 ) -> pd.DataFrame:
-    """
-    Compute EWMA covariance matrix at the last available date.
+    """Estimate the final QIS EWMA covariance from the supplied price history.
 
-    Standalone function for use outside the estimator class (e.g., by
-    FactorCovarEstimator for factor covariance estimation).
+    The helper samples log returns, drops the first price-difference row and,
+    when demeaning, subtracts the contemporaneous EWMA mean and drops the first
+    zero deviation. The ordinary covariance recursion starts at zero.
+    NanBackfill.ZERO_FILL resets non-finite covariance updates to zero; it is
+    not equivalent to replacing every missing input return with zero.
+
+    This is a full-panel current fit. Slice prices first for a historical cutoff.
+    Volatility normalization uses the QIS kernel whose volatility initialization
+    depends on the entire supplied return array.
 
     Args:
-        prices: Asset price panel. Index=dates, columns=tickers.
-        returns_freq: Frequency for return computation.
-        span: EWMA half-life span in periods.
-        is_apply_vol_normalised_returns: If True, normalise returns by rolling vol.
-        demean: If True, subtract rolling mean before estimation.
-        apply_an_factor: If True, annualise the covariance matrix.
+        prices: Date-by-ticker price panel with an ordered DatetimeIndex. Prices
+            should represent the intended total-return convention.
+        returns_freq: Frequency for sampling log returns, default 'W-WED'.
+        span: EWMA span in sampled return observations. Decay is
+            1 - 2 / (span + 1); span is not a half-life or a fixed window length.
+        is_apply_vol_normalised_returns: Select the QIS normalized-return kernel,
+            which reconstructs covariance using EWMA volatilities. This does not
+            shrink covariance toward an identity matrix.
+        demean: Subtract the current EWMA mean before covariance estimation.
+            False retains raw log returns after the initial difference.
+        apply_an_factor: Multiply by the annualization factor inferred from the
+            sampled return index. False leaves per-observation covariance units.
+        **kwargs: Accepted for compatibility but not read or forwarded by this helper.
 
     Returns:
-        Covariance matrix (N x N) as pd.DataFrame.
+        Square covariance DataFrame on the price tickers, using the last sampled
+        return state. Units are fractional log-return squared, annualized when
+        apply_an_factor is True.
     """
     returns = compute_returns_from_prices(prices=prices, returns_freq=returns_freq, demean=demean, span=span)
     x = returns.to_numpy()
@@ -86,18 +107,28 @@ def estimate_current_ewma_covar(prices: pd.DataFrame,
 
 @dataclass
 class EwmaCovarEstimator(CovarEstimator):
-    """
-    Exponentially weighted covariance matrix estimator.
+    """Configure current and rolling EWMA covariance estimates through QIS.
 
-    Computes EWMA covariance matrices from asset prices, with optional
-    vol-normalised returns and shrinkage toward identity.
+    The ordinary path estimates an exponentially weighted second moment of the
+    configured adjusted log returns. It starts covariance at zero, without a
+    degrees-of-freedom correction or finite-history weight renormalization.
+    The class implements no identity shrinkage.
 
-    Args:
-        returns_freq: Frequency for return computation (e.g., 'W-WED', 'ME', 'B').
-        span: EWMA half-life span in periods at returns_freq frequency.
-        is_apply_vol_normalised_returns: If True, normalise returns by rolling vol
-            before covariance estimation (DCC-like effect).
-        demean: If True, subtract EWMA rolling mean before estimation.
+    Current fits use all supplied prices. Rolling fits compute the full tensor
+    and select return-grid observations. The normalized-return option starts
+    volatility from the full-array mean square, so future data can affect earlier
+    rolling estimates. See docs/covariance_estimators.md for that limitation.
+
+    Attributes:
+        rebalancing_freq: Inherited calendar frequency selecting rolling outputs,
+            default 'QE'. It does not control return sampling.
+        returns_freq: Log-return sampling cadence, default 'W-WED'.
+        span: EWMA span in return observations, default 52. Decay is
+            1 - 2 / (span + 1); this is not a half-life or hard lookback.
+        is_apply_vol_normalised_returns: Use the QIS normalized-return covariance
+            kernel instead of the ordinary recursion.
+        demean: Subtract the contemporaneous EWMA mean before estimation. The first
+            price difference is dropped; demeaning drops one additional zero deviation.
 
     Example:
         >>> import numpy as np
@@ -130,14 +161,18 @@ class EwmaCovarEstimator(CovarEstimator):
     def fit_current_covar(self,
                           prices: pd.DataFrame,
                           ) -> pd.DataFrame:
-        """
-        Compute annualised EWMA covariance matrix at the last available date.
+        """Return annualized EWMA covariance at the final sampled return date.
+
+        Uses the entire supplied panel with the estimator's return cadence, span,
+        demeaning and normalization settings. rebalancing_freq has no effect on
+        this current fit. Slice prices explicitly for a historical cutoff.
 
         Args:
-            prices: Asset price panel. Index=dates, columns=tickers.
+            prices: Ordered date-by-ticker price panel in the intended return convention.
 
         Returns:
-            Annualised covariance matrix (N x N) as pd.DataFrame.
+            Square covariance DataFrame with price tickers on both axes, in annual
+            fractional log-return-squared units inferred from the sampled return index.
         """
         return estimate_current_ewma_covar(
             prices=prices,
@@ -153,19 +188,33 @@ class EwmaCovarEstimator(CovarEstimator):
                            time_period: qis.TimePeriod,
                            rebalancing_freq: Optional[str] = None,
                            ) -> Dict[pd.Timestamp, pd.DataFrame]:
-        """
-        Compute rolling EWMA covariance matrices at each rebalancing date.
+        """Select annualized EWMA matrices on the sampled-return rebalance grid.
 
-        Computes the full EWMA covariance tensor in a single O(T) pass,
-        then extracts slices at each rebalancing date within the time period.
+        The method computes one full covariance tensor before selecting QIS
+        rebalancing indicators within time_period, inclusively. History before the
+        start still contributes to estimation. The end date filters outputs without
+        truncating inputs, so the normalized-return option retains its full-array
+        volatility-initialization limitation.
+
+        This schedule uses return-grid observations and need not match the calendar
+        keys produced by FactorCovarEstimator. Returned dates do not establish when
+        the source observations became available.
 
         Args:
-            prices: Asset price panel. Index=dates, columns=tickers.
-            time_period: Period over which to generate the rebalancing schedule.
-            rebalancing_freq: Override rebalancing frequency. If None, uses self.rebalancing_freq.
+            prices: Ordered date-by-ticker price history for sampling and estimation.
+            time_period: Output-selection bounds, with a required start and optional end.
+                Bounds are localized to the sampled return index's timezone.
+            rebalancing_freq: Optional override for the inherited output frequency.
+                None uses self.rebalancing_freq.
 
         Returns:
-            Dict mapping rebalancing dates to annualised covariance matrices.
+            Dictionary from selected return-grid dates to annual covariance DataFrames
+            with price tickers on both axes. If the global schedule exists but no
+            selected date falls in time_period, the dictionary is empty.
+
+        Raises:
+            ValueError: If the sampled return history has no rebalance indicator at
+                the effective frequency.
         """
         freq = rebalancing_freq or self.rebalancing_freq
 

@@ -223,7 +223,7 @@ workflow. Keeping construction here makes its financial conventions and dependen
 visible together.
 
 Other portfolio libraries organize related capabilities differently.
-The [package comparison](package_comparison.rst) records a **21 August 2026** version snapshot
+The [package comparison](package_comparison.md) records a **21 August 2026** version snapshot
 and describes those differences. Treat it as a dated comparison, not a current release inventory
 or a universal ranking. Shared generic capabilities continue to belong in their owning packages.
 

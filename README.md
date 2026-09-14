@@ -1,4 +1,22 @@
+---
+myst:
+  html_meta:
+    description: >-
+      Multi-asset portfolio construction and rolling backtesting in Python, with
+      offline examples, constrained optimization, covariance models and analytics.
+---
+
 # optimalportfolios
+
+*[author / affiliation / date — placeholder]*
+
+Source: [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
+Analytics and holdings simulation use [qis](https://github.com/ArturSepp/QuantInvestStrats);
+cite its [software record](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).
+
+Explore the [analytics gallery](docs/analytics_gallery.md) for reproducible synthetic examples
+with sample dates, conventions, producer links and reviewed provenance.
 
 **Production multi-asset portfolio construction and rolling backtesting in Python — from
 point-in-time covariance and alpha estimation through constrained optimisation, rebalancing,
@@ -121,7 +139,7 @@ final NAV, and measured runtime. The
 [rendered quickstart documentation](https://optimalportfolios.readthedocs.io/en/latest/quickstart.html)
 includes this same file directly, so the example and documentation cannot drift.
 
-#### A minimal executable example
+### A minimal executable example
 
 The script above remains the authoritative first-use workflow. The shorter version below exists so
 that the README's own code is executed rather than trusted:
@@ -439,7 +457,7 @@ pip install "optimalportfolios[data,reports]"
 <a id="7-price-time-series-data"></a>
 <a id="8-drift-aware-rolling-backtests-v531"></a>
 
-See the [optimisation module guide](https://optimalportfolios.readthedocs.io/en/latest/optimization_module_readme.html) for solver architecture, constraints, backends, and configuration. The [rolling backtest guide](https://optimalportfolios.readthedocs.io/en/latest/rolling_backtests.html) covers rebalancing and transaction costs; [supported examples](examples/README.md) provide complete runnable workflows.
+See the [optimisation module guide](https://optimalportfolios.readthedocs.io/en/latest/optimization_module_readme.html) for solver architecture, constraints, backends, and configuration. The [rolling backtest guide](https://optimalportfolios.readthedocs.io/en/latest/rolling_backtests.html) covers rebalancing and transaction costs; [supported examples](docs/examples_readme.md) provide complete runnable workflows.
 
 ## Examples
 
@@ -525,8 +543,16 @@ qis.save_figs_to_pdf(figs=figs, file_name=f"{portfolio_data.nav.name}_portfolio_
                      orientation='landscape', local_path="output/")
 ```
 
-[![Portfolio factsheet with cumulative returns and drawdowns](examples/figures/example_portfolio_factsheet1.PNG)](examples/figures/example_portfolio_factsheet1.PNG)
-[![Maximum-diversification portfolio: 99% value-at-risk and risk attribution](examples/figures/example_portfolio_factsheet2.PNG)](examples/figures/example_portfolio_factsheet2.PNG)
+The two previews below are offline teaching exhibits produced by
+[`portfolio_reports.py`](tools/docs_analytics/portfolio_reports.py), with OptimalPortfolios
+construction and qis analytics. They use a fixed synthetic sample ending 31 December 2025;
+the performance window starts 1 April 2015 and the risk snapshot is dated 1 October 2025.
+The [shared provenance record](examples/figures/analytics_manifest.json) records the input,
+configuration, software versions and visual review. The full factsheet produced by the code
+above has its own layout.
+
+[![Synthetic maximum-diversification portfolio growth and drawdowns](examples/figures/example_portfolio_factsheet1.PNG)](examples/figures/example_portfolio_factsheet1.PNG)
+[![Synthetic maximum-diversification target weights and contributions to annualized volatility](examples/figures/example_portfolio_factsheet2.PNG)](examples/figures/example_portfolio_factsheet2.PNG)
 
 #### Customised reporting
 
@@ -549,7 +575,12 @@ def run_customised_reporting(portfolio_data) -> plt.Figure:
     return fig
 ```
 
-[![Customised report of cumulative performance, portfolio weights, and benchmark regressions](examples/figures/example_customised_report.PNG)](examples/figures/example_customised_report.PNG)
+The offline preview from
+[`portfolio_reports.py`](tools/docs_analytics/portfolio_reports.py) shows quarterly target
+weights and realized trading costs over 1 April 2015 to 31 December 2025 on the same synthetic
+sample. Costs include entry; quarterly sums of cost divided by NAV are descriptive.
+
+[![Synthetic portfolio target weights and quarterly trading costs](examples/figures/example_customised_report.PNG)](examples/figures/example_customised_report.PNG)
 
 #### Parameter sensitivity backtest
 
@@ -558,7 +589,12 @@ estimation or solver parameters.
 
 See [`examples/comparisons/parameter_sensitivity.py`](examples/comparisons/parameter_sensitivity.py).
 
-[![Maximum-diversification portfolios across covariance spans](examples/figures/max_diversification_span.PNG)](examples/figures/max_diversification_span.PNG)
+The synthetic preview is generated by
+[`span_sensitivity.py`](tools/docs_analytics/span_sensitivity.py). It compares net performance
+and trading costs for five EWMA spans over 1 April 2015 to 31 December 2025, using common assets,
+constraints and implementation dates.
+
+[![Synthetic maximum-diversification performance and trading costs across EWMA spans](examples/figures/max_diversification_span.PNG)](examples/figures/max_diversification_span.PNG)
 
 #### Multi-optimiser cross-backtest
 
@@ -567,7 +603,12 @@ Multiple optimisation methods can be analysed using
 
 See [`examples/comparisons/optimisers.py`](examples/comparisons/optimisers.py).
 
-[![Backtest comparison of portfolio optimisation methods](examples/figures/multi_optimisers_backtest.PNG)](examples/figures/multi_optimisers_backtest.PNG)
+The synthetic preview from
+[`optimiser_comparison.py`](tools/docs_analytics/optimiser_comparison.py) compares minimum
+variance, maximum diversification and equal risk budgets over 1 April 2015 to 31 December 2025.
+Covariance, assets, constraints and trade dates are shared; the comparison is illustrative.
+
+[![Synthetic net performance and trading costs for three covariance-only objectives](examples/figures/multi_optimisers_backtest.PNG)](examples/figures/multi_optimisers_backtest.PNG)
 
 #### Multi-covariance-estimator backtest
 
@@ -575,7 +616,14 @@ Multiple covariance estimators can be backtested for the same optimisation metho
 
 See [`examples/comparisons/covar_estimators.py`](examples/comparisons/covar_estimators.py).
 
-[![Minimum-variance backtests across covariance estimators](examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)](examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)
+The preview from
+[`covariance_comparison.py`](tools/docs_analytics/covariance_comparison.py) uses a fixed
+known-factor Gaussian simulation. It shows net minimum-variance performance over 3 January 2024
+to 31 December 2025 and covariance-estimation error at the last decision, 1 October 2025.
+OptimalPortfolios constructs portfolios, factorlasso fits sparse factor models, and qis computes
+backtests and analytics. One simulated path does not establish an estimator ranking.
+
+[![Synthetic minimum-variance performance and covariance errors for six estimators](examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)](examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)
 
 #### Drift-policy comparison (new in v5.3.1)
 
@@ -691,7 +739,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
   year={2026},
-  version={7.6.0},
+  version={7.6.1},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

@@ -2,7 +2,8 @@
 
 Adapted from QuantInvestStrats/tools/check_docs.py (Artur Sepp, MIT).
 Default: validate adopted pages and report pending migration. --files checks a batch;
---all requires complete adoption. Renderer, numerical and external-link checks are separate.
+--source-all checks all human sources without adopting them; --all requires complete adoption.
+Renderer, numerical and external-link checks are separate.
 """
 
 import argparse
@@ -274,7 +275,7 @@ def discover_pages(root: Path) -> set[str]:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """Validate adopted/selected pages, or require complete migration with --all.
+    """Validate selected sources, retaining --all as the complete-adoption gate.
 
     Args:
         argv: Optional command-line arguments, excluding the program name.
@@ -286,6 +287,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument('--files', nargs='+', type=Path, help='Human pages to validate now.')
     selection.add_argument('--all', action='store_true', help='Require complete adoption.')
+    selection.add_argument('--source-all', action='store_true',
+                           help='Check all human sources without claiming adoption.')
     args = parser.parse_args(argv)
     inventory, errors = load_inventory(REPO_ROOT)
     if errors:
@@ -319,7 +322,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 parser.error(f'Expected an inventoried human documentation page: {requested}')
             selected.add(name)
     else:
-        selected = human if args.all else adopted
+        selected = human if args.all or args.source_all else adopted
     if args.all:
         for name in sorted(pending):
             errors.append(f'{name}:1: Pending migration; mark adopted only after verification.')

@@ -387,9 +387,10 @@ def test_registry_cannot_widen_publication_paths(reviewed):
     old = registry['assets'][0]['path']
     replacement = 'examples/figures/not_approved.PNG'
     (root / replacement).write_bytes((root / old).read_bytes())
-    readme = root / 'README.md'
-    updated = readme.read_text(encoding='utf-8').replace(old, replacement)
-    readme.write_text(updated, encoding='utf-8')
+    for document in registry['assets'][0]['documents']:
+        path = root / document
+        updated = path.read_text(encoding='utf-8').replace(old, replacement)
+        path.write_text(updated, encoding='utf-8')
     registry['assets'][0]['path'] = replacement
     rewrite(ledger, registry)
     before = snapshot(root)

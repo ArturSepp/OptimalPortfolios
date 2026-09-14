@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "Coverage ledger for six legacy README previews. Portfolio-report and span-sensitivity offline candidates are implemented; two other producer families and complete-bundle publication remain pending.",
+  "description": "Coverage ledger for six offline teaching previews in the README and analytics gallery. All four producer families are implemented; publication requires complete-bundle validation and a separate visual-review record.",
   "adapted_from": "https://github.com/ArturSepp/QuantInvestStrats/tree/main/tools/docs_analytics",
   "producers": {
     "portfolio_reports": {
@@ -539,7 +539,8 @@
       "id": "portfolio_factsheet",
       "path": "examples/figures/example_portfolio_factsheet1.PNG",
       "documents": [
-        "README.md"
+        "README.md",
+        "docs/analytics_gallery.md"
       ],
       "producer": "portfolio_reports",
       "status": "legacy"
@@ -548,7 +549,8 @@
       "id": "portfolio_risk",
       "path": "examples/figures/example_portfolio_factsheet2.PNG",
       "documents": [
-        "README.md"
+        "README.md",
+        "docs/analytics_gallery.md"
       ],
       "producer": "portfolio_reports",
       "status": "legacy"
@@ -557,7 +559,8 @@
       "id": "customised_report",
       "path": "examples/figures/example_customised_report.PNG",
       "documents": [
-        "README.md"
+        "README.md",
+        "docs/analytics_gallery.md"
       ],
       "producer": "portfolio_reports",
       "status": "legacy"
@@ -566,7 +569,8 @@
       "id": "span_sensitivity",
       "path": "examples/figures/max_diversification_span.PNG",
       "documents": [
-        "README.md"
+        "README.md",
+        "docs/analytics_gallery.md"
       ],
       "producer": "span_sensitivity",
       "status": "legacy"
@@ -575,7 +579,8 @@
       "id": "optimiser_comparison",
       "path": "examples/figures/multi_optimisers_backtest.PNG",
       "documents": [
-        "README.md"
+        "README.md",
+        "docs/analytics_gallery.md"
       ],
       "producer": "optimiser_comparison",
       "status": "legacy"
@@ -584,7 +589,8 @@
       "id": "covariance_comparison",
       "path": "examples/figures/MinVariance_multi_covar_estimator_backtest.PNG",
       "documents": [
-        "README.md"
+        "README.md",
+        "docs/analytics_gallery.md"
       ],
       "producer": "covariance_comparison",
       "status": "legacy"

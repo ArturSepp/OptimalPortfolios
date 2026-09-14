@@ -1,23 +1,24 @@
-"""
-LASSO-based factor covariance matrix estimator.
+"""Integrate FactorLasso regression with QIS factor covariance estimation.
 
-Concrete implementation of CovarEstimator using sparse factor model
-estimation (LASSO / Group LASSO / HCGL) via CVXPY.
+FactorLasso owns sparse fitting, clustering and decomposition containers.
+This module aligns factor prices to asset-return cadences, annualizes and
+merges fitted components, and provides current and rolling estimator APIs.
+QIS owns factor-return construction, EWMA covariance and date utilities.
 
-Provides both the shared interface (fit_current_covar, fit_rolling_covars)
-and factor-model-specific methods (fit_current_factor_covars,
-fit_rolling_factor_covars) that expose the full decomposition.
+The shared methods return asset covariance matrices. Factor-specific methods
+return CurrentFactorCovarData or RollingFactorCovarData. Covariance combines
+the factor component with a diagonal residual term; betas are dimensionless.
+Supplied factor covariance must already have compatible annual units.
+
+An ordinary current fit does not truncate inputs from an estimation_date
+label. The rolling wrapper slices each input through the scheduled date.
+See docs/covariance_estimators.md in the source checkout for cutoff,
+normalization and demeaning qualifications.
 
 Reference:
     Sepp A., Ossa I., and Kastenholz M. (2026),
     "Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios",
     The Journal of Portfolio Management, 52(4), 86-120.
-
-The model assembles annualised asset covariance as ``Σ_y = β Σ_x β' + D``: factor covariance
-and residual variances are annualised from their configured return frequencies, while betas are
-dimensionless. Main entry points are ``FactorCovarEstimator`` and
-``estimate_lasso_factor_covar_data``. Boundary: portfolio optimisation, signal construction,
-and performance reporting are downstream concerns.
 """
 from __future__ import annotations
 
@@ -51,7 +52,19 @@ _CFCD_SUPPORTS_DERIVED_SIGNS = (
 
 
 def _model_for_frequency(lasso_model: LassoModel, freq: str) -> LassoModel:
-    """Return fit configuration with beta and clustering spans for one cadence."""
+    """Resolve regression and clustering spans for one return cadence.
+
+    Args:
+        lasso_model: FactorLasso configuration, optionally carrying cadence maps.
+        freq: Asset-return frequency code used to look up each configured map.
+
+    Returns:
+        A model copy with span overrides when maps are present; otherwise the
+        supplied model itself. Spans count observations at the requested cadence.
+
+    Raises:
+        KeyError: If a configured regression or clustering span map lacks freq.
+    """
     overrides = {}
     if lasso_model.span_freq_dict is not None:
         if freq not in lasso_model.span_freq_dict:
@@ -71,7 +84,19 @@ def _model_for_frequency(lasso_model: LassoModel, freq: str) -> LassoModel:
 
 
 def _validate_recluster_frequency(recluster_freq: str, rebalancing_freq: str) -> None:
-    """Require HOLD anchors to occur less often than covariance rebalancing dates."""
+    """Check that the reclustering frequency generates fewer calendar anchors.
+
+    The check compares counts over a fixed 2000-2029 calendar interval. It checks
+    relative cadence, not whether every recluster date is a covariance date.
+
+    Args:
+        recluster_freq: Pandas frequency string for reclustering anchors.
+        rebalancing_freq: Pandas frequency string for covariance output dates.
+
+    Raises:
+        ValueError: If either frequency is invalid or reclustering generates at
+            least as many anchors as covariance rebalancing.
+    """
     sample_start = pd.Timestamp('2000-01-01')
     sample_end = pd.Timestamp('2029-12-31')
     try:
@@ -93,7 +118,23 @@ def _validate_recluster_frequency(recluster_freq: str, rebalancing_freq: str) ->
 # This reporting adapter retains the discovered merge heights; it never reclusters assets.
 def _restrict_linkage(linkage: np.ndarray, labels: pd.Index,
                       assets: pd.Index) -> np.ndarray:
-    """Remove reference leaves, preserving retained leaf order and cophenetic distances."""
+    """Remove reference leaves from a discovered clustering tree.
+
+    The adapter retains discovered merge heights and the requested asset order;
+    it does not recluster the retained assets.
+
+    Args:
+        linkage: SciPy-style linkage array for the complete discovered tree.
+        labels: Leaf labels in the order used by linkage.
+        assets: Ordered subset of leaf labels to retain.
+
+    Returns:
+        Four-column linkage array over retained assets; zero or one retained
+        leaf gives no merge rows.
+
+    Raises:
+        ValueError: If any requested asset label is absent from labels.
+    """
     positions = labels.get_indexer(assets)
     if np.any(positions < 0):
         raise ValueError('clustering linkage is missing fitted asset labels')
@@ -113,7 +154,28 @@ def _restrict_linkage(linkage: np.ndarray, labels: pd.Index,
 
 def _factor_cluster_path(risk_factor_prices: pd.DataFrame, returns: pd.DataFrame,
                          schedule: List[pd.Timestamp], model: LassoModel):
-    """Discover clusters with factor references, then adapt partitions and trees to assets."""
+    """Build factor-assisted cluster paths and retain asset-only reporting trees.
+
+    Factor prices are forward-filled to the return index and converted to log
+    returns. FactorLasso discovers clusters on assets plus renamed factor
+    references. References are then removed from assignments and linkages.
+    Missing asset assignments receive distinct groups; warm-up-eligible asset
+    leaves determine each reported tree.
+
+    Args:
+        risk_factor_prices: Date-by-factor prices for clustering references.
+        returns: One cadence's date-by-asset log returns.
+        schedule: Estimation dates passed to FactorLasso's cluster-path builder.
+        model: Configuration with spans resolved for this return cadence.
+
+    Returns:
+        FactorLasso cluster-path container with asset assignments and restricted
+        linkages. Its cutoff records remain those of the discovered reference tree.
+
+    Raises:
+        ValueError: If asset/factor columns are not unique, asset names collide
+            with reserved factor-anchor labels, or retained linkage labels are missing.
+    """
     if not returns.columns.is_unique or not risk_factor_prices.columns.is_unique:
         raise ValueError('factor clustering requires unique asset and factor columns')
     prices = risk_factor_prices.reindex(index=returns.index, method='ffill').ffill()
@@ -144,7 +206,21 @@ def _factor_cluster_path(risk_factor_prices: pd.DataFrame, returns: pd.DataFrame
 
 @dataclass(frozen=True)
 class _FrequencyFitResult:
-    """Components produced by fitting one asset-return cadence."""
+    """Unannualized components from one asset-return cadence.
+
+    Attributes:
+        betas: Asset-by-factor loadings from the fitted model.
+        ewma_variances: Per-asset total variation reported by the fit.
+        residual_variances: Per-asset residual variation reported by the fit.
+        alphas: Per-asset fitted intercepts.
+        r2: Dimensionless fit R-squared diagnostics.
+        clusters: Optional per-asset fitted cluster assignments.
+        linkage: Optional SciPy-style tree for this cadence.
+        cutoff: Optional dendrogram cut distance.
+        residuals: Supplied asset returns minus fitted factor returns times betas;
+            the fitted intercept is not subtracted.
+        derived_signs: Optional asset-by-factor sign requirements; NaN is unconstrained.
+    """
 
     betas: pd.DataFrame
     ewma_variances: pd.Series
@@ -169,7 +245,34 @@ def _fit_lasso_frequency(
         precomputed_linkages: Optional[Dict[str, np.ndarray]] = None,
         precomputed_cutoffs: Optional[Dict[str, float]] = None,
 ) -> _FrequencyFitResult:
-    """Fit one return cadence and collect its unannualised factor-model components."""
+    """Fit one return cadence and collect unannualized model components.
+
+    Factor prices are aligned with historical forward-filling to asset dates,
+    then converted to log returns. Cadence maps override regression/clustering
+    spans for the fit. The original LassoModel receives the fitted state; a
+    combined multi-cadence result must be read from the returned containers.
+
+    Args:
+        freq: Frequency code for this asset-return bucket.
+        asset_returns: Date-by-asset log returns at the bucket's observation cadence.
+        risk_factor_prices: Date-by-factor prices covering the observation history.
+        lasso_model: Configured model to fit in place.
+        verbose: Whether to print solver diagnostics.
+        precomputed_clusters: Optional cadence-to-assignment map. A matching key
+            supplies external memberships without replacing the configured model type.
+        precomputed_linkages: Corresponding linkage map, required when memberships
+            are supplied for this cadence.
+        precomputed_cutoffs: Corresponding cut-distance map, required when memberships
+            are supplied for this cadence.
+
+    Returns:
+        Unannualized fit components. Residual time series exclude only the fitted
+        factor contribution, not the regression intercept.
+
+    Raises:
+        ValueError: If supplied cluster assignments are missing for any fitted asset.
+        KeyError: If required cadence spans, linkages or cutoffs are absent.
+    """
     factor_prices = risk_factor_prices.reindex(index=asset_returns.index, method='ffill').ffill()
     factor_returns = qis.to_returns(
         prices=factor_prices,
@@ -233,40 +336,43 @@ def _fit_lasso_frequency(
 
 @dataclass
 class FactorCovarEstimator(CovarEstimator):
-    """
-    Factor model covariance estimator using LASSO-based sparse regression.
+    """Configure sparse factor fitting and annual covariance assembly.
 
-    Estimates Σ_y = β Σ_x β' + D where β is estimated via LASSO/Group LASSO
-    and Σ_x is the factor covariance matrix estimated via EWMA.
+    QIS estimates factor covariance; FactorLasso estimates loadings and residual
+    variation. Plain covariance methods assemble the factor component plus a
+    weighted residual diagonal. Factor-specific methods retain diagnostics,
+    clusters and residual time series in FactorLasso containers.
 
-    Provides two levels of API:
-        - **Shared interface** (from CovarEstimator):
-            ``fit_current_covar()`` and ``fit_rolling_covars()`` returning
-            plain covariance matrices (pd.DataFrame / Dict[Timestamp, DataFrame]).
-        - **Factor-model-specific**:
-            ``fit_current_factor_covars()`` and ``fit_rolling_factor_covars()``
-            returning CurrentFactorCovarData / RollingFactorCovarData with
-            full decomposition (betas, residuals, clusters, R², etc.).
+    An ordinary current fit uses supplied histories even when estimation_date
+    is earlier. Rolling methods slice inputs through each output date. Optional
+    factor references also impose a current-fit cutoff; smoothing alone does
+    not make the final current regression truncate its inputs.
 
-    Args:
-        lasso_model: Configured LassoModel instance (model_type, reg_lambda, etc.).
-        factor_returns_freq: Frequency for computing factor returns (e.g., 'W-WED').
-        factor_covar_span: EWMA span for factor covariance estimation.
-        is_apply_vol_normalised_returns: If True, normalise returns by rolling vol.
-        demean: If True, subtract rolling mean before covariance estimation.
-        include_factors_in_clustering: Add the selected factor returns as clustering
-            references for HCGL/FCGL. References never enter the response fit, pooled
-            signs, group sizes, residuals or asset covariance. Reported dendrograms
-            remove reference leaves while retaining their induced merge heights.
-            Explicit precomputed partitions take precedence. Defaults to False.
-        factor_clustering_freqs: Restrict factor references to these asset-return
-            cadences when enabled, for example ``['ME']``. None includes every cadence.
+    Attributes:
+        rebalancing_freq: Inherited calendar frequency for rolling estimation,
+            default 'QE'; separate from return sampling and regression spans.
+        lasso_model: FactorLasso fit configuration. Required for fitting; None permits
+            construction only when factor references are disabled. Fits update this
+            model's state, leaving the final cadence's fit attached.
+        factor_returns_freq: Factor-covariance return cadence, default 'W-WED'.
+            Regression factor returns instead follow each asset-return bucket.
+        factor_covar_span: EWMA span in factor-covariance return observations,
+            default 52; not a half-life or hard lookback.
+        is_apply_vol_normalised_returns: Select the normalized-return QIS kernel for
+            internally estimated factor covariance. No identity shrinkage is applied.
+        demean: Stored configuration field currently not forwarded to the internal
+            factor-covariance helper, which always uses demean=True. Regression
+            demeaning is controlled separately by lasso_model.demean.
+        include_factors_in_clustering: Add factor returns as clustering references
+            for HCGL/FCGL. References are excluded from response fitting, pooled signs,
+            group sizes, residuals and asset covariance. Explicit partitions take
+            precedence; reported trees retain the induced asset merge heights.
+        factor_clustering_freqs: Optional nonempty sequence of asset-return cadences
+            receiving references when enabled. None includes every cadence.
 
     Example:
-        Not executed as a doctest: an HCGL fit costs roughly four seconds even on a two-asset
-        panel, which is not a cost worth paying in every cell of the CI matrix for a docstring.
-        `EwmaCovarEstimator` carries the runnable version of this interface, and
-        `src/optimalportfolios/covar_estimation/tests/` covers this estimator directly.
+        Illustrative calls: supply factors, returns_dict and time_period first.
+        EwmaCovarEstimator provides runnable examples of the shared interface.
 
         >>> from factorlasso import LassoModel, LassoModelType  # doctest: +SKIP
         >>> estimator = FactorCovarEstimator(  # doctest: +SKIP
@@ -294,7 +400,15 @@ class FactorCovarEstimator(CovarEstimator):
     factor_clustering_freqs: Optional[List[str]] = None
 
     def __post_init__(self) -> None:
-        """Validate the opt-in clustering mode without changing legacy construction."""
+        """Validate factor-reference configuration at construction.
+
+        This validates the opt-in reference fields, not complete fit readiness.
+
+        Raises:
+            TypeError: If include_factors_in_clustering is not a bool.
+            ValueError: If factor_clustering_freqs is not a nonempty list/tuple of
+                nonempty strings, or enabled references lack an HCGL/FCGL model.
+        """
         if not isinstance(self.include_factors_in_clustering, bool):
             raise TypeError('include_factors_in_clustering must be a bool')
         if self.factor_clustering_freqs is not None and (
@@ -310,30 +424,45 @@ class FactorCovarEstimator(CovarEstimator):
             raise ValueError('factor clustering references require HCGL or FCGL')
 
     def _use_factor_references(self, freq: str) -> bool:
-        """Whether this response cadence receives the optional factor references."""
+        """Check whether factor references are enabled for one response cadence.
+
+        Args:
+            freq: Asset-return cadence code.
+
+        Returns:
+            True when references are enabled and the cadence is selected, or when
+            the enabled configuration has no cadence restriction.
+        """
         return self.include_factors_in_clustering and (
             self.factor_clustering_freqs is None or freq in self.factor_clustering_freqs
         )
 
     def copy(self, **overrides) -> FactorCovarEstimator:
-        """Create a copy, optionally overriding specific fields.
+        """Create a replacement estimator with supplied field overrides.
+
+        The copy is shallow: unchanged nested objects, including LassoModel, remain
+        shared with the original estimator.
 
         Args:
-            **overrides: Field names and new values to replace.
+            **overrides: Dataclass field names and replacement values.
 
         Returns:
-            New ProductConfig instance.
+            New FactorCovarEstimator with constructor validation applied.
         """
         self_dict = {f.name: getattr(self, f.name) for f in fields(self)}
         self_dict.update(overrides)
         return FactorCovarEstimator(**self_dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Serialise estimator config to dictionary.
+        """Return configuration fields with a fresh, unfitted nested model.
 
-        Rebuilds the nested ``LassoModel`` from its public constructor parameters so
-        fitted-state fields never cross the configuration boundary.
+        The dataclass conversion copies field values, then replaces a configured
+        LassoModel with one rebuilt from its public constructor parameters.
+        Fitted-state fields do not cross that model-configuration boundary.
+
+        Returns:
+            Dictionary containing estimator fields. Its lasso_model value is a
+            LassoModel instance or None, not a JSON configuration mapping.
         """
         this = asdict(self)
         if self.lasso_model is not None:
@@ -350,22 +479,30 @@ class FactorCovarEstimator(CovarEstimator):
                           estimation_date: Optional[pd.Timestamp] = None,
                           residual_var_weight: float = 1.0,
                           ) -> pd.DataFrame:
-        """
-        Estimate annualised asset covariance matrix at a single date.
+        """Fit a factor model and return its annual asset covariance matrix.
 
-        Fits the factor model via ``fit_current_factor_covars`` and returns
-        Σ_y = β Σ_x β' + w·D as a plain DataFrame.
+        Delegates to fit_current_factor_covars(), then asks FactorLasso to assemble
+        the factor component plus residual_var_weight times the residual diagonal.
+        The weight affects assembly without refitting or imposing cross-residual
+        covariances.
 
         Args:
-            risk_factor_prices: Factor price panel.
-            asset_returns_dict: Asset returns at multiple frequencies.
-            assets: Asset universe to estimate.
-            x_covar: Pre-computed factor covariance. If None, estimated internally.
-            estimation_date: Reference date for metadata.
-            residual_var_weight: Weight on diagonal residual variances.
+            risk_factor_prices: Ordered date-by-factor total-return prices.
+            asset_returns_dict: Frequency-code-to-log-return-panel mapping. Each asset
+                belongs to exactly one cadence bucket.
+            assets: Optional ordered output universe. Missing fitted asset rows are
+                zero-filled by the factor-data helper.
+            x_covar: Optional already annualized factor covariance with consistent
+                factor labels and axis order. It is used without further scaling.
+            estimation_date: Result label and optional clustering endpoint. In the
+                ordinary current path it does not truncate inputs; slice histories
+                explicitly. Enabled factor references truncate input histories.
+            residual_var_weight: Multiplier on the annual residual diagonal, default
+                1.0. Values numerically close to zero omit that term.
 
         Returns:
-            Annualised covariance matrix (N x N) as pd.DataFrame.
+            Square annual asset covariance DataFrame in fractional log-return-squared
+            units when the supplied returns and factor covariance obey that convention.
         """
         factor_data = self.fit_current_factor_covars(
             risk_factor_prices=risk_factor_prices,
@@ -384,22 +521,26 @@ class FactorCovarEstimator(CovarEstimator):
                            rebalancing_freq: Optional[str] = None,
                            residual_var_weight: float = 1.0,
                            ) -> Dict[pd.Timestamp, pd.DataFrame]:
-        """
-        Estimate rolling covariance matrices at each rebalancing date.
+        """Return annual asset covariance matrices from scheduled factor fits.
 
-        Calls ``fit_rolling_factor_covars`` and extracts plain covariance dicts.
+        Delegates to fit_rolling_factor_covars(), which slices every input through
+        each scheduled date, then extracts plain matrices through FactorLasso.
 
         Args:
-            risk_factor_prices: Factor price panel.
-            asset_returns_dict: Asset returns at multiple frequencies.
-            time_period: Estimation period.
-            assets: Asset universe to estimate.
-            rebalancing_freq: Override rebalancing frequency.
-            residual_var_weight: Weight on diagonal residual variances in
-                Σ_y = β Σ_x β' + w·D. Default 1.0 (full idiosyncratic risk).
+            risk_factor_prices: Ordered date-by-factor total-return prices.
+            asset_returns_dict: Frequency-code-to-log-return-panel mapping; buckets
+                partition the asset universe.
+            time_period: Period for the calendar estimation schedule, not a lower
+                bound on the histories used by each fit.
+            assets: Optional ordered output universe for every matrix.
+            rebalancing_freq: Calendar output-frequency override; None uses the
+                estimator's inherited rebalancing_freq.
+            residual_var_weight: Multiplier on the annual residual diagonal in each
+                assembled matrix. Values numerically close to zero omit that term.
 
         Returns:
-            Dict mapping rebalancing dates to annualised asset covariance matrices.
+            Dictionary from calendar estimation dates to annual asset covariance
+            DataFrames. Keys need not match the direct EWMA estimator's return grid.
         """
         rolling_data = self.fit_rolling_factor_covars(
             risk_factor_prices=risk_factor_prices,
@@ -424,36 +565,46 @@ class FactorCovarEstimator(CovarEstimator):
             precomputed_linkages: Optional[Dict[str, np.ndarray]] = None,
             precomputed_cutoffs: Optional[Dict[str, float]] = None,
     ) -> CurrentFactorCovarData:
-        """
-        Fit factor covariance model at a single estimation date.
+        """Fit a current factor decomposition and retain its diagnostics.
 
-        Estimates the decomposition Σ_y = β Σ_x β' + D using LASSO-based
-        factor selection, where β is sparse factor loadings, Σ_x is factor
-        covariance, and D is diagonal idiosyncratic variance.
+        With factor references disabled, estimation_date labels the result and
+        sets any rebuilt smoother's final date; it does not truncate the final
+        regression inputs or the internally estimated factor covariance. Slice
+        factor prices and every return bucket before historical current fits.
+
+        With factor references enabled, the method truncates those histories through
+        estimation_date, defaulting to the latest last-return date across buckets.
+        A supplied x_covar is still used unchanged and must respect that cutoff.
+
+        Without explicit partitions, active smoothing rebuilds the clustering path
+        from the configured warm-up position through the endpoint. Factor references
+        are added only for selected cadences. The original LassoModel retains the
+        last cadence's fitted state.
 
         Args:
-            risk_factor_prices: Factor price panel. Index=dates, columns=factor names.
-            asset_returns_dict: Asset returns at multiple frequencies.
-                Keys are frequency strings (e.g., 'W-WED'), values are return DataFrames.
-            assets: Asset universe to estimate. Must be subset of return columns.
-            x_covar: Pre-computed factor covariance matrix. If None, estimated from
-                ``risk_factor_prices``.
-            estimation_date: Reference date for the estimation.
-            precomputed_clusters: Optional per-frequency cluster assignments
-                (keys matching ``asset_returns_dict``). The configured cluster
-                model and its penalty semantics are preserved. Use case:
-                USD-anchored clustering for non-USD CMA runs. With an active
-                smoother and no precomputed inputs, the causal clustering pass
-                is rebuilt from the supplied history through ``estimation_date``.
-            precomputed_linkages: Per-frequency scipy linkage matrices
-                corresponding to ``precomputed_clusters``. Stored on the
-                returned CurrentFactorCovarData so dendrogram plots still
-                render with the reference-run linkage structure.
-            precomputed_cutoffs: Per-frequency dendrogram cut distances
-                corresponding to ``precomputed_clusters``.
+            risk_factor_prices: Ordered date-by-factor prices for covariance and fits.
+            asset_returns_dict: Frequency-code-to-log-return-panel mapping, with each
+                asset in exactly one cadence bucket.
+            assets: Optional ordered output universe. The helper zero-fills missing
+                fitted statistics instead of requiring a strict subset of fitted assets.
+            x_covar: Optional annual factor covariance, already aligned in factor units
+                and axis order. None estimates it from the supplied factor-price history.
+            estimation_date: Result date and clustering endpoint, with the cutoff
+                qualification above. Without a rebuilt path, None defaults in the
+                helper to the first bucket's last date.
+            precomputed_clusters: Optional cadence-to-membership map. Explicit
+                memberships override automatic partition construction for supplied
+                cadences and retain the configured model's penalty semantics.
+            precomputed_linkages: Matching cadence-to-SciPy-linkage map for supplied
+                memberships; used to preserve reference dendrograms.
+            precomputed_cutoffs: Matching cadence-to-cut-distance map. Supply all three
+                precomputed maps together; omitted cadence keys fit their own clusters.
 
         Returns:
-            Factor covariance decomposition at the estimation date.
+            FactorLasso CurrentFactorCovarData with annual covariance/variance
+            components, asset-by-factor betas, diagnostics and clustering metadata.
+            Its residual panel is annual-scaled by cadence and excludes factor
+            contributions without subtracting the fitted intercept.
         """
         if self.include_factors_in_clustering:
             estimation_date = estimation_date or max(
@@ -528,23 +679,35 @@ class FactorCovarEstimator(CovarEstimator):
             assets: Union[List[str], pd.Index] = None,
             rebalancing_freq: Optional[str] = None,
     ) -> RollingFactorCovarData:
-        """
-        Fit factor covariance model at each date in a rebalancing schedule.
+        """Fit factor decompositions using expanding histories at calendar dates.
 
-        For each rebalancing date, truncates all input data to ``[:estimation_date]``
-        and calls ``fit_current_factor_covars`` with expanding-window estimation. An
-        active smoother first computes a causal partition path over this exact schedule,
-        then injects the partition into each unchanged cluster-model fit.
+        The QIS schedule uses the effective rebalancing frequency without adding
+        off-grid period endpoints. Before each fit, factor prices and every
+        asset-return bucket are sliced through that date; history before the period
+        start remains available.
+
+        An active smoother or enabled factor references first builds cluster paths
+        over the same schedule through FactorLasso. Those per-date partitions are
+        injected into the configured model fits. Supplied observation dates must
+        reflect when data was available; the schedule cannot establish that.
 
         Args:
-            risk_factor_prices: Factor price panel. Index=dates, columns=factor names.
-            asset_returns_dict: Asset returns at multiple frequencies.
-            assets: Asset universe to estimate at each rebalancing date.
-            time_period: Period over which to generate the rebalancing schedule.
-            rebalancing_freq: Pandas frequency string for rebalancing dates.
+            risk_factor_prices: Ordered date-by-factor total-return prices.
+            asset_returns_dict: Frequency-code-to-log-return-panel mapping, with
+                nonoverlapping asset buckets.
+            time_period: Calendar period for output dates, separate from fit histories.
+            assets: Optional ordered output universe at every date.
+            rebalancing_freq: Output-frequency override; None uses self.rebalancing_freq.
 
         Returns:
-            RollingFactorCovarData with full decomposition at each date.
+            FactorLasso RollingFactorCovarData mapping each scheduled date to its
+            decomposition. The estimator's model retains the final cadence/date fit.
+
+        Raises:
+            ValueError: If a bucket has fewer rows than the configured warmup_period
+                at a fit date, or a configured reclustering cadence is not coarser
+                than the effective output cadence. The row-count check is not a
+                per-asset completeness or eligibility test.
         """
         effective_rebalancing_freq = rebalancing_freq or self.rebalancing_freq
         rebalancing_schedule = qis.generate_dates_schedule(
@@ -630,55 +793,66 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
                                      precomputed_linkages: Optional[Dict[str, np.ndarray]] = None,
                                      precomputed_cutoffs: Optional[Dict[str, float]] = None,
                                      ) -> CurrentFactorCovarData:
-    """
-    Compute factor covariance data at last valuation date.
+    """Assemble current factor covariance data from supplied return histories.
 
-    Uses LASSO/Group LASSO to estimate sparse factor loadings per asset,
-    then assembles the factor covariance matrix, betas, idiosyncratic variances,
-    and in-sample diagnostics into CurrentFactorCovarData.
+    For each asset-return cadence, align factor prices by historical
+    forward-filling, form log returns, and fit the supplied FactorLasso model.
+    The original model is updated in place and retains the final bucket's fit.
+    estimation_date is metadata only here; truncate every input explicitly for
+    a historical current fit.
 
-    ``LassoModel.estimated_betas`` and ``CurrentFactorCovarData.y_betas`` both use the
-    (N x M) convention with assets on rows and factors on columns. Clusters, linkages and
-    cutoffs are fitted per frequency, then flattened into persistable pandas objects:
+    Internal factor covariance always uses demean=True and is annualized from
+    factor_returns_freq. Regression mean adjustment belongs to LassoModel.
+    Asset variances, intercepts and stored residual series are multiplied by
+    their bucket's annualization factor; betas and R-squared are not.
+    Stored residuals are asset returns minus the fitted factor contribution,
+    without intercept subtraction. Annual scaling does not aggregate those
+    observations into realized annual returns.
 
-    - ``clusters`` is a Series indexed by asset with frequency-prefixed cluster IDs.
-    - ``linkages`` stacks scipy linkage rows across frequencies under a frequency-prefixed
-      merge-step index. ``factor_covar.get_linkage_array(linkages, freq)`` recovers one
-      scipy-compatible array.
-    - ``cutoffs`` is a Series indexed by frequency code.
+    Cluster IDs and linkage merge-step labels are frequency-prefixed; cutoffs
+    are indexed by cadence. FactorLasso owns the resulting data container and
+    the methods that assemble asset covariance from its components.
 
     Args:
-        risk_factor_prices: Factor price series. Index=dates, columns=factor names.
-        asset_returns_dict: Dict[freq_str, DataFrame] of asset returns at different
-            rebalancing frequencies (e.g., {'ME': monthly_returns, 'QE': quarterly_returns}).
-        assets: Ordered list/index of asset names for output alignment.
-        lasso_model: Configured LassoModel instance (model_type, reg_lambda, etc.).
-        x_covar: Pre-computed factor covariance matrix (M x M). If None, estimated from
-            risk_factor_prices using EWMA.
-        factor_returns_freq: Frequency for factor return computation (default 'W-WED').
-        factor_covar_span: EWMA span for factor covariance estimation.
-        is_apply_vol_normalised_returns: If True, use vol-normalised returns for
-            factor covariance estimation.
-        estimation_date: Override estimation date. Defaults to last date in first
-            frequency's returns.
-        verbose: If True, print solver diagnostics.
-        precomputed_clusters: Optional per-frequency cluster assignments to use
-            instead of deriving clusters from the y correlation matrix. Keys are
-            frequency codes matching ``asset_returns_dict`` (e.g., 'ME', 'QE').
-            The configured FCGL or HCGL model is retained and the external
-            memberships feed its unchanged penalty construction. Primary use
-            case: USD-anchored clustering for non-USD CMA estimation. Must be
-            supplied with ``precomputed_linkages`` and ``precomputed_cutoffs``.
-        precomputed_linkages: Per-frequency scipy linkage matrices corresponding
-            to ``precomputed_clusters``. Stored on the returned
-            CurrentFactorCovarData so dendrogram plots still render with the
-            reference-run linkage structure.
-        precomputed_cutoffs: Per-frequency dendrogram cut distances corresponding
-            to ``precomputed_clusters``.
+        risk_factor_prices: Ordered date-by-factor total-return prices.
+        asset_returns_dict: Nonempty mapping from return-frequency codes to
+            date-by-asset log-return panels. Codes describe observation cadence,
+            not rebalancing. Each asset belongs to exactly one bucket.
+        lasso_model: Configured FactorLasso model, fitted in place for each bucket.
+            Cadence maps control regression and clustering spans where configured.
+        assets: Optional ordered asset universe for output alignment. Missing
+            fitted rows receive zero betas and zero variance/alpha/R-squared
+            statistics; cluster/sign entries remain NaN.
+        x_covar: Optional square annual factor covariance used without rescaling.
+            Both axes must use consistent factor labels and order.
+        factor_returns_freq: Return cadence for internally estimated factor
+            covariance, default 'W-WED'; regression factors follow each bucket.
+        factor_covar_span: EWMA span in factor-covariance return observations,
+            default 52; not a half-life or hard lookback.
+        is_apply_vol_normalised_returns: Use the normalized-return QIS kernel for
+            internal factor covariance. Ignored when x_covar is supplied.
+        estimation_date: Metadata label; None uses the last date in the first
+            return bucket. This argument never truncates input data here.
+        verbose: Whether to print solver diagnostics.
+        precomputed_clusters: Optional cadence-to-membership map. Matching keys
+            supply external partitions while retaining the configured model and
+            penalty semantics; missing keys use the model's own clustering.
+        precomputed_linkages: Matching linkage arrays for supplied memberships.
+            Must be provided together with both other precomputed maps.
+        precomputed_cutoffs: Matching dendrogram cut distances for supplied
+            memberships; all three maps must be supplied together or all be None.
 
     Returns:
-        CurrentFactorCovarData with factor covariance, betas (N x M), variances,
-        clusters, and residuals.
+        FactorLasso CurrentFactorCovarData. Betas use asset rows and factor
+        columns; variance/alpha statistics are annualized and R-squared is filled
+        then clipped below at zero. Residuals keep structural NaNs across cadence
+        grids; with an explicit assets universe, entirely missing residual columns
+        become zero. Optional derived-sign NaNs retain their unconstrained meaning.
+
+    Raises:
+        ValueError: If only some precomputed maps are supplied, or a supplied
+            membership panel lacks an assignment for a fitted asset.
+        KeyError: If a required cadence span, linkage or cutoff entry is missing.
     """
     # Validate precomputed cluster inputs: either all three or none.
     # Partial supply would produce inconsistent CurrentFactorCovarData

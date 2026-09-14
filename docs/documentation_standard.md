@@ -191,8 +191,9 @@ identity, sample period, actual source version and generation record. Captions e
 alt text describes the comparison. Inspect labels, legends and tables at normal page width and
 full resolution. Keep strategy colors and units consistent across comparable exhibits.
 
-The six existing README figures are legacy exhibits awaiting the analytics stages. Their scripts
-depend on live data and they do not yet share a reproducible bundle. The
+The six README previews are offline synthetic teaching exhibits. Their shared
+[provenance record](../examples/figures/analytics_manifest.json) records the input/configuration
+identity, actual software environment, generation timestamp and separate visual review. The
 [analytics registry](../tools/docs_analytics/registry.json) now records the six stable preview
 paths, their four producer families, and eight non-analytics badges. The
 [analytics runner](../tools/docs_analytics/run.py) checks coverage without importing those scripts.
@@ -221,7 +222,7 @@ ordinary Markdown and reference images, HTML images, and MyST/RST image directiv
 source check, not a browser renderer.
 
 A plan records effective source hashes, legacy image hashes, installed distribution metadata,
-producer ownership, fixture candidates and outstanding generation work. The saved file is
+producer ownership, fixed fixtures and any outstanding generation work. The saved file is
 `run_plan.json` with `status="planned"`. Its `generation_ready` flag reflects whether every
 producer has an implemented entry point and a complete configuration; it does not prove execution.
 Plans always have `publication_ready=false`. A legacy image hash identifies bytes without
@@ -243,7 +244,7 @@ partial outputs for diagnosis; they have no completion manifest. Use a fresh des
 ### Portfolio-report family preview
 
 The [portfolio-report producer](../tools/docs_analytics/portfolio_reports.py) implements the
-three report candidates. Generate and inspect this family while the other families are pending:
+three report candidates. Generate and inspect this family independently during development:
 
 ```console
 python -m tools.docs_analytics.portfolio_reports --output-root <new-C-local-preview>
@@ -562,7 +563,8 @@ The [registry tests](../src/optimalportfolios/tests/documentation_analytics_regi
 cover inspection without analytical imports. The
 [bundle tests](../src/optimalportfolios/tests/documentation_analytics_bundle_test.py) exercise
 all six asset names with controlled test producers, repeated output, failure containment and
-provenance rejection. These tests do not certify the pending real financial exhibits.
+provenance rejection. Real-producer checks and the dated visual-review receipt provide
+separate evidence for the financial exhibits in the [analytics gallery](analytics_gallery.md).
 
 ### Reviewed preview publication
 
@@ -643,8 +645,9 @@ existing OneDrive policy.
 The [publication tests](../src/optimalportfolios/tests/documentation_analytics_publication_test.py)
 exercise exact publication scope, invalid review/bundles, failures before and after individual
 replacements, rollback failure/retry, conflicting edits, and recovery in a fresh process after
-a forced process exit. Real preview publication and visual acceptance belong to the later
-producer/review stages.
+a forced process exit. The [analytics gallery](analytics_gallery.md) displays the reviewed
+real-producer bundle; its linked receipt records the actual generation and review dates.
+Every replacement still requires a complete validated bundle and a separate visual review.
 
 Use the frozen qis synthetic universe for new market-panel teaching examples where appropriate.
 Preserve the established OptimalPortfolios multiasset fixture and existing simulation seeds.
@@ -663,13 +666,16 @@ After the mandatory repository environment setup, use the prescribed external in
 ```console
 python tools/check_docs.py
 python tools/check_docs.py --files docs/documentation_standard.md
+python tools/check_docs.py --source-all
 python tools/check_docs.py --all
 ```
 
 The default checks adopted pages and reports pending migrations. `--files` checks a selected
-human-page batch regardless of its adoption status. `--all` is the final migration gate and fails
-while pending pages remain. Legacy RST pages retain explicit inventory entries until converted;
-do not leave both Markdown and RST sources with the same basename.
+human-page batch regardless of its adoption status. `--source-all` validates every human-authored
+source, including pending pages, without changing the inventory or claiming viewer acceptance.
+It still rejects legacy human RST, malformed prose and missing local targets. `--all` is the
+final migration gate and fails while pending pages remain. Legacy RST pages retain explicit
+inventory entries until converted; do not leave both Markdown and RST sources with the same basename.
 
 These checks do not prove mathematical correctness, external-link availability, bibliography
 accuracy or rendering. Run relevant examples/tests and strict Sphinx HTML/link checks separately.
@@ -680,9 +686,57 @@ When renaming a page, preserve its basename and HTML address, record existing an
 source/download links. Inspect rendered formulas after the math engine finishes. Keep numerical
 changes and unsupported empirical claims out of cosmetic edits.
 
+### Automated documentation checks
+
+The [documentation workflow](../.github/workflows/docs.yml) runs on changes to articles, README,
+examples and their previews, source/fixtures, documentation tooling, attribution, dependency
+metadata or build configuration. It uses Python 3.12 and uv 0.12.13 with
+`uv sync --locked --extra docs --group test`. The test group adds checker tests; the numerical
+and Sphinx dependencies come from the reviewed `uv.lock`. Subsequent `uv run --no-sync` commands
+use that environment without resolving again. The separate package CI retains public-API,
+optional-dependency and installed-wheel tests.
+
+The job checks all human sources, exercises checker regressions, validates displayed-image
+registration and the dated preview receipt, generates and validates all four offline producers,
+and runs strict Sphinx HTML and external-link builds. Link checks use one worker to reduce
+concurrent requests to citation/source hosts; warnings and failed links remain fatal.
+Environments, analytics candidates, caches
+and HTML/linkcheck output use the ephemeral runner's temporary directory. Autosummary may write
+generated sources in that disposable checkout. The workflow never publishes its analytics
+candidate or marks a visual review complete.
+
+These gates answer different questions:
+
+| Gate | What a pass establishes |
+|---|---|
+| `check_docs.py --source-all` | Every inventoried human source meets the source standard; pending reviews stay explicit. |
+| `tools.docs_analytics.run --list` | Every displayed image is registered, including its document consumers. |
+| `tools.docs_analytics.publish --verify` | Committed previews match their dated review receipt and current coverage registry. |
+| `tools.docs_analytics.run --all` | Current source and locked dependencies generate a complete, internally validated offline bundle. |
+| Strict Sphinx HTML and linkcheck | The site builds without warnings and external links pass the configured link policy. |
+
+Preview verification detects changed or missing image bytes relative to the receipt. It does
+not assert that an older publication used today's source. Regeneration validates the current
+candidate; it does not compare PNG bytes across operating systems, install that candidate or
+replace mathematical/visual review. Follow the complete review/publication procedure above to
+refresh the displayed bundle after source changes.
+
+[Read the Docs configuration](../.readthedocs.yaml) uses the same Python minor version, uv version,
+lockfile and `docs` extra, with `UV_PROJECT_ENVIRONMENT` pointing to its managed environment.
+Its custom install uses `--locked` so inconsistent dependency metadata fails instead of silently
+revising the lock. Source, image-coverage and dated-preview checks run before its strict Sphinx
+build. Offline regeneration and the external-link gate run in GitHub Actions; hosting serves the
+reviewed committed previews. Build-system bootstrap packages, operating-system libraries and
+the Python patch version are not fully pinned by the application lockfile.
+
+This setup follows the documented [Read the Docs build-job customization](https://docs.readthedocs.com/platform/stable/build-customization.html) and
+[uv project environment and lock controls](https://docs.astral.sh/uv/concepts/projects/config/).
+On this Windows host, continue to use the prescribed external interpreter and a C-local source
+export after the mandatory repository setup; runner commands are not a replacement for that policy.
+
 ## See also
 
-- [Documentation home](index.rst)
+- [Documentation home](index.md)
 - [Constraints and solver contracts](constraints.md)
 - [Software design](software_design.md)
 - [Contributor guidance](https://github.com/ArturSepp/OptimalPortfolios/blob/main/AGENTS.md)
@@ -695,4 +749,3 @@ changes and unsupported empirical claims out of cosmetic edits.
 - [MyST: math and equations](https://myst-parser.readthedocs.io/en/latest/syntax/math.html).
 - [GitHub: writing mathematical expressions](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/writing-mathematical-expressions).
 - [VS Code: Markdown](https://code.visualstudio.com/docs/languages/markdown).
-

@@ -8,7 +8,8 @@
   "pages": {
     "README.md": {
       "form": "utility",
-      "status": "pending"
+      "status": "pending",
+      "review": "M5b utility source migration and gallery integration. Local verification is recorded in agents/DOCS_M5B_GALLERY_IMPLEMENTATION_REPORT.md; GitHub/VS Code review remains pending, so full adoption is pending."
     },
     "docs/alphas_module_readme.md": {
       "form": "methodology",
@@ -18,7 +19,8 @@
     "docs/api.rst": {
       "form": "api",
       "status": "api",
-      "reason": "Human-maintained autosummary entry; generated API pages retain their generator format."
+      "reason": "Human-maintained autosummary entry; generated API pages retain their generator format.",
+      "review": "M4e API-entry review verified on 2026-09-14: RST ownership and the autosummary/automodule tail are preserved. All 138 ordered entries match the imported public surface. Attribution, project/QIS/FactorLasso citations, seven guide entry points, an executed signature-inspection example and interface guidance are added. All 317 existing focused tests, strict HTML, scoped strict linkcheck (eight working API URLs) and Sphinx browser review pass. All 16 old entry IDs, 323 local-link occurrences and the source download are verified; all 138 generated bodies/link mappings and 2,281 old generated-page IDs are unchanged. Independent source viewers remain unperformed. API status is retained; generated docstrings are not revised."
     },
     "docs/constraints.md": {
       "form": "methodology",
@@ -44,9 +46,10 @@
       "status": "pending",
       "review": "M4a source migration, six executable examples, independent units/cash and covariance-state references, scoped checks, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-13. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
     },
-    "docs/index.rst": {
+    "docs/index.md": {
       "form": "utility",
-      "status": "pending"
+      "status": "pending",
+      "review": "M4e utility migration verified on 2026-09-14: five navigation groups preserve all 20 original destinations, each with an ordinary Markdown link. The exact byline, project/QIS/FactorLasso citations, offline entry points and solver ownership are explicit. All 331 existing focused tests, strict HTML and scoped strict linkcheck pass (15 working URLs; two established SSRN exceptions). Sphinx browser review covers the starting table, guide groups, bibliography, sidebar and API entry. All 19 old HTML IDs, 208 local-link occurrences and the byte-identical home source download are verified. The 138 autosummary entries/generated pages and API rendered body/link mapping are unchanged. GitHub/VS Code review remains pending; this page is not yet fully adopted. M5b adds the analytics gallery to ordinary links and Sphinx navigation; external-viewer status is unchanged."
     },
     "docs/installation.md": {
       "form": "utility",
@@ -73,9 +76,10 @@
       "status": "pending",
       "review": "M4c methodology migration, seven offline blocks, independent allocation/floor/risk references, 25 article cases and 882 focused tests passed on 2026-09-14. All six deliberate defects were detected; the original synthetic example is unchanged. Strict Sphinx HTML/linkcheck and Sphinx browser review pass: six display equations, four tables and all 18 old HTML IDs. Fixed-exposure floor scaling and the missing SLSQP return row are documented without numerical changes. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
     },
-    "docs/package_comparison.rst": {
+    "docs/package_comparison.md": {
       "form": "utility",
-      "status": "pending"
+      "status": "pending",
+      "review": "M4e utility migration verified on 2026-09-14: five historical release identifiers and all twelve categories for four packages are preserved. Primary documentation and version-specific PyPI records were reviewed with separate August snapshot and September review dates. Both documentation-version mismatches and execution/drift qualifications are explicit. All 78 focused tests pass in the final QIS 5.30.2 environment; strict HTML and scoped strict linkcheck pass with all 34 guide URLs verified. Sphinx browser review covers six tables; all 20 old HTML IDs, 219 local-link occurrences and the matching metadata download are verified. Concurrent release, source-link and test-harness changes are preserved. GitHub/VS Code review remains pending; no peer numerical benchmark or version-parity certification is claimed."
     },
     "docs/quickstart.md": {
       "form": "utility",
@@ -114,15 +118,23 @@
     },
     "src/optimalportfolios/alphas/README.md": {
       "form": "utility",
-      "status": "pending"
+      "status": "pending",
+      "review": "M4 contributor-guide migration verified on 2026-09-14: the module map, named-panel profiling API, carry import levels, example link and development workflow are reconciled with current source. One offline example and two supplied-context fragments pass; classic momentum also matches an independent price-endpoint reference. All 327 existing focused tests pass with six unchanged strict default-beta timing expected failures. The documentation checker, strict HTML and scoped linkcheck (seven working URLs) pass. A temporary C-local Sphinx include was visually reviewed: three tables, five preserved legacy anchors, 216 local-link occurrences and 26 matching downloads from 24 source files. Production code, fixtures, exports and seeds are unchanged. GitHub/VS Code review remains pending; this page is not yet fully adopted."
     },
     "src/optimalportfolios/covar_estimation/README.md": {
       "form": "utility",
-      "status": "pending"
+      "status": "pending",
+      "review": "M4 contributor-guide migration verified on 2026-09-14: current module/export ownership, container fields, annualization, QIS risk/report integration and runner prerequisites are documented. Duplicated formulas now link to the authoritative methodology; all 24 legacy headings/anchors are retained. Four sequential offline examples and one optional plotting fragment pass, with independent EWMA and factor-component references. All 195 existing focused tests, the source checker and strict Sphinx HTML pass. Scoped linkcheck verifies nine working URLs with one established SSRN exception. A temporary C-local Sphinx include was visually reviewed: seven tables, 245 local-link occurrences and 22 byte-matching source downloads. Production code, fixtures, seeds and public exports are unchanged. GitHub/VS Code review remains pending; this page is not yet fully adopted."
     },
     "src/optimalportfolios/optimization/constraints/README.md": {
       "form": "utility",
-      "status": "pending"
+      "status": "pending",
+      "review": "M4 contributor-guide migration verified on 2026-09-14: attribution and QIS ownership/citation, public import levels, aligned input ordering, frozen-policy semantics, backend return values and compliance limitations now follow current source. The original residual inputs are preserved; all three Python blocks pass offline, with independent turnover and diagonal-covariance tracking-error references and reorder/freeze checks. All 334 existing focused tests, the documentation checker, strict HTML and default offline SCS development runner pass. A temporary C-local Sphinx include retains all 12 legacy anchors; its four tables, 226 local-link occurrences and 24 downloads from 22 source files were checked. Scoped strict linkcheck verifies five working URLs after rate-limit retries, with no ignored URLs. Production code, API exports, fixtures and seeds are unchanged. GitHub/VS Code rendering remains pending; this page is not yet fully adopted."
+    },
+    "docs/analytics_gallery.md": {
+      "form": "utility",
+      "status": "pending",
+      "review": "M5b utility source migration and gallery integration. Local verification is recorded in agents/DOCS_M5B_GALLERY_IMPLEMENTATION_REPORT.md; GitHub/VS Code review remains pending, so full adoption is pending."
     }
   }
 }

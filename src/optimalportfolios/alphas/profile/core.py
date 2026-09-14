@@ -1,15 +1,15 @@
-"""
-core alpha profiler: rank-based long-only backtest for any pre-computed alpha score panel.
+"""Rank-based alpha selection, QIS backtesting and reporting.
 
-This is THE backtester/profiler for alphas in this package. It takes an alpha score panel (or a dict
-of named panels) and evaluates it by holding the top-quantile of assets, equal-weighted, against an
-equal-weight-all benchmark. It computes NO signals itself -- signal construction lives in the signal
-modules, and the per-signal profilers in signal_profilers compute a panel and call in here.
+This module accepts precomputed score panels and forms equal-weight
+top-quantile targets. Signal construction belongs in alphas.signals;
+the adapters in signal_profilers construct scores and call this core.
 
-    backtest_alpha_rank_portfolio  -- backtest one or several alpha panels (the core entry point)
-    compute_top_quantile_equal_weights -- the rank-and-select weighting rule
-    compute_alpha_rank_analysis_table  -- performance + annualised turnover per leg
-    generate_alpha_profile_report      -- multi-strategy factsheet PDF from the profiled legs
+QIS owns holdings simulation, performance statistics and factsheets. It holds
+units between rebalances, so realized weights drift with prices. The core
+returns alpha strategies followed by one equal-weight benchmark.
+
+The source checkout's docs/alphas_module_readme.md documents methodology and
+limitations; src/optimalportfolios/alphas/README.md gives an offline workflow.
 """
 import numpy as np
 import pandas as pd
@@ -21,25 +21,31 @@ def compute_top_quantile_equal_weights(alpha_scores: pd.DataFrame,
                                        prices: pd.DataFrame,
                                        quantile: float = 1.0 / 3.0,
                                        ) -> pd.DataFrame:
-    """long-only equal weights on the top-quantile assets by alpha score, per date.
+    """Build equal-weight targets for the highest-scoring eligible assets.
 
-    At each date, rank the assets that have BOTH a finite alpha score and a valid price (available
-    universe), keep the best ceil(quantile * n_available), and equal-weight them; all other assets
-    get zero. This is a pure rank-and-select rule -- no covariance, no optimisation -- so it isolates
-    the selection power of the alpha, independent of any sizing model.
+    On each score date, select ceil(quantile * n_available) assets and divide
+    equally among them. Higher scores rank first; ties follow prices.columns
+    order. Eligibility uses non-missing scores and prices, not a positivity or
+    finiteness check. Validate those properties before calling.
+
+    A quantile of 1.0 selects all score-eligible assets. This can differ from the
+    equal-weight benchmark, which does not require an alpha score. This function
+    forms targets only; it does not optimize, rebalance or simulate holdings.
 
     Args:
-        alpha_scores: T x N panel of alpha scores (higher = better). Any alpha; not computed here.
-        prices: T x N price panel, used only to mask assets to those actually trading on each date.
-        quantile: top fraction to hold, in (0, 1]. 1/3 keeps the best third. 1.0 keeps all
-            available assets (i.e. reduces to equal-weight-all).
+        alpha_scores: Date-by-ticker scores. Columns are reindexed to prices.columns:
+            extra score columns are dropped and missing ones become NaN.
+        prices: Date-by-ticker prices, reindexed to score dates for the eligibility
+            mask without forward-filling. Column order also resolves score ties.
+        quantile: Fraction of eligible assets to hold, in (0, 1]. The basket size
+            rounds upward, so a nonempty eligible universe selects at least one asset.
 
     Returns:
-        pd.DataFrame: T x N long-only weights summing to 1 across the held basket on each row
-        (0 on rows with no available asset).
+        Target-weight DataFrame on the score index and price columns. Nonempty
+        baskets sum to one; excluded assets and rows with no eligible asset are zero.
 
     Raises:
-        ValueError: if quantile is not in (0, 1] or the panels do not share columns.
+        ValueError: If quantile is outside (0, 1].
     """
     if not 0.0 < quantile <= 1.0:
         raise ValueError(f"quantile must lie in (0, 1], got {quantile!r}")
@@ -69,34 +75,44 @@ def backtest_alpha_rank_portfolio(prices: pd.DataFrame,
                                   strategy_ticker: str = 'Top-quantile',
                                   benchmark_ticker: str = 'Equal Weight',
                                   ) -> qis.MultiPortfolioData:
-    """backtest one or several long-only top-quantile alpha baskets against equal-weight-all.
+    """Backtest named top-quantile targets against one equal-weight benchmark.
 
-    Generic: pass any pre-computed alpha score panel (momentum, carry, low-beta, a blend, ...), or a
-    dict mapping a label to each such panel to compare several alphas in one run. Each strategy holds
-    the top quantile of assets by that alpha's score, equal-weighted, rebalanced on
-    rebalancing_freq; a single equal-weight-all benchmark uses the same schedule. Every leg goes
-    through qis.backtest_model_portfolio and the set is returned as a MultiPortfolioData for
-    the standard strategy-vs-benchmark factsheet.
+    Each score panel produces a strategy through compute_top_quantile_equal_weights().
+    A separate QIS equal-weight allocation uses non-missing prices independently
+    of the scores. Target rows are optionally filtered by time_period and sampled
+    with asfreq(rebalancing_freq, method='ffill') before each QIS backtest.
 
-    This does NOT compute alphas and takes no signal enum -- alpha construction lives in the signal
-    modules; this only evaluates the ranking they produce.
+    The full price panel is passed through. The target-window end is therefore
+    not a simulation end date: existing holdings can continue through later prices.
+    Choose the price sample explicitly. QIS holds units between rebalances, and
+    the wrapper leaves its weight-implementation lag at the default of zero.
+    Supplied scores must be available at formation time.
 
     Args:
-        prices: T x N price panel.
-        alpha_scores: either a single T x N score panel (higher = better), or a dict
-            {label: score_panel} to backtest several alphas jointly. Labels name the legs.
-        quantile: top fraction held, in (0, 1]. Default 1/3.
-        rebalancing_freq: rebalance schedule (e.g. 'QE', 'ME').
-        time_period: optional window to restrict the backtest.
-        rebalancing_costs: optional per-asset cost, in bp, passed to the backtester.
-        instruments_carry: optional carry panel for carry-aware reporting in the factsheet.
-        strategy_ticker: leg name when alpha_scores is a single panel (ignored for a dict, whose
-            keys are the leg names).
-        benchmark_ticker: name for the equal-weight benchmark leg.
+        prices: Date-by-ticker price panel for target eligibility and QIS simulation.
+            Validate the calendar and price data before profiling.
+        alpha_scores: One score DataFrame or a dictionary mapping strategy labels
+            to score DataFrames. Higher scores rank first; non-missing score/price
+            pairs are eligible. Dictionary iteration order determines strategy order.
+        quantile: Fraction of score-eligible assets selected, in (0, 1].
+        rebalancing_freq: Calendar frequency used to sample target weights, such
+            as 'QE' or 'ME'. Dated target rows determine the QIS trading schedule.
+        time_period: Optional window selecting target rows before frequency sampling.
+            It does not truncate prices or define a reporting window.
+        rebalancing_costs: Per-ticker proportional costs in fractional units, passed unchanged
+            to QIS for every leg; 0.001 means 10 basis points. None means no costs.
+        instruments_carry: Optional date-by-ticker annual fractional carry rates,
+            passed to QIS for accrual on holdings. These affect simulated NAV,
+            not just report labels. None adds no separate carry cash flows.
+        strategy_ticker: Strategy label for a single score panel; dictionary keys
+            take precedence when alpha_scores is a dictionary.
+        benchmark_ticker: Label for the equal-weight reference.
 
     Returns:
-        qis.MultiPortfolioData: The alpha legs followed by the equal-weight benchmark. The
-        benchmark is always last, so ``portfolio_datas[-1]`` is the equal-weight reference.
+        QIS MultiPortfolioData containing the strategy legs in input order and the
+        equal-weight benchmark last. benchmark_prices contains that final leg's NAV.
+        An empty dictionary produces only the benchmark; profile_alpha_signals()
+        instead requires at least one named panel.
     """
     # normalise to a label -> score-panel dict so single-panel and multi-panel share one code path
     if isinstance(alpha_scores, pd.DataFrame):
@@ -141,20 +157,35 @@ def compute_alpha_rank_analysis_table(multi_portfolio_data: qis.MultiPortfolioDa
                                       time_period: qis.TimePeriod = None,
                                       perf_params: qis.PerfParams = None,
                                       ) -> pd.DataFrame:
-    """performance + annualised turnover, one row per leg of an alpha-rank backtest.
+    """Tabulate QIS performance and annualized turnover for each portfolio leg.
 
-    Pulls the standard risk-adjusted performance columns from qis.compute_ra_perf_table and
-    appends the annualised (two-sided, buys+sells) turnover for each leg -- the metric the perf table
-    does not carry, and the one that matters for a rank strategy where the basket churns as the
-    ranking moves.
+    Performance uses each leg's full supplied NAV history. Only turnover is
+    filtered by time_period, so specifying that argument can mix measurement
+    windows. Supply consistently selected histories when comparing columns.
+
+    Turnover comes from each PortfolioData.get_turnover() with aggregation and
+    no rolling sum. For the rank profiler's standard QIS backtests this is
+    two-sided traded turnover, including buys and sells. Its sum is divided by
+    elapsed calendar days between the first and last turnover dates / 365.25.
+    A nonempty series spanning zero days produces NaN; an empty selected series
+    is not handled and raises IndexError.
 
     Args:
-        multi_portfolio_data: the output of backtest_alpha_rank_portfolio (legs + benchmark).
-        time_period: window over which to measure both performance and turnover.
-        perf_params: performance parameters; defaults to monthly.
+        multi_portfolio_data: Profiled portfolio legs, normally including the final
+            equal-weight benchmark. Each leg supplies its NAV and turnover convention.
+        time_period: Optional turnover-only measurement window. It does not filter
+            NAVs before performance statistics are computed.
+        perf_params: QIS performance configuration. None uses PerfParams(freq='ME').
+            The output always selects the zero-rate 'Sharpe (rf=0)' column.
 
     Returns:
-        pd.DataFrame: indexed by leg ticker, with return / vol / Sharpe / max-dd / annualised turnover.
+        DataFrame indexed by leg ticker with 'Return p.a.', 'Vol', 'Sharpe',
+        'Max DD' and 'Turnover p.a.' columns. Return, volatility and drawdown are
+        fractional values, Sharpe is dimensionless, and turnover is a fraction
+        per year under the leg's turnover convention.
+
+    Raises:
+        IndexError: If a leg has no turnover observations in the selected window.
     """
     if perf_params is None:
         perf_params = qis.PerfParams(freq='ME')
@@ -193,26 +224,29 @@ def generate_alpha_profile_report(multi_portfolio_data: qis.MultiPortfolioData,
                                   local_path: Optional[str] = None,
                                   add_current_date: bool = True,
                                   ) -> List:
-    """generate the multi-strategy factsheet for profiled alpha legs and save it to PDF.
+    """Render QIS factsheet figures and save them as a multipage PDF.
 
-    Takes the MultiPortfolioData produced by ``backtest_alpha_rank_portfolio`` (every signal leg plus
-    the equal-weight benchmark) and renders the multi-portfolio factsheet, then writes it to
-    ``{local_path}/{file_name}.pdf``. Kept separate from the backtester so the backtest stays a pure
-    data producer; call this when a report is wanted.
+    Reporting is separate from signal construction and backtesting. The reporting
+    window is forwarded to the QIS factsheet; it does not rerun the strategies.
+    Use an explicit output directory for reproducible batch generation.
 
     Args:
-        multi_portfolio_data: Profiled legs returned by ``backtest_alpha_rank_portfolio``.
-        time_period: Reporting window; defaults to the full sample.
-        perf_params: Performance parameters; defaults to monthly-frequency statistics.
-        regime_benchmark: Leg used for regime classification; defaults to the final leg.
-        group_data: Ticker-to-group labels for grouped exposures.
-        backtest_name: Title shown on the factsheet.
-        file_name: Output file stem; ``.pdf`` is appended.
-        local_path: Output directory; ``None`` uses the qis default output path.
-        add_current_date: Append the run date to the file name.
+        multi_portfolio_data: Profiled legs, normally returned by
+            backtest_alpha_rank_portfolio(), with the equal-weight reference last.
+        time_period: Reporting window forwarded to QIS; None leaves it unspecified.
+        perf_params: Performance configuration; None uses PerfParams(freq='ME').
+        regime_benchmark: Benchmark series name for regime classification; None
+            uses the final portfolio leg's ticker.
+        group_data: Ticker-to-group labels forwarded to the QIS factsheet.
+        backtest_name: Title shown on the report.
+        file_name: Output stem; QIS appends the date when requested and then '.pdf'.
+        local_path: Output directory. Explicit None is passed to QIS and writes
+            relative to the current working directory.
+        add_current_date: Append the generation date to the file stem.
 
     Returns:
-        Generated matplotlib figures, which are also written to disk.
+        List of matplotlib figures also saved to the PDF. The returned value
+        contains figures, not the PDF path. The caller owns their lifecycle.
     """
     if perf_params is None:
         perf_params = qis.PerfParams(freq='ME')

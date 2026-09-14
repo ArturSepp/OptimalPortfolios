@@ -8,8 +8,13 @@ on:
   push:
     branches: [main]
     paths:
+      - README.md
+      - AGENTS.md
+      - CITATION.cff
       - docs/**
-      - examples/covar_estimation/rolling_factor_covar_from_csv.py
+      - examples/**
+      - tools/**
+      - .readthedocs.yaml
       - pyproject.toml
       - uv.lock
       - src/optimalportfolios/**
@@ -17,8 +22,13 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - README.md
+      - AGENTS.md
+      - CITATION.cff
       - docs/**
-      - examples/covar_estimation/rolling_factor_covar_from_csv.py
+      - examples/**
+      - tools/**
+      - .readthedocs.yaml
       - pyproject.toml
       - uv.lock
       - src/optimalportfolios/**
@@ -36,16 +46,45 @@ env:
 jobs:
   docs:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
+    env:
+      AGENT_LOCAL_ROOT: ${{ runner.temp }}/documentation
+      UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/documentation/venv
+      PYTHONPYCACHEPREFIX: ${{ runner.temp }}/documentation/cache/python
+      NUMBA_CACHE_DIR: ${{ runner.temp }}/documentation/cache/numba
+      MPLCONFIGDIR: ${{ runner.temp }}/documentation/cache/matplotlib
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install uv and Python
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version: "3.12"
+          version: "0.12.13"
       - name: Sync documentation environment
-        run: uv sync --locked --extra docs
+        run: uv sync --locked --extra docs --group test
+      - name: Check every human-authored source
+        run: uv run --no-sync python tools/check_docs.py --source-all
+      - name: Test source-checker regressions
+        run: >-
+          uv run --no-sync python -m pytest
+          src/optimalportfolios/tests/documentation_standard_test.py
+          -o cache_dir="$AGENT_LOCAL_ROOT/cache/pytest"
+          --basetemp="$AGENT_LOCAL_ROOT/tests"
+      - name: Check displayed-image registration
+        run: uv run --no-sync python -m tools.docs_analytics.run --list
+      - name: Verify published preview integrity
+        run: uv run --no-sync python -m tools.docs_analytics.publish --verify --repo-root "$PWD"
+      - name: Generate and validate the complete offline analytics bundle
+        run: >-
+          uv run --no-sync python -m tools.docs_analytics.run --all
+          --output-root "$AGENT_LOCAL_ROOT/bundle"
       - name: Build HTML with warnings as errors
-        run: uv run --no-sync python -m sphinx -E -W --keep-going -b html docs docs/_build/html
+        run: >-
+          uv run --no-sync python -m sphinx -E -W --keep-going
+          -b html docs "$AGENT_LOCAL_ROOT/html"
       - name: Check documentation links
-        run: uv run --no-sync python -m sphinx -E -W -b linkcheck docs docs/_build/linkcheck
+        run: >-
+          uv run --no-sync python -m sphinx -E -W
+          -D linkcheck_workers=1 -b linkcheck docs "$AGENT_LOCAL_ROOT/linkcheck"
+      - name: Confirm the reviewed lockfile was preserved
+        run: git diff --exit-code -- pyproject.toml uv.lock
