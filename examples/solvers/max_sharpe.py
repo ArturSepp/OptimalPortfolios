@@ -16,13 +16,13 @@ from optimalportfolios import (Constraints, GroupLowerUpperConstraints,
 from examples.data.universe import fetch_benchmark_universe_data
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     ONE_STEP_OPTIMISATION = 1
     ROLLING_OPTIMISATION = 2
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes.
 
     These are integration tests that download real universe and generate reports.
@@ -45,7 +45,7 @@ def run_local_test(local_test: LocalTests):
                                max_weights=pd.Series(1.0, index=prices.columns),
                                weights_0=benchmark_weights)
 
-    if local_test == LocalTests.ONE_STEP_OPTIMISATION:
+    if local == Locals.ONE_STEP_OPTIMISATION:
         # optimise using last available universe as inputs
         returns = qis.to_returns(prices, freq='W-WED', is_log_returns=True)
         pd_covar = pd.DataFrame(52.0 * qis.compute_masked_covar_corr(data=returns, is_covar=True),
@@ -70,7 +70,7 @@ def run_local_test(local_test: LocalTests):
 
         plt.show()
 
-    elif local_test == LocalTests.ROLLING_OPTIMISATION:
+    elif local == Locals.ROLLING_OPTIMISATION:
         # optimise using last available universe as inputs
         time_period = qis.TimePeriod('31Dec2016', '15Mar2026')
         rebalancing_costs = 0.0003
@@ -114,4 +114,4 @@ def run_local_test(local_test: LocalTests):
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.ROLLING_OPTIMISATION)
+    run_local(local=Locals.ROLLING_OPTIMISATION)

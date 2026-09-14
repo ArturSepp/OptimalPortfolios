@@ -84,12 +84,12 @@ def run_multi_optimisers_backtest(prices: pd.DataFrame,
     return figs
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     MULTI_OPTIMISERS_BACKTEST = 1
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes.
 
     These are integration tests that download real universe and generate reports.
@@ -98,7 +98,7 @@ def run_local_test(local_test: LocalTests):
 
     import optimalportfolios.local_path as local_path
 
-    if local_test == LocalTests.MULTI_OPTIMISERS_BACKTEST:
+    if local == Locals.MULTI_OPTIMISERS_BACKTEST:
         prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
         time_period = qis.TimePeriod(start='31Dec1999', end=prices.index[-1])  # backtest start: need 6y of universe for rolling Sharpe and max mixure portfolios
         perf_time_period = qis.TimePeriod(start='31Dec2007', end=prices.index[-1])  # backtest report
@@ -119,4 +119,4 @@ def run_local_test(local_test: LocalTests):
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.MULTI_OPTIMISERS_BACKTEST)
+    run_local(local=Locals.MULTI_OPTIMISERS_BACKTEST)

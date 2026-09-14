@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optimalportfolios"
-version = "7.3.0"
+version = "7.6.0"
 description = "Production multi-asset portfolio construction and rolling backtesting in Python"
 readme = "README.md"
 license = "MIT"
@@ -54,7 +54,7 @@ dependencies = [
     "cvxpy>=1.5.2",
     "scs>=3.2.4.post3,!=3.3.0",
     "quadprog>=0.1.11",
-    "qis>=5.20.0",
+    "qis>=5.26.0",
     "factorlasso>=0.17.0",
 ]
 
@@ -147,7 +147,8 @@ testpaths = ["src/optimalportfolios"]
 # the out-of-scope paper replication modules, which are invoked by explicit path.
 python_files = ["*_test.py", "test_*.py"]
 addopts = "-ra -q --tb=short"
-cache_dir = "tmp/pytest-cache"
+# Invoke-Repo.ps1 supplies a C-local cache_dir override for agent runs. CI may use pytest's
+# ephemeral default; do not configure a repository-relative cache in this project file.
 
 # `papers/` reproduces published code and is left exactly as-is.
 [tool.ruff]

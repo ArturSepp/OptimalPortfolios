@@ -93,14 +93,14 @@ def plot_static_risk_budgets_vs_weights(prices: pd.DataFrame,
     return figs
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     SOLVE_FOR_RISK_BUDGETS = 1
     ILLUSTRATE_WEIGHTS = 2
 
 
 @qis.timer
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes.
 
     These are integration tests that download real universe and generate reports.
@@ -131,13 +131,13 @@ def run_local_test(local_test: LocalTests):
                                              returns_freq='W-WED',
                                              span=52)
 
-    if local_test == LocalTests.SOLVE_FOR_RISK_BUDGETS:
+    if local == Locals.SOLVE_FOR_RISK_BUDGETS:
         risk_budgets = solve_for_risk_budgets_from_given_weights(prices=prices,
                                                                  given_weights=given_static_weights,
                                                                  covar_dict=covar_dict)
         print(risk_budgets)
 
-    elif local_test == LocalTests.ILLUSTRATE_WEIGHTS:
+    elif local == Locals.ILLUSTRATE_WEIGHTS:
         risk_budgets = solve_for_risk_budgets_from_given_weights(prices=prices,
                                                                  given_weights=given_static_weights,
                                                                  covar_dict=covar_dict)
@@ -156,4 +156,4 @@ def run_local_test(local_test: LocalTests):
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.ILLUSTRATE_WEIGHTS)
+    run_local(local=Locals.ILLUSTRATE_WEIGHTS)

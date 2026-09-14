@@ -7,6 +7,10 @@
 - Never run plain `uv sync` or plain `uv run` from this checkout: uv otherwise creates `<repo>\.venv` even when uv was launched through a Python executable under `C:\Python`.
 - If a uv project operation is required, first set `UV_PROJECT_ENVIRONMENT=C:\Python\OptimalPortfolios312`; for pip-style operations prefer `uv pip ... --python C:\Python\OptimalPortfolios312\Scripts\python.exe`.
 - If any OneDrive-local environment already exists, do not use it; report it for removal.
+- Run standard portfolio tasks through
+  `& "$env:USERPROFILE\OneDrive\analytics\my_github\ArturSepp\scripts\repo_governance\Invoke-Repo.ps1" -Task verify`.
+  Use `-Task check` or `-Task test` for a narrower run. The launcher selects this repository's
+  external interpreter and routes generated state to C:.
 
 # AGENTS.md
 
@@ -177,23 +181,52 @@ and has no reference left in this repository. To run the examples, install what 
 - **Preserve Core Logic:** Maintain the existing optimiser defaults, constraint semantics, and rebalancing conventions, as published results heavily depend on them.
 - **Respect Linting Exclusions:** Leave `papers/` exactly as-is; it is deliberately excluded from linting to preserve published code.
 - **Ensure Offline Execution:** Ensure all examples run on free data. Never add a hard dependency on Bloomberg data.
-- **Maintain Clean Commits:** Prevent backtest outputs, factsheets, or generated figures from being committed to version control.
+- **Maintain Clean Commits:** Exclude backtest outputs, factsheets, and generated figures except the explicitly allowlisted, reviewed documentation previews described below.
+
+## Documentation and analytical exhibits
+
+- Follow [docs/documentation_standard.md](docs/documentation_standard.md) for reader-facing
+  methodology and guides. Articles use the prescribed eight-section structure; utility pages
+  use the shorter form. Include the visible author/affiliation/date placeholder and the
+  OptimalPortfolios project and citation links. Do not invent author details or review dates.
+- Cite qis and factorlasso where their calculations are used. Preserve ownership: portfolio
+  construction here, generic factor estimation in factorlasso, analytics/reporting in qis.
+  The public constraints contract remains in `docs/constraints.md`.
+- Use `$...$` and standalone `$$` math with surrounding blank lines. Check Sphinx, GitHub and
+  VS Code separately; a source check or one viewer does not certify another viewer.
+  Preserve numerical meaning, units, conventions, examples, source basenames and old anchors.
+- Register pages and adoption status in `tools/docs_inventory.json`. Run `python tools/check_docs.py`
+  with the prescribed interpreter; `--files <paths>` checks a revision batch and `--all` requires
+  complete migration. Keep pending legacy pages explicit and API/autosummary sources separate.
+- Build from a C-local source export using the existing setup/launcher. Autosummary writes
+  source files, so redirecting only build output is insufficient. No new setup wrapper is needed.
+- Generate analytics C-locally. The conditional exception to the generated-output prohibition is
+  the six existing README preview paths under `examples/figures/` and their future shared
+  `analytics_manifest.json`, after the implemented registry/publisher validates the complete
+  reviewed bundle. Until that tooling exists, the legacy figures are not reproducible outputs.
+  Full factsheets, PDFs, downloads and temporary output remain excluded.
+- Preserve executable README and quickstart/notebook contracts, frozen fixtures, seeds,
+  public re-exports and numerical behavior. Record validation and pending checks under `agents/`.
 
 ## Temporary workspace hygiene
 
-- Do not create `.pytest*` or `.codex*` work directories at the repository root. Pytest's cache
-  is configured under the ignored `tmp/` tree.
-- Use the operating-system temp directory when it is writable. If sandboxing requires a workspace
-  path, use a task-specific directory below `tmp/` and remove it after verification. In particular,
-  pass `--basetemp=tmp/pytest/<task-id>` only when pytest's default temp location is unavailable.
-- Generated previews, extracted attachments, dependency junctions and diagnostic scripts are
-  temporary artifacts. Keep them below `tmp/`, deliver intentional outputs elsewhere, and clean
-  the temporary tree before handing the task back.
+- Do not create `tmp/`, `.pytest*`, `.codex*`, cache, build, analysis, or run directories anywhere
+  in this OneDrive checkout. The existing ignored `tmp/` tree is legacy cleanup material, not an
+  approved workspace for new tasks.
+- Run standard checks through `Invoke-Repo.ps1`. Before any manual Python, pytest, Ruff, mypy,
+  coverage, build, or analysis command, dot-source `Enter-AgentRepo.ps1` as required below. The
+  helper assigns `$env:AGENT_LOCAL_ROOT` and routes pytest's cache and temporary state to C:.
+- Put task-specific scratch below `$env:AGENT_LOCAL_ROOT\tmp\<task-id>` and generated analyses,
+  builds, outputs, and runs in the corresponding C-local directories created by the helper. Never
+  fall back to a repository-relative path when that environment variable is unavailable; run the
+  helper first.
+- Copy back only intentional durable deliverables. Agent roadmaps and working records remain in
+  the ignored repository-root `agents/` directory under the separate artifact policy.
 
 <!-- ===== SHARED AGENT CORE (consumer variant) — begin =====
      Generated from SHARED_AGENT_CORE.md in the maintainer's project knowledge. Do not hand-edit
      between these markers — propose the change to the maintainer instead. Variants: builder
-     (qis) / consumer / standalone. Last synced 2026-09-08, agent core v1.5 -->
+     (qis) / consumer / standalone. Last synced 2026-09-13, agent core v1.6 -->
 
 ## Domain invariants
 
@@ -270,15 +303,18 @@ between your read of it and your write.
 - Prefer minimal anchored edits over whole-file replacement. If the on-disk content is not what
   you expected, stop and reconcile your change onto the current content rather than overwrite.
 
-## Roadmap execution
+## Agent-generated artifacts
 
-Feature roadmaps live at the repository root as `ROADMAP_<feature>.md`. An execution request
-names the file and the stage. A stage is complete when its stated verification command passes;
-its out-of-scope list is binding.
+All agent-generated roadmaps, execution plans, audits, reports, handoffs, and other working
+outputs live under the repository-root `agents/` directory, which is local and ignored by Git.
+Never create `ROADMAP_*.md`, `Claude outputs/`, `Codex outputs/`, or similar agent-output
+artifacts at the repository root. Name feature roadmaps `agents/ROADMAP_<feature>.md`. An
+execution request names the file and stage. A stage is complete when its stated verification
+command passes; its out-of-scope list is binding.
 
 <!-- ===== SHARED AGENT CORE — end ===== -->
 
-The JOSS alignment execution contract is `roadmap/ROADMAP_JOSS_ALIGNMENT.md`.
+The JOSS alignment execution contract is `agents/ROADMAP_JOSS_ALIGNMENT.md`.
 
 ## Replication contract
 

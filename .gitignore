@@ -1,5 +1,4 @@
 # created by virtualenv automatically
-/roadmap/
 /tmp/
 /.codex/
 /.codex-remote-attachments/
@@ -217,6 +216,5 @@ papers/references/
 /agents/
 /.codex_spreadsheet_tmp/
 src/optimalportfolios/run_local/data/test_prices.csv
-/Claude outputs/
 /papers/crypto_allocation_risk_2023/update_2026
 papers/cma_data/SHARPE_ACCOUNTING.md

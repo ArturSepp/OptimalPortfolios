@@ -86,12 +86,12 @@ def fetch_minimal_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series
     return prices, benchmark_prices, group_data
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     ILLUSTRATE_INPUT_DATA = 1
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes.
 
     These are integration tests that download real universe and generate reports.
@@ -100,7 +100,7 @@ def run_local_test(local_test: LocalTests):
 
     prices, benchmark_prices, ac_loadings, benchmark_weights, group_data, ac_benchmark_prices = fetch_benchmark_universe_data()
 
-    if local_test == LocalTests.ILLUSTRATE_INPUT_DATA:
+    if local == Locals.ILLUSTRATE_INPUT_DATA:
         with sns.axes_style('darkgrid'):
             fig, axs = plt.subplots(2, 1, figsize=(14, 12), constrained_layout=True)
             qis.plot_prices_with_dd(prices=prices, axs=axs)
@@ -110,4 +110,4 @@ def run_local_test(local_test: LocalTests):
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.ILLUSTRATE_INPUT_DATA)
+    run_local(local=Locals.ILLUSTRATE_INPUT_DATA)

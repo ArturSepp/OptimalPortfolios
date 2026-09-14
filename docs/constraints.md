@@ -1,14 +1,78 @@
+---
+myst:
+  html_meta:
+    description: >-
+      Portfolio constraints in OptimalPortfolios: exposure, risk, turnover, group and beta
+      limits, hard versus utility enforcement, backend coverage, and verified examples.
+---
+
 # Portfolio constraints
 
-This guide documents the complete constraint contract used by
-`optimalportfolios.optimization.constraints`: the mathematical rows, required inputs,
-hard-versus-utility behavior, backend coverage, universe alignment, and post-solve analytics.
-The examples are synthetic, deterministic, and require no market-data connection.
+*[author / affiliation / date — placeholder]*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
+
+Portfolio constraints specify which allocations are admissible under an investment policy.
+They can restrict capital exposure, instrument weights, risk, trading, or benchmark-relative
+positions. A hard constraint limits the feasible set; a utility penalty expresses a trade-off
+in the objective and does not by itself guarantee a limit.
+
+## Overview
+
+This article is the complete contract for `optimalportfolios.optimization.constraints`:
+mathematical rows, required inputs, hard-versus-utility behavior, backend coverage, universe
+alignment, and post-solve diagnostics. Its examples use fixed synthetic inputs without
+market-data downloads. They illustrate the calculation contract rather than an investment
+recommendation.
 
 The central object is the immutable `Constraints` dataclass. It describes policy; a backend
 compiler translates the supported parts of that policy into CVXPY, SciPy, or risk-budgeting
 solver rows. This separation matters: a field existing on `Constraints` does not imply that every
 backend enforces it.
+
+<a id="notation-and-units"></a>
+
+## Inputs, notation, and assumptions
+
+The formulas below use:
+
+| Symbol | Meaning and dimensions |
+|---|---|
+| $w,b,w_0$ | Ordered $n$-asset portfolio, benchmark and pre-trade weight vectors |
+| $\mu,\alpha$ | Expected-return and alpha vectors, with $n$ entries |
+| $\Sigma$ | $n$-by-$n$ covariance matrix in the supplied variance units |
+| $B$ | Covariance factor, with $BB^\top=\Sigma_{\mathrm{stabilized}}$ |
+| $L,L_g$ | Assets-by-groups/factors loadings and the $n$-entry column for group $g$ |
+| $a,a_g$ | Active weights $w-b$ and their group-masked vector |
+| $c$ | Portfolio-level turnover multipliers, `turnover_costs` |
+| $h$ | Per-asset benchmark-beta loadings; distinct from turnover multipliers |
+| $b_C$ | Benchmark constituent weights when the joint covariance uses a separate constituent set $C$ |
+| $\odot$ | Elementwise multiplication |
+
+Weights, exposure, and turnover are fractions of NAV. `0.05` therefore means 5%. Exposure is
+**signed net exposure** $\sum_i w_i$, not gross leverage $\sum_i \lvert w_i\rvert$. For
+example, `[1.20, -0.20]` has net exposure `1.00` and gross leverage `1.40`.
+
+The constraint layer does no resampling or annualisation. Keep the following units consistent:
+
+- `asset_returns` and `target_return` must use the same horizon and scaling;
+- covariance entries are variance in the caller's chosen units;
+- volatility and tracking-error limits use the square-root units of that covariance;
+- utility coefficients depend on the units of both alpha and the penalized quantity.
+
+Despite its historical `_an` suffix, `max_target_portfolio_vol_an` does not annualise either the
+covariance or the limit. If the covariance is annualized, supply an annualized limit; if it is
+monthly, supply a monthly limit.
+
+Use one identical asset order for vectors and covariance rows/columns. Inputs are point-in-time:
+the current holdings, benchmark, covariance and beta loadings must be available at the decision
+date. The constraint compiler itself does not estimate data or apply a trading lag. Reporting
+and drift-aware backtesting use [qis](https://github.com/ArturSepp/QuantInvestStrats); see its
+[software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).
+
+The Python fragments below run in document order with these shared imports. The complete
+forced example also supplies its own inputs and imports.
 
 ```python
 from optimalportfolios.optimization.constraints import (
@@ -23,79 +87,55 @@ from optimalportfolios.optimization.constraints import (
 )
 ```
 
-## Notation and units
+## Methodology
 
-The formulas below use:
+The following linear, quadratic and norm constraints specify the package policy. General
+convex-optimization background is given by
+[Boyd and Vandenberghe](https://web.stanford.edu/~boyd/cvxbook/); enforcement and missing-input
+rules below are implementation conventions.
 
-| Symbol | Meaning |
-|---|---|
-| {math}`w` | portfolio weights in solver order |
-| {math}`b` | benchmark weights (`benchmark_weights`) |
-| {math}`w_0` | current weights before the proposed trade (`weights_0`) |
-| {math}`\mu` | expected asset returns (`asset_returns`) |
-| {math}`\Sigma` | covariance matrix |
-| {math}`L` | an assets-by-groups or assets-by-factors loading matrix |
-| {math}`L_g` | the loading vector for one group or factor |
-| {math}`\odot` | elementwise multiplication |
-
-Weights, exposure, and turnover are fractions of NAV. `0.05` therefore means 5%. Exposure is
-**signed net exposure** {math}`\sum_i w_i`, not gross leverage {math}`\sum_i \lvert w_i\rvert`. For
-example, `[1.20, -0.20]` has net exposure `1.00` and gross leverage `1.40`.
-
-The constraint layer does no resampling or annualisation. Keep the following units consistent:
-
-- `asset_returns` and `target_return` must use the same horizon and scaling;
-- covariance entries are variance in the caller's chosen units;
-- volatility and tracking-error limits use the square-root units of that covariance;
-- utility coefficients depend on the units of both alpha and the penalized quantity.
-
-Despite its historical `_an` suffix, `max_target_portfolio_vol_an` does not annualise either the
-covariance or the limit. If the covariance is annualized, supply an annualized limit; if it is
-monthly, supply a monthly limit.
-
-## The constraint map
+### The constraint map
 
 Some `Constraints` fields are policy limits and some are supporting state required to evaluate a
 limit.
 
-| Field | Mathematical contract | Required state |
-|---|---|---|
-| `is_long_only` | {math}`w_i \ge 0` | none |
-| `min_weights`, `max_weights` | {math}`w_i^{min} \le w_i \le w_i^{max}` | aligned asset index |
-| `min_exposure`, `max_exposure` | {math}`E_{min} \le \sum_i w_i \le E_{max}` | none |
-| `target_return` | {math}`\mu^\top w \ge r_{target}` | `asset_returns` |
-| `max_target_portfolio_vol_an` | {math}`\sqrt{w^\top\Sigma w} \le \sigma_{max}` | covariance or factorization |
-| `tracking_err_vol_constraint` | {math}`\sqrt{(w-b)^\top\Sigma(w-b)} \le \tau` | benchmark and covariance |
-| `turnover_constraint` | {math}`\sum_i \lvert c_i(w_i-w_{0,i})\rvert \le T` | `weights_0`; costs {math}`c_i` are optional |
-| `group_lower_upper_constraints` | {math}`l_g \le L_g^\top w \le u_g` | group loadings |
-| `group_tracking_error_constraint` | {math}`\sqrt{a_g^\top\Sigma a_g} \le \tau_g`, {math}`a_g=L_g\odot(w-b)` | benchmark and covariance |
-| `group_turnover_constraint` | {math}`\sum_i \lvert L_{ig}(w_i-w_{0,i})\rvert \le T_g` | `weights_0` |
-| `sector_deviation_constraints` | {math}`\lvert L_g^\top(w-b)\rvert \le d_g` | benchmark |
-| `style_deviation_constraints` | {math}`\lvert L_g^\top(w-b)\rvert \le d_g` | benchmark |
-| `benchmark_beta_constraint` | {math}`\beta_{min} \le c^\top w \le \beta_{max}` | per-date beta loadings {math}`c` |
+| Field(s) | Policy and required state |
+|---|---|
+| `is_long_only` | Nonnegative weights; no reference vector required |
+| `min_weights`, `max_weights` | Per-name boxes in the aligned asset universe |
+| `min_exposure`, `max_exposure` | Lower and upper bounds on signed net exposure |
+| `target_return` | Expected-return floor; requires `asset_returns` |
+| `max_target_portfolio_vol_an` | Volatility ceiling; requires covariance or factorization |
+| `tracking_err_vol_constraint` | Total active-risk ceiling; requires benchmark and covariance |
+| `turnover_constraint` | Full L1 trading budget; requires `weights_0`; `turnover_costs` optional |
+| `group_lower_upper_constraints` | Linear allocation bounds on group/factor loadings |
+| `group_tracking_error_constraint` | Risk limits after masking active weights by group loadings |
+| `group_turnover_constraint` | Group-weighted L1 trading budgets; requires `weights_0` |
+| `sector_deviation_constraints`, `style_deviation_constraints` | Absolute active-loading limits; require benchmark weights |
+| `benchmark_beta_constraint` | Linear bounds on portfolio beta; requires per-date beta loadings |
 
 The supporting fields `benchmark_weights`, `weights_0`, `asset_returns`, and `turnover_costs` do
 nothing by themselves. They supply the reference vectors needed by another configured limit or
 utility term.
 
-`Constraints()` defaults to a long-only, fully invested portfolio: {math}`w_i\ge0` and
-{math}`\sum_iw_i=1`. There are no explicit per-name boxes unless they are supplied.
+`Constraints()` defaults to a long-only, fully invested portfolio: $w_i\ge0$ and
+$\sum_iw_i=1$. There are no explicit per-name boxes unless they are supplied.
 
-## Exposure, long-only, and instrument boxes
+### Exposure, long-only, and instrument boxes
 
 CVXPY compiles three independent pieces:
 
-```{math}
-w_i \ge 0 \quad \text{when is_long_only is true},
-```
+$$
+w_i \ge 0 \quad \text{for a long-only portfolio},
+$$
 
-```{math}
+$$
 E_{min} \le \sum_i w_i \le E_{max},
-```
+$$
 
-```{math}
+$$
 w_i^{min} \le w_i \le w_i^{max}.
-```
+$$
 
 Exactly equal stored exposure limits produce one equality. Distinct values, even if numerically
 close, remain an exposure band. Thus `min_exposure=1.0, max_exposure=1.000005` is not treated as
@@ -121,7 +161,7 @@ For Charnes--Cooper transformations, `exposure_scaler=k` scales exposure, per-na
 group-allocation rows. Other rows are not automatically homogenized; the scaler is an internal
 solver feature, not a general way to lever every constraint family.
 
-### Constructor validation
+#### Constructor validation
 
 `Constraints` rejects:
 
@@ -133,15 +173,15 @@ solver feature, not a general way to lever every constraint family.
 Always align both the labels and their order before calling a low-level compiler. Several rows
 ultimately use NumPy arrays, which cannot recover a misplaced pandas label.
 
-## Target return and portfolio volatility
+### Target return and portfolio volatility
 
-### Minimum target return
+#### Minimum target return
 
 The target-return floor is linear and remains hard in both enforcement modes:
 
-```{math}
+$$
 \mu^\top w \ge r_{target}.
-```
+$$
 
 ```python
 returns = pd.Series({"A": 0.08, "B": 0.02})
@@ -151,22 +191,22 @@ return_floor = Constraints(asset_returns=returns, target_return=0.05)
 `w=[0.50, 0.50]` produces `0.05` and passes. `w=[0.40, 0.60]` produces `0.044` and fails. A
 configured `target_return` without `asset_returns` raises `ValueError` during CVXPY compilation.
 
-### Maximum portfolio volatility
+#### Maximum portfolio volatility
 
 Without a covariance factorization, the hard row is:
 
-```{math}
+$$
 w^\top\Sigma w \le \sigma_{max}^2.
-```
+$$
 
-With a factor {math}`B` satisfying {math}`BB^\top=\Sigma_{stabilized}`, the same policy is
+With a factor $B$ satisfying $BB^\top=\Sigma_{stabilized}$, the same policy is
 compiled as a second-order cone:
 
-```{math}
-\|B^\top w\|_2 \le \sigma_{max}.
-```
+$$
+\lVert B^\top w\rVert_2 \le \sigma_{max}.
+$$
 
-For {math}`\Sigma=\operatorname{diag}(0.04,0.01)` and `w=[0.5,0.5]`, volatility is
+For $\Sigma=\operatorname{diag}(0.04,0.01)$ and `w=[0.5,0.5]`, volatility is
 `sqrt(0.0125) = 0.1118`; a `0.12` ceiling passes.
 
 The factorization takes precedence if both `covar` and `covar_factorization` are supplied. This is
@@ -178,29 +218,29 @@ stored on the object. The generic utility compiler omits the cap. Utility SAA so
 own variance objective or penalty; they do not convert `max_target_portfolio_vol_an` into a
 penalty coefficient.
 
-## Benchmark-relative risk
+### Benchmark-relative risk
 
-Let active weights be {math}`a=w-b`.
+Let active weights be $a=w-b$.
 
-### Total tracking error
+#### Total tracking error
 
 The hard limit is:
 
-```{math}
+$$
 \operatorname{TE}(w,b)=\sqrt{a^\top\Sigma a}\le\tau.
-```
+$$
 
 `benchmark_weights` and a covariance or factorization are required. In factorized form the hard
-row is {math}`\lVert B^\top a\rVert_2\le\tau`.
+row is $\lVert B^\top a\rVert_2\le\tau$.
 
-### Group tracking error
+#### Group tracking error
 
 `GroupTrackingErrorConstraint` masks the active vector before computing risk:
 
-```{math}
+$$
 a_g=L_g\odot(w-b), \qquad
 \operatorname{TE}_g=\sqrt{a_g^\top\Sigma a_g}\le\tau_g.
-```
+$$
 
 This is not the same as multiplying total TE by a group's portfolio weight. Cross-covariances
 inside the masked vector remain part of the calculation.
@@ -227,7 +267,7 @@ non-negative values and exact coverage for every loaded group used by the select
 coverage warns during construction but can raise on `.loc[group]` during compilation. A `NaN`
 utility coefficient skips that penalty; a `NaN` hard cap is not an intentional skip.
 
-## Group allocation and benchmark deviations
+### Group allocation and benchmark deviations
 
 All loading matrices are oriented **assets by groups/factors**: asset labels on rows, group names
 on columns.
@@ -236,13 +276,13 @@ Use explicit zero for “not loaded.” Existing `NaN` loading values are genera
 alignment selects rows but does not universally replace missing cells before expressions are
 compiled.
 
-### Absolute group allocation
+#### Absolute group allocation
 
 `GroupLowerUpperConstraints` applies linear floors and ceilings:
 
-```{math}
+$$
 l_g \le L_g^\top w \le u_g.
-```
+$$
 
 ```python
 group_allocation = GroupLowerUpperConstraints(
@@ -261,7 +301,7 @@ group_allocation = GroupLowerUpperConstraints(
 For `w=[0.45,0.40,0.15]`, Growth is `0.45` and Defensive is `0.55`; both pass.
 
 Loadings need not be binary. Fractional loadings describe partial exposure, and signed loadings
-describe a linear spread. A signed column still compiles as {math}`L_g^\top w`; it is not
+describe a linear spread. A signed column still compiles as $L_g^\top w$; it is not
 silently converted to membership.
 
 Columns that are exactly all zero or all missing are dropped at construction. A column that is
@@ -277,13 +317,13 @@ the contradiction.
 group names receive `_1` and `_2` suffixes, missing asset loadings are filled with zero, and a
 missing side remains `NaN` rather than inventing a bound.
 
-### Sector and style deviations
+#### Sector and style deviations
 
 `BenchmarkDeviationConstraints` implements the same formula for both fields:
 
-```{math}
-|L_g^\top(w-b)|\le d_g.
-```
+$$
+\lvert L_g^\top(w-b)\rvert\le d_g.
+$$
 
 The difference is interpretation:
 
@@ -316,15 +356,15 @@ Supply every bound label as a loading column and use finite limits. Missing labe
 construction but can fail later during compilation; unlike group-allocation bounds, a `NaN`
 deviation limit is not an intentional skip contract.
 
-## Turnover and trading constraints
+### Turnover and trading constraints
 
-### Total turnover
+#### Total turnover
 
 Without cost multipliers, the hard budget is full L1 turnover:
 
-```{math}
-\sum_i|w_i-w_{0,i}|\le T.
-```
+$$
+\sum_i\lvert w_i-w_{0,i}\rvert\le T.
+$$
 
 There is no factor of one half. Moving 10% from A to B has turnover `0.20`:
 
@@ -336,9 +376,9 @@ L1 = |-0.10| + |+0.10| = 0.20
 
 With `turnover_costs=c`, the quantity becomes:
 
-```{math}
-\sum_i|c_i(w_i-w_{0,i})|.
-```
+$$
+\sum_i\lvert c_i(w_i-w_{0,i})\rvert.
+$$
 
 For costs `[2,1]`, the same trade has weighted turnover `0.30`. These values are multipliers in
 the constraint or utility penalty; this layer does not subtract transaction costs from portfolio
@@ -347,13 +387,13 @@ NAV.
 If `weights_0` is absent, total and group turnover rows are skipped with a debug log. That is not
 equivalent to assuming zero starting weights.
 
-### Group turnover
+#### Group turnover
 
 For each group:
 
-```{math}
-\sum_i|L_{ig}(w_i-w_{0,i})|\le T_g.
-```
+$$
+\sum_i\lvert L_{ig}(w_i-w_{0,i})\rvert\le T_g.
+$$
 
 ```python
 group_turnover = GroupTurnoverConstraint(
@@ -378,24 +418,25 @@ groups can count one asset's trade more than once. At least one of `group_max_tu
 values with complete group coverage; missing hard labels can fail at compilation, while a `NaN`
 utility coefficient skips that group's penalty.
 
-## Benchmark beta
+### Benchmark beta
 
-`BenchmarkBetaConstraint` is linear after per-asset beta loadings {math}`c` have been computed:
+`BenchmarkBetaConstraint` is linear after per-asset beta loadings $h$ have been computed:
 
-```{math}
-\beta(w)=c^\top w, \qquad
-\beta_{min}\le c^\top w\le\beta_{max}.
-```
+$$
+\beta(w)=h^\top w, \qquad
+\beta_{min}\le h^\top w\le\beta_{max}.
+$$
 
 At least one side of the range is required. A rolling optimizer should keep static bounds and
 inject the current date's loadings with `.with_loadings(...)` before compilation.
 
-When portfolio assets and benchmark constituents are in one joint covariance, loadings are:
+When portfolio assets and constituents $C$ are in one joint covariance, with constituent
+weights $b_C$, the loadings are:
 
-```{math}
-c=\frac{\Sigma_{assets,constituents}b}
-        {b^\top\Sigma_{constituents,constituents}b}.
-```
+$$
+h=\frac{\Sigma_{\mathrm{assets},C}b_C}
+        {b_C^\top\Sigma_{C,C}b_C}.
+$$
 
 ```python
 from optimalportfolios.optimization.constraints import (
@@ -433,12 +474,11 @@ model, including optional benchmark idiosyncratic variance.
 Beta remains hard in utility mode. Compiling before loadings are injected raises `ValueError`.
 The constrained quantity is absolute portfolio beta, not active beta relative to the benchmark.
 
-(hard-and-utility-enforcement)=
-## Hard and utility enforcement
+### Hard and utility enforcement
 
 `ConstraintEnforcementType` supports two policy interpretations in the CVXPY SAA/TAA paths.
 
-### Forced constraints
+#### Forced constraints
 
 `FORCED_CONSTRAINTS` uses limit values as feasibility rows. In particular:
 
@@ -447,19 +487,21 @@ The constrained quantity is absolute portfolio beta, not active beta relative to
 - portfolio volatility is a hard cap;
 - exposure, boxes, target return, group allocation, deviations, and beta are hard.
 
-### Utility constraints
+#### Utility constraints
 
 The generic utility builder keeps mandate rows hard but turns tracking error and turnover into
 objective trade-offs. With total penalties its maximization objective has the form:
 
-```{math}
-\alpha^\top(w-b)
--\lambda_{TE}(w-b)^\top\Sigma(w-b)
--\lambda_{TO}\sum_i|c_i(w_i-w_{0,i})|.
-```
+$$
+\begin{aligned}
+&\alpha^\top(w-b)\\
+&\quad-\lambda_{TE}(w-b)^\top\Sigma(w-b)\\
+&\quad-\lambda_{TO}\sum_i\lvert c_i(w_i-w_{0,i})\rvert.
+\end{aligned}
+$$
 
 Tracking error is penalized as **variance**, not volatility. Group TE similarly contributes
-{math}`-\lambda_g a_g^\top\Sigma a_g`. Turnover is penalized as full L1 turnover.
+$-\lambda_g a_g^\top\Sigma a_g$. Turnover is penalized as full L1 turnover.
 
 The hard rows retained by the generic utility builder are:
 
@@ -473,7 +515,7 @@ The generic builder does not retain a configured maximum-volatility cap. Individ
 solvers may add absolute or active variance in their own objective; consult the selected solver's
 docstring rather than interpreting a target-volatility field as a lambda.
 
-### Group precedence
+#### Group precedence
 
 Utility precedence is based on object presence:
 
@@ -500,7 +542,7 @@ Finally, the enum is descriptive state used by wrappers and analytics; it does n
 low-level method. `set_cvx_all_constraints()` always builds hard rows. For utility behavior, call
 `set_cvx_utility_objective_constraints()` or a public utility solver.
 
-### Solver-specific utility paths
+#### Solver-specific utility paths
 
 The rules above describe the shared generic builder. Public solvers that already own a risk
 objective use narrower paths:
@@ -516,35 +558,9 @@ objective use narrower paths:
 This is why the backend table says “generic utility” and why a target-volatility argument should
 not be read as a universal penalty calibration.
 
-## Backend capability matrix
+## Worked example
 
-| Constraint family | CVXPY forced | CVXPY generic utility | SciPy | Risk budgeting / PyRB |
-|---|---|---|---|---|
-| Long-only and boxes | Hard | Hard | Bounds/callback | Bounds |
-| Min/max net exposure | Hard | Hard | Two callbacks | Full investment is solver policy; arbitrary bands are not compiled |
-| Target return | Hard | Hard | Unsupported | Unsupported |
-| Portfolio volatility | Hard cap | No generic cap; solver-specific risk objective | Unsupported | Unsupported |
-| Total and group TE | Both hard | Soft; group object takes precedence | Unsupported | Unsupported |
-| Total and group turnover | Both hard | Soft; group object takes precedence | Unsupported | Unsupported |
-| Group allocation | Hard | Hard | Callbacks | Matrix rows |
-| Sector/style deviation | Hard | Hard | Unsupported | Unsupported |
-| Benchmark beta | Hard | Hard | Unsupported | Unsupported |
-
-“Unsupported” means the backend compiler emits no row for that field. It does not mean the
-backend approximates the policy, and a post-solve report cannot retroactively make the solve
-constrained.
-
-SciPy has two box defaults worth knowing:
-
-- with no explicit box side, long-only uses `[0,1]` per asset and long/short uses no bounds;
-- if either side is supplied, a missing lower side becomes `0` for long-only or `-inf` for
-  long/short, and a missing upper side becomes `1`.
-
-SciPy represents an exact exposure target as two opposite inequalities. PyRB receives box bounds
-and group rows {math}`-L_g^\top w\le-l_g` and {math}`L_g^\top w\le u_g`; its risk-budgeting
-solver and validator own the full-investment contract.
-
-## A complete forced-constraint example
+### A complete forced-constraint example
 
 The following problem intentionally includes every constraint family. The covariance and all
 risk limits use annualized units in this example; changing to monthly units would require changing
@@ -558,6 +574,7 @@ import pandas as pd
 from optimalportfolios.optimization.constraints import (
     BenchmarkBetaConstraint,
     BenchmarkDeviationConstraints,
+    ConstraintEnforcementType,
     Constraints,
     GroupLowerUpperConstraints,
     GroupTrackingErrorConstraint,
@@ -662,7 +679,7 @@ Gold      0.131667
 dtype: float64
 ```
 
-The code below independently checks every applicable policy row:
+The solver-independent residual evaluator checks every applicable policy row:
 
 ```python
 residuals = evaluate_constraint_residuals(
@@ -674,7 +691,44 @@ hard_breaches = [r for r in residuals if r.hard and not r.passed]
 assert hard_breaches == []
 ```
 
-## Converting the example to utility mode
+#### Independent check of the forced allocation
+
+Write the three weights as $w_E,w_B,w_G$ for Equity, Bond and Gold. At the reported solution,
+full investment, the Risk-assets upper deviation, and weighted turnover are binding:
+
+$$
+\begin{aligned}
+w_E+w_B+w_G &= 1,\\
+w_E+w_G &= 0.68,\\
+w_E-\tfrac12 w_B-2w_G &= 0.125.
+\end{aligned}
+$$
+
+Solving these three linear equations gives the displayed allocation. The last row follows from
+the turnover multipliers and current weights in this example; its signs match a purchase of
+Equity and sales of Bond and Gold.
+
+There is also a global upper-bound check. The sector limit implies $w_E+w_G\le0.68$.
+The weighted absolute-value turnover constraint implies
+$w_E-\tfrac12w_B-2w_G\le0.125$ for every feasible allocation, regardless of trade signs.
+The expected annual return $R(w)$ can therefore be written as:
+
+$$
+\begin{aligned}
+R(w) &= 0.070w_E+0.035w_B+0.040w_G\\
+     &= 0.040(w_E+w_B+w_G)\\
+     &\quad+0.020(w_E+w_G)\\
+     &\quad+0.010(w_E-\tfrac12w_B-2w_G)\\
+     &\le 0.040+0.020(0.68)+0.010(0.125)\\
+     &= 0.05485.
+\end{aligned}
+$$
+
+The candidate attains that bound and passes the remaining risk and mandate residuals.
+This checks optimality independently of the CVXPY solve. It is specific to these fixed inputs,
+not a general shortcut for the full constraint system.
+
+### Converting the example to utility mode
 
 `Constraints.copy()` deep-copies the contained pandas objects and accepts field overrides. The
 dataclass is frozen, so copying is the normal way to change policy:
@@ -732,9 +786,57 @@ The result is:
 `passed=True` here means “does not determine hard compliance,” not “is below the displayed soft
 reference limit.” The positive `violation` preserves the magnitude for reporting.
 
-## Universe alignment and rebalancing policy
+## Implementation in optimalportfolios
 
-### Use the production alignment method
+The examples use the existing constraint facade and low-level compilers. Their canonical
+source is this article; the repository test extracts and executes its `python` fences in order.
+The final `OptimizationOutcome` fragment is explicitly illustrative because it depends on a
+wrapper result supplied by the caller.
+
+After the repository's external-environment setup, run:
+
+```console
+python -m pytest src/optimalportfolios/tests/constraints_documentation_test.py -q
+```
+
+Review the [constraint implementation](https://github.com/ArturSepp/OptimalPortfolios/tree/main/src/optimalportfolios/optimization/constraints)
+and [solver diagnostics](https://github.com/ArturSepp/OptimalPortfolios/blob/main/src/optimalportfolios/optimization/solver_diagnostics.py)
+for the public calculation contracts. The original guide remains at the same source basename
+and site URL. Examples were checked on 2026-09-13 with OptimalPortfolios 7.6.0, qis 5.26.0 and
+CVXPY 1.9.2 using CLARABEL; the saved working-source hashes accompany the implementation report.
+Rounded allocations are illustrative outputs, not cross-platform bitwise guarantees.
+
+### Backend capability matrix
+
+| Constraint family | CVXPY forced | CVXPY generic utility | SciPy | Risk budgeting / PyRB |
+|---|---|---|---|---|
+| Long-only and boxes | Hard | Hard | Bounds/callback | Bounds |
+| Min/max net exposure | Hard | Hard | Two callbacks | Full investment is solver policy; arbitrary bands are not compiled |
+| Target return | Hard | Hard | Unsupported | Unsupported |
+| Portfolio volatility | Hard cap | No generic cap; solver-specific risk objective | Unsupported | Unsupported |
+| Total and group TE | Both hard | Soft; group object takes precedence | Unsupported | Unsupported |
+| Total and group turnover | Both hard | Soft; group object takes precedence | Unsupported | Unsupported |
+| Group allocation | Hard | Hard | Callbacks | Matrix rows |
+| Sector/style deviation | Hard | Hard | Unsupported | Unsupported |
+| Benchmark beta | Hard | Hard | Unsupported | Unsupported |
+
+“Unsupported” means the backend compiler emits no row for that field. It does not mean the
+backend approximates the policy, and a post-solve report cannot retroactively make the solve
+constrained.
+
+SciPy has two box defaults worth knowing:
+
+- with no explicit box side, long-only uses `[0,1]` per asset and long/short uses no bounds;
+- if either side is supplied, a missing lower side becomes `0` for long-only or `-inf` for
+  long/short, and a missing upper side becomes `1`.
+
+SciPy represents an exact exposure target as two opposite inequalities. PyRB receives box bounds
+and group rows $-L_g^\top w\le-l_g$ and $L_g^\top w\le u_g$; its risk-budgeting
+solver and validator own the full-investment contract.
+
+### Universe alignment and rebalancing policy
+
+#### Use the production alignment method
 
 `update_with_valid_tickers(...)` is the full production path. It aligns flat Series and all nested
 loading blocks to one ordered solver universe. The simpler `update(valid_tickers, **kwargs)` only
@@ -762,7 +864,7 @@ When `total_to_good_ratio` is supplied, only two policies scale:
 
 Minimum weights, exposure limits, group bounds, target return, and risk limits do not scale.
 
-### Current-to-model eligibility corridor
+#### Current-to-model eligibility corridor
 
 `compute_eligible_rebalancing_bounds` projects candidate boxes into the interval between current
 and model weights. It permits holding or moving toward the model but not overshooting it.
@@ -791,7 +893,7 @@ An indicator is one when either current or model absolute weight is strictly gre
 An asset absent from both is ineligible. A nonzero asset already at model weight still has an
 indicator of one, but its corridor is a single point.
 
-### Frozen positions
+#### Frozen positions
 
 When both `weights_0` and `rebalancing_indicators` are supplied, a value not numerically close to
 one freezes an asset. The method replaces each box side that already exists with the current
@@ -800,7 +902,7 @@ weight. An exact pin therefore requires both `min_weights` and `max_weights` to 
 For long-only books, a tiny negative frozen weight is clipped to zero to absorb solver-scale
 numerical noise. Long/short books retain the signed weight.
 
-### Frozen group-bound waivers
+#### Frozen group-bound waivers
 
 A frozen live position can already exceed a group ceiling, leaving the new solve infeasible even
 though the optimizer cannot trade that name. With `relax_frozen_group_bounds=True`, the aligned
@@ -823,21 +925,32 @@ aligned = spec.update_with_valid_tickers(
     rebalancing_indicators=pd.Series([0, 1], index=assets),
 )
 aligned.group_lower_upper_constraints.group_max_allocation["Illiquid"]
-# 0.2501
+# 0.25000001
 ```
 
-The `1e-4` increment preserves a small numerical feasibility tolerance. The symmetric rule lowers
-a group floor to the loading-weighted frozen maximum minus `1e-4` when necessary.
+The `1e-8` increment is a numerical feasibility cushion. The symmetric rule lowers a group
+floor to the loading-weighted sum of post-freeze per-name maxima minus `1e-8`. The waiver applies
+only to a group with a frozen member and a mismatch introduced by freezing: a group bound that
+was already infeasible against the pre-freeze boxes is not repaired.
+
+The separate `1e-4` threshold determines whether a mismatch is material enough for a structured
+relaxation record. Smaller reconciliations are logged at debug level unless they breach the
+configured relaxation tolerance or exposure budget. It is not the amount added to a bound.
 
 `max_relaxation_tol` controls log escalation only; it does not cap, reject, or undo a waiver.
 `relax_frozen_group_bounds=False` disables the waiver so the infeasible selected trade set remains
 visible. Negative-only signed loading groups remain valid solver rows but do not create a
 frozen-membership waiver.
 
-(feasibility-and-diagnostics)=
-## Feasibility and diagnostics
+## Interpretation and limitations
 
-### Before solving
+A successful solve does not certify an unsupported constraint, a missing analytical input,
+or an infeasible fallback. Check both backend coverage and the aligned policy actually evaluated.
+Risk limits describe the supplied covariance estimate; they do not guarantee future realized risk.
+
+### Feasibility and diagnostics
+
+#### Before solving
 
 The `Constraints` constructor catches three common group/box contradictions using a `1e-4`
 tolerance and positive group loadings:
@@ -851,7 +964,7 @@ reachability, group reachability, and whether a benchmark is compatible with the
 and exposure policy. These are cheap structural checks, not a proof that every quadratic,
 turnover, deviation, and beta row is jointly feasible.
 
-### After solving
+#### After solving
 
 `evaluate_constraint_residuals` evaluates a candidate against the aligned policy. Each immutable
 `ConstraintResidual` contains:
@@ -890,9 +1003,11 @@ both group allocations, Risk-assets deviation, and benchmark beta. The structure
 supported analytics interface; it is more reliable than parsing formatted diagnostic text.
 
 Public solver wrappers return an `OptimizationOutcome` carrying the exact aligned constraints,
-covariance factorization, and residual tuple used for acceptance. Use:
+covariance factorization, and residual tuple used for acceptance. Given the `outcome` returned
+by the chosen wrapper, this illustrative fragment reads it
+(it is excluded from the executable article sequence because no wrapper is called here):
 
-```python
+```python +SKIP
 outcome.compliant
 outcome.residuals_frame()
 hard_breaches = [
@@ -906,7 +1021,7 @@ hard_breaches = [
 was used instead of a fallback. `compliant` says whether all emitted hard residuals pass. A
 fallback is not assumed to satisfy the mandate.
 
-## Configuration checklist
+### Configuration checklist
 
 Before running a constrained optimizer:
 
@@ -921,3 +1036,23 @@ Before running a constrained optimizer:
 9. Remember that total and group TE/turnover are additive when hard, but group penalties take
    precedence in the generic utility builder.
 10. Audit the returned `OptimizationOutcome`; do not infer compliance from solver status alone.
+
+## See also
+
+- [Minimum tracking error](minimum_tracking_error.md)
+- [Risk budgeting](risk_budgeting.md)
+- [Turnover and transaction costs](turnover_and_transaction_costs.md)
+- [Incomplete histories and frozen positions](incomplete_histories.md)
+- [Overlay constraints](overlay_tail_floor.md)
+- [Documentation standard](documentation_standard.md)
+
+## References
+
+- Boyd, S., and Vandenberghe, L. `Convex Optimization`. Cambridge University Press.
+  [Author-hosted book and materials](https://web.stanford.edu/~boyd/cvxbook/).
+  General background on feasible sets, convex constraints and optimality certificates.
+- CVXPY. [Constraints](https://www.cvxpy.org/tutorial/constraints/index.html).
+  Library documentation for expressing constrained problems; backend coverage in this article
+  is the OptimalPortfolios compiler contract, not a claim about every capability of CVXPY.
+- [OptimalPortfolios software citation](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
+- [qis software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).

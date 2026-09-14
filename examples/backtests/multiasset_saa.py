@@ -48,21 +48,21 @@ def _group_constraints(group_data: pd.Series) -> GroupLowerUpperConstraints:
                                       group_max_allocation=group_max)
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     ERC_VS_MIN_VARIANCE = 1
     GROUP_CONSTRAINED_ERC = 2
     OBJECTIVE_SWEEP = 3
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run one local diagnostic scenario for development and debugging."""
     data = load_multiasset_data()
     prices = data.prices
     tickers = prices.columns.to_list()
     covar_dict = _saa_covar_dict(prices)
 
-    if local_test == LocalTests.ERC_VS_MIN_VARIANCE:
+    if local == Locals.ERC_VS_MIN_VARIANCE:
         constraints = Constraints(is_long_only=True,
                                   max_weights=pd.Series(0.25, index=tickers))
         navs = {}
@@ -77,7 +77,7 @@ def run_local_test(local_test: LocalTests):
         qis.plot_prices(prices=navs)
         plt.show()
 
-    elif local_test == LocalTests.GROUP_CONSTRAINED_ERC:
+    elif local == Locals.GROUP_CONSTRAINED_ERC:
         constraints = Constraints(is_long_only=True,
                                   group_lower_upper_constraints=_group_constraints(data.group_data))
         weights = compute_rolling_optimal_weights(
@@ -88,7 +88,7 @@ def run_local_test(local_test: LocalTests):
         print("asset-class weights by rebalance:")
         print(group_weights.round(3))
 
-    elif local_test == LocalTests.OBJECTIVE_SWEEP:
+    elif local == Locals.OBJECTIVE_SWEEP:
         constraints = Constraints(is_long_only=True,
                                   max_weights=pd.Series(0.25, index=tickers))
         last_date = list(covar_dict.keys())[-1]
@@ -106,4 +106,4 @@ def run_local_test(local_test: LocalTests):
 
 
 if __name__ == '__main__':
-    run_local_test(local_test=LocalTests.OBJECTIVE_SWEEP)
+    run_local(local=Locals.OBJECTIVE_SWEEP)

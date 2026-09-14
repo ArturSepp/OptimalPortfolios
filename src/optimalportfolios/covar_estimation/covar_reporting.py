@@ -13,9 +13,8 @@ Reference:
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import scipy.cluster.hierarchy as spc
 import qis as qis
-from qis.plots.utils import get_table_lines_for_group_data, set_title, set_suptitle
+from qis.plots.utils import get_table_lines_for_group_data, set_suptitle
 from matplotlib.colors import ListedColormap
 from typing import List, Dict, Tuple, Optional, Union
 
@@ -81,7 +80,7 @@ def plot_hcgl_covar_data(x_covar: pd.DataFrame,
     else:
         df = pd.concat([r2.clip(0.0, None), total_vol, residual_vol], axis=1, sort=False)
 
-    agg_clusters, fig_clusters = plot_clusters(
+    agg_clusters, fig_clusters = qis.plot_clusters(
         clusters=clusters,
         linkages=linkages,
         cutoffs=cutoffs,
@@ -134,69 +133,6 @@ def plot_hcgl_covar_data(x_covar: pd.DataFrame,
                      hline_rows=hline_rows, ax=axs[1])
 
     return figs
-
-
-def plot_clusters(clusters: Dict[str, pd.Series],
-                  linkages: Dict[str, np.ndarray],
-                  cutoffs: Dict[str, float],
-                  figsize: Tuple[float, float] = (14, 10)
-                  ) -> Tuple[pd.Series, plt.Figure]:
-    """Plot the clustering dendrogram of each reporting cadence.
-
-    Args:
-        clusters: Cadence to asset cluster labels.
-        linkages: Cadence to scipy linkage matrix.
-        cutoffs: Cadence to the distance at which clusters were cut.
-        figsize: Figure size.
-
-    Returns:
-        The aggregated cluster labels and the figure.
-
-    Raises:
-        NotImplementedError: Unless exactly one or two cadences are supplied.
-    """
-    fig = plt.figure(figsize=figsize, constrained_layout=True)
-
-    if len(clusters.keys()) == 1:
-        gs = fig.add_gridspec(nrows=1, ncols=3, wspace=0.0, hspace=0.0)
-        axs = [fig.add_subplot(gs[0, :2])]
-        titles = ['Monthly']
-    elif len(clusters.keys()) == 2:
-        gs = fig.add_gridspec(nrows=4, ncols=3, wspace=0.0, hspace=0.0)
-        axs = [fig.add_subplot(gs[0, :2]), fig.add_subplot(gs[1:, :2])]
-        titles = ["(A) Quarterly", "(B) Monthly"]
-    else:
-        raise NotImplementedError(f"number clusters = {len(clusters.keys())}")
-
-    # reverse
-    linkages = dict(reversed(linkages.items()))
-    agg_clusters = []
-    for idx, (freq, linkage) in enumerate(linkages.items()):
-        ax = axs[idx]
-        spc.dendrogram(linkage, labels=clusters[freq].index.to_list(), orientation="right",
-                       color_threshold=cutoffs[freq],
-                       ax=ax)
-        set_title(ax, title=titles[idx])
-        ax.axvline(cutoffs[freq], color='k')
-        ax.tick_params(axis='x', labelbottom=False)
-        ax.tick_params(axis='y', which='major', labelsize=10)
-
-        cluster_ = clusters[freq]
-        agg_clusters.append(cluster_.apply(lambda x: f"{freq}-{x}"))
-    agg_clusters = pd.concat(agg_clusters).sort_values()
-    # index by inverse of agg clusters
-    agg_clusters = agg_clusters.reindex(index=agg_clusters.index[::-1])
-
-    # plot clusters
-    ax = fig.add_subplot(gs[:, 2])
-    qis.plot_df_table(df=agg_clusters.to_frame(name='Cluster ID'),
-                      index_column_name='Instrument',
-                      fontsize=10,
-                      title='(C) Cluster IDs',
-                      rows_edge_lines=get_table_lines_for_group_data(agg_clusters),
-                      ax=ax)
-
-    return agg_clusters, fig
 
 
 def run_rolling_covar_report(risk_factor_prices: pd.DataFrame,

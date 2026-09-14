@@ -376,6 +376,32 @@ figs, dfs = run_rolling_covar_report(
     asset_returns_dict=asset_returns_dict)
 ```
 
+## Factor references for cluster discovery
+
+`FactorCovarEstimator(include_factors_in_clustering=True)` adds the selected factor
+returns to the HCGL/FCGL clustering panel. The default is `False`. Each factor price
+series is sampled and converted to log returns on each asset cadence exactly as in
+the regression. Correlation spans, signed dependence measures, linkage rules and
+causal temporal smoothing come from the existing `LassoModel` configuration.
+
+Only original assets enter the regression responses, pooled sign derivation, group
+penalties and portfolio covariance. Factors remain the explanatory variables. The
+asset-only dendrogram removes reference leaves without recomputing the clustering;
+its retained merge heights match the augmented tree. Short-history assets keep the
+existing warmup treatment. Explicit precomputed partitions take precedence over
+automatic discovery, including this option.
+
+Reference series can change both merge decisions and the maximum distance used by
+the fractional cutoff. Compare realised asset-cluster counts, stability and held-out
+reconstruction errors before selecting the option; a more interpretable partition
+does not establish improved out-of-sample portfolio performance. Closely replicated
+factors and benchmarks may also give one exposure disproportionate representation.
+
+To add references only to monthly responses, set
+`include_factors_in_clustering=True, factor_clustering_freqs=['ME']`. Other cadences
+retain their existing clustering and fitting paths. The default `None` applies
+references to every cadence when enabled.
+
 ## References
 
 Sepp A., Ossa I., and Kastenholz M. (2026),
@@ -388,3 +414,15 @@ Sepp A., Hansen E., and Kastenholz M. (2026),
 "Capital Market Assumptions and Strategic Asset Allocation
 Using Multi-Asset Tradable Factors",
 *Under revision at the Journal of Portfolio Management*.
+
+
+### Cluster plot ownership
+
+QIS 5.26 owns the generic `plot_dendrogram` and `plot_clusters` renderers.
+OP extracts cluster memberships, linkages and cutoffs from FactorLasso snapshots
+and calls `qis.plot_clusters` directly in its covariance reports. The former
+`covar_reporting.plot_clusters` function and its legacy fallback have been removed;
+update direct imports to `qis.plot_clusters`.
+
+The QIS interface accepts plain mappings of Series, linkage arrays and cutoffs,
+with support for caller-owned axes, display aliases and multiple cadences.

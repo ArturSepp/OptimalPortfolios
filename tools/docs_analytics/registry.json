@@ -1,0 +1,635 @@
+{
+  "schema_version": 1,
+  "description": "Coverage ledger for six legacy README previews. Portfolio-report and span-sensitivity offline candidates are implemented; two other producer families and complete-bundle publication remain pending.",
+  "adapted_from": "https://github.com/ArturSepp/QuantInvestStrats/tree/main/tools/docs_analytics",
+  "producers": {
+    "portfolio_reports": {
+      "module": "tools.docs_analytics.portfolio_reports",
+      "callable": "produce",
+      "status": "implemented",
+      "configuration": {
+        "fixture": {
+          "factory": "qis.datasets.generate_synthetic_universe",
+          "source_files": []
+        },
+        "parameters": {
+          "apply_quirks": false,
+          "report_start": "2015-01-01",
+          "decision_end": "2025-10-01",
+          "returns_freq": "W-WED",
+          "rebalancing_freq": "QE",
+          "span": 52,
+          "demean": true,
+          "max_weight": 0.35,
+          "initial_nav": 100.0,
+          "cost_rate": 0.001
+        },
+        "conventions": {
+          "data_kind": "Synthetic teaching example, not market or paper-replication evidence.",
+          "sample_start": "2010-01-04",
+          "sample_end": "2025-12-31",
+          "seed": 20260725,
+          "universe": [
+            "SEQ_US",
+            "SEQ_EU",
+            "SBD_TSY",
+            "SBD_IG",
+            "SCM_GLD",
+            "SCM_BCOM"
+          ],
+          "missing_data": "Clean fixture mode (apply_quirks=False); no filling or filtering.",
+          "returns": "log",
+          "observation_frequency": "Business-day prices (B).",
+          "estimation_frequency": "Weekly Wednesday log returns; trailing EWMA demeaning.",
+          "annualization": 52,
+          "warmup": "History from 2010-01-04; decisions requested from 2015-01-01.",
+          "rebalance_frequency": "Quarter-end mapped to the first weekly Wednesday observation on or after the boundary; save actual decision and implementation dates.",
+          "implementation_lag": 1,
+          "transaction_costs": "10 bp on gross traded notional, including entry; no funding or management fee.",
+          "sharpe_convention": "qis SharpeConvention.PA: compounded annual return / weekly annualized volatility; zero risk-free rate. Benchmark is the fixture daily-rebalanced gross 60/40."
+        },
+        "tables": [
+          "prices",
+          "benchmark_prices",
+          "target_weights",
+          "realized_weights",
+          "units",
+          "navs",
+          "drawdowns",
+          "performance",
+          "last_covariance",
+          "risk_contributions",
+          "trading",
+          "decision_schedule"
+        ],
+        "input_tables": [
+          "prices",
+          "benchmark_prices"
+        ],
+        "checks": [
+          "finite_inputs_outputs",
+          "weight_constraints",
+          "accepted_solves",
+          "point_in_time_covariance",
+          "implementation_schedule",
+          "realized_cost_identity",
+          "opening_trade_identity"
+        ],
+        "rendering": {
+          "dpi": 150,
+          "font_family": "DejaVu Sans"
+        },
+        "solver": {
+          "required": true,
+          "backends": {
+            "SLSQP": {
+              "ftol": 1e-08,
+              "maxiter": 500
+            }
+          }
+        },
+        "dependencies": {
+          "optimalportfolios": "optimalportfolios",
+          "qis": "qis",
+          "scipy": "scipy",
+          "factorlasso": "factorlasso",
+          "numba": "numba",
+          "seaborn": "seaborn"
+        }
+      },
+      "legacy_sources": [
+        "examples/backtests/minimal_backtest.py",
+        "examples/data/universe.py"
+      ],
+      "fixture_candidate": "qis.datasets.generate_synthetic_universe",
+      "purpose": "Three synthetic portfolio report previews; preserve the existing public image paths."
+    },
+    "span_sensitivity": {
+      "module": "tools.docs_analytics.span_sensitivity",
+      "callable": "produce",
+      "status": "implemented",
+      "configuration": {
+        "fixture": {
+          "factory": "qis.datasets.generate_synthetic_universe",
+          "source_files": []
+        },
+        "parameters": {
+          "apply_quirks": false,
+          "report_start": "2015-01-01",
+          "decision_end": "2025-10-01",
+          "returns_freq": "W-WED",
+          "rebalancing_freq": "QE",
+          "demean": true,
+          "max_weight": 0.35,
+          "initial_nav": 100.0,
+          "cost_rate": 0.001,
+          "spans": [
+            5,
+            13,
+            26,
+            52,
+            104
+          ]
+        },
+        "conventions": {
+          "data_kind": "Synthetic teaching example, not market or paper-replication evidence.",
+          "sample_start": "2010-01-04",
+          "sample_end": "2025-12-31",
+          "seed": 20260725,
+          "universe": [
+            "SEQ_US",
+            "SEQ_EU",
+            "SBD_TSY",
+            "SBD_IG",
+            "SCM_GLD",
+            "SCM_BCOM"
+          ],
+          "missing_data": "Clean fixture mode (apply_quirks=False); no filling or filtering.",
+          "returns": "log",
+          "observation_frequency": "Business-day prices (B).",
+          "estimation_frequency": "Weekly Wednesday log returns; each span controls trailing demeaning and covariance smoothing. Span is an EWMA parameter, not a half-life or a finite window.",
+          "annualization": 52,
+          "warmup": "History from 2010-01-04; decisions requested from 2015-01-01.",
+          "rebalance_frequency": "Quarter-end mapped to the first weekly Wednesday observation on or after the boundary; save actual decision and implementation dates.",
+          "implementation_lag": 1,
+          "transaction_costs": "10 bp on gross traded notional, including entry; no funding or management fee.",
+          "sharpe_convention": "qis SharpeConvention.PA: compounded annual return / weekly annualized volatility; zero risk-free rate. Every displayed portfolio is net of trading costs."
+        },
+        "tables": [
+          "prices",
+          "benchmark_prices",
+          "target_weights",
+          "realized_weights",
+          "units",
+          "navs",
+          "drawdowns",
+          "performance",
+          "last_covariance",
+          "risk_contributions",
+          "trading",
+          "decision_schedule",
+          "cost_summary"
+        ],
+        "input_tables": [
+          "prices",
+          "benchmark_prices"
+        ],
+        "checks": [
+          "same_inputs",
+          "same_decision_schedule",
+          "same_report_sample",
+          "all_span_checks",
+          "declared_span_configuration",
+          "complete_solver_grid",
+          "distinct_span_covariances",
+          "distinct_span_weights",
+          "finite_outputs",
+          "cost_summary_identity"
+        ],
+        "rendering": {
+          "dpi": 150,
+          "font_family": "DejaVu Sans"
+        },
+        "solver": {
+          "required": true,
+          "backends": {
+            "SLSQP": {
+              "ftol": 1e-08,
+              "maxiter": 500
+            }
+          }
+        },
+        "dependencies": {
+          "optimalportfolios": "optimalportfolios",
+          "qis": "qis",
+          "scipy": "scipy",
+          "factorlasso": "factorlasso",
+          "numba": "numba",
+          "seaborn": "seaborn"
+        }
+      },
+      "legacy_sources": [
+        "examples/comparisons/parameter_sensitivity.py",
+        "examples/data/universe.py"
+      ],
+      "fixture_candidate": "qis.datasets.generate_synthetic_universe",
+      "purpose": "Compare covariance spans on one fixed synthetic universe and sample."
+    },
+    "optimiser_comparison": {
+      "module": "tools.docs_analytics.optimiser_comparison",
+      "callable": "produce",
+      "status": "implemented",
+      "configuration": {
+        "fixture": {
+          "factory": "qis.datasets.generate_synthetic_universe",
+          "source_files": []
+        },
+        "parameters": {
+          "apply_quirks": false,
+          "report_start": "2015-01-01",
+          "decision_end": "2025-10-01",
+          "returns_freq": "W-WED",
+          "rebalancing_freq": "QE",
+          "span": 52,
+          "demean": true,
+          "max_weight": 0.35,
+          "initial_nav": 100.0,
+          "cost_rate": 0.001,
+          "objectives": [
+            "MIN_VARIANCE",
+            "MAX_DIVERSIFICATION",
+            "EQUAL_RISK_CONTRIBUTION"
+          ],
+          "risk_budget": "Equal positive budgets (1/6); only risk budgeting",
+          "factorize_covar": false
+        },
+        "conventions": {
+          "data_kind": "Synthetic teaching example, not market or paper-replication evidence.",
+          "sample_start": "2010-01-04",
+          "sample_end": "2025-12-31",
+          "seed": 20260725,
+          "universe": [
+            "SEQ_US",
+            "SEQ_EU",
+            "SBD_TSY",
+            "SBD_IG",
+            "SCM_GLD",
+            "SCM_BCOM"
+          ],
+          "missing_data": "Clean fixture mode (apply_quirks=False); no filling or filtering.",
+          "returns": "log",
+          "observation_frequency": "Business-day prices (B).",
+          "estimation_frequency": "Weekly Wednesday log returns; trailing EWMA demeaning.",
+          "annualization": 52,
+          "warmup": "History from 2010-01-04; decisions requested from 2015-01-01.",
+          "rebalance_frequency": "Quarter-end mapped to the first weekly Wednesday observation on or after the boundary; save actual decision and implementation dates.",
+          "implementation_lag": 1,
+          "transaction_costs": "10 bp on gross traded notional, including entry; no funding or management fee.",
+          "sharpe_convention": "qis SharpeConvention.PA: compounded annual return / weekly annualized volatility; zero risk-free rate. Every displayed portfolio is net of trading costs."
+        },
+        "tables": [
+          "prices",
+          "benchmark_prices",
+          "target_weights",
+          "realized_weights",
+          "units",
+          "navs",
+          "drawdowns",
+          "performance",
+          "last_covariance",
+          "risk_contributions",
+          "trading",
+          "decision_schedule",
+          "cost_summary",
+          "risk_budgets"
+        ],
+        "input_tables": [
+          "prices",
+          "benchmark_prices",
+          "risk_budgets"
+        ],
+        "checks": [
+          "same_inputs",
+          "same_covariances",
+          "same_decision_schedule",
+          "same_report_sample",
+          "all_case_checks",
+          "declared_case_configuration",
+          "complete_solver_grid",
+          "distinct_objective_weights",
+          "finite_outputs",
+          "cost_summary_identity",
+          "positive_definite_covariances",
+          "risk_budget_floor_unused"
+        ],
+        "rendering": {
+          "dpi": 150,
+          "font_family": "DejaVu Sans"
+        },
+        "solver": {
+          "required": true,
+          "backends": {
+            "CLARABEL": {
+              "options": "CVXPY/CLARABEL defaults; no overrides"
+            },
+            "SLSQP": {
+              "ftol": 1e-08,
+              "maxiter": 500
+            },
+            "risk_budgeting": {
+              "options": "Internal ADMM-CCD defaults; no overrides"
+            }
+          }
+        },
+        "dependencies": {
+          "optimalportfolios": "optimalportfolios",
+          "qis": "qis",
+          "scipy": "scipy",
+          "factorlasso": "factorlasso",
+          "numba": "numba",
+          "seaborn": "seaborn",
+          "cvxpy": "cvxpy",
+          "clarabel": "clarabel"
+        }
+      },
+      "legacy_sources": [
+        "examples/comparisons/optimisers.py",
+        "examples/data/universe.py"
+      ],
+      "fixture_candidate": "qis.datasets.generate_synthetic_universe",
+      "purpose": "Compare objectives on shared inputs with solver acceptance and compliance records."
+    },
+    "covariance_comparison": {
+      "module": "tools.docs_analytics.covariance_comparison",
+      "callable": "produce",
+      "status": "implemented",
+      "configuration": {
+        "fixture": {
+          "factory": "examples.covar_estimation.simulate_factor_returns.simulate_factor_model_returns",
+          "source_files": [
+            "examples/covar_estimation/simulate_factor_returns.py"
+          ]
+        },
+        "parameters": {
+          "simulation": {
+            "n_factors": 4,
+            "n_assets": 8,
+            "n_periods": 783,
+            "factor_vol": 0.15,
+            "idio_vol_range": [
+              0.01,
+              0.15
+            ],
+            "beta_range": [
+              -1.5,
+              1.5
+            ],
+            "factor_corr": null,
+            "dt": 0.0038461538461538464,
+            "seed": 42
+          },
+          "report_start": "2023-12-01",
+          "decision_end": "2025-10-01",
+          "returns_freq": "W-WED",
+          "rebalancing_freq": "QE",
+          "span": 52,
+          "warmup": 52,
+          "demean": true,
+          "max_weight": 0.35,
+          "initial_nav": 100.0,
+          "cost_rate": 0.001,
+          "objective": "MIN_VARIANCE",
+          "factorize_covar": false,
+          "group_assignments": [
+            0,
+            0,
+            1,
+            1,
+            2,
+            2,
+            3,
+            3
+          ],
+          "group_penalty": "normalized",
+          "l1_weight": 0.0,
+          "cases": {
+            "EWMA": {
+              "model": "EWMA",
+              "vol_normalized": false
+            },
+            "EWMA vol norm": {
+              "model": "EWMA",
+              "vol_normalized": true
+            },
+            "Lasso": {
+              "model": "LASSO",
+              "vol_normalized": false,
+              "reg_lambda": 1e-06
+            },
+            "Lasso factor vol norm": {
+              "model": "LASSO",
+              "vol_normalized": true,
+              "reg_lambda": 1e-06
+            },
+            "Group Lasso": {
+              "model": "GROUP_LASSO",
+              "vol_normalized": false,
+              "reg_lambda": 1e-05
+            },
+            "Group Lasso factor vol norm": {
+              "model": "GROUP_LASSO",
+              "vol_normalized": true,
+              "reg_lambda": 1e-05
+            }
+          }
+        },
+        "conventions": {
+          "data_kind": "Known-factor Gaussian simulation, not market or replication evidence.",
+          "sample_start": "2023-01-02",
+          "sample_end": "2025-12-31",
+          "seed": 42,
+          "universe": [
+            "Asset_1",
+            "Asset_2",
+            "Asset_3",
+            "Asset_4",
+            "Asset_5",
+            "Asset_6",
+            "Asset_7",
+            "Asset_8"
+          ],
+          "missing_data": "Complete simulated panel; no imputation or asset filtering.",
+          "returns": "log",
+          "observation_frequency": "Business-day Gaussian increments interpreted as log returns.",
+          "estimation_frequency": "Weekly Wednesday log returns. EWMA span 52; factor regressions use the same weekly data and span. Vol normalization affects asset/factor covariance only.",
+          "annualization": 52,
+          "warmup": "History from 2023-01-02; at least 52 weekly observations before each fit.",
+          "rebalance_frequency": "Shared EWMA quarterly schedule mapped to observed Wednesdays. All estimators fit current covariances on these exact truncated dates.",
+          "implementation_lag": 1,
+          "transaction_costs": "10 bp on gross traded notional, including entry; no funding or management fee.",
+          "sharpe_convention": "qis SharpeConvention.PA with zero risk-free rate; all portfolios are net. Compounded annual return / weekly annualized volatility."
+        },
+        "tables": [
+          "prices",
+          "factor_prices",
+          "simulated_asset_returns",
+          "simulated_factor_returns",
+          "simulated_residual_returns",
+          "true_betas",
+          "true_factor_covariance",
+          "true_asset_covariance",
+          "true_idio_volatility",
+          "group_assignments",
+          "target_weights",
+          "realized_weights",
+          "units",
+          "navs",
+          "drawdowns",
+          "performance",
+          "covariances",
+          "estimated_betas",
+          "estimated_factor_covariances",
+          "estimated_residual_variances",
+          "covariance_errors",
+          "trading",
+          "decision_schedule"
+        ],
+        "input_tables": [
+          "prices",
+          "factor_prices",
+          "simulated_asset_returns",
+          "simulated_factor_returns",
+          "simulated_residual_returns",
+          "true_betas",
+          "true_factor_covariance",
+          "true_asset_covariance",
+          "true_idio_volatility",
+          "group_assignments"
+        ],
+        "checks": [
+          "finite_inputs_outputs",
+          "same_decision_schedule",
+          "same_report_sample",
+          "complete_allocation_grid",
+          "complete_factor_fit_grid",
+          "positive_definite_covariances",
+          "distinct_covariances",
+          "distinct_weights",
+          "implementation_schedule",
+          "realized_cost_identity",
+          "opening_trade_identity",
+          "error_summary_identity",
+          "generative_identity",
+          "warmup_satisfied"
+        ],
+        "rendering": {
+          "dpi": 150,
+          "font_family": "DejaVu Sans"
+        },
+        "solver": {
+          "required": true,
+          "backends": {
+            "CLARABEL": {
+              "options": "CVXPY/CLARABEL defaults; no overrides or fallback chain"
+            }
+          }
+        },
+        "dependencies": {
+          "optimalportfolios": "optimalportfolios",
+          "qis": "qis",
+          "scipy": "scipy",
+          "factorlasso": "factorlasso",
+          "numba": "numba",
+          "seaborn": "seaborn",
+          "cvxpy": "cvxpy",
+          "clarabel": "clarabel"
+        }
+      },
+      "legacy_sources": [
+        "examples/comparisons/covar_estimators.py",
+        "examples/data/universe.py",
+        "examples/covar_estimation/simulate_factor_returns.py"
+      ],
+      "fixture_candidate": "Existing factor-return simulator; explicit fixed teaching-fixture exception.",
+      "purpose": "Minimum-variance comparison across covariance estimators; the legacy example default differs."
+    }
+  },
+  "assets": [
+    {
+      "id": "portfolio_factsheet",
+      "path": "examples/figures/example_portfolio_factsheet1.PNG",
+      "documents": [
+        "README.md"
+      ],
+      "producer": "portfolio_reports",
+      "status": "legacy"
+    },
+    {
+      "id": "portfolio_risk",
+      "path": "examples/figures/example_portfolio_factsheet2.PNG",
+      "documents": [
+        "README.md"
+      ],
+      "producer": "portfolio_reports",
+      "status": "legacy"
+    },
+    {
+      "id": "customised_report",
+      "path": "examples/figures/example_customised_report.PNG",
+      "documents": [
+        "README.md"
+      ],
+      "producer": "portfolio_reports",
+      "status": "legacy"
+    },
+    {
+      "id": "span_sensitivity",
+      "path": "examples/figures/max_diversification_span.PNG",
+      "documents": [
+        "README.md"
+      ],
+      "producer": "span_sensitivity",
+      "status": "legacy"
+    },
+    {
+      "id": "optimiser_comparison",
+      "path": "examples/figures/multi_optimisers_backtest.PNG",
+      "documents": [
+        "README.md"
+      ],
+      "producer": "optimiser_comparison",
+      "status": "legacy"
+    },
+    {
+      "id": "covariance_comparison",
+      "path": "examples/figures/MinVariance_multi_covar_estimator_backtest.PNG",
+      "documents": [
+        "README.md"
+      ],
+      "producer": "covariance_comparison",
+      "status": "legacy"
+    }
+  ],
+  "non_analytics": [
+    {
+      "document": "README.md",
+      "url": "https://img.shields.io/pypi/v/optimalportfolios?style=flat-square",
+      "reason": "PyPI version badge"
+    },
+    {
+      "document": "README.md",
+      "url": "https://img.shields.io/pypi/pyversions/optimalportfolios?style=flat-square",
+      "reason": "Supported Python badge"
+    },
+    {
+      "document": "README.md",
+      "url": "https://github.com/ArturSepp/OptimalPortfolios/actions/workflows/ci.yml/badge.svg?branch=main",
+      "reason": "CI status badge"
+    },
+    {
+      "document": "README.md",
+      "url": "https://readthedocs.org/projects/optimalportfolios/badge/?version=latest",
+      "reason": "Documentation build badge"
+    },
+    {
+      "document": "README.md",
+      "url": "https://img.shields.io/github/license/ArturSepp/OptimalPortfolios.svg?style=flat-square",
+      "reason": "License badge"
+    },
+    {
+      "document": "README.md",
+      "url": "https://static.pepy.tech/badge/optimalportfolios",
+      "reason": "Download count badge"
+    },
+    {
+      "document": "README.md",
+      "url": "https://static.pepy.tech/badge/optimalportfolios/month",
+      "reason": "Monthly download count badge"
+    },
+    {
+      "document": "README.md",
+      "url": "https://colab.research.google.com/assets/colab-badge.svg",
+      "reason": "Colab launch badge"
+    }
+  ]
+}

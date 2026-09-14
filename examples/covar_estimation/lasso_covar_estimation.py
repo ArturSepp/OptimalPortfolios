@@ -66,13 +66,13 @@ def print_beta_and_r2(label: str, model: LassoModel) -> pd.DataFrame:
     return betas
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     LASSO_BETAS = 1
     LASSO_COVAR_DIFFERENT_FREQUENCIES = 2
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run one local diagnostic scenario for development and debugging."""
     pd.set_option('display.max_rows', 500)
     pd.set_option('display.max_columns', 500)
@@ -86,7 +86,7 @@ def run_local_test(local_test: LocalTests):
         solver='CLARABEL',
     )
 
-    if local_test == LocalTests.LASSO_BETAS:
+    if local == Locals.LASSO_BETAS:
         # prepare returns (monthly, demeaned externally since demean=False)
         y = qis.to_returns(asset_prices, freq='W-WED', drop_first=True)
         x = qis.to_returns(benchmark_prices, freq='W-WED', drop_first=True)
@@ -131,7 +131,7 @@ def run_local_test(local_test: LocalTests):
         ]):
             qis.plot_heatmap(df=betas, title=title, var_format='{:.2f}', ax=ax)
 
-    elif local_test == LocalTests.LASSO_COVAR_DIFFERENT_FREQUENCIES:
+    elif local == Locals.LASSO_COVAR_DIFFERENT_FREQUENCIES:
         # ── Factor covariance estimation at different frequencies ──
         # using FactorCovarEstimator with mixed-frequency asset returns
 
@@ -216,4 +216,4 @@ def run_local_test(local_test: LocalTests):
 
 
 if __name__ == '__main__':
-    run_local_test(local_test=LocalTests.LASSO_BETAS)
+    run_local(local=Locals.LASSO_BETAS)

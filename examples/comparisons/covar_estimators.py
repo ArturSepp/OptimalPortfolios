@@ -165,15 +165,15 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
     return figs
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     MULTI_COVAR_ESTIMATORS_BACKTEST = 1
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes."""
 
-    if local_test == LocalTests.MULTI_COVAR_ESTIMATORS_BACKTEST:
+    if local == Locals.MULTI_COVAR_ESTIMATORS_BACKTEST:
         portfolio_objective = PortfolioObjective.MIN_VARIANCE
         params = dict(returns_freq='ME', rebalancing_freq='QE', span=18)
 
@@ -202,4 +202,4 @@ def run_local_test(local_test: LocalTests):
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.MULTI_COVAR_ESTIMATORS_BACKTEST)
+    run_local(local=Locals.MULTI_COVAR_ESTIMATORS_BACKTEST)

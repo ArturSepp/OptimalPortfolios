@@ -383,7 +383,8 @@ git clone https://github.com/ArturSepp/OptimalPortfolios.git
 
 The core package supports Python >=3.10. Its current dependency floors are NumPy >=2.0,
 SciPy >=1.12, pandas >=2.2, Matplotlib >=3.8, seaborn >=0.13, openpyxl >=3.1,
-PyYAML >=6.0, CVXPY >=1.3, quadprog >=0.1.11, `qis` >=5.20.0 and
+PyYAML >=6.0, CVXPY >=1.5.2, SCS >=3.2.4.post3 (excluding 3.3.0),
+quadprog >=0.1.11, `qis` >=5.26.0 and
 `factorlasso` >=0.17.0. `pyproject.toml` is the source of truth.
 
 Optional extras keep network-data and reporting integrations out of the core
@@ -690,7 +691,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
   year={2026},
-  version={7.3.0},
+  version={7.6.0},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

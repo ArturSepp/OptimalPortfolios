@@ -163,27 +163,27 @@ def load_sp500_universe_bloomberg(local_path: str = LOCAL_PATH
     return prices, market_cap, inclusion_indicators, group_data
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     CREATE_UNIVERSE_DATA_WITH_YAHOO = 1
     CREATE_UNIVERSE_DATA_WITH_BLOOMBERG = 2
     LOAD = 3
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes.
 
     These are integration tests that download real universe and generate reports.
     Use for quick verification during product_development.
     """
 
-    if local_test == LocalTests.CREATE_UNIVERSE_DATA_WITH_YAHOO:
+    if local == Locals.CREATE_UNIVERSE_DATA_WITH_YAHOO:
         create_sp500_universe_with_yahoo()
 
-    elif local_test == LocalTests.CREATE_UNIVERSE_DATA_WITH_BLOOMBERG:
+    elif local == Locals.CREATE_UNIVERSE_DATA_WITH_BLOOMBERG:
         create_sp500_universe_with_bloomberg()
 
-    elif local_test == LocalTests.LOAD:
+    elif local == Locals.LOAD:
         prices, market_cap, inclusion_indicators, group_data = load_sp500_universe_bloomberg()
         print(prices)
         print(market_cap)
@@ -193,4 +193,4 @@ def run_local_test(local_test: LocalTests):
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.CREATE_UNIVERSE_DATA_WITH_BLOOMBERG)
+    run_local(local=Locals.CREATE_UNIVERSE_DATA_WITH_BLOOMBERG)

@@ -68,20 +68,20 @@ def fetch_bond_etf_universe() -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd
     return prices, carry, benchmark_price, group_data
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     JOINT_PROFILE = 1        # profile carry + low_beta + momentum together
     SINGLE_CARRY = 2         # profile carry alone
     QUANTILE_SWEEP = 3       # carry at several top-quantiles
 
 
-def run_local_test(local_test: LocalTests = LocalTests.JOINT_PROFILE) -> None:
+def run_local(local: Locals = Locals.JOINT_PROFILE) -> None:
     """Run one local diagnostic scenario for development and debugging."""
     prices, carry, benchmark_price, group_data = fetch_bond_etf_universe()
     time_period = qis.TimePeriod('31Dec2015', prices.index[-1])
     perf_params = qis.PerfParams(freq='ME')
 
-    if local_test == LocalTests.JOINT_PROFILE:
+    if local == Locals.JOINT_PROFILE:
         carry_scores, _ = compute_ra_carry_alpha(
             prices=prices, carry=carry, returns_freq='ME', vol_span=13)
         low_beta_scores, _ = compute_low_beta_alpha(
@@ -111,7 +111,7 @@ def run_local_test(local_test: LocalTests = LocalTests.JOINT_PROFILE) -> None:
                                       file_name='alpha_signal_profile')
         plt.show()
 
-    elif local_test == LocalTests.SINGLE_CARRY:
+    elif local == Locals.SINGLE_CARRY:
         multi_portfolio_data = profile_carry(
             prices=prices, carry=carry, returns_freq='ME', vol_span=13,
             quantile=1.0 / 3.0, rebalancing_freq='QE', time_period=time_period)
@@ -119,7 +119,7 @@ def run_local_test(local_test: LocalTests = LocalTests.JOINT_PROFILE) -> None:
             multi_portfolio_data, time_period=time_period, perf_params=perf_params)
         print(table.to_string())
 
-    elif local_test == LocalTests.QUANTILE_SWEEP:
+    elif local == Locals.QUANTILE_SWEEP:
         # how does carry's edge change with basket concentration?
         for quantile in [0.25, 1.0 / 3.0, 0.5]:
             multi_portfolio_data = profile_carry(
@@ -135,4 +135,4 @@ def run_local_test(local_test: LocalTests = LocalTests.JOINT_PROFILE) -> None:
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.JOINT_PROFILE)
+    run_local(local=Locals.JOINT_PROFILE)

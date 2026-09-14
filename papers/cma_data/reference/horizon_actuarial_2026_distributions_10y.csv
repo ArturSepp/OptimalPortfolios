@@ -1,0 +1,19 @@
+category,min,p25,p50,p75,max
+US Equity - Large Cap,0.044,0.054,0.067,0.070,0.091
+US Equity - Small/Mid Cap,0.042,0.060,0.069,0.076,0.098
+Non-US Equity - Developed,0.045,0.062,0.069,0.075,0.094
+Non-US Equity - Emerging,0.036,0.064,0.073,0.079,0.098
+US Corporate Bonds - Core,0.038,0.046,0.048,0.052,0.057
+US Corporate Bonds - Long Duration,0.033,0.047,0.052,0.055,0.061
+US Corporate Bonds - High Yield,0.041,0.054,0.057,0.061,0.074
+Non-US Debt - Developed,0.018,0.033,0.039,0.046,0.089
+Non-US Debt - Emerging,0.036,0.053,0.057,0.063,0.075
+US Treasuries (Cash Equivalents),0.023,0.032,0.033,0.037,0.049
+TIPS (Inflation-Protected),0.036,0.043,0.045,0.047,0.057
+Real Estate,0.032,0.057,0.063,0.071,0.097
+Hedge Funds,0.042,0.052,0.057,0.063,0.092
+Commodities,0.011,0.037,0.046,0.054,0.102
+Infrastructure,0.038,0.063,0.067,0.075,0.129
+Private Equity,0.061,0.083,0.091,0.099,0.160
+Private Debt,0.051,0.072,0.076,0.079,0.118
+Inflation,0.022,0.023,0.024,0.025,0.031

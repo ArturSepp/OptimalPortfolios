@@ -175,6 +175,50 @@ def test_package_development_runner_layout(root: Path) -> None:
     assert not production_imports, f"production modules importing run_local: {production_imports}"
 
 
+def test_repository_plural_dispatchers_use_current_api(root: Path) -> None:
+    """Plural example and paper dispatchers use ``Locals`` and ``run_local(local=...)``."""
+    failures: list[str] = []
+    search_roots = (
+        root / "examples",
+        root / "papers" / "crypto_allocation_risk_2023" / "replication",
+    )
+
+    for search_root in search_roots:
+        for path in sorted(search_root.rglob("*.py")):
+            relative = _relative(path, root)
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            classes = {
+                node.name
+                for node in tree.body
+                if isinstance(node, ast.ClassDef)
+            }
+            functions = {
+                node.name: node
+                for node in tree.body
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            }
+            if "LocalTests" in classes:
+                failures.append(f"{relative}: retains the old plural dispatcher API")
+            if "Locals" not in classes:
+                continue
+
+            dispatcher = functions.get("run_local")
+            if dispatcher is None:
+                failures.append(f"{relative}: Locals enum requires run_local")
+                continue
+            args = dispatcher.args.args
+            annotation = args[0].annotation if len(args) == 1 else None
+            if (
+                len(args) != 1
+                or args[0].arg != "local"
+                or not isinstance(annotation, ast.Name)
+                or annotation.id != "Locals"
+            ):
+                failures.append(f"{relative}: expected run_local(local: Locals)")
+
+    assert not failures, "repository dispatcher violations:\n" + "\n".join(failures)
+
+
 def test_example_discovery_excludes_local_diagnostics(root: Path) -> None:
     """Local diagnostics remain manual and are excluded from unattended example lanes."""
     script = root / ".github" / "scripts" / "run_examples.py"

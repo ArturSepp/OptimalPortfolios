@@ -23,6 +23,11 @@ extensions = [
     "sphinx.ext.napoleon",
 ]
 
+# Dollar math keeps article source portable across MyST, GitHub and VS Code.
+myst_enable_extensions = ["dollarmath"]
+# Resolve ordinary Markdown section links with GitHub-compatible heading fragments.
+myst_heading_anchors = 4
+
 autosummary_generate = True
 autosummary_imported_members = True
 autodoc_typehints = "description"

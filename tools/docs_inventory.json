@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "excluded_doc_roots": {
+    "docs/generated": "Sphinx autosummary output",
+    "docs/_templates": "Sphinx generation templates",
+    "docs/_build": "Sphinx build output"
+  },
+  "pages": {
+    "README.md": {
+      "form": "utility",
+      "status": "pending"
+    },
+    "docs/alphas_module_readme.md": {
+      "form": "methodology",
+      "status": "pending",
+      "review": "M4c source migration, 15 offline executable blocks, independent signal/scoring references, 43 passing article cases and six strict expected failures for default beta mean initialization were verified on 2026-09-14. The focused suite has 386 passes and the same six expected failures. Strict Sphinx HTML/linkcheck and Sphinx browser review pass. The timing limitation is documented without numerical changes. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+    },
+    "docs/api.rst": {
+      "form": "api",
+      "status": "api",
+      "reason": "Human-maintained autosummary entry; generated API pages retain their generator format."
+    },
+    "docs/constraints.md": {
+      "form": "methodology",
+      "status": "pending",
+      "review": "M2a source migration, executable examples, scoped checks, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-13. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+    },
+    "docs/covariance_estimators.md": {
+      "form": "methodology",
+      "status": "pending",
+      "review": "M4b source migration, six executable examples, independent EWMA/factor-component references, future-input timing checks, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-14. The normalized-return timing and factor demeaning-field limitations are documented without numerical changes. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+    },
+    "docs/documentation_standard.md": {
+      "form": "utility",
+      "status": "adopted"
+    },
+    "docs/examples_readme.md": {
+      "form": "utility",
+      "status": "pending",
+      "review": "M4d utility revision verified on 2026-09-14: all 30 Python workflows are catalogued (7 offline, 19 network, 4 local). All seven offline defaults passed with network and optional imports blocked. Ten new cases passed within 81 focused checks; seven deliberate defects were detected, with a restored ten-case pass and final layout checks. Strict HTML and Sphinx browser review pass: nine tables, all 26 old HTML IDs, 12 preserved module mappings, 271 local-link occurrences and 45 matching downloads covering 33 sources. Strict linkcheck passed before a concurrent stress-article addition; this guide's external URLs remain identical. The integrated 81-case run, strict HTML, local links and browser review pass, preserving the concurrent article and fourth local example. Canonical scripts, fixtures, notebook and preview bytes are unchanged. GitHub/VS Code review, fixture attribution and lockfile reconciliation remain pending; this page is not yet fully adopted."
+    },
+    "docs/incomplete_histories.md": {
+      "form": "methodology",
+      "status": "pending",
+      "review": "M4a source migration, six executable examples, independent units/cash and covariance-state references, scoped checks, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-13. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+    },
+    "docs/index.rst": {
+      "form": "utility",
+      "status": "pending"
+    },
+    "docs/installation.md": {
+      "form": "utility",
+      "status": "pending",
+      "review": "M4d utility migration, six installation recipe/import cases and 57 focused tests passed on 2026-09-14. Five deliberate defects were detected and restored checks passed. The unchanged offline quickstart, notebook parity, pip check and local wheel metadata inspection passed. Strict Sphinx HTML/linkcheck and Sphinx browser review pass: three tables, the original article anchor/all 15 old HTML IDs and five matching source-download links. The three published extras are distinguished from contributor groups without dependency changes. Locked environment reconciliation and GitHub/VS Code viewer checks remain pending; this page is not yet fully adopted."
+    },
+    "docs/minimum_tracking_error.md": {
+      "form": "methodology",
+      "status": "pending",
+      "review": "M2c source migration, executable examples, independent allocation reference, covariance-scale and timing checks, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-13. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+    },
+    "docs/mixed_frequency_data.md": {
+      "form": "methodology",
+      "status": "pending",
+      "review": "M4b source migration, six executable blocks, independent return-window and covariance-unit references, per-cadence scoring and future-input checks, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-14. All three original examples are preserved. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+    },
+    "docs/optimization_module_readme.md": {
+      "form": "utility",
+      "status": "pending",
+      "review": "M4c utility migration, 11 offline executable blocks, independent allocation/target/constraint references, 32 guide cases and 857 focused tests passed on 2026-09-14. All six controlled defects were detected. Strict Sphinx HTML/linkcheck and Sphinx browser review pass: five display equations, eight tables and all 38 old HTML IDs. Solver configuration, dispatch, return types and fallback limitations are documented without numerical changes. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+    },
+    "docs/overlay_tail_floor.md": {
+      "form": "methodology",
+      "status": "pending",
+      "review": "M4c methodology migration, seven offline blocks, independent allocation/floor/risk references, 25 article cases and 882 focused tests passed on 2026-09-14. All six deliberate defects were detected; the original synthetic example is unchanged. Strict Sphinx HTML/linkcheck and Sphinx browser review pass: six display equations, four tables and all 18 old HTML IDs. Fixed-exposure floor scaling and the missing SLSQP return row are documented without numerical changes. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+    },
+    "docs/package_comparison.rst": {
+      "form": "utility",
+      "status": "pending"
+    },
+    "docs/quickstart.md": {
+      "form": "utility",
+      "status": "pending",
+      "review": "M4d utility migration, 14 new quickstart cases and 107 focused tests passed on 2026-09-14. Five deliberate defects were detected; the restored 14-case run, final 20-case quickstart/installation checks and core-only network-blocked script passed. Canonical Python/notebook parity is preserved. Independent covariance weighted sums, prefix/future probes and unit/cost identities verify the documented conventions. Strict Sphinx HTML/linkcheck and Sphinx browser review pass: one display equation, three tables, both original article anchors/all 16 old HTML IDs and ten matching source-download links. Fixture attribution, dependency reconciliation and GitHub/VS Code viewer checks remain pending; this page is not yet fully adopted."
+    },
+    "docs/risk_budgeting.md": {
+      "form": "methodology",
+      "status": "pending",
+      "review": "M2b source migration, executable examples, independent references, scoped checks, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-13. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+    },
+    "docs/rolling_backtests.md": {
+      "form": "methodology",
+      "status": "pending",
+      "review": "M4a rolling-backtests source migration, both executable examples, independent holdings/cost references, 173 focused tests, strict Sphinx HTML/linkcheck and three-equation Sphinx browser review passed on 2026-09-13. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+    },
+    "docs/rolling_factor_covar_from_csv.md": {
+      "form": "methodology",
+      "status": "pending",
+      "review": "M4b source migration, seven executable offline blocks, independent FX/cash and covariance references, future-input checks, 153 focused tests, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-14. The seven original examples and all legacy anchors are preserved; loader, residual-unit and output-path limitations are explicit. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+    },
+    "docs/stress_testing_with_options.md": {
+      "form": "methodology",
+      "status": "pending",
+      "review": "End-to-end numerical verification, cached replay, 25 integration tests and strict Sphinx build pass. Report layouts inspected, including a rendered PDF cluster page. Browser renders 49 MathJax expressions without errors. GitHub and VS Code viewer checks remain pending."
+    },
+    "docs/software_design.md": {
+      "form": "utility",
+      "status": "pending",
+      "review": "M4e utility migration verified on 2026-09-14: 134 existing focused tests, strict HTML and scoped strict linkcheck pass; all six guide URLs are working. Sphinx browser review covers five tables and the construction/execution diagram. All 25 old HTML IDs are preserved; 236 local-link occurrences resolve and 20 downloads match 18 source files. Actual backend selection, dispatcher-specific estimation, decision-state drift versus QIS execution, result shapes and package ownership are documented without code or numerical changes. GitHub/VS Code review and dependency reconciliation remain pending; this page is not yet fully adopted."
+    },
+    "docs/turnover_and_transaction_costs.md": {
+      "form": "methodology",
+      "status": "pending",
+      "review": "M4a turnover/cost source migration, both preserved examples and their extensions, independent allocation and currency-ledger references, 249 focused tests, strict Sphinx HTML/linkcheck and four-equation Sphinx browser review passed on 2026-09-13. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+    },
+    "src/optimalportfolios/alphas/README.md": {
+      "form": "utility",
+      "status": "pending"
+    },
+    "src/optimalportfolios/covar_estimation/README.md": {
+      "form": "utility",
+      "status": "pending"
+    },
+    "src/optimalportfolios/optimization/constraints/README.md": {
+      "form": "utility",
+      "status": "pending"
+    }
+  }
+}

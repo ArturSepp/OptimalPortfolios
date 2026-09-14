@@ -2,7 +2,7 @@
 the HCGL covariance report.
 
 These are plotting functions, so the assertions are about the things a plot can get wrong
-without looking wrong: the *ordering* contract and the cadence guard.
+without looking wrong: the *ordering* contract and snapshot adaptation.
 
 ``is_align_to_clusters_index`` is the one that matters. When it is on, the asset covariance and
 the beta panel are reindexed onto the cluster ordering so the heatmap's block structure lines
@@ -10,10 +10,6 @@ up with the dendrogram's; when it is off they keep the estimation order. Both re
 and a mismatch between them is a picture that reads as a clean factor structure while pairing
 each row's betas with a different asset's label. So the tests check the reindexing on the
 returned aggregate cluster series rather than inspecting pixels.
-
-``plot_clusters`` accepts exactly one or two cadences -- the subplot grid is hand-laid for
-those two cases -- and raises otherwise; that guard is the difference between an exception and
-an IndexError three frames deeper.
 
 The snapshot adapter is checked against factorlasso's flat persisted cluster fields. Its
 plotting inputs are also compared with an independent split of the raw factorlasso output so
@@ -30,7 +26,6 @@ from factorlasso import LassoModel, LassoModelType
 # optimalportfolios
 import optimalportfolios.covar_estimation.covar_reporting as covar_reporting
 from optimalportfolios.covar_estimation.covar_reporting import (
-    plot_clusters,
     plot_current_covar_data,
     plot_hcgl_covar_data,
     run_rolling_covar_report,
@@ -119,42 +114,6 @@ def plot_kwargs(covar_data, **overrides) -> dict:
 
 
 # --------------------------------------------------------------------------- #
-# plot_clusters
-# --------------------------------------------------------------------------- #
-def test_one_cadence_returns_every_asset_labelled_by_that_cadence() -> None:
-    """A single-cadence partition labels each cluster id with its cadence prefix."""
-    clusters, linkages, cutoffs = make_cluster_inputs(n_cadences=1)
-    agg_clusters, fig = plot_clusters(clusters=clusters, linkages=linkages, cutoffs=cutoffs)
-    assert isinstance(fig, plt.Figure)
-    assert sorted(agg_clusters.index) == sorted(ASSETS)
-    assert set(agg_clusters.unique()) == {'ME-1', 'ME-2', 'ME-3'}
-
-
-def test_two_cadences_are_concatenated_into_one_ordering() -> None:
-    """Two cadences partition disjoint assets and both appear in the aggregate labels."""
-    clusters, linkages, cutoffs = make_cluster_inputs(n_cadences=2)
-    agg_clusters, _ = plot_clusters(clusters=clusters, linkages=linkages, cutoffs=cutoffs)
-    assert len(agg_clusters) == N_ASSETS                # four assets from each cadence
-    assert {label.split('-')[0] for label in agg_clusters} == {'QE', 'ME'}
-
-
-def test_the_aggregate_ordering_groups_assets_by_cluster() -> None:
-    """Assets sharing a cluster id are adjacent; that ordering is what the heatmaps use."""
-    clusters, linkages, cutoffs = make_cluster_inputs(n_cadences=1)
-    agg_clusters, _ = plot_clusters(clusters=clusters, linkages=linkages, cutoffs=cutoffs)
-    labels = list(agg_clusters)
-    assert labels == sorted(labels, reverse=True)       # sorted ascending, then reversed
-
-
-def test_three_cadences_are_refused_rather_than_mis_laid_out() -> None:
-    """The subplot grid is hand-laid for one or two cadences only."""
-    clusters, linkages, cutoffs = make_cluster_inputs(n_cadences=2)
-    clusters['YE'], linkages['YE'], cutoffs['YE'] = clusters['ME'], linkages['ME'], cutoffs['ME']
-    with pytest.raises(NotImplementedError, match='number clusters = 3'):
-        plot_clusters(clusters=clusters, linkages=linkages, cutoffs=cutoffs)
-
-
-# --------------------------------------------------------------------------- #
 # plot_hcgl_covar_data
 # --------------------------------------------------------------------------- #
 def test_a_snapshot_renders_four_figures(covar_data) -> None:
@@ -171,7 +130,7 @@ def test_alignment_reindexes_the_covariance_onto_the_cluster_ordering(covar_data
     drawn against another asset's label -- so both settings are exercised, and the ordering
     the aligned path imposes is checked to cover exactly the estimated universe.
     """
-    agg_clusters, _ = plot_clusters(*make_cluster_inputs(n_cadences=1))
+    agg_clusters, _ = qis.plot_clusters(*make_cluster_inputs(n_cadences=1))
     plt.close('all')
     assert len(plot_hcgl_covar_data(**plot_kwargs(covar_data,
                                                   is_align_to_clusters_index=True))) == 4
@@ -220,7 +179,7 @@ def test_seeded_factorlasso_clusters_are_the_clusters_plotted(covar_data,
         expected[freq] = selected.str.slice(start=len(prefix))
 
     plotted = {}
-    real_plot_clusters = covar_reporting.plot_clusters
+    real_plot_clusters = qis.plot_clusters
 
     def capture_plot_clusters(clusters, linkages, cutoffs, figsize=(14, 10)):
         """Capture the adapter output while delegating the actual rendering."""
@@ -228,7 +187,7 @@ def test_seeded_factorlasso_clusters_are_the_clusters_plotted(covar_data,
         return real_plot_clusters(clusters=clusters, linkages=linkages,
                                   cutoffs=cutoffs, figsize=figsize)
 
-    monkeypatch.setattr(covar_reporting, 'plot_clusters', capture_plot_clusters)
+    monkeypatch.setattr(qis, 'plot_clusters', capture_plot_clusters)
     figs = covar_reporting.plot_current_covar_data(covar_data=covar_data)
 
     assert len(raw_clusters) >= 8

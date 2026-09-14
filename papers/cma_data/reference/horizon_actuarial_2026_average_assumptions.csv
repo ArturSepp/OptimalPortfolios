@@ -1,0 +1,19 @@
+category,arith_10y,geom_10y,arith_20y,geom_20y,stdev
+US Equity - Large Cap,0.0766,0.0639,0.0832,0.0702,0.1643
+US Equity - Small/Mid Cap,0.0871,0.0678,0.0932,0.0738,0.2036
+Non-US Equity - Developed,0.0837,0.0684,0.0870,0.0711,0.1802
+Non-US Equity - Emerging,0.0945,0.0701,0.1008,0.0750,0.2274
+US Corporate Bonds - Core,0.0508,0.0490,0.0528,0.0510,0.0603
+US Corporate Bonds - Long Duration,0.0562,0.0506,0.0588,0.0535,0.1069
+US Corporate Bonds - High Yield,0.0620,0.0575,0.0671,0.0624,0.0953
+Non-US Debt - Developed,0.0436,0.0406,0.0445,0.0414,0.0736
+Non-US Debt - Emerging,0.0621,0.0572,0.0647,0.0597,0.0996
+US Treasuries (Cash Equivalents),0.0348,0.0346,0.0357,0.0354,0.0156
+TIPS (Inflation-Protected),0.0466,0.0447,0.0476,0.0454,0.0605
+Real Estate,0.0760,0.0631,0.0783,0.0663,0.1597
+Hedge Funds,0.0636,0.0595,0.0682,0.0634,0.0842
+Commodities,0.0622,0.0466,0.0660,0.0491,0.1789
+Infrastructure,0.0800,0.0690,0.0832,0.0716,0.1483
+Private Equity,0.1154,0.0919,0.1217,0.0971,0.2206
+Private Debt,0.0819,0.0755,0.0838,0.0780,0.1146
+Inflation,0.0245,0.0244,0.0244,0.0244,0.0195

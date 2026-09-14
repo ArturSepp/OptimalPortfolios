@@ -74,6 +74,8 @@ Project links
    incomplete_histories
    covariance_estimators
    rolling_factor_covar_from_csv
+   stress_testing_with_options
    software_design
    package_comparison
+   documentation_standard
    api

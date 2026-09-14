@@ -75,18 +75,18 @@ def run_cross_backtest(prices: pd.DataFrame,
     return portfolio_datas
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     CROSS_BACKTEST = 1
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes."""
 
     import optimalportfolios.local_path as lp
     from examples.data.sp500_universe_local import load_sp500_universe_yahoo
 
-    if local_test == LocalTests.CROSS_BACKTEST:
+    if local == Locals.CROSS_BACKTEST:
 
         time_period = qis.TimePeriod('31Dec2010', '31Jan2024')
         spans = [26, 52, 104, 208]
@@ -127,4 +127,4 @@ def run_local_test(local_test: LocalTests):
 
 
 if __name__ == '__main__':
-    run_local_test(local_test=LocalTests.CROSS_BACKTEST)
+    run_local(local=Locals.CROSS_BACKTEST)

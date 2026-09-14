@@ -33,6 +33,7 @@ from factorlasso import (
     ClusterSmootherType,
     CurrentFactorCovarData,
     LassoModel,
+    LassoModelType,
     RollingFactorCovarData,
     VarianceColumns,
     compute_rolling_smoothed_clusters,
@@ -86,6 +87,59 @@ def _validate_recluster_frequency(recluster_freq: str, rebalancing_freq: str) ->
             f"recluster_freq={recluster_freq!r} must be coarser than "
             f"rebalancing_freq={rebalancing_freq!r}"
         )
+
+
+# FactorLasso's get_linkage_array extracts a whole tree but cannot restrict its leaves.
+# This reporting adapter retains the discovered merge heights; it never reclusters assets.
+def _restrict_linkage(linkage: np.ndarray, labels: pd.Index,
+                      assets: pd.Index) -> np.ndarray:
+    """Remove reference leaves, preserving retained leaf order and cophenetic distances."""
+    positions = labels.get_indexer(assets)
+    if np.any(positions < 0):
+        raise ValueError('clustering linkage is missing fitted asset labels')
+    nodes = {int(old): (new, 1) for new, old in enumerate(positions)}
+    rows = []
+    for step, (left, right, height, _) in enumerate(linkage):
+        lhs, rhs = nodes.get(int(left)), nodes.get(int(right))
+        parent = len(labels) + step
+        if lhs is not None and rhs is not None:
+            count = lhs[1] + rhs[1]
+            nodes[parent] = (len(assets) + len(rows), count)
+            rows.append((lhs[0], rhs[0], height, count))
+        elif lhs is not None or rhs is not None:
+            nodes[parent] = lhs if lhs is not None else rhs
+    return np.asarray(rows, dtype=float).reshape(-1, 4)
+
+
+def _factor_cluster_path(risk_factor_prices: pd.DataFrame, returns: pd.DataFrame,
+                         schedule: List[pd.Timestamp], model: LassoModel):
+    """Discover clusters with factor references, then adapt partitions and trees to assets."""
+    if not returns.columns.is_unique or not risk_factor_prices.columns.is_unique:
+        raise ValueError('factor clustering requires unique asset and factor columns')
+    prices = risk_factor_prices.reindex(index=returns.index, method='ffill').ffill()
+    factors = qis.to_returns(
+        prices, is_log_returns=True, is_first_zero=False, drop_first=False, freq=None,
+    )
+    factors.columns = pd.Index([f'__factor_anchor__:{i}' for i in range(len(factors.columns))])
+    if not returns.columns.intersection(factors.columns).empty:
+        raise ValueError('asset names collide with reserved __factor_anchor__: labels')
+    panel = pd.concat([returns, factors], axis=1, sort=True)
+    path = compute_rolling_smoothed_clusters(y=panel, estimation_dates=schedule, lasso_model=model)
+    for date in schedule:
+        discovered = path.clusters[date]
+        assignments = discovered.reindex(returns.columns).copy()
+        # A common-mode transform may omit not-yet-eligible assets from discovery. Give each
+        # missing response its own solver group; FactorLasso still zeroes/drops it at warmup.
+        next_group = int(discovered.max()) + 1
+        for asset in assignments.index[assignments.isna()]:
+            assignments.loc[asset] = next_group
+            next_group += 1
+        active = returns.columns
+        if model.warmup_period is not None:
+            active = active[returns.loc[:date].notna().sum() >= model.warmup_period]
+        path.linkages[date] = _restrict_linkage(path.linkages[date], discovered.index, active)
+        path.clusters[date] = assignments.astype(int)
+    return path
 
 
 @dataclass(frozen=True)
@@ -200,6 +254,13 @@ class FactorCovarEstimator(CovarEstimator):
         factor_covar_span: EWMA span for factor covariance estimation.
         is_apply_vol_normalised_returns: If True, normalise returns by rolling vol.
         demean: If True, subtract rolling mean before covariance estimation.
+        include_factors_in_clustering: Add the selected factor returns as clustering
+            references for HCGL/FCGL. References never enter the response fit, pooled
+            signs, group sizes, residuals or asset covariance. Reported dendrograms
+            remove reference leaves while retaining their induced merge heights.
+            Explicit precomputed partitions take precedence. Defaults to False.
+        factor_clustering_freqs: Restrict factor references to these asset-return
+            cadences when enabled, for example ``['ME']``. None includes every cadence.
 
     Example:
         Not executed as a doctest: an HCGL fit costs roughly four seconds even on a two-asset
@@ -229,6 +290,30 @@ class FactorCovarEstimator(CovarEstimator):
     factor_covar_span: int = 52
     is_apply_vol_normalised_returns: bool = False
     demean: bool = True
+    include_factors_in_clustering: bool = False
+    factor_clustering_freqs: Optional[List[str]] = None
+
+    def __post_init__(self) -> None:
+        """Validate the opt-in clustering mode without changing legacy construction."""
+        if not isinstance(self.include_factors_in_clustering, bool):
+            raise TypeError('include_factors_in_clustering must be a bool')
+        if self.factor_clustering_freqs is not None and (
+                not isinstance(self.factor_clustering_freqs, (list, tuple))
+                or not self.factor_clustering_freqs
+                or not all(isinstance(freq, str) and freq for freq in self.factor_clustering_freqs)):
+            raise ValueError('factor_clustering_freqs must be a non-empty sequence of frequency names')
+        if self.include_factors_in_clustering and (
+                self.lasso_model is None or self.lasso_model.model_type not in (
+                    LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
+                    LassoModelType.FACTOR_CLUSTER_GROUP_LASSO,
+                )):
+            raise ValueError('factor clustering references require HCGL or FCGL')
+
+    def _use_factor_references(self, freq: str) -> bool:
+        """Whether this response cadence receives the optional factor references."""
+        return self.include_factors_in_clustering and (
+            self.factor_clustering_freqs is None or freq in self.factor_clustering_freqs
+        )
 
     def copy(self, **overrides) -> FactorCovarEstimator:
         """Create a copy, optionally overriding specific fields.
@@ -370,8 +455,17 @@ class FactorCovarEstimator(CovarEstimator):
         Returns:
             Factor covariance decomposition at the estimation date.
         """
+        if self.include_factors_in_clustering:
+            estimation_date = estimation_date or max(
+                returns.index[-1] for returns in asset_returns_dict.values()
+            )
+            risk_factor_prices = risk_factor_prices.loc[:estimation_date]
+            asset_returns_dict = {
+                freq: returns.loc[:estimation_date] for freq, returns in asset_returns_dict.items()
+            }
         smoother_type = ClusterSmootherType(self.lasso_model.cluster_smoother_type)
-        if smoother_type != ClusterSmootherType.NONE and precomputed_clusters is None:
+        if (smoother_type != ClusterSmootherType.NONE or self.include_factors_in_clustering
+                ) and precomputed_clusters is None:
             estimation_date = estimation_date or max(
                 returns.index[-1] for returns in asset_returns_dict.values()
             )
@@ -379,8 +473,10 @@ class FactorCovarEstimator(CovarEstimator):
             precomputed_linkages = {}
             precomputed_cutoffs = {}
             for freq, returns in asset_returns_dict.items():
+                if smoother_type == ClusterSmootherType.NONE and not self._use_factor_references(freq):
+                    continue
                 fit_model = _model_for_frequency(self.lasso_model, freq)
-                start_position = min(fit_model.warmup_period - 1, len(returns.index) - 1)
+                start_position = min((fit_model.warmup_period or 1) - 1, len(returns.index) - 1)
                 start_date = returns.index[start_position]
                 schedule = qis.generate_dates_schedule(
                     time_period=qis.TimePeriod(start_date, estimation_date),
@@ -389,6 +485,8 @@ class FactorCovarEstimator(CovarEstimator):
                     include_end_date=True,
                 )
                 final_date = pd.Timestamp(estimation_date)
+                if smoother_type == ClusterSmootherType.NONE:
+                    schedule = [final_date]
                 if final_date not in schedule:
                     # Not covered, and currently unreachable: the schedule above is generated with
                     # include_end_date=True and estimation_date as the end, so qis always returns
@@ -396,10 +494,11 @@ class FactorCovarEstimator(CovarEstimator):
                     # case that flag or its semantics change -- the lookups below index the
                     # smoother output by final_date and would raise if it were ever absent.
                     schedule = sorted([*schedule, final_date])  # pragma: no cover
-                rolling_clusters = compute_rolling_smoothed_clusters(
-                    y=returns,
-                    estimation_dates=schedule,
-                    lasso_model=fit_model,
+                rolling_clusters = (
+                    _factor_cluster_path(risk_factor_prices, returns, schedule, fit_model)
+                    if self._use_factor_references(freq) else compute_rolling_smoothed_clusters(
+                        y=returns, estimation_dates=schedule, lasso_model=fit_model,
+                    )
                 )
                 precomputed_clusters[freq] = rolling_clusters.clusters[final_date]
                 precomputed_linkages[freq] = rolling_clusters.linkages[final_date]
@@ -456,19 +555,24 @@ class FactorCovarEstimator(CovarEstimator):
         )
         smoother_type = ClusterSmootherType(self.lasso_model.cluster_smoother_type)
         rolling_clusters_by_freq = None
-        if smoother_type != ClusterSmootherType.NONE:
+        if smoother_type != ClusterSmootherType.NONE or self.include_factors_in_clustering:
             if self.lasso_model.recluster_freq is not None:
                 _validate_recluster_frequency(
                     recluster_freq=str(self.lasso_model.recluster_freq),
                     rebalancing_freq=effective_rebalancing_freq,
                 )
             rolling_clusters_by_freq = {
-                freq: compute_rolling_smoothed_clusters(
-                    y=returns,
-                    estimation_dates=rebalancing_schedule,
-                    lasso_model=_model_for_frequency(self.lasso_model, freq),
+                freq: (
+                    _factor_cluster_path(
+                        risk_factor_prices, returns, rebalancing_schedule,
+                        _model_for_frequency(self.lasso_model, freq),
+                    ) if self._use_factor_references(freq) else compute_rolling_smoothed_clusters(
+                        y=returns, estimation_dates=rebalancing_schedule,
+                        lasso_model=_model_for_frequency(self.lasso_model, freq),
+                    )
                 )
                 for freq, returns in asset_returns_dict.items()
+                if smoother_type != ClusterSmootherType.NONE or self._use_factor_references(freq)
             }
 
         covar_datas: Dict[pd.Timestamp, CurrentFactorCovarData] = {}

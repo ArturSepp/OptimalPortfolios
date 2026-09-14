@@ -199,7 +199,7 @@ def load_risk_free_rate(snapshot_tag: Optional[str] = None) -> pd.Series:
     return yf.download('^IRX', start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].dropna() / 100.0
 
 
-class LocalTests(Enum):
+class Locals(Enum):
     UPDATE_PRICES_WITH_YF = 1
     CREATE_ETH = 2
     CHECK_PRICES = 3
@@ -208,19 +208,19 @@ class LocalTests(Enum):
     UPDATE_PRICES_WITH_BLOOMBERG = 6
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes.
 
     These are integration tests that download real universe and generate reports.
     Use for quick verification during product_development.
     """
 
-    if local_test == LocalTests.UPDATE_PRICES_WITH_YF:
+    if local == Locals.UPDATE_PRICES_WITH_YF:
         update_prices_with_yf()
         prices = load_prices()
         print(prices)
 
-    elif local_test == LocalTests.CREATE_ETH:
+    elif local == Locals.CREATE_ETH:
         # btc_price = qis.load_df_from_csv(file_name=BTC_PRICES_FROM_2010, local_path=LOCAL_PATH).iloc[:, 0]
         # eth_price = create_eth_price(btc_price=btc_price)
         # print(eth_price)
@@ -231,12 +231,12 @@ def run_local_test(local_test: LocalTests):
         qis.plot_ra_perf_table(prices=prices)
         qis.plot_prices_with_dd(prices=prices, start_to_one=False)
 
-    elif local_test == LocalTests.CHECK_PRICES:
+    elif local == Locals.CHECK_PRICES:
         prices = load_prices(crypto_asset=None, is_updated=True)
         qis.plot_ra_perf_table(prices=prices)
         qis.plot_prices_with_dd(prices=prices)
 
-    elif local_test == LocalTests.CREATE_BALANCED_PRICE:
+    elif local == Locals.CREATE_BALANCED_PRICE:
         import yfinance as yf
 
         price = create_balanced_price()
@@ -245,7 +245,7 @@ def run_local_test(local_test: LocalTests):
         prices = pd.concat([price, bal], axis=1).dropna()
         qis.plot_prices_with_dd(prices=prices)
 
-    elif local_test == LocalTests.CHECK_REAL_ESTATE:
+    elif local == Locals.CHECK_REAL_ESTATE:
         import yfinance as yf
 
         assets = ['IYR', 'REZ', 'REET']
@@ -255,7 +255,7 @@ def run_local_test(local_test: LocalTests):
         prices = pd.concat(prices, axis=1).dropna()
         qis.plot_prices_with_dd(prices=prices)
 
-    elif local_test == LocalTests.UPDATE_PRICES_WITH_BLOOMBERG:
+    elif local == Locals.UPDATE_PRICES_WITH_BLOOMBERG:
         prices = update_prices_with_bloomberg(as_of=DEFAULT_AS_OF)
         qis.plot_prices_with_dd(prices=prices)
 
@@ -264,4 +264,4 @@ def run_local_test(local_test: LocalTests):
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.CREATE_ETH)
+    run_local(local=Locals.CREATE_ETH)

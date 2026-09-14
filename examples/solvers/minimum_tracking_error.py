@@ -17,8 +17,8 @@ from optimalportfolios import (
 from examples.data.universe import fetch_benchmark_universe_data
 
 
-class LocalTests(Enum):
-    """Diagnostic modes supported by ``run_local_test``."""
+class Locals(Enum):
+    """Diagnostic modes supported by ``run_local``."""
 
     ONE_STEP_OPTIMISATION = 1
     ROLLING_OPTIMISATION = 2
@@ -45,7 +45,7 @@ def _build_constraints(
     )
 
 
-def run_local_test(local_test: LocalTests) -> None:
+def run_local(local: Locals) -> None:
     """Run a minimum-tracking-error diagnostic or rolling backtest."""
     import optimalportfolios.local_path as lp
 
@@ -62,7 +62,7 @@ def run_local_test(local_test: LocalTests) -> None:
         ac_loadings=ac_loadings,
     )
 
-    if local_test == LocalTests.ONE_STEP_OPTIMISATION:
+    if local == Locals.ONE_STEP_OPTIMISATION:
         returns = qis.to_returns(prices, freq='W-WED', is_log_returns=True)
         pd_covar = pd.DataFrame(
             52.0 * qis.compute_masked_covar_corr(data=returns, is_covar=True),
@@ -95,7 +95,7 @@ def run_local_test(local_test: LocalTests) -> None:
         )
         plt.show()
 
-    elif local_test == LocalTests.ROLLING_OPTIMISATION:
+    elif local == Locals.ROLLING_OPTIMISATION:
         time_period = qis.TimePeriod('31Jan2007', '17Apr2025')
         rebalancing_costs = 0.0003
         covar_dict = EwmaCovarEstimator().fit_rolling_covars(
@@ -154,4 +154,4 @@ def run_local_test(local_test: LocalTests) -> None:
 
 
 if __name__ == '__main__':
-    run_local_test(local_test=LocalTests.ROLLING_OPTIMISATION)
+    run_local(local=Locals.ROLLING_OPTIMISATION)

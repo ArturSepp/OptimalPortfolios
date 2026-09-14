@@ -471,11 +471,11 @@ def produce_article_backtests(time_period: TimePeriod,
     plt.close('all')
 
 
-class LocalTests(Enum):
+class Locals(Enum):
     BACKTEST_ARTICLE_FIGURES = 1
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes.
 
     These are integration tests that download real universe and generate reports.
@@ -494,7 +494,7 @@ def run_local_test(local_test: LocalTests):
     # perf_time_period = TimePeriod('31Mar2016', end_date)  # for report
     perf_time_period = TimePeriod('31Mar2016', end_date)  # for report
 
-    if local_test == LocalTests.BACKTEST_ARTICLE_FIGURES:
+    if local == Locals.BACKTEST_ARTICLE_FIGURES:
         time_period_dict_btc = {'16Q2-23Q2': TimePeriod(start='31Mar2016', end=end_date),
                                 '21Q1-23Q1': TimePeriod(start='31Dec2020', end='31Mar2023')}
         time_period_dict_eth = {'16Q2-23Q2': TimePeriod(start='31Mar2016', end=end_date),
@@ -510,4 +510,4 @@ def run_local_test(local_test: LocalTests):
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.BACKTEST_ARTICLE_FIGURES)
+    run_local(local=Locals.BACKTEST_ARTICLE_FIGURES)

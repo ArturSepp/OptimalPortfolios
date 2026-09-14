@@ -7,16 +7,21 @@ snapshot is present.
 """
 # packages
 import importlib.util
+import shutil
 import sys
 import pytest
 from pathlib import Path
 
 CMA_DATA = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('cma_data', CMA_DATA / '__init__.py',
-                                              submodule_search_locations=[str(CMA_DATA)])
-cma_data = importlib.util.module_from_spec(spec)
-sys.modules['cma_data'] = cma_data
-spec.loader.exec_module(cma_data)
+if 'cma_data' in sys.modules:
+    # The JPM parity suite may have loaded the shared package already.
+    cma_data = sys.modules['cma_data']
+else:
+    spec = importlib.util.spec_from_file_location('cma_data', CMA_DATA / '__init__.py',
+                                                  submodule_search_locations=[str(CMA_DATA)])
+    cma_data = importlib.util.module_from_spec(spec)
+    sys.modules['cma_data'] = cma_data
+    spec.loader.exec_module(cma_data)
 
 
 def test_universe_counts():
@@ -79,7 +84,7 @@ def test_snapshot_manifest_verifies(tag):
 
 
 @pytest.mark.parametrize('tag', SNAPSHOT_TAGS)
-def test_snapshot_loads_and_aligns(tag):
+def test_snapshot_loads_and_aligns(tag, tmp_path):
     snapshot = CMA_DATA / 'snapshots' / tag
     if not snapshot.exists():
         pytest.skip(f'no {tag} snapshot present')
@@ -92,11 +97,13 @@ def test_snapshot_loads_and_aligns(tag):
     if inputs.has_panel('asset_excess_logreturns'):
         assert len(inputs.asset_excess_logreturns) >= 290    # ~300 month rows on the window
     # tampering detection: corrupting one byte must fail verification
-    target = snapshot / 'betas.csv'
+    snapshot_copy = tmp_path / tag
+    shutil.copytree(snapshot, snapshot_copy)
+    target = snapshot_copy / 'betas.csv'
     original = target.read_bytes()
     try:
         target.write_bytes(original + b' ')
         with pytest.raises(ValueError):
-            cma_data.verify_manifest(snapshot_path=snapshot)
+            cma_data.verify_manifest(snapshot_path=snapshot_copy)
     finally:
         target.write_bytes(original)

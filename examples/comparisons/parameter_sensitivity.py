@@ -68,12 +68,12 @@ def run_max_diversification_sensitivity_to_span(prices: pd.DataFrame,
     return figs
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     MAX_DIVERSIFICATION_SPAN = 1
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes.
 
     These are integration tests that download real universe and generate reports.
@@ -95,7 +95,7 @@ def run_local_test(local_test: LocalTests):
                                max_weights=pd.Series(0.2, index=prices.columns),
                                group_lower_upper_constraints=group_lower_upper_constraints)
 
-    if local_test == LocalTests.MAX_DIVERSIFICATION_SPAN:
+    if local == Locals.MAX_DIVERSIFICATION_SPAN:
 
         time_period = qis.TimePeriod(start='31Dec1998', end='15Mar2026')  # backtest start for weights computation
         perf_time_period = qis.TimePeriod(start='31Dec2004', end='15Mar2026')  # backtest report
@@ -117,4 +117,4 @@ def run_local_test(local_test: LocalTests):
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.MAX_DIVERSIFICATION_SPAN)
+    run_local(local=Locals.MAX_DIVERSIFICATION_SPAN)

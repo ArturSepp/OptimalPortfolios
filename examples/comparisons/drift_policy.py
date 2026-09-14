@@ -124,12 +124,12 @@ def run_backtest_under_policy(prices: pd.DataFrame,
 # main runner
 # -----------------------------------------------------------------------------
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     DRIFT_POLICY_COMPARISON = 1
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Compare drift-on (B) and drift-off (A) rolling backtests of a
     min-variance portfolio with a binding per-rebalance L1 turnover budget.
     """
@@ -165,7 +165,7 @@ def run_local_test(local_test: LocalTests):
         group_lower_upper_constraints=group_lower_upper_constraints,
     )
 
-    if local_test == LocalTests.DRIFT_POLICY_COMPARISON:
+    if local == Locals.DRIFT_POLICY_COMPARISON:
         # --- shared covar (single estimation, identical inputs to both runs) ---
         time_period = qis.TimePeriod('31Jan2007', '17Apr2025')
         rebalancing_costs = 0.0003
@@ -279,4 +279,4 @@ def run_local_test(local_test: LocalTests):
 
 
 if __name__ == '__main__':
-    run_local_test(local_test=LocalTests.DRIFT_POLICY_COMPARISON)
+    run_local(local=Locals.DRIFT_POLICY_COMPARISON)

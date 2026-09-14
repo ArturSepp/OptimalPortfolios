@@ -110,14 +110,14 @@ def fetch_benchmark_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Data
     return prices, benchmark_prices, dividends, yields, target_returns, group_data
 
 
-class LocalTests(Enum):
-    """Local diagnostic scenarios ``run_local_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     ILLUSTRATE_INPUT_DATA = 1
     ONE_STEP_OPTIMISATION = 2
     ROLLING_OPTIMISATION = 3
 
 
-def run_local_test(local_test: LocalTests):
+def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes.
 
     These are integration tests that download real universe and generate reports.
@@ -128,7 +128,7 @@ def run_local_test(local_test: LocalTests):
 
     prices, benchmark_prices, dividends, yields, target_returns, group_data = fetch_benchmark_universe_data()
 
-    if local_test == LocalTests.ILLUSTRATE_INPUT_DATA:
+    if local == Locals.ILLUSTRATE_INPUT_DATA:
         with sns.axes_style('darkgrid'):
             fig, axs = plt.subplots(2, 1, figsize=(14, 12), constrained_layout=True)
             qis.plot_prices_with_dd(prices=prices, axs=axs)
@@ -139,7 +139,7 @@ def run_local_test(local_test: LocalTests):
             qis.plot_time_series(df=yields, title='Yields', var_format='{:,.2%}', ax=axs[1])
         plt.show()
 
-    elif local_test == LocalTests.ONE_STEP_OPTIMISATION:
+    elif local == Locals.ONE_STEP_OPTIMISATION:
         # optimise using last available universe as inputs
         returns = qis.to_returns(prices, freq='W-WED', is_log_returns=True)
         pd_covar = pd.DataFrame(52.0 * qis.compute_masked_covar_corr(data=returns, is_covar=True),
@@ -172,7 +172,7 @@ def run_local_test(local_test: LocalTests):
         qis.plot_bars(df=weights)
         plt.show()
 
-    elif local_test == LocalTests.ROLLING_OPTIMISATION:
+    elif local == Locals.ROLLING_OPTIMISATION:
         # optimise using last available universe as inputs
         time_period = qis.TimePeriod('31Dec2016', '31Dec2025')
         weights = run_bonds_etf_optimal_portfolio(prices=prices,
@@ -201,4 +201,4 @@ def run_local_test(local_test: LocalTests):
 
 if __name__ == '__main__':
 
-    run_local_test(local_test=LocalTests.ROLLING_OPTIMISATION)
+    run_local(local=Locals.ROLLING_OPTIMISATION)

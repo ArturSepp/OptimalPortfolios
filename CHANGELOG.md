@@ -7,6 +7,39 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [7.6.0] - 2026-09-14
+
+### Removed
+
+- Removed `covar_reporting.plot_clusters` and its legacy renderer. Covariance
+  reports now call `qis.plot_clusters` directly; callers importing the former
+  OP utility must use QIS instead. Cluster ordering and estimation are unchanged.
+
+### Changed
+
+- Require QIS 5.26 or later for the migrated cluster renderer.
+
+## [7.5.0] - 2026-09-12
+
+### Added
+
+- `factor_clustering_freqs` restricts optional factor references to named response
+  cadences. With `include_factors_in_clustering=True, factor_clustering_freqs=['ME']`,
+  monthly clustering uses factor references while quarterly estimation retains its
+  existing partition and regression path. The default None retains all-cadence behaviour.
+
+## [7.4.0] - 2026-09-12
+
+### Added
+
+- `FactorCovarEstimator(include_factors_in_clustering=True)` discovers HCGL/FCGL clusters
+  on the joint asset and selected factor return panel at each estimation frequency. Factors
+  remain regressors and are excluded from response fitting, pooled sign derivation, penalty
+  group sizes and asset outputs. The option defaults to False and supports causal cluster
+  smoothing; explicitly supplied precomputed partitions retain precedence.
+- Asset-only reporting dendrograms preserve merge heights from the augmented tree after
+  reference leaves are removed. Short-history assets retain FactorLasso's warmup treatment.
+
 ## [7.3.0] - 2026-09-10
 
 ### Added
