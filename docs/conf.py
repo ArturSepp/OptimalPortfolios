@@ -39,9 +39,11 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # SSRN returns HTTP 403 to automated link-check clients even when the public pages are live.
+# artursepp.com answers HTTP 429 to the GitHub runner on a single request, for the same reason.
 linkcheck_ignore = [
     r"https://(?:www\.)?ssrn\.com/.*",
     r"https://papers\.ssrn\.com/.*",
+    r"https://(?:www\.)?artursepp\.com/.*",
 ]
 
 html_theme = "furo"
