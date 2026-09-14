@@ -47,14 +47,16 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      AGENT_LOCAL_ROOT: ${{ runner.temp }}/documentation
-      UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/documentation/venv
-      PYTHONPYCACHEPREFIX: ${{ runner.temp }}/documentation/cache/python
-      NUMBA_CACHE_DIR: ${{ runner.temp }}/documentation/cache/numba
-      MPLCONFIGDIR: ${{ runner.temp }}/documentation/cache/matplotlib
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Keep documentation state outside the checkout
+        # runner context is unavailable in job-level env; initialize it on the runner.
+        run: |
+          echo "AGENT_LOCAL_ROOT=$RUNNER_TEMP/documentation" >> "$GITHUB_ENV"
+          echo "UV_PROJECT_ENVIRONMENT=$RUNNER_TEMP/documentation/venv" >> "$GITHUB_ENV"
+          echo "PYTHONPYCACHEPREFIX=$RUNNER_TEMP/documentation/cache/python" >> "$GITHUB_ENV"
+          echo "NUMBA_CACHE_DIR=$RUNNER_TEMP/documentation/cache/numba" >> "$GITHUB_ENV"
+          echo "MPLCONFIGDIR=$RUNNER_TEMP/documentation/cache/matplotlib" >> "$GITHUB_ENV"
       - name: Install uv and Python
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
