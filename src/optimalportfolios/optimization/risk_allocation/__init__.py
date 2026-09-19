@@ -7,6 +7,7 @@ from optimalportfolios.optimization.risk_allocation.hierarchical_risk_parity imp
     compute_hierarchical_risk_parity_weights,
 )
 from optimalportfolios.optimization.risk_allocation.risk_budgeting import (
+    average_rolling_weights,
     opt_risk_budgeting,
     rolling_risk_budgeting,
     solve_for_risk_budgets_from_given_weights,

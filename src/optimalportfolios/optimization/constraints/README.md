@@ -8,7 +8,7 @@ myst:
 
 # Optimization Constraints
 
-*[author / affiliation / date — placeholder]*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-08-31](https://github.com/ArturSepp/OptimalPortfolios/commit/8cf38668a5eabd6b522703103af377a3bf531d3c)*
 
 Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).

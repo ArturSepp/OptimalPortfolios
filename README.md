@@ -8,7 +8,7 @@ myst:
 
 # optimalportfolios
 
-*[author / affiliation / date — placeholder]*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2023-07-08](https://github.com/ArturSepp/OptimalPortfolios/commit/6950e6d9310f70280891ddc4094be78c6f178e24)*
 
 Source: [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
@@ -739,7 +739,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
   year={2026},
-  version={7.6.1},
+  version={7.7.0},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

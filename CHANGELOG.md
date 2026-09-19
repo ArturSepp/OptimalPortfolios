@@ -7,6 +7,34 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [7.7.0] - 2026-09-18
+
+Behaviour change: `solve_for_risk_budgets_from_given_weights` now fits the budgets to an
+exponentially weighted average of the rolling weight path (default `ewma_span=12`
+rebalances, alpha = 2 / (span + 1)) instead of the simple mean over the whole path. On a
+time-varying covariance the returned budgets differ from 7.6.x; pass `ewma_span=None` to
+reproduce the previous fit.
+
+### Added
+
+- `average_rolling_weights(weights, ewma_span)`: the averaging of a rebalance-date weight
+  path used by the inverse fit (the causal `qis.compute_ewm` recursion, `InitType.X0`),
+  exported so callers report the same average they fitted.
+- `INVERSE_EWMA_SPAN = 12`, the default span.
+- Before the inverse fit starts, the marginal risk contributions of the target weights are
+  checked on every covariance date. A targeted asset whose averaged contribution is not
+  positive raises `ValueError` naming it: no non-negative budget can hold an asset that
+  hedges the target portfolio. An asset negative on at least half the dates only warns.
+  The `RuntimeError` of a failed fit now ends with the same per-asset table (target
+  weight, averaged contribution, share of dates with a negative contribution).
+
+### Changed
+
+- `solve_for_risk_budgets_from_given_weights` gains `ewma_span`. The seed, the fixed-point
+  iteration and the SLSQP check all average with it, so a target that is only reachable in
+  the recent covariance regime (a hedging asset whose marginal risk contribution changed
+  sign) can be fitted; the simple mean could not steer such a path to its target.
+
 ## [7.6.1] - 2026-09-14
 
 ### Changed

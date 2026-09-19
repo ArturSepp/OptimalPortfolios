@@ -27,6 +27,7 @@ from optimalportfolios.optimization.risk_allocation import (
     risk_budgeting as risk_budgeting_module,
 )
 from optimalportfolios.optimization.risk_allocation.risk_budgeting import (
+    average_rolling_weights,
     risk_budget_objective,
     solve_for_risk_budgets_from_given_weights,
     wrapper_risk_budgeting,
@@ -404,6 +405,173 @@ def test_inverse_target_weights_are_validated_before_calibration() -> None:
             covar_dict=make_covar_dict())
 
 
+def test_average_rolling_weights_matches_the_explicit_recursion() -> None:
+    """the exponential average is the first-row-seeded EWMA recursion at the last rebalance
+
+    The reference is computed a different way from ``qis.compute_ewm``: an explicit Python
+    loop m_0 = w_0, m_t = lambda m_{t-1} + (1 - lambda) w_t with lambda = 1 - 2 / (span + 1),
+    and, equivalently, the closed-form weights (1 - lambda) lambda^(T-1-t) with the residual
+    lambda^(T-1) on the first row.
+    """
+    dates = pd.date_range('2024-03-31', periods=5, freq='QE')
+    path = pd.DataFrame({'growth': [0.6, 0.5, 0.4, 0.3, 0.2],
+                         'balanced': [0.2, 0.3, 0.0, 0.3, 0.3],
+                         'defensive': [0.2, 0.2, 0.6, 0.4, 0.5]}, index=dates)
+    span = 3.0
+    decay = 1.0 - 2.0 / (span + 1.0)
+    expected = {}
+    for column in path.columns:
+        values = path[column].to_numpy()
+        state = float(values[0])
+        for value in values[1:]:
+            state = decay * state + (1.0 - decay) * value
+        expected[column] = state
+        closed_form = (1.0 - decay) * decay ** np.arange(len(values))[::-1]
+        closed_form[0] = decay ** (len(values) - 1)
+        assert closed_form.sum() == pytest.approx(1.0, abs=1e-12)
+        assert float(closed_form @ values) == pytest.approx(state, abs=1e-12)
+    averaged = average_rolling_weights(weights=path, ewma_span=span)
+    assert list(averaged.index) == list(path.columns)
+    np.testing.assert_allclose(averaged.to_numpy(), pd.Series(expected).to_numpy(), atol=1e-12)
+    # the most recent rebalance carries the largest weight
+    assert averaged['growth'] < path['growth'].mean()
+    # None restores the simple mean
+    pd.testing.assert_series_equal(average_rolling_weights(weights=path, ewma_span=None),
+                                   path.mean(axis=0))
+
+
+@pytest.mark.parametrize('span', [0.0, -1.0, np.inf, np.nan])
+def test_average_rolling_weights_rejects_a_non_positive_span(span) -> None:
+    """a span that is not a finite positive number is a configuration error"""
+    path = pd.DataFrame(np.full((3, 3), 1.0 / 3.0), index=REBALANCING_DATES, columns=TICKERS)
+    with pytest.raises(ValueError, match='ewma_span must be None or a finite positive number'):
+        average_rolling_weights(weights=path, ewma_span=span)
+
+
+def test_inverse_evaluation_fits_the_recent_rebalances(monkeypatch) -> None:
+    """the inverse error is measured on the exponentially averaged path, not the flat mean
+
+    A path that reaches the target only in its recent rebalances is a near-perfect fit under a
+    short span and a poor fit under the simple mean, which is what lets a regime change in the
+    covariance be fitted at all.
+    """
+    target = np.array([0.5, 0.3, 0.2])
+    dates = pd.date_range('2020-03-31', periods=12, freq='QE')
+    early = np.tile([0.2, 0.2, 0.6], (8, 1))
+    recent = np.tile(target, (4, 1))
+    path = pd.DataFrame(np.vstack([early, recent]), index=dates, columns=TICKERS)
+    monkeypatch.setattr(risk_budgeting_module, 'rolling_risk_budgeting', lambda **_kwargs: path)
+    mean_error_flat, max_error_flat, _ = risk_budgeting_module._evaluate_inverse_risk_budget(
+        prices=make_prices(), given_weights=target, covar_dict=make_covar_dict(),
+        risk_budgets=np.full(3, 1.0 / 3.0), ewma_span=None)
+    mean_error_ewma, max_error_ewma, _ = risk_budgeting_module._evaluate_inverse_risk_budget(
+        prices=make_prices(), given_weights=target, covar_dict=make_covar_dict(),
+        risk_budgets=np.full(3, 1.0 / 3.0), ewma_span=1.0)
+    assert max_error_flat > risk_budgeting_module._INVERSE_MAX_WEIGHT_TOL
+    assert mean_error_ewma == pytest.approx(0.0, abs=1e-12)
+    assert max_error_ewma == pytest.approx(0.0, abs=1e-12)
+
+
+def test_inverse_fit_threads_the_span_into_every_evaluation(monkeypatch) -> None:
+    """the seed, the fixed point and the SLSQP check all average with the caller's span"""
+    seen = []
+
+    def record_evaluation(**kwargs):
+        """Capture the span each evaluation was asked to average with."""
+        seen.append(kwargs['ewma_span'])
+        return 0.0, 0.0, kwargs['given_weights']
+
+    monkeypatch.setattr(risk_budgeting_module, '_evaluate_inverse_risk_budget', record_evaluation)
+    budgets = solve_for_risk_budgets_from_given_weights(
+        prices=make_prices(), given_weights=pd.Series([0.5, 0.3, 0.2], index=TICKERS),
+        covar_dict=make_covar_dict(), ewma_span=7.0)
+    assert seen == [7.0]
+    assert budgets.sum() == pytest.approx(1.0, abs=1e-10)
+    with pytest.raises(ValueError, match='ewma_span must be None or a finite positive number'):
+        solve_for_risk_budgets_from_given_weights(
+            prices=make_prices(), given_weights=pd.Series([0.5, 0.3, 0.2], index=TICKERS),
+            covar_dict=make_covar_dict(), ewma_span=0.0)
+
+
+# A hedging asset: 'defensive' moves against both risky assets strongly enough that its
+# marginal risk contribution at 50/30/20 is negative. The matrix is positive definite.
+HEDGE_CORR = np.array([[1.00, 0.50, -0.80],
+                       [0.50, 1.00, -0.80],
+                       [-0.80, -0.80, 1.00]])
+HEDGE_COVAR_DF = pd.DataFrame(np.outer(VOLS, VOLS) * HEDGE_CORR, index=TICKERS, columns=TICKERS)
+
+
+def test_a_target_held_by_a_hedging_asset_is_refused_before_the_search(monkeypatch) -> None:
+    """no non-negative budget holds an asset whose marginal risk contribution is negative
+
+    The reference is the identity w_i (Σw)_i = b_i σ_p²: with (Σw)_i < 0 at the target on
+    every date the required budget is negative, so the fit is refused before any solve.
+    """
+    given = pd.Series([0.5, 0.3, 0.2], index=TICKERS)
+    marginal = HEDGE_COVAR_DF.to_numpy() @ given.to_numpy()
+    assert np.linalg.eigvalsh(HEDGE_COVAR_DF.to_numpy()).min() > 0.0
+    assert marginal[2] < 0.0 and marginal[0] > 0.0 and marginal[1] > 0.0
+
+    def fail_if_called(**kwargs):
+        """The search must not start on a target that cannot be reproduced."""
+        raise AssertionError('the fixed point must not run on an irreproducible target')
+
+    monkeypatch.setattr(risk_budgeting_module, '_solve_inverse_risk_budget_fixed_point',
+                        fail_if_called)
+    covar_dict = {date: HEDGE_COVAR_DF for date in REBALANCING_DATES}
+    with pytest.raises(ValueError, match='marginal risk contribution of defensive') as excinfo:
+        solve_for_risk_budgets_from_given_weights(
+            prices=make_prices(), given_weights=given, covar_dict=covar_dict)
+    message = str(excinfo.value)
+    assert 'defensive: target weight 0.2000' in message
+    assert 'negative on 100% of dates' in message
+    assert 'growth' not in message.split('targeted assets with')[1]
+
+
+def test_a_hedging_asset_on_most_dates_warns_but_the_fit_proceeds(monkeypatch) -> None:
+    """a negative contribution on a majority of dates is a warning, not a refusal
+
+    The averaged contribution is positive because the short span weights the recent
+    dates, where the asset carries risk; the early dates, where it hedges, are the
+    majority and are reported.
+    """
+    given = pd.Series([0.5, 0.3, 0.2], index=TICKERS)
+    dates = pd.date_range('2020-03-31', periods=8, freq='QE')
+    covar_dict = {date: (HEDGE_COVAR_DF if k < 5 else COVAR_DF) for k, date in enumerate(dates)}
+    seen = {}
+
+    def converged_fixed_point(**kwargs):
+        """Record the seed and report immediate convergence."""
+        seen['seed'] = kwargs['initial_risk_budgets']
+        return kwargs['initial_risk_budgets'], 0.0, 0.0, 1
+
+    monkeypatch.setattr(risk_budgeting_module, '_solve_inverse_risk_budget_fixed_point',
+                        converged_fixed_point)
+    with pytest.warns(UserWarning, match='defensive has a negative marginal risk contribution'):
+        budgets = solve_for_risk_budgets_from_given_weights(
+            prices=make_prices(), given_weights=given, covar_dict=covar_dict, ewma_span=1.0)
+    assert budgets.sum() == pytest.approx(1.0, abs=1e-10)
+    assert np.all(seen['seed'] > 0.0)
+    # the diagnostics table reports the hedging asset and the share of dates
+    diagnostics = risk_budgeting_module._target_risk_contributions(
+        given_weights=given, covar_dict=covar_dict, ewma_span=1.0)
+    assert diagnostics.loc['defensive', 'negative_rc_share'] == pytest.approx(5 / 8)
+    assert diagnostics.loc['defensive', 'average_rc'] > 0.0
+    assert diagnostics.loc['growth', 'negative_rc_share'] == 0.0
+    assert '62% of dates' in risk_budgeting_module._describe_target_risk_contributions(diagnostics)
+
+
+def test_a_clean_target_reports_no_hedging_asset() -> None:
+    """the description says so when every targeted asset carries risk on every date"""
+    diagnostics = risk_budgeting_module._target_risk_contributions(
+        given_weights=pd.Series([0.5, 0.3, 0.2], index=TICKERS),
+        covar_dict=make_covar_dict(), ewma_span=None)
+    assert (diagnostics['negative_rc_share'] == 0.0).all()
+    assert diagnostics['average_rc'].sum() == pytest.approx(1.0, abs=1e-12)
+    description = risk_budgeting_module._describe_target_risk_contributions(diagnostics)
+    assert description == 'no targeted asset has a negative marginal risk contribution on any date'
+
+
 def test_one_weighted_asset_in_a_larger_panel_has_the_only_budget() -> None:
     """the 0.99 generic cap does not make a one-leg allocation infeasible"""
     budgets = solve_for_risk_budgets_from_given_weights(
@@ -459,8 +627,10 @@ def test_failed_inverse_calibration_raises_instead_of_returning_zeros(monkeypatc
 
     monkeypatch.setattr(risk_budgeting_module, 'minimize',
                         lambda *args, **kwargs: _Failed())
-    with pytest.raises(RuntimeError, match='No zero risk-budget fallback was returned'):
+    with pytest.raises(RuntimeError, match='No zero risk-budget fallback was returned') as excinfo:
         solve_for_risk_budgets_from_given_weights(
             prices=make_prices(),
             given_weights=pd.Series([0.5, 0.3, 0.2], index=TICKERS),
             covar_dict=make_covar_dict())
+    assert str(excinfo.value).endswith(
+        'no targeted asset has a negative marginal risk contribution on any date')

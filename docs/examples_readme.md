@@ -8,7 +8,7 @@ myst:
 
 # Examples
 
-*[author / affiliation / date — placeholder]*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-05-17](https://github.com/ArturSepp/OptimalPortfolios/commit/703689ff9ca14faf1e5cdb8fcac222d092705405)*
 
 Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).

@@ -46,7 +46,7 @@ import numpy as np
 import pandas as pd
 import qis as qis
 from scipy.optimize import minimize
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 from optimalportfolios.utils.portfolio_funcs import (compute_portfolio_variance,
                                                      compute_portfolio_risk_contribution_outputs)
@@ -369,6 +369,128 @@ def risk_budget_objective(x, pars) -> float:
 
 _INVERSE_MEAN_WEIGHT_TOL = 1e-4
 _INVERSE_MAX_WEIGHT_TOL = 1e-3
+# A targeted asset whose marginal risk contribution is negative on at least this share of
+# covariance dates is flagged before the fit: it hedges the target portfolio there, and a
+# non-negative budget cannot hold it on those dates.
+_NEGATIVE_RC_SHARE_WARNING = 0.5
+# Default exponential span, in rebalances, for averaging the rolling weight path in the
+# inverse fit: alpha = 2 / (span + 1), so 12 quarterly rebalances is a 3-year span.
+INVERSE_EWMA_SPAN = 12
+
+
+def average_rolling_weights(weights: pd.DataFrame,
+                            ewma_span: Optional[float] = INVERSE_EWMA_SPAN
+                            ) -> pd.Series:
+    """average a rolling weight path over its rebalance dates
+
+    With ``ewma_span=None`` the result is the simple mean over dates. Otherwise it is the
+    last value of the ``qis.compute_ewm`` recursion seeded at the first row
+    (``InitType.X0``), with lambda = 1 - 2 / (ewma_span + 1):
+
+        m_0 = w_0,   m_t = lambda m_{t-1} + (1 - lambda) w_t,   w̄ = m_{T-1}
+
+    so row t carries weight (1 - lambda) lambda^(T-1-t) and the first row the residual
+    lambda^(T-1); the recursion is causal at every step. Rows are taken in index order, so
+    the path must be sorted by date; a NaN row is carried forward by the recursion (qis
+    ``NanBackfill.FFILL``).
+
+    Args:
+        weights: Weight path indexed by rebalance date, one column per asset.
+        ewma_span: Exponential span in rebalances, or None for the simple mean.
+
+    Returns:
+        Averaged weights indexed by the columns of ``weights``.
+
+    Raises:
+        ValueError: If ``ewma_span`` is not None and not a finite positive number.
+    """
+    if ewma_span is None:
+        return weights.mean(axis=0)
+    if not np.isfinite(ewma_span) or ewma_span <= 0.0:
+        raise ValueError(
+            f"ewma_span must be None or a finite positive number, got {ewma_span!r}")
+    if weights.isna().all().all():
+        return weights.mean(axis=0)  # nothing to seed the recursion with: all-NaN, as the mean
+    return qis.compute_ewm(data=weights, span=ewma_span, init_type=qis.InitType.X0).iloc[-1]
+
+
+def _target_risk_contributions(given_weights: pd.Series,
+                               covar_dict: Dict[pd.Timestamp, pd.DataFrame],
+                               ewma_span: Optional[float]
+                               ) -> pd.DataFrame:
+    """risk-contribution shares of the target weights over the covariance dates
+
+    On each date the shares are RC_i / Σ_j RC_j with RC_i = w_i (Σ w)_i at the target
+    weights w, so a negative share is a negative marginal risk contribution (Σ w)_i: the
+    asset reduces the risk of the target portfolio on that date.
+
+    Args:
+        given_weights: Target weights, indexed by asset.
+        covar_dict: Covariance matrices keyed by rebalance date in order.
+        ewma_span: Span for the averaged share, as in the inverse fit; None for the mean.
+
+    Returns:
+        Frame indexed by asset with ``target_weight``, ``average_rc`` (the share averaged
+        over dates with ``average_rolling_weights``) and ``negative_rc_share`` (the
+        fraction of dates with a negative share).
+    """
+    shares = {}
+    for date, pd_covar in covar_dict.items():
+        rc = qis.compute_portfolio_risk_contributions(w=given_weights, covar=pd_covar)
+        shares[date] = rc / np.nansum(rc)
+    shares_by_date = pd.DataFrame.from_dict(shares, orient='index').sort_index()
+    shares_by_date = shares_by_date.reindex(columns=given_weights.index)
+    return pd.DataFrame({
+        'target_weight': given_weights,
+        'average_rc': average_rolling_weights(weights=shares_by_date, ewma_span=ewma_span),
+        'negative_rc_share': shares_by_date.lt(0.0).mean(axis=0)})
+
+
+def _describe_target_risk_contributions(diagnostics: pd.DataFrame) -> str:
+    """one line per targeted asset with a negative marginal contribution on any date"""
+    flagged = diagnostics[(diagnostics['target_weight'] > 0.0)
+                          & (diagnostics['negative_rc_share'] > 0.0)]
+    if flagged.empty:
+        return 'no targeted asset has a negative marginal risk contribution on any date'
+    flagged = flagged.sort_values('negative_rc_share', ascending=False)
+    lines = [f"{asset}: target weight {row.target_weight:.4f}, averaged risk contribution "
+             f"{row.average_rc:+.4f}, marginal contribution negative on "
+             f"{100.0 * row.negative_rc_share:.0f}% of dates"
+             for asset, row in flagged.iterrows()]
+    return 'targeted assets with a negative marginal risk contribution: ' + '; '.join(lines)
+
+
+def _check_target_risk_contributions(diagnostics: pd.DataFrame) -> None:
+    """reject targets no non-negative budget can reproduce; warn on a hedging asset
+
+    A risk-budget portfolio holds asset i only where (Σ w)_i > 0, because
+    w_i (Σ w)_i = b_i σ_p² with b_i ≥ 0. A targeted asset whose averaged risk
+    contribution at the target weights is not positive therefore has no admissible
+    budget, and the fit is refused before it starts. An asset negative on a majority
+    of dates is only warned about: the averaged path may still reach the target.
+
+    Raises:
+        ValueError: If a targeted asset has a non-positive averaged risk contribution.
+    """
+    targeted = diagnostics[diagnostics['target_weight'] > 0.0]
+    not_reproducible = targeted[targeted['average_rc'] <= 0.0]
+    if not not_reproducible.empty:
+        raise ValueError(
+            'inverse risk-budget calibration cannot reproduce the given weights: the '
+            'marginal risk contribution of '
+            f"{', '.join(map(str, not_reproducible.index))} at the target weights is not "
+            'positive on average, so no non-negative risk budget holds the asset there '
+            '(the asset hedges the target portfolio). '
+            + _describe_target_risk_contributions(diagnostics))
+    hedging = targeted[targeted['negative_rc_share'] >= _NEGATIVE_RC_SHARE_WARNING]
+    if not hedging.empty:
+        warnings.warn(
+            'inverse risk-budget calibration: '
+            f"{', '.join(map(str, hedging.index))} has a negative marginal risk "
+            'contribution at the target weights on at least '
+            f'{100.0 * _NEGATIVE_RC_SHARE_WARNING:.0f}% of dates; a non-negative budget '
+            'cannot hold it on those dates and the fit may not converge. '
+            + _describe_target_risk_contributions(diagnostics))
 
 
 def _scale_to_box_simplex(values: np.ndarray,
@@ -400,15 +522,17 @@ def _scale_to_box_simplex(values: np.ndarray,
 def _evaluate_inverse_risk_budget(prices: pd.DataFrame,
                                   given_weights: np.ndarray,
                                   covar_dict: Dict[pd.Timestamp, pd.DataFrame],
-                                  risk_budgets: np.ndarray
+                                  risk_budgets: np.ndarray,
+                                  ewma_span: Optional[float] = INVERSE_EWMA_SPAN
                                   ) -> tuple[float, float, np.ndarray]:
-    """Return errors and average weights for candidate risk budgets."""
+    """Return errors and averaged weights for candidate risk budgets."""
     risk_budget_weights = rolling_risk_budgeting(
         prices=prices,
         covar_dict=covar_dict,
         risk_budget=pd.Series(risk_budgets, index=prices.columns),
         constraints=Constraints(is_long_only=True))
-    average_weights = risk_budget_weights.mean(axis=0).reindex(prices.columns).to_numpy()
+    average_weights = average_rolling_weights(
+        weights=risk_budget_weights, ewma_span=ewma_span).reindex(prices.columns).to_numpy()
     if not np.all(np.isfinite(average_weights)):
         return np.inf, np.inf, average_weights
     errors = np.abs(average_weights - given_weights)
@@ -422,7 +546,8 @@ def _solve_inverse_risk_budget_fixed_point(
         initial_risk_budgets: np.ndarray,
         lower_bounds: np.ndarray,
         upper_bounds: np.ndarray,
-        max_iterations: int = 50
+        max_iterations: int = 50,
+        ewma_span: Optional[float] = INVERSE_EWMA_SPAN
         ) -> tuple[np.ndarray, float, float, int]:
     """Calibrate inverse budgets with bounded multiplicative fixed-point updates."""
     risk_budgets = _scale_to_box_simplex(
@@ -437,7 +562,8 @@ def _solve_inverse_risk_budget_fixed_point(
             prices=prices,
             given_weights=given_weights,
             covar_dict=covar_dict,
-            risk_budgets=risk_budgets)
+            risk_budgets=risk_budgets,
+            ewma_span=ewma_span)
         if mean_error < best_mean_error:
             best_budgets = risk_budgets.copy()
             best_mean_error = mean_error
@@ -465,20 +591,38 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
                                               given_weights: pd.Series,
                                               covar_dict: Dict[pd.Timestamp, pd.DataFrame],
                                               min_risk_budget: float = 1e-4,
-                                              max_risk_budget: float = 0.99
+                                              max_risk_budget: float = 0.99,
+                                              ewma_span: Optional[float] = INVERSE_EWMA_SPAN
                                               ) -> pd.Series:
     """
     Inverse risk budgeting: find budgets that reproduce given target weights.
 
+    The candidate budgets are run through the long-only rolling risk-budget solve over
+    ``covar_dict`` and the resulting weight path is averaged over its rebalance dates with
+    ``average_rolling_weights``; the budgets are fitted so that this average matches
+    ``given_weights``. With the default ``ewma_span`` the average is exponentially
+    weighted towards the most recent rebalances, so the fit reproduces the targets in the
+    current covariance regime; ``ewma_span=None`` fits the simple mean over the whole path.
+
     Args:
         prices: Asset price panel.
         given_weights: Target portfolio weights to reproduce.
-        covar_dict: Pre-computed covariance matrices.
+        covar_dict: Pre-computed covariance matrices, keyed by rebalance date in order.
         min_risk_budget: Lower bound on each non-zero risk budget.
         max_risk_budget: Upper bound on each risk budget.
+        ewma_span: Exponential span, in rebalances, for averaging the weight path;
+            None for the simple mean.
 
     Returns:
         Optimal risk budgets as pd.Series. Budgets sum to 1.
+
+    Raises:
+        ValueError: If ``given_weights`` are invalid, ``ewma_span`` is not positive, or a
+            targeted asset has a non-positive averaged marginal risk contribution at the
+            target weights, which no non-negative budget can reproduce.
+        RuntimeError: If no candidate reproduces the averaged target weights. The message
+            lists the targeted assets whose marginal risk contribution is negative on some
+            dates, with the share of such dates.
     """
     # Single-asset universe: the only budget consistent with sum=1 is 1.0
     # on the lone asset. Skip the solver — it would be infeasible under the
@@ -502,17 +646,19 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
             prices=prices,
             given_weights=given_weights_np,
             covar_dict=covar_dict,
-            risk_budgets=risk_budgets)
+            risk_budgets=risk_budgets,
+            ewma_span=ewma_span)
         return mean_error
 
+    # Risk contributions of the targets, averaged the same way as the fit: the seed of the
+    # search, and the check that a non-negative budget can hold every targeted asset.
+    rc_diagnostics = _target_risk_contributions(
+        given_weights=given_weights, covar_dict=covar_dict, ewma_span=ewma_span)
+    _check_target_risk_contributions(rc_diagnostics)
     is_use_avg_rc = True
     if is_use_avg_rc:
-        portfolio_rc = {}
-        for date, pd_covar in covar_dict.items():
-            rc = qis.compute_portfolio_risk_contributions(w=given_weights, covar=pd_covar)
-            portfolio_rc[date] = rc / np.nansum(rc)
-        avg_portfolio_rc = pd.DataFrame.from_dict(portfolio_rc, orient='index').mean(axis=0)
-        x0 = np.nan_to_num(avg_portfolio_rc.to_numpy(), nan=0.0, posinf=0.0, neginf=0.0)
+        x0 = np.nan_to_num(rc_diagnostics['average_rc'].to_numpy(),
+                           nan=0.0, posinf=0.0, neginf=0.0)
     else:
         # Not covered, and unreachable as written: `is_use_avg_rc` is assigned the literal True
         # directly above and is never reassigned anywhere in the package, so this branch is dead.
@@ -532,7 +678,8 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
             covar_dict=covar_dict,
             initial_risk_budgets=x0,
             lower_bounds=min_rbs,
-            upper_bounds=max_rbs))
+            upper_bounds=max_rbs,
+            ewma_span=ewma_span))
     if (fixed_point_mean_error <= _INVERSE_MEAN_WEIGHT_TOL
             and fixed_point_max_error <= _INVERSE_MAX_WEIGHT_TOL):
         logger.info(
@@ -554,7 +701,8 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
             prices=prices,
             given_weights=given_weights_np,
             covar_dict=covar_dict,
-            risk_budgets=risk_budgets)
+            risk_budgets=risk_budgets,
+            ewma_span=ewma_span)
         slsqp_error_text = (
             f"SLSQP mean/max weight errors were {mean_error:.6g}/{max_error:.6g}")
         if (mean_error <= _INVERSE_MEAN_WEIGHT_TOL
@@ -565,4 +713,5 @@ def solve_for_risk_budgets_from_given_weights(prices: pd.DataFrame,
         "inverse risk-budget calibration failed: fixed-point best mean/max weight errors "
         f"were {fixed_point_mean_error:.6g}/{fixed_point_max_error:.6g}; "
         f"SLSQP status={res.status}: {res.message}; {slsqp_error_text}. "
-        "No zero risk-budget fallback was returned.")
+        "No zero risk-budget fallback was returned. "
+        + _describe_target_risk_contributions(rc_diagnostics))

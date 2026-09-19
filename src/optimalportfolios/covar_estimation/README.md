@@ -8,7 +8,7 @@ myst:
 
 # Covariance Estimation Module
 
-*[author / affiliation / date — placeholder]*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2025-08-10](https://github.com/ArturSepp/OptimalPortfolios/commit/2057085d2fc04fe8b6876f05ad513a358797f2c3)*
 
 Contributor documentation for [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).

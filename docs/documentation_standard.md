@@ -8,7 +8,7 @@ myst:
 
 # Documentation standard
 
-*[author / affiliation / date — placeholder]*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-14](https://github.com/ArturSepp/OptimalPortfolios/commit/bdcbc350a2699eb6cf8769f9af7c15aba38c545a)*
 
 This standard applies to [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
@@ -45,8 +45,8 @@ retain their own format. Build output and autosummary templates are not authorin
 
 ## Copyable methodology template
 
-Replace topic placeholders with actual content. Keep the author placeholder until the author
-supplies the details. Record a tested version only after checking the imported package and source:
+Replace topic placeholders with actual content. Use the confirmed author and repository-date
+format below. Record a tested version only after checking the imported package and source:
 an installed release, checkout metadata, and uncommitted code can describe different states.
 
 ````markdown
@@ -59,7 +59,7 @@ myst:
 
 # [Method or analytical concept]
 
-*[author / affiliation / date — placeholder]*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [YYYY-MM-DD](https://github.com/ArturSepp/OptimalPortfolios/commit/COMMIT_SHA)*
 
 Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
@@ -100,7 +100,19 @@ Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios
 - [OptimalPortfolios software citation](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 ````
 
-For supplied details use `*Author: [name] / Affiliation: [affiliation] / Date: YYYY-MM-DD*`.
+The confirmed author is [Artur Sepp](https://github.com/ArturSepp). Link that name in the
+byline; omit affiliation unless supplied. **First recorded** is the earliest available
+repository commit date for the article, following renames and earlier RST versions where
+applicable. Link the date to that commit, using its full hash. Git history is evidence of
+repository inclusion, not the exact time a page was pushed to GitHub or publicly posted.
+
+Inspect `git log --follow --format="%H %cI" -- docs/<page>.md` and the previous source path.
+Use the earliest entry's committer date, preserving its recorded timezone's calendar date.
+For a Markdown conversion, also check its former RST source so reformatting does not reset
+the article's date. Do not substitute the date of this edit, a release, a file modification,
+or an analytics run. For a new page with no committed history, use
+`*Author: [Artur Sepp](https://github.com/ArturSepp)*` until a repository date is available.
+
 Author date, last substantive review date, data cutoff, and image generation time are separate
 facts. A build must not silently claim that a method was reviewed again.
 

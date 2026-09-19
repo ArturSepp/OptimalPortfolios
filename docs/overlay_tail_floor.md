@@ -8,7 +8,7 @@ myst:
 
 # Overlay optimisation with a fixed core and linear side constraints
 
-*[author / affiliation / date — placeholder]*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-07-12](https://github.com/ArturSepp/OptimalPortfolios/commit/a5d635895e0e05cfa64966e1c5f77ff9ab255afe)*
 
 Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).

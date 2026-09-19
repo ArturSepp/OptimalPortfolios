@@ -187,8 +187,11 @@ and has no reference left in this repository. To run the examples, install what 
 
 - Follow [docs/documentation_standard.md](docs/documentation_standard.md) for reader-facing
   methodology and guides. Articles use the prescribed eight-section structure; utility pages
-  use the shorter form. Include the visible author/affiliation/date placeholder and the
-  OptimalPortfolios project and citation links. Do not invent author details or review dates.
+  use the shorter form. Use Artur Sepp as the confirmed author, linked to
+  `https://github.com/ArturSepp`. Label the date `First recorded` and link to the article's
+  earliest available Git commit, following renames and earlier RST sources. This is a
+  repository-history date, not a verified public posting or review date. Omit unavailable
+  dates and affiliations; do not restore author placeholders. Retain project/citation links.
 - Cite qis and factorlasso where their calculations are used. Preserve ownership: portfolio
   construction here, generic factor estimation in factorlasso, analytics/reporting in qis.
   The public constraints contract remains in `docs/constraints.md`.

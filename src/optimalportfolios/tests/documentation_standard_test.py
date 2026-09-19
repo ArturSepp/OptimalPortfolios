@@ -19,6 +19,9 @@ assert CHECKER_PATH.is_file(), 'A checkout must contain its documentation checke
 CHECKER = runpy.run_path(str(CHECKER_PATH))
 CHECK = CHECKER['check_document']
 PROJECT = 'https://github.com/ArturSepp/OptimalPortfolios'
+AUTHOR_BYLINE = '*Author: [Artur Sepp](https://github.com/ArturSepp)*'
+DATED_BYLINE = (AUTHOR_BYLINE[:-1] + ' / First recorded: [2026-09-06]('
+                + PROJECT + '/commit/' + 'a' * 40 + ')*')
 HEADER = f'''---
 myst:
   html_meta:
@@ -28,7 +31,7 @@ myst:
 
 # An analytical method
 
-*[author / affiliation / date — placeholder]*
+{DATED_BYLINE}
 
 Implemented in [OptimalPortfolios]({PROJECT}).
 Software citation: [CITATION.cff]({PROJECT}/blob/main/CITATION.cff).
@@ -80,7 +83,7 @@ def test_complete_article_and_short_utility_page_pass():
 
 
 @pytest.mark.parametrize('before,after,message', [
-    ('*[author / affiliation / date — placeholder]*', '', 'byline'),
+    (DATED_BYLINE, '', 'byline'),
     (f'[OptimalPortfolios]({PROJECT})', 'OptimalPortfolios', 'project repository'),
     (f'[CITATION.cff]({PROJECT}/blob/main/CITATION.cff)', 'CITATION.cff', 'CITATION.cff'),
     ('    description: >-\n      An analytical method implemented in OptimalPortfolios.',
@@ -323,3 +326,28 @@ def test_source_all_cannot_be_combined_with_narrower_selections(inventory_tree):
 def test_all_repository_sources_pass_without_claiming_adoption():
     """Check pending prose too, retaining the installed-wheel module-level skip."""
     assert CHECKER['main'](['--source-all']) == 0
+
+
+@pytest.mark.parametrize('byline', [
+    AUTHOR_BYLINE,
+    DATED_BYLINE,
+    DATED_BYLINE.replace('2026-09-06', '2024-02-29'),
+])
+def test_linked_author_and_evidenced_date_pass(byline):
+    """Allow confirmed authors without inventing an affiliation or uncommitted date."""
+    assert not CHECK(HEADER.replace(DATED_BYLINE, byline), methodology=False)
+
+
+@pytest.mark.parametrize('byline', [
+    '*[author / affiliation / date — placeholder]*',
+    AUTHOR_BYLINE.replace('[Artur Sepp](https://github.com/ArturSepp)', 'Artur Sepp'),
+    AUTHOR_BYLINE.replace('https://github.com/', 'https://example.com/'),
+    DATED_BYLINE.replace('2026-09-06', '2026-02-30'),
+    DATED_BYLINE.replace('a' * 40, 'abcdef'),
+    DATED_BYLINE.replace(PROJECT + '/commit/', PROJECT + '/tree/'),
+    DATED_BYLINE.replace(PROJECT + '/commit/', 'https://example.com/commit/'),
+])
+def test_invalid_author_metadata_is_rejected(byline):
+    """Reject placeholders, broken attribution and dates without a valid evidence link."""
+    issues = CHECK(HEADER.replace(DATED_BYLINE, byline), methodology=False)
+    assert any('byline' in issue.message for issue in issues)

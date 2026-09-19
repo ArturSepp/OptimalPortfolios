@@ -66,6 +66,7 @@ from optimalportfolios.optimization.risk_allocation import (
     wrapper_risk_budgeting,
     opt_risk_budgeting,
     solve_for_risk_budgets_from_given_weights,
+    average_rolling_weights,
 )
 
 # saa solvers

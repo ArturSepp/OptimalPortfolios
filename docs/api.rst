@@ -1,7 +1,7 @@
 API reference
 =============
 
-*[author / affiliation / date — placeholder]*
+Author: `Artur Sepp <https://github.com/ArturSepp>`_ / First recorded: `2026-08-09 <https://github.com/ArturSepp/OptimalPortfolios/commit/254505981ed43e0dbc12a19c98c034d351b8d059>`_.
 
 Documentation for `OptimalPortfolios <https://github.com/ArturSepp/OptimalPortfolios>`_.
 Software citation: `CITATION.cff
