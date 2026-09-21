@@ -929,7 +929,7 @@ wheels = [
 
 [[package]]
 name = "factorlasso"
-version = "0.18.0"
+version = "0.19.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cvxpy", version = "1.7.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -944,9 +944,9 @@ dependencies = [
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
     { name = "scipy", version = "1.18.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/01/61/9b54234e4ecf52b04899d8aaa773329467d6f57e9b300b643b3e101d5c8a/factorlasso-0.18.0.tar.gz", hash = "sha256:655bce0333423e826baab6f0cf0a07ea8a6b06a65677eea07c551921fe732da1", size = 275419, upload-time = "2026-09-01T05:13:00.081Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8c/8c/f7dd653a1a39759b3df117d6e639a429e621f75c4cce655bb3e5f43f0358/factorlasso-0.19.0.tar.gz", hash = "sha256:24e5c73c62e78c1989767de2b5560870eb5154cdb64977352d70dbe0d957aec6", size = 298615, upload-time = "2026-09-20T20:19:05.653Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/01/7c/225e214a5734e3cd28c9395f0e9571159b3f5f6145f772855d60caf59f10/factorlasso-0.18.0-py3-none-any.whl", hash = "sha256:d47f0acee5ac9ce56dc8c1c87231a2fc333b1fb500944323548c684e1bc4ef3d", size = 153250, upload-time = "2026-09-01T05:12:58.383Z" },
+    { url = "https://files.pythonhosted.org/packages/8a/7a/cb8eef4717095eea6b5e5eb6df8dde50ac20571d3274632db8656b0e80f4/factorlasso-0.19.0-py3-none-any.whl", hash = "sha256:0b5f6cfc34a42c994eec4f8829ff977a513300cd2be6436a111ca3aa17075d4e", size = 161984, upload-time = "2026-09-20T20:19:04.056Z" },
 ]
 
 [[package]]

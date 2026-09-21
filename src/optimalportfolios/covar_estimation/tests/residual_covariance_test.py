@@ -197,3 +197,11 @@ def test_empirical_fit_keeps_unfitted_zero_risk_asset_independent(panels):
     pd.testing.assert_frame_equal(covariance.loc[["a", "b", "c"], ["a", "b", "c"]],
                                   fitted.get_y_covar(residual_type="empirical"))
     assert covariance.loc["future"].eq(0).all()
+
+
+@requires_prepared
+def test_empirical_fit_rejects_universe_without_positive_residual_risk(panels):
+    """A wholly unfitted output universe cannot define empirical correlation."""
+    prices, returns = panels
+    with pytest.raises(ValueError, match="positive residual risk"):
+        estimator().fit_current_factor_covars(prices, returns, assets=["future"])

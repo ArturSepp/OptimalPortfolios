@@ -382,7 +382,7 @@ common-period returns reside in `residual_metadata` and `residual_correlation`, 
 filtering and Excel save/load. Decomposition getters still default to orthogonal residuals;
 shared estimator methods use the configured `residual_type` and `residual_corr_weight`.
 
-This opt-in requires FactorLasso's correlation API (development version 0.19.0.dev2).
+This opt-in requires FactorLasso's correlation API (version 0.19.0 or newer).
 Older supported releases continue to serve the default orthogonal mode. Correlation is the only
 prepared empirical state. Configure its grid and span during preparation; covariance retrieval
 has no span or annualisation arguments. Rebuild earlier development covariance snapshots from
