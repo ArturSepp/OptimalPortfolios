@@ -18,23 +18,10 @@ permissions:
   contents: read
 
 on:
-  # Live dependency drift belongs to a run whose cause names it. Push and pull-request runs use
-  # uv.lock exactly; this daily run exercises the newest versions allowed by pyproject.toml.
+  workflow_call:
   schedule:
     - cron: "37 3 * * *"
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
-
-# A push to a PR branch makes the run already in flight for that branch pointless: this workflow
-# is 14 matrix jobs plus the wheel job, so cancelling it is the single largest saving available
-# here. Runs on `main` are
-# keyed per-ref and never cancel each other.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -305,6 +292,8 @@ jobs:
         run: python .github/scripts/check_stack_imports.py
 
   lowest-dependencies:
+    # Floor resolution is compatibility maintenance, not a verdict on an unrelated edit.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     name: lowest direct dependencies (Python 3.10)
     runs-on: ubuntu-latest
     timeout-minutes: 45

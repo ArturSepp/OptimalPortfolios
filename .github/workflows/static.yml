@@ -28,16 +28,7 @@ permissions:
 # those seconds by deleting the early signal on exactly the branches that need it. Suppressing the
 # duplicate on the `pull_request` side is not an alternative at any price; see above.
 on:
-  push:
-  pull_request:
-
-# Keyed on `github.workflow`, so this workflow's runs only ever cancel each other -- the CI
-# matrix in ci.yml is a separate group and is unaffected. Superseding a run matters more now
-# that every branch push starts one, so cancellation is keyed on the ref rather than the event:
-# any branch cancels its own in-flight run, and only `main` keeps every run it starts.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  workflow_call:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
