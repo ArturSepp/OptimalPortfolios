@@ -1,0 +1,156 @@
+{
+  "version": "1.0.0",
+  "repository": "OptimalPortfolios",
+  "package": "optimalportfolios",
+  "python_environment": "OptimalPortfolios312",
+  "lint_paths": [
+    "src/optimalportfolios/*.py",
+    "tests/*.py",
+    "examples/*.py"
+  ],
+  "preflight": [
+    {
+      "paths": [
+        "docs/*.md",
+        "tools/check_docs.py",
+        "tools/docs_inventory.json"
+      ],
+      "command": [
+        "tools/check_docs.py",
+        "--source-all"
+      ]
+    },
+    {
+      "paths": [
+        "notebooks/*",
+        "examples/getting_started/*",
+        ".github/scripts/check_quickstart_notebook.py"
+      ],
+      "command": [
+        ".github/scripts/check_quickstart_notebook.py"
+      ]
+    }
+  ],
+  "docs": [
+    [
+      "-m",
+      "sphinx",
+      "-E",
+      "-W",
+      "--keep-going",
+      "-b",
+      "html",
+      "docs",
+      "{output}/html"
+    ]
+  ],
+  "tests": [
+    [
+      "-m",
+      "pytest",
+      "-o",
+      "cache_dir={output}/pytest"
+    ]
+  ],
+  "remote_only": [
+    "supported Python/OS matrix",
+    "clean core/extras environments",
+    "wheel and sdist",
+    "coverage gates",
+    "dependency floors and live compatibility",
+    "online link and security health"
+  ],
+  "required_jobs": [
+    "preflight",
+    "ci",
+    "docs",
+    "static",
+    "examples",
+    "replication",
+    "references"
+  ],
+  "workflow_inventory": {
+    "ci": {
+      "test": [
+        "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "Install uv and Python ${{ matrix.python-version }}",
+        "Sync the environment",
+        "Assert optional modules are absent",
+        "Run the test suite"
+      ],
+      "wheel": [
+        "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "Install uv and Python",
+        "Build the wheel from the source distribution",
+        "Assert the wheel carries its test packages and fixture",
+        "Install the wheel into a clean environment",
+        "Run the shipped suite against the installed wheel"
+      ],
+      "stack-policy": [
+        "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d",
+        "Exercise policy regressions",
+        "Check stack imports and optional adapter isolation"
+      ],
+      "lowest-dependencies": [
+        "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d",
+        "Keep the test environment outside the checkout",
+        "Resolve a fresh lowest-direct test environment",
+        "Record installed versions",
+        "Check optional dependencies stay outside package-root import",
+        "Test declared dependency floors without live provider credentials"
+      ]
+    },
+    "docs": {
+      "docs": [
+        "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "Keep documentation state outside the checkout",
+        "Install uv and Python",
+        "Sync documentation environment",
+        "Check every human-authored source",
+        "Test source-checker regressions",
+        "Check displayed-image registration",
+        "Verify published preview integrity",
+        "Generate and validate the complete offline analytics bundle",
+        "Build HTML with warnings as errors",
+        "Check documentation links",
+        "Confirm the reviewed lockfile was preserved"
+      ]
+    },
+    "static": {
+      "static": [
+        "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "Install uv",
+        "Check stack invariants and the F family",
+        "Check docstring coverage"
+      ]
+    },
+    "examples": {
+      "offline": [
+        "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "Install uv and Python",
+        "Sync the core environment",
+        "Check the Colab notebook mirror",
+        "Run the offline examples"
+      ],
+      "network": [
+        "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "Install uv and Python",
+        "Sync with the data extra",
+        "Run the network examples",
+        "Summarise"
+      ]
+    },
+    "replication": {
+      "replication": [
+        "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "Install uv and Python 3.12",
+        "Install the locked test environment",
+        "Verify the public CMA snapshot"
+      ]
+    }
+  },
+  "audit": true,
+  "consumers": []
+}

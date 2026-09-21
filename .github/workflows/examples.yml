@@ -23,19 +23,10 @@ permissions:
 # Triggers are unconditional rather than filtered on `examples/**`, because an example breaks far
 # more often from a change to the package it calls than from an edit to itself.
 on:
-  push:
-  pull_request:
-  # For the network lane below, which is the only job that reads this trigger. Offset from the
-  # hour because scheduled jobs queue heavily at :00, and an hour after audit.yml so the two do
-  # not contend. GitHub runs `schedule` only from the default branch, and disables it after 60
-  # days of repository inactivity.
+  workflow_call:
   schedule:
-    - cron: "41 5 * * *"
+    - cron: "47 4 * * *"
   workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true

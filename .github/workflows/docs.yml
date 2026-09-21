@@ -5,39 +5,12 @@ permissions:
   contents: read
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - README.md
-      - AGENTS.md
-      - CITATION.cff
-      - docs/**
-      - examples/**
-      - tools/**
-      - .readthedocs.yaml
-      - pyproject.toml
-      - uv.lock
-      - src/optimalportfolios/**
-      - .github/workflows/docs.yml
-  pull_request:
-    branches: [main]
-    paths:
-      - README.md
-      - AGENTS.md
-      - CITATION.cff
-      - docs/**
-      - examples/**
-      - tools/**
-      - .readthedocs.yaml
-      - pyproject.toml
-      - uv.lock
-      - src/optimalportfolios/**
-      - .github/workflows/docs.yml
+  workflow_call:
+    inputs:
+      online:
+        type: boolean
+        default: false
   workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -80,11 +53,10 @@ jobs:
         run: >-
           uv run --no-sync python -m tools.docs_analytics.run --all
           --output-root "$AGENT_LOCAL_ROOT/bundle"
-      - name: Build HTML with warnings as errors
-        run: >-
-          uv run --no-sync python -m sphinx -E -W --keep-going
-          -b html docs "$AGENT_LOCAL_ROOT/html"
+      - name: Build documentation with the shared profile
+        run: uv run --no-sync python .github/oss_checks.py docs --working-tree --output-dir "$RUNNER_TEMP/oss-docs"
       - name: Check documentation links
+        if: inputs.online || github.event_name == 'workflow_dispatch'
         run: >-
           uv run --no-sync python -m sphinx -E -W
           -D linkcheck_workers=1 -b linkcheck docs "$AGENT_LOCAL_ROOT/linkcheck"

@@ -28,25 +28,10 @@ permissions:
 # disables it after 60 days with no repository activity. `workflow_dispatch` is here so the gate
 # can always be run by hand, including from a branch.
 on:
+  workflow_call:
   schedule:
     - cron: "17 4 * * *"
-  push:
-    branches: [main]
-    paths:
-      - pyproject.toml
-      - uv.lock
-      - .github/workflows/audit.yml
-  pull_request:
-    branches: [main]
-    paths:
-      - pyproject.toml
-      - uv.lock
-      - .github/workflows/audit.yml
   workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
