@@ -30,7 +30,7 @@
     "docs/covariance_estimators.md": {
       "form": "methodology",
       "status": "pending",
-      "review": "M4b source migration, six executable examples, independent EWMA/factor-component references, future-input timing checks, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-14. The normalized-return timing and factor demeaning-field limitations are documented without numerical changes. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+      "review": "M4b source migration, six executable examples, independent EWMA/factor-component references, future-input timing checks, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-14. The normalized-return timing and factor demeaning-field limitations are documented without numerical changes. Common-frequency residual correlation revised on 2026-09-20 to preserve current MATF variances: source checks, independent numerical and correlation-state tests, installed equity parity and strict Sphinx HTML pass. Visual checks of this addition in Sphinx, GitHub and VS Code remain pending; this page is not yet fully adopted."
     },
     "docs/documentation_standard.md": {
       "form": "utility",

@@ -13,115 +13,32 @@ myst:
 This standard applies to [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
-Methodology articles define a concept, state its assumptions, explain its calculation, and then
-describe its implementation. Use neutral, encyclopedic prose and primary references. Distinguish
-published methods from package conventions. This standard adapts the documentation approach
-used for [qis](https://github.com/ArturSepp/QuantInvestStrats) to portfolio
-construction and the existing OptimalPortfolios documentation tree.
+This is the OP supplement to the
+[shared OSS documentation standard](https://github.com/ArturSepp/ArturSepp/blob/main/docs/documentation_standard.md).
+The shared guide owns common authoring rules; this page retains OptimalPortfolios-specific
+contracts, examples, analytics tooling, and verification. General changes belong in the
+shared guide. Existing section headings remain available for incoming links.
 
 ## Article structure
 
-A methodology article has one H1, the visible byline and software links, a short definition-led
-introduction, and these H2 sections in order. Use descriptive H3 subsections within them.
-Preserve existing section links with explicit anchors when reorganizing an article.
-
-| Section | Required content |
-|---|---|
-| Overview | The question the method answers, its scope, and when to use it. |
-| Inputs, notation, and assumptions | Symbols, dimensions, units, frequencies, data policies, and timing. |
-| Methodology | Definitions and equations, followed by their interpretation. |
-| Worked example | Fixed inputs, a small result, and what it establishes. |
-| Implementation in optimalportfolios | Verified public entry points, input/output contract, runnable source, and verification context. |
-| Interpretation and limitations | Assumptions, numerical qualifications, edge cases, and unsuitable uses. |
-| See also | A small set of useful related methods and guides. |
-| References | Verified primary method sources and the software citation. |
-
-Installation, quickstart, navigation, architecture, package comparison, gallery, and contributor
-guides use a **utility form**. They retain one H1, the byline, project/citation links, a useful page
-description, and a logical heading hierarchy. They do not need empty methodology sections.
-
+Use the shared [article structure](https://github.com/ArturSepp/ArturSepp/blob/main/docs/documentation_standard.md#user-content-article-structure),
+with the H2 `Implementation in optimalportfolios`. Utility pages use the shared shorter form.
 The human-maintained API entry remains `api.rst`; its autosummary inventory and generated pages
 retain their own format. Build output and autosummary templates are not authoring locations.
 
 ## Copyable methodology template
 
-Replace topic placeholders with actual content. Use the confirmed author and repository-date
-format below. Record a tested version only after checking the imported package and source:
-an installed release, checkout metadata, and uncommitted code can describe different states.
-
-````markdown
----
-myst:
-  html_meta:
-    description: >-
-      [A factual description of the method and its OptimalPortfolios implementation.]
----
-
-# [Method or analytical concept]
-
-*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [YYYY-MM-DD](https://github.com/ArturSepp/OptimalPortfolios/commit/COMMIT_SHA)*
-
-Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
-
-[Define the concept and its scope.]
-
-## Overview
-
-[Purpose and appropriate uses.]
-
-## Inputs, notation, and assumptions
-
-[Symbols, units, dimensions, frequencies, missing-data policy, and timing.]
-
-## Methodology
-
-[Introduce each equation and explain its meaning.]
-
-## Worked example
-
-[Fixed inputs, result, and interpretation. Label synthetic data explicitly.]
-
-## Implementation in optimalportfolios
-
-[Verified entry points, ordinary source links, reproduction command, and source/version context.]
-
-## Interpretation and limitations
-
-[Assumptions, numerical qualifications, and edge cases.]
-
-## See also
-
-[Related methods and guides.]
-
-## References
-
-- [Verified author, year, title, venue, and DOI or primary-source link.]
-- [OptimalPortfolios software citation](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
-````
-
-The confirmed author is [Artur Sepp](https://github.com/ArturSepp). Link that name in the
-byline; omit affiliation unless supplied. **First recorded** is the earliest available
-repository commit date for the article, following renames and earlier RST versions where
-applicable. Link the date to that commit, using its full hash. Git history is evidence of
-repository inclusion, not the exact time a page was pushed to GitHub or publicly posted.
-
-Inspect `git log --follow --format="%H %cI" -- docs/<page>.md` and the previous source path.
-Use the earliest entry's committer date, preserving its recorded timezone's calendar date.
-For a Markdown conversion, also check its former RST source so reformatting does not reset
-the article's date. Do not substitute the date of this edit, a release, a file modification,
-or an analytics run. For a new page with no committed history, use
-`*Author: [Artur Sepp](https://github.com/ArturSepp)*` until a repository date is available.
-
-Author date, last substantive review date, data cutoff, and image generation time are separate
-facts. A build must not silently claim that a method was reviewed again.
+Copy the [shared methodology template](https://github.com/ArturSepp/ArturSepp/blob/main/docs/documentation_standard.md#user-content-copyable-methodology-template),
+replace `PACKAGE` with `optimalportfolios` and `REPOSITORY` with `OptimalPortfolios`, and supply
+the topic. Keep the MyST description front matter. Follow the shared
+[authorship and date rules](https://github.com/ArturSepp/ArturSepp/blob/main/docs/documentation_standard.md#user-content-authorship-and-dates);
+a new uncommitted page uses the linked Artur Sepp byline without a date.
 
 ## Portable mathematics
 
-Supported targets are GitHub Markdown, MyST/Sphinx, and VS Code's built-in Markdown preview.
-Use `$...$` inline and standalone `$$` delimiters with blank lines around display blocks.
-MyST's `dollarmath` extension is enabled in the site configuration. Basic CommonMark viewers may
-show TeX source; retain ordinary links to the rendered site for readers using those viewers.
+Follow the shared [portable mathematics rules](https://github.com/ArturSepp/ArturSepp/blob/main/docs/documentation_standard.md#user-content-portable-mathematics).
+MyST's `dollarmath` extension is enabled in the OP site configuration. Inspect Sphinx,
+GitHub Markdown, and VS Code separately; keep unperformed viewer checks pending.
 
 For example, let $b_i$ denote a nonnegative fractional risk budget for asset $i$ among $n$ assets:
 
@@ -140,32 +57,12 @@ $$
 $$
 ````
 
-- Keep semantic equations out of code spans and code fences. Fences are appropriate for showing
-  source, as above. Do not use fenced `{math}` directives or `{math}`/`{eq}` roles in article prose.
-- Use supported `aligned`, `cases`, or matrix environments inside a display block where needed.
-  Split long expressions at meaningful equalities; avoid custom macros.
-- Define symbols before use, with one meaning per symbol and explicit time subscripts.
-- Link to ordinary section headings instead of renderer-specific equation labels.
-- Keep complex formulas out of table cells. Use `\lvert`/`\rvert` and `\lVert`/`\rVert` for
-  absolute values and norms where a raw pipe could be parsed as a table separator.
-- Write currency as `USD 100` or `CHF 100` near math. Do not globally unescape source files.
-- Check dimensions, signs, timing, covariance scale and normalization against the owning
-  implementation. A delimiter repair must not alter mathematical meaning.
-
-The underlying syntax is documented by
-[GitHub](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/writing-mathematical-expressions),
-[MyST](https://myst-parser.readthedocs.io/en/latest/syntax/math.html), and
-[VS Code](https://code.visualstudio.com/docs/languages/markdown#_math-formula-rendering).
-Inspect each target independently; a successful Sphinx build does not establish GitHub or
-VS Code rendering. Record unperformed viewer checks as pending.
+Check dimensions, signs, timing, covariance scale and normalization against the owning
+implementation. A delimiter repair must not alter mathematical meaning.
 
 ## References and implementation ownership
 
-Cite methodological claims where they appear and give full bibliographic entries under
-References. Verify author names, dates, titles and DOIs against primary sources. A paper
-citation does not identify the software used to produce an exhibit; a software citation does
-not replace a mathematical source. Link to `CITATION.cff` rather than repeating release metadata.
-
+Apply the shared [reference and example rules](https://github.com/ArturSepp/ArturSepp/blob/main/docs/documentation_standard.md#user-content-references-and-executable-examples).
 Every article cites OptimalPortfolios. If calculations use
 [qis](https://github.com/ArturSepp/QuantInvestStrats) or
 [factorlasso](https://github.com/ArturSepp/FactorLasso), identify that delegation and include the

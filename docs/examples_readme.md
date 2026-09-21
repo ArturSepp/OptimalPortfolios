@@ -55,7 +55,7 @@ scenario; it does not execute every branch of a `Locals` enum.
 ### Unattended execution lanes
 
 The [classifier and runner](../.github/scripts/run_examples.py) derives lanes from Python imports.
-Its current inventory is **7 offline, 19 network, 26 unattended examples**. The **4 local-data workflows** ending in
+Its current inventory is **8 offline, 19 network, 27 unattended examples**. The **4 local-data workflows** ending in
 `*_local.py` are excluded. Each catalogue row below states the classification.
 
 ```console
@@ -148,6 +148,7 @@ constraints differ; consult the [optimization guide](optimization_module_readme.
 | [Maximum Sharpe](../examples/solvers/max_sharpe.py) | Network | `rolling_maximize_portfolio_sharpe` with estimated means and covariance. |
 | [Maximum diversification](../examples/solvers/max_diversification.py) | Network | `rolling_maximise_diversification`; compare portfolio diversification under constraints. |
 | [Risk budgeting](../examples/solvers/risk_budgeting.py) | Network | `rolling_risk_budgeting` with equal or specified risk budgets. |
+| [JuneX inverse risk-budget boundary](../examples/solvers/inverse_risk_budget_bonds.py) | Offline | Synthetic JuneX-shaped inputs show why negative average marginal risk contribution or persistent overweight at a tiny positive budget requires fixing the affected central weight before fitting the other risk budgets. No private inputs are required. |
 | [CARA mixture](../examples/solvers/carra_mixture.py) | Network | `rolling_maximize_cara_mixture`; expected utility under a fitted Gaussian mixture. The filename retains the historical `carra` spelling. |
 | [Alpha with a tracking-error budget](../examples/solvers/tracking_error.py) | Network | `rolling_maximise_alpha_over_tre`; alpha allocation relative to an ETF benchmark. |
 | [Alpha with a target return](../examples/solvers/target_return.py) | Network | `rolling_maximise_alpha_with_target_return`; includes yield and price-return inputs from its own loader. |

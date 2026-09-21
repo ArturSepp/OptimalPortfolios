@@ -46,7 +46,7 @@ factor decomposition containers
 | $s$, $\lambda$ | Span in return observations and corresponding decay factor. |
 | $a$, $S_t$ | Observations per year and unannualized EWMA covariance state. |
 | $\Sigma_y$, $\Sigma_x$ | Annual asset covariance and annual factor covariance, in fractional return-squared units. |
-| $\beta$, $D$ | Dimensionless asset-by-factor loadings and diagonal annual residual variances. |
+| $\beta$, $D$ | Dimensionless asset-by-factor loadings and annual residual covariance (diagonal by default). |
 | `rebalancing_freq` | Frequency for reported estimation dates; it does not set return sampling frequency. |
 
 Inputs use ordered `DatetimeIndex` rows and unique, consistently ordered instrument labels.
@@ -127,10 +127,11 @@ $$
 $$
 
 For $N$ assets and $M$ factors, loadings have shape $N\times M$, factor covariance is
-$M\times M$, and the result is $N\times N$. The residual term is diagonal: this model does not
-estimate an unrestricted cross-asset residual covariance.
+$M\times M$, and the result is $N\times N$. The default `residual_type="orthogonal"`
+uses the stored residual diagonal. The optional `"empirical"` choice scales common-period
+EWMA correlations by current MATF residual standard deviations. Both assume zero factor-residual cross covariance.
 
-`residual_var_weight` scales only the residual diagonal. Its default is 1.0; zero gives the
+`residual_var_weight` scales the selected residual covariance, including its off-diagonal entries. Its default is 1.0; zero gives the
 factor-only component. Very small values that the assembly treats as numerically close to zero
 also omit that term. Lowering residual weight changes the model rather than merely its display.
 
@@ -149,12 +150,60 @@ that call uses `demean=True` internally. Regression demeaning is controlled sepa
 `LassoModel.demean`. This is a verified implementation qualification, not an interchangeable
 configuration choice.
 
+### Common-frequency empirical residual covariance
+
+Configure `FactorCovarEstimator(residual_type="empirical", lasso_model=...)` to prepare
+empirical residual risk during fitting. Native frequency, beta span, periods per year and
+stored/raw residual multiplier are captured per asset. The default common grid is the lowest
+native frequency: monthly plus quarterly funds use QE. Monthly-only equities retain ME.
+`residual_covar_freq` and `residual_covar_span` optionally override the grid and its EWMA span.
+
+For asset $i$, let $A_i$ denote native observations per year and let $s_i$ denote its stored
+residual multiplier. The adapter currently uses $s_i=A_i$. Recover raw log residuals before
+summing complete native intervals $k$ within common period $q$:
+
+$$
+R_{i,q}=\sum_{k\in q}\frac{\widetilde r_{i,k}}{s_i},
+\qquad C=\operatorname{EWMAcorr}(R_q),
+\qquad D_t=S_t[(1-\rho)I+\rho C]S_t.
+$$
+
+Here $S_t$ contains current MATF annual residual standard deviations and
+$\rho$ is `residual_corr_weight` in $[0,1]$ (default 1). FactorLasso subtracts a causal
+EWMA mean and discards its initial zero deviation before estimating correlation.
+Constant positive per-asset scaling and common EWMA weight normalization cancel.
+Native annual-alpha residuals remain unchanged. The residual diagonal is exactly the
+current MATF diagonal at every retention setting; zero retention reproduces orthogonal
+risk. `residual_var_weight` separately multiplies the entire residual block.
+Factor covariance may continue using weekly returns and span 52.
+
+The default common span is the lowest-frequency bucket's beta span: monthly span 36 plus
+quarterly span 12 gives quarterly span 12. If an explicitly coarser grid is chosen, native
+decay is raised to the ratio of native to common periods per year. An explicit residual span
+counts common periods. Different beta spans within the lowest-frequency bucket require an
+explicit choice.
+
+Leading and trailing incomplete periods are excluded; an internal gap fails. Intervals must
+nest exactly: weekly residuals straddling quarter ends need reconstruction from finer source
+returns. Business-day panels use the declared pandas business-day calendar. There is no
+prorating, interpolation or extrapolation. Annualisation assumes linear time scaling; summation
+provides observed quarterly covariances, but cannot establish absence of serial dependence.
+
+A prepared estimate records its last complete observation period and its actual fit/availability
+date. A historical quarter is never assigned a covariance fitted using later betas. The rolling
+producer holds its last prepared correlation between complete common-period updates,
+while current betas, factor covariance and MATF residual variances continue to update. The input data
+must themselves represent the information available at the fit date; publication lags and NAV
+revisions remain the data producer's responsibility.
+
 ### Current fits and rolling dates
 
 A current EWMA fit uses the complete supplied price panel. In the ordinary factor current-fit
 path, `estimation_date` can be only a metadata label; it does not automatically truncate all
 inputs. Slice factor prices and every return bucket through the intended date before calling
-a current fit, including when supplying an external factor covariance.
+a current fit, including when supplying an external factor covariance. Empirical current
+fits truncate all fitted inputs at `estimation_date`; a supplied factor covariance must still
+respect that cutoff.
 
 `fit_rolling_factor_covars` explicitly slices each input through every scheduled date and uses
 an expanding history. An active cluster smoother is delegated to FactorLasso over the causal
@@ -323,6 +372,22 @@ The reported `residuals` panel is scaled by each bucket's annualization factor, 
 without subtracting a fitted intercept. It is not the original per-observation residual series;
 do not recompute $D$ as its ordinary sample variance.
 
+With prepared empirical correlation, `rolling.get_y_covars(residual_type="empirical",
+residual_corr_weight=0.5)` retains half of the empirical off-diagonal dependence. It needs
+no getter span or scale. Optional `dates` queries select the latest available fitted snapshot;
+retrieval does not refit. `rolling.get_residual_covars(residual_type="empirical")` assembles
+annual residual matrices at every fit/query date. `rolling.get_residual_correlations()` returns
+unique dimensionless correlation vintages keyed by availability date. Native metadata and
+common-period returns reside in `residual_metadata` and `residual_correlation`, and survive
+filtering and Excel save/load. Decomposition getters still default to orthogonal residuals;
+shared estimator methods use the configured `residual_type` and `residual_corr_weight`.
+
+This opt-in requires FactorLasso's correlation API (development version 0.19.0.dev2).
+Older supported releases continue to serve the default orthogonal mode. Correlation is the only
+prepared empirical state. Configure its grid and span during preparation; covariance retrieval
+has no span or annualisation arguments. Rebuild earlier development covariance snapshots from
+source returns and saved betas. No migration or legacy covariance compatibility layer is provided.
+
 The fitting helper mutates the supplied `LassoModel` with the final bucket's fitted state.
 Use returned decomposition objects for combined results. Reusing a configuration object does
 not make its attached last-fit state a record of all buckets or dates.
@@ -358,7 +423,8 @@ cluster choices, residual scaling and return normalization all change the risk m
 For historical use, preserve data as it was known on each date. Direct ordinary EWMA passed a
 future-price perturbation check in the included fixture; the optional normalized-return rolling
 path did not, owing to full-array volatility initialization. Rolling factor fitting explicitly
-truncates inputs, while a current fit requires the caller's cutoff. A long warm-up may reduce
+truncates inputs; an orthogonal current fit without factor references requires the caller's
+explicit input cutoff. A long warm-up may reduce
 initialization effects but does not prove that look-ahead is absent.
 
 The factor adapter's demeaning-field limitation and the direct normalized-return timing

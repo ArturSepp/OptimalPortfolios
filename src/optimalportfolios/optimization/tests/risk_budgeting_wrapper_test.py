@@ -79,6 +79,28 @@ def test_a_budget_given_as_a_dict_is_the_same_as_one_given_as_a_series() -> None
     pd.testing.assert_series_equal(from_dict, from_series)
 
 
+def test_zero_budget_asset_with_fixed_weight_stays_in_full_covariance() -> None:
+    """A pinned hedging sleeve has zero budget but retains its target weight."""
+    target = pd.Series([0.5, 0.3, 0.2], index=TICKERS)
+    covariance = pd.DataFrame(
+        np.outer(VOLS, VOLS) * np.array([[1.0, 0.5, -0.8],
+                                         [0.5, 1.0, -0.8],
+                                         [-0.8, -0.8, 1.0]]),
+        index=TICKERS, columns=TICKERS)
+    minimum = pd.Series(0.0, index=TICKERS)
+    maximum = pd.Series(1.0, index=TICKERS)
+    minimum.loc['defensive'] = target.loc['defensive']
+    maximum.loc['defensive'] = target.loc['defensive']
+    budgets = pd.Series([0.65, 0.35, 0.0], index=TICKERS)
+    actual = wrapper_risk_budgeting(
+        pd_covar=covariance, constraints=Constraints(
+            is_long_only=True, min_weights=minimum, max_weights=maximum),
+        risk_budget=budgets)
+    assert actual.sum() == pytest.approx(1.0, abs=1e-8)
+    assert actual['defensive'] == pytest.approx(0.2, abs=1e-8)
+    assert actual['growth'] > 0.0 and actual['balanced'] > 0.0
+
+
 def test_a_budget_that_is_neither_a_dict_nor_a_series_is_rejected() -> None:
     """the type is named in the error, because a bare list would otherwise index by position
 
@@ -438,6 +460,14 @@ def test_average_rolling_weights_matches_the_explicit_recursion() -> None:
     # None restores the simple mean
     pd.testing.assert_series_equal(average_rolling_weights(weights=path, ewma_span=None),
                                    path.mean(axis=0))
+    pd.testing.assert_series_equal(average_rolling_weights(weights=path), path.mean(axis=0))
+
+
+def test_average_rolling_weights_all_nan_path_preserves_missing_values() -> None:
+    """An explicitly requested EWMA cannot seed a wholly missing path."""
+    path = pd.DataFrame(np.nan, index=REBALANCING_DATES, columns=TICKERS)
+    pd.testing.assert_series_equal(average_rolling_weights(path, ewma_span=12.0),
+                                   path.mean(axis=0))
 
 
 @pytest.mark.parametrize('span', [0.0, -1.0, np.inf, np.nan])
@@ -493,6 +523,24 @@ def test_inverse_fit_threads_the_span_into_every_evaluation(monkeypatch) -> None
             covar_dict=make_covar_dict(), ewma_span=0.0)
 
 
+def test_inverse_fit_defaults_to_the_simple_mean(monkeypatch) -> None:
+    """The omitted span averages the entire rolling path, not its recent dates."""
+    seen = []
+
+    def record_evaluation(**kwargs):
+        """Record the averaging policy used by the forward fit."""
+        seen.append(kwargs['ewma_span'])
+        return 0.0, 0.0, kwargs['given_weights']
+
+    monkeypatch.setattr(risk_budgeting_module, '_evaluate_inverse_risk_budget', record_evaluation)
+    solve_for_risk_budgets_from_given_weights(
+        prices=make_prices(),
+        given_weights=pd.Series([0.5, 0.3, 0.2], index=TICKERS),
+        covar_dict=make_covar_dict(),
+    )
+    assert seen == [None]
+
+
 # A hedging asset: 'defensive' moves against both risky assets strongly enough that its
 # marginal risk contribution at 50/30/20 is negative. The matrix is positive definite.
 HEDGE_CORR = np.array([[1.00, 0.50, -0.80],
@@ -501,31 +549,367 @@ HEDGE_CORR = np.array([[1.00, 0.50, -0.80],
 HEDGE_COVAR_DF = pd.DataFrame(np.outer(VOLS, VOLS) * HEDGE_CORR, index=TICKERS, columns=TICKERS)
 
 
-def test_a_target_held_by_a_hedging_asset_is_refused_before_the_search(monkeypatch) -> None:
-    """no non-negative budget holds an asset whose marginal risk contribution is negative
-
-    The reference is the identity w_i (Σw)_i = b_i σ_p²: with (Σw)_i < 0 at the target on
-    every date the required budget is negative, so the fit is refused before any solve.
-    """
+def test_a_hedging_target_is_pinned_without_changing_the_central_weights(monkeypatch) -> None:
+    """Fit the original target, with the hedging asset fixed and budgeted at zero."""
     given = pd.Series([0.5, 0.3, 0.2], index=TICKERS)
     marginal = HEDGE_COVAR_DF.to_numpy() @ given.to_numpy()
     assert np.linalg.eigvalsh(HEDGE_COVAR_DF.to_numpy()).min() > 0.0
     assert marginal[2] < 0.0 and marginal[0] > 0.0 and marginal[1] > 0.0
+    seen = {}
 
-    def fail_if_called(**kwargs):
-        """The search must not start on a target that cannot be reproduced."""
-        raise AssertionError('the fixed point must not run on an irreproducible target')
+    def capture_fixed_point(**kwargs):
+        """Capture the original objective and its pinned zero-budget boundary."""
+        seen.update(kwargs)
+        return np.array([0.65, 0.35, 0.0]), 0.0, 0.0, 1
 
     monkeypatch.setattr(risk_budgeting_module, '_solve_inverse_risk_budget_fixed_point',
-                        fail_if_called)
+                        capture_fixed_point)
     covar_dict = {date: HEDGE_COVAR_DF for date in REBALANCING_DATES}
-    with pytest.raises(ValueError, match='marginal risk contribution of defensive') as excinfo:
-        solve_for_risk_budgets_from_given_weights(
+    with pytest.warns(UserWarning, match='defensive.*fixed at 0.2000.*set to 0'):
+        budgets = solve_for_risk_budgets_from_given_weights(
             prices=make_prices(), given_weights=given, covar_dict=covar_dict)
-    message = str(excinfo.value)
-    assert 'defensive: target weight 0.2000' in message
-    assert 'negative on 100% of dates' in message
-    assert 'growth' not in message.split('targeted assets with')[1]
+    np.testing.assert_allclose(seen['given_weights'], given, atol=1e-12)
+    assert seen['fixed_weights'].to_dict() == {'defensive': 0.2}
+    assert seen['lower_bounds'][2] == 0.0
+    assert seen['upper_bounds'][2] == 0.0
+    assert budgets['defensive'] == 0.0
+    pd.testing.assert_series_equal(given, pd.Series([0.5, 0.3, 0.2], index=TICKERS))
+
+
+def test_pinned_hedge_inverse_fit_matches_independent_kkt_reference() -> None:
+    """The active budgets reproduce the unchanged target under the full covariance."""
+    target = pd.Series([0.5, 0.3, 0.2], index=TICKERS)
+    covar_dict = {date: HEDGE_COVAR_DF for date in REBALANCING_DATES}
+    with pytest.warns(UserWarning, match='defensive.*fixed at 0.2000'):
+        budgets = solve_for_risk_budgets_from_given_weights(
+            prices=make_prices(), given_weights=target, covar_dict=covar_dict)
+    marginal = HEDGE_COVAR_DF.to_numpy() @ target.to_numpy()
+    contribution = target.to_numpy() * marginal
+    share = contribution / contribution.sum()
+    # On the free sleeve, KKT gives b_i = RCshare_i + nu*w_i. The common
+    # multiplier nu makes the active budgets sum to one while the pinned
+    # hedging asset carries its genuine (negative) contribution separately.
+    reference = share[:2] + (share[2] / target.iloc[:2].sum()) * target.iloc[:2].to_numpy()
+    np.testing.assert_allclose(budgets.iloc[:2], reference, atol=1e-3)
+    assert budgets['defensive'] == 0.0
+    lower = pd.Series([0.0, 0.0, 0.2], index=TICKERS)
+    upper = pd.Series([1.0, 1.0, 0.2], index=TICKERS)
+    forward = risk_budgeting_module.rolling_risk_budgeting(
+        prices=make_prices(), covar_dict=covar_dict, risk_budget=budgets,
+        constraints=Constraints(is_long_only=True, min_weights=lower, max_weights=upper))
+    np.testing.assert_allclose(forward, np.tile(target, (len(forward), 1)), atol=1e-3)
+
+
+def test_explicit_fixed_asset_keeps_positive_mrc_target_with_zero_budget(monkeypatch) -> None:
+    """An explicit pin supplements the automatic negative-average-RC rule."""
+    target = pd.Series([0.5, 0.3, 0.2], index=TICKERS)
+    seen = {}
+
+    def capture_fixed_point(**kwargs):
+        """Capture the pin and budget bounds before numerical fitting."""
+        seen.update(kwargs)
+        return np.array([0.6, 0.4, 0.0]), 0.0, 0.0, 1
+
+    monkeypatch.setattr(risk_budgeting_module, '_solve_inverse_risk_budget_fixed_point',
+                        capture_fixed_point)
+    budgets = solve_for_risk_budgets_from_given_weights(
+        prices=make_prices(), given_weights=target, covar_dict=make_covar_dict(),
+        fixed_weight_assets=('defensive',))
+    assert seen['fixed_weights'].to_dict() == {'defensive': 0.2}
+    np.testing.assert_allclose(seen['given_weights'], target)
+    assert seen['upper_bounds'][2] == 0.0
+    assert budgets['defensive'] == 0.0
+
+
+def test_explicit_positive_mrc_pin_matches_full_covariance_kkt_reference() -> None:
+    """The explicit pin preserves its weight while active budgets fit normally."""
+    target = pd.Series([0.5, 0.3, 0.2], index=TICKERS)
+    budgets = solve_for_risk_budgets_from_given_weights(
+        prices=make_prices(), given_weights=target, covar_dict=make_covar_dict(),
+        fixed_weight_assets=('defensive',))
+    marginal = COVAR @ target.to_numpy()
+    share = target.to_numpy() * marginal / (target.to_numpy() @ marginal)
+    reference = share[:2] + (share[2] / target.iloc[:2].sum()) * target.iloc[:2].to_numpy()
+    np.testing.assert_allclose(budgets.iloc[:2], reference, atol=1e-3)
+    assert budgets['defensive'] == 0.0
+    lower = pd.Series([0.0, 0.0, 0.2], index=TICKERS)
+    upper = pd.Series([1.0, 1.0, 0.2], index=TICKERS)
+    forward = risk_budgeting_module.rolling_risk_budgeting(
+        prices=make_prices(), covar_dict=make_covar_dict(), risk_budget=budgets,
+        constraints=Constraints(is_long_only=True, min_weights=lower, max_weights=upper))
+    np.testing.assert_allclose(forward, np.tile(target, (len(forward), 1)), atol=1e-3)
+
+
+def make_junex_boundary_case() -> tuple[pd.DataFrame, pd.Series,
+                                        Dict[pd.Timestamp, pd.DataFrame]]:
+    """Compress JuneX's central mix into four sleeves and three covariance regimes."""
+    assets = ['JuneX equity', 'JuneX other', 'LUATTRUU Index', 'LD19TRUU Index']
+    target = pd.Series([0.65, 0.198925, 0.1253, 0.025775], index=assets)
+    vol = np.array([0.20, 0.12, 0.06, 0.07])
+    covars = {}
+    for k, equity_ld_corr in enumerate((-0.3, 0.2, 0.2)):
+        corr = np.array([
+            [1.0, 0.4, -0.7, equity_ld_corr],
+            [0.4, 1.0, -0.2, 0.0],
+            [-0.7, -0.2, 1.0, 0.0],
+            [equity_ld_corr, 0.0, 0.0, 1.0],
+        ])
+        date = pd.Timestamp('2020-01-01') + pd.Timedelta(days=k)
+        covars[date] = pd.DataFrame(np.outer(vol, vol) * corr,
+                                    index=assets, columns=assets)
+    prices = pd.DataFrame(1.0, index=list(covars), columns=assets)
+    return prices, target, covars
+
+
+def test_junex_boundary_automatically_pins_two_distinct_failure_modes() -> None:
+    """A positive-average-RC asset can still be infeasible at a positive budget."""
+    prices, target, covars = make_junex_boundary_case()
+    diagnostics = risk_budgeting_module._target_risk_contributions(target, covars, None)
+    assert diagnostics.loc['LUATTRUU Index', 'average_rc'] < 0.0
+    assert diagnostics.loc['LD19TRUU Index', 'average_rc'] > 0.0
+    assert diagnostics.loc['LD19TRUU Index', 'negative_rc_share'] > 0.0
+
+    with pytest.warns(UserWarning) as caught:
+        budgets = solve_for_risk_budgets_from_given_weights(
+            prices=prices, given_weights=target, covar_dict=covars,
+            min_risk_budget=1e-6)
+
+    assert budgets['LUATTRUU Index'] == 0.0
+    assert budgets['LD19TRUU Index'] == 0.0
+    assert budgets.sum() == pytest.approx(1.0)
+    assert any('LD19TRUU Index' in str(item.message) and 'boundary' in str(item.message)
+               for item in caught)
+
+    minimum = pd.Series(0.0, index=target.index)
+    maximum = pd.Series(1.0, index=target.index)
+    minimum.loc[['LUATTRUU Index', 'LD19TRUU Index']] = target.loc[
+        ['LUATTRUU Index', 'LD19TRUU Index']]
+    maximum.loc[minimum[minimum > 0.0].index] = minimum[minimum > 0.0]
+    forward = risk_budgeting_module.rolling_risk_budgeting(
+        prices=prices, covar_dict=covars, risk_budget=budgets,
+        constraints=Constraints(is_long_only=True, min_weights=minimum, max_weights=maximum))
+    np.testing.assert_allclose(forward.mean().to_numpy(), target.to_numpy(), atol=1e-3)
+
+
+def test_boundary_probe_does_not_require_the_optimizer_to_reach_the_floor(
+        monkeypatch) -> None:
+    """A forward floor probe catches the JuneX jump after an incomplete fit."""
+    prices, target, covars = make_junex_boundary_case()
+    original_fixed_point = risk_budgeting_module._solve_inverse_risk_budget_fixed_point
+    unfinished = np.array([0.91, 0.089, 0.0, 0.001])
+
+    def stop_before_the_floor(**kwargs):
+        """Emulate an inverse search ending before LD19TRUU reaches its bound."""
+        if 'LD19TRUU Index' in kwargs['fixed_weights'].index:
+            return original_fixed_point(**kwargs)
+        mean_error, max_error, _ = risk_budgeting_module._evaluate_inverse_risk_budget(
+            prices=kwargs['prices'], given_weights=kwargs['given_weights'],
+            covar_dict=kwargs['covar_dict'], risk_budgets=unfinished,
+            ewma_span=kwargs['ewma_span'], fixed_weights=kwargs['fixed_weights'])
+        return unfinished, mean_error, max_error, 1
+
+    class _Unfinished:
+        """Represent a numerically incomplete SLSQP search."""
+        success = False
+        status = 9
+        message = 'Iteration limit reached'
+        x = unfinished
+
+    monkeypatch.setattr(risk_budgeting_module, '_solve_inverse_risk_budget_fixed_point',
+                        stop_before_the_floor)
+    monkeypatch.setattr(risk_budgeting_module, 'minimize',
+                        lambda *args, **kwargs: _Unfinished())
+    with pytest.warns(UserWarning, match='budget boundary'):
+        budgets = solve_for_risk_budgets_from_given_weights(
+            prices=prices, given_weights=target, covar_dict=covars,
+            min_risk_budget=1e-12)
+    assert budgets['LD19TRUU Index'] == 0.0
+
+
+def test_boundary_screen_requires_overweight_and_a_budget_at_its_floor() -> None:
+    """A low risk budget alone does not justify pinning an otherwise fitted asset."""
+    target = pd.Series([0.5, 0.3, 0.2], index=TICKERS)
+    candidates = risk_budgeting_module._inverse_boundary_overweights(
+        budgets=np.array([0.7, 1e-4, 0.2999]),
+        average_weights=np.array([0.44, 0.36, 0.20]),
+        target_weights=target,
+        lower_bounds=np.full(3, 1e-4),
+        active=pd.Series(True, index=TICKERS))
+    assert candidates.to_dict() == {'balanced': pytest.approx(0.06)}
+
+    not_at_floor = risk_budgeting_module._inverse_boundary_overweights(
+        budgets=np.array([0.7, 0.001, 0.299]),
+        average_weights=np.array([0.44, 0.36, 0.20]),
+        target_weights=target,
+        lower_bounds=np.full(3, 1e-4),
+        active=pd.Series(True, index=TICKERS))
+    assert not_at_floor.empty
+
+
+def test_floor_probe_skips_an_infeasible_remaining_budget_cap() -> None:
+    """A positive floor cannot be forced if the other budget caps cannot sum to one."""
+    prices, target, covars = make_junex_boundary_case()
+    probe = risk_budgeting_module._probe_inverse_budget_floor(
+        asset='LD19TRUU Index', budgets=np.array([0.5, 0.0, 0.0, 0.5]),
+        lower_bounds=np.array([1e-4, 0.0, 0.0, 1e-4]),
+        upper_bounds=np.array([0.99, 0.0, 0.0, 0.99]),
+        prices=prices, given_weights=target.to_numpy(), covar_dict=covars,
+        ewma_span=None, fixed_weights=target[['JuneX other', 'LUATTRUU Index']])
+    assert probe is None
+
+
+def test_failed_boundary_trial_still_raises_instead_of_zeroing_a_budget(monkeypatch) -> None:
+    """A floor-overweight candidate is fixed only after a validated complete refit."""
+    prices, target, covars = make_junex_boundary_case()
+    real_evaluation = risk_budgeting_module._evaluate_inverse_risk_budget
+
+    def reject_trial(**kwargs):
+        """Emulate a second irreproducible sleeve after the LD19TRUU trial pin."""
+        if 'LD19TRUU Index' in kwargs['fixed_weights'].index:
+            return 0.05, 0.10, np.array([0.55, 0.298925, 0.1253, 0.025775])
+        return real_evaluation(**kwargs)
+
+    monkeypatch.setattr(risk_budgeting_module, '_evaluate_inverse_risk_budget', reject_trial)
+    with pytest.warns(UserWarning, match='LUATTRUU Index'):
+        with pytest.raises(RuntimeError, match='Boundary pin trials rejected') as excinfo:
+            solve_for_risk_budgets_from_given_weights(
+                prices=prices, given_weights=target, covar_dict=covars,
+                min_risk_budget=1e-12)
+    assert 'LD19TRUU Index: RuntimeError' in str(excinfo.value)
+
+
+def test_boundary_trial_result_is_checked_with_the_forward_solver(monkeypatch) -> None:
+    """A trial-returned budget cannot bypass the full-path fit tolerance."""
+    prices, target, covars = make_junex_boundary_case()
+    seen = []
+
+    def return_bad_trial(**kwargs):
+        """Stand in for a trial solver reporting budgets that miss the target."""
+        seen.append(kwargs['fixed_weight_assets'])
+        return pd.Series([0.5, 0.5, 0.0, 0.0], index=target.index)
+
+    monkeypatch.setattr(risk_budgeting_module,
+                        'solve_for_risk_budgets_from_given_weights', return_bad_trial)
+    with pytest.warns(UserWarning, match='LUATTRUU Index'):
+        with pytest.raises(RuntimeError, match='LD19TRUU Index: refit max error'):
+            solve_for_risk_budgets_from_given_weights(
+                prices=prices, given_weights=target, covar_dict=covars,
+                min_risk_budget=1e-12)
+    assert seen == [('LD19TRUU Index',)]
+
+
+@pytest.mark.parametrize('fixed_assets, error', [
+    (('unknown',), 'not in prices'),
+    (('defensive', 'defensive'), 'duplicate'),
+    (('defensive',), 'positive target weights'),
+    (('growth', 'balanced', 'defensive'), 'at least one unfixed'),
+])
+def test_explicit_fixed_assets_reject_invalid_labels(fixed_assets, error) -> None:
+    """Invalid pins cannot silently change the calibration universe."""
+    target = pd.Series([0.5, 0.5, 0.0] if error == 'positive target weights'
+                       else [0.5, 0.3, 0.2], index=TICKERS)
+    with pytest.raises(ValueError, match=error):
+        solve_for_risk_budgets_from_given_weights(
+            prices=make_prices(), given_weights=target,
+            covar_dict=make_covar_dict(), fixed_weight_assets=fixed_assets)
+
+
+def test_explicit_fixed_assets_reject_a_scalar_string() -> None:
+    """A string is not interpreted as a sequence of single-character tickers."""
+    with pytest.raises(TypeError, match='sequence of asset labels'):
+        solve_for_risk_budgets_from_given_weights(
+            prices=make_prices(), given_weights=pd.Series([0.5, 0.3, 0.2], index=TICKERS),
+            covar_dict=make_covar_dict(), fixed_weight_assets='defensive')
+
+
+def test_single_asset_universe_cannot_pin_its_only_weight() -> None:
+    """The sole positive weight must retain the entire risk budget."""
+    prices = make_prices()[['growth']]
+    with pytest.raises(ValueError, match='sole target asset'):
+        solve_for_risk_budgets_from_given_weights(
+            prices=prices, given_weights=pd.Series({'growth': 1.0}),
+            covar_dict={date: COVAR_DF.loc[['growth'], ['growth']]
+                        for date in REBALANCING_DATES},
+            fixed_weight_assets=('growth',))
+
+
+def test_one_free_asset_with_a_pinned_hedge_has_the_entire_active_budget() -> None:
+    """A fixed hedging sleeve needs no numerical inverse search with one free asset."""
+    target = pd.Series([0.8, 0.0, 0.2], index=TICKERS)
+    covar_dict = {date: HEDGE_COVAR_DF for date in REBALANCING_DATES}
+    with pytest.warns(UserWarning, match='defensive.*fixed at 0.2000'):
+        budgets = solve_for_risk_budgets_from_given_weights(
+            prices=make_prices(), given_weights=target, covar_dict=covar_dict)
+    assert budgets.to_dict() == {'growth': 1.0, 'balanced': 0.0, 'defensive': 0.0}
+
+
+def test_hedging_assets_are_identified_once_at_the_original_target() -> None:
+    """Pinning one sleeve must not cause a second asset to be dropped."""
+    correlation = np.array([
+        [1.0, -0.8, -0.4],
+        [-0.8, 1.0, 0.8],
+        [-0.4, 0.8, 1.0],
+    ])
+    covariance = np.outer([0.2, 0.1, 0.1], [0.2, 0.1, 0.1]) * correlation
+    assert np.linalg.eigvalsh(covariance).min() > 0.0
+    target = pd.Series([0.5, 0.35, 0.15], index=TICKERS)
+    initial_marginal = covariance @ target.to_numpy()
+    assert initial_marginal[1] < 0.0 < initial_marginal[2]
+    after_first = np.array([0.5 / 0.65, 0.0, 0.15 / 0.65])
+    assert (covariance @ after_first)[2] < 0.0
+    covar_dict = {
+        date: pd.DataFrame(covariance, index=TICKERS, columns=TICKERS)
+        for date in REBALANCING_DATES
+    }
+
+    with pytest.warns(UserWarning, match='balanced') as warning:
+        fixed, diagnostics = risk_budgeting_module._identify_inverse_fixed_weights(
+            given_weights=target, covar_dict=covar_dict, ewma_span=None)
+
+    assert fixed.to_dict() == {'growth': 0.0, 'balanced': 0.35, 'defensive': 0.0}
+    assert diagnostics.loc['defensive', 'average_rc'] > 0.0
+    assert 'defensive' not in str(warning[0].message)
+
+
+def test_nonfinite_average_target_contribution_is_not_silently_dropped(monkeypatch) -> None:
+    """Missing covariance diagnostics are an input error, not a zero-budget signal."""
+    target = pd.Series([0.5, 0.3, 0.2], index=TICKERS)
+    diagnostics = pd.DataFrame({
+        'target_weight': target,
+        'average_rc': [0.7, np.nan, 0.3],
+        'negative_rc_share': [0.0, 0.0, 0.0],
+    })
+    monkeypatch.setattr(risk_budgeting_module, '_target_risk_contributions',
+                        lambda **_kwargs: diagnostics)
+    with pytest.raises(ValueError, match='must be finite'):
+        risk_budgeting_module._identify_inverse_fixed_weights(
+            given_weights=target, covar_dict=make_covar_dict(), ewma_span=None)
+
+
+def test_all_nonpositive_target_contributions_are_rejected(monkeypatch) -> None:
+    """At least one asset must remain available for budget fitting."""
+    target = pd.Series([0.5, 0.3, 0.2], index=TICKERS)
+    diagnostics = pd.DataFrame({
+        'target_weight': target,
+        'average_rc': [0.0, -0.1, -0.2],
+        'negative_rc_share': [0.0, 1.0, 1.0],
+    })
+    monkeypatch.setattr(risk_budgeting_module, '_target_risk_contributions',
+                        lambda **_kwargs: diagnostics)
+    with pytest.raises(ValueError, match='no positive-risk target assets remain'):
+        risk_budgeting_module._identify_inverse_fixed_weights(
+            given_weights=target, covar_dict=make_covar_dict(), ewma_span=None)
+
+
+def test_unresolved_nonpositive_contribution_cannot_enter_inverse_fit() -> None:
+    """Keep the final invariant check for an unpinned negative contribution."""
+    diagnostics = pd.DataFrame({
+        'target_weight': [0.5, 0.3, 0.2],
+        'average_rc': [0.7, 0.4, -0.1],
+        'negative_rc_share': [0.0, 0.0, 1.0],
+    }, index=TICKERS)
+    with pytest.raises(ValueError, match='defensive.*not positive on average'):
+        risk_budgeting_module._check_target_risk_contributions(diagnostics)
 
 
 def test_a_hedging_asset_on_most_dates_warns_but_the_fit_proceeds(monkeypatch) -> None:

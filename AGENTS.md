@@ -185,28 +185,27 @@ and has no reference left in this repository. To run the examples, install what 
 
 ## Documentation and analytical exhibits
 
-- Follow [docs/documentation_standard.md](docs/documentation_standard.md) for reader-facing
-  methodology and guides. Articles use the prescribed eight-section structure; utility pages
-  use the shorter form. Use Artur Sepp as the confirmed author, linked to
-  `https://github.com/ArturSepp`. Label the date `First recorded` and link to the article's
-  earliest available Git commit, following renames and earlier RST sources. This is a
-  repository-history date, not a verified public posting or review date. Omit unavailable
-  dates and affiliations; do not restore author placeholders. Retain project/citation links.
+- Follow the [shared OSS documentation standard](https://github.com/ArturSepp/ArturSepp/blob/main/docs/documentation_standard.md)
+  for common article structure, linked Artur Sepp authorship, evidenced First recorded dates,
+  portable Markdown math, citations, and review requirements.
+- Follow [the OP supplement](docs/documentation_standard.md) for package-specific analytical
+  contracts, figure generation/publication, and validation commands. Methodology articles use
+  `Implementation in optimalportfolios`; utility pages use the shared shorter form.
+  Retain ordinary project and `CITATION.cff` links in every human-authored page.
 - Cite qis and factorlasso where their calculations are used. Preserve ownership: portfolio
   construction here, generic factor estimation in factorlasso, analytics/reporting in qis.
   The public constraints contract remains in `docs/constraints.md`.
-- Use `$...$` and standalone `$$` math with surrounding blank lines. Check Sphinx, GitHub and
-  VS Code separately; a source check or one viewer does not certify another viewer.
-  Preserve numerical meaning, units, conventions, examples, source basenames and old anchors.
+- Preserve numerical meaning, units, conventions, examples, source basenames and old anchors.
+  Apply the shared math and viewer-review rules to revised articles.
 - Register pages and adoption status in `tools/docs_inventory.json`. Run `python tools/check_docs.py`
   with the prescribed interpreter; `--files <paths>` checks a revision batch and `--all` requires
   complete migration. Keep pending legacy pages explicit and API/autosummary sources separate.
 - Build from a C-local source export using the existing setup/launcher. Autosummary writes
   source files, so redirecting only build output is insufficient. No new setup wrapper is needed.
-- Generate analytics C-locally. The conditional exception to the generated-output prohibition is
-  the six existing README preview paths under `examples/figures/` and their future shared
-  `analytics_manifest.json`, after the implemented registry/publisher validates the complete
-  reviewed bundle. Until that tooling exists, the legacy figures are not reproducible outputs.
+- Generate analytics C-locally. The generated-output exception covers the six registered
+  README previews under `examples/figures/` and their shared `analytics_manifest.json`,
+  after the implemented registry/publisher validates the complete visually reviewed bundle.
+  Follow the OP supplement's generation, validation, publication, and verification procedure.
   Full factsheets, PDFs, downloads and temporary output remain excluded.
 - Preserve executable README and quickstart/notebook contracts, frozen fixtures, seeds,
   public re-exports and numerical behavior. Record validation and pending checks under `agents/`.
