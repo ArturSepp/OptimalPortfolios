@@ -19,10 +19,9 @@ fell back to benchmark weights (issue #49). The test therefore asserts not just 
 that the weights equal the utility-only solve, so a budget silently left in force would show
 up as a different optimum rather than only as a different reported reason.
 
-That branch does something subtle enough to be worth a test of its own: the utility builder
-would penalise turnover as well, so the soft path nulls ``turnover_utility_weight`` and then
-re-adds turnover as a *hard* constraint. Get that wrong and turnover is either double-counted
-(penalised and constrained) or silently unconstrained. Both produce a solved portfolio.
+With hard turnover caps, the soft-TE path nulls ``turnover_utility_weight`` and re-adds
+turnover as a hard constraint. With no caps, it retains the configured penalty, allowing
+the hard yield floor to take priority over trading preferences.
 
 The objective also switches form on whether a benchmark is present -- active ``alpha'(w - w_b)``
 versus absolute ``alpha'w``. Since ``w_b`` is a constant, the two have the same argmax under
@@ -492,4 +491,37 @@ def test_an_infeasible_first_rebalance_resets_the_drift_anchor() -> None:
         target_returns=pd.Series([0.035, 0.035, 0.035], index=dates), **common)
 
     assert np.all(with_failure.iloc[0].to_numpy() == 0.0), 'the first solve was expected to fail'
+    outcomes = with_failure.attrs['optimization_outcomes']
+    assert [row['accepted'] for row in outcomes] == [False, True, True]
+    assert [row['date'] for row in outcomes] == [str(date.date()) for date in dates]
+    assert all(row['compliant'] for row in outcomes[1:])
     pd.testing.assert_frame_equal(with_failure.iloc[1:], all_feasible.iloc[1:], atol=1e-8)
+
+
+def test_soft_turnover_without_hard_caps_trades_only_enough_to_meet_yield() -> None:
+    """A turnover penalty limits trading but cannot prevent satisfying the hard yield floor."""
+    tickers = pd.Index(['LOW', 'HIGH'])
+    previous = pd.Series([0.5, 0.5], index=tickers)
+    constraints = Constraints(
+        min_weights=pd.Series(0.0, index=tickers),
+        max_weights=pd.Series(1.0, index=tickers),
+        min_exposure=1.0,
+        max_exposure=1.0,
+        benchmark_weights=previous,
+        weights_0=previous,
+        asset_returns=pd.Series([0.02, 0.06], index=tickers),
+        target_return=0.045,
+        tre_utility_weight=0.0,
+        turnover_utility_weight=2.0,
+    )
+    outcome = cvx_maximise_alpha_with_target_return(
+        covar=np.eye(2) * 0.01,
+        alphas=np.array([0.0, 1.0]),
+        constraints=constraints,
+        soft_tracking_error=True,
+    )
+    # With HIGH >= .625, the objective slope is 1 - 2*2 < 0; the floor binds.
+    assert outcome.accepted
+    np.testing.assert_allclose(outcome.weights, [0.375, 0.625], atol=1e-6)
+    assert float(outcome.weights @ np.array([0.02, 0.06])) >= 0.045 - 1e-8
+    assert float(np.abs(outcome.weights - previous.to_numpy()).sum()) > 0.05

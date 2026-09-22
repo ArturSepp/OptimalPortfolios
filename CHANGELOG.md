@@ -5,6 +5,12 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased — 2026-09-22
+
+- Yield-target optimisation retains its configured turnover penalty when no hard
+  turnover caps are supplied. Explicit hard-cap paths retain their existing behaviour.
+  Rolling yield-target weights expose per-date solve/fallback status in DataFrame attrs.
+
 ## 7.8.0.dev4 — 2026-09-21 (local development)
 
 - Added optional `fixed_weight_assets` to inverse risk-budget inference. Named

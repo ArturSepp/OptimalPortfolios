@@ -57,9 +57,12 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
                                               target_returns: pd.Series,
                                               constraints: Constraints,
                                               covar_dict: Dict[pd.Timestamp, pd.DataFrame],
-                                              benchmark_weights: Optional[Union[pd.Series, pd.DataFrame]] = None,
+                                              benchmark_weights: Optional[
+                                                  Union[pd.Series, pd.DataFrame]
+                                              ] = None,
                                               soft_tracking_error: bool = False,
-                                              optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
+                                              optimiser_config: OptimiserConfig = OptimiserConfig(
+                                                  apply_total_to_good_ratio=True)
                                               ) -> pd.DataFrame:
     """
     Compute rolling alpha-maximising portfolios with a target return constraint.
@@ -94,7 +97,8 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
         optimiser_config: Solver configuration.
 
     Returns:
-        DataFrame of portfolio weights.
+        DataFrame of portfolio weights. ``attrs['optimization_outcomes']`` contains
+        one serializable solver-status record per rebalance, including fallback use.
     """
     rebalancing_schedule = list(covar_dict.keys())
     alphas = alphas.reindex(index=rebalancing_schedule, method='ffill')
@@ -113,6 +117,7 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
                 index=rebalancing_schedule, method='ffill').fillna(0.0)
 
     weights = {}
+    outcomes = []
     weights_0 = None
     prev_date = None
     for date, pd_covar in covar_dict.items():
@@ -132,7 +137,7 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
         benchmark_weights_t = (
             benchmark_weights.loc[date, :] if benchmark_weights is not None else None
         )
-        weights_, _ = wrapper_maximise_alpha_with_target_return(
+        weights_, outcome = wrapper_maximise_alpha_with_target_return(
             pd_covar=pd_covar,
             alphas=alphas.loc[date, :],
             yields=yields.loc[date, :],
@@ -144,6 +149,11 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
             optimiser_config=optimiser_config,
             context=str(pd.Timestamp(date).date())
         )
+        outcomes.append(dict(
+            date=str(pd.Timestamp(date).date()), accepted=bool(outcome.accepted),
+            status=outcome.status, solver=outcome.solver, reason=outcome.reason,
+            fallback_source=outcome.fallback_source, compliant=bool(outcome.compliant),
+        ))
 
         if np.all(np.equal(weights_, 0.0)):
             weights_0 = None
@@ -155,6 +165,7 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
 
     weights = pd.DataFrame.from_dict(weights, orient='index')
     weights = weights.reindex(columns=prices.columns.to_list()).fillna(0.0)
+    weights.attrs['optimization_outcomes'] = outcomes
 
     return weights
 
@@ -167,7 +178,8 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
                                               benchmark_weights: Optional[pd.Series] = None,
                                               soft_tracking_error: bool = False,
                                               weights_0: pd.Series = None,
-                                              optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True),
+                                              optimiser_config: OptimiserConfig = OptimiserConfig(
+                                                  apply_total_to_good_ratio=True),
                                               context: str = ''
                                               ) -> Tuple[pd.Series, OptimizationOutcome]:
     """
@@ -308,21 +320,24 @@ def cvx_maximise_alpha_with_target_return(covar: np.ndarray,
     solved_constraints = constraints
 
     if soft_tracking_error and constraints.benchmark_weights is not None:
-        # Soft TE only: TE becomes a utility penalty (tre_utility_weight) while
-        # the return target and turnover stay HARD. The utility builder would
-        # otherwise also penalise turnover (turnover_utility_weight) — we null
-        # that out so turnover isn't double-counted, then add the hard turnover
-        # constraint explicitly below. Yield target is added hard by the builder.
+        # Explicit hard turnover caps retain their historical constraint-only behavior.
+        # With no hard caps, retain the configured turnover penalty so a hard yield
+        # floor can take priority over trading preferences without removing them.
+        has_hard_turnover = (
+            constraints.turnover_constraint is not None
+            or constraints.group_turnover_constraint is not None
+        )
+        turnover_penalty = None if has_hard_turnover else constraints.turnover_utility_weight
         constraints_soft = dataclasses.replace(
             constraints,
             tracking_err_vol_constraint=None,
-            turnover_utility_weight=None,
+            turnover_utility_weight=turnover_penalty,
             group_turnover_constraint=None,
         )
         solved_constraints = dataclasses.replace(
             constraints,
             tracking_err_vol_constraint=None,
-            turnover_utility_weight=None,
+            turnover_utility_weight=turnover_penalty,
         )
         objective_fun, constraints_ = constraints_soft.set_cvx_utility_objective_constraints(
             w=w,
