@@ -5,13 +5,11 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased — 2026-09-22
+## [7.8.0] - 2026-09-23
 
 - Yield-target optimisation retains its configured turnover penalty when no hard
   turnover caps are supplied. Explicit hard-cap paths retain their existing behaviour.
   Rolling yield-target weights expose per-date solve/fallback status in DataFrame attrs.
-
-## 7.8.0.dev4 — 2026-09-21 (local development)
 
 - Added optional `fixed_weight_assets` to inverse risk-budget inference. Named
   positive-weight assets are held at their input target weights throughout the
@@ -21,9 +19,6 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   positive budgets, even when the inverse search stops above that boundary.
   It pins one at its central weight only when the complete refit meets both
   existing weight tolerances; otherwise it raises with rejected trial diagnostics.
-- Local development only; no publication.
-
-## 7.8.0.dev3 — 2026-09-21 (local development)
 
 - Inverse risk-budget inference now defaults to the simple average of rolling
   portfolio weights (`ewma_span=None`); an explicit span retains EWMA fitting.
@@ -31,9 +26,6 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   held at their original weights in each full-covariance solve and receive zero
   reported budget. Other budgets are fitted without redistributing target weights.
 - The changed default and fixed-sleeve treatment alter inferred budgets by design.
-  Local development only; no publication.
-
-## 7.8.0.dev2 — 2026-09-20 (local development)
 
 - Removed the unreleased legacy residual-covariance object, estimator,
   migration methods, diagnostic fallback and obsolete getter span/scale arguments.
@@ -42,9 +34,6 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Current MATF variance/correlation assembly, orthogonal defaults and alpha
   are unchanged. Equity verification reconstructs correlation from saved
   returns and betas, with no legacy checkpoint deserialization.
-- Local development only; no publication.
-
-## 7.8.0.dev1 — 2026-09-20 (local development)
 
 - Revised the opt-in empirical residual risk model to preserve current MATF
   residual variances and apply common-period EWMA correlations. The orthogonal
@@ -52,13 +41,8 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Added `residual_corr_weight` in [0, 1], separate from the multiplier on all
   residual risk. Hold correlation between completed periods, updating marginal
   variances at every fit. No annual covariance scaling is needed at retrieval.
-- Empirical preparation requires FactorLasso 0.19.0.dev1 correlation support;
+- Empirical preparation uses FactorLasso 0.19.0 correlation support;
   orthogonal callers retain compatibility with older supported dependencies.
-- Local builds only; no package publication.
-
-## [Unreleased]
-
-### Added
 
 - `FactorCovarEstimator` and `estimate_lasso_factor_covar_data` accept
   `residual_type="empirical"`, `residual_covar_freq` and `residual_covar_span`.
@@ -68,10 +52,9 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Empirical current fits truncate inputs at the estimation date. Rolling fits
   retain the last available residual covariance between completed common periods.
   Native annual alpha and the default orthogonal covariance remain unchanged.
-- Empirical preparation requires the new FactorLasso API (0.19.0.dev0 development
-  source). Older supported FactorLasso releases retain the default path and raise
-  an upgrade error for this opt-in. Local development version is 7.8.0.dev0;
-  neither package has been published as part of this change.
+- Empirical preparation requires the FactorLasso 0.19.0 API. Older supported
+  FactorLasso releases retain the default path and raise an upgrade error for
+  this opt-in.
 
 ## [7.7.0] - 2026-09-18
 
