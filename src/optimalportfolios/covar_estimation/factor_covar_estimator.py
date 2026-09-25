@@ -249,6 +249,7 @@ def _fit_lasso_frequency(
         precomputed_clusters: Optional[Dict[str, pd.Series]] = None,
         precomputed_linkages: Optional[Dict[str, np.ndarray]] = None,
         precomputed_cutoffs: Optional[Dict[str, float]] = None,
+        reg_lambda: Optional[float] = None,
 ) -> _FrequencyFitResult:
     """Fit one return cadence and collect unannualized model components.
 
@@ -269,6 +270,8 @@ def _fit_lasso_frequency(
             are supplied for this cadence.
         precomputed_cutoffs: Corresponding cut-distance map, required when memberships
             are supplied for this cadence.
+        reg_lambda: Optional fixed penalty for this cadence. The model's scalar
+            configuration is restored after fitting, including on solver failure.
 
     Returns:
         Unannualized fit components. Residual time series exclude only the fitted
@@ -311,16 +314,22 @@ def _fit_lasso_frequency(
     cluster_span_kwargs = {}
     if hasattr(fit_model, 'cluster_correlation_span'):
         cluster_span_kwargs['cluster_correlation_span'] = cluster_correlation_span
-    fit_model.fit(
-        x=factor_returns,
-        y=asset_returns,
-        verbose=verbose,
-        span=span,
-        external_clusters=external_clusters,
-        external_linkage=precomputed_linkages[freq] if use_precomputed else None,
-        external_cutoff=precomputed_cutoffs[freq] if use_precomputed else None,
-        **cluster_span_kwargs,
-    )
+    original_lambda = fit_model.reg_lambda
+    if reg_lambda is not None:
+        fit_model.reg_lambda = reg_lambda
+    try:
+        fit_model.fit(
+            x=factor_returns,
+            y=asset_returns,
+            verbose=verbose,
+            span=span,
+            external_clusters=external_clusters,
+            external_linkage=precomputed_linkages[freq] if use_precomputed else None,
+            external_cutoff=precomputed_cutoffs[freq] if use_precomputed else None,
+            **cluster_span_kwargs,
+        )
+    finally:
+        fit_model.reg_lambda = original_lambda
 
     estimation_result = fit_model.estimation_result_
     linkage = precomputed_linkages[freq] if use_precomputed else fit_model.linkage
@@ -415,6 +424,8 @@ class FactorCovarEstimator(CovarEstimator):
     residual_covar_freq: Optional[str] = None
     residual_covar_span: Optional[float] = None
     residual_corr_weight: float = 1.0
+    # Fixed penalties by native response cadence; None preserves the scalar model setting.
+    reg_lambda_freq_dict: Optional[Dict[str, float]] = None
 
     def __post_init__(self) -> None:
         """Validate factor-reference configuration at construction.
@@ -695,6 +706,8 @@ class FactorCovarEstimator(CovarEstimator):
             'residual_covar_freq': self.residual_covar_freq,
             'residual_covar_span': self.residual_covar_span,
         } if self.residual_type == 'empirical' else {})
+        if self.reg_lambda_freq_dict is not None:
+            residual_options['reg_lambda_freq_dict'] = self.reg_lambda_freq_dict
         factor_covar_data = estimate_lasso_factor_covar_data(
             risk_factor_prices=risk_factor_prices,
             asset_returns_dict=asset_returns_dict,
@@ -850,6 +863,7 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
                                      residual_type: str = 'orthogonal',
                                      residual_covar_freq: Optional[str] = None,
                                      residual_covar_span: Optional[float] = None,
+                                     reg_lambda_freq_dict: Optional[Dict[str, float]] = None,
                                      ) -> CurrentFactorCovarData:
     """Assemble current factor covariance data from supplied return histories.
 
@@ -879,6 +893,9 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
             not rebalancing. Each asset belongs to exactly one bucket.
         lasso_model: Configured FactorLasso model, fitted in place for each bucket.
             Cadence maps control regression and clustering spans where configured.
+        reg_lambda_freq_dict: Optional fixed penalty per response cadence. Every
+            fitted cadence must be present. None retains lasso_model.reg_lambda.
+            Values are not rescaled as estimation histories grow.
         assets: Optional ordered asset universe for output alignment. Missing
             fitted rows receive zero betas and zero variance/alpha/R-squared
             statistics; cluster/sign entries remain NaN.
@@ -920,6 +937,13 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
             membership panel lacks an assignment for a fitted asset.
         KeyError: If a required cadence span, linkage or cutoff entry is missing.
     """
+    if reg_lambda_freq_dict is not None:
+        if any(not np.isfinite(value) or value < 0
+               for value in reg_lambda_freq_dict.values()):
+            raise ValueError('cadence penalties must be finite and nonnegative')
+        missing = set(asset_returns_dict) - set(reg_lambda_freq_dict)
+        if missing:
+            raise KeyError(f'no reg_lambda for cadence(s): {sorted(missing)}')
     if residual_type not in ('orthogonal', 'empirical'):
         raise ValueError("residual_type must be 'orthogonal' or 'empirical'")
     if residual_type == 'empirical':
@@ -972,6 +996,8 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
             precomputed_clusters=precomputed_clusters,
             precomputed_linkages=precomputed_linkages,
             precomputed_cutoffs=precomputed_cutoffs,
+            **({'reg_lambda': reg_lambda_freq_dict[freq]}
+               if reg_lambda_freq_dict is not None else {}),
         )
         for freq, asset_returns in asset_returns_dict.items()
     }

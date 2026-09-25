@@ -1,0 +1,1068 @@
+{
+  "tag": "2026_matf_cma_revised_20260925",
+  "extracted": "2026-09-25",
+  "valuation_date": "2026-06-30",
+  "model": "matf_custom_ig_hy",
+  "universe": "18 paper sleeves from all 182 production indices",
+  "admission_policy": "PE 50%; PC 50%; ILS 100%; other agreed workbook weights unchanged",
+  "bootstrap_window": [
+    "2001-07-31",
+    "2026-06-30"
+  ],
+  "units": "decimal per annum; arithmetic CMAs; excess log-return estimation panels",
+  "source_workbook": "global_saa_universe_data_cmas_usd_2026q2.xlsx",
+  "source_workbook_sha256": "e9485231b39859c0acb4a976b5eb75a1660196d760a602921c9c36d30ca17f19",
+  "prod_config_snapshot": [
+    {
+      "Unnamed: 0": "factor_model.name",
+      "group": "factor_model",
+      "value": "matf_custom_ig_hy"
+    },
+    {
+      "Unnamed: 0": "factor_model.file_name",
+      "group": "factor_model",
+      "value": "futures_risk_factors_custom_ig_hy"
+    },
+    {
+      "Unnamed: 0": "factor_model.n_factors",
+      "group": "factor_model",
+      "value": "12"
+    },
+    {
+      "Unnamed: 0": "factor_model.regional_equity_factor",
+      "group": "factor_model",
+      "value": "Equity"
+    },
+    {
+      "Unnamed: 0": "factor_model.regional_rates_factor",
+      "group": "factor_model",
+      "value": "Rates"
+    },
+    {
+      "Unnamed: 0": "basket.Equity",
+      "group": "factor_baskets",
+      "value": "NDDUWI:1.0 | vol_target=0.15 | QE | span=156 | sign=+1.0 | family=Equity"
+    },
+    {
+      "Unnamed: 0": "basket.Rates",
+      "group": "factor_baskets",
+      "value": "TY1:0.6, RX1:0.1, G1:0.1, JB1:0.1, CN1:0.05, XM1:0.05 | vol_target=0.06 | QE | span=156 | sign=+1.0 | family=Rates"
+    },
+    {
+      "Unnamed: 0": "basket.Credit IG",
+      "group": "factor_baskets",
+      "value": "Cr IG US:1.0 | vol_target=0.05 | QE | span=156 | sign=+1.0 | family=Credit"
+    },
+    {
+      "Unnamed: 0": "basket.Credit HY",
+      "group": "factor_baskets",
+      "value": "Cr HY US:1.0 | vol_target=0.05 | QE | span=156 | sign=+1.0 | family=Credit"
+    },
+    {
+      "Unnamed: 0": "basket.Credit EM",
+      "group": "factor_baskets",
+      "value": "Cr EM:1.0 | vol_target=0.05 | QE | span=156 | sign=+1.0 | family=Credit"
+    },
+    {
+      "Unnamed: 0": "basket.Carry G10",
+      "group": "factor_baskets",
+      "value": "Cy G10:1.0 | vol_target=0.05 | QE | span=156 | sign=+1.0 | family=Carry"
+    },
+    {
+      "Unnamed: 0": "basket.Carry EM",
+      "group": "factor_baskets",
+      "value": "Cy EM:1.0 | vol_target=0.05 | QE | span=156 | sign=+1.0 | family=Carry"
+    },
+    {
+      "Unnamed: 0": "basket.Inflation",
+      "group": "factor_baskets",
+      "value": "In US:0.5, In EU:0.5 | vol_target=0.05 | QE | span=156 | family=Inflation"
+    },
+    {
+      "Unnamed: 0": "basket.Commodities",
+      "group": "factor_baskets",
+      "value": "BCOM:1.0 | vol_target=0.15 | QE | span=156 | family=Commodities"
+    },
+    {
+      "Unnamed: 0": "basket.Private Equity",
+      "group": "factor_baskets",
+      "value": "NQ1:0.5, RTY:0.5, CDX:0.5, NDDUWI:-1.0 | vol_target=0.07 | QE | span=156 | gated | family=Private Equity"
+    },
+    {
+      "Unnamed: 0": "basket.Rates Vol",
+      "group": "factor_baskets",
+      "value": "LongRatesVol:1.0 | vol_target=0.05 | QE | span=156 | sign=-1.0 | family=Rates Vol"
+    },
+    {
+      "Unnamed: 0": "basket.Fx",
+      "group": "factor_baskets",
+      "value": "DXY:1.0 | vol_target=0.07 | QE | span=156 | family=Fx"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Equity",
+      "group": "matf_sharpe_ratios",
+      "value": "0.4"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Rates",
+      "group": "matf_sharpe_ratios",
+      "value": "0.25"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Credit",
+      "group": "matf_sharpe_ratios",
+      "value": "0.4"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Carry",
+      "group": "matf_sharpe_ratios",
+      "value": "0.25"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Inflation",
+      "group": "matf_sharpe_ratios",
+      "value": "0.15"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Commodities",
+      "group": "matf_sharpe_ratios",
+      "value": "0.15"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Private Equity",
+      "group": "matf_sharpe_ratios",
+      "value": "0.7"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Rates Vol",
+      "group": "matf_sharpe_ratios",
+      "value": "0.25"
+    },
+    {
+      "Unnamed: 0": "sharpe_ratio.Fx",
+      "group": "matf_sharpe_ratios",
+      "value": "0.0"
+    },
+    {
+      "Unnamed: 0": "family_sharpe_ratio.Equity",
+      "group": "matf_family_sharpe_ratios",
+      "value": "0.4"
+    },
+    {
+      "Unnamed: 0": "family_sharpe_ratio.Rates",
+      "group": "matf_family_sharpe_ratios",
+      "value": "0.25"
+    },
+    {
+      "Unnamed: 0": "family_sharpe_ratio.Credit",
+      "group": "matf_family_sharpe_ratios",
+      "value": "0.4"
+    },
+    {
+      "Unnamed: 0": "family_sharpe_ratio.Carry",
+      "group": "matf_family_sharpe_ratios",
+      "value": "0.25"
+    },
+    {
+      "Unnamed: 0": "family_sharpe_ratio.Inflation",
+      "group": "matf_family_sharpe_ratios",
+      "value": "0.15"
+    },
+    {
+      "Unnamed: 0": "family_sharpe_ratio.Commodities",
+      "group": "matf_family_sharpe_ratios",
+      "value": "0.15"
+    },
+    {
+      "Unnamed: 0": "family_sharpe_ratio.Private Equity",
+      "group": "matf_family_sharpe_ratios",
+      "value": "0.7"
+    },
+    {
+      "Unnamed: 0": "family_sharpe_ratio.Rates Vol",
+      "group": "matf_family_sharpe_ratios",
+      "value": "0.25"
+    },
+    {
+      "Unnamed: 0": "family_sharpe_ratio.Fx",
+      "group": "matf_family_sharpe_ratios",
+      "value": "0.0"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Equity",
+      "group": "factor_vols",
+      "value": "0.15"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Rates",
+      "group": "factor_vols",
+      "value": "0.06"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Credit IG",
+      "group": "factor_vols",
+      "value": "0.05"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Credit HY",
+      "group": "factor_vols",
+      "value": "0.05"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Credit EM",
+      "group": "factor_vols",
+      "value": "0.05"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Carry G10",
+      "group": "factor_vols",
+      "value": "0.05"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Carry EM",
+      "group": "factor_vols",
+      "value": "0.05"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Inflation",
+      "group": "factor_vols",
+      "value": "0.05"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Commodities",
+      "group": "factor_vols",
+      "value": "0.15"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Private Equity",
+      "group": "factor_vols",
+      "value": "0.07"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Rates Vol",
+      "group": "factor_vols",
+      "value": "0.05"
+    },
+    {
+      "Unnamed: 0": "factor_vol.Fx",
+      "group": "factor_vols",
+      "value": "0.07"
+    },
+    {
+      "Unnamed: 0": "blend_weight_current",
+      "group": "blending",
+      "value": "0.5"
+    },
+    {
+      "Unnamed: 0": "equilibrium_vol.return_freq",
+      "group": "equilibrium_volatility",
+      "value": "ME"
+    },
+    {
+      "Unnamed: 0": "equilibrium_vol.span_months",
+      "group": "equilibrium_volatility",
+      "value": "60"
+    },
+    {
+      "Unnamed: 0": "equilibrium_vol.annualization_factor",
+      "group": "equilibrium_volatility",
+      "value": "12.0"
+    },
+    {
+      "Unnamed: 0": "equilibrium_vol.use_log_returns",
+      "group": "equilibrium_volatility",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "equilibrium_vol.init_from_target",
+      "group": "equilibrium_volatility",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "factor_scenario.stress.date",
+      "group": "factor_scenarios",
+      "value": "31Dec2022"
+    },
+    {
+      "Unnamed: 0": "factor_scenario.upside.date",
+      "group": "factor_scenarios",
+      "value": "31Dec2023"
+    },
+    {
+      "Unnamed: 0": "factor_scenario.divisor",
+      "group": "factor_scenarios",
+      "value": "5.0"
+    },
+    {
+      "Unnamed: 0": "regional_equity_pcaey_add_on.EM",
+      "group": "regional_equity_pcaey_add_ons",
+      "value": "0.0"
+    },
+    {
+      "Unnamed: 0": "equity_factor_regions.Equity US",
+      "group": "equity_factor_regions",
+      "value": "US,Canada"
+    },
+    {
+      "Unnamed: 0": "equity_factor_regions.Equity EU",
+      "group": "equity_factor_regions",
+      "value": "Europe,UK,Switzerland"
+    },
+    {
+      "Unnamed: 0": "equity_factor_regions.Equity Asia",
+      "group": "equity_factor_regions",
+      "value": "Japan,Australia"
+    },
+    {
+      "Unnamed: 0": "equity_factor_regions.Equity EM",
+      "group": "equity_factor_regions",
+      "value": "EM"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Equity US",
+      "group": "factor_cma_sources",
+      "value": "equity:Equity US"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Equity EU",
+      "group": "factor_cma_sources",
+      "value": "equity:Equity EU"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Equity Asia",
+      "group": "factor_cma_sources",
+      "value": "equity:Equity Asia"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Equity EM",
+      "group": "factor_cma_sources",
+      "value": "equity:Equity EM"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Rates US",
+      "group": "factor_cma_sources",
+      "value": "rates:US"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Rates EU",
+      "group": "factor_cma_sources",
+      "value": "rates:Europe"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Rates JP",
+      "group": "factor_cma_sources",
+      "value": "rates:Japan"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Rates UK",
+      "group": "factor_cma_sources",
+      "value": "rates:UK"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Credit IG",
+      "group": "factor_cma_sources",
+      "value": "credit:Credit IG"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Credit IG EU",
+      "group": "factor_cma_sources",
+      "value": "credit:Credit"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Credit HY",
+      "group": "factor_cma_sources",
+      "value": "credit:Credit HY"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Credit XO EU",
+      "group": "factor_cma_sources",
+      "value": "credit:Credit"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Credit EM",
+      "group": "factor_cma_sources",
+      "value": "credit:Credit EM"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Carry G10",
+      "group": "factor_cma_sources",
+      "value": "equilibrium:Carry"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Carry EM",
+      "group": "factor_cma_sources",
+      "value": "equilibrium:Carry"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Inflation US",
+      "group": "factor_cma_sources",
+      "value": "equilibrium:Inflation"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Inflation EU",
+      "group": "factor_cma_sources",
+      "value": "equilibrium:Inflation"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Rates Vol USD",
+      "group": "factor_cma_sources",
+      "value": "equilibrium:Rates Vol"
+    },
+    {
+      "Unnamed: 0": "factor_cma_source.Rates Vol EUR",
+      "group": "factor_cma_sources",
+      "value": "equilibrium:Rates Vol"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.model_type",
+      "group": "covar_estimation_spec",
+      "value": "FACTOR_CLUSTER_GROUP_LASSO"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.cluster_cutoff_fraction",
+      "group": "covar_estimation_spec",
+      "value": "0.6"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.linkage_method",
+      "group": "covar_estimation_spec",
+      "value": "ward"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.distance_transform",
+      "group": "covar_estimation_spec",
+      "value": "one_minus_rho"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.dependence_measure",
+      "group": "covar_estimation_spec",
+      "value": "pearson"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.gerber_threshold",
+      "group": "covar_estimation_spec",
+      "value": "0.5"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.n_clusters",
+      "group": "covar_estimation_spec",
+      "value": NaN
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.cluster_smoother_type",
+      "group": "covar_estimation_spec",
+      "value": "NONE"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.smoother_delta",
+      "group": "covar_estimation_spec",
+      "value": "0.05"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.smoother_lambda",
+      "group": "covar_estimation_spec",
+      "value": "0.7"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.recluster_freq",
+      "group": "covar_estimation_spec",
+      "value": NaN
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.l1_weight",
+      "group": "covar_estimation_spec",
+      "value": "0.0"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.reg_lambda",
+      "group": "covar_estimation_spec",
+      "value": "0.000104264890398061"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.solver",
+      "group": "covar_estimation_spec",
+      "value": "MOSEK"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.demean",
+      "group": "covar_estimation_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.warmup_period",
+      "group": "covar_estimation_spec",
+      "value": "12"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.apply_ols_prior",
+      "group": "covar_estimation_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.prior_selection_type",
+      "group": "covar_estimation_spec",
+      "value": "highest_r2"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.span_freq_dict",
+      "group": "covar_estimation_spec",
+      "value": "{'ME': 60, 'QE': 40}"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.alpha_span",
+      "group": "covar_estimation_spec",
+      "value": "{'ME': 60, 'QE': 40}"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.factor_returns_freq",
+      "group": "covar_estimation_spec",
+      "value": "W-WED"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.factor_covar_span",
+      "group": "covar_estimation_spec",
+      "value": "260"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.rebalancing_freq",
+      "group": "covar_estimation_spec",
+      "value": "QE"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.auto_sign_constraints",
+      "group": "covar_estimation_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.auto_sign_adaptive_weights",
+      "group": "covar_estimation_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.auto_sign_threshold_t",
+      "group": "covar_estimation_spec",
+      "value": "1.0"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.auto_sign_adaptive_floor",
+      "group": "covar_estimation_spec",
+      "value": "0.5"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.auto_sign_use_fit_span",
+      "group": "covar_estimation_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.auto_sign_variance",
+      "group": "covar_estimation_spec",
+      "value": "date"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.cluster_correlation_span",
+      "group": "covar_estimation_spec",
+      "value": NaN
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.cluster_correlation_span_freq_dict",
+      "group": "covar_estimation_spec",
+      "value": NaN
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.include_factors_in_clustering",
+      "group": "covar_estimation_spec",
+      "value": "False"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.factor_clustering_freqs",
+      "group": "covar_estimation_spec",
+      "value": NaN
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.residual_type",
+      "group": "covar_estimation_spec",
+      "value": "orthogonal"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.residual_corr_weight",
+      "group": "covar_estimation_spec",
+      "value": "1.0"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.pe_beta_prior",
+      "group": "covar_estimation_spec",
+      "value": "1.0"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.loss_normalization",
+      "group": "covar_estimation_spec",
+      "value": "weight_sum"
+    },
+    {
+      "Unnamed: 0": "covar_estimation_spec.reg_lambda_freq_dict",
+      "group": "covar_estimation_spec",
+      "value": "{'ME': 0.000104264890398061, 'QE': 5.19664260036678e-05}"
+    },
+    {
+      "Unnamed: 0": "returns_spec.is_log_returns",
+      "group": "returns_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "returns_spec.is_excess_returns",
+      "group": "returns_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "returns_spec.zero_return_to_nan",
+      "group": "returns_spec",
+      "value": "False"
+    },
+    {
+      "Unnamed: 0": "returns_spec.apply_unsmoothing_for_pe",
+      "group": "returns_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "returns_spec.unsmoothing_type",
+      "group": "returns_spec",
+      "value": "beta_lag"
+    },
+    {
+      "Unnamed: 0": "returns_spec.unsmoothing_factor",
+      "group": "returns_spec",
+      "value": "Equity"
+    },
+    {
+      "Unnamed: 0": "returns_spec.unsmooth_span",
+      "group": "returns_spec",
+      "value": "{'D': 2600, 'W': 520, 'ME': 120, 'QE': 40}"
+    },
+    {
+      "Unnamed: 0": "returns_spec.max_ar_coeff",
+      "group": "returns_spec",
+      "value": "0.75"
+    },
+    {
+      "Unnamed: 0": "returns_spec.min_ar_coeff",
+      "group": "returns_spec",
+      "value": NaN
+    },
+    {
+      "Unnamed: 0": "returns_spec.max_factor_beta",
+      "group": "returns_spec",
+      "value": NaN
+    },
+    {
+      "Unnamed: 0": "returns_spec.min_factor_beta",
+      "group": "returns_spec",
+      "value": "0.0"
+    },
+    {
+      "Unnamed: 0": "returns_spec.ar_order",
+      "group": "returns_spec",
+      "value": "1"
+    },
+    {
+      "Unnamed: 0": "returns_spec.ar_max_value_for_beta",
+      "group": "returns_spec",
+      "value": "0.75"
+    },
+    {
+      "Unnamed: 0": "returns_spec.ar_min_value_for_beta",
+      "group": "returns_spec",
+      "value": "-0.25"
+    },
+    {
+      "Unnamed: 0": "returns_spec.ar_non_negative",
+      "group": "returns_spec",
+      "value": "False"
+    },
+    {
+      "Unnamed: 0": "returns_spec.ar_non_negative_tol",
+      "group": "returns_spec",
+      "value": "0.0"
+    },
+    {
+      "Unnamed: 0": "returns_spec.warmup_period",
+      "group": "returns_spec",
+      "value": "{'D': 260, 'W': 52, 'ME': 12, 'QE': 4}"
+    },
+    {
+      "Unnamed: 0": "returns_spec.mean_adj_type",
+      "group": "returns_spec",
+      "value": "EWMA"
+    },
+    {
+      "Unnamed: 0": "returns_spec.apply_ewma_mean_smoother",
+      "group": "returns_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.is_log_returns",
+      "group": "reporting_returns_spec",
+      "value": "False"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.is_excess_returns",
+      "group": "reporting_returns_spec",
+      "value": "False"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.zero_return_to_nan",
+      "group": "reporting_returns_spec",
+      "value": "False"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.apply_unsmoothing_for_pe",
+      "group": "reporting_returns_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.unsmoothing_type",
+      "group": "reporting_returns_spec",
+      "value": "beta_lag"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.unsmoothing_factor",
+      "group": "reporting_returns_spec",
+      "value": "Equity"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.unsmooth_span",
+      "group": "reporting_returns_spec",
+      "value": "{'D': 2600, 'W': 520, 'ME': 120, 'QE': 40}"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.max_ar_coeff",
+      "group": "reporting_returns_spec",
+      "value": "0.75"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.min_ar_coeff",
+      "group": "reporting_returns_spec",
+      "value": NaN
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.max_factor_beta",
+      "group": "reporting_returns_spec",
+      "value": NaN
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.min_factor_beta",
+      "group": "reporting_returns_spec",
+      "value": "0.0"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.ar_order",
+      "group": "reporting_returns_spec",
+      "value": "1"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.ar_max_value_for_beta",
+      "group": "reporting_returns_spec",
+      "value": "0.75"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.ar_min_value_for_beta",
+      "group": "reporting_returns_spec",
+      "value": "-0.25"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.ar_non_negative",
+      "group": "reporting_returns_spec",
+      "value": "False"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.ar_non_negative_tol",
+      "group": "reporting_returns_spec",
+      "value": "0.0"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.warmup_period",
+      "group": "reporting_returns_spec",
+      "value": "{'D': 260, 'W': 52, 'ME': 12, 'QE': 4}"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.mean_adj_type",
+      "group": "reporting_returns_spec",
+      "value": "EWMA"
+    },
+    {
+      "Unnamed: 0": "reporting_returns_spec.apply_ewma_mean_smoother",
+      "group": "reporting_returns_spec",
+      "value": "True"
+    },
+    {
+      "Unnamed: 0": "version.qis",
+      "group": "versions",
+      "value": "5.30.3"
+    },
+    {
+      "Unnamed: 0": "version.optimalportfolios",
+      "group": "versions",
+      "value": "7.8.0"
+    },
+    {
+      "Unnamed: 0": "version.factorlasso",
+      "group": "versions",
+      "value": "0.20.0.dev5"
+    },
+    {
+      "Unnamed: 0": "git_commit",
+      "group": "versions",
+      "value": "b60d63bdf164550f23972262549da1f120804f53"
+    },
+    {
+      "Unnamed: 0": "run.reference_ccy",
+      "group": "run",
+      "value": "USD"
+    },
+    {
+      "Unnamed: 0": "run.date",
+      "group": "run",
+      "value": "2026-06-30 00:00:00"
+    },
+    {
+      "Unnamed: 0": "run.use_beta_priors",
+      "group": "run",
+      "value": "False"
+    },
+    {
+      "Unnamed: 0": "run.uip_discount",
+      "group": "run",
+      "value": "0.5"
+    },
+    {
+      "Unnamed: 0": "run.uip_discounts",
+      "group": "run",
+      "value": "{'USD': 0.5, 'EUR': 0.5, 'GBP': 0.5, 'CHF': 0.5}"
+    },
+    {
+      "Unnamed: 0": "run.pipeline",
+      "group": "run",
+      "value": "run_global_saa_cma_estimation"
+    },
+    {
+      "Unnamed: 0": "credit.IG.historical_spread_bps",
+      "group": "credit_calibration",
+      "value": "65.0"
+    },
+    {
+      "Unnamed: 0": "credit.IG.pd_ttc",
+      "group": "credit_calibration",
+      "value": "0.001"
+    },
+    {
+      "Unnamed: 0": "credit.IG.lgd",
+      "group": "credit_calibration",
+      "value": "0.6"
+    },
+    {
+      "Unnamed: 0": "credit.IG.expected_loss_bps",
+      "group": "credit_calibration",
+      "value": "6.0"
+    },
+    {
+      "Unnamed: 0": "credit.IG.migration_allowance_bps",
+      "group": "credit_calibration",
+      "value": "15.0"
+    },
+    {
+      "Unnamed: 0": "credit.IG.total_loss_allowance_bps",
+      "group": "credit_calibration",
+      "value": "21.0"
+    },
+    {
+      "Unnamed: 0": "credit.HY.historical_spread_bps",
+      "group": "credit_calibration",
+      "value": "400.0"
+    },
+    {
+      "Unnamed: 0": "credit.HY.pd_ttc",
+      "group": "credit_calibration",
+      "value": "0.02"
+    },
+    {
+      "Unnamed: 0": "credit.HY.lgd",
+      "group": "credit_calibration",
+      "value": "0.6"
+    },
+    {
+      "Unnamed: 0": "credit.HY.expected_loss_bps",
+      "group": "credit_calibration",
+      "value": "120.0"
+    },
+    {
+      "Unnamed: 0": "credit.HY.migration_allowance_bps",
+      "group": "credit_calibration",
+      "value": "0.0"
+    },
+    {
+      "Unnamed: 0": "credit.HY.total_loss_allowance_bps",
+      "group": "credit_calibration",
+      "value": "120.0"
+    },
+    {
+      "Unnamed: 0": "em_credit.spread_key",
+      "group": "em_credit",
+      "value": "credit.em.sovereign_spread"
+    },
+    {
+      "Unnamed: 0": "em_credit.tracker_ticker",
+      "group": "em_credit",
+      "value": "JCRECCEU"
+    },
+    {
+      "Unnamed: 0": "em_credit.loss_method",
+      "group": "em_credit",
+      "value": "fixed_sovereign_assumption"
+    },
+    {
+      "Unnamed: 0": "em_credit.pd_ttc",
+      "group": "em_credit",
+      "value": "0.003"
+    },
+    {
+      "Unnamed: 0": "em_credit.lgd",
+      "group": "em_credit",
+      "value": "0.5"
+    },
+    {
+      "Unnamed: 0": "em_credit.expected_loss_bps",
+      "group": "em_credit",
+      "value": "15.0"
+    },
+    {
+      "Unnamed: 0": "em_credit.loss_basis",
+      "group": "em_credit",
+      "value": "annual_loss_per_performing_credit_notional"
+    },
+    {
+      "Unnamed: 0": "em_credit.history_convention",
+      "group": "em_credit",
+      "value": "constant_loss_policy_not_point_in_time"
+    },
+    {
+      "Unnamed: 0": "em_credit.historical_spread_bps",
+      "group": "em_credit",
+      "value": "400.0"
+    },
+    {
+      "Unnamed: 0": "credit_units.IG.policy",
+      "group": "credit_units",
+      "value": "first_order_unit_NAV_proxy; frozen_current_exposure; no extra carry/cost adjustment"
+    },
+    {
+      "Unnamed: 0": "credit_units.IG.matf_single_weight",
+      "group": "credit_units",
+      "value": 4.544959799742528
+    },
+    {
+      "Unnamed: 0": "credit_units.IG.tracker_notional_per_nav",
+      "group": "credit_units",
+      "value": 1
+    },
+    {
+      "Unnamed: 0": "credit_units.IG.matf_basket_weight",
+      "group": "credit_units",
+      "value": 1.387007906355277
+    },
+    {
+      "Unnamed: 0": "credit_units.HY.policy",
+      "group": "credit_units",
+      "value": "first_order_unit_NAV_proxy; frozen_current_exposure; no extra carry/cost adjustment"
+    },
+    {
+      "Unnamed: 0": "credit_units.HY.matf_single_weight",
+      "group": "credit_units",
+      "value": 1.016519555204765
+    },
+    {
+      "Unnamed: 0": "credit_units.HY.tracker_notional_per_nav",
+      "group": "credit_units",
+      "value": 1
+    },
+    {
+      "Unnamed: 0": "credit_units.HY.matf_basket_weight",
+      "group": "credit_units",
+      "value": 0.7145192244860517
+    },
+    {
+      "Unnamed: 0": "credit_units.EM.policy",
+      "group": "credit_units",
+      "value": "first_order_unit_NAV_proxy; frozen_current_exposure; no extra carry/cost adjustment"
+    },
+    {
+      "Unnamed: 0": "credit_units.EM.matf_single_weight",
+      "group": "credit_units",
+      "value": 0.6754574809979466
+    },
+    {
+      "Unnamed: 0": "credit_units.EM.tracker_notional_per_nav",
+      "group": "credit_units",
+      "value": 1
+    },
+    {
+      "Unnamed: 0": "beta_prior_policy.factor_for_prior",
+      "group": "beta_prior_policy",
+      "value": "worksheet_factor_columns"
+    }
+  ],
+  "file_sha256": {
+    "assets.csv": "ac32175fbd64d232c323c6195e453b8698d9ae464f113bf60ef0d9770e4fd783",
+    "asset_excess_logreturns.csv": "bed46e03d4223194597661441b3507b7c2b9e788e3f484b40940bdd9f064dd79",
+    "asset_total_returns.csv": "58cde0ede3886c7fea3a0c50e584e8d3faef3dd0b7051a2aedd04d1f45bc16fe",
+    "betas.csv": "927c0dc2562201cc5b0772cd775129b90eb26615de8e3c9af66fadde2d7ba53f",
+    "factor_covar.csv": "e405b5e8e75b5224d338dc30957b8acedeec2c8a68b2f92d2b3804eddec55272",
+    "factor_navs.csv": "b1a1f7b1ace850250587918c9be6480d6d3ff9eaa7a6f1aab368c6ac537c8d18",
+    "factor_premia.csv": "dbb55e6a2ca3bbbbdb6cb7809857fd742ace5e7dc5e2290b3306d8f5a9ef8914",
+    "providers.csv": "8201955fb3d8c4a32eb8ea4d97835d55daf6c7f717cc3ed955b0ab3c49b482bc"
+  },
+  "input_file_sha256": {
+    "factor_cma2026.xlsx": "420d0eff7c8824e7f879f97fd132815a8504d9c5720007b7751e2c9d5bb3e922",
+    "factor_cma2026_factor_prices.csv": "add81fea0b9df0c920cfe72f783861b6791c1351ea5fa2785a7e544551e6840b",
+    "factor_premia_inputs.xlsx": "c3ef166d977f6953b0a9c3f26897f8f1ddf90164f7dbf8f21d7b69f5e8e20efd",
+    "Global_CMA_SAA_Universe.xlsx": "f71117b573a5dbaacfd6670ebd4768671ee077deff6f50c8112ed7b1c0732128",
+    "global_saa_universe_data_metadata.csv": "4098a04cc6d6fc9f12b646e4d52666ef1d45f78015c8bbc9e770567b04bbcb6a",
+    "global_saa_universe_data_prices.csv": "36e2a2028614427734eae2a3f8e234a7afc0322389cd6513266f7f75d87bd846",
+    "futures_prices.csv": "e14dfe5a331965de4cb52e6205e8fc9329641404114f991d2ee791352bf418a3",
+    "fx_hedging_data_domestic_rates.csv": "f366a15a332d763d6a195d91393de3e7662922caf47d97b657511e1c9abb4a28",
+    "fx_hedging_data_fx_spots.csv": "5eaf1bb911990e59c360db9aa7162379dc0be0020ea8aeda7fbeb83ca6e6d0a6",
+    "fx_hedging_data_usd_assets.csv": "ff00f6eb66f6bda346323da01e3c9c61da3226278e5b744455d8ae7b74adf622",
+    "global_saa_universe_data_cmas_usd_2026q2.xlsx": "821cadbc4c11080efce4e5036b6033cb168a2dfe970d7ce2b8f4e437a881b8fe",
+    "global_saa_universe_data_cmas_eur_2026q2.xlsx": "7266989008269745c52e3f911c6bfe6549ef734f98104cd17eedd404d9b08f2e",
+    "global_saa_universe_data_cmas_chf_2026q2.xlsx": "680e32b6242939099eb4412b04e7137d9af378c58fe74aa0611fea7063323d15",
+    "global_saa_universe_data_cmas_gbp_2026q2.xlsx": "b9cc05b2865cbdb2b89bc709f558720ec77cd7db6f087d54cc668a646f10d782"
+  },
+  "source_code_bundle_sha256": {
+    "qis": "5d3997735c0b18304070d704493ec3834f16e581ab7f5684b02e5a6bc2a8bc3d",
+    "factorlasso": "953b458694d74ad8dffa9e826e0dad9984ecb0afa32f090fef07dcc93c6f04dd",
+    "optimalportfolios": "afe4644d85094da3bf2529bc03d02a3e389704cedf60d05524aa72444ad75774",
+    "ramen.quant_model_mvp.rosaa": "1ce63cd9953655350b99dfe95d27feebc0119ec6bef145422c74a50988401415"
+  },
+  "estimator_policy": "FCGL; per-response valid EWMA mass normalized loss; fixed native-frequency penalties; EWMA date-pooled signs; worksheet priors and prior-sign precedence subject to hard gates",
+  "factor_for_prior_policy": {
+    "paper_map": {
+      "LGCPTRUH Index": "Credit IG",
+      "H23059US Index": "Credit HY",
+      "H04386US Index": "Credit EM",
+      "LF94TRUH Index": [
+        "Rates",
+        "Inflation"
+      ]
+    },
+    "reestimated_each_draw": true,
+    "soft_prior": true
+  },
+  "previous_snapshot": "2026q2_custom_ig_hy_publication",
+  "previous_snapshot_manifest_sha256": "64078837476e952c90084148eb39655913c933b29a890692d91a93595b63bcdc",
+  "computation_notes": [
+    "June cutoff unchanged; source and input panels frozen.",
+    "IG 65 bp long-run spread; 6 bp default and 15 bp migration policy deductions.",
+    "HY 400 bp long-run spread; 120 bp default deduction.",
+    "EM 400 bp long-run spread; 15 bp strategic loss, 0.30% PD x 50% LGD; not benchmark calibrated.",
+    "Credit tracker notional/NAV 1x remains an approximation; fixed current outer MATF exposure.",
+    "Fund/TAA prior routing and deferred duration/leverage checks unchanged."
+  ]
+}

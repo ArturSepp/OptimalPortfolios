@@ -5,6 +5,13 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.8.1.dev1] - 2026-09-25
+
+- Add optional fixed `reg_lambda_freq_dict` penalties to `FactorCovarEstimator`
+  and `estimate_lasso_factor_covar_data`. Each native return cadence uses its
+  calibrated penalty without changing the model's scalar setting. Omitting the
+  map preserves existing results and solver defaults.
+
 ## [7.8.0] - 2026-09-23
 
 - Yield-target optimisation retains its configured turnover penalty when no hard

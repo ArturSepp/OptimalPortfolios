@@ -3,9 +3,9 @@ The shared paper universe: one source of truth for both paper packages.
 
 Defines the 18-asset universe of the MATF-CMA (JPM) and Achievable Sharpe
 (FAJ) papers: tickers, sleeve names, asset classes, the paper admission
-policy, the legacy nine-factor and custom eleven-factor panels, and the common
-bootstrap window. The FAJ paper pins the nine-factor panel; the JPM paper pins
-the custom eleven-factor panel. Both papers import these definitions through
+policy, the legacy nine-factor and custom eleven/twelve-factor panels, and the common
+bootstrap window. Both papers now pin the custom twelve-factor split-credit
+publication snapshot, whose labels are read from its verified files. Both import these definitions through
 cma_data; neither paper defines its own universe. Estimated quantities (betas,
 alphas, vols, premia) do NOT live
 here — they live in versioned snapshots (see loaders.py).
@@ -66,9 +66,16 @@ ADMISSION_POLICY: Dict[str, float] = {
 FACTORS = ['Equity', 'Rates', 'Credit', 'Carry', 'Inflation', 'Commodities',
            'Private Equity', 'Rates Vol', 'Fx']
 
-# JPM MATF_CUSTOM adoption decision D1, 2026-08-12; FAJ continues to use FACTORS.
+# Historical custom eleven-factor panel; older snapshots retain these labels.
 FACTORS_CUSTOM = ['Equity', 'Rates', 'Credit', 'Credit EM', 'Carry G10', 'Carry EM',
                   'Inflation', 'Commodities', 'Private Equity', 'Rates Vol', 'Fx']
+
+# Initial split-credit labels, 2026-09-23; publication snapshots shorten IG/HY names.
+# Retain this historical constant; consumers use the labels in their pinned snapshot.
+FACTORS_CUSTOM_IG_HY = [
+    'Equity', 'Rates', 'Credit IG US', 'Credit HY US', 'Credit EM', 'Carry G10',
+    'Carry EM', 'Inflation', 'Commodities', 'Private Equity', 'Rates Vol', 'Fx',
+]
 
 # Common bootstrap window for both papers: 300 months.
 BOOTSTRAP_START = '2001-07-31'

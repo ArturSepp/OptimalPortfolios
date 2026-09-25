@@ -61,7 +61,8 @@ def test_unknown_mandate_raises():
         cma_data.get_benchmark_weights(mandate='Aggressive')
 
 
-SNAPSHOT_TAGS = ('2026q2', '2026q2_custom')
+SNAPSHOT_TAGS = ('2026q2', '2026q2_custom', '2026q2_custom_ig_hy',
+                 '2026q2_custom_ig_hy_ig_prior', '2026q2_custom_ig_hy_publication')
 
 
 @pytest.mark.parametrize('tag', SNAPSHOT_TAGS)
