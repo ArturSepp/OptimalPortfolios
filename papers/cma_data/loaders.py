@@ -30,7 +30,8 @@ treats a panel as OPTIONAL: it loads when present, is None when absent, and
 PaperInputs.require_panel() raises a message naming the file and the scripts
 that need it. Manifest verification checks the hash of every file that IS
 present and reports the absent ones, so tampering is still caught on
-everything shipped.
+everything shipped. Some manifests also record the licensed provider vectors
+(providers.csv), which are optional in the same way.
 
 Does not belong here: universe identity (universe.py), benchmarks
 (benchmarks.py), any computation on the inputs (the papers' replication).
@@ -50,6 +51,8 @@ CONFIG_FILES: Tuple[str, ...] = ('assets.csv', 'betas.csv', 'factor_covar.csv',
                                  'factor_premia.csv')
 PANEL_FILES: Tuple[str, ...] = ('asset_excess_logreturns.csv', 'asset_total_returns.csv',
                                 'factor_navs.csv')
+# licensed provider CMA vectors that some manifests record; like the panels they never ship
+LICENSED_INPUT_FILES: Tuple[str, ...] = ('providers.csv',)
 # which replication scripts need each panel, for the message a public checkout sees
 PANEL_CONSUMERS: Dict[str, str] = {
     'asset_excess_logreturns': 'run_consistency_exhibits.py (J4d), run_bootstrap_q2.py (J5)',

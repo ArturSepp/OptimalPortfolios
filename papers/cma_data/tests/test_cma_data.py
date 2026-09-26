@@ -69,9 +69,9 @@ SNAPSHOT_TAGS = ('2026q2', '2026q2_custom', '2026q2_custom_ig_hy',
 def test_snapshot_manifest_verifies(tag):
     """every present file matches its hash; absent files are reported, not fatal.
 
-    The three return panels are not redistributed publicly, so a public checkout
-    reports them as absent. Config files are always present or verify_manifest
-    raises.
+    The three return panels and the licensed provider vectors are not redistributed
+    publicly, so a public checkout reports them as absent. Config files are always
+    present or verify_manifest raises.
     """
     snapshot = CMA_DATA / 'snapshots' / tag
     if not snapshot.exists():
@@ -79,7 +79,8 @@ def test_snapshot_manifest_verifies(tag):
     manifest, absent = cma_data.verify_manifest(snapshot_path=snapshot)
     assert manifest['tag'] == tag
     assert len(manifest['file_sha256']) >= 6
-    assert set(absent).issubset(set(cma_data.loaders.PANEL_FILES))
+    optional = set(cma_data.loaders.PANEL_FILES) | set(cma_data.loaders.LICENSED_INPUT_FILES)
+    assert set(absent).issubset(optional)
     for name in cma_data.loaders.CONFIG_FILES:
         assert name not in absent
 
