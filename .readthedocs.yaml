@@ -5,11 +5,13 @@ build:
   tools:
     python: "3.12"
   jobs:
+    # pip does not put the uv entry point on the build PATH, so uv runs as a module. A bare
+    # `uv` failed every build from 2026-09-14 to 2026-09-26 with "uv: not found".
     create_environment:
       - python -m pip install uv==0.12.13
-      - uv venv "$READTHEDOCS_VIRTUALENV_PATH"
+      - python -m uv venv --python "$(python -c 'import sys; print(sys.executable)')" "$READTHEDOCS_VIRTUALENV_PATH"
     install:
-      - UV_PROJECT_ENVIRONMENT="$READTHEDOCS_VIRTUALENV_PATH" uv sync --locked --extra docs
+      - UV_PROJECT_ENVIRONMENT="$READTHEDOCS_VIRTUALENV_PATH" python -m uv sync --locked --extra docs
     pre_build:
       - '"$READTHEDOCS_VIRTUALENV_PATH/bin/python" tools/check_docs.py --source-all'
       - '"$READTHEDOCS_VIRTUALENV_PATH/bin/python" -m tools.docs_analytics.run --list'

@@ -638,6 +638,13 @@ build. Offline regeneration and the external-link gate run in GitHub Actions; ho
 reviewed committed previews. Build-system bootstrap packages, operating-system libraries and
 the Python patch version are not fully pinned by the application lockfile.
 
+The configuration runs uv as a module, `python -m uv`, because pip does not put the uv entry
+point on the build `PATH`. A bare `uv` command failed every hosted build from 2026-09-14 to
+2026-09-26 while `docs.yml` stayed green, since that workflow builds in its own environment.
+The daily [external documentation health workflow](../.github/workflows/link-health.yml) now
+fails when the newest finished build of `latest` did not succeed. The `stable` version rebuilds
+only from a release tag.
+
 This setup follows the documented [Read the Docs build-job customization](https://docs.readthedocs.com/platform/stable/build-customization.html) and
 [uv project environment and lock controls](https://docs.astral.sh/uv/concepts/projects/config/).
 On this Windows host, continue to use the prescribed external interpreter and a C-local source
