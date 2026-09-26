@@ -111,6 +111,12 @@ class ParitySolveError(RuntimeError):
     """Raised when a paper-era optimiser does not return admissible weights."""
 
 
+# The 2024 run solved the MaxSharpe Charnes-Cooper QP with ECOS_BB. The program has no integer
+# variables, and ECOS is no longer a CVXPY dependency, so the replay uses CLARABEL, which CVXPY
+# installs by default; the golden-median replay checks that the result is unchanged.
+MAX_SHARPE_SOLVER = "CLARABEL"
+
+
 @dataclass(frozen=True)
 class Parity2024Config:
     """Parameters used by the August 2024 paper update."""
@@ -127,7 +133,7 @@ class Parity2024Config:
     estimation_start: str | pd.Timestamp | None = "2010-07-19"
     reporting_start: str | pd.Timestamp | None = "2016-03-31"
     end_date: str | pd.Timestamp | None = None
-    max_sharpe_solver: str = "ECOS_BB"
+    max_sharpe_solver: str = MAX_SHARPE_SOLVER
 
 
 @dataclass(frozen=True)
@@ -238,10 +244,10 @@ def _installed_version(distribution: str) -> str | None:
 def dependency_report(
     methods: Iterable[ParityMethod | str | object] = (),
 ) -> DependencyReport:
-    """Inspect lower bounds plus method-specific sklearn/ECOS_BB requirements.
+    """Inspect lower bounds plus method-specific sklearn/solver requirements.
 
     The base numerical stack is always checked.  ``scikit-learn`` is required
-    only for CARA and the historical ``ECOS_BB`` backend only for MaxSharpe.
+    only for CARA and the ``CLARABEL`` backend only for MaxSharpe.
     Installed versions are reported even when a method does not require them so
     every numerical replay can persist the same audit manifest.
     """
@@ -271,8 +277,8 @@ def dependency_report(
             missing.append(f"{package} has an unparseable version {installed!r}")
 
     installed_solvers = tuple(sorted(cvx.installed_solvers()))
-    if ParityMethod.MAX_SHARPE in normalised and "ECOS_BB" not in installed_solvers:
-        missing.append("CVXPY solver ECOS_BB is not installed")
+    if ParityMethod.MAX_SHARPE in normalised and MAX_SHARPE_SOLVER not in installed_solvers:
+        missing.append(f"CVXPY solver {MAX_SHARPE_SOLVER} is not installed")
 
     return DependencyReport(
         python=platform.python_version(),
@@ -300,7 +306,7 @@ def _require_cvxpy_solver(solver: str) -> None:
     if solver not in cvx.installed_solvers():
         raise ParityDependencyError(
             f"CVXPY solver {solver!r} is not installed; available solvers are "
-            f"{sorted(cvx.installed_solvers())}. The historical solver was 'ECOS_BB'."
+            f"{sorted(cvx.installed_solvers())}. The default solver is {MAX_SHARPE_SOLVER!r}."
         )
 
 

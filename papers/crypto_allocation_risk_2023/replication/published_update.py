@@ -739,7 +739,7 @@ def run_published_update(
             "Balanced ERC applies a 75% risk budget to the 60/40 sleeve; it is not a 75% capital weight.",
             (
                 "Published-engine MaxSharpe uses a rolling 60-month arithmetic mean and "
-                "the historical ECOS_BB Charnes-Cooper solve."
+                "the Charnes-Cooper solve, with CLARABEL in place of the 2024 ECOS_BB backend."
                 if engine_id == PUBLISHED_ENGINE
                 else "Current-engine MaxSharpe uses EWMA expected returns."
             ),

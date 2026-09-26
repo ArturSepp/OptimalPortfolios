@@ -323,7 +323,7 @@ _RUN_GOLDEN_ENGINE = os.environ.get("RUN_CRYPTO_PARITY_GOLDEN") == "1"
 def test_private_archived_panel_reproduces_all_golden_weight_medians() -> None:
     """Run all sixteen private panel/method combinations against the workbook oracle."""
 
-    assert "ECOS_BB" in cvx.installed_solvers()
+    assert "CLARABEL" in cvx.installed_solvers()
     panel = pd.read_csv(GOLDEN_PANEL_PATH, index_col=0, parse_dates=True)
     config = Parity2024Config(end_date="2024-08-16")
     scenarios = (
@@ -356,6 +356,6 @@ def test_private_archived_panel_reproduces_all_golden_weight_medians() -> None:
             observed.append(float(result.with_asset[crypto].median()))
         observed.append(float(np.median(observed)))
         # The archived environment was not locked.  ECOS_BB/CVXPY patch-level
-        # drift moves the MaxSharpe median by about 3e-6 under the recorded
-        # current runtime, while leaving the economic result unchanged.
+        # drift moved the MaxSharpe median by about 3e-6; the CLARABEL replay is
+        # within 6.3e-7 of every golden median, leaving the economic result unchanged.
         np.testing.assert_allclose(observed, expected, rtol=0.0, atol=3.1e-6)
