@@ -209,6 +209,8 @@ papers/achievable_sharpe_faj_2026/
 /papers/cluster_lineage_2026/
 /papers/matf_cma_jpm_2026/
 /papers/layer_attribution_2026/
+# accepted at JOIM; local until the post-acceptance anonymised release
+/papers/smart_diversification_joim_2026/
 
 # Reference source documents (books, survey PDFs) are not redistributable.
 papers/references/
