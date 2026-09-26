@@ -98,9 +98,13 @@ test = [
 # fail tomorrow with nothing in this repository having moved. An exact pin makes a verdict change
 # a reviewed commit rather than an upstream event. Bumping is a deliberate PR: raise the version
 # here, re-lock, and fix whatever the new release now reports.
+#
+# deptry is a gate of the same kind: it reads the imports under src/ against the declarations
+# above, and its configuration is [tool.deptry] below.
 lint = [
     "ruff==0.16.2",
     "interrogate==1.7.0",
+    "deptry==0.25.1",
 ]
 
 # `pip-audit` is separated from `lint` because it is not a source gate: it reads the resolved
@@ -220,6 +224,38 @@ pandas = "pd"
 # published code and is left exactly as-is. `rosaa/` is gitignored and not ours.
 fail-under = 100
 exclude = ["papers", "rosaa", ".codex_analysis", "outputs", "tmp"]
+
+[tool.deptry]
+# static.yml runs deptry from the `lint` group alone, as `uvx deptry src` does, so none of the
+# dependencies it checks are installed and it guesses each import name from the distribution
+# name. PyYAML is the one dependency where that guess is wrong: it is imported as `yaml`.
+package_module_name_map = {PyYAML = "yaml"}
+# `examples/` is this repository's own tree, not a package. One checkout-only test puts the
+# checkout on sys.path to import it and is skipped when there is no checkout.
+known_first_party = ["examples"]
+# The test modules stay in the scan, although they ship inside the package: a test that imports
+# an undeclared package breaks `pytest --pyargs optimalportfolios` on an installed wheel. So each
+# ignore below is scoped to one named dependency, never to a path.
+
+[tool.deptry.per_rule_ignores]
+# Declared but never imported by name, each on purpose:
+# - openpyxl: the Excel engine pandas loads when `UniverseData` reads metadata through
+#   `qis.load_df_from_excel`.
+# - scs: a CVXPY solver backend. CVXPY already requires it; it is declared here to raise the
+#   floor to 3.2.4.post3 and exclude the broken 3.3.0 (see CHANGELOG).
+# - sphinx, furo, myst-parser: the `docs` extra is build tooling, not an import.
+DEP002 = ["openpyxl", "scs", "sphinx", "furo", "myst-parser"]
+# Tests ship inside the package, so test modules and the package conftest import pytest from
+# the `test` group. The ignore is global, because deptry cannot scope one to `tests/`.
+DEP004 = ["pytest"]
+# Imported in tests without being declared:
+# - PIL (Pillow, required by matplotlib) draws a blank image in the docs-bundle validator test.
+# - tomli / tomllib: the Python 3.10 fallback in installation_documentation_test.py. On a 3.10
+#   interpreter deptry does not count tomllib as standard library.
+# DEP001 fires where the module is absent, as in the `lint` group; DEP003 where another
+# dependency installs it, as in the full project environment.
+DEP001 = ["PIL", "tomllib"]
+DEP003 = ["PIL", "tomli"]
 
 [tool.coverage.run]
 source = ["optimalportfolios"]

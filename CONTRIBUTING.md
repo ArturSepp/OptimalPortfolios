@@ -49,10 +49,11 @@ uv sync --locked --group test                            # editable install, ver
 uv run --no-sync pytest                                  # the full suite; a few minutes
 uv run --locked --only-group lint ruff check --select TID251,TID253,ICN,F src/optimalportfolios/
 uv run --locked --only-group lint interrogate -v         # docstring coverage, must stay at 100%
+uv run --locked --only-group lint deptry src             # declared dependencies against imports
 uv run --no-sync pytest --cov=optimalportfolios --cov-report=term-missing  # floor is fail_under = 100
 ```
 
-The two lint commands are the exact invocations `static.yml` gates with. The coverage command is
+The three lint commands are the exact invocations `static.yml` gates with. The coverage command is
 what the ubuntu/3.12 cell of `ci.yml` runs, with `--locked` added — that cell enforces the lock on
 its `uv sync` step instead, so the effect is the same.
 

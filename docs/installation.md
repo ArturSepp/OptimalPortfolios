@@ -170,7 +170,7 @@ The checkout's PEP 735 groups are:
 | Group | Purpose |
 |---|---|
 | `test` | `pytest` and `pytest-cov` for automated checks. |
-| `lint` | Pinned `ruff` and `interrogate` for source gates. |
+| `lint` | Pinned `ruff`, `interrogate` and `deptry` for source gates. |
 | `audit` | Pinned `pip-audit` for dependency-advisory checks. |
 | `all` | Requests `optimalportfolios[data,reports]` for contributor environments. |
 

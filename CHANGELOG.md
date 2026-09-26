@@ -30,6 +30,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   and `estimate_lasso_factor_covar_data`. Each native return cadence uses its
   calibrated penalty without changing the model's scalar setting. Omitting the
   map preserves existing results and solver defaults.
+- `static.yml` now gates declared dependencies against imports with `deptry`, pinned at 0.25.1
+  in the `lint` group. Unconfigured, it reported 102 findings, none a defect: `[tool.deptry]` in
+  `pyproject.toml` maps PyYAML to `yaml` and records a reason for every ignore, among them the
+  deliberately declared `openpyxl` (pandas Excel engine) and `scs` (CVXPY solver pin). Tagged the
+  six untagged README code fences as `text` or `bibtex`. Fixes issue #86.
 
 ## [7.8.0] - 2026-09-23
 
