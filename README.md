@@ -223,7 +223,7 @@ estimator rather than portfolio construction.
 
 ## Package overview
 
-```
+```text
 src/optimalportfolios/
 ├── config.py                      # PortfolioObjective enum
 ├── alphas/                        # Alpha signal computation
@@ -465,7 +465,7 @@ The `examples/` folder is organised into six purpose-folders. The
 [examples guide](docs/examples_readme.md) maps every demo to its
 role; the headlines are:
 
-```
+```text
 examples/
 ├── data/                  Universe fixtures (fetch_benchmark_universe_data, fetch_minimal_universe_data)
 ├── solvers/               One demo per single-objective solver
@@ -734,7 +734,7 @@ A machine-readable citation is available in [`CITATION.cff`](CITATION.cff).
 
 If you use optimalportfolios in your research, please cite it as:
 
-```
+```bibtex
 @software{sepp2026optimalportfolios,
   author={Sepp, Artur},
   title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
@@ -744,7 +744,7 @@ If you use optimalportfolios in your research, please cite it as:
 }
 ```
 
-```
+```bibtex
 @article{sepp2023,
   title={Optimal allocation to cryptocurrencies in diversified portfolios},
   author={Sepp, Artur},
@@ -756,7 +756,7 @@ If you use optimalportfolios in your research, please cite it as:
 }
 ```
 
-```
+```bibtex
 @article{sepp2026rosaa,
   author={Sepp, Artur and Ossa, Ivan and Kastenholz, Mika},
   title={Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios},
@@ -768,7 +768,7 @@ If you use optimalportfolios in your research, please cite it as:
 }
 ```
 
-```
+```bibtex
 @article{sepphansenkastenholz2026,
   title={Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors},
   author={Sepp, Artur and Hansen, Emilie H. and Kastenholz, Mika},
