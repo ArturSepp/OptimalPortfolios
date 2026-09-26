@@ -29,3 +29,7 @@
 *.pickle binary
 *.parquet binary
 .githooks/* text eol=lf
+
+# Paper snapshots are hash-verified byte for byte (papers/cma_data/loaders.py), so git must
+# store and check out their exact bytes; any line-ending conversion breaks the manifest.
+papers/cma_data/snapshots/** -text
