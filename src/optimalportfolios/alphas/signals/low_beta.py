@@ -43,8 +43,11 @@ def _compute_raw_beta_single_freq(prices: pd.DataFrame,
         benchmark_price = benchmark_price.reindex(index=prices.index, method='ffill')
         benchmark_returns = qis.to_returns(benchmark_price, freq=returns_freq, is_log_returns=True)
 
+    # X0 starts each EWMA mean at the column's first return; InitType.MEAN would seed it with
+    # the full-sample mean, which is a look-ahead
     ewm_linear_model = qis.EwmLinearModel(x=benchmark_returns.to_frame('benchmark'), y=returns)
-    ewm_linear_model.fit(span=beta_span, mean_adj_type=mean_adj_type, is_x_correlated=True, warmup_period=beta_span)
+    ewm_linear_model.fit(span=beta_span, mean_adj_type=mean_adj_type, init_type=qis.InitType.X0,
+                         is_x_correlated=True, warmup_period=beta_span)
     raw_beta = ewm_linear_model.loadings['benchmark']
     raw_beta = raw_beta.replace({0.0: np.nan})
 

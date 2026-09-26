@@ -162,7 +162,8 @@ def test_standard_scores_match_their_raw_characteristic(examples, family):
 def test_momentum_default_has_contemporaneous_vol_and_unit_variance_filter(examples):
     """Derive the default signal from squared-return EWM weights and a separate geometric sum."""
     relative = _log_returns(examples['prices']).sub(_log_returns(examples['benchmark']), axis=0)
-    variance = _ewm_reference(relative.to_numpy() ** 2, span=13)
+    variance = np.zeros(relative.shape)  # the variance starts at the first observed square
+    variance[1:] = _ewm_reference(relative.to_numpy()[1:] ** 2, span=13, seed_first=True)
     adjusted = np.divide(relative, np.sqrt(variance), out=np.zeros_like(variance),
                          where=variance > 0)
     expected = np.sqrt(12) * _ewm_reference(adjusted, span=12)
@@ -239,8 +240,8 @@ def test_carry_uses_annual_volatility_even_when_span_is_none(examples, span):
         examples['prices'], carry=examples['carry'], returns_freq='ME', vol_span=span)
     returns = _log_returns(examples['prices']).to_numpy()
     effective_span = span if span is not None else 2 / (1 - 0.94) - 1
-    variance = 12 * _ewm_reference(returns ** 2, effective_span)
-    expected = examples['carry'].to_numpy()[1:] / np.sqrt(variance[1:])
+    variance = 12 * _ewm_reference(returns[1:] ** 2, effective_span, seed_first=True)
+    expected = examples['carry'].to_numpy()[1:] / np.sqrt(variance)
     np.testing.assert_allclose(actual.iloc[1:], expected, rtol=1e-11, atol=1e-12)
 
 
@@ -339,11 +340,7 @@ def test_mixed_cadence_and_fixed_groups_use_the_stated_comparison_sets(examples)
 
 
 @pytest.mark.parametrize('family,mean_adjustment', [
-    pytest.param(family, 'default', marks=pytest.mark.xfail(
-        strict=True, reason='QIS MEAN initialisation uses future data; numerical fix is pending'))
-    if family in ['low_beta', 'residual_momentum', 'residual_reversal']
-    else pytest.param(family, 'default')
-    for family in FAMILIES
+    (family, 'default') for family in FAMILIES
 ] + [(family, 'NONE') for family in ['low_beta', 'residual_momentum', 'residual_reversal']])
 @pytest.mark.parametrize('cluster', [False, True])
 def test_future_observations_do_not_change_earlier_signals(

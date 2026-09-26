@@ -109,7 +109,8 @@ m_t=\sqrt{1-\lambda^2}\sum_{j=1}^{t}\lambda^{t-j}u_j.
 $$
 
 By default $u_t$ is the benchmark-relative log return divided by its contemporaneous
-per-period EWMA volatility. Without a benchmark it is based on the asset's own return.
+per-period EWMA volatility, whose variance recursion starts at the first observed squared
+return. Without a benchmark it is based on the asset's own return.
 `vol_span=None` disables this normalisation for momentum and residual signals.
 A short leg subtracts another exponentially filtered component with the joint normalisation
 defined in [QIS's EWMA implementation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/src/qis/models/linear/ewm.py).
@@ -145,15 +146,15 @@ The raw-beta path replaces exact zero loadings with NaN. A zero or missing score
 needs interpretation in its scoring context. A low-beta characteristic does not itself
 construct a beta-neutral or leveraged betting-against-beta portfolio.
 
-**Timing limitation in the verified environment:** these beta-based constructors call
-`qis.EwmLinearModel.fit` without overriding its `init_type=MEAN` default. With
-`mean_adj_type=EWMA`, the running means start from the full-sample mean. Later observations
-can therefore alter earlier low-beta, residual-momentum and residual-reversal signals.
-A warm-up reduces this dependence but does not remove it. The current default examples are
-descriptive demonstrations, not verified point-in-time backtest inputs. Explicit
-`mean_adj_type=qis.MeanAdjType.NONE` bypasses this mean-initialisation path and passes the
-future-observation checks on this fixture; it also changes the estimator's meaning.
-Correcting the default initialisation requires a separate numerical change.
+**Point-in-time beta estimation:** these beta-based constructors call
+`qis.EwmLinearModel.fit` with `init_type=qis.InitType.X0`. With `mean_adj_type=EWMA`, each
+running mean starts at its column's first return, including a late-starting asset's first
+return after inception. Later observations therefore cannot alter earlier low-beta,
+residual-momentum or residual-reversal signals, and both `EWMA` and
+`mean_adj_type=qis.MeanAdjType.NONE` pass the future-observation checks on this fixture.
+`NONE` regresses through the origin, which changes the estimator's meaning. Before
+OptimalPortfolios 7.8.1 the running means started from the full-sample mean (`InitType.MEAN`),
+so later data moved the first few years of each asset's signals.
 
 #### Residual Momentum
 
@@ -204,7 +205,7 @@ A residual can reflect omitted risks or model error as well as skill.
 
 Carry requires a separate, dated annual-decimal yield panel. For example, `0.03` means 3%
 per year. The carry pair computes yield divided by annualised EWMA log-return volatility,
-then scores that ratio. Its default return cadence is `W-WED` and its volatility span is 13.
+whose variance recursion starts at the first observed squared return, then scores that ratio. Its default return cadence is `W-WED` and its volatility span is 13.
 Supply carry values known at formation time. This ratio does not remove all duration,
 credit or other economic risk.
 
@@ -718,12 +719,10 @@ Ties are resolved by column order. A top-quantile profile ranks and equal-weight
 does not optimise their covariance or control factor exposures.
 
 Avoid `MeanAdjType.INSAMPLE` in historical trading signals: it uses the full-sample mean.
-Future-observation checks pass for EWMA momentum, classic momentum and carry, including
-their cluster variants, on this fixture. The three beta-based families have the default
-initialisation limitation described under Low Beta; their explicit `NONE` variants pass.
-These checks cannot establish when a supplied price, carry input or factor loading was
-actually available. The pending default-path checks remain strict expected failures so a
-future fix triggers a documentation review.
+Future-observation checks pass for all six families, including their cluster variants, on
+this fixture; the three beta-based families pass under both the default `EWMA` and the
+explicit `NONE` mean adjustment. These checks cannot establish when a supplied price, carry
+input or factor loading was actually available.
 Changing the reporting cadence changes both the observations and the meaning of scalar spans.
 
 ### Empirical Findings

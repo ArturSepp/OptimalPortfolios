@@ -61,11 +61,13 @@ def _compute_raw_residual_reversal_single_freq(
         benchmark_returns = qis.to_returns(
             benchmark_price, freq=returns_freq, is_log_returns=True)
 
-    # EWMA beta estimation
+    # EWMA beta estimation; X0 starts each EWMA mean at the column's first return
+    # (InitType.MEAN would seed it with the full-sample mean, which is a look-ahead)
     ewm_linear_model = qis.EwmLinearModel(
         x=benchmark_returns.to_frame('benchmark'), y=returns)
     ewm_linear_model.fit(
-        span=beta_span, mean_adj_type=mean_adj_type, is_x_correlated=True, warmup_period=beta_span)
+        span=beta_span, mean_adj_type=mean_adj_type, init_type=qis.InitType.X0,
+        is_x_correlated=True, warmup_period=beta_span)
     raw_beta = ewm_linear_model.loadings['benchmark']
 
     # residual = r_t - beta_{t-1} * r_bench_t  (lagged beta avoids look-ahead)

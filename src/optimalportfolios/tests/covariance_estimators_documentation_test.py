@@ -196,8 +196,8 @@ def test_direct_rolling_ewma_is_unchanged_by_future_prices(examples):
         np.testing.assert_allclose(covariance, prefix, rtol=1e-10, atol=1e-14)
 
 
-def test_normalized_rolling_ewma_exposes_full_array_initialization(examples):
-    """Characterize the documented look-ahead limitation without changing the QIS kernel."""
+def test_normalized_rolling_ewma_is_unchanged_by_future_prices(examples):
+    """QIS 5.31 seeds the normalized-return volatility with the first square, not the full array."""
     cutoff = max(examples['rolling_covars'])
     future = examples['prices'].copy()
     mask = future.index > cutoff
@@ -205,8 +205,9 @@ def test_normalized_rolling_ewma_exposes_full_array_initialization(examples):
     estimator = replace(examples['estimator'], is_apply_vol_normalised_returns=True)
     before = estimator.fit_rolling_covars(examples['prices'], examples['ewma_period'])
     after = estimator.fit_rolling_covars(future, examples['ewma_period'])
-    difference = max(np.max(np.abs(before[date] - after[date]).to_numpy()) for date in before)
-    assert difference > 1e-5
+    assert list(before) == list(after)
+    for date, covariance in before.items():
+        np.testing.assert_allclose(covariance, after[date], rtol=1e-10, atol=1e-14)
 
 
 def test_rolling_factor_fit_is_unchanged_by_future_inputs(examples):

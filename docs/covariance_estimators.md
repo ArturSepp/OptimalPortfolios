@@ -111,11 +111,11 @@ mean replacing a missing input return with zero before recursion. Sampling may a
 handled a missing source price. See [incomplete histories](incomplete_histories.md).
 
 The optional `is_apply_vol_normalised_returns=True` selects a different, DCC-like normalized-return
-kernel. It is not an identity-shrinkage option. In the checked qis 5.26.0 implementation, that
-kernel seeds volatility from the mean squared returns over the entire supplied array.
-**Its use in the direct rolling EWMA path is therefore not point-in-time safe.** Later observations
-can affect earlier matrices even when `time_period.end` is earlier. This qualification is
-verified below and recorded separately from the ordinary EWMA formulas.
+kernel. It is not an identity-shrinkage option. From qis 5.31.0, which this package requires, that
+kernel seeds each volatility with the column's first finite squared return, so the direct rolling
+EWMA path is point in time with either kernel. Up to qis 5.30 it seeded volatility from the mean
+squared returns over the entire supplied array, and later observations could affect earlier
+matrices even when `time_period.end` was earlier. The future-price check is verified below.
 
 ### Factor and HCGL covariance
 
@@ -420,16 +420,15 @@ Zero-filled missing betas or residual variances can make an absent-history asset
 Eligibility and warm-up policy remain separate from matrix assembly. Sparse factor structure,
 cluster choices, residual scaling and return normalization all change the risk model.
 
-For historical use, preserve data as it was known on each date. Direct ordinary EWMA passed a
-future-price perturbation check in the included fixture; the optional normalized-return rolling
-path did not, owing to full-array volatility initialization. Rolling factor fitting explicitly
+For historical use, preserve data as it was known on each date. Direct ordinary EWMA and the
+optional normalized-return rolling path both pass a future-price perturbation check in the
+included fixture. Rolling factor fitting explicitly
 truncates inputs; an orthogonal current fit without factor references requires the caller's
 explicit input cutoff. A long warm-up may reduce
 initialization effects but does not prove that look-ahead is absent.
 
-The factor adapter's demeaning-field limitation and the direct normalized-return timing
-limitation are documented here without numerical changes. Use the checked causal configuration
-and inspect the implementation when changing either option.
+The factor adapter's demeaning-field limitation is documented here without numerical changes.
+Use the checked causal configuration and inspect the implementation when changing it.
 
 ## See also
 

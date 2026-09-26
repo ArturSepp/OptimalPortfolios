@@ -54,7 +54,7 @@ dependencies = [
     "cvxpy>=1.5.2",
     "scs>=3.2.4.post3,!=3.3.0",
     "quadprog>=0.1.11",
-    "qis>=5.26.0",
+    "qis>=5.31.0",
     "factorlasso>=0.17.0",
 ]
 

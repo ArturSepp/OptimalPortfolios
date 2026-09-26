@@ -115,8 +115,8 @@ initialization, demeaning, missing updates and span/half-life distinction.
 The class has no shrinkage-to-identity parameter.
 `estimate_rolling_ewma_covar` is a QIS re-export whose defaults differ from the class.
 
-The direct rolling normalized-return option has a documented full-array initialization
-limitation. For historical work, follow the
+The direct rolling normalized-return option is point in time from qis 5.31.0, which seeds its
+volatility with each column's first squared return. For historical work, follow the
 [timing qualifications](../../../docs/covariance_estimators.md#current-fits-and-rolling-dates):
 an ordinary current factor fit does not truncate inputs merely because `estimation_date`
 was supplied. The factor estimator's top-level `demean` field also does not control the

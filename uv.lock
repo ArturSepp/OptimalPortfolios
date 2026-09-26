@@ -2248,7 +2248,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.2.0" },
     { name = "pybloqs", marker = "extra == 'reports'", specifier = ">=1.2.13" },
     { name = "pyyaml", specifier = ">=6.0" },
-    { name = "qis", specifier = ">=5.26.0" },
+    { name = "qis", specifier = ">=5.31.0" },
     { name = "quadprog", specifier = ">=0.1.11" },
     { name = "scipy", specifier = ">=1.12.0" },
     { name = "scs", specifier = ">=3.2.4.post3,!=3.3.0" },
@@ -2917,7 +2917,7 @@ wheels = [
 
 [[package]]
 name = "qis"
-version = "5.30.2"
+version = "5.31.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "matplotlib", version = "3.10.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -2936,9 +2936,9 @@ dependencies = [
     { name = "seaborn" },
     { name = "statsmodels" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a2/84/7782edef35d5244c919fe767e3bedd84c0161783ddbb6b62c84394708269/qis-5.30.2.tar.gz", hash = "sha256:842649f58f57c435612116938db0bc7dc976f60200c7eb7152ca98761a4f7565", size = 936526, upload-time = "2026-09-14T05:58:49.045Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/22/cf/4c5c93a8f8eb9c930956fc34508083378f71febcaaf3169e7625a02e37d5/qis-5.31.0.tar.gz", hash = "sha256:86a110423f7e851c26256ed80240d8a737f943c097133479e19d444bc4bf6987", size = 1091299, upload-time = "2026-09-26T07:25:44.128Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/01/60/063d682314aaad7aa118dc5e6a57abbf34a85ab8b88e3e84bab1b371e0db/qis-5.30.2-py3-none-any.whl", hash = "sha256:4554339f9d3f56f11c14daa6bfe5968c73e50055dec82ad02333c6e8feaeff01", size = 1135002, upload-time = "2026-09-14T05:58:47.034Z" },
+    { url = "https://files.pythonhosted.org/packages/0f/f6/233451a35c198cbd30ae3feb7542e5e0e8c8af1b8ca0df8591648c01e7d9/qis-5.31.0-py3-none-any.whl", hash = "sha256:c0bceb96075317764ce13c25471368c92705fad33edcb72914c31c3ab885a980", size = 1340669, upload-time = "2026-09-26T07:25:41.47Z" },
 ]
 
 [[package]]

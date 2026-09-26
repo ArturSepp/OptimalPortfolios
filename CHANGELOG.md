@@ -7,6 +7,21 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [7.8.1.dev1] - 2026-09-25
 
+- **This changes computed values.** The low-beta, residual-momentum and residual-reversal
+  alphas (standard and cluster constructors) are now point in time under their default
+  `mean_adj_type=EWMA`. Their `qis.EwmLinearModel.fit` call passes `init_type=qis.InitType.X0`,
+  so each EWMA mean starts at the column's first return instead of the full-sample mean,
+  which let later observations move earlier signals. Fixes issue #85.
+- **This changes computed values.** Raised the minimum QIS version from 5.26.0 to 5.31.0. Its
+  `InitType.X0` seeds each column with its first finite value; earlier QIS seeded a column
+  that starts with a missing value, which every return panel does, with zero. Every QIS EWM
+  volatility now starts at the first squared return, which moves the early volatility
+  normalisation of momentum, residual momentum, residual reversal and carry. The
+  `is_apply_vol_normalised_returns=True` covariance kernel no longer seeds its volatility from
+  the full array, so that rolling EWMA path is now point in time as well.
+- Combined, on the offline multi-asset fixture, momentum and beta-based scores move by up to
+  about 0.9 in the first four years of a series, by less than 0.08 in years four to six, by
+  less than 0.003 in years six to ten and by less than 1e-5 after that.
 - Add optional fixed `reg_lambda_freq_dict` penalties to `FactorCovarEstimator`
   and `estimate_lasso_factor_covar_data`. Each native return cadence uses its
   calibrated penalty without changing the model's scalar setting. Omitting the
