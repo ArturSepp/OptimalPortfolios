@@ -22,6 +22,10 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Combined, on the offline multi-asset fixture, momentum and beta-based scores move by up to
   about 0.9 in the first four years of a series, by less than 0.08 in years four to six, by
   less than 0.003 in years six to ten and by less than 1e-5 after that.
+- `opt_maximise_diversification` keeps an SLSQP stop with status 8 (positive directional
+  derivative for linesearch) and validates it for feasibility like a converged solve. Such
+  stops land next to the optimum; rejecting them fell back to drifted previous weights, which
+  breached a 0.2 weight cap on the ubuntu CI runners. Solves that converge are unchanged.
 - Add optional fixed `reg_lambda_freq_dict` penalties to `FactorCovarEstimator`
   and `estimate_lasso_factor_covar_data`. Each native return cadence uses its
   calibrated penalty without changing the model's scalar setting. Omitting the

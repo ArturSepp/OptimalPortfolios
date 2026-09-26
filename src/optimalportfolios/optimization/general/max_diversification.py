@@ -29,7 +29,7 @@ estimation, policy definition, and reporting are external.
 # packages
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize
+from scipy.optimize import OptimizeResult, minimize
 from typing import List, Dict
 
 # optimalportfolios
@@ -41,11 +41,12 @@ from optimalportfolios.optimization.config import OptimiserConfig
 from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
 
 
-def rolling_maximise_diversification(prices: pd.DataFrame,
-                                     constraints: Constraints,
-                                     covar_dict: Dict[pd.Timestamp, pd.DataFrame],
-                                     optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
-                                     ) -> pd.DataFrame:
+def rolling_maximise_diversification(
+        prices: pd.DataFrame,
+        constraints: Constraints,
+        covar_dict: Dict[pd.Timestamp, pd.DataFrame],
+        optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
+) -> pd.DataFrame:
     """
     Compute rolling maximum diversification portfolios.
 
@@ -81,12 +82,13 @@ def rolling_maximise_diversification(prices: pd.DataFrame,
     return weights
 
 
-def wrapper_maximise_diversification(pd_covar: pd.DataFrame,
-                                     constraints: Constraints,
-                                     weights_0: pd.Series = None,
-                                     optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True),
-                                     context: str = ''
-                                     ) -> pd.Series:
+def wrapper_maximise_diversification(
+        pd_covar: pd.DataFrame,
+        constraints: Constraints,
+        weights_0: pd.Series = None,
+        optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True),
+        context: str = ''
+) -> pd.Series:
     """
     Single-date maximum diversification with NaN/zero-variance filtering.
 
@@ -100,14 +102,16 @@ def wrapper_maximise_diversification(pd_covar: pd.DataFrame,
         Portfolio weights as pd.Series aligned to pd_covar.index.
     """
     vectors = None
-    clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar, vectors=vectors)
+    clean_covar, good_vectors = filter_covar_and_vectors_for_nans(pd_covar=pd_covar,
+                                                                  vectors=vectors)
 
     if optimiser_config.apply_total_to_good_ratio:
         total_to_good_ratio = len(pd_covar.columns) / len(clean_covar.columns)
     else:
         total_to_good_ratio = None
 
-    constraints1 = constraints.update_with_valid_tickers(context=context, valid_tickers=clean_covar.columns.to_list(),
+    constraints1 = constraints.update_with_valid_tickers(context=context,
+                                                         valid_tickers=clean_covar.columns.to_list(),
                                                          total_to_good_ratio=total_to_good_ratio,
                                                          weights_0=weights_0)
 
@@ -152,6 +156,13 @@ def opt_maximise_diversification(covar: np.ndarray,
                    constraints=constraints_,
                    bounds=bounds,
                    options={'disp': verbose, 'ftol': ftol, 'maxiter': maxiter})
+    if not res.success and res.status == 8:
+        # status 8 (positive directional derivative for linesearch): the line search cannot improve
+        # on the current point, which for this smooth objective happens next to the optimum when
+        # rounding swamps the finite-difference gradient. Validate that point for feasibility like
+        # a converged one rather than replacing it with the drifted fallback, which can breach caps
+        res = OptimizeResult(res)
+        res.success = True
 
     optimal_weights = res.x
     if res.success and optimal_weights is not None and constraints.is_long_only:

@@ -35,11 +35,14 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 import pytest
+import qis
 
 # optimalportfolios
 import optimalportfolios as op
 from optimalportfolios import Constraints, PortfolioObjective
 from optimalportfolios.optimization.general.quadratic import solve_analytic_log_opt
+from optimalportfolios.utils.portfolio_funcs import calculate_diversification_ratio
+from optimalportfolios.tests.data.multiasset import load_multiasset_data
 
 TICKERS = ['A', 'B', 'C', 'D']
 VOLS = np.array([0.10, 0.15, 0.20, 0.25])
@@ -201,6 +204,37 @@ def test_max_diversification_maximises_the_diversification_ratio() -> None:
         perturbed = weights + 1e-4 * step
         if np.all(perturbed >= 0.0):             # stay inside the long-only feasible set
             assert ratio(perturbed) <= best + 1e-6
+
+
+@pytest.mark.parametrize('seed,eps', [(5, 1e-11), (6, 1e-13), (18, 1e-13)])
+def test_capped_max_diversification_keeps_a_status_8_stop_next_to_the_optimum(
+        seed: int, eps: float) -> None:
+    """
+    a capped SLSQP stop with status 8 is validated and kept rather than replaced by the fallback.
+
+    On the fixture's 2021-03-31 covariance these perturbations, far below estimation noise, stop
+    SLSQP next to the optimum with status 8 (positive directional derivative for linesearch). A
+    rejected stop fell back to the drifted previous weights, which breached the cap on the ubuntu
+    CI runners, and with no previous weights it returns zeros. The stop must instead come back as
+    a fully invested portfolio within the cap whose diversification ratio matches the optimum.
+    """
+    prices = load_multiasset_data().prices
+    covars = op.estimate_rolling_ewma_covar(
+        prices=prices, time_period=qis.TimePeriod(prices.index[60], prices.index[-1]),
+        returns_freq='ME', rebalancing_freq='QE', span=24)
+    base = covars[pd.Timestamp('2021-03-31')].to_numpy()
+    noise = np.random.default_rng(seed).standard_normal(base.shape)
+    covar = base * (1.0 + eps * (noise + noise.T) / 2)
+    cap = 0.2
+    constraints = Constraints(is_long_only=True,
+                              max_weights=pd.Series(cap, index=prices.columns))
+    weights = op.opt_maximise_diversification(covar=covar, constraints=constraints)
+    assert weights.sum() == pytest.approx(1.0, abs=1e-6)
+    assert weights.max() <= cap + 1e-6
+    assert weights.min() >= 0.0
+    reference = op.opt_maximise_diversification(covar=base, constraints=constraints)
+    assert (calculate_diversification_ratio(weights, covar)
+            >= calculate_diversification_ratio(reference, base) - 1e-6)
 
 
 # ───────────────────────────────────────────────────────────────────────────────
