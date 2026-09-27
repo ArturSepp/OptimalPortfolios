@@ -421,15 +421,16 @@ slopes, errors = ols_slopes(returns, benchmark_returns)
 assert (np.abs(slopes - beta_loadings) < 4.0 * errors).all()
 ```
 
-Every slope is within four standard errors of its loading, and no gap exceeds 0.01:
+Every slope is within four standard errors of its loading; the largest gap, 0.02 for Gold, is 1.4
+standard errors:
 
 | Asset | Loading | Regression slope | Standard error |
 |---|---:|---:|---:|
-| Govt | 0.03 | 0.03 | 0.006 |
-| Credit | 0.47 | 0.47 | 0.005 |
-| US eq | 1.64 | 1.65 | 0.004 |
-| EM eq | 1.97 | 1.97 | 0.014 |
-| Gold | 0.51 | 0.50 | 0.015 |
+| Govt | 0.03 | 0.04 | 0.006 |
+| Credit | 0.47 | 0.48 | 0.005 |
+| US eq | 1.64 | 1.64 | 0.004 |
+| EM eq | 1.97 | 1.95 | 0.014 |
+| Gold | 0.51 | 0.49 | 0.016 |
 
 The regression of the portfolio's return on the benchmark return gives the portfolio beta within
 its own sampling error, and its slope is the weighted sum of the asset slopes.

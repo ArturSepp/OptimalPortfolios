@@ -81,9 +81,15 @@ def vol_gradient(covar: np.ndarray, weights: np.ndarray, step: float = 1e-6) -> 
 
 
 def simulated_returns(covar: pd.DataFrame, n_draws: int, seed: int) -> pd.DataFrame:
-    """Draw weekly Gaussian returns whose annual covariance is ``covar``."""
+    """Draw weekly Gaussian returns whose annual covariance is ``covar``.
+
+    The draws use the Cholesky factor, which is unique, rather than
+    ``Generator.multivariate_normal``, whose SVD factor differs between LAPACK builds, so the
+    same seed gives the same returns on every platform.
+    """
     rng = np.random.default_rng(seed)
-    draws = rng.multivariate_normal(np.zeros(len(covar)), covar.to_numpy() / 52.0, size=n_draws)
+    factor = np.linalg.cholesky(covar.to_numpy() / 52.0)
+    draws = rng.standard_normal((n_draws, len(covar))) @ factor.T
     return pd.DataFrame(draws, columns=covar.columns)
 
 
@@ -269,14 +275,15 @@ def main() -> None:
     assert (np.abs(slopes - beta_loadings) < 4.0 * errors).all()
 
     # The regression is an independent estimate: its slopes agree with the loadings within
-    # four standard errors; the standard errors run from 0.004 to 0.015 and the largest gap is
-    # below 0.01. The portfolio's return regressed on the benchmark return gives the portfolio
-    # beta, and its slope is the weighted sum of the asset slopes.
-    assert round(errors.min(), 3) == 0.004 and round(errors.max(), 3) == 0.015
-    assert np.abs(slopes - beta_loadings).max() < 0.01
+    # four standard errors; the largest gap, 0.02 for Gold, is 1.4 standard errors. The
+    # portfolio's return regressed on the benchmark return gives the portfolio beta, and its
+    # slope is the weighted sum of the asset slopes.
+    gaps = (slopes - beta_loadings).abs()
+    assert gaps.idxmax() == 'Gold' and (gaps / errors).idxmax() == 'Gold'
+    assert round(gaps.max(), 2) == 0.02 and round((gaps / errors).max(), 1) == 1.4
     # The page's table of slopes and standard errors.
-    assert np.round(slopes, 2).tolist() == [0.03, 0.47, 1.65, 1.97, 0.50]
-    assert np.round(errors, 3).tolist() == [0.006, 0.005, 0.004, 0.014, 0.015]
+    assert np.round(slopes, 2).tolist() == [0.04, 0.48, 1.64, 1.95, 0.49]
+    assert np.round(errors, 3).tolist() == [0.006, 0.005, 0.004, 0.014, 0.016]
     portfolio_slope, portfolio_error = ols_slopes((returns @ weights).to_frame('p'),
                                                   benchmark_returns)
     assert abs(portfolio_slope['p'] - portfolio_beta) < 4.0 * portfolio_error['p']

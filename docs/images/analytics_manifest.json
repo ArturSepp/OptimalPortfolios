@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-09-27T11:17:37+00:00",
+  "generated_at_utc": "2026-09-27T11:50:37+00:00",
   "platform": "Windows-11-10.0.26200-SP0",
   "versions": {
     "python": "3.12.14",
@@ -890,7 +890,7 @@
     "risk_contributions_vs_weights": {
       "path": "docs/images/risk_contributions_vs_weights.png",
       "script": "examples/docs/portfolio_risk_analytics.py",
-      "script_sha256": "3fc8011c61be3ce3c9f5b7901a8ea2ac69feb05013c246f2d0c230848a94ac35",
+      "script_sha256": "aae019ffdeeebce6fcee254740e0d72b959a715bf68562ac5e15628aa9f96443",
       "image_sha256": "233eccb48e1271703a2d5b2b94edd098453dd13e76af3b8160d0a6b7241c4336",
       "table_sha256": "4825d3c35d5ca40286e4208c3309cc08802928a9c98b3de8742068338830b836",
       "parameters": {
@@ -1229,7 +1229,7 @@
     }
   },
   "review": {
-    "note": "Inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27. factor_covariance_variance_split: systematic and residual parts stacked per asset; residual variances and covariances of the private portfolio stacked by residual type; formula labels in ink. risk_contributions_vs_weights: capital weights and risk shares of four objectives with in-segment percentages in ink and one shared legend. covariance_conditioning: floor and cap dashed, the raised eigenvalue annotated with an arrow, input and floored series distinguished by marker as well as colour. The twelve earlier exhibits are byte-identical to their published images; the three new ones are byte-identical to the reviewed previews.",
-    "published_at_utc": "2026-09-27T11:18:26+00:00"
+    "note": "Republished on 2026-09-27 after examples/docs/portfolio_risk_analytics.py switched its regression-check draws from Generator.multivariate_normal to a Cholesky factor, so the same seed gives the same returns on every LAPACK build (macOS CI drew different returns). The exhibit does not use the draws: all fifteen images are byte-identical to the published ones, which were inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27.",
+    "published_at_utc": "2026-09-27T11:50:40+00:00"
   }
 }
