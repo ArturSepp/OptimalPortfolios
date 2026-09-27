@@ -190,6 +190,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     columns; its exhibit is derived from that tracked panel.
   - The MATF-CMA case study is synthetic: it builds the workflow from CMAs to a strategic
     allocation with the package and reproduces none of the paper's results.
+- The README, which is also the PyPI description, no longer restates the methodology that the
+  documentation site now covers (795 to 516 lines). The key differentiators, package overview,
+  installation and highlighted demos become short summaries that link their articles; the
+  executed quickstart, the six previews, the citations and every heading and anchor are kept.
+  The dependency floors now point to `pyproject.toml`, which removes a stale `qis` floor.
 - Documentation site, consolidation (no package change): every page is adopted, and
   `tools/check_docs.py --all` passes.
   - The examples guide becomes "Examples and recipes", with a table mapping each task to its
