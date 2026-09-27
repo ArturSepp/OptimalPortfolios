@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-09-27T12:39:04+00:00",
+  "generated_at_utc": "2026-09-27T13:01:29+00:00",
   "platform": "Windows-11-10.0.26200-SP0",
   "versions": {
     "python": "3.12.14",
@@ -300,7 +300,7 @@
     "risk_budgeting_contributions": {
       "path": "docs/images/risk_budgeting_contributions.png",
       "script": "examples/docs/risk_budgeting.py",
-      "script_sha256": "6c69f390dfc00b8622be652f32c31babfb42684b7cedfb211ce11ed148252906",
+      "script_sha256": "6de67866c47edb65633c5671611b4a6ff0066512895f60413a31f021b913d558",
       "image_sha256": "0f469178455316260afe018675c0a292bb00c57e11ab0f0af04a519383841f18",
       "table_sha256": "eb5d78b6c069fbc5beb3d10d31e17027031e736fd78dd930745177128b5ffd6a",
       "parameters": {
@@ -1237,10 +1237,208 @@
         "docs/analytics_gallery.md",
         "docs/factor_covariance_hcgl.md"
       ]
+    },
+    "unsmoothing_autocorrelation": {
+      "path": "docs/images/unsmoothing_autocorrelation.png",
+      "script": "examples/docs/universe_data_and_unsmoothing.py",
+      "script_sha256": "6fea8501ffedb2ff8df0f3de372db3cab365ed75f120619fbb5045f7424c5c17",
+      "image_sha256": "6d0ef03b9579037dd6388385caac5e7ba4d13ab698d77b311a9dec6b2cb516a9",
+      "table_sha256": "79e14794b0ab5af2e3ece2fd6d68d389823b9ba8fcc24c1ce5c9edbb19293137",
+      "parameters": {
+        "TICKERS": [
+          "Govt",
+          "Credit",
+          "Equity",
+          "PE"
+        ],
+        "NAMES": [
+          "Government bonds",
+          "Credit",
+          "Listed equity",
+          "Private equity"
+        ],
+        "ASSET_CLASSES": [
+          "Bonds",
+          "Bonds",
+          "Equities",
+          "Equities"
+        ],
+        "MEANS": [
+          0.03,
+          0.04,
+          0.07,
+          0.08
+        ],
+        "VOLS": [
+          0.05,
+          0.08,
+          0.16,
+          0.2
+        ],
+        "CORR": [
+          [
+            1.0,
+            0.5,
+            -0.2,
+            -0.1
+          ],
+          [
+            0.5,
+            1.0,
+            0.4,
+            0.4
+          ],
+          [
+            -0.2,
+            0.4,
+            1.0,
+            0.7
+          ],
+          [
+            -0.1,
+            0.4,
+            0.7,
+            1.0
+          ]
+        ],
+        "PHI": 0.6,
+        "START": "1989-12-31",
+        "END": "2024-12-31",
+        "SEED": 19
+      },
+      "checks": {
+        "autocorrelation_falls": true,
+        "volatility_rises": true,
+        "other_columns_unchanged": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/universe_data_and_unsmoothing.md"
+      ]
+    },
+    "implied_budgets_round_trip": {
+      "path": "docs/images/implied_budgets_round_trip.png",
+      "script": "examples/docs/implied_risk_budgets.py",
+      "script_sha256": "a54f09d7761f7636d440c78a51f2fcace5ca4abce01d2febc534ab5af43fffe9",
+      "image_sha256": "31a10ac37d988c7001c06b10fb40390f1582df1a847ef8a68090b0d99259f64d",
+      "table_sha256": "36cf1ee96f0b4fd35427ee4a6958e8d96c0bc3e90abb03018cb660bc50190ff6",
+      "parameters": {
+        "ASSETS": [
+          "Equity",
+          "Bonds",
+          "Gold"
+        ],
+        "VOLS": [
+          0.16,
+          0.07,
+          0.15
+        ],
+        "EQUITY_GOLD": 0.1,
+        "BONDS_GOLD": 0.2,
+        "TARGET_WEIGHTS": [
+          0.4,
+          0.45,
+          0.15
+        ],
+        "STOCK_BOND_PATH": [
+          -0.7,
+          0.4
+        ],
+        "REBALANCES": 12,
+        "FIRST_REBALANCE": "2023-03-31",
+        "TOLERANCE": 0.001
+      },
+      "checks": {
+        "implied_budgets_sum_to_one": true,
+        "round_trip_where_all_contributions_positive": true,
+        "hedging_dates_have_no_admissible_budget": true,
+        "average_weight_matches_target": true,
+        "average_is_the_simple_mean": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/implied_risk_budgets.md"
+      ]
+    },
+    "hrp_vs_erc_weights": {
+      "path": "docs/images/hrp_vs_erc_weights.png",
+      "script": "examples/docs/hierarchical_risk_parity_and_cluster_budgets.py",
+      "script_sha256": "1fc9058af1ed4e1a293b9dcac1e676480c18ea8ad653c9254b4df38ffc63079e",
+      "image_sha256": "75a8225a17bec7149909eb1333a62be897cd397ffc664d26d6b227ff782f9064",
+      "table_sha256": "028a39b6046331460fa2197d855806819315c06d1407db7159c061c27d1dc295",
+      "parameters": {
+        "ASSETS": [
+          "US govt",
+          "EU govt",
+          "UK govt",
+          "JP govt",
+          "US equity",
+          "EU equity",
+          "Commodities",
+          "Gold"
+        ],
+        "BLOCKS": [
+          "Bonds",
+          "Bonds",
+          "Bonds",
+          "Bonds",
+          "Equities",
+          "Equities",
+          "Real assets",
+          "Real assets"
+        ],
+        "BLOCK_NAMES": [
+          "Bonds",
+          "Equities",
+          "Real assets"
+        ],
+        "BLOCK_CORR": [
+          [
+            0.6,
+            -0.1,
+            0.1
+          ],
+          [
+            -0.1,
+            0.8,
+            0.3
+          ],
+          [
+            0.1,
+            0.3,
+            0.4
+          ]
+        ],
+        "VOLS": [
+          0.05,
+          0.05,
+          0.06,
+          0.04,
+          0.16,
+          0.18,
+          0.2,
+          0.15
+        ],
+        "N_CLUSTERS": 3
+      },
+      "checks": {
+        "weights_sum_to_one": true,
+        "hrp_weights_positive": true,
+        "first_split_separates_bonds": true,
+        "hrp_blocks_follow_bisection": true,
+        "hrp_matches_independent_bisection": true,
+        "erc_equal_risk_shares": true,
+        "cluster_budgets_met": true,
+        "clusters_are_blocks": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/hierarchical_risk_parity_and_cluster_budgets.md"
+      ]
     }
   },
   "review": {
-    "note": "Republished on 2026-09-27 after examples/docs/factor_covariance_hcgl.py, examples/docs/app_rosaa_multi_asset_allocation.py and examples/docs/maximum_diversification.py replaced Generator.multivariate_normal by its SVD draws with the sign of each singular vector's largest entry pinned at SVD_SIGNS, the signs OpenBLAS returns, so the same seed gives the same returns on every LAPACK build. The draws match the previous ones to 1e-15 and the rosaa_saa_taa_layers and factor_covariance_variance_split tables to 1.4e-13. All fifteen images are byte-identical to the published ones, which were inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27.",
-    "published_at_utc": "2026-09-27T12:40:31+00:00"
+    "note": "Republished on 2026-09-27 after merging main ab81376 (R5, #98) into the pinned-sign branch: examples/docs/factor_covariance_hcgl.py, examples/docs/app_rosaa_multi_asset_allocation.py and examples/docs/maximum_diversification.py replaced Generator.multivariate_normal by its SVD draws with the sign of each singular vector's largest entry pinned at SVD_SIGNS, the signs OpenBLAS returns, so the same seed gives the same returns on every LAPACK build. The draws match the previous ones to 1e-15 and the rosaa_saa_taa_layers and factor_covariance_variance_split tables to 1.4e-13. All eighteen images are byte-identical to those inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27: implied_budgets_round_trip, hrp_vs_erc_weights and unsmoothing_autocorrelation are new in R5, with universe_data_and_unsmoothing.py's SVD signs pinned positive; the fifteen earlier exhibits are unchanged.",
+    "published_at_utc": "2026-09-27T13:01:57+00:00"
   }
 }
