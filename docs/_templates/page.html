@@ -1,0 +1,8 @@
+{% extends "!page.html" %}
+
+{% block footer %}
+  {{ super() }}
+  {%- if build_versions %}
+  <div class="build-versions">{{ build_versions|e }}</div>
+  {%- endif %}
+{% endblock footer %}

@@ -55,7 +55,7 @@ The checkout declares exactly these three package extras:
 |---|---|---|
 | `data` | `yfinance` | Examples or loaders that download Yahoo Finance data. |
 | `reports` | `pybloqs` | The dedicated HTML/PDF report backend. |
-| `docs` | Sphinx, Furo and MyST | Building the documentation from a checkout. |
+| `docs` | Sphinx, Furo, MyST and the Mermaid extension | Building the documentation from a checkout. |
 
 Install either runtime integration, or both, with quoted package requirements:
 
@@ -160,8 +160,8 @@ For documentation work with pip:
 python -m pip install -e ".[docs]"
 ```
 
-Pip resolves the declared requirements; it does not consume `uv.lock`. These commands are not
-a reproduction of the reviewed lockfile.
+Pip resolves the declared requirements; it does not consume `uv.lock`, so these commands do not
+reproduce the locked environment.
 
 ### Contributor groups and the lockfile
 
@@ -206,17 +206,16 @@ Sync selects the requested environment contents; retain the extras and groups th
 when changing that selection. Follow AGENTS.md and the owning CI workflow for the actual checks.
 Documentation builds run from a C-local source export because autosummary generates source files.
 
-### Current development verification boundary
+<a id="current-development-verification-boundary"></a>
 
-The 2026-09-14 review used Python 3.12.14 with OptimalPortfolios 7.6.0 working source,
-QIS 5.26.0 and FactorLasso 0.18.0. The current `uv.lock` still records OptimalPortfolios 7.5.0
-and QIS 5.22.3, while `pyproject.toml` requires QIS >=5.26.0. The checkout and lockfile therefore
-need a separately reviewed reconciliation before claiming a successful locked setup.
+### Locked and resolved versions
 
-The read-only offline lock check failed because the cached resolver data could not supply
-QIS >=5.26.0. This is not evidence that the requirement is unavailable on PyPI. Neither a new
-environment installation nor an online dependency resolution was performed for this page.
-The successful import and quickstart checks apply to the recorded working environment.
+`uv.lock` pins one exact version of every dependency. CI tests pull requests in that locked
+environment, and Read the Docs builds this site in it; the footer of every page names the
+versions of its build. Scheduled CI runs also test the newest and the lowest versions the
+declared ranges allow. A pip installation does not read the lockfile: it resolves the ranges
+declared in `pyproject.toml` and can select newer releases. When a result differs between the
+two, compare the versions printed by the import check above with the footer.
 
 ## Troubleshooting and next checks
 

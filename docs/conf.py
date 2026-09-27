@@ -86,8 +86,45 @@ html_baseurl = (
 html_title = "optimalportfolios - portfolio construction and rolling backtesting"
 html_short_title = "optimalportfolios"
 html_static_path = ["_static"]
-# The verification tag is emitted by _templates/base.html on every page, Markdown included.
-html_context = {"google_site_verification": GOOGLE_SITE_VERIFICATION}
+html_css_files = ["optimalportfolios.css"]
+
+# Packages whose versions the footer names, with their usual spelling.
+BUILD_PACKAGES = {
+    "qis": "qis",
+    "factorlasso": "factorlasso",
+    "cvxpy": "CVXPY",
+    "numpy": "NumPy",
+    "pandas": "pandas",
+    "scipy": "SciPy",
+}
+
+
+def _build_versions() -> str:
+    """Name the package versions of this build for the footer of every page.
+
+    Pages state no hand-written version stamps, which went stale between releases; the build
+    reads the versions of its own environment instead, which on Read the Docs is ``uv.lock``.
+    The package itself is named by the source version in ``pyproject.toml``, because the pages
+    document the checkout being built. A package missing from the environment is left out.
+    """
+    from importlib.metadata import PackageNotFoundError, version as installed_version
+
+    names = []
+    for distribution, label in BUILD_PACKAGES.items():
+        try:
+            names.append(f"{label} {installed_version(distribution)}")
+        except PackageNotFoundError:
+            continue
+    built_with = ", ".join(names[:-1]) + f" and {names[-1]}" if len(names) > 1 else "".join(names)
+    return f"Built from optimalportfolios {release}" + (f" with {built_with}." if names else ".")
+
+
+# The verification tag is emitted by _templates/base.html on every page, Markdown included;
+# _templates/page.html adds the build versions to the footer.
+html_context = {
+    "google_site_verification": GOOGLE_SITE_VERIFICATION,
+    "build_versions": _build_versions(),
+}
 html_theme_options = {
     "source_repository": "https://github.com/ArturSepp/OptimalPortfolios/",
     "source_branch": "main",

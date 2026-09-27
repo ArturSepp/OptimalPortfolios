@@ -47,7 +47,7 @@ The notation follows the [conventions page](conventions.md#notation). In additio
 | Symbol | Meaning |
 |---|---|
 | $\sigma$ | Vector of asset volatilities $\sigma_i = \sqrt{\Sigma_{ii}}$ |
-| $C$ | Correlation matrix, $\Sigma = \mathrm{diag}(\sigma) \, C \, \mathrm{diag}(\sigma)$ |
+| $C$ | Correlation matrix, $\Sigma = \mathrm{diag}(\sigma) C \mathrm{diag}(\sigma)$ |
 | $\mathrm{DR}(w)$ | Diversification ratio of the weights $w$ |
 | $y$ | Volatility-weighted shares, $y_i = w_i \sigma_i / \sigma^{\top} w$ |
 | $\rho_i(w)$ | Correlation of asset $i$ with the portfolio $w$ |
@@ -91,7 +91,7 @@ $y^{\star}$ is the minimum-variance portfolio of $C$ on the simplex
 $\lbrace y \geq 0, \sum_i y_i = 1 \rbrace$.
 
 **Proof.** Write $\Sigma_{ij} = \sigma_i \sigma_j C_{ij}$. Then
-$w^{\top} \Sigma w = \sum_{i,j} (w_i \sigma_i)(w_j \sigma_j) C_{ij} = (\sigma^{\top} w)^2 \, y^{\top} C y$,
+$w^{\top} \Sigma w = \sum_{i,j} (w_i \sigma_i)(w_j \sigma_j) C_{ij} = (\sigma^{\top} w)^2 y^{\top} C y$,
 so $\mathrm{DR}(w) = 1 / \sqrt{y^{\top} C y}$. The map from long-only $w$ to $y$ is onto the
 simplex and inverted, up to scale, by $w_i \propto y_i / \sigma_i$. Maximising the ratio is
 therefore minimising the convex quadratic $y^{\top} C y$ on the simplex. $\square$
@@ -111,7 +111,7 @@ $$
 
 **Proof.** Because the ratio is scale-invariant, the budget constraint does not bind at the
 optimum, and the first-order conditions for $\max \mathrm{DR}(w)$ over $w \geq 0$ are
-$\partial \mathrm{DR} / \partial w_i \leq 0$, with equality where $w_i > 0$. The derivative is
+$\partial \mathrm{DR} / \partial w_i \leq 0$, with equality where $w_i \gt 0$. The derivative is
 
 $$
 \frac{\partial \mathrm{DR}}{\partial w_i} = \frac{\sigma_i}{\sigma(w)} - \frac{(\sigma^{\top} w) (\Sigma w)_i}{\sigma(w)^3} .

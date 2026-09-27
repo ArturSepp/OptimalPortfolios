@@ -77,7 +77,7 @@ $$
 The optimization minimizes active variance over the feasible set:
 
 $$
-w^\star \in \operatorname*{arg\,min}_{w\in\mathcal{F}}
+w^\star \in \arg\min_{w\in\mathcal{F}}
 (w-w_b)^{\mathsf{T}}\Sigma(w-w_b).
 $$
 
@@ -89,7 +89,7 @@ For the long-only, fully invested example, the feasible set is
 
 $$
 \mathcal{F}
-= \left\{w:\ \sum_{i=1}^{n}w_i=1,\quad 0\leq w_i\leq u_i\right\},
+= \left\lbrace w:\ \sum_{i=1}^{n}w_i=1,\quad 0\leq w_i\leq u_i\right\rbrace,
 $$
 
 where $u_i$ is the cap for asset $i$. Other exposure policies are available through

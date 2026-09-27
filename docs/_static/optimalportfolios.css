@@ -1,0 +1,6 @@
+/* The build versions under the furo footer (docs/_templates/page.html). */
+.build-versions {
+  color: var(--color-foreground-muted);
+  font-size: var(--font-size--small--2);
+  margin-top: 0.5rem;
+}
