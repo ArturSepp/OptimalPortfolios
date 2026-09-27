@@ -155,6 +155,8 @@ def generate(output: Path, root: Path = ROOT) -> Path:
         raise ValueError(f'Refusing to reuse an existing output directory: {output}')
     (output / 'images').mkdir(parents=True)
     (output / 'tables').mkdir()
+    import matplotlib
+
     records = {}
     sys.path.insert(0, str(root))
     for exhibit in exhibits:
@@ -162,7 +164,10 @@ def generate(output: Path, root: Path = ROOT) -> Path:
         namespace = runpy.run_path(str(script), run_name='__docs_exhibit__')
         check_parameters(exhibit, namespace)
         image = output / 'images' / f'{exhibit["id"]}.png'
-        result = namespace[exhibit['function']](image)
+        # Each exhibit starts from the same style: settings one exhibit changes are restored
+        # before the next, so an image does not depend on the registry order.
+        with matplotlib.rc_context():
+            result = namespace[exhibit['function']](image)
         checks = {name: bool(value) for name, value in result['checks'].items()}
         if not checks or not all(checks.values()):
             raise ValueError(f'{exhibit["id"]}: failed checks {checks}')

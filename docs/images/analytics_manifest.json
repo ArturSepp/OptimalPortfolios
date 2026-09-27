@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-09-27T12:11:40+00:00",
+  "generated_at_utc": "2026-09-27T13:56:22+00:00",
   "platform": "Windows-11-10.0.26200-SP0",
   "versions": {
     "python": "3.12.14",
@@ -1424,10 +1424,260 @@
         "docs/analytics_gallery.md",
         "docs/hierarchical_risk_parity_and_cluster_budgets.md"
       ]
+    },
+    "efficient_frontier_objectives": {
+      "path": "docs/images/efficient_frontier_objectives.png",
+      "script": "examples/docs/mean_variance_objectives.py",
+      "script_sha256": "a3fe4eefff347d18b4ff1f937a1ad43ffcf3601f7e6c8350ac88b287218d3045",
+      "image_sha256": "dfbdb1cbe50abbce590d02e2401302d119ba2fad0c0c6cbadd21fce90605c9e4",
+      "table_sha256": "c185d4b5226022c99aba96e1d519de66a3e2b75c7da59854d61523c205a02bc3",
+      "parameters": {
+        "TICKERS": [
+          "Govt",
+          "Credit",
+          "US eq",
+          "EM eq",
+          "Gold"
+        ],
+        "MEANS": [
+          0.005,
+          0.02,
+          0.045,
+          0.055,
+          0.025
+        ],
+        "VOLS": [
+          0.05,
+          0.07,
+          0.15,
+          0.19,
+          0.15
+        ],
+        "CORR": [
+          [
+            1.0,
+            0.3,
+            -0.2,
+            -0.1,
+            0.1
+          ],
+          [
+            0.3,
+            1.0,
+            0.3,
+            0.25,
+            0.1
+          ],
+          [
+            -0.2,
+            0.3,
+            1.0,
+            0.5,
+            0.0
+          ],
+          [
+            -0.1,
+            0.25,
+            0.5,
+            1.0,
+            0.2
+          ],
+          [
+            0.1,
+            0.1,
+            0.0,
+            0.2,
+            1.0
+          ]
+        ],
+        "GAMMAS": [
+          5.0,
+          10.0,
+          20.0,
+          50.0
+        ],
+        "SHOWN_GAMMA": 5.0
+      },
+      "checks": {
+        "min_variance_matches_closed_form": true,
+        "max_sharpe_matches_tangency": true,
+        "utility_points_on_frontier": true,
+        "tangency_ratio_is_slope": true,
+        "shown_utility_is_two_fund_mix": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/mean_variance_objectives.md"
+      ]
+    },
+    "saa_target_duality": {
+      "path": "docs/images/saa_target_duality.png",
+      "script": "examples/docs/strategic_allocation_targets.py",
+      "script_sha256": "6246f4bb34b4d8a7ae67148a63e81939b4176f7c3e2116eb2a1c271f469999cc",
+      "image_sha256": "f69751ef1e1030f0932cc8de3d1c6069543627c6ef132ef36c6ec372ffaafe69",
+      "table_sha256": "28310dfc102cf46971f494eedd989822384e0b2e7f159425625397433e62995e",
+      "parameters": {
+        "RETURNS_FREQ": "ME",
+        "EWMA_SPAN": 36,
+        "REBALANCING_FREQ": "YE",
+        "BACKTEST_START": "31Dec2005",
+        "MAX_WEIGHT": 0.25,
+        "GROUP_MIN": {
+          "Fixed Income": 0.2
+        },
+        "GROUP_MAX": {
+          "Equity": 0.6,
+          "Alternatives": 0.4
+        },
+        "DATE": "2025-12-31",
+        "CASH_RATE": 0.02,
+        "SHARPE_RATIO": 0.3,
+        "TARGET_VOL": 0.05,
+        "FRONTIER_RETURNS": [
+          0.03,
+          0.035,
+          0.04,
+          0.045,
+          0.05,
+          0.055
+        ],
+        "FRONTIER_VOLS": [
+          0.02,
+          0.03,
+          0.04,
+          0.05,
+          0.06,
+          0.07,
+          0.08,
+          0.09
+        ],
+        "PENALTY_WEIGHTS": [
+          0.5,
+          1.0,
+          2.0,
+          5.0,
+          10.0,
+          20.0,
+          50.0
+        ],
+        "WEIGHT_TOL": 0.001,
+        "MOMENT_TOL": 1e-05
+      },
+      "checks": {
+        "round_trips_return_the_same_weights": true,
+        "utility_solutions_are_on_the_frontier": true,
+        "utility_at_shadow_price_is_the_hard_solution": true,
+        "utility_volatility_falls_as_phi_grows": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/strategic_allocation_targets.md"
+      ]
+    },
+    "cara_mixture_allocation": {
+      "path": "docs/images/cara_mixture_allocation.png",
+      "script": "examples/docs/cara_gaussian_mixture.py",
+      "script_sha256": "552ad072d99487ad54c66a52fdd247727f027c6e35999e9606dbdf2c9f892458",
+      "image_sha256": "46dd3d45488ce43e53a944fc66050facbd1028f1fe99a42b88c8f83c32cc0c0e",
+      "table_sha256": "4eac5805db32fd3a79c6328b94b9d90fd67d0c10e858920b06f7e9a3518f833e",
+      "parameters": {
+        "TICKERS": [
+          "Bonds",
+          "Equities",
+          "Crypto"
+        ],
+        "CRYPTO": 2,
+        "PROBS": [
+          0.8,
+          0.15,
+          0.05
+        ],
+        "MEANS": [
+          [
+            0.02,
+            0.11,
+            0.5
+          ],
+          [
+            0.04,
+            -0.06,
+            -0.2
+          ],
+          [
+            0.06,
+            -0.3,
+            -1.5
+          ]
+        ],
+        "VOLS": [
+          [
+            0.05,
+            0.13,
+            0.6
+          ],
+          [
+            0.07,
+            0.2,
+            0.8
+          ],
+          [
+            0.08,
+            0.3,
+            0.7
+          ]
+        ],
+        "CORR": [
+          [
+            1.0,
+            -0.2,
+            0.0
+          ],
+          [
+            -0.2,
+            1.0,
+            0.3
+          ],
+          [
+            0.0,
+            0.3,
+            1.0
+          ]
+        ],
+        "GAMMA": 5.0,
+        "GAMMA_GRID": [
+          0.5,
+          0.6,
+          0.75,
+          0.9,
+          1.0,
+          1.25,
+          1.5,
+          1.75,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0
+        ]
+      },
+      "checks": {
+        "one_component_matches_closed_form": true,
+        "three_components_match_cvxpy": true,
+        "crash_lowers_crypto_weight": true,
+        "crypto_weight_falls_with_gamma": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/cara_gaussian_mixture.md"
+      ]
     }
   },
   "review": {
-    "note": "Republished on 2026-09-27 on top of main 932ed33 (R4 merged, including the Cholesky draws of portfolio_risk_analytics.py) with the R5 scripts, among them universe_data_and_unsmoothing.py with its SVD signs pinned (largest entry of each singular vector positive), which reproduces the previous draws to 1e-16. All eighteen images are byte-identical to those inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27: implied_budgets_round_trip, hrp_vs_erc_weights and unsmoothing_autocorrelation (reworked to separate autocorrelation and volatility axes) are new in R5; the fifteen earlier exhibits are unchanged.",
-    "published_at_utc": "2026-09-27T12:11:53+00:00"
+    "note": "Republished on 2026-09-27 after the CI matrix showed version-dependent statements: strategic_allocation_targets.py now accepts both outcomes of a target Series that starts late (CVXPY 1.9 raises ValueError; CVXPY 1.7 falls back to zeros), and cara_gaussian_mixture.py compares its SLSQP grid with CVXPY to 5e-4 (SciPy 1.15 differs by up to 1.05e-4 at risk aversion 0.6). Both scripts pass under the Python 3.10 pins (CVXPY 1.7.5, NumPy 2.2.6, SciPy 1.15.3). All twenty-one images are byte-identical to those inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27.",
+    "published_at_utc": "2026-09-27T13:56:27+00:00"
   }
 }

@@ -318,6 +318,54 @@ function of [`examples/docs/maximum_diversification.py`](../examples/docs/maximu
 run by [the teaching-exhibit tool](../tools/docs_analytics/teaching.py). **Configuration:**
 [teaching registry](../tools/docs_analytics/teaching.json).
 
+## Mean-variance objectives
+
+A teaching exhibit of the [mean-variance objectives](mean_variance_objectives.md) page. With a
+full-investment budget, minimum variance, quadratic utility and maximum Sharpe lie on one
+frontier: the utility portfolio mixes the minimum-variance and tangency portfolios, and a risk
+aversion of 6.96 returns the tangency portfolio, whose Sharpe ratio is 0.416.
+
+![Left: expected excess return against volatility, with the frontier, the minimum-variance and
+maximum-Sharpe portfolios and utility portfolios at four risk aversions. Right: the weights of the
+minimum-variance, maximum-Sharpe and utility portfolios.](images/efficient_frontier_objectives.png)
+
+**Sample:** fixed expected excess returns, volatilities and correlations of five assets; no
+simulation. **Producer:** the `exhibit` function of
+[`examples/docs/mean_variance_objectives.py`](../examples/docs/mean_variance_objectives.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Target return and target volatility
+
+A teaching exhibit of the [strategic allocation](strategic_allocation_targets.md) page. Minimum
+variance at a target return, maximum return at a target volatility and the utility form at a
+penalty weight trace one frontier: a 5% volatility target, a 4.81% return target and a penalty
+weight of 4.46 return the same portfolio.
+
+![Left: expected return against volatility, with the frontier and the solutions of the three
+routes. Right: the volatility of the utility solution against the penalty weight, crossing the 5%
+target at the shadow price.](images/saa_target_duality.png)
+
+**Sample:** the packaged 19-instrument monthly fixture, with an EWMA covariance (span 36) at
+31 December 2025 and equal-Sharpe expected returns; no simulation. **Producer:** the `exhibit`
+function of
+[`examples/docs/strategic_allocation_targets.py`](../examples/docs/strategic_allocation_targets.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## CARA utility under Gaussian mixtures
+
+A teaching exhibit of the [CARA utility under Gaussian mixtures](cara_gaussian_mixture.md) page.
+A crash component lowers the allocation to crypto at every risk aversion: at a risk aversion of
+5, the three-component mixture holds 6.3% in crypto against 7.2% for the Gaussian with the
+mixture's own mean and covariance.
+
+![Left: the weight of crypto against risk aversion for one and three mixture components. Right:
+the weights of bonds, equities and crypto at a risk aversion of 5.](images/cara_mixture_allocation.png)
+
+**Sample:** fixed annual parameters of a stylised three-asset, three-component mixture; no
+simulation. **Producer:** the `exhibit` function of
+[`examples/docs/cara_gaussian_mixture.py`](../examples/docs/cara_gaussian_mixture.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
 ## Minimum tracking error
 
 A teaching exhibit of the [minimum tracking error](minimum_tracking_error.md) page. Starting

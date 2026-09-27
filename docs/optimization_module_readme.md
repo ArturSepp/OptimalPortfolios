@@ -49,9 +49,9 @@ In words: without expected returns, choose minimum tracking error when a benchma
 otherwise a risk-based objective: minimum variance, [risk budgeting](risk_budgeting.md),
 [hierarchical risk parity](hierarchical_risk_parity_and_cluster_budgets.md) or
 [maximum diversification](maximum_diversification.md); with expected returns or alphas, choose the
-tactical solver against a benchmark, the strategic solvers for a return or volatility target, and
-otherwise maximum Sharpe, quadratic utility or, when returns are fat-tailed, CARA utility under a
-Gaussian mixture. The [conventions page](conventions.md#objectives-and-their-inputs) lists the
+tactical solver against a benchmark, the [strategic solvers](strategic_allocation_targets.md) for a return or
+volatility target, and otherwise [maximum Sharpe or quadratic utility](mean_variance_objectives.md) or, when
+returns are fat-tailed, [CARA utility under a Gaussian mixture](cara_gaussian_mixture.md). The [conventions page](conventions.md#objectives-and-their-inputs) lists the
 exact inputs of each, and the [dispatch flow](#dispatch-flow) below maps them to functions. A
 fixed core with an optimised sleeve is the [overlay tail floor](overlay_tail_floor.md).
 
@@ -286,14 +286,14 @@ definition. The dispatcher's log-return means are a modelling input, not a repor
 
 | Family | Owning file | Backend and important qualification |
 |---|---|---|
-| Minimum variance / quadratic utility | [quadratic.py](../src/optimalportfolios/optimization/general/quadratic.py) | CVXPY with consistent return/covariance units. |
-| Maximum Sharpe | [max_sharpe.py](../src/optimalportfolios/optimization/general/max_sharpe.py) | Fixed net exposure uses a convex transformed problem; variable net exposure uses SLSQP. |
+| [Minimum variance / quadratic utility](mean_variance_objectives.md) | [quadratic.py](../src/optimalportfolios/optimization/general/quadratic.py) | CVXPY with consistent return/covariance units. |
+| [Maximum Sharpe](mean_variance_objectives.md) | [max_sharpe.py](../src/optimalportfolios/optimization/general/max_sharpe.py) | Fixed net exposure uses a convex transformed problem; variable net exposure uses SLSQP. |
 | Maximum diversification | [max_diversification.py](../src/optimalportfolios/optimization/general/max_diversification.py) | SLSQP ratio optimisation; a weight vector is not proof of a global optimum. |
 | Risk budgeting | [risk_budgeting.py](../src/optimalportfolios/optimization/risk_allocation/risk_budgeting.py) | Internal CCD/ADMM; constrained risk contributions can miss requested budgets. |
-| CARA mixture | [carra_mixture.py](../src/optimalportfolios/optimization/general/carra_mixture.py) | SLSQP on the fixed mixture's exponential utility; rolling also estimates the mixture. |
+| [CARA mixture](cara_gaussian_mixture.md) | [carra_mixture.py](../src/optimalportfolios/optimization/general/carra_mixture.py) | SLSQP on the fixed mixture's exponential utility; rolling also estimates the mixture. |
 | Minimum tracking error | [minimum_tracking_error.py](../src/optimalportfolios/optimization/general/minimum_tracking_error.py) | Direct CVXPY entry point; not in the dispatcher enum. |
-| SAA return floor | [min_variance_target_return.py](../src/optimalportfolios/optimization/saa/min_variance_target_return.py) | Minimise variance or benchmark-relative variance with a return floor. |
-| SAA volatility budget | [max_return_target_vol.py](../src/optimalportfolios/optimization/saa/max_return_target_vol.py) | Maximise expected return; hard budget and utility formulations differ. |
+| [SAA return floor](strategic_allocation_targets.md) | [min_variance_target_return.py](../src/optimalportfolios/optimization/saa/min_variance_target_return.py) | Minimise variance or benchmark-relative variance with a return floor. |
+| [SAA volatility budget](strategic_allocation_targets.md) | [max_return_target_vol.py](../src/optimalportfolios/optimization/saa/max_return_target_vol.py) | Maximise expected return; hard budget and utility formulations differ. |
 | TAA alpha/TE | [maximise_alpha_over_tre.py](../src/optimalportfolios/optimization/taa/maximise_alpha_over_tre.py) | Hard mode maximises active alpha under a TE cap; it does not maximise an alpha/TE ratio. |
 | TAA alpha/yield | [maximise_alpha_with_target_yield.py](../src/optimalportfolios/optimization/taa/maximise_alpha_with_target_yield.py) | Public function suffix is `with_target_return`; `yields` supplies the return-floor vector. |
 
