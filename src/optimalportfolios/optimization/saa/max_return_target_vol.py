@@ -20,7 +20,10 @@ Two formulations are supported:
    The volatility budget is enforced as a hard SOCP constraint.
 
 2. **Utility penalties** (``ConstraintEnforcementType.UTILITY_CONSTRAINTS``):
-   The volatility and turnover are penalised in the objective.
+   The variance, or the tracking-error variance with a benchmark, is penalised
+   in the objective with weight ``tre_utility_weight``, and the turnover with
+   ``turnover_utility_weight`` when ``weights_0`` is given. ``target_vol`` does
+   not enter the solve, and its residual is soft, so it never rejects a result.
 
 Both CVXPY formulations factor the filtered covariance once by default and
 reuse the stabilized matrix and square root in risk terms and validation.
@@ -72,9 +75,17 @@ def rolling_max_return_target_vol(prices: pd.DataFrame,
     Compute rolling return-maximising portfolios with a volatility budget.
 
     Args:
-        prices: Asset price panel for column alignment.
-        expected_returns: Expected returns per asset. Forward-filled.
-        target_vols: Maximum portfolio volatility at each date.
+        prices: Asset price panel, used for column alignment and, when
+            ``use_drifted_weights_0`` is set, to drift the previous weights to each date.
+        expected_returns: Expected returns per asset, forward-filled to the keys
+            of ``covar_dict``; dates before its first row get zero expected returns.
+        target_vols: Maximum portfolio volatility, or tracking error with a
+            benchmark, at each date, forward-filled to the keys of ``covar_dict``.
+            Dates before its first entry get a missing target: with CVXPY 1.9 the
+            solve raises ``ValueError``, which this function does not catch; with
+            CVXPY 1.7 the solution fails validation and the date takes the
+            ``validate_solution`` fallback (zeros without ``weights_0`` or a
+            benchmark). Unused in utility mode.
         constraints: Portfolio constraints.
         benchmark_weights: Optional benchmark. None for absolute vol constraint.
         covar_dict: Pre-computed covariance matrices keyed by rebalancing date.
@@ -157,10 +168,14 @@ def wrapper_max_return_target_vol(pd_covar: pd.DataFrame,
     Args:
         pd_covar: Covariance matrix (N x N) as DataFrame.
         expected_returns: Expected returns per asset (α = CMAs).
-        target_vol: Maximum portfolio volatility or tracking error.
+        target_vol: Maximum portfolio volatility, or tracking error with a
+            benchmark, as a hard constraint in the default forced mode. In
+            utility mode it is unused: the variance is penalised with
+            ``constraints.tre_utility_weight`` instead.
         constraints: Portfolio constraints.
         benchmark_weights: Optional benchmark for TE-based risk.
-        weights_0: Previous-period weights for warm-start / turnover.
+        weights_0: Previous-period weights: the turnover baseline and the
+            fallback. The solver is not warm-started from them.
         rebalancing_indicators: Binary series for position freezing.
         optimiser_config: Solver configuration.
         context: Rebalance label included in solver diagnostics.

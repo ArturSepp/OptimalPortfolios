@@ -158,6 +158,72 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     unsmoothing restores to a private-equity series.
   - The universe page states the observed behaviour where the code and its docstrings differ:
     the unsmoothing copy runs the qis AR(2) default, and resets `liquidity_ac_id`.
+- Documentation site, fourth stage, third batch of new methodology pages (no package change):
+  minimum variance, quadratic utility and maximum Sharpe; strategic allocation with a target
+  return or a target volatility; and CARA utility under Gaussian mixtures. Each follows the
+  canonical-script contract; no content moves.
+  - New teaching exhibits: the three mean-variance objectives on one frontier; the target-return,
+    target-volatility and utility routes on one frontier, with the penalty weight at which the
+    utility form meets a volatility target; and the allocation to a fat-tailed asset against risk
+    aversion with one and three mixture components.
+  - The pages state where the code differs from its docstrings: the Charnes–Cooper route of
+    maximum Sharpe rescales only the exposure, box and group rows, so a volatility cap can make
+    it infeasible; the utility form of the target-volatility solver ignores `target_vol`; and
+    the CARA mixture's fitted weekly components are annualised as one-year regimes.
+  - `tools/docs_analytics/teaching.py` draws each exhibit with its own matplotlib settings, so
+    a setting one exhibit changes no longer reaches the exhibits drawn after it.
+- Documentation site, fourth stage, fourth batch of new methodology pages (no package change):
+  signal diagnostics and alpha-rank portfolios, and tactical allocation by alpha over tracking
+  error and yield targets. Each follows the canonical-script contract.
+  - The profiling and diagnostics subsections of the alpha signals page move to the signal
+    diagnostics page; the alpha page keeps pointers and its exhibit, which is unchanged.
+  - New teaching exhibits: quintile portfolios and the rolling rank IC of a synthetic score; and
+    active weights against the closed form, with the information ratio against the
+    tracking-error budget with and without long-only bounds.
+  - The router states that the soft tracking-error path of the yield-target solver keeps its
+    turnover penalty when no turnover cap is set (since 7.8.0).
+- Documentation site, fourth stage, the two remaining case studies (no package change):
+  cryptocurrencies in diversified portfolios, and from capital market assumptions to strategic
+  allocation (MATF-CMA). Each follows the canonical-script contract.
+  - The cryptocurrency case study reports the paper's design and results by section and runs the
+    four methods with the current API on the frozen 2023 panel, using only its ETF-derived
+    columns; its exhibit is derived from that tracked panel.
+  - The MATF-CMA case study is synthetic: it builds the workflow from CMAs to a strategic
+    allocation with the package and reproduces none of the paper's results.
+- The README, which is also the PyPI description, no longer restates the methodology that the
+  documentation site now covers (795 to 516 lines). The key differentiators, package overview,
+  installation and highlighted demos become short summaries that link their articles; the
+  executed quickstart, the six previews, the citations and every heading and anchor are kept.
+  The dependency floors now point to `pyproject.toml`, which removes a stale `qis` floor.
+- Documentation site, consolidation (no package change): every page is adopted, and
+  `tools/check_docs.py --all` passes.
+  - The examples guide becomes "Examples and recipes", with a table mapping each task to its
+    article, canonical script and standalone examples by lane.
+  - The software design page draws the workflow and the package's module imports as Mermaid
+    diagrams, and corrects the factor estimator's inputs and the note on state feedback.
+  - The analytics gallery lists all 31 exhibits, and the landing table links every article.
+  - The README names `factorlasso.cluster_lineage` for cluster lineage, where it advertised the
+    deprecated `risk_labelling` aliases, and lists the ten example folders.
+  - `linkcheck_ignore` covers the DOIs of publishers that answer HTTP 403 to automated clients.
+- Docstrings and comments only, no code change (checked against the previous source with the
+  docstrings removed): stale or wrong statements found while writing the methodology pages are
+  corrected in 25 modules and two examples. Among them:
+  - `PortfolioObjective`, `UniverseData` (all ten fields) and `FactorCovarEstimator`
+    (`reg_lambda_freq_dict`) are documented;
+  - the EWMA covariance docstrings say the normalised-return kernel is point in time since
+    qis 5.31.0, and the alpha profilers say the same of their constructors since 7.8.1.dev1;
+  - the solver descriptions: risk budgeting (CCD, or ADMM with a `quadprog` projection;
+    `weights_0` is not a start), maximum Sharpe (SLSQP whenever the exposure is a range; not
+    invariant to a risk-free rate; only the exposure, box and group rows are rescaled), the
+    target-return and target-volatility solvers (the utility form ignores `target_vol`), the
+    CARA mixture (expected utility; the fallback order) and the tactical solvers;
+  - `compute_benchmark_beta_loadings_from_covar` needs benchmark weights that sum to one, and
+    the unsmoothing copy uses the qis default AR(2) filter.
+- The ROSAA example in `papers/robust_optimisation_jpm_2026` uses
+  `LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO` (the old member no longer exists), passes the
+  documented `factor_covar_span=36` (the default is 52) and writes its factsheet to the
+  configured output directory instead of a hard-coded path; its README follows.
+- A risk-budgeting test uses the anonymised sleeve names of the matching example.
 
 ## [7.8.0] - 2026-09-23
 

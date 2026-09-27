@@ -82,10 +82,11 @@ simulates the holdings with price drift, implementation lag and transaction cost
 |---|---|
 | Estimation grid | [Mixed-frequency data](mixed_frequency_data.md), [incomplete histories](incomplete_histories.md), [universe data and unsmoothing](universe_data_and_unsmoothing.md) |
 | Risk model | [Covariance estimators](covariance_estimators.md), [factor covariance with HCGL](factor_covariance_hcgl.md), [rolling factor risk model from CSV](rolling_factor_covar_from_csv.md), [ex-ante risk contributions and betas](portfolio_risk_analytics.md) |
-| Expected returns | [Alpha signals](alphas_module_readme.md) |
-| Objective and constraints | [Choosing an objective](optimization_module_readme.md), [risk budgeting](risk_budgeting.md), [implied risk budgets](implied_risk_budgets.md), [hierarchical risk parity and cluster budgets](hierarchical_risk_parity_and_cluster_budgets.md), [maximum diversification](maximum_diversification.md), [minimum tracking error](minimum_tracking_error.md), [overlay tail floor](overlay_tail_floor.md), [constraints](constraints.md) |
+| Expected returns | [Alpha signals](alphas_module_readme.md), [signal diagnostics and alpha-rank portfolios](signal_diagnostics_and_profiling.md) |
+| Objective and constraints | [Choosing an objective](optimization_module_readme.md), [risk budgeting](risk_budgeting.md), [implied risk budgets](implied_risk_budgets.md), [hierarchical risk parity and cluster budgets](hierarchical_risk_parity_and_cluster_budgets.md), [maximum diversification](maximum_diversification.md), [mean-variance objectives](mean_variance_objectives.md), [target return and target volatility](strategic_allocation_targets.md), [CARA utility under Gaussian mixtures](cara_gaussian_mixture.md), [minimum tracking error](minimum_tracking_error.md), [alpha over tracking error](alpha_over_tracking_error.md), [overlay tail floor](overlay_tail_floor.md), [constraints](constraints.md) |
 | Solve and check the outcome | [Choosing an objective](optimization_module_readme.md), [constraints](constraints.md), [solver numerics and outcomes](solver_numerics_and_outcomes.md) |
 | Dated target weights and qis backtest | [Rolling backtests](rolling_backtests.md), [turnover and transaction costs](turnover_and_transaction_costs.md) |
+| The whole pipeline, applied | [ROSAA](app_rosaa_multi_asset_allocation.md), [cryptocurrencies in diversified portfolios](app_crypto_allocation.md), [capital market assumptions to strategic allocation](app_cma_strategic_allocation.md), [stress testing with options](stress_testing_with_options.md) |
 
 <a id="signals-and-risk-estimates"></a>
 
@@ -116,6 +117,9 @@ simulates the holdings with price drift, implementation lag and transaction cost
 
 - [Alpha signals](alphas_module_readme.md): momentum, low beta, residual momentum and reversal,
   carry and managers' alpha, with cross-sectional and within-cluster scoring.
+- [Signal diagnostics and alpha-rank portfolios](signal_diagnostics_and_profiling.md): the rank information
+  coefficient and its stability, quantile portfolios, per-component diagnostics and the rank
+  profiler.
 
 <a id="construction-and-constraints"></a>
 
@@ -134,8 +138,20 @@ simulates the holdings with price drift, implementation lag and transaction cost
 - [Maximum diversification](maximum_diversification.md): the diversification ratio, why the
   solution is the minimum-variance portfolio of the correlation matrix, and the equal-correlation
   property of the assets it holds.
+- [Minimum variance, quadratic utility and maximum Sharpe](mean_variance_objectives.md): the
+  closed forms, the two-fund mix of utility portfolios on the frontier, and the
+  Charnes–Cooper route for maximum Sharpe.
+- [Strategic allocation: target return and target volatility](strategic_allocation_targets.md):
+  minimum variance at a return target and maximum return at a volatility target, their hard
+  and utility forms, and the frontier duality between them.
+- [CARA utility under Gaussian mixtures](cara_gaussian_mixture.md): expected exponential
+  utility under a fitted mixture, its reduction to mean-variance with one component, and what
+  a crash component does to the allocation.
 - [Minimum tracking error](minimum_tracking_error.md): the allocation closest in risk to a
   supplied benchmark under the constraints.
+- [Tactical allocation: alpha over tracking error and yield targets](alpha_over_tracking_error.md): the
+  closed-form active weights under a tracking-error budget, the utility form, group limits
+  and the yield-target variant.
 - [Overlay optimisation with a fixed core](overlay_tail_floor.md): a fixed core exposure and an
   optimised sleeve under a linear downside floor.
 
@@ -164,6 +180,12 @@ show.
 - [Strategic and tactical allocation with HCGL covariance (ROSAA)](app_rosaa_multi_asset_allocation.md):
   the three layers of the framework in The Journal of Portfolio Management, its study design
   and results, and the same configuration run offline.
+- [Cryptocurrencies in diversified portfolios](app_crypto_allocation.md): the four allocation methods of the
+  cryptocurrency paper in Risk, its study design and results, and the current API on the
+  frozen 2023 panel, ETF-derived columns only.
+- [From capital market assumptions to strategic allocation (MATF-CMA)](app_cma_strategic_allocation.md): CMAs and
+  covariance from one loading matrix, and a strategic allocation by alpha over tracking error
+  against mandate benchmarks, on synthetic inputs.
 - [Stress testing with options and FCGL clusters](stress_testing_with_options.md): factor
   scenarios and option repricing for a stock-and-option portfolio. It needs network data and
   local prerequisites, and it does not optimise the positions.
@@ -259,6 +281,7 @@ portfolio_risk_analytics
 :caption: Expected returns and signals
 
 alphas_module_readme
+signal_diagnostics_and_profiling
 ```
 
 ```{toctree}
@@ -271,7 +294,11 @@ risk_budgeting
 implied_risk_budgets
 hierarchical_risk_parity_and_cluster_budgets
 maximum_diversification
+mean_variance_objectives
+strategic_allocation_targets
+cara_gaussian_mixture
 minimum_tracking_error
+alpha_over_tracking_error
 overlay_tail_floor
 ```
 
@@ -299,6 +326,8 @@ turnover_and_transaction_costs
 :caption: Applications
 
 app_rosaa_multi_asset_allocation
+app_crypto_allocation
+app_cma_strategic_allocation
 stress_testing_with_options
 ```
 

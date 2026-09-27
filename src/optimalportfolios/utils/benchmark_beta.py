@@ -92,7 +92,9 @@ def compute_benchmark_beta_loadings_from_covar(covar: pd.DataFrame,
             benchmark constituents — e.g. one date of the extended-universe
             ``get_y_covars`` dict.
         benchmark_weights: Static benchmark composition indexed by
-            constituent ticker (need not sum to 1; the ratio normalises).
+            constituent ticker, as fractions summing to 1. Weights summing to k
+            divide every loading by k (weights in percent give betas 100 times
+            too small); only the benchmark's own beta stays 1.
         asset_tickers: Portfolio asset order of w.
 
     Returns:

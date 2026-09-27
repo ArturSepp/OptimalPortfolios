@@ -7,17 +7,23 @@ Maximises the Sharpe ratio:
 
 where μ is the vector of expected returns and Σ is the covariance matrix.
 The maximum Sharpe portfolio is the tangency portfolio on the mean-variance
-efficient frontier, and is invariant to the risk-free rate when μ is
-expressed as excess returns.
+efficient frontier of the supplied μ. The solver subtracts no risk-free rate,
+and the solution is not invariant to one: pass excess returns when the
+excess-return Sharpe ratio is intended. In ``docs/mean_variance_objectives.md``
+adding 2% to every mean raises the government-bond weight from 28.5% to 54.7%.
 
 The fractional (ratio) objective is non-convex, but admits an exact convex
 reformulation via the Charnes-Cooper transformation: introduce auxiliary
-variables (y, k) with y = k*w, k > 0, and solve the equivalent SOCP:
+variables (y, k) with y = k*w and k ≥ 0 (the code imposes k >= 0; a long-only
+book rules out k = 0), and solve the equivalent SOCP:
 
     min_y  y'Σy   s.t.  μ'y = c,  constraints(y, k)
 
-then recover w* = y / k. This yields the global optimum without the
-initialisation sensitivity of direct ratio optimisation.
+then recover w* = y / k. Only the exposure, per-asset and group-allocation
+rows are rescaled by k; any other row is compiled on y, not on w. For a
+long-only book with only those rows and a feasible portfolio of positive
+expected return, this yields the global optimum without the initialisation
+sensitivity of direct ratio optimisation.
 
 Uses CVXPY with pre-computed covariance matrices from any CovarEstimator.
 For the fixed-exposure CVXPY path, the filtered covariance is factorized once
@@ -61,13 +67,15 @@ def rolling_maximize_portfolio_sharpe(prices: pd.DataFrame,
                                       expected_returns: pd.DataFrame,
                                       constraints: Constraints,
                                       covar_dict: Dict[pd.Timestamp, pd.DataFrame],
-                                      optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
+                                      optimiser_config: OptimiserConfig = OptimiserConfig(
+                                          apply_total_to_good_ratio=True)
                                       ) -> pd.DataFrame:
     """
     Maximise portfolio Sharpe ratio at each rebalancing date.
 
     Args:
-        prices: Asset price panel. Used for column alignment.
+        prices: Asset price panel, used for column alignment and, when
+            ``use_drifted_weights_0`` is set, to drift the previous weights to each date.
         expected_returns: Expected returns per asset. Forward-filled to
             rebalancing dates.
         constraints: Portfolio constraints.
@@ -110,7 +118,8 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
                                       means: pd.Series,
                                       constraints: Constraints,
                                       weights_0: pd.Series = None,
-                                      optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True),
+                                      optimiser_config: OptimiserConfig = OptimiserConfig(
+                                          apply_total_to_good_ratio=True),
                                       context: str = ''
                                       ) -> Tuple[pd.Series, OptimizationOutcome]:
     """
@@ -120,7 +129,8 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
         pd_covar: Covariance matrix (N x N) as DataFrame.
         means: Expected returns per asset.
         constraints: Portfolio constraints.
-        weights_0: Previous-period weights for warm-start / fallback.
+        weights_0: Previous-period weights: the turnover baseline and the
+            fallback. The solver is not warm-started from them.
         optimiser_config: Solver configuration.
         context: Rebalance label included in solver diagnostics.
 
@@ -136,9 +146,10 @@ def wrapper_maximize_portfolio_sharpe(pd_covar: pd.DataFrame,
     else:
         total_to_good_ratio = None
 
-    constraints1 = constraints.update_with_valid_tickers(context=context, valid_tickers=clean_covar.columns.to_list(),
-                                                         total_to_good_ratio=total_to_good_ratio,
-                                                         weights_0=weights_0)
+    constraints1 = constraints.update_with_valid_tickers(
+        context=context, valid_tickers=clean_covar.columns.to_list(),
+        total_to_good_ratio=total_to_good_ratio,
+        weights_0=weights_0)
 
     outcome = cvx_maximize_portfolio_sharpe(
         covar=clean_covar.to_numpy(),
@@ -167,17 +178,22 @@ def cvx_maximize_portfolio_sharpe(covar: np.ndarray,
     Maximise the Sharpe ratio via the Charnes-Cooper transformation.
 
     The Charnes-Cooper transformation introduces z = [y; k] where y = k*w
-    and k > 0. Setting μ'y = c pins the scale and converts the problem to:
+    and k ≥ 0 (imposed as k >= 0). Setting μ'y = c, with c = max_exposure,
+    pins the scale and converts the problem to:
 
         min_z  y'Σy   s.t.  μ'y = c,  constraints(y, k)
 
-    The optimal weights are recovered as w* = y / k.
+    The optimal weights are recovered as w* = y / k. Only the exposure,
+    per-asset (``min_weights``, ``max_weights``) and group-allocation rows are
+    compiled with ``exposure_scaler=k`` and so rescaled by k; every other row of
+    ``Constraints``, such as a volatility cap, a return floor, a turnover or a
+    tracking-error limit, is compiled on y = k*w, not on w.
 
     The transformation requires a fixed-sum equality constraint on portfolio
-    exposure (max_exposure == min_exposure). When the portfolio allows
-    variable net exposure (long-short with max_exposure != min_exposure),
-    the function falls back to direct ratio optimisation via scipy SLSQP,
-    which handles arbitrary exposure bounds at the cost of non-convexity.
+    exposure (max_exposure == min_exposure). Whenever max_exposure !=
+    min_exposure, for a long-only or a long-short book alike, the function
+    instead maximises the ratio directly with scipy SLSQP, which handles an
+    exposure band at the cost of non-convexity.
 
     Args:
         covar: Covariance matrix (N x N).
@@ -187,13 +203,13 @@ def cvx_maximize_portfolio_sharpe(covar: np.ndarray,
         solver: CVXPY solver name (used only for Charnes-Cooper path).
         context: Rebalance label included in solver diagnostics.
         factorize_covar: Use one controlled covariance square root on the
-            fixed-exposure CVXPY path. Ignored by the SciPy fallback.
+            fixed-exposure CVXPY path. Ignored by the SLSQP route.
 
     Returns:
         Structured outcome containing safe weights and diagnostics.
     """
     if constraints.max_exposure != constraints.min_exposure:
-        # long-short: Charnes-Cooper requires equality sum constraint
+        # exposure band, long-only or long-short: Charnes-Cooper requires equality sum constraint
         return _scipy_maximize_sharpe(covar=covar, means=means,
                                       constraints=constraints, verbose=verbose,
                                       context=context)
@@ -281,7 +297,7 @@ def _scipy_maximize_sharpe(covar: np.ndarray,
                             verbose: bool = False,
                             context: str = ''
                             ) -> OptimizationOutcome:
-    """Direct Sharpe-ratio maximisation via SciPy SLSQP for long-short.
+    """Direct Sharpe-ratio maximisation via SciPy SLSQP when min_exposure != max_exposure.
 
     Args:
         covar: Asset covariance matrix.

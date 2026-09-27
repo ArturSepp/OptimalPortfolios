@@ -72,7 +72,9 @@ universe: SPY (US equities), EZU (Europe equities), EEM (EM equities),
 TLT (US Treasuries), HYG (High Yield), GLD (Gold).
 Those histories can be revised by the provider, so a fresh run reproduces the method but is not
 expected to reproduce the exact published numbers bit-for-bit. For an installed release rather than
-a checkout, use `pip install "optimalportfolios[data]"`.
+a checkout, use `pip install "optimalportfolios[data]"`. The factsheet PDF is written to the output
+directory that `optimalportfolios.local_path.get_output_path()` resolves: the `settings.yaml`
+setting, or `outputs/` in the checkout.
 
 
 ## Code walkthrough
@@ -83,9 +85,9 @@ from optimalportfolios import (Constraints, LassoModelType, LassoModel,
 
 # 1. configure the LASSO factor model
 lasso_model = LassoModel(
-    model_type=LassoModelType.GROUP_LASSO_CLUSTERS,  # hierarchical clustering groups
+    model_type=LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,  # hierarchical clustering groups
     reg_lambda=1e-5,   # LASSO regularisation strength
-    span=36,           # EWMA half-life in months for beta estimation
+    span=36,           # EWMA span in monthly returns for beta estimation
     warmup_period=12)  # minimum months before first beta estimate
 
 # 2. configure the factor covariance estimator
@@ -124,10 +126,11 @@ frequencies, and illiquid alternatives.
 | Parameter | Value | Description |
 |-----------|-------|-------------|
 | `reg_lambda` | 1e-5 | LASSO penalty. Higher → sparser betas, more factor model shrinkage |
-| `span` | 36 | EWMA half-life in months for beta estimation. 36 = 3 years |
+| `span` | 36 | EWMA span in monthly returns for beta estimation (a span, not a half-life) |
 | `factor_returns_freq` | 'ME' | Monthly factor returns for beta regression |
+| `factor_covar_span` | 36 | EWMA span in monthly returns for the factor covariance (the estimator's default is 52) |
 | `rebalancing_freq` | 'QE' | Quarterly SAA rebalancing |
-| `residual_var_weight` | 1.0 (SAA) / 0.0 (TAA) | Include residual variance for SAA risk budgeting; exclude for TAA tracking error |
+| `residual_var_weight` | 1.0 | Multiplier on the residual variance of the assembled covariance. The example uses the full covariance; the article also measures tracking error with the full covariance, so a weight below one is a package option, not the article's method |
 
 
 ## Connection to the full ROSAA framework

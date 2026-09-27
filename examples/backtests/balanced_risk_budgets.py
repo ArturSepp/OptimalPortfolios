@@ -1,7 +1,8 @@
 """
 illustration of solving for risk budgets using input weights
-create 60/40 portfolio with static weights
-find equivalent risk budget portfolio with weights matching in average weights of 60/40 portfolio
+create a static-weight portfolio: 55/35/10 SPY/IEF/GLD by default
+(is_60_40 = True in run_local selects 60/40 SPY/IEF)
+find equivalent risk budget portfolio whose average weights match the static weights
 show weights/risk contributions for both
 """
 
@@ -30,20 +31,25 @@ def plot_static_risk_budgets_vs_weights(prices: pd.DataFrame,
                                         ) -> List[plt.Figure]:
     """Report the risk-budgeted portfolio against the static-weight portfolio."""
     # create static_weights on same
-    static_weights = pd.DataFrame.from_dict({date: given_static_weights for date in risk_budgets_weights.index}, orient='index')
+    static_weights = pd.DataFrame.from_dict({date: given_static_weights
+                                             for date in risk_budgets_weights.index},
+                                            orient='index')
 
     static_portfolio = qis.backtest_model_portfolio(prices=prices, weights=static_weights,
                                                     ticker=benchmark_ticker)
 
-    risk_budget_portfolio = qis.backtest_model_portfolio(prices=prices, weights=risk_budgets_weights,
+    risk_budget_portfolio = qis.backtest_model_portfolio(prices=prices,
+                                                         weights=risk_budgets_weights,
                                                          ticker=strategy_ticker)
 
-    multi_portfolio_data = qis.MultiPortfolioData(portfolio_datas=[risk_budget_portfolio, static_portfolio],
+    multi_portfolio_data = qis.MultiPortfolioData(portfolio_datas=[risk_budget_portfolio,
+                                                                   static_portfolio],
                                                   benchmark_prices=prices.iloc[:, 0],
                                                   covar_dict=covar_dict)
 
-    report_kwargs = qis.fetch_default_report_kwargs(reporting_frequency=qis.ReportingFrequency.MONTHLY,
-                                                    add_rates_data=False)
+    report_kwargs = qis.fetch_default_report_kwargs(
+        reporting_frequency=qis.ReportingFrequency.MONTHLY,
+        add_rates_data=False)
 
     figs = qis.generate_strategy_benchmark_factsheet_plt(multi_portfolio_data=multi_portfolio_data,
                                                          time_period=time_period,
@@ -69,8 +75,10 @@ def plot_static_risk_budgets_vs_weights(prices: pd.DataFrame,
 
     # risk contributions
     rc_kwargs = dict(covar_dict=multi_portfolio_data.covar_dict, normalise=True)
-    strategy_risk_contributions_ac = risk_budget_portfolio.compute_risk_contributions_implied_by_covar(**rc_kwargs)
-    benchmark_risk_contributions_ac = static_portfolio.compute_risk_contributions_implied_by_covar(**rc_kwargs)
+    strategy_risk_contributions_ac = (
+        risk_budget_portfolio.compute_risk_contributions_implied_by_covar(**rc_kwargs))
+    benchmark_risk_contributions_ac = static_portfolio.compute_risk_contributions_implied_by_covar(
+        **rc_kwargs)
     fig, axs = plt.subplots(1, 2, figsize=figsize, tight_layout=True)
     if add_titles:
         qis.set_suptitle(fig, title="Time Series of risk contributions by asset classes")
@@ -82,8 +90,10 @@ def plot_static_risk_budgets_vs_weights(prices: pd.DataFrame,
                                                    **kwargs)
 
     # portfolio vol
-    strategy_ex_anti_vol = risk_budget_portfolio.compute_ex_anti_portfolio_vol_implied_by_covar(covar_dict=covar_dict)
-    benchmark_ex_anti_vol = static_portfolio.compute_ex_anti_portfolio_vol_implied_by_covar(covar_dict=covar_dict)
+    strategy_ex_anti_vol = risk_budget_portfolio.compute_ex_anti_portfolio_vol_implied_by_covar(
+        covar_dict=covar_dict)
+    benchmark_ex_anti_vol = static_portfolio.compute_ex_anti_portfolio_vol_implied_by_covar(
+        covar_dict=covar_dict)
     ex_anti_vols = pd.concat([strategy_ex_anti_vol, benchmark_ex_anti_vol], axis=1)
     fig, ax = plt.subplots(1, 1, figsize=figsize, tight_layout=True)
     figs.append(fig)
@@ -117,7 +127,8 @@ def run_local(local: Locals):
         given_static_weights = {'SPY': 0.55, 'IEF': 0.35, 'GLD': 0.1}
     given_static_weights = pd.Series(given_static_weights)
 
-    prices = yf.download(tickers=given_static_weights.index.to_list(), start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close']
+    prices = yf.download(tickers=given_static_weights.index.to_list(), start="2003-12-31",
+                         end=None, ignore_tz=True, auto_adjust=True)['Close']
     prices = prices[given_static_weights.index].dropna()
     print(prices)
 
@@ -151,7 +162,8 @@ def run_local(local: Locals):
                                                    given_static_weights=given_static_weights,
                                                    covar_dict=covar_dict,
                                                    time_period=time_period)
-        qis.save_figs_to_pdf(figs, file_name='risk_budget_portfolio', local_path=lp.get_output_path())
+        qis.save_figs_to_pdf(figs, file_name='risk_budget_portfolio',
+                             local_path=lp.get_output_path())
 
 
 if __name__ == '__main__':

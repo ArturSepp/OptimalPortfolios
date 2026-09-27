@@ -70,10 +70,14 @@ exclude_patterns = ["_build", "_generated", "Thumbs.db", ".DS_Store"]
 
 # SSRN returns HTTP 403 to automated link-check clients even when the public pages are live.
 # artursepp.com answers HTTP 429 to the GitHub runner on a single request, for the same reason.
+# DOIs of Wiley (10.1002, 10.1111), Taylor & Francis (10.1080, 10.1201, 10.2469), Oxford (10.1093)
+# and MDPI (10.3390) redirect to publisher pages that answer HTTP 403 to automated clients. Those
+# DOIs are checked as registered through the doi.org handle API when a page cites them.
 linkcheck_ignore = [
     r"https://(?:www\.)?ssrn\.com/.*",
     r"https://papers\.ssrn\.com/.*",
     r"https://(?:www\.)?artursepp\.com/.*",
+    r"https://doi\.org/10\.(?:1002|1080|1093|1111|1201|2469|3390)/.*",
 ]
 
 GOOGLE_SITE_VERIFICATION = "cddUZk3Gsd1MySw42Rwuq_rMzUDcMNkJWekObx-QS9Y"

@@ -2,11 +2,14 @@
 Portfolio optimisation using CARA (Constant Absolute Risk Aversion) utility.
 
 Implements expected utility maximisation under Gaussian and Gaussian mixture
-return distributions. The CARA utility U(r) = -exp(-γr) yields closed-form
-certainty equivalents under Gaussian assumptions:
+return distributions. The CARA utility U(r) = -exp(-γr) yields closed forms
+under Gaussian assumptions:
 
-    CE = μ'w - (γ/2) w'Σw               (single Gaussian)
-    CE = -Σ_k p_k exp(-γμ_k'w + γ²/2 w'Σ_k w)   (K-component mixture)
+    CE = μ'w - (γ/2) w'Σw                          (single Gaussian: certainty equivalent)
+    E[U] = -Σ_k p_k exp(-γμ_k'w + γ²/2 w'Σ_k w)    (K-component mixture: expected utility)
+
+The mixture's certainty equivalent, CE = -(1/γ) ln Σ_k p_k exp(-γμ_k'w + γ²/2 w'Σ_k w),
+falls as the expected disutility rises, so both objectives give the same weights.
 
 The mixture formulation captures fat tails and regime-dependent correlations
 by fitting a Gaussian Mixture Model to rolling return windows, then optimising
@@ -34,7 +37,8 @@ from typing import List
 
 from optimalportfolios.utils.gaussian_mixture import fit_gaussian_mixture
 from optimalportfolios.utils.portfolio_funcs import compute_portfolio_variance
-from optimalportfolios.optimization.constraints import (Constraints, total_weight_constraint, long_only_constraint)
+from optimalportfolios.optimization.constraints import (Constraints, total_weight_constraint,
+                                                        long_only_constraint)
 from optimalportfolios.optimization.solver_diagnostics import validate_scipy_solution
 from optimalportfolios.optimization.config import OptimiserConfig
 from optimalportfolios.utils.weights_drift import apply_drift_to_weights_0
@@ -50,7 +54,8 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
                                   returns_freq: str = 'W-WED',
                                   carra: float = 0.5,
                                   n_components: int = 3,
-                                  optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
+                                  optimiser_config: OptimiserConfig = OptimiserConfig(
+                                      apply_total_to_good_ratio=True)
                                   ) -> pd.DataFrame:
     """
     Compute rolling CARA-optimal portfolios under a Gaussian mixture model.
@@ -82,7 +87,8 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
         if idx >= roll_window-1 and value:
             period = qis.TimePeriod(rebalancing_schedule.index[idx - roll_window+1], date)
             rets_ = period.locate(returns).dropna(axis=1, how='any')
-            params = fit_gaussian_mixture(x=rets_.to_numpy(), n_components=n_components, an_factor=scaler)
+            params = fit_gaussian_mixture(x=rets_.to_numpy(), n_components=n_components,
+                                          an_factor=scaler)
             # drift weights_0 from the last actual rebalance date (not from
             # every schedule tick) to ``date`` before passing to the wrapper.
             weights_0 = apply_drift_to_weights_0(
@@ -90,9 +96,10 @@ def rolling_maximize_cara_mixture(prices: pd.DataFrame,
                 prev_date=prev_date, date=date,
                 use_drifted_weights_0=optimiser_config.use_drifted_weights_0,
             )
-            constraints1 = constraints.update_with_valid_tickers(context=str(pd.Timestamp(date).date()), valid_tickers=rets_.columns.to_list(),
-                                                                 total_to_good_ratio=len(tickers)/len(rets_.columns),
-                                                                 weights_0=weights_0)
+            constraints1 = constraints.update_with_valid_tickers(
+                context=str(pd.Timestamp(date).date()), valid_tickers=rets_.columns.to_list(),
+                total_to_good_ratio=len(tickers)/len(rets_.columns),
+                weights_0=weights_0)
 
             weights_ = wrapper_maximize_cara_mixture(means=params.means,
                                                      covars=params.covars,
@@ -120,7 +127,8 @@ def wrapper_maximize_cara_mixture(means: List[np.ndarray],
                                   constraints: Constraints,
                                   tickers: List[str],
                                   carra: float = 0.5,
-                                  optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True),
+                                  optimiser_config: OptimiserConfig = OptimiserConfig(
+                                      apply_total_to_good_ratio=True),
                                   context: str = ''
                                   ) -> pd.Series:
     """
@@ -173,8 +181,10 @@ def opt_maximize_cara_mixture(means: List[np.ndarray],
         verbose: If True, print SLSQP solver diagnostics.
 
     Returns:
-        Optimal weights (N,). Falls back to weights_0 or equal-weight
-        if the solver fails.
+        Optimal weights (N,). SLSQP starts from ``constraints.weights_0``, or
+        equal weights without it; when ``validate_scipy_solution`` rejects the
+        result, the fallback is ``constraints.weights_0``, else the benchmark
+        weights, else zeros.
     """
     n = covars[0].shape[0]
     if constraints.weights_0 is not None:
@@ -224,7 +234,9 @@ def opt_maximize_cara(means: np.ndarray,
         is_print_log: If True, print portfolio diagnostics after solving.
 
     Returns:
-        Optimal weights (N,).
+        Optimal weights (N,). When SLSQP does not converge or returns
+        non-finite weights, a warning is logged and the equal-weight start is
+        returned without validation.
     """
     n = covar.shape[0]
     x0 = np.ones(n) / n

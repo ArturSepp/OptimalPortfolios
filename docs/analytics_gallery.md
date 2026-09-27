@@ -2,8 +2,8 @@
 myst:
   html_meta:
     description: >-
-      Reproducible OptimalPortfolios analytics: synthetic portfolio performance,
-      allocation, trading costs, covariance spans, objectives and factor estimators.
+      Reproducible OptimalPortfolios analytics: six previews of a synthetic portfolio and a
+      teaching exhibit for each methodology article and case study, with their provenance.
 ---
 
 # Analytics gallery
@@ -13,18 +13,26 @@ myst:
 Examples from [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
-These six teaching exhibits connect portfolio construction to risk and performance analytics.
+The gallery has six previews and 25 teaching exhibits. The previews connect
+portfolio construction to risk and performance analytics on one synthetic portfolio:
 OptimalPortfolios estimates risk and constructs targets,
 [qis](https://github.com/ArturSepp/QuantInvestStrats) simulates holdings and computes analytics,
-and [factorlasso](https://github.com/ArturSepp/FactorLasso) fits the sparse factor models.
+and [factorlasso](https://github.com/ArturSepp/FactorLasso) fits the sparse factor models. Each
+teaching exhibit is drawn by the canonical script of its article and illustrates one result of
+it.
 
-All inputs are synthetic. The figures illustrate calculations and implementation conventions;
-they do not establish historical performance or recommend an allocation or estimator.
-The [shared provenance record](../examples/figures/analytics_manifest.json) identifies the
-effective source, inputs, parameters, actual software environment, generation time and visual
-review. A fixed sample ending in 2025 is separate from the date the image was generated.
+All inputs are synthetic or fixed, except the cryptocurrency exhibit, which is derived from the
+tracked price panel of its paper. The figures illustrate calculations and implementation
+conventions; they do not establish historical performance or recommend an allocation or
+estimator. The previews' [shared provenance record](../examples/figures/analytics_manifest.json)
+identifies the effective source, inputs, parameters, actual software environment, generation
+time and visual review; the teaching exhibits have their own
+[manifest](images/analytics_manifest.json). A fixed sample ending in 2025 is separate from the
+date the image was generated.
 
 ## Choose an exhibit
+
+The six previews simulate one synthetic portfolio end to end:
 
 | Question | Exhibit |
 |---|---|
@@ -34,8 +42,36 @@ review. A fixed sample ending in 2025 is separate from the date the image was ge
 | How does covariance smoothing affect this example? | [Span sensitivity](#covariance-span-sensitivity) |
 | How do three objectives behave with common risk inputs? | [Objective comparison](#portfolio-objectives) |
 | How do estimates compare with a known simulated covariance? | [Covariance estimators](#covariance-estimators) |
-| Why does the maximum diversification portfolio hold what it holds? | [Maximum diversification](#maximum-diversification) |
-| How do the strategic and tactical layers of ROSAA divide the work? | [ROSAA layers](#rosaa-layers) |
+
+The 25 teaching exhibits each illustrate one article, in the order of the sidebar:
+
+| Question | Exhibit |
+|---|---|
+| Which observations enter each asset's classic momentum when monthly and quarterly assets share a formation date, and how is a quarterly signal carried between quarter ends? | [Mixed-frequency data](#mixed-frequency-data) |
+| What happens to NAV and holdings when a price is missing between rebalancings, on a rebalance date, and at the opening trade? | [Incomplete histories](#incomplete-histories) |
+| How much autocorrelation and volatility does unsmoothing restore to an appraisal-smoothed private-asset series? | [Universe data and unsmoothing](#universe-data-and-unsmoothing) |
+| Do both residual types give each asset the same variance, and how much residual variance does a portfolio of assets sharing an unspanned shock collect under each? | [Factor covariance with HCGL](#factor-covariance-with-hcgl) |
+| How do capital weights and risk shares differ across equal weight, minimum variance, equal risk contribution and maximum diversification on one covariance? | [Ex-ante risk contributions](#ex-ante-risk-contributions) |
+| How does scoring one signal within clusters change the ranking of assets compared with scoring it across the whole cross-section? | [Alpha signals](#alpha-signals) |
+| Does the signal rank returns, and how stable is its IC? | [Signal diagnostics](#signal-diagnostics) |
+| Are the risk budgets met when a weight bound binds? | [Risk budgeting](#risk-budgeting) |
+| What static risk budgets reproduce a target allocation on average, and how far do the weights they imply drift from it date by date? | [Implied risk budgets](#implied-risk-budgets) |
+| How do HRP, equal risk contribution and equal cluster budgets divide capital and risk among the blocks of one universe? | [Hierarchical risk parity](#hierarchical-risk-parity) |
+| Is the maximum diversification portfolio the minimum-variance portfolio of the correlation matrix, rescaled by inverse volatility, and do its held assets share one correlation with it? | [Maximum diversification](#maximum-diversification) |
+| Where do minimum variance, utility and maximum Sharpe sit on the frontier? | [Mean-variance objectives](#mean-variance-objectives) |
+| Do the target-return and target-volatility solvers trace the same frontier, hard and soft? | [Target return and target volatility](#target-return-and-target-volatility) |
+| How do risk aversion and a crash component change the allocation? | [CARA utility under Gaussian mixtures](#cara-utility-under-gaussian-mixtures) |
+| What does each added constraint cost in ex-ante tracking error against the benchmark? | [Minimum tracking error](#minimum-tracking-error) |
+| Do active weights follow the closed form, and how does IR scale with the TE budget? | [Alpha over tracking error](#alpha-over-tracking-error) |
+| How do the overlay sleeve and the portfolio's model risk and return change as the linear tail floor tightens from non-binding to near its reachable maximum? | [Overlay tail floor](#overlay-tail-floor) |
+| What changes when a tracking-error limit becomes a penalty: how far does the solve exceed the limit, and what active return does that buy, as the penalty weight grows? | [Portfolio constraints](#portfolio-constraints) |
+| What does the eigenvalue floor change as two proxies become collinear? | [Solver numerics and outcomes](#solver-numerics-and-outcomes) |
+| How far do held weights drift from target weights between quarterly rebalancings? | [Rolling backtests](#rolling-backtests) |
+| How does raising `turnover_utility_weight` trade turnover against ex-ante tracking error, and at what weight does trading stop? | [Turnover and transaction costs](#turnover-and-transaction-costs) |
+| How do risk budgets translate into strategic weights, and do the tactical tilts spend the tracking-error budget in the direction of the alphas? | [ROSAA layers](#rosaa-layers) |
+| How much does each method allocate to the crypto asset? | [Cryptocurrency allocation](#cryptocurrency-allocation) |
+| How do factor premia and residual adjustments build the CMAs, and what allocation do they imply? | [Capital market assumptions](#capital-market-assumptions) |
+| How do factor shocks and option repricing combine in a portfolio stress test? | [Stress testing with options](#stress-testing-with-options) |
 
 Select a preview to open its full-resolution image. The
 [offline quickstart](quickstart.md) provides a smaller executable introduction, and the
@@ -43,19 +79,19 @@ Select a preview to open its full-resolution image. The
 
 ## Samples and conventions
 
-The first five exhibits use six assets from the fixed
+The first five previews use six assets from the fixed
 [qis synthetic-universe generator](https://github.com/ArturSepp/QuantInvestStrats/blob/main/src/qis/datasets/synthetic.py):
 US and European equity, Treasuries, investment-grade bonds, gold and commodities.
 Seed 20260725 and clean mode (`apply_quirks=False`) select complete business-day observations
 from 4 January 2010 to 31 December 2025. Early history supplies estimation warmup;
 the displayed performance window is 1 April 2015 to 31 December 2025.
 
-The final exhibit uses the repository's
+The sixth preview, covariance estimators, uses the repository's
 [known-factor simulator](../examples/covar_estimation/simulate_factor_returns.py), seed 42:
 four factors, eight assets and 783 business-day observations from 2 January 2023 to
 31 December 2025. Its displayed backtest starts on 3 January 2024 after weekly estimation warmup.
 
-| Convention | Applied in these exhibits |
+| Convention | Applied in the six previews |
 |---|---|
 | Estimation returns | Weekly Wednesday log returns, with trailing EWMA demeaning |
 | Covariance units | Annualized using 52 weekly observations per year |
@@ -255,6 +291,21 @@ four bond-like, October 2023 to December 2024; no simulation. **Producer:** the 
 function of [`examples/docs/alphas_module_readme.py`](../examples/docs/alphas_module_readme.py).
 **Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
 
+## Signal diagnostics
+
+A teaching exhibit of the [signal diagnostics and alpha-rank portfolios](signal_diagnostics_and_profiling.md) page. A
+synthetic score whose population rank information coefficient is 0.0955 sorts 500 assets into
+quintile portfolios whose values fan out in rank order, while the monthly rank IC scatters widely
+around its population value.
+
+![Left: the values of the five quintile portfolios sorted by the score, on a log scale. Right: the
+monthly rank IC with its 12-month mean and the population value.](images/alpha_rank_quantiles.png)
+
+**Sample:** 500 synthetic assets with 240 month-end returns from January 2006 to December 2025,
+seed 11. **Producer:** the `exhibit` function of
+[`examples/docs/signal_diagnostics_and_profiling.py`](../examples/docs/signal_diagnostics_and_profiling.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
 ## Risk budgeting
 
 A teaching exhibit of the [risk budgeting](risk_budgeting.md) page. With slack caps, each
@@ -318,6 +369,54 @@ function of [`examples/docs/maximum_diversification.py`](../examples/docs/maximu
 run by [the teaching-exhibit tool](../tools/docs_analytics/teaching.py). **Configuration:**
 [teaching registry](../tools/docs_analytics/teaching.json).
 
+## Mean-variance objectives
+
+A teaching exhibit of the [mean-variance objectives](mean_variance_objectives.md) page. With a
+full-investment budget, minimum variance, quadratic utility and maximum Sharpe lie on one
+frontier: the utility portfolio mixes the minimum-variance and tangency portfolios, and a risk
+aversion of 6.96 returns the tangency portfolio, whose Sharpe ratio is 0.416.
+
+![Left: expected excess return against volatility, with the frontier, the minimum-variance and
+maximum-Sharpe portfolios and utility portfolios at four risk aversions. Right: the weights of the
+minimum-variance, maximum-Sharpe and utility portfolios.](images/efficient_frontier_objectives.png)
+
+**Sample:** fixed expected excess returns, volatilities and correlations of five assets; no
+simulation. **Producer:** the `exhibit` function of
+[`examples/docs/mean_variance_objectives.py`](../examples/docs/mean_variance_objectives.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Target return and target volatility
+
+A teaching exhibit of the [strategic allocation](strategic_allocation_targets.md) page. Minimum
+variance at a target return, maximum return at a target volatility and the utility form at a
+penalty weight trace one frontier: a 5% volatility target, a 4.81% return target and a penalty
+weight of 4.46 return the same portfolio.
+
+![Left: expected return against volatility, with the frontier and the solutions of the three
+routes. Right: the volatility of the utility solution against the penalty weight, crossing the 5%
+target at the shadow price.](images/saa_target_duality.png)
+
+**Sample:** the packaged 19-instrument monthly fixture, with an EWMA covariance (span 36) at
+31 December 2025 and equal-Sharpe expected returns; no simulation. **Producer:** the `exhibit`
+function of
+[`examples/docs/strategic_allocation_targets.py`](../examples/docs/strategic_allocation_targets.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## CARA utility under Gaussian mixtures
+
+A teaching exhibit of the [CARA utility under Gaussian mixtures](cara_gaussian_mixture.md) page.
+A crash component lowers the allocation to crypto at every risk aversion: at a risk aversion of
+5, the three-component mixture holds 6.3% in crypto against 7.2% for the Gaussian with the
+mixture's own mean and covariance.
+
+![Left: the weight of crypto against risk aversion for one and three mixture components. Right:
+the weights of bonds, equities and crypto at a risk aversion of 5.](images/cara_mixture_allocation.png)
+
+**Sample:** fixed annual parameters of a stylised three-asset, three-component mixture; no
+simulation. **Producer:** the `exhibit` function of
+[`examples/docs/cara_gaussian_mixture.py`](../examples/docs/cara_gaussian_mixture.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
 ## Minimum tracking error
 
 A teaching exhibit of the [minimum tracking error](minimum_tracking_error.md) page. Starting
@@ -330,6 +429,21 @@ the covariance sends the displaced weight at two of the steps.
 **Sample:** fixed volatilities and correlations of a stylised five-asset universe with a 60/40
 benchmark and fixed current holdings; no simulation. **Producer:** the `exhibit` function of
 [`examples/docs/minimum_tracking_error.py`](../examples/docs/minimum_tracking_error.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Alpha over tracking error
+
+A teaching exhibit of the [alpha over tracking error](alpha_over_tracking_error.md) page. Under a 2%
+tracking-error budget the long-only active weights equal the closed form, and the information
+ratio stays at 0.336 until a weight bound binds at a 3.82% budget; without weight bounds it does
+not fall.
+
+![Left: long-only active weights at a 2% budget against the closed form. Right: the information
+ratio against the tracking-error budget, with and without long-only bounds.](images/alpha_over_te_active_weights.png)
+
+**Sample:** fixed volatilities, correlations, benchmark and alphas of a stylised six-asset
+universe; no simulation. **Producer:** the `exhibit` function of
+[`examples/docs/alpha_over_tracking_error.py`](../examples/docs/alpha_over_tracking_error.py).
 **Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
 
 ## Overlay tail floor
@@ -416,6 +530,38 @@ alphas at a 3% ex-ante tracking error at every quarter end.
 **Sample:** synthetic monthly panel of three factors and eight asset classes, December 2004 to
 June 2025, seed 11; quarter ends from December 2014. **Producer:** the `exhibit` function of
 [`examples/docs/app_rosaa_multi_asset_allocation.py`](../examples/docs/app_rosaa_multi_asset_allocation.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Cryptocurrency allocation
+
+A paper-derived exhibit of the [cryptocurrencies in diversified portfolios](app_crypto_allocation.md) case
+study, run with the current API on the frozen 2023 panel of the paper. In the all-alternatives
+template with BTC, the median BTC weight is 5.3% under equal risk contribution, 6.3% under
+maximum diversification and 10.9% under maximum Sharpe, and CARA utility with three mixture
+components holds the most.
+
+![Two panels of BTC weights at each quarter end from March 2016 to June 2023 for four methods,
+with the median marked, in the all-alternatives and the balanced templates.](images/crypto_allocation_by_method.png)
+
+**Sample:** the tracked price panel of the cryptocurrency paper, ETF-derived columns only (BTC,
+private equity, real estate, commodities, gold and a 60/40 proxy), monthly log returns and 30
+quarter ends from 31 March 2016 to 30 June 2023. **Producer:** the `exhibit` function of
+[`examples/docs/app_crypto_allocation.py`](../examples/docs/app_crypto_allocation.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Capital market assumptions
+
+A teaching exhibit of the [capital market assumptions to strategic allocation](app_cma_strategic_allocation.md)
+case study. One loading matrix gives the factor-implied part of each CMA; two one-point residual
+adjustments, small beside the factor parts, turn a sold-out hedge-fund position into a 3.4-point
+overweight at a 1% tracking-error budget.
+
+![Left: the factor-implied and residual parts of eight synthetic CMAs. Right: active weights against
+the benchmark with and without the residual adjustments.](images/cma_decomposition_saa.png)
+
+**Sample:** fixed synthetic loadings, factor premia and residual adjustments of eight asset classes
+and four factors; no simulation. **Producer:** the `exhibit` function of
+[`examples/docs/app_cma_strategic_allocation.py`](../examples/docs/app_cma_strategic_allocation.py).
 **Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
 
 ## Stress testing with options
