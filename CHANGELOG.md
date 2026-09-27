@@ -48,6 +48,12 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   created with `python -m uv venv --python 3.12`. `readthedocs_config_test.py` rejects a single
   quote or a bare `uv` in any build-job command, so the test matrix of every pull request catches
   both failures, which `docs.yml` cannot see.
+- The next build created the environment and then failed with `No module named uv`: once the
+  project virtualenv exists, Read the Docs puts its `bin` directory first on `PATH`, so
+  `python -m uv` ran the virtualenv's interpreter, which has no uv. uv is now installed with
+  `pip install --target "$READTHEDOCS_VIRTUALENV_PATH.uv"` and called by that path in every step,
+  so no uv call depends on `PATH`. The guard test now also rejects `python -m uv` and checks that
+  every call uses the installed binary.
 
 ## [7.8.0] - 2026-09-23
 

@@ -5,16 +5,18 @@ build:
   tools:
     python: "3.12"
   jobs:
-    # pip does not put the uv entry point on the build PATH, so uv runs as a module. A bare
-    # `uv` failed every build from 2026-09-14 to 2026-09-26 with "uv: not found".
-    # Read the Docs runs each command as /bin/sh -c '<command>' without escaping it, so a
-    # command must not contain a single quote (readthedocs_config_test.py enforces both rules).
+    # Read the Docs runs each command as /bin/sh -c '<command>' without escaping it and puts
+    # the project virtualenv's bin directory first on PATH. So uv is installed into its own
+    # directory beside the virtualenv and always called by that path: a bare `uv` is not on
+    # PATH ("uv: not found", 2026-09-14 to 2026-09-26), and `python -m uv` resolves to the
+    # virtualenv's interpreter once it exists ("No module named uv", 2026-09-27). No command
+    # may contain a single quote. readthedocs_config_test.py enforces these rules.
     # `--python 3.12` asks uv for a base interpreter of the build.tools.python version.
     create_environment:
-      - python -m pip install uv==0.12.13
-      - python -m uv venv --python 3.12 "$READTHEDOCS_VIRTUALENV_PATH"
+      - python -m pip install --target "$READTHEDOCS_VIRTUALENV_PATH.uv" uv==0.12.13
+      - '"$READTHEDOCS_VIRTUALENV_PATH.uv/bin/uv" venv --python 3.12 "$READTHEDOCS_VIRTUALENV_PATH"'
     install:
-      - UV_PROJECT_ENVIRONMENT="$READTHEDOCS_VIRTUALENV_PATH" python -m uv sync --locked --extra docs
+      - UV_PROJECT_ENVIRONMENT="$READTHEDOCS_VIRTUALENV_PATH" "$READTHEDOCS_VIRTUALENV_PATH.uv/bin/uv" sync --locked --extra docs
     pre_build:
       - '"$READTHEDOCS_VIRTUALENV_PATH/bin/python" tools/check_docs.py --source-all'
       - '"$READTHEDOCS_VIRTUALENV_PATH/bin/python" -m tools.docs_analytics.run --list'
