@@ -29,6 +29,9 @@ CORR = np.array([
 ])
 HELD = 1e-4  # a weight above this is a held asset
 SEED = 7
+# Sign of the largest entry of each singular vector of the daily covariance as OpenBLAS returns
+# it, with which Generator.multivariate_normal drew the simulated prices.
+SVD_SIGNS = [1, -1, -1, -1, -1, 1]
 
 
 def covariance(vols: np.ndarray, corr: np.ndarray, tickers: list) -> pd.DataFrame:
@@ -52,11 +55,19 @@ def correlations_with_portfolio(covar: np.ndarray, weights: np.ndarray) -> np.nd
 
 
 def simulated_prices(covar: pd.DataFrame, seed: int) -> pd.DataFrame:
-    """Simulate business-daily prices with the given annual covariance and zero drift."""
+    """Simulate business-daily prices with the given annual covariance and zero drift.
+
+    The draws are those of ``Generator.multivariate_normal``, whose SVD factor has signs that
+    differ between LAPACK builds, with each singular vector's largest entry given its sign in
+    ``SVD_SIGNS``, the signs for the page's covariance, so that the same seed gives the same
+    prices on every platform.
+    """
     dates = pd.bdate_range('2015-01-01', '2025-12-31')
     rng = np.random.default_rng(seed)
-    returns = rng.multivariate_normal(np.zeros(len(covar)), covar.to_numpy() / 260.0,
-                                      size=len(dates))
+    _, singular_values, vh = np.linalg.svd(covar.to_numpy() / 260.0)
+    vh = vh * (SVD_SIGNS * np.sign(vh[np.arange(len(vh)), np.abs(vh).argmax(axis=1)]))[:, None]
+    shocks = rng.standard_normal((len(dates), len(covar)))
+    returns = shocks @ (np.sqrt(singular_values)[:, None] * vh)
     return pd.DataFrame(100.0 * np.exp(np.cumsum(returns, axis=0)), index=dates,
                         columns=covar.columns)
 

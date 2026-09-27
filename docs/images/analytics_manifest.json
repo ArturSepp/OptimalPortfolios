@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-09-27T11:50:37+00:00",
+  "generated_at_utc": "2026-09-27T12:39:04+00:00",
   "platform": "Windows-11-10.0.26200-SP0",
   "versions": {
     "python": "3.12.14",
@@ -18,7 +18,7 @@
     "max_diversification_identity": {
       "path": "docs/images/max_diversification_identity.png",
       "script": "examples/docs/maximum_diversification.py",
-      "script_sha256": "8ba4bc43a716a7c45c8e25849f3fe335f775e9ab4a3523552fcda7baa584fc03",
+      "script_sha256": "028602bc6939cf40fcddaaa63ad7f7a6d15733e73db22e15eb649b7ae56c8282",
       "image_sha256": "4c4ce1196c4f1f65ba2be117fe635247f70a0240a7a5fe1dc55cbd62fb1aef45",
       "table_sha256": "3031281898616f021871e7192367edef3663fe35e64aa036936873f88664661c",
       "parameters": {
@@ -103,11 +103,16 @@
     "rosaa_saa_taa_layers": {
       "path": "docs/images/rosaa_saa_taa_layers.png",
       "script": "examples/docs/app_rosaa_multi_asset_allocation.py",
-      "script_sha256": "cdb9076e0a2e072141e816fb5b5a375afb7f8eaf8008e7ad22a2c74e8135aa14",
+      "script_sha256": "2f6329cc5dce30d81de13bb96cc8b36c2b52496ff3ed611f5bbca57110303d34",
       "image_sha256": "1411d388f3a2b55cafea7a229be22214cd1a106cf8787bf9e7d20e144e81f2a3",
-      "table_sha256": "78b118093497d04ee3db60a08f8e23026046c457333423867222f0cef4aace08",
+      "table_sha256": "5e3a57cea653b40641c90d9a1ac1a831b635cf4708739232575525764bae8764",
       "parameters": {
         "SEED": 11,
+        "SVD_SIGNS": [
+          -1,
+          1,
+          -1
+        ],
         "FACTORS": [
           "Equity",
           "Rates",
@@ -1087,11 +1092,17 @@
     "factor_covariance_variance_split": {
       "path": "docs/images/factor_covariance_variance_split.png",
       "script": "examples/docs/factor_covariance_hcgl.py",
-      "script_sha256": "d1a90685625c3700bf4018326c1eed5bfd5b9dd51d36a4abbef45419a86f50af",
+      "script_sha256": "dc6ab6cf41c4466eaa03ca2cc975d7c29016845d399bbb7e392ede97089d2648",
       "image_sha256": "df44432e853c3a95842ac3896e05458736e0c6c82ab8588eb600fb988d5ac2f0",
-      "table_sha256": "f0d9db963551224ad06b9ae4335abdb749c43d167242e81a66cf5a0781748136",
+      "table_sha256": "cc33c07a7921bfab0123d0bffe7fe5ffedf8fa922a33bc1601e6891e1bbf3f8c",
       "parameters": {
         "SEED": 5,
+        "SVD_SIGNS": [
+          -1,
+          -1,
+          -1,
+          -1
+        ],
         "FACTORS": [
           "Equity",
           "Rates",
@@ -1229,7 +1240,7 @@
     }
   },
   "review": {
-    "note": "Republished on 2026-09-27 after examples/docs/portfolio_risk_analytics.py switched its regression-check draws from Generator.multivariate_normal to a Cholesky factor, so the same seed gives the same returns on every LAPACK build (macOS CI drew different returns). The exhibit does not use the draws: all fifteen images are byte-identical to the published ones, which were inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27.",
-    "published_at_utc": "2026-09-27T11:50:40+00:00"
+    "note": "Republished on 2026-09-27 after examples/docs/factor_covariance_hcgl.py, examples/docs/app_rosaa_multi_asset_allocation.py and examples/docs/maximum_diversification.py replaced Generator.multivariate_normal by its SVD draws with the sign of each singular vector's largest entry pinned at SVD_SIGNS, the signs OpenBLAS returns, so the same seed gives the same returns on every LAPACK build. The draws match the previous ones to 1e-15 and the rosaa_saa_taa_layers and factor_covariance_variance_split tables to 1.4e-13. All fifteen images are byte-identical to the published ones, which were inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27.",
+    "published_at_utc": "2026-09-27T12:40:31+00:00"
   }
 }

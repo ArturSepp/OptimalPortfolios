@@ -90,6 +90,11 @@
       "function": "exhibit",
       "parameters": {
         "SEED": 11,
+        "SVD_SIGNS": [
+          -1,
+          1,
+          -1
+        ],
         "FACTORS": [
           "Equity",
           "Rates",
@@ -982,6 +987,12 @@
       "function": "exhibit",
       "parameters": {
         "SEED": 5,
+        "SVD_SIGNS": [
+          -1,
+          -1,
+          -1,
+          -1
+        ],
         "FACTORS": [
           "Equity",
           "Rates",
