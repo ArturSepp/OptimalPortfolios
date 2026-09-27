@@ -35,7 +35,7 @@ see the [qis software citation](https://github.com/ArturSepp/QuantInvestStrats/b
 | Symbol | Meaning and units |
 |---|---|
 | $w$ | $n$-asset capital-weight vector; fractions of NAV |
-| $\Sigma$ | $n$-by-$n$ covariance matrix in caller-supplied variance units |
+| $\Sigma$ | Covariance matrix of size $n \times n$ in caller-supplied variance units |
 | $\sigma_p$ | Portfolio volatility in the square-root units of $\Sigma$ |
 | $\mathrm{RC}_i$ | Asset $i$'s Euler contribution to portfolio volatility |
 | $r_i$ | Asset $i$'s dimensionless fraction of portfolio volatility |
@@ -223,7 +223,7 @@ empirical performance result.
 
 ### Independent diagonal-covariance check
 
-For uncorrelated assets with volatilities $\sigma_i>0$, positive budgets, no binding bounds
+For uncorrelated assets with volatilities $\sigma_i \gt 0$, positive budgets, no binding bounds
 and no active variance floor, the target equations reduce to:
 
 $$

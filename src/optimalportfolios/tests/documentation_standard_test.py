@@ -146,6 +146,37 @@ def test_unclosed_source_blocks_are_rejected(ending, message):
     assert any(message in issue.message for issue in issues)
 
 
+@pytest.mark.parametrize('faulty,fixed,message', [
+    ('A scale $\\sigma \\, C$.', 'A scale $\\sigma C$.', 'Spell TeX commands'),
+    ('A set $\\{w\\}$.', 'A set $\\lbrace w \\rbrace$.', 'Spell TeX commands'),
+    ('$$\n\\lVert w \\rVert = \\left\\|w\\right\\|\n$$', '$$\n\\lVert w \\rVert\n$$',
+     'Spell TeX commands'),
+    ('Positive $w_i > 0$ weights.', 'Positive $w_i \\gt 0$ weights.', '\\lt and \\gt'),
+    ('An $n$-by-$n$ matrix.', 'An $n \\times n$ matrix.', 'space or an opening parenthesis'),
+    ('The $i$th asset.', 'Asset $i$.', 'letter or digit'),
+    ('$$\nx = a\n+ b\n$$', '$$\nx = a +\nb\n$$', 'display-math line'),
+    ('> **Insight.** Weights $w_i > 0$.', '> **Insight.** Weights $w_i \\gt 0$.',
+     '\\lt and \\gt'),
+    ('Returns $\\hat{\\mu}_t$ and\nholdings $w_{t^-}$.',
+     'Returns $\\hat\\mu_t$ and\nholdings $w_{t^-}$.', 'as emphasis'),
+    ('| $\\hat{\\mu}_t$ | $w_{t^-}$ |', '| $\\hat{\\mu}_t$ | $w_{t^-}$ |', None),
+    ('- $\\hat{\\mu}_t$ returns\n- $w_{t^-}$ holdings',
+     '- $\\hat{\\mu}_t$ returns\n- $w_{t^-}$ holdings', None),
+])
+def test_math_that_github_renders_wrongly_is_rejected(faulty, fixed, message):
+    """Each GitHub-only math fault fails, and its portable spelling passes.
+
+    The last two cases pass as written: emphasis never crosses a table cell or a list item.
+    """
+    source = HEADER + SECTIONS + '\n' + faulty + '\n'
+    issues = CHECK(source, methodology=True)
+    if message is None:
+        assert not issues, issues
+    else:
+        assert any(message in issue.message for issue in issues), issues
+    assert not CHECK(HEADER + SECTIONS + '\n' + fixed + '\n', methodology=True)
+
+
 def test_local_links_check_files_without_interpreting_examples(tmp_path):
     """Resolve encoded and reference-style files, excluding code and remote URLs."""
     docs = tmp_path / 'docs'

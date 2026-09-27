@@ -51,9 +51,9 @@ w_t^{\star} = \arg\max_{w \in \mathcal{C}_t} U(w; \hat{\mu}_t, \hat{\Sigma}_t, w
 \hat{\Sigma}_t = \beta_t \Sigma_{F,t} \beta_t^{\top} + D_t .
 $$
 
-Here $U$ is the objective, $\mathcal{C}_t$ the set of admissible weights, $\hat{\mu}_t$ the
+Here $U$ is the objective, $\mathcal C_t$ the set of admissible weights, $\hat\mu_t$ the
 expected returns or alphas where the objective uses them, $w^{\mathrm{bm}}$ a benchmark and
-$w_{t^-}$ the current holdings drifted to $t$. The covariance $\hat{\Sigma}_t$ is either an EWMA
+$w_{t^-}$ the current holdings drifted to $t$. The covariance $\hat\Sigma_t$ is either an EWMA
 estimate or the factor model on the right, with loadings $\beta_t$, factor covariance
 $\Sigma_{F,t}$ and residual covariance $D_t$. The construction runs through the steps below.
 

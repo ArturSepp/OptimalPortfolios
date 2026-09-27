@@ -99,8 +99,9 @@ and the [alpha guide's timing qualifications](alphas_module_readme.md).
 
 With `OptimiserConfig.use_drifted_weights_0=True`, rolling solvers drift the previous target
 to the next decision date using price changes before passing it as `weights_0`.
-The [drift helper](../src/optimalportfolios/utils/portfolio_funcs.py) retains the previous weights
-when its prerequisites are unavailable. Setting the option to `False` reuses the prior target.
+The drift helper `apply_drift_to_weights_0` in
+[`utils/weights_drift.py`](../src/optimalportfolios/utils/weights_drift.py) retains the previous
+weights when its prerequisites are unavailable. Setting the option to `False` reuses the prior target.
 
 This reference state supports turnover constraints, penalties and warm starts where the selected
 solver implements them. It is a decision-date approximation to current allocation, not a complete
@@ -202,11 +203,11 @@ and three published extras:
 |---|---|
 | `data` | Yahoo Finance integration through yfinance. |
 | `reports` | Optional pybloqs rendering. QIS/matplotlib analytics and factsheets are already used by the core workflows. |
-| `docs` | Sphinx, theme and Markdown tooling for building documentation. |
+| `docs` | Sphinx, theme, Markdown and Mermaid tooling for building documentation. |
 
 The `all` contributor dependency group is separate from a published extra.
 The [installation guide](installation.md) describes released installs, contributor groups,
-the external Windows environment and the pending lockfile reconciliation.
+the external Windows environment, and the difference between locked and resolved versions.
 
 Core imports keep optional integrations out of their import path. A dedicated optional module
 or a repository example can still require its declared integration: inspect the relevant

@@ -76,9 +76,8 @@ interactive plot windows; it does not suppress file writes.
 
 The [examples workflow](../.github/workflows/examples.yml) defines a core-only offline PR gate
 on Linux, Windows and macOS with Python 3.12. Its network lane is scheduled daily and advisory
-(`continue-on-error`). These are workflow definitions, not a claim that this documentation
-review reran the hosted jobs. The [installation guide](installation.md#contributor-groups-and-the-lockfile)
-records the pending lockfile reconciliation.
+(`continue-on-error`). The [installation guide](installation.md#locked-and-resolved-versions)
+explains which dependency versions the PR gate and a pip installation use.
 
 ## Layout
 

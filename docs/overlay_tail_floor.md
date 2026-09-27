@@ -44,7 +44,7 @@ fixed core, fixed exposure, asset bounds, compatible sleeve budgets and one line
 | $c$ | Index of the core; $w_c=1$. |
 | $W$ | Nonnegative overlay budget; the example uses 1.0. |
 | $E$ | Fixed total exposure $1+W$, strictly positive. |
-| $e$ | Length-$n$ vector of ones. |
+| $e$ | Vector of $n$ ones. |
 | $\mu$ | Supplied expected excess returns, annual decimal units in the example. |
 | $\Sigma$ | Symmetric positive-definite covariance, annual decimal-return variance here. |
 | $a$ | Fixed linear coefficients, with a common horizon and unit across assets. |
@@ -99,19 +99,19 @@ The fixed-exposure implementation chooses the positive normalization constant $E
 transformed objective and recovery are
 
 $$
-\min_{y,k}\;y^\top\Sigma y,\qquad
+\min_{y,k} y^\top\Sigma y,\qquad
 \mu^\top y=E,\qquad y=kw,\qquad w=\frac{y}{k}.
 $$
 
 The source imposes $k\geq0$. In this bounded long-only example, $k=0$ would force $y=0$,
-contradicting $\mu^\top y=E>0$, so a feasible transformed solution has $k>0$.
+contradicting $\mu^\top y=E \gt 0$, so a feasible transformed solution has $k \gt 0$.
 
 **Fixed core and sleeve budget.** Core minimum and maximum weights both equal 1.0; total
 minimum and maximum exposures both equal $E$. The backend scales these rows correctly:
 
 $$
 y_c=k,\qquad e^\top y=kE,\qquad
-k\,\ell_i\leq y_i\leq k\,u_i.
+k\ell_i\leq y_i\leq k u_i.
 $$
 
 Here $\ell_i,u_i$ are asset lower and upper bounds. Multiple sleeves can use

@@ -41,7 +41,7 @@ The formulas below use:
 |---|---|
 | $w,b,w_0$ | Ordered $n$-asset portfolio, benchmark and pre-trade weight vectors |
 | $\mu,\alpha$ | Expected-return and alpha vectors, with $n$ entries |
-| $\Sigma$ | $n$-by-$n$ covariance matrix in the supplied variance units |
+| $\Sigma$ | Covariance matrix of size $n \times n$ in the supplied variance units |
 | $B$ | Covariance factor, with $BB^\top=\Sigma_{\mathrm{stabilized}}$ |
 | $L,L_g$ | Assets-by-groups/factors loadings and the $n$-entry column for group $g$ |
 | $a,a_g$ | Active weights $w-b$ and their group-masked vector |

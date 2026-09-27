@@ -39,10 +39,11 @@ The release records and linked capability documentation were reviewed again on
 **14 September 2026**. This confirms the existence of those releases and the documented
 features described below; it does not recreate the original review's "latest stable" status.
 
-The OptimalPortfolios table describes the working source declaring **7.6.0**, as recorded in
-[packaging metadata](../pyproject.toml), with qualifications from the current methodology
-guides. Peer-package tables describe the linked official documentation reviewed on the later
-date. They do not certify that every documented feature exists in the historical release above.
+The OptimalPortfolios table describes the working source as reviewed on 14 September 2026, when
+it declared version **7.6.0**, with qualifications from the methodology guides of that date.
+Later releases add features that the table does not list; the
+[changelog](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CHANGELOG.md) records them.
+Peer-package tables describe the linked official documentation reviewed on the later date. They do not certify that every documented feature exists in the historical release above.
 See [How this comparison was made](#how-this-comparison-was-made) for documentation-version mismatches.
 
 ## Capability matrix

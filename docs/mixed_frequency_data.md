@@ -69,9 +69,9 @@ appraisal-unsmoothing model or a claim that those NAVs were tradable at the disp
 For each cadence, sample prices at its endpoints and compute returns within that bucket:
 
 $$
-r_{i,k}^{(f)} = \log\!\left(\frac{P_{i,k}^{(f)}}{P_{i,k-1}^{(f)}}\right),
+r_{i,k}^{(f)} = \log\left(\frac{P_{i,k}^{(f)}}{P_{i,k-1}^{(f)}}\right),
 \qquad
-R_{i,k}^{(f)} = \exp\!\left(r_{i,k}^{(f)}\right)-1.
+R_{i,k}^{(f)} = \exp\left(r_{i,k}^{(f)}\right)-1.
 $$
 
 Here $R_{i,k}^{(f)}$ is the arithmetic return over the same interval. Neither return is
@@ -96,7 +96,7 @@ Risk-adjusted momentum, classic momentum, low-beta and residual momentum accept 
 per-asset `returns_freq` Series. Their relevant horizon parameters accept mappings keyed
 by cadence. Those parameters have different meanings.
 
-For an EWMA span $S_f>1$, the decay $\lambda_f$ and half-life $h_f$ satisfy:
+For an EWMA span $S_f \gt 1$, the decay $\lambda_f$ and half-life $h_f$ satisfy:
 
 $$
 \lambda_f = 1-\frac{2}{S_f+1},
@@ -146,8 +146,8 @@ scaled at its asset-return cadence:
 
 $$
 \Sigma_{\mathrm{annual}}
-= B\left(a_x\Sigma_x^{(f_x)}\right)B^\mathsf{T}
-+ \operatorname{diag}\!\left(a_{f_i}v_{\epsilon,i}^{(f_i)}\right).
+= B\left(a_x\Sigma_x^{(f_x)}\right)B^\mathsf{T} +
+\operatorname{diag}\left(a_{f_i}v_{\epsilon,i}^{(f_i)}\right).
 $$
 
 $B$ is the dimensionless asset-by-factor loading matrix, $f_x$ the factor covariance cadence,

@@ -98,6 +98,20 @@ a display block, never start a line with `+`, `-`, `*`, `>`, `#` or a numbered-l
 GitHub reads it as a block element and ends the formula. Absolute values inside a Markdown table
 use `\lvert` and `\rvert`, because a bare bar ends the table cell.
 
+Three more GitHub faults concern inline math, and MyST and VS Code show none of them:
+
+- GitHub escapes `<` and `>` in inline math twice, so the reader sees `&gt;`. Write `\lt` and
+  `\gt`.
+- GitHub opens inline math only after a space, `(` or `*`, and closes it only before a character
+  that is not a letter or digit. Write `a matrix of size $n \times n$`, not `$n$-by-$n$`, and
+  `asset $i$`, not `the $i$th asset`.
+- An underscore after a closing brace, as in `\hat{\mu}_t`, can pair with a later letter
+  subscript such as `w_{t^-}` in the same paragraph as emphasis, which breaks every formula in
+  between. Attach the subscript to a letter: `\hat\mu_t`.
+
+`tools/check_docs.py` rejects all of these. Before a page is adopted, it is also rendered through
+the GitHub Markdown API and VS Code's KaTeX plugin; the stage audit records the result.
+
 ## References and implementation ownership
 
 Apply the shared [reference and example rules](https://github.com/ArturSepp/ArturSepp/blob/main/docs/documentation_standard.md#user-content-references-and-executable-examples).
@@ -312,6 +326,11 @@ HTML output directory is insufficient for a OneDrive checkout.
 When renaming a page, preserve its basename and HTML address, record existing anchors, and update
 source/download links. Inspect rendered formulas after the math engine finishes. Keep numerical
 changes and unsupported empirical claims out of cosmetic edits.
+
+Do not write version stamps such as "verified with OptimalPortfolios 7.6.0" in a page; they go
+stale at the next release. `docs/conf.py` reads the versions of the build environment, which on
+Read the Docs is `uv.lock`, and the footer of every page names them. What a page asserts is
+checked by its canonical script or its test, in the locked environment.
 
 ### Automated documentation checks
 

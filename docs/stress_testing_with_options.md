@@ -85,12 +85,12 @@ The configured FCGL objective is
 
 $$
 \widehat B=\arg\min_B
-\left\{
+\left\lbrace
 \frac{1}{T}\sum_{t=1}^{T}\sum_{i=1}^{5}
 m_{ti}\eta^{T-t}(y_{ti}-B_i x_t)^2
 +\lambda\sum_{g=1}^{G}\sqrt{\frac{n_g}{G}}
 \sum_{j=1}^{4}\lVert B_{g,j}\rVert_2
-\right\},\qquad \lambda=10^{-5}.
+\right\rbrace,\qquad \lambda=10^{-5}.
 $$
 
 Here $B_{g,j}$ collects all member stocks' loadings on factor $j$. A whole cluster-factor
@@ -156,7 +156,7 @@ S_i(z)=S_i(0)\exp(B_i z),\qquad
 \qquad R_p(z)=\frac{\sum_\ell\Delta V_\ell(z)}{N}.
 $$
 
-Signed contracts $n_\ell<0$ create negative option gamma. Stocks use shares times the spot
+Signed contracts $n_\ell \lt 0$ create negative option gamma. Stocks use shares times the spot
 change. Current source marks equal VOP prices, so zero shock preserves every mark and
 produces zero P&L. Premiums are not added again as a separate cash asset.
 The [QIS options guide](https://github.com/ArturSepp/QuantInvestStrats/blob/main/docs/stress_testing_with_options.md)

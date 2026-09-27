@@ -74,6 +74,12 @@ BYLINE = re.compile(
     r'(?: / First recorded: \[(?P<date>\d{4}-\d{2}-\d{2})\]'
     rf'\({re.escape(PROJECT_URL)}/commit/[0-9a-f]{{40}}\))?\*$'
 )
+# GitHub math faults that MyST and VS Code render without complaint (check_math_portability).
+INLINE_MATH = re.compile(r'(?<![\\$])\$(?!\$)(.+?)(?<![\\$])\$')
+MATH_PUNCTUATION_COMMAND = re.compile(r'\\[^A-Za-z\\\s]')
+DISPLAY_BLOCK_MARKER = re.compile(r'^\s*(?:[-+*>#]|\d+[.)])(?:\s|$)')
+EMPHASIS_OPENER = re.compile(r'[})\]]_')
+EMPHASIS_CLOSER = re.compile(r'[A-Za-z0-9]_[{(\\]')
 
 
 class Issue(NamedTuple):
@@ -176,6 +182,116 @@ def prose_lines(text: str) -> tuple[list[tuple[int, str]], list[Issue], str]:
     return visible, issues, metadata
 
 
+def check_math_portability(text: str) -> list[Issue]:
+    """Find mathematics that GitHub renders wrongly although MyST and VS Code render it.
+
+    GitHub applies Markdown before its math renderer. It strips the backslash of a punctuation
+    command (``\\,`` shows a comma, ``\\{`` a bare brace, ``\\|`` a single bar), escapes ``<``
+    and ``>`` in inline math twice, opens inline math only after whitespace, ``(`` or ``*``,
+    closes it only before a non-alphanumeric character, ends a display block at a line that
+    starts like a list, quote or heading, and pairs an underscore after a closing bracket with a
+    later letter-underscore as emphasis, which breaks every formula in between. Callout
+    blockquotes are checked like prose.
+
+    Args:
+        text: Complete Markdown source.
+
+    Returns:
+        One issue per fault, on its source line.
+    """
+    issues = []
+    lines = text.splitlines()
+    first = 0
+    if lines and lines[0] == '---':
+        first = next((i + 1 for i in range(1, len(lines)) if lines[i] == '---'), len(lines))
+    fence = ''
+    display = False
+    opener = 0
+    for index in range(first, len(lines)):
+        number = index + 1
+        line = lines[index]
+        if line.startswith('>'):
+            line = line[1:].lstrip()
+        matched = FENCE.match(line)
+        if fence:
+            if (matched and matched[1][0] == fence[0] and len(matched[1]) >= len(fence)
+                    and not matched[2].strip()):
+                fence = ''
+            continue
+        if display:
+            if line.strip() == '$$':
+                display = False
+            elif DISPLAY_BLOCK_MARKER.match(line):
+                issues.append(Issue(number, 'Do not start a display-math line with a list, '
+                                            'quote or heading marker; GitHub ends the formula.'))
+            elif MATH_PUNCTUATION_COMMAND.search(line):
+                issues.append(Issue(number, 'Spell TeX commands with letters (\\lbrace, '
+                                            '\\lVert, no \\, spacing); GitHub drops the '
+                                            'backslash.'))
+            continue
+        if matched:
+            fence = matched[1]
+            continue
+        prose = re.sub(r'(`+).*?\1', '', line)
+        if not prose.strip() or prose.strip() == '$$':
+            display = prose.strip() == '$$'
+            opener = 0
+            continue
+        # Emphasis never crosses a table cell, a list item or a heading.
+        if prose.lstrip().startswith('|'):
+            segments = table_cells(prose)
+        else:
+            if re.match(r'^\s*(?:[-+*]|\d+[.)]|#{1,6})\s', prose):
+                opener = 0
+            segments = [prose]
+        for segment in segments:
+            if len(segments) > 1:
+                opener = 0
+            for span in INLINE_MATH.finditer(segment):
+                issues.extend(Issue(number, message) for message in inline_math_faults(
+                    segment, span, opener, number))
+                if opener and EMPHASIS_CLOSER.search(span[1]):
+                    opener = 0
+                if EMPHASIS_OPENER.search(span[1]):
+                    opener = number
+    return issues
+
+
+def inline_math_faults(prose: str, span: re.Match, opener: int, number: int) -> list[str]:
+    """Return the GitHub faults of one inline math span; see check_math_portability.
+
+    Args:
+        prose: The table cell or line that holds the span, without inline code.
+        span: Match of INLINE_MATH in ``prose``; group 1 is the TeX.
+        opener: Line of an unpaired emphasis opener earlier in the paragraph, or zero.
+        number: Source line of the span.
+
+    Returns:
+        Issue messages, empty when GitHub renders the span as written.
+    """
+    tex = span[1]
+    before = prose[span.start() - 1] if span.start() else ' '
+    after = prose[span.end()] if span.end() < len(prose) else ' '
+    faults = []
+    if not (before.isspace() or before in '(*'):
+        faults.append('Put a space or an opening parenthesis before inline math; GitHub opens '
+                      'math only there.')
+    if after.isalnum():
+        faults.append('Do not follow inline math by a letter or digit; GitHub does not close '
+                      'math there.')
+    if MATH_PUNCTUATION_COMMAND.search(tex):
+        faults.append('Spell TeX commands with letters (\\lbrace, \\lVert, no \\, spacing); '
+                      'GitHub drops the backslash.')
+    if '<' in tex or '>' in tex:
+        faults.append('Write \\lt and \\gt in inline math; GitHub escapes < and > twice.')
+    if opener and EMPHASIS_CLOSER.search(tex):
+        where = 'this line' if opener == number else f'line {opener}'
+        faults.append(f'GitHub pairs this subscript with the underscore after a bracket on '
+                      f'{where} as emphasis; attach that subscript to a letter, as in '
+                      f'\\hat\\mu_t.')
+    return faults
+
+
 def valid_byline(line: str) -> bool:
     """Check linked attribution and an optional, calendar-valid repository-evidence date."""
     match = BYLINE.fullmatch(line)
@@ -244,6 +360,7 @@ def check_document(text: str, *, methodology: bool = False, form: Optional[str] 
         issues.append(Issue(1, 'Use each required case-study H2 once, in the standard order.'))
     if card:
         issues.extend(check_convention_card(visible))
+    issues.extend(check_math_portability(text))
     return issues
 
 

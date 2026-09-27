@@ -249,7 +249,7 @@ Let $w$ be portfolio weights, $\Sigma$ covariance, $\mu$ expected returns and $\
 aversion. Minimum variance minimises $w^\top\Sigma w$. Quadratic utility uses
 
 $$
-\max_w\;\mu^\top w-\frac{\gamma}{2}w^\top\Sigma w.
+\max_w \mu^\top w-\frac{\gamma}{2}w^\top\Sigma w.
 $$
 
 The one-half factor is part of the implemented `carra` convention. Direct solvers do not
@@ -552,7 +552,7 @@ uses its utility weights instead of interpreting hard limits as penalties.
 For prior weights $w_0$, the unweighted group L1 constraint is
 
 $$
-\left\|g\odot(w-w_0)\right\|_1\leq T_g.
+\left\lVert g\odot(w-w_0)\right\rVert_1\leq T_g.
 $$
 
 Configured costs change the scaling as described in [turnover and costs](turnover_and_transaction_costs.md).

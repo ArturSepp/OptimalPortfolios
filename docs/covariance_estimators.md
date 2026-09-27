@@ -69,7 +69,7 @@ calendar histories. See [mixed-frequency data](mixed_frequency_data.md).
 
 ### EWMA covariance
 
-For a span $s>1$, qis uses the following decay and implied half-life $h$, measured in observations:
+For a span $s \gt 1$, qis uses the following decay and implied half-life $h$, measured in observations:
 
 $$
 \lambda = 1-\frac{2}{s+1},

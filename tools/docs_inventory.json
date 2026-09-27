@@ -19,8 +19,8 @@
     },
     "docs/analytics_gallery.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "M5b utility source migration and gallery integration. Local verification is recorded in agents/DOCS_M5B_GALLERY_IMPLEMENTATION_REPORT.md; GitHub/VS Code review remains pending, so full adoption is pending."
+      "status": "adopted",
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors)."
     },
     "docs/api.rst": {
       "form": "api",
@@ -30,9 +30,9 @@
     },
     "docs/app_rosaa_multi_asset_allocation.md": {
       "form": "case_study",
-      "status": "pending",
+      "status": "adopted",
       "example": "examples/docs/app_rosaa_multi_asset_allocation.py",
-      "review": "R2 pilot (2026-09-27): study design and results read from the published article (author-shared copy) by section and exhibit; the script asserts the mechanism on a synthetic panel. Pending the owner review of R2 and viewer checks."
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). R2 pilot, reviewed by the owner."
     },
     "docs/constraints.md": {
       "form": "methodology",
@@ -41,8 +41,8 @@
     },
     "docs/conventions.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "R1 (2026-09-27): new page; source checks, strict Sphinx HTML and the Read the Docs emulation pass. Viewer review in Sphinx, GitHub and VS Code pending."
+      "status": "adopted",
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors)."
     },
     "docs/covariance_estimators.md": {
       "form": "methodology",
@@ -55,8 +55,8 @@
     },
     "docs/examples_readme.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "M4d utility revision verified on 2026-09-14: all 30 Python workflows are catalogued (7 offline, 19 network, 4 local). All seven offline defaults passed with network and optional imports blocked. Ten new cases passed within 81 focused checks; seven deliberate defects were detected, with a restored ten-case pass and final layout checks. Strict HTML and Sphinx browser review pass: nine tables, all 26 old HTML IDs, 12 preserved module mappings, 271 local-link occurrences and 45 matching downloads covering 33 sources. Strict linkcheck passed before a concurrent stress-article addition; this guide's external URLs remain identical. The integrated 81-case run, strict HTML, local links and browser review pass, preserving the concurrent article and fourth local example. Canonical scripts, fixtures, notebook and preview bytes are unchanged. GitHub/VS Code review, fixture attribution and lockfile reconciliation remain pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Lockfile note replaced by a link to the installation guide; the router rewrite follows in R9."
     },
     "docs/incomplete_histories.md": {
       "form": "methodology",
@@ -65,19 +65,19 @@
     },
     "docs/index.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "M4e utility migration verified on 2026-09-14: five navigation groups preserve all 20 original destinations, each with an ordinary Markdown link. The exact byline, project/QIS/FactorLasso citations, offline entry points and solver ownership are explicit. All 331 existing focused tests, strict HTML and scoped strict linkcheck pass (15 working URLs; two established SSRN exceptions). Sphinx browser review covers the starting table, guide groups, bibliography, sidebar and API entry. All 19 old HTML IDs, 208 local-link occurrences and the byte-identical home source download are verified. The 138 autosummary entries/generated pages and API rendered body/link mapping are unchanged. GitHub/VS Code review remains pending; this page is not yet fully adopted. M5b adds the analytics gallery to ordinary links and Sphinx navigation; external-viewer status is unchanged."
+      "status": "adopted",
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Inline subscripts rewritten so that GitHub renders the construction formula paragraph."
     },
     "docs/installation.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "M4d utility migration, six installation recipe/import cases and 57 focused tests passed on 2026-09-14. Five deliberate defects were detected and restored checks passed. The unchanged offline quickstart, notebook parity, pip check and local wheel metadata inspection passed. Strict Sphinx HTML/linkcheck and Sphinx browser review pass: three tables, the original article anchor/all 15 old HTML IDs and five matching source-download links. The three published extras are distinguished from contributor groups without dependency changes. Locked environment reconciliation and GitHub/VS Code viewer checks remain pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Stale lockfile statements replaced by the locked and resolved versions section; the page footer names the build versions."
     },
     "docs/maximum_diversification.md": {
       "form": "methodology",
-      "status": "pending",
+      "status": "adopted",
       "example": "examples/docs/maximum_diversification.py",
-      "review": "R2 pilot (2026-09-27): written to the canonical-script contract; the script asserts every quoted number and the exhibit is drawn from it. Pending the owner review of R2 and viewer checks."
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). R2 pilot, reviewed by the owner; thin spaces removed and an inline > written as \\gt for GitHub."
     },
     "docs/minimum_tracking_error.md": {
       "form": "methodology",
@@ -101,18 +101,18 @@
     },
     "docs/package_comparison.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "M4e utility migration verified on 2026-09-14: five historical release identifiers and all twelve categories for four packages are preserved. Primary documentation and version-specific PyPI records were reviewed with separate August snapshot and September review dates. Both documentation-version mismatches and execution/drift qualifications are explicit. All 78 focused tests pass in the final QIS 5.30.2 environment; strict HTML and scoped strict linkcheck pass with all 34 guide URLs verified. Sphinx browser review covers six tables; all 20 old HTML IDs, 219 local-link occurrences and the matching metadata download are verified. Concurrent release, source-link and test-harness changes are preserved. GitHub/VS Code review remains pending; no peer numerical benchmark or version-parity certification is claimed."
+      "status": "adopted",
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). The 7.6.0 line now describes the dated review and links the changelog for later releases."
     },
     "docs/quickstart.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "M4d utility migration, 14 new quickstart cases and 107 focused tests passed on 2026-09-14. Five deliberate defects were detected; the restored 14-case run, final 20-case quickstart/installation checks and core-only network-blocked script passed. Canonical Python/notebook parity is preserved. Independent covariance weighted sums, prefix/future probes and unit/cost identities verify the documented conventions. Strict Sphinx HTML/linkcheck and Sphinx browser review pass: one display equation, three tables, both original article anchors/all 16 old HTML IDs and ten matching source-download links. Fixture attribution, dependency reconciliation and GitHub/VS Code viewer checks remain pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Review stamps removed; the displayed output and solve outcomes are checked by quickstart_documentation_test.py; steps link to the conventions and objective articles."
     },
     "docs/research_papers.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "R1 (2026-09-27): new page with the public paper ledger; source checks and strict Sphinx HTML pass. Viewer review pending."
+      "status": "adopted",
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors)."
     },
     "docs/risk_budgeting.md": {
       "form": "methodology",
@@ -131,8 +131,8 @@
     },
     "docs/software_design.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "M4e utility migration verified on 2026-09-14: 134 existing focused tests, strict HTML and scoped strict linkcheck pass; all six guide URLs are working. Sphinx browser review covers five tables and the construction/execution diagram. All 25 old HTML IDs are preserved; 236 local-link occurrences resolve and 20 downloads match 18 source files. Actual backend selection, dispatcher-specific estimation, decision-state drift versus QIS execution, result shapes and package ownership are documented without code or numerical changes. GitHub/VS Code review and dependency reconciliation remain pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Drift-helper link corrected to utils/weights_drift.py; the Mermaid diagrams follow in R9."
     },
     "docs/stress_testing_with_options.md": {
       "form": "methodology",

@@ -42,9 +42,10 @@ released package from PyPI and displays its version. That initial setup needs ne
 the analytical workflow then uses the packaged fixture. The notebook carries no saved outputs.
 Its tagged Python cell is mechanically checked against the canonical script.
 
-A release or Colab installation can differ from the working source used to review this page.
-The [installation guide](installation.md#current-development-verification-boundary) records the
-current lockfile reconciliation limitation.
+A release or Colab installation resolves the newest compatible dependencies, which can differ
+from the locked versions this site is built with. The
+[installation guide](installation.md#locked-and-resolved-versions) explains the difference.
+The [conventions page](conventions.md) defines the grids, units and timing this page uses.
 
 ## Inputs and portfolio decisions
 
@@ -139,8 +140,8 @@ for the complete conventions.
 
 ## Read the result
 
-The 2026-09-14 review used Python 3.12.14, OptimalPortfolios 7.6.0 working source, QIS 5.26.0
-and FactorLasso 0.18.0. The unchanged script printed the following, with elapsed runtime omitted:
+The script prints the following, with elapsed runtime omitted. The test suite runs the script
+and compares its output with this block, in the locked versions named in the page footer:
 
 ```text
 Price history: 2010-01-31 to 2022-12-31
@@ -156,8 +157,8 @@ Final NAV after 10 bp transaction costs: 105.0409
 ```
 
 Weights are rounded to four decimals before printing, so a displayed zero can represent a small
-positive allocation. In this review, all 31 single-date solves were accepted and compliant with
-no fallback. The dispatcher itself returns weights without a per-date diagnostic history;
+positive allocation. All 31 single-date solves are accepted and compliant, with no fallback; the
+test suite checks this too. The dispatcher itself returns weights without a per-date diagnostic history;
 a finite result alone does not certify every future configuration. Use the
 [solver outcome guidance](optimization_module_readme.md#three-layer-solver-pattern) when diagnostic
 records are needed.
@@ -183,9 +184,11 @@ The [rolling dispatcher](../src/optimalportfolios/optimization/wrapper_rolling_p
 supports six `PortfolioObjective` members:
 
 - `MIN_VARIANCE` and `MAX_DIVERSIFICATION` consume the covariance dictionary and constraints.
-  Diversification uses a different backend, so its supported constraints still need review.
+  Diversification uses a different backend, so its supported constraints still need review; see
+  [maximum diversification](maximum_diversification.md).
 - `EQUAL_RISK_CONTRIBUTION` also accepts `risk_budget`. Omitting it requests equal budgets;
-  specify and align it when a different risk allocation is intended.
+  specify and align it when a different risk allocation is intended; see
+  [risk budgeting](risk_budgeting.md).
 - `QUADRATIC_UTILITY` and `MAXIMUM_SHARPE_RATIO` estimate expected returns internally.
   Set `returns_freq="ME"` and the intended mean-estimation `span` for this monthly panel,
   instead of silently inheriting the dispatcher's weekly return-sampling default.

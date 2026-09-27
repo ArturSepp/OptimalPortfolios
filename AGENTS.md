@@ -197,7 +197,9 @@ and has no reference left in this repository. To run the examples, install what 
   construction here, generic factor estimation in factorlasso, analytics/reporting in qis.
   The public constraints contract remains in `docs/constraints.md`.
 - Preserve numerical meaning, units, conventions, examples, source basenames and old anchors.
-  Apply the shared math and viewer-review rules to revised articles.
+  Apply the shared math and viewer-review rules to revised articles; `check_docs.py` also
+  rejects the inline-math forms that GitHub renders wrongly (see the OP supplement). Write no
+  version stamps in pages: the footer of every built page names the versions of its build.
 - Register pages and adoption status in `tools/docs_inventory.json`. Run `python tools/check_docs.py`
   with the prescribed interpreter; `--files <paths>` checks a revision batch and `--all` requires
   complete migration. Keep pending legacy pages explicit and API/autosummary sources separate.

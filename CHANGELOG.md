@@ -81,6 +81,17 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `tools.docs_analytics.run --verify` checks them together with the README previews, in the Read
   the Docs pre-build and in `docs.yml`. The canonical scripts under `examples/docs/` run in the
   offline examples lane.
+- Documentation site, third stage, first batch (no package change):
+  - Mathematics now renders on GitHub as it does on the site. Rendering every page through the
+    GitHub Markdown API found 25 faults that MyST and VS Code do not show: `<` and `>` in inline
+    math, TeX commands such as `\,` and `\{` whose backslash GitHub strips, math opened after a
+    hyphen, a display line starting with `+`, and subscripts that GitHub paired as emphasis. The
+    pages are fixed, and `tools/check_docs.py` rejects each fault.
+  - Pages no longer carry hand-written version stamps; the footer of every page names the
+    versions of its build. The installation, quickstart, examples and software-design pages drop
+    statements about an unreconciled lockfile that had been resolved.
+  - Eleven pages are adopted: the home, conventions, research-papers, installation, quickstart,
+    examples, gallery, software-design and comparison pages and the two R2 pilots.
 
 ## [7.8.0] - 2026-09-23
 
