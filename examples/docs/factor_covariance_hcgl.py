@@ -47,6 +47,9 @@ FACTOR_CORR = [
     [0.5, 0.1, 1.0, 0.2],
     [0.3, -0.1, 0.2, 1.0],
 ]
+# Sign of the largest entry of each singular vector of the factor covariance as OpenBLAS returns
+# it, with which Generator.multivariate_normal drew the panel.
+SVD_SIGNS = [-1, -1, -1, -1]
 RESIDUAL_VOLS = [0.003, 0.006, 0.01, 0.02, 0.02, 0.008, 0.006, 0.005]  # monthly
 PRIVATE_SHOCK_VOL = 0.006  # a monthly residual shock common to the three private assets
 SPANS = {'ME': 36, 'QE': 12}
@@ -65,7 +68,13 @@ def simulated_panel(seed: int) -> tuple:
     dates = pd.date_range('2004-12-31', '2024-12-31', freq='ME')
     rng = np.random.default_rng(seed)
     factor_covar = np.outer(FACTOR_VOLS, FACTOR_VOLS) * np.array(FACTOR_CORR)
-    factors = rng.multivariate_normal(np.full(4, 0.004), factor_covar, size=len(dates) - 1)
+    # The draws of Generator.multivariate_normal, whose SVD factor has signs that differ between
+    # LAPACK builds, with each singular vector's largest entry given its sign in SVD_SIGNS so that
+    # the same seed gives the same returns on every platform.
+    _, singular_values, vh = np.linalg.svd(factor_covar)
+    vh = vh * (SVD_SIGNS * np.sign(vh[np.arange(4), np.abs(vh).argmax(axis=1)]))[:, None]
+    shocks = rng.standard_normal((len(dates) - 1, 4))
+    factors = 0.004 + shocks @ (np.sqrt(singular_values)[:, None] * vh)
     residuals = rng.normal(0.0, RESIDUAL_VOLS, size=(len(dates) - 1, len(ASSETS)))
     residuals[:, 5:] += rng.normal(0.0, PRIVATE_SHOCK_VOL, size=(len(dates) - 1, 1))
     monthly = pd.DataFrame(factors @ np.array(LOADINGS).T + residuals,
