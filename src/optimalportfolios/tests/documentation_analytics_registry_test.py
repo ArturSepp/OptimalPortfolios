@@ -269,6 +269,26 @@ def test_linked_output_is_rejected(replica, tooling, monkeypatch, tmp_path):
         runner.output_boundary(output, repo)
 
 
+def test_main_branch_image_urls_count_as_repository_paths(replica, tooling):
+    """README may display a registered image by its absolute main-branch URL (PyPI-safe)."""
+    repo, _ = replica
+    registry, _ = tooling
+    readme = repo / 'README.md'
+    text = readme.read_text(encoding='utf-8')
+    for prefix in registry.REPOSITORY_FILE_URLS:
+        readme.write_text(text.replace('](examples/figures/', f']({prefix}examples/figures/'),
+                          encoding='utf-8')
+        registry.load_registry(repo)
+    readme.write_text(text + '\n![gone](' + registry.REPOSITORY_FILE_URLS[0]
+                      + 'examples/figures/missing.PNG)\n', encoding='utf-8')
+    with pytest.raises(ValueError, match='Missing'):
+        registry.load_registry(repo)
+    readme.write_text(text + '\n![other](https://raw.githubusercontent.com/ArturSepp/'
+                      'QuantInvestStrats/main/docs/figures/x.PNG)\n', encoding='utf-8')
+    with pytest.raises(ValueError, match='unregistered'):
+        registry.load_registry(repo)
+
+
 def test_source_escape_image_is_rejected(replica, tooling):
     """An encoded traversal cannot turn a displayed image into an outside file read."""
     repo, _ = replica

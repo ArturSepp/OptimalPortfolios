@@ -15,7 +15,7 @@ Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios
 Analytics and holdings simulation use [qis](https://github.com/ArturSepp/QuantInvestStrats);
 cite its [software record](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).
 
-Explore the [analytics gallery](docs/analytics_gallery.md) for reproducible synthetic examples
+Explore the [analytics gallery](https://optimalportfolios.readthedocs.io/en/latest/analytics_gallery.html) for reproducible synthetic examples
 with sample dates, conventions, producer links and reviewed provenance.
 
 **Production multi-asset portfolio construction and rolling backtesting in Python — from
@@ -28,7 +28,7 @@ transaction costs, and reporting.**
 [![Python](https://img.shields.io/pypi/pyversions/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/)
 [![CI](https://github.com/ArturSepp/OptimalPortfolios/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ArturSepp/OptimalPortfolios/actions/workflows/ci.yml)
 [![Docs](https://readthedocs.org/projects/optimalportfolios/badge/?version=latest)](https://optimalportfolios.readthedocs.io/en/latest/)
-[![License](https://img.shields.io/github/license/ArturSepp/OptimalPortfolios.svg?style=flat-square)](LICENSE.txt)
+[![License](https://img.shields.io/github/license/ArturSepp/OptimalPortfolios.svg?style=flat-square)](https://github.com/ArturSepp/OptimalPortfolios/blob/main/LICENSE.txt)
 [![Downloads](https://static.pepy.tech/badge/optimalportfolios)](https://pepy.tech/project/optimalportfolios)
 [![Monthly](https://static.pepy.tech/badge/optimalportfolios/month)](https://pepy.tech/project/optimalportfolios)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ArturSepp/OptimalPortfolios/blob/main/examples/getting_started/production_quickstart.ipynb)
@@ -79,7 +79,7 @@ and illiquid positions.
 
 ## Five-minute quickstart
 
-The [production quickstart](examples/getting_started/production_quickstart.py) is the authoritative
+The [production quickstart](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/getting_started/production_quickstart.py) is the authoritative
 source for the first-use workflow. It runs entirely offline on the multi-asset fixture shipped in
 the wheel and writes no files:
 
@@ -208,7 +208,7 @@ The [software-design guide](https://optimalportfolios.readthedocs.io/en/latest/s
 | Universe, backtest and reporting | Validated `UniverseData`, metadata/group-loadings persistence and transforms, drift-aware rolling weights, transaction-cost backtests through `qis`, efficient-frontier plots, marginal portfolio backtests and optional PyBloqs HTML/PDF reports. |
 
 This table groups the analytics by workflow. The exact package-root import inventory and callable
-signatures are maintained in the [API reference](docs/api.rst).
+signatures are maintained in the [API reference](https://optimalportfolios.readthedocs.io/en/latest/api.html).
 
 **Architecture: factorlasso vs optimalportfolios**
 
@@ -224,7 +224,7 @@ the factor model to the asset returns of each frequency and annualises the decom
 <a id="group-risk-budgets"></a>
 <a id="hierarchical-risk-parity"></a>
 
-See [hierarchical risk parity and cluster risk budgets](docs/hierarchical_risk_parity_and_cluster_budgets.md) for group risk budgets and hierarchical risk parity, including date-by-asset cluster labels, and the [risk-budgeting guide](https://optimalportfolios.readthedocs.io/en/latest/risk_budgeting.html) for the solver that group budgets feed.
+See [hierarchical risk parity and cluster risk budgets](https://optimalportfolios.readthedocs.io/en/latest/hierarchical_risk_parity_and_cluster_budgets.html) for group risk budgets and hierarchical risk parity, including date-by-asset cluster labels, and the [risk-budgeting guide](https://optimalportfolios.readthedocs.io/en/latest/risk_budgeting.html) for the solver that group budgets feed.
 
 ## Alpha signals module
 
@@ -294,12 +294,12 @@ or `dev` extra; tests and static checks are the PEP 735 `test` and `lint` depend
 <a id="7-price-time-series-data"></a>
 <a id="8-drift-aware-rolling-backtests-v531"></a>
 
-See the [optimisation module guide](https://optimalportfolios.readthedocs.io/en/latest/optimization_module_readme.html) for solver architecture, constraints, backends, and configuration. The [rolling backtest guide](https://optimalportfolios.readthedocs.io/en/latest/rolling_backtests.html) covers rebalancing and transaction costs; [supported examples](docs/examples_readme.md) provide complete runnable workflows.
+See the [optimisation module guide](https://optimalportfolios.readthedocs.io/en/latest/optimization_module_readme.html) for solver architecture, constraints, backends, and configuration. The [rolling backtest guide](https://optimalportfolios.readthedocs.io/en/latest/rolling_backtests.html) covers rebalancing and transaction costs; [supported examples](https://optimalportfolios.readthedocs.io/en/latest/examples_readme.html) provide complete runnable workflows.
 
 ## Examples
 
 The `examples/` folder is organised by purpose. The
-[examples and recipes guide](docs/examples_readme.md) maps every task to its article, canonical
+[examples and recipes guide](https://optimalportfolios.readthedocs.io/en/latest/examples_readme.html) maps every task to its article, canonical
 script and standalone examples, with each example's offline, network or local-data lane:
 
 ```text
@@ -318,12 +318,12 @@ examples/
 
 ### Recommended reading order for newcomers
 
-1. [Quickstart](docs/quickstart.md) — the smallest offline portfolio workflow.
-2. [`examples/backtests/multiasset_saa.py`](examples/backtests/multiasset_saa.py) — another offline workflow with group metadata and objective choices.
-3. [`examples/data/universe.py`](examples/data/universe.py) and [`examples/backtests/minimal_backtest.py`](examples/backtests/minimal_backtest.py) — downloaded prices and reporting.
-4. [`examples/solvers/min_variance.py`](examples/solvers/min_variance.py) and [`examples/solvers/minimum_tracking_error.py`](examples/solvers/minimum_tracking_error.py) — covariance-based construction.
-5. [`examples/solvers/tracking_error.py`](examples/solvers/tracking_error.py) — benchmark-relative allocation with a signal.
-6. [`examples/comparisons/optimisers.py`](examples/comparisons/optimisers.py) — how objectives differ on the same universe.
+1. [Quickstart](https://optimalportfolios.readthedocs.io/en/latest/quickstart.html) — the smallest offline portfolio workflow.
+2. [`examples/backtests/multiasset_saa.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/backtests/multiasset_saa.py) — another offline workflow with group metadata and objective choices.
+3. [`examples/data/universe.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/data/universe.py) and [`examples/backtests/minimal_backtest.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/backtests/minimal_backtest.py) — downloaded prices and reporting.
+4. [`examples/solvers/min_variance.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/solvers/min_variance.py) and [`examples/solvers/minimum_tracking_error.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/solvers/minimum_tracking_error.py) — covariance-based construction.
+5. [`examples/solvers/tracking_error.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/solvers/tracking_error.py) — benchmark-relative allocation with a signal.
+6. [`examples/comparisons/optimisers.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/comparisons/optimisers.py) — how objectives differ on the same universe.
 
 ### Highlighted demos
 
@@ -336,8 +336,8 @@ exhibits on a fixed synthetic sample ending 31 December 2025, produced by the sc
 each; the [shared provenance record](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/figures/analytics_manifest.json) records their
 inputs, configuration, software versions and visual review.
 
-[![Synthetic maximum-diversification portfolio growth and drawdowns](examples/figures/example_portfolio_factsheet1.PNG)](examples/figures/example_portfolio_factsheet1.PNG)
-[![Synthetic maximum-diversification target weights and contributions to annualized volatility](examples/figures/example_portfolio_factsheet2.PNG)](examples/figures/example_portfolio_factsheet2.PNG)
+[![Synthetic maximum-diversification portfolio growth and drawdowns](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/example_portfolio_factsheet1.PNG)](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/example_portfolio_factsheet1.PNG)
+[![Synthetic maximum-diversification target weights and contributions to annualized volatility](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/example_portfolio_factsheet2.PNG)](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/example_portfolio_factsheet2.PNG)
 
 #### Customised reporting
 
@@ -345,7 +345,7 @@ inputs, configuration, software versions and visual review.
 return scatters. The preview from [`portfolio_reports.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/docs_analytics/portfolio_reports.py)
 shows quarterly target weights and realised trading costs.
 
-[![Synthetic portfolio target weights and quarterly trading costs](examples/figures/example_customised_report.PNG)](examples/figures/example_customised_report.PNG)
+[![Synthetic portfolio target weights and quarterly trading costs](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/example_customised_report.PNG)](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/example_customised_report.PNG)
 
 #### Parameter sensitivity backtest
 
@@ -353,16 +353,16 @@ shows quarterly target weights and realised trading costs.
 backtests one method across estimation parameters; the preview from
 [`span_sensitivity.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/docs_analytics/span_sensitivity.py) compares five EWMA spans.
 
-[![Synthetic maximum-diversification performance and trading costs across EWMA spans](examples/figures/max_diversification_span.PNG)](examples/figures/max_diversification_span.PNG)
+[![Synthetic maximum-diversification performance and trading costs across EWMA spans](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/max_diversification_span.PNG)](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/max_diversification_span.PNG)
 
 #### Multi-optimiser cross-backtest
 
 [`examples/comparisons/optimisers.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/comparisons/optimisers.py) runs several objectives
 through `compute_rolling_optimal_weights()`; the preview from
-[`optimiser_comparison.py`](tools/docs_analytics/optimiser_comparison.py) compares minimum
+[`optimiser_comparison.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/docs_analytics/optimiser_comparison.py) compares minimum
 variance, maximum diversification and equal risk budgets on shared inputs.
 
-[![Synthetic net performance and trading costs for three covariance-only objectives](examples/figures/multi_optimisers_backtest.PNG)](examples/figures/multi_optimisers_backtest.PNG)
+[![Synthetic net performance and trading costs for three covariance-only objectives](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/multi_optimisers_backtest.PNG)](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/multi_optimisers_backtest.PNG)
 
 #### Multi-covariance-estimator backtest
 
@@ -371,7 +371,7 @@ objective with several covariance estimators; the preview from
 [`covariance_comparison.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/docs_analytics/covariance_comparison.py) compares six estimators
 on one known-factor simulation, which does not establish an estimator ranking.
 
-[![Synthetic minimum-variance performance and covariance errors for six estimators](examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)](examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)
+[![Synthetic minimum-variance performance and covariance errors for six estimators](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)
 
 #### Drift-policy comparison (new in v5.3.1)
 
@@ -448,14 +448,14 @@ packages and their distinct boundaries.
 - **Bug:** use the [bug-report form](https://github.com/ArturSepp/OptimalPortfolios/issues/new?template=bug_report.yml) with the package version, Python/platform, a minimal public-data reproducer, and expected versus actual output.
 - **Feature:** use the [feature-request form](https://github.com/ArturSepp/OptimalPortfolios/issues/new?template=feature_request.yml) and describe the user goal, current workaround, and smallest useful API. In particular: which constraint, report, or portfolio workflow cannot be expressed today?
 - **Question or methodology:** search or open an [issue](https://github.com/ArturSepp/OptimalPortfolios/issues) and name the paper, example, or convention involved.
-- **Contribution:** follow [CONTRIBUTING.md](CONTRIBUTING.md); focused work is listed under [`good first issue`](https://github.com/ArturSepp/OptimalPortfolios/labels/good%20first%20issue) and [`help wanted`](https://github.com/ArturSepp/OptimalPortfolios/labels/help%20wanted).
+- **Contribution:** follow [CONTRIBUTING.md](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CONTRIBUTING.md); focused work is listed under [`good first issue`](https://github.com/ArturSepp/OptimalPortfolios/labels/good%20first%20issue) and [`help wanted`](https://github.com/ArturSepp/OptimalPortfolios/labels/help%20wanted).
 
 Project decisions, maintenance expectations, release policy, and best-effort support routes are
-documented in [GOVERNANCE.md](GOVERNANCE.md).
+documented in [GOVERNANCE.md](https://github.com/ArturSepp/OptimalPortfolios/blob/main/GOVERNANCE.md).
 
 ## Citation
 
-A machine-readable citation is available in [`CITATION.cff`](CITATION.cff).
+A machine-readable citation is available in [`CITATION.cff`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 If you use optimalportfolios in your research, please cite it as:
 
@@ -504,13 +504,13 @@ If you use optimalportfolios in your research, please cite it as:
 
 ## License
 
-MIT — see [LICENSE.txt](LICENSE.txt).
+MIT — see [LICENSE.txt](https://github.com/ArturSepp/OptimalPortfolios/blob/main/LICENSE.txt).
 
 ## Disclaimer
 
 OptimalPortfolios package is distributed FREE & WITHOUT ANY WARRANTY under the MIT License.
 
-See the [LICENSE.txt](LICENSE.txt) in the release for details.
+See the [LICENSE.txt](https://github.com/ArturSepp/OptimalPortfolios/blob/main/LICENSE.txt) in the release for details.
 
 Use the dedicated routes in [Feedback & contributing](#feedback-contributing) for bugs, feature
 requests, and methodology questions.
