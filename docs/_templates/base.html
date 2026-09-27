@@ -2,5 +2,7 @@
 
 {% block extrahead %}
   {{ super() }}
-  <meta name="google-site-verification" content="cddUZk3Gsd1MySw42Rwuq_rMzUDcMNkJWekObx-QS9Y" />
+  {%- if google_site_verification %}
+  <meta name="google-site-verification" content="{{ google_site_verification }}">
+  {%- endif %}
 {% endblock %}

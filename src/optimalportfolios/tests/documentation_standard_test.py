@@ -181,10 +181,10 @@ def inventory_tree(tmp_path, monkeypatch):
     (tmp_path / 'docs/legacy.rst').write_text('Legacy\n======\n', encoding='utf-8')
     (tmp_path / 'docs/api.rst').write_text('API\n===\n', encoding='utf-8')
     inventory = {
-        'schema_version': 1,
+        'schema_version': 2,
         'excluded_doc_roots': {
-            'docs/generated': 'autosummary', 'docs/_templates': 'templates',
-            'docs/_build': 'build output',
+            'docs/generated': 'autosummary', 'docs/_generated': 'API body',
+            'docs/_templates': 'templates', 'docs/_build': 'build output',
         },
         'pages': {
             'docs/adopted.md': {'form': 'utility', 'status': 'adopted'},
@@ -255,7 +255,7 @@ def test_only_named_api_entry_is_exempt(inventory_tree, capsys):
 def test_generated_roots_are_excluded_but_new_nested_prose_is_not(inventory_tree, capsys):
     """Generated API files are exempt while new authored subdirectories remain visible."""
     root, _ = inventory_tree
-    for directory in ('generated', '_templates', '_build'):
+    for directory in ('generated', '_generated', '_templates', '_build'):
         (root / 'docs' / directory).mkdir()
         (root / 'docs' / directory / 'machine.rst').write_text('Generated\n', encoding='utf-8')
     assert CHECKER['main']([]) == 0
@@ -351,3 +351,215 @@ def test_invalid_author_metadata_is_rejected(byline):
     """Reject placeholders, broken attribution and dates without a valid evidence link."""
     issues = CHECK(HEADER.replace(DATED_BYLINE, byline), methodology=False)
     assert any('byline' in issue.message for issue in issues)
+
+
+CARD = '''| Convention | This article |
+|---|---|
+| Return basis | Simple returns |
+| Estimation grid | Weekly, span 52 |
+| Rebalancing grid | Quarter ends |
+| Covariance units | Annualised by the estimator |
+| Expected returns | None |
+| Weight state | Target weights |
+| Solver | CLARABEL through CVXPY |
+
+'''
+WITH_CARD = SECTIONS.replace('Let $b_i$ be a fractional budget.', CARD + 'Let $b_i$ be a budget.')
+
+
+def test_convention_card_is_required_when_requested():
+    """The card must open the inputs section with the seven rows in order and filled in."""
+    assert not CHECK(HEADER + WITH_CARD, form='methodology', card=True)
+    assert not CHECK(HEADER + SECTIONS, form='methodology', card=False)
+    for source, message in (
+            (HEADER + SECTIONS, 'convention card'),
+            (HEADER + WITH_CARD.replace('| Solver |', '| Backend |'), 'convention card'),
+            (HEADER + WITH_CARD.replace('| Return basis | Simple returns |\n', ''),
+             'convention card'),
+            (HEADER + WITH_CARD.replace('| Expected returns | None |', '| Expected returns |  |'),
+             'Fill every convention-card row'),
+            (HEADER + WITH_CARD.replace('| Convention | This article |', '| Row | Value |'),
+             'convention card')):
+        issues = CHECK(source, form='methodology', card=True)
+        assert any(message in issue.message for issue in issues), issues
+
+
+CASE_STUDY = ''.join(f'\n## {heading}\n\nText.\n' for heading in CHECKER['CASE_STUDY_HEADINGS'])
+
+
+def test_case_study_form_requires_its_sections_in_order():
+    """A case study uses its own eight sections, not the methodology sections."""
+    assert not CHECK(HEADER + CASE_STUDY, form='case_study')
+    swapped = CASE_STUDY.replace('## Results', '## Swap').replace('## Configuration', '## Results')
+    issues = CHECK(HEADER + swapped.replace('## Swap', '## Configuration'), form='case_study')
+    assert any('case-study H2' in issue.message for issue in issues)
+    assert any('case-study H2' in issue.message
+               for issue in CHECK(HEADER + SECTIONS, form='case_study'))
+
+
+SCRIPT = '''"""Canonical script."""
+import numpy as np
+
+
+def main():
+    weights = np.full(4, 0.25)
+    assert abs(weights.sum() - 1.0) < 1e-12
+    return weights
+
+
+if __name__ == "__main__":
+    main()
+'''
+
+
+@pytest.mark.parametrize('block,passes', [
+    ('weights = np.full(4, 0.25)\nassert abs(weights.sum() - 1.0) < 1e-12', True),
+    ('import numpy as np', True),
+    ('weights = np.full(4, 0.30)', False),
+    ('weights = np.full(4, 0.25)\nreturn weights', False),
+])
+def test_python_blocks_must_be_excerpts_of_the_script(block, passes):
+    """Blocks compare after dedenting; an edited or non-contiguous block fails."""
+    page = f'{HEADER}\n```python\n{block}\n```\n'
+    issues = CHECKER['check_excerpts'](page, SCRIPT)
+    assert (not issues) is passes, issues
+    marked = f'{HEADER}\n{CHECKER["FRAGMENT_MARKER"]}\n```python\n{block}\n```\n'
+    assert not CHECKER['check_excerpts'](marked, SCRIPT)
+
+
+def test_python_fences_skip_teaching_source_inside_outer_fences():
+    """A Python fence shown inside a Markdown teaching block is not an executable block."""
+    page = '````markdown\n```python\nnot_in_script()\n```\n````\n\n```text\nx\n```\n'
+    assert CHECKER['python_fences'](page) == []
+
+
+@pytest.fixture(scope='module')
+def repository_inventory():
+    """The committed inventory of this checkout."""
+    return json.loads((REPO_ROOT / 'tools/docs_inventory.json').read_text(encoding='utf-8'))
+
+
+def test_static_public_surface_matches_the_runtime_package():
+    """The ast reading of the package root equals the imported package's public objects."""
+    import inspect
+    import optimalportfolios as op
+    surface = CHECKER['public_surface'](REPO_ROOT)
+    runtime = {name for name in dir(op)
+               if not name.startswith('_') and not inspect.ismodule(getattr(op, name))}
+    assert set(surface) == runtime
+    for name, package in surface.items():
+        module = getattr(getattr(op, name), '__module__', '') or ''
+        assert module.split('.')[0] == package, (name, module, package)
+
+
+def test_static_dataclass_fields_match_runtime(repository_inventory):
+    """The ast reading of each mapped dataclass equals dataclasses.fields, in order."""
+    import dataclasses
+    import optimalportfolios as op
+    for name in repository_inventory['parameters']:
+        expected = [field.name for field in dataclasses.fields(getattr(op, name))]
+        assert CHECKER['dataclass_fields'](REPO_ROOT, name) == expected, name
+
+
+def test_repository_ownership_is_complete(repository_inventory):
+    """Every public object and mapped field of this checkout has exactly one owning page."""
+    assert CHECKER['check_ownership'](repository_inventory, REPO_ROOT) == []
+    assert CHECKER['check_papers'](repository_inventory, REPO_ROOT) == []
+
+
+def _mutated(inventory, change):
+    """Return a deep copy of the inventory after applying one change to it."""
+    copy = json.loads(json.dumps(inventory))
+    change(copy)
+    return copy
+
+
+def _move_to_adopted_page(inventory, name):
+    """Give an object to the adopted standard page, which does not name it."""
+    for names in inventory['symbols'].values():
+        if name in names:
+            names.remove(name)
+    inventory['symbols']['docs/documentation_standard.md'] = [name]
+
+
+@pytest.mark.parametrize('change,message', [
+    (lambda inv: inv['symbols']['docs/constraints.md'].remove('Constraints'),
+     'Public object without an owning page: `Constraints`'),
+    (lambda inv: inv['symbols']['docs/rolling_backtests.md'].append('Constraints'),
+     '`Constraints` is also owned'),
+    (lambda inv: inv['symbols']['docs/rolling_backtests.md'].append('not_a_public_name'),
+     'is not a public object'),
+    (lambda inv: inv['symbols']['docs/rolling_backtests.md'].append('LassoModel'),
+     'list it under external_symbols'),
+    (lambda inv: inv['external_symbols'].pop('LassoModel'),
+     'Re-export without an external owner: `LassoModel`'),
+    (lambda inv: inv['symbols'].setdefault('docs/unknown_page.md', []),
+     'neither an inventoried nor a planned page'),
+    (lambda inv: inv['parameters']['Constraints']['docs/constraints.md'].remove('weights_0'),
+     'Field without an owning page: `Constraints.weights_0`'),
+    (lambda inv: inv['parameters']['Constraints']['docs/constraints.md'].append('not_a_field'),
+     'is not a field'),
+    (lambda inv: _move_to_adopted_page(inv, 'round_weights_to_pct'),
+     'Name the owned `round_weights_to_pct`'),
+])
+def test_ownership_defects_are_rejected(repository_inventory, change, message):
+    """Each ownership defect of the real inventory produces its diagnostic."""
+    errors = CHECKER['check_ownership'](_mutated(repository_inventory, change), REPO_ROOT)
+    assert any(message in error for error in errors), errors
+
+
+def test_retired_paper_titles_and_ledger_titles_are_checked(tmp_path):
+    """A retired title fails in reader-facing text; the papers page must carry each title."""
+    (tmp_path / 'docs').mkdir()
+    (tmp_path / 'docs/page.md').write_text('See *An Old Working\nTitle* here.', encoding='utf-8')
+    (tmp_path / 'docs/research_papers.md').write_text('Nothing yet.', encoding='utf-8')
+    inventory = {'pages': {'docs/research_papers.md': {}}, 'papers': {'paper': {
+        'title': 'The Current Title', 'authors': 'Sepp, A.', 'status': 'Working paper',
+        'citation': 'Sepp, A. (2026). The Current Title.',
+        'retired_titles': ['An old working title']}}}
+    errors = CHECKER['check_papers'](inventory, tmp_path)
+    assert any('docs/page.md:1: Retired title' in error for error in errors), errors
+    assert any('Ledger title of paper paper missing' in error for error in errors), errors
+    inventory['papers']['paper'].pop('citation')
+    assert any('needs title, authors' in error
+               for error in CHECKER['check_papers'](inventory, tmp_path))
+
+
+def test_planned_pages_block_complete_adoption(inventory_tree, capsys):
+    """A planned page is not a written page: it fails --all and must not already exist."""
+    root, inventory = inventory_tree
+    (root / 'docs/legacy.rst').unlink()
+    (root / 'docs/legacy.md').write_text(HEADER, encoding='utf-8')
+    inventory['pages'].pop('docs/legacy.rst')
+    inventory['pages']['docs/legacy.md'] = {'form': 'utility', 'status': 'adopted'}
+    inventory['planned'] = {'docs/future.md': {'form': 'methodology', 'title': 'Future'}}
+    save_inventory(root, inventory)
+    assert CHECKER['main']([]) == 0
+    capsys.readouterr()
+    assert CHECKER['main'](['--all']) == 1
+    assert 'Planned page not yet written' in capsys.readouterr().out
+    (root / 'docs/future.md').write_text(HEADER, encoding='utf-8')
+    assert CHECKER['main']([]) == 1
+    assert 'Planned page exists' in capsys.readouterr().out
+
+
+def test_example_key_enables_card_and_excerpt_checks(inventory_tree, capsys):
+    """A page written to the script contract gets the card and excerpt rules before adoption."""
+    root, inventory = inventory_tree
+    (root / 'examples/docs').mkdir(parents=True)
+    (root / 'examples/docs/method.py').write_text(SCRIPT, encoding='utf-8')
+    page = HEADER + WITH_CARD + '\n```python\nweights = np.full(4, 0.25)\n```\n'
+    (root / 'docs/method.md').write_text(page, encoding='utf-8')
+    inventory['pages']['docs/method.md'] = {'form': 'methodology', 'status': 'pending',
+                                            'example': 'examples/docs/method.py'}
+    save_inventory(root, inventory)
+    assert CHECKER['main'](['--files', 'docs/method.md']) == 0
+    (root / 'docs/method.md').write_text(page.replace('0.25', '0.5').replace(CARD, ''),
+                                         encoding='utf-8')
+    assert CHECKER['main'](['--files', 'docs/method.md']) == 1
+    output = capsys.readouterr().out
+    assert 'not a verbatim excerpt' in output and 'convention card' in output
+    inventory['pages']['docs/method.md']['example'] = 'examples/docs/missing.py'
+    save_inventory(root, inventory)
+    assert CHECKER['main'](['--files', 'docs/method.md']) == 1
+    assert 'existing examples/docs/ script' in capsys.readouterr().out

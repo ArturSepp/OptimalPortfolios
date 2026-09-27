@@ -54,6 +54,23 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `pip install --target "$READTHEDOCS_VIRTUALENV_PATH.uv"` and called by that path in every step,
   so no uv call depends on `PATH`. The guard test now also rejects `python -m uv` and checks that
   every call uses the installed binary.
+- Documentation site, first stage of the Read the Docs roadmap (no package change):
+  - A new home page organised by reader question, with *the portfolio in one picture*, a Mermaid
+    pipeline diagram and a pipeline-ordered sidebar; a conventions, notation and glossary page; a
+    research-papers page with the public paper ledger. The optimisation guide becomes "Choosing an
+    objective", with a decision diagram; its old title anchor is kept.
+  - The API page body is generated at build time from `tools/docs_inventory.json`: every public
+    object under the page that explains it, the re-exports from FactorLasso and qis linked to
+    their owners, and one table of fields and defaults per mapped configuration dataclass. It
+    replaces the hand-kept list, which had missed `average_rolling_weights`. Object pages keep
+    their `generated/` addresses.
+  - `tools/check_docs.py` reads the public surface and dataclass fields with `ast` and enforces
+    one owning page per object and field, the case-study form, the convention card, the excerpt
+    rule for canonical example scripts, planned pages and the paper ledger. Mermaid diagrams
+    (`sphinxcontrib-mermaid` in the `docs` extra), a canonical-URL and sitemap extension and
+    Insight/Pitfall callouts are added to the site.
+  - The analytics operator procedure moves from the documentation standard to
+    `tools/docs_analytics/README.md`; the standard keeps its rules and section anchors.
 
 ## [7.8.0] - 2026-09-23
 

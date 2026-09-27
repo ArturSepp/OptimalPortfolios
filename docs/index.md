@@ -2,8 +2,10 @@
 myst:
   html_meta:
     description: >-
-      OptimalPortfolios documentation: start with an offline portfolio backtest,
-      then explore signals, covariance estimation, constraints, and risk reporting.
+      optimalportfolios documentation: multi-asset portfolio construction in Python, from
+      covariance estimates and signals through risk budgeting, maximum diversification,
+      mean-variance, tracking-error and overlay objectives to constrained rolling backtests,
+      with the methods, runnable offline examples and reproducible exhibits.
 ---
 
 <a id="optimalportfolios-production-portfolio-construction-and-rolling-backtesting"></a>
@@ -12,123 +14,184 @@ myst:
 
 *Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-08-09](https://github.com/ArturSepp/OptimalPortfolios/commit/254505981ed43e0dbc12a19c98c034d351b8d059)*
 
-Documentation for [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+[OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios) is a Python library for
+multi-asset portfolio construction and rolling backtesting. At each rebalancing date it turns
+dated risk estimates, expected returns and constraints into target weights under a chosen
+objective: risk budgets, maximum diversification, minimum variance, maximum Sharpe, tracking
+error against a benchmark, or expected utility under fat-tailed returns. Holdings simulation,
+transaction costs and reporting belong to
+[qis](https://github.com/ArturSepp/QuantInvestStrats), and sparse factor estimation to
+[FactorLasso](https://github.com/ArturSepp/FactorLasso); optimalportfolios is the reference
+implementation of the ROSAA framework of Sepp, Ossa and Kastenholz (2026).
+
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
-
-OptimalPortfolios is a Python library for multi-asset portfolio construction and rolling
-backtesting. It turns dated estimates, investment objectives and constraints into target
-weights, then delegates holdings simulation, transaction costs and reporting to
-[QIS](https://github.com/ArturSepp/QuantInvestStrats).
-
-The package implements the ROSAA framework described by Sepp, Ossa and Kastenholz (2026);
-the [papers below](#papers) provide its research context.
 
 ## Start here
 
-| Your task | Begin with |
+1. [Install optimalportfolios](installation.md) and choose its optional features. The core
+   installation command is `python -m pip install optimalportfolios`.
+2. Run the [offline quickstart](quickstart.md): EWMA covariance, constrained minimum-variance
+   weights and a qis backtest with explicit trade timing and costs, on a fixture shipped in the
+   wheel.
+3. Keep the [conventions and glossary](conventions.md) at hand. Return basis, estimation and
+   rebalancing grids, covariance units, weight states, notation and solver defaults are defined
+   there once for every page.
+4. Browse the [analytics gallery](analytics_gallery.md) for reproducible exhibits, or the
+   [examples guide](examples_readme.md) for complete workflows and their data requirements.
+
+<a id="overview"></a>
+
+## The portfolio in one picture
+
+At each rebalancing date $t$, optimalportfolios chooses the target weights
+
+$$
+w_t^{\star} = \arg\max_{w \in \mathcal{C}_t} U(w; \hat{\mu}_t, \hat{\Sigma}_t, w^{\mathrm{bm}}, w_{t^-}),
+\qquad
+\hat{\Sigma}_t = \beta_t \Sigma_{F,t} \beta_t^{\top} + D_t .
+$$
+
+Here $U$ is the objective, $\mathcal{C}_t$ the set of admissible weights, $\hat{\mu}_t$ the
+expected returns or alphas where the objective uses them, $w^{\mathrm{bm}}$ a benchmark and
+$w_{t^-}$ the current holdings drifted to $t$. The covariance $\hat{\Sigma}_t$ is either an EWMA
+estimate or the factor model on the right, with loadings $\beta_t$, factor covariance
+$\Sigma_{F,t}$ and residual covariance $D_t$. The construction runs through the steps below.
+
+```mermaid
+flowchart TB
+    subgraph estimate ["Estimate at each rebalancing date"]
+        direction LR
+        A["Prices and<br/>metadata"] --> B["Estimation grid<br/>cadences, ragged histories"]
+        B --> C["Risk model<br/>EWMA or factor covariance"]
+        B --> D["Expected returns<br/>signals and CMAs"]
+    end
+    subgraph construct ["Construct and simulate"]
+        direction LR
+        E["Objective and<br/>constraints"] --> F["Solve and check<br/>the outcome"] --> G["Dated target<br/>weights"] --> H["qis backtest<br/>drift, lag and costs"]
+    end
+    estimate --> construct
+```
+
+In words: prices are sampled on an estimation grid that respects each asset's cadence and
+history; a risk model and, for the objectives that need them, expected returns are estimated
+from information available at the rebalancing date; the objective is solved under the
+constraints and its outcome checked; and the dated target weights are passed to qis, which
+simulates the holdings with price drift, implementation lag and transaction costs.
+
+| Step of the diagram | Pages |
 |---|---|
-| Install the package and choose optional features | [Installation](installation.md) |
-| Estimate covariance, compute constrained weights and backtest them | [Offline quickstart](quickstart.md) |
-| Find a complete workflow and its data prerequisites | [Examples guide](examples_readme.md) |
-| Inspect reproducible synthetic portfolio and risk exhibits | [Analytics gallery](analytics_gallery.md) |
+| Estimation grid | [Mixed-frequency data](mixed_frequency_data.md), [incomplete histories](incomplete_histories.md) |
+| Risk model | [Covariance estimators](covariance_estimators.md), [rolling factor risk model from CSV](rolling_factor_covar_from_csv.md) |
+| Expected returns | [Alpha signals](alphas_module_readme.md) |
+| Objective and constraints | [Choosing an objective](optimization_module_readme.md), [risk budgeting](risk_budgeting.md), [minimum tracking error](minimum_tracking_error.md), [overlay tail floor](overlay_tail_floor.md), [constraints](constraints.md) |
+| Solve and check the outcome | [Choosing an objective](optimization_module_readme.md), [constraints](constraints.md) |
+| Dated target weights and qis backtest | [Rolling backtests](rolling_backtests.md), [turnover and transaction costs](turnover_and_transaction_costs.md) |
 
-The quickstart computes a result from a fixed monthly fixture shipped in the wheel. After
-installation, the calculation runs offline. The guide explains how to run a saved script
-or use the repository example; the `examples/` tree itself is not installed with the wheel.
-Its Colab option needs a network connection for setup.
+<a id="signals-and-risk-estimates"></a>
 
-## Overview
+## Data and estimation grids
 
-A typical workflow connects four steps:
+- [Mixed-frequency data](mixed_frequency_data.md): assets observed at different cadences, their
+  EWMA spans and signal horizons, and when each observation becomes available.
+- [Incomplete histories and frozen positions](incomplete_histories.md): eligibility, warmup,
+  frozen target weights and missing prices in rolling workflows and in the qis backtester.
 
-1. **Estimate signals.** The [alpha guide](alphas_module_readme.md) covers momentum, carry,
-   low-beta, residual momentum and reversal, including cross-sectional and within-cluster
-   scoring.
-2. **Estimate risk.** The [covariance guide](covariance_estimators.md) explains EWMA and
-   factor covariance. Sparse factor fitting and hierarchical clustering group lasso (HCGL)
-   are supplied by [FactorLasso](https://github.com/ArturSepp/FactorLasso).
-3. **Construct target weights.** The [optimization guide](optimization_module_readme.md)
-   maps objectives to their solvers. The shared [constraints contract](constraints.md)
-   describes the supported conditions and their backend-specific limits. Implementations
-   use CVXPY, SciPy or dedicated risk-budgeting routines, depending on the objective.
-4. **Simulate and report.** [Rolling backtests](rolling_backtests.md) connect dated targets
-   to QIS holdings, price drift, implementation lag and transaction costs. Target weights
-   and executed holdings are distinct states.
+## Risk models
 
-The [software design guide](software_design.md) explains these package boundaries. Cite
-the [QIS software record](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff)
-for its analytics and simulation, and the
-[FactorLasso software record](https://github.com/ArturSepp/FactorLasso/blob/main/CITATION.cff)
-for its factor estimation.
+- [Covariance estimators](covariance_estimators.md): EWMA and sparse factor covariance, return
+  conventions, spans against half-lives, annualisation and point-in-time inputs.
+- [Rolling factor risk model from CSV](rolling_factor_covar_from_csv.md): rebuild a rolling
+  factor risk model from six CSV inputs and connect it to the qis risk model.
 
-## Signals and risk estimates
+## Expected returns and signals
 
-- [Alpha signals](alphas_module_readme.md): definitions, scoring and estimation timing.
-- [Covariance estimators](covariance_estimators.md): EWMA and factor-model inputs and outputs.
-- [Mixed-frequency data](mixed_frequency_data.md): align assets observed at different cadences.
-- [Incomplete histories](incomplete_histories.md): handle eligibility, missing prices and warmup.
-- [Rolling factor covariance from CSV](rolling_factor_covar_from_csv.md): load dated estimates
-  and connect them to the QIS risk model.
+- [Alpha signals](alphas_module_readme.md): momentum, low beta, residual momentum and reversal,
+  carry and managers' alpha, with cross-sectional and within-cluster scoring.
 
-## Construction and constraints
+<a id="construction-and-constraints"></a>
 
-- [Optimization guide](optimization_module_readme.md): objectives, dispatch, configuration,
-  return types and solver outcomes.
-- [Constraints](constraints.md): units, alignment, feasibility and backend support.
-- [Minimum tracking error](minimum_tracking_error.md): construct allocations relative to a
-  supplied benchmark.
-- [Risk budgeting](risk_budgeting.md): allocate risk using specified contribution budgets.
-- [Overlay tail floor](overlay_tail_floor.md): combine fixed exposure with an optimized sleeve
-  under a downside floor.
+## Portfolio objectives
 
-## Backtests and applied examples
+- [Choosing an objective](optimization_module_readme.md): which objective fits which inputs,
+  the rolling dispatcher, solver configuration, return types and solver outcomes.
+- [Risk budgeting](risk_budgeting.md): Euler risk contributions, constrained budgets, group
+  budgets and hierarchical risk parity.
+- [Minimum tracking error](minimum_tracking_error.md): the allocation closest in risk to a
+  supplied benchmark under the constraints.
+- [Overlay optimisation with a fixed core](overlay_tail_floor.md): a fixed core exposure and an
+  optimised sleeve under a linear downside floor.
 
-- [Analytics gallery](analytics_gallery.md): six synthetic exhibits with sample dates, conventions,
-  producer source links and reviewed provenance.
+## Constraints and solving
 
-- [Rolling backtests](rolling_backtests.md): estimation dates, target weights and execution.
-- [Turnover and transaction costs](turnover_and_transaction_costs.md): distinguish construction
-  penalties from realized trades and cash costs.
-- [Stress testing with options](stress_testing_with_options.md): assess a supplied stock-and-option
-  portfolio using factor scenarios and option repricing. This example requires network data and
-  the local prerequisites listed in its guide; it does not optimize the supplied positions.
+- [Portfolio constraints](constraints.md): exposure, box, tracking-error, turnover, group and
+  beta limits, hard against utility enforcement, units and backend coverage.
 
-## Reference and project guidance
+<a id="backtests-and-applied-examples"></a>
 
-- [Software design](software_design.md): component responsibilities and integration boundaries.
-- [Package comparison](package_comparison.md): a dated comparison of portfolio-library capabilities.
-- [Documentation standard](documentation_standard.md): article structure, notation, citations and
-  reproducible analytics.
-- [API reference](api.rst): the public import surface, signatures and docstrings.
+## Backtesting and costs
 
-## Papers
+- [Rolling portfolio backtests](rolling_backtests.md): estimation and decision dates, drifted
+  holdings, implementation lag and the qis holdings simulation.
+- [Turnover and transaction costs](turnover_and_transaction_costs.md): turnover limits and
+  penalties at construction, executed notional and cash costs in the backtest.
 
-- Sepp, A. (2023). *Optimal Allocation to Cryptocurrencies in Diversified Portfolios*.
-  [Risk Magazine, 6 October 2023](https://www.risk.net/cutting-edge/7957914/optimal-allocation-to-cryptocurrencies-in-diversified-portfolios).
-  [SSRN 4217841](https://ssrn.com/abstract=4217841).
+## Applications
+
+- [Stress testing with options and FCGL clusters](stress_testing_with_options.md): factor
+  scenarios and option repricing for a stock-and-option portfolio. It needs network data and
+  local prerequisites, and it does not optimise the positions.
+
+<a id="reference-and-project-guidance"></a>
+
+## Implementation and reference
+
+- [Software design and boundaries](software_design.md): component responsibilities, solver
+  backends, result contracts, and the division of work with qis and FactorLasso.
+- [Choosing a portfolio optimisation library](package_comparison.md): a dated comparison of
+  portfolio-library capabilities.
+- [Research papers and replication](research_papers.md): the papers behind the methods, the pages
+  that use each one, and what a public checkout can reproduce.
+- [API reference](api.rst): every public object, grouped by the page that explains it, and the
+  configuration fields of the main dataclasses with their defaults.
+- [Documentation standard](documentation_standard.md): page forms, notation, citations,
+  executable examples and exhibit provenance.
+
+<a id="papers"></a>
+
+## Research papers
+
+The methods are described in the following papers. The
+[research papers page](research_papers.md) lists which page uses which paper and how to
+reproduce each one.
+
 - Sepp, A., Ossa, I. and Kastenholz, M. (2026). *Robust Optimization of Strategic and Tactical
   Asset Allocation for Multi-Asset Portfolios*.
   [The Journal of Portfolio Management, 52(4), 86–120](https://www.pm-research.com/content/iijpormgmt/52/4/86).
-  An [author-shared publisher copy](https://eprints.pm-research.com/17511/143431/index.html)
-  is also available.
-- Sepp, A., Hansen, E. H. and Kastenholz, M. (2026). *Capital Market Assumptions and Strategic
-  Asset Allocation Using Multi-Asset Tradable Factors*. Working paper, 17 May 2026.
+- Sepp, A. (2023). *Optimal Allocation to Cryptocurrencies in Diversified Portfolios*.
+  [Risk, October 2023](https://www.risk.net/cutting-edge/7957914/optimal-allocation-to-cryptocurrencies-in-diversified-portfolios);
+  [SSRN 4217841](https://ssrn.com/abstract=4217841).
+- Sepp, A., Hansen, E. and Kastenholz, M. (2026). *Capital Market Assumptions and Strategic
+  Asset Allocation Using Multi-Asset Tradable Factors*. Working paper,
   [SSRN 6785958](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6785958).
 
-The [author's research catalogue](https://artursepp.com/research/) provides the related
-bibliographic records. Cite a paper for its method and the software records above for the
-packages used in an implementation.
+Cite a paper for its method, and the software records for the packages an implementation uses:
+[optimalportfolios](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff),
+[qis](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff) and
+[FactorLasso](https://github.com/ArturSepp/FactorLasso/blob/main/CITATION.cff).
 
-## Project links
+<a id="project-links"></a>
 
-- [PyPI](https://pypi.org/project/optimalportfolios/) and
+## Project resources
+
+- [PyPI](https://pypi.org/project/optimalportfolios/) and the
   [rendered documentation](https://optimalportfolios.readthedocs.io/en/latest/).
 - [Source repository](https://github.com/ArturSepp/OptimalPortfolios) and
   [issue tracker](https://github.com/ArturSepp/OptimalPortfolios/issues).
 - [Governance, maintenance and support](https://github.com/ArturSepp/OptimalPortfolios/blob/main/GOVERNANCE.md).
 - [Changelog](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CHANGELOG.md).
+- The [author's research catalogue](https://artursepp.com/research/).
 
-<!-- The sidebar mirrors the ordinary article links above. Keep each document in one tree. -->
+<!-- The sidebar mirrors the groups above. Keep each document in exactly one tree. -->
 
 ```{toctree}
 :hidden:
@@ -137,51 +200,81 @@ packages used in an implementation.
 
 installation
 quickstart
+conventions
+analytics_gallery
 examples_readme
 ```
 
 ```{toctree}
 :hidden:
 :maxdepth: 2
-:caption: Signals and risk estimates
+:caption: Data and estimation grids
 
-alphas_module_readme
-covariance_estimators
 mixed_frequency_data
 incomplete_histories
+```
+
+```{toctree}
+:hidden:
+:maxdepth: 2
+:caption: Risk models
+
+covariance_estimators
 rolling_factor_covar_from_csv
 ```
 
 ```{toctree}
 :hidden:
 :maxdepth: 2
-:caption: Construction and constraints
+:caption: Expected returns and signals
+
+alphas_module_readme
+```
+
+```{toctree}
+:hidden:
+:maxdepth: 2
+:caption: Portfolio objectives
 
 optimization_module_readme
-constraints
-minimum_tracking_error
 risk_budgeting
+minimum_tracking_error
 overlay_tail_floor
 ```
 
 ```{toctree}
 :hidden:
 :maxdepth: 2
-:caption: Backtests and applied examples
+:caption: Constraints and solving
 
-analytics_gallery
+constraints
+```
+
+```{toctree}
+:hidden:
+:maxdepth: 2
+:caption: Backtesting and costs
+
 rolling_backtests
 turnover_and_transaction_costs
+```
+
+```{toctree}
+:hidden:
+:maxdepth: 2
+:caption: Applications
+
 stress_testing_with_options
 ```
 
 ```{toctree}
 :hidden:
 :maxdepth: 2
-:caption: Reference and project
+:caption: Implementation and reference
 
 software_design
 package_comparison
-documentation_standard
+research_papers
 api
+documentation_standard
 ```

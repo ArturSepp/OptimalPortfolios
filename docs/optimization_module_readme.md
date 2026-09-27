@@ -2,11 +2,14 @@
 myst:
   html_meta:
     description: >-
-      A practical map of OptimalPortfolios solvers: objective dispatch, configuration,
-      labelled and numerical interfaces, constraints, outcomes, and offline examples.
+      Choose a portfolio objective in OptimalPortfolios by the inputs you have, then call it:
+      objective dispatch, solver configuration, labelled and numerical interfaces, return
+      types, constraints, solver outcomes and offline examples.
 ---
 
-# Optimization Module
+<a id="optimization-module"></a>
+
+# Choosing an objective: dispatch, configuration and results
 
 *Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-03-15](https://github.com/ArturSepp/OptimalPortfolios/commit/ce4d4c3469216d807079af2c52f5a85775d9c572)*
 
@@ -21,7 +24,34 @@ factor estimation uses [FactorLasso](https://github.com/ArturSepp/FactorLasso).
 
 Use this page to select and call a solver. The [constraint guide](constraints.md) is authoritative
 for constraint formulas, alignment and backend semantics; the [examples guide](examples_readme.md)
-covers larger workflows.
+covers larger workflows. Units, timing and notation follow the
+[conventions page](conventions.md).
+
+## Choose an objective by its inputs
+
+The objectives differ first in what they need: a covariance only, expected returns or alphas as
+well, a benchmark to measure against, or a return or volatility target.
+
+```mermaid
+flowchart TD
+    Q1{"Expected returns<br/>or alphas?"}
+    Q1 -- "no" --> Q2{"A benchmark<br/>to track?"}
+    Q2 -- "yes" --> MTE["Minimum tracking error"]
+    Q2 -- "no" --> RISK["Risk-based: minimum variance,<br/>risk budgeting, hierarchical<br/>risk parity, maximum diversification"]
+    Q1 -- "yes" --> Q3{"Measured against<br/>a benchmark?"}
+    Q3 -- "yes" --> TAA["Tactical: alpha over<br/>tracking error"]
+    Q3 -- "no" --> Q4{"A return or<br/>volatility target?"}
+    Q4 -- "yes" --> SAA["Strategic: target return<br/>or target volatility"]
+    Q4 -- "no" --> MV["Maximum Sharpe, quadratic utility,<br/>or CARA utility for fat tails"]
+```
+
+In words: without expected returns, choose a risk-based objective, or minimum tracking error when
+a benchmark is given; with expected returns or alphas, choose the tactical solver against a
+benchmark, the strategic solvers for a return or volatility target, and otherwise maximum Sharpe,
+quadratic utility or, when returns are fat-tailed, CARA utility under a Gaussian mixture. The
+[conventions page](conventions.md#objectives-and-their-inputs) lists the exact inputs of each, and
+the [dispatch flow](#dispatch-flow) below maps them to functions. A fixed core with an optimised
+sleeve is the [overlay tail floor](overlay_tail_floor.md).
 
 ## Start with an auditable allocation
 
@@ -406,15 +436,9 @@ is not a solved portfolio.
 
 The aggregate is a frozen dataclass with copy/update methods. Its pandas members are mutable
 objects; do not interpret `frozen=True` as deep immutability. Supply aligned ticker labels.
-
-| Policy | Main fields |
-|---|---|
-| Asset/exposure | `is_long_only`, `min_weights`, `max_weights`, `min_exposure`, `max_exposure` |
-| Benchmark-relative | `benchmark_weights`, `tracking_err_vol_constraint`, deviation and beta constraints |
-| Trading | `weights_0`, `turnover_constraint`, `turnover_costs`, group turnover |
-| Return/volatility | `asset_returns`, `target_return`, `max_target_portfolio_vol_an` |
-| Allocation groups | `group_lower_upper_constraints` |
-| Enforcement | `constraint_enforcement_type`, `tre_utility_weight`, `turnover_utility_weight` |
+Every field of `Constraints` is explained, with its units and backend support, in
+[portfolio constraints](constraints.md); the
+[API reference](api.rst) lists the fields with their defaults.
 
 `turnover_constraint` uses the L1 trade amount, not half-L1 one-way turnover.
 `turnover_costs` scales its expression; it is not automatically the QIS backtest charge.

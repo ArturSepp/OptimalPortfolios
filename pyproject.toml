@@ -71,6 +71,7 @@ docs = [
     "sphinx>=7.2",
     "furo>=2024.1.29",
     "myst-parser>=2.0",
+    "sphinxcontrib-mermaid>=1.0",
 ]
 
 # There is no `jupyter` extra. It declared jupyter, notebook and jupyterlab, none of which this
@@ -243,8 +244,9 @@ known_first_party = ["examples"]
 #   `qis.load_df_from_excel`.
 # - scs: a CVXPY solver backend. CVXPY already requires it; it is declared here to raise the
 #   floor to 3.2.4.post3 and exclude the broken 3.3.0 (see CHANGELOG).
-# - sphinx, furo, myst-parser: the `docs` extra is build tooling, not an import.
-DEP002 = ["openpyxl", "scs", "sphinx", "furo", "myst-parser"]
+# - sphinx, furo, myst-parser, sphinxcontrib-mermaid: the `docs` extra is build tooling, not
+#   an import.
+DEP002 = ["openpyxl", "scs", "sphinx", "furo", "myst-parser", "sphinxcontrib-mermaid"]
 # Tests ship inside the package, so test modules and the package conftest import pytest from
 # the `test` group. The ignore is global, because deptry cannot scope one to `tests/`.
 DEP004 = ["pytest"]
