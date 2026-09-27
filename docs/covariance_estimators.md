@@ -39,6 +39,18 @@ factor decomposition containers
 
 ## Inputs, notation, and assumptions
 
+| Convention | This article |
+|---|---|
+| Return basis | Log returns: `EwmaCovarEstimator` takes log differences of prices sampled at `returns_freq`; factor fits take supplied log asset returns and log factor-price differences on each bucket's dates |
+| Estimation grid | Weekly Wednesdays (`"W-WED"`, the default `returns_freq`) with span 52 in the direct example; month ends (`"ME"`) in the three-observation and factor examples |
+| Rebalancing grid | Quarter ends (`"QE"`, the default `rebalancing_freq`): the direct wrapper reports the first weekly observation on or after each quarter end, the factor wrapper fits at calendar quarter ends |
+| Covariance units | Annual, fractional log-return squared: the EWMA state times the observations per year of the sampled returns (52 weekly, 12 monthly); factor covariance and residual variances are annualized by their own cadences |
+| Expected returns | None |
+| Weight state | None; the page estimates covariance matrices, not weights |
+| Solver | CVXPY with CLARABEL, the `LassoModel` default, for the factor fits; the EWMA estimators solve nothing |
+
+The notation follows the [conventions page](conventions.md#notation). In addition:
+
 | Symbol or input | Meaning |
 |---|---|
 | $P_{i,t}$, $r_{i,t}$ | Positive total-return price and log return of asset $i$ at observation $t$. |
@@ -78,7 +90,10 @@ h = \frac{\log(1/2)}{\log(\lambda)}.
 $$
 
 Thus `span=52` is approximately an 18-observation half-life, not a 52-observation half-life.
-The span does not impose a hard lookback cutoff.
+
+> **Insight.** A span is neither a half-life nor a window. The weights decay geometrically but
+> never reach zero, so the span imposes no hard lookback cutoff: in the worked example below,
+> changing the first of 160 weekly prices still moves the current matrix.
 
 With `demean=True`, the adapter subtracts the current EWMA mean:
 
@@ -113,9 +128,10 @@ handled a missing source price. See [incomplete histories](incomplete_histories.
 The optional `is_apply_vol_normalised_returns=True` selects a different, DCC-like normalized-return
 kernel. It is not an identity-shrinkage option. From qis 5.31.0, which this package requires, that
 kernel seeds each volatility with the column's first finite squared return, so the direct rolling
-EWMA path is point in time with either kernel. Up to qis 5.30 it seeded volatility from the mean
-squared returns over the entire supplied array, and later observations could affect earlier
-matrices even when `time_period.end` was earlier. The future-price check is verified below.
+EWMA path is point in time with either kernel: each rolling matrix equals a current fit on the
+prices through its date, and later prices change none of them. Earlier qis releases seeded that
+volatility from the mean squared return of the entire supplied array, so later observations could
+move earlier matrices even when `time_period.end` was earlier.
 
 ### Factor and HCGL covariance
 
@@ -205,6 +221,10 @@ a current fit, including when supplying an external factor covariance. Empirical
 fits truncate all fitted inputs at `estimation_date`; a supplied factor covariance must still
 respect that cutoff.
 
+> **Pitfall.** A date label is not a cutoff. In the worked example, an ordinary current factor
+> fit on the whole history with `estimation_date` set to 31 December 2022 differs from the fit on
+> inputs sliced through that date, and even reverses the sign of the Equity-Bonds covariance.
+
 `fit_rolling_factor_covars` explicitly slices each input through every scheduled date and uses
 an expanding history. An active cluster smoother is delegated to FactorLasso over the causal
 estimation schedule. The rolling wrapper checks each bucket's row count against `warmup_period`;
@@ -217,7 +237,16 @@ date independently guarantees that the upstream observations were actually avail
 
 ## Worked example
 
-All six blocks are canonical sequential examples using fixed synthetic data, without downloads.
+The six Python blocks below run in order on fixed synthetic data and need no download, data file
+or random seed. They are excerpts of the canonical script
+[`examples/docs/covariance_estimators.py`](../examples/docs/covariance_estimators.py), which runs
+them and asserts every number on this page, and its main properties, against a reference
+computed a different way:
+
+```console
+python -m examples.docs.covariance_estimators
+```
+
 The small EWMA example gives an exact arithmetic reference; the HCGL example demonstrates an
 actual fit and component assembly.
 
@@ -357,6 +386,7 @@ date contracts rather than compare investment performance.
 |---|---|
 | `EwmaCovarEstimator.fit_current_covar` | Price panel to one annual covariance matrix. |
 | `EwmaCovarEstimator.fit_rolling_covars` | Price panel and reporting period to a date-keyed dictionary. |
+| `estimate_current_ewma_covar` | The function behind `fit_current_covar`; `apply_an_factor=False` keeps per-observation units. |
 | `FactorCovarEstimator.fit_current_covar` | Factor prices and asset-return buckets to one assembled annual matrix. |
 | `FactorCovarEstimator.fit_rolling_covars` | The factor inputs and period to a dictionary of assembled matrices. |
 | `fit_current_factor_covars` / `fit_rolling_factor_covars` | Factor-specific methods retaining betas, residual statistics, clustering and decomposition metadata. |
@@ -394,17 +424,11 @@ not make its attached last-fit state a record of all buckets or dates.
 
 ### Reproduction and verification context
 
-[Executable article tests](../src/optimalportfolios/tests/covariance_estimators_documentation_test.py)
-run all six blocks, verify independent weighted-sum and factor-component references, and perturb
-future observations to check the documented timing distinctions:
-
-```console
-python -m pytest src/optimalportfolios/tests/covariance_estimators_documentation_test.py
-```
-
-Local verification used the OptimalPortfolios 7.6.0 working source with Python 3.12.14,
-qis 5.26.0, factorlasso 0.18.0, CVXPY 1.9.2 and CLARABEL 0.11.1. The existing lockfile records
-qis 5.22.3; these results characterize the inspected local environment, not a locked installation.
+The [canonical script](../examples/docs/covariance_estimators.py) runs the worked example and
+checks the EWMA weighted sums, the exact three-observation weights, the factor-component
+assembly and annualization, the empirical residual retention, the input cutoffs and the
+future-input timing properties. The test suite runs it, and so does the offline examples lane
+of CI.
 
 ## Interpretation and limitations
 
@@ -420,15 +444,17 @@ Zero-filled missing betas or residual variances can make an absent-history asset
 Eligibility and warm-up policy remain separate from matrix assembly. Sparse factor structure,
 cluster choices, residual scaling and return normalization all change the risk model.
 
-For historical use, preserve data as it was known on each date. Direct ordinary EWMA and the
-optional normalized-return rolling path both pass a future-price perturbation check in the
-included fixture. Rolling factor fitting explicitly
+For historical use, preserve data as it was known on each date. Both direct EWMA kernels, the
+ordinary one and the optional normalized-return one, pass a future-price perturbation check in
+the worked example, and each of their rolling matrices equals a current fit on the prices
+through its date. Rolling factor fitting explicitly
 truncates inputs; an orthogonal current fit without factor references requires the caller's
 explicit input cutoff. A long warm-up may reduce
 initialization effects but does not prove that look-ahead is absent.
 
-The factor adapter's demeaning-field limitation is documented here without numerical changes.
-Use the checked causal configuration and inspect the implementation when changing it.
+The factor adapter stores its top-level `demean` field but does not read it: with `demean=False`
+the worked example's factor covariance and betas are unchanged. Set regression demeaning through
+`LassoModel.demean`; see [factor and HCGL covariance](#factor-and-hcgl-covariance).
 
 ## See also
 
@@ -439,8 +465,10 @@ Use the checked causal configuration and inspect the implementation when changin
 - [Offline mixed-frequency covariance example](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/covar_estimation/demo_covar_different_estimation_freqs.py).
 - [Factor covariance example](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/covar_estimation/lasso_covar_estimation.py)
   (requires network data).
-- [Documentation analytics](documentation_standard.md#covariance-comparison-family-preview)
-  for the fixed offline estimator-comparison exhibit and its provenance.
+- [Analytics gallery](analytics_gallery.md#covariance-estimators) for a fixed offline exhibit
+  that feeds six covariance estimates to one minimum-variance construction on a simulation with
+  known covariance; the [documentation standard](documentation_standard.md#covariance-comparison-family-preview)
+  records its provenance.
 
 ## References
 

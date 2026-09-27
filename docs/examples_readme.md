@@ -55,7 +55,7 @@ scenario; it does not execute every branch of a `Locals` enum.
 ### Unattended execution lanes
 
 The [classifier and runner](../.github/scripts/run_examples.py) derives lanes from Python imports.
-Its current inventory is **10 offline, 19 network, 29 unattended examples**. The **4 local-data workflows** ending in
+Its current inventory is **13 offline, 20 network, 33 unattended examples**. The **4 local-data workflows** ending in
 `*_local.py` are excluded. Each catalogue row below states the classification.
 
 ```console
@@ -222,13 +222,19 @@ timing limitation, before interpreting the example as a historical trading resul
 ## `docs/` — canonical scripts of documentation pages
 
 Each script is the canonical example of one documentation page: the page shows excerpts of
-it, and the script asserts every number the page quotes. The scripts run offline after
-`pip install optimalportfolios`, and some also draw the page's teaching exhibit.
+it, and the script asserts every number the page quotes. The test suite runs every script,
+and some also draw the page's teaching exhibit. All but one run offline after
+`pip install optimalportfolios`; the CSV risk-model script imports a repository example, so
+it needs a source checkout.
 
 | Source | Lane | Purpose and prerequisites |
 |---|---|---|
 | [ROSAA case study](../examples/docs/app_rosaa_multi_asset_allocation.py) | Offline | The configuration of the [ROSAA case study](app_rosaa_multi_asset_allocation.md) on a synthetic panel with known loadings: a rolling HCGL factor covariance, strategic risk budgets and a tactical alpha-over-tracking-error overlay, with the mechanism asserted at every quarter end. |
+| [Covariance estimators](../examples/docs/covariance_estimators.py) | Offline | The worked example of the [covariance estimators](covariance_estimators.md) page: direct EWMA covariance against an explicit weighted sum, three monthly observations against exact weights, an HCGL factor covariance assembled from its components, input cutoffs, and rolling estimates unchanged by later prices. |
+| [Incomplete histories](../examples/docs/incomplete_histories.py) | Offline | The worked example of the [incomplete histories](incomplete_histories.md) page: frozen bounds from a stored baseline, drift with a missing price, three holdings paths against an exact ledger of units and cash, covariance filtering and an EWMA state reset. |
 | [Maximum diversification](../examples/docs/maximum_diversification.py) | Offline | The worked example of the [maximum diversification](maximum_diversification.md) page: inverse-volatility weights for two assets, the correlation-matrix identity checked against CVXPY, the equal-correlation property, a binding cap, and a rolling allocation on simulated prices. |
+| [Mixed-frequency data](../examples/docs/mixed_frequency_data.py) | Offline | The worked example of the [mixed-frequency data](mixed_frequency_data.md) page: monthly and quarterly return buckets, momentum windows against endpoint ratios, per-cadence scoring, and a mixed-frequency factor covariance against native per-bucket fits. |
+| [Rolling factor risk model from CSV](../examples/docs/rolling_factor_covar_from_csv.py) | Network | The worked example of the [rolling factor risk model from CSV](rolling_factor_covar_from_csv.md) page: a six-file bundle round trip, FX-converted returns against endpoint wealth, every snapshot covariance summed term by term, the `load` command in a fresh process, loader defects and repairs, and the Yahoo fetch on synthetic closes. It opens no connection; the classifier lists it as network because the repository example it imports holds the Yahoo fetcher. Needs a source checkout. |
 
 ## Recommended reading order for newcomers
 

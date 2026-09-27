@@ -383,7 +383,7 @@ closely replicated factors can overrepresent one exposure. The
 | EWMA, annualization and returned matrices | [EWMA tests](./tests/ewma_covar_estimator_test.py) and [property tests](./tests/covar_properties_test.py). |
 | Factor fitting, configuration and cutoffs | [API tests](./tests/factor_estimator_api_test.py), [guards](./tests/factor_estimator_guards_test.py) and [smoothing](./tests/cluster_smoothing_test.py). |
 | QIS risk integration and reports | [Risk adapter tests](./tests/risk_model_adapter_test.py) and [report tests](./tests/covar_reporting_test.py). |
-| Public calculation contracts | [Covariance article tests](../tests/covariance_estimators_documentation_test.py) and [mixed-frequency article tests](../tests/mixed_frequency_data_documentation_test.py). |
+| Public calculation contracts | The canonical scripts of the [covariance article](../../../examples/docs/covariance_estimators.py) and the [mixed-frequency article](../../../examples/docs/mixed_frequency_data.py), run by [`documentation_examples_test.py`](../tests/documentation_examples_test.py). |
 
 The [EWMA runner](./run_local/ewma_covar_estimator_run.py) defaults to
 `ROLLING_COVAR_PROPERTIES`. Despite its name,
@@ -400,8 +400,8 @@ After setup, run the selected commands from the C-local source export:
 ```text
 python tools/check_docs.py --files src/optimalportfolios/covar_estimation/README.md
 python -m pytest src/optimalportfolios/covar_estimation/tests
-python -m pytest src/optimalportfolios/tests/covariance_estimators_documentation_test.py
-python -m pytest src/optimalportfolios/tests/mixed_frequency_data_documentation_test.py
+python -m examples.docs.covariance_estimators
+python -m examples.docs.mixed_frequency_data
 ```
 
 For the manual runner, only after providing its local-data prerequisite:

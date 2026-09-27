@@ -174,11 +174,14 @@ links the script. Every fenced block tagged `python` must be a verbatim, contigu
 script, compared after removing common indentation; a block that is not meant to run carries the
 comment `<!-- fragment -->` on the line before its fence. A script runs offline after
 `pip install optimalportfolios`, builds its inputs from a fixed seed, and asserts every number the
-page quotes against a reference computed a different way.
+page quotes against a reference computed a different way. A script that exercises a repository
+example, such as the CSV risk-model page, needs a checkout instead and says so on its page.
+`src/optimalportfolios/tests/documentation_examples_test.py` runs every script in the test suite,
+and the examples workflow runs them again in their lane.
 
 Pages written earlier are checked by their own documentation tests under
 `src/optimalportfolios/tests/`, and they move to the canonical-script contract when they are
-revised. Preserve the quickstart's executed README and Python/notebook parity checks. Label
+revised: the page's checks move into its script, and its test is removed in the same change. Preserve the quickstart's executed README and Python/notebook parity checks. Label
 fragments with missing context as illustrative; do not present them as standalone commands.
 
 ## Analytical conventions and figures

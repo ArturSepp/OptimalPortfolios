@@ -161,6 +161,33 @@ curves and one-date covariance errors do not establish an estimator ranking.
 **Producer:** [covariance comparison](../tools/docs_analytics/covariance_comparison.py).
 **Configuration:** [analytics registry](../tools/docs_analytics/registry.json).
 
+## Mixed-frequency data
+
+A teaching exhibit of the [mixed-frequency data](mixed_frequency_data.md) page. At one
+formation date, the monthly assets' classic momentum uses 12 monthly returns ending one month
+earlier, and the quarterly asset uses 4 quarterly returns ending one quarter earlier; the
+quarterly signal is carried unchanged between quarter ends.
+
+![Left: the observations in each asset's classic momentum window at 31 December 2023. Right: raw classic momentum, with the quarterly asset flat between quarter ends.](images/mixed_frequency_grids.png)
+
+**Sample:** deterministic synthetic panel of two monthly series and quarter-end NAVs, December
+2018 to December 2024; no simulation. **Producer:** the `exhibit` function of
+[`examples/docs/mixed_frequency_data.py`](../examples/docs/mixed_frequency_data.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Incomplete histories
+
+A teaching exhibit of the [incomplete histories](incomplete_histories.md) page. A price missing
+between rebalancings lowers NAV only until the price returns; the same gap on a rebalance date
+clears the held units without proceeds; a missing opening price leaves that allocation in cash.
+
+![Left: NAV of the hold-through-gap, rebalance-on-gap and missing-opening-price paths over four business days. Right: the rebalance-on-gap path's holdings, with the gapped position replaced by cash.](images/incomplete_histories_price_gaps.png)
+
+**Sample:** two synthetic assets over four business days in January 2024, with one missing
+price; no simulation. **Producer:** the `exhibit` function of
+[`examples/docs/incomplete_histories.py`](../examples/docs/incomplete_histories.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
 ## Maximum diversification
 
 A teaching exhibit of the [maximum diversification](maximum_diversification.md) page. The
