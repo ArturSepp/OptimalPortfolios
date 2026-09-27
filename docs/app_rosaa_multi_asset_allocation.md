@@ -73,7 +73,7 @@ The article's empirical application covers:
 
 Each layer of the article maps to one call of the package. The configuration below is that of the
 canonical script,
-[`examples/docs/app_rosaa_multi_asset_allocation.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/docs/app_rosaa_multi_asset_allocation.py),
+[`examples/docs/app_rosaa_multi_asset_allocation.py`](../examples/docs/app_rosaa_multi_asset_allocation.py),
 on a synthetic panel of three factors and eight asset classes, monthly from December 2004 to
 June 2025.
 

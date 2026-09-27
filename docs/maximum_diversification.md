@@ -135,7 +135,7 @@ The package then solves the ratio directly under all supported constraints.
 ## Worked example
 
 The canonical script of this page,
-[`examples/docs/maximum_diversification.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/docs/maximum_diversification.py),
+[`examples/docs/maximum_diversification.py`](../examples/docs/maximum_diversification.py),
 runs offline and asserts every number quoted here:
 
 ```console
