@@ -35,6 +35,13 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `pyproject.toml` maps PyYAML to `yaml` and records a reason for every ignore, among them the
   deliberately declared `openpyxl` (pandas Excel engine) and `scs` (CVXPY solver pin). Tagged the
   six untagged README code fences as `text` or `bibtex`. Fixes issue #86.
+- Read the Docs builds again. Every hosted build from 2026-09-14 to 2026-09-26 failed at
+  `uv venv` with `uv: not found`, because pip does not put the uv entry point on the build
+  `PATH`, so both `latest` and `stable` kept serving the documentation of 2026-09-14.
+  `.readthedocs.yaml` now runs `python -m uv` and creates the environment with the build's
+  Python 3.12. The daily `link-health.yml` run gains a job, `.github/scripts/check_rtd_build.py`,
+  that fails when the newest finished `latest` build did not succeed. `stable` keeps the old
+  site until the next release tag.
 
 ## [7.8.0] - 2026-09-23
 

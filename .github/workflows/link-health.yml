@@ -10,3 +10,17 @@ jobs:
     uses: ./.github/workflows/docs.yml
     with:
       online: true
+  read-the-docs:
+    # Read the Docs builds from .readthedocs.yaml, not from docs.yml, so a hosting-only failure
+    # leaves CI green; every build from 2026-09-14 to 2026-09-26 failed unnoticed that way.
+    # Only `latest` is checked: `stable` rebuilds from a release tag, and the v7.8.0 tag carries
+    # the broken configuration until the next release.
+    name: Read the Docs build status
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Prove the status checker's failure cases
+        run: python3 -m unittest discover -s .github/scripts -p check_rtd_build_test.py -v
+      - name: Check the newest finished build of latest
+        run: python3 .github/scripts/check_rtd_build.py --project optimalportfolios --version latest
