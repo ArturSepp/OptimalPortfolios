@@ -82,12 +82,15 @@ _STATUS_OPTIMAL = "optimal"
 _STATUS_INACCURATE = {"optimal_inaccurate"}
 
 
-def _compute_fallback(constraints: Constraints, tickers: Sequence[str], n: int) -> Tuple[np.ndarray, str]:
+def _compute_fallback(constraints: Constraints, tickers: Sequence[str],
+                      n: int) -> Tuple[np.ndarray, str]:
     """Pick a guaranteed-finite fallback weight vector.
 
-    Order: drifted ``weights_0`` → ``benchmark_weights`` → zeros. The rolling
-    loop already treats an all-zero vector as 'skip this rebalance', so zeros
-    is a safe terminal fallback. Each candidate is accepted only if finite.
+    Order: drifted ``weights_0`` → ``benchmark_weights`` → zeros. Each candidate
+    is accepted only if finite. Zeros are the terminal fallback and do not skip
+    the rebalance: the rolling loops (e.g. ``rolling_quadratic_optimisation``
+    and ``rolling_risk_budgeting``) store the all-zero vector as that date's
+    weight row.
 
     Args:
         constraints: Aligned constraints carrying optional starting and
@@ -358,11 +361,15 @@ def validate_solution(
             needlessly replaced by the previous weights.
 
     Returns:
-        An ``OptimizationOutcome`` containing finite ``weights`` of length
-        ``n`` — either the accepted solver output or the fallback. ``is_valid``
-        The ``accepted`` flag records whether the solver output itself was
-        accepted; the outcome also carries solver, residual, fallback,
-        constraint, and covariance audit data.
+        An ``OptimizationOutcome`` whose ``weights`` are finite and of length
+        ``n``. When ``accepted`` is True they are the solver output, and
+        ``reason`` is empty and ``fallback_source`` None; otherwise they are
+        the ``_compute_fallback`` vector, ``fallback_source`` names it and
+        ``reason`` gives the rejection. The outcome also carries ``solver``,
+        ``status`` (``problem_status``), ``context``, the
+        ``constraint_residuals`` of the returned weights at
+        ``constraint_atol``, and the ``constraints`` and
+        ``covar_factorization`` of the solve.
     """
     tickers = list(_resolve_asset_index(constraints, n_assets=n))
     tag = f"[{context}] " if context else ""
@@ -408,7 +415,8 @@ def validate_solution(
     if optimal_weights is None:
         return _reject("w.value is None", logging.WARNING)
 
-    w = np.array(optimal_weights, dtype=float).ravel()  # copy -> writable (pandas 3.0 / downstream in-place edits)
+    # copy -> writable (pandas 3.0 / downstream in-place edits)
+    w = np.array(optimal_weights, dtype=float).ravel()
 
     # (2) hard failure status (or unknown/None status string)
     if problem_status is None or (
@@ -515,7 +523,8 @@ def validate_scipy_solution(
 
     if optimal_weights is None:
         return _reject("scipy returned no weights", logging.WARNING)
-    w = np.array(optimal_weights, dtype=float).ravel()  # copy -> writable (pandas 3.0 / downstream in-place edits)
+    # copy -> writable (pandas 3.0 / downstream in-place edits)
+    w = np.array(optimal_weights, dtype=float).ravel()
     if success is False:
         return _reject("scipy reported non-convergence", logging.WARNING, w)
     ok, reason = _validate_weight_vector(
@@ -562,9 +571,12 @@ def validate_rb_solution(
     box feasibility are checked against ``constraints`` (risk-budgeting solves
     are fully invested, ``sum(w)=max_exposure``); the group inequality rows
     ``c_rows @ w <= c_lhs`` are checked at ``group_atol`` when provided.
-    Its 1e-4 default is a conservative post-solve acceptance band; the ADMM
-    inner loop uses a tighter 1e-12 squared residual threshold, while the box
-    is enforced directly inside CCD.
+    Its 1e-4 default is a conservative post-solve acceptance band. The solver
+    stops on squared residuals in its dimensionless lift (``ADMM_TOL=1e-18``
+    for ADMM, ``CCD_TOL=1e-20`` for CCD); a box other than the default [0, 1]
+    and the group rows are enforced by the ADMM ``quadprog`` projection, not
+    inside CCD, and the solver raises when its normalised weights breach the
+    original rows by more than ``FEASIBILITY_ATOL=1e-8``.
     Falls back drifted weights_0 → benchmark → zeros on rejection.
 
     Args:
@@ -597,7 +609,8 @@ def validate_rb_solution(
 
     if optimal_weights is None:
         return _reject("risk-budgeting solver returned no solution", logging.WARNING)
-    w = np.array(optimal_weights, dtype=float).ravel()  # copy -> writable (pandas 3.0 / downstream in-place edits)
+    # copy -> writable (pandas 3.0 / downstream in-place edits)
+    w = np.array(optimal_weights, dtype=float).ravel()
     if converged is False:
         return _reject("risk-budgeting solver reported non-convergence", logging.WARNING, w)
     ok, reason = _validate_weight_vector(
@@ -1518,7 +1531,8 @@ def diagnose_infeasibility(constraints: Constraints, covar: Optional[np.ndarray]
             rows.append((v, f"  {name} min {ref:.4f} \u2192 {ref - v:.4f} (short {v:.4f})"))
             violations[f"box_min:{name}"] = v
         elif kind == "group_min":
-            rows.append((v, f"  group '{name}' floor {ref:.4f} \u2192 {ref - v:.4f} (short {v:.4f})"))
+            rows.append((v,
+                         f"  group '{name}' floor {ref:.4f} \u2192 {ref - v:.4f} (short {v:.4f})"))
             violations[f"group_min:{name}"] = v
         elif kind == "group_max":
             rows.append((v, f"  group '{name}' cap {ref:.4f} \u2192 {ref + v:.4f} (over {v:.4f})"))

@@ -26,7 +26,8 @@ Supported objectives and their solvers:
 
     MAXIMUM_SHARPE_RATIO
         Maximise μ'w / √(w'Σw) via CVXPY using the Charnes-Cooper
-        transformation (SOCP).
+        transformation when ``min_exposure == max_exposure``, and via SciPy
+        SLSQP on the ratio itself when they differ.
         → ``rolling_maximize_portfolio_sharpe``
 
     MAX_CARA_MIXTURE
@@ -68,7 +69,8 @@ from optimalportfolios.config import PortfolioObjective
 def compute_rolling_optimal_weights(prices: pd.DataFrame,
                                     constraints: Constraints,
                                     covar_dict: Dict[pd.Timestamp, pd.DataFrame],
-                                    portfolio_objective: PortfolioObjective = PortfolioObjective.MAX_DIVERSIFICATION,
+                                    portfolio_objective: PortfolioObjective =
+                                        PortfolioObjective.MAX_DIVERSIFICATION,
                                     time_period: qis.TimePeriod = None,
                                     risk_budget: Union[pd.Series, pd.DataFrame] = None,
                                     returns_freq: Optional[str] = 'W-WED',
@@ -77,7 +79,8 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
                                     roll_window: int = 20,
                                     carra: float = 0.5,
                                     n_mixures: int = 3,
-                                    optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
+                                    optimiser_config: OptimiserConfig = OptimiserConfig(
+                                        apply_total_to_good_ratio=True)
                                     ) -> pd.DataFrame:
     """
     Compute rolling optimal portfolio weights for any supported objective.
@@ -97,7 +100,12 @@ def compute_rolling_optimal_weights(prices: pd.DataFrame,
         rebalancing_freq: Rebalancing frequency (MAX_CARA_MIXTURE only).
         span: EWMA span for mean estimation (MAXIMUM_SHARPE_RATIO,
             QUADRATIC_UTILITY).
-        roll_window: Rolling window for mixture estimation (MAX_CARA_MIXTURE).
+        roll_window: Number of returns at ``returns_freq`` in each mixture-fit
+            window (MAX_CARA_MIXTURE only). The default 20 is 20 weekly returns
+            with the default ``returns_freq='W-WED'``, whereas
+            ``rolling_maximize_cara_mixture`` and
+            ``backtest_rolling_optimal_portfolio`` default to 312, six years of
+            weekly returns; pass it explicitly.
         carra: CARA risk aversion parameter γ.
         n_mixures: Number of mixture components K.
         optimiser_config: Solver configuration passed through to all solvers.
@@ -171,7 +179,8 @@ def backtest_rolling_optimal_portfolio(prices: pd.DataFrame,
                                        constraints: Constraints,
                                        covar_dict: Dict[pd.Timestamp, pd.DataFrame],
                                        perf_time_period: qis.TimePeriod = None,
-                                       portfolio_objective: PortfolioObjective = PortfolioObjective.MAX_DIVERSIFICATION,
+                                       portfolio_objective: PortfolioObjective =
+                                           PortfolioObjective.MAX_DIVERSIFICATION,
                                        risk_budget: Union[pd.Series, pd.DataFrame] = None,
                                        returns_freq: Optional[str] = 'W-WED',
                                        rebalancing_freq: str = 'QE',
@@ -182,7 +191,8 @@ def backtest_rolling_optimal_portfolio(prices: pd.DataFrame,
                                        ticker: str = None,
                                        rebalancing_costs: float = 0.0010,
                                        weight_implementation_lag: Optional[int] = None,
-                                       optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
+                                       optimiser_config: OptimiserConfig = OptimiserConfig(
+                                           apply_total_to_good_ratio=True)
                                        ) -> qis.PortfolioData:
     """
     Compute optimal weights and run a backtest in one call.
@@ -198,7 +208,9 @@ def backtest_rolling_optimal_portfolio(prices: pd.DataFrame,
         returns_freq: Return frequency for mean-dependent objectives.
         rebalancing_freq: Rebalancing frequency (MAX_CARA_MIXTURE only).
         span: EWMA span for mean estimation.
-        roll_window: Rolling window for mixture estimation.
+        roll_window: Number of returns at ``returns_freq`` in each mixture-fit
+            window (MAX_CARA_MIXTURE only); the default 312 is six years of
+            weekly returns.
         carra: CARA risk aversion parameter γ.
         n_mixures: Number of mixture components K.
         ticker: Portfolio identifier string for report.

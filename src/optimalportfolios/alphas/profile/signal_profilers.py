@@ -10,7 +10,7 @@ named score panels. It does not build signals from ProfileSignal members.
 All adapters return QIS MultiPortfolioData with an equal-weight benchmark
 last. Costs are fractional rates; time_period selects target-weight rows and
 does not end the price history. The source checkout's
-docs/alphas_module_readme.md covers the signal and timing limitations.
+docs/signal_diagnostics_and_profiling.md covers the methodology and limitations.
 """
 # packages
 import pandas as pd
@@ -155,11 +155,11 @@ def profile_low_beta(prices: pd.DataFrame,
     a higher score; the resulting basket is long-only and equal-weighted, without
     a beta-neutrality constraint.
 
-    This adapter retains the constructor's default EWMA mean adjustment and QIS
-    mean initialization. In the verified environment, full-sample initialization
-    lets later observations affect earlier scores. The default path is not a
-    verified point-in-time signal. To control mean adjustment, call the signal
-    constructor explicitly and pass its score panel to the profile core.
+    This adapter retains the constructor's default EWMA mean adjustment. Since
+    7.8.1.dev1 the constructor fits with qis.InitType.X0, so each running mean
+    starts at its column's first return and later observations do not change
+    earlier scores. To control mean adjustment, call the signal constructor
+    explicitly and pass its score panel to the profile core.
 
     Args:
         prices: Date-by-ticker prices for signal construction and QIS backtesting.
@@ -207,10 +207,10 @@ def profile_residual_momentum(prices: pd.DataFrame,
     and cross-sectional scoring. This residual signal does not impose portfolio
     beta neutrality.
 
-    The adapter retains the beta constructor's default EWMA mean adjustment and
-    QIS mean initialization. Full-sample initialization can affect earlier scores
-    when later observations change; lagging fitted betas does not remove that
-    limitation. Construct scores explicitly when controlling mean adjustment.
+    The adapter retains the beta constructor's default EWMA mean adjustment. Since
+    7.8.1.dev1 the beta regression fits with qis.InitType.X0, so each running mean
+    starts at its column's first return and later observations do not change
+    earlier scores. Construct scores explicitly when controlling mean adjustment.
 
     Args:
         prices: Date-by-ticker prices for signal construction and QIS backtesting.

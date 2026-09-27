@@ -1,5 +1,11 @@
 """
-examples of
+Portfolio arithmetic helpers shared by the optimisers and their reports.
+
+The module computes the variance and volatility of a weight vector under a
+covariance matrix, the tracking-error, turnover, alpha and volatility summary of
+one solution against its benchmark and prior weights, the diversification ratio,
+a per-asset table of weights, risk contributions and risk budgets, and the
+rounding of weights to percentages for display (round_weights_to_pct).
 """
 from __future__ import division
 

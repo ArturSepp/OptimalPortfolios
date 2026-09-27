@@ -3,17 +3,30 @@ Alpha-maximising portfolio optimisation with a target return constraint.
 
 Solves the tactical asset allocation (TAA) problem:
 
-    max_w  α'w
+    max_w  α'(w - w_b)                            [if benchmark provided]
+    max_w  α'w                                    [if no benchmark]
 
-    s.t.   y'w >= r_target        (return constraint, optional)
-           w'Σw <= σ²_max         (risk constraint, optional)
-           1'w = 1                (full investment)
-           w >= 0                 (long-only, optional)
-           w_min <= w <= w_max    (weight bounds)
+    s.t.   y'w >= r_target                        (return constraint, optional)
+           (w - w_b)'Σ(w - w_b) <= TE²_max        (TE limit, optional, needs a benchmark)
+           w'Σw <= σ²_max                         (risk constraint, optional)
+           1'w = 1                                (full investment)
+           w >= 0                                 (long-only, optional)
+           w_min <= w <= w_max                    (weight bounds)
 
 where α is the vector of expected alphas (excess returns from active views),
-y is the vector of asset yields or expected returns, r_target is the minimum
-portfolio return, and Σ is the covariance matrix.
+w_b the optional benchmark weights, y the vector of asset yields or expected
+returns, r_target the minimum portfolio return, and Σ the covariance matrix.
+
+With a benchmark, ``soft_tracking_error=True`` selects the soft path: the
+tracking error is penalised with ``tre_utility_weight`` instead of capped,
+the return floor stays hard, and the turnover penalty
+``turnover_utility_weight`` stays in the objective unless a hard turnover cap
+is set:
+
+    max_w  α'(w - w_b) - λ_TE (w - w_b)'Σ(w - w_b) - λ_TO ||w - w_0||_1
+    s.t.   y'w >= r_target, and the rows that stay hard in utility mode
+
+Without a benchmark the flag has no effect and the hard problem above is solved.
 
 This formulation separates the alpha signal (what we want to maximise) from
 the return constraint (what we need to deliver).
@@ -75,7 +88,8 @@ def rolling_maximise_alpha_with_target_return(prices: pd.DataFrame,
     schedule.
 
     Args:
-        prices: Asset price panel. Used for column alignment.
+        prices: Asset price panel, used for column alignment and, when
+            ``use_drifted_weights_0`` is set, to drift the previous weights to each date.
         alphas: Alpha signals per asset. Forward-filled to rebalancing dates.
         yields: Expected asset returns or yields. Forward-filled.
         target_returns: Minimum portfolio return at each date. Forward-filled.
@@ -201,7 +215,8 @@ def wrapper_maximise_alpha_with_target_return(pd_covar: pd.DataFrame,
             hard constraint — so yield always takes priority and the solve
             never goes infeasible on a tight TE budget. Requires
             benchmark_weights. When False, TE is hard (if a budget is set).
-        weights_0: Previous-period weights for warm-start / fallback.
+        weights_0: Previous-period weights: the turnover baseline and the
+            fallback. The solver is not warm-started from them.
         optimiser_config: Solver configuration.
         context: Rebalance label included in solver diagnostics.
 

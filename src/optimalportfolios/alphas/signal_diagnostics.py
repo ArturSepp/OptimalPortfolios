@@ -24,6 +24,20 @@ qis; this module is the AlphasData adapter:
         Side-by-side comparison: aggregates pooled regression rows from
         multiple results into one DataFrame.
 
+    compare_signal_ic_ir
+        The IC-IR sibling of ``compare_signal_diagnostics``: stacks the
+        per-horizon ``qis.estimate_ic_ir`` rows of multiple results into one
+        DataFrame.
+
+    build_signal_diagnostics_table
+        Joins the pooled-regression rows of ``compare_signal_diagnostics``
+        with the IC-IR rows of ``compare_signal_ic_ir`` (whose ``t_stat`` is
+        renamed ``IC_t_stat``) into one wide table.
+
+``optimalportfolios.alphas`` exports the first four functions only; import
+``compare_signal_ic_ir`` and ``build_signal_diagnostics_table`` from this
+module.
+
 The ``plot_signal_diagnostics`` and ``plot_signal_diagnostics_beta_boxplot``
 "compute+plot" wrappers previously in this module now live in qis as
 ``qis.plot_signal_diagnostics_for_returns`` and

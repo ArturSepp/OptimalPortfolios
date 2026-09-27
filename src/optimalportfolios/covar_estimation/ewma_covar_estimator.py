@@ -9,8 +9,9 @@ shrinkage-to-identity parameter is implemented.
 Span counts return observations and sets decay as 1 - 2 / (span + 1).
 It is neither a half-life nor a hard lookback. Class outputs are annualized
 using the sampled return index; rebalancing_freq only selects output dates.
-The normalized-return kernel initializes volatility from the full supplied
-array, so selecting earlier tensor slices is not point-in-time safe.
+Since qis 5.31.0 (InitType.X0), the normalized-return kernel seeds each
+volatility with its column's first finite squared return, so with either
+kernel a rolling matrix equals a current fit on the prices through its date.
 
 See docs/covariance_estimators.md in the source checkout for the methodology,
 units and timing qualifications. Portfolio weights, objectives and reports
@@ -64,8 +65,8 @@ def estimate_current_ewma_covar(prices: pd.DataFrame,
     not equivalent to replacing every missing input return with zero.
 
     This is a full-panel current fit. Slice prices first for a historical cutoff.
-    Volatility normalization uses the QIS kernel whose volatility initialization
-    depends on the entire supplied return array.
+    Volatility normalization uses the QIS kernel that, since qis 5.31.0, seeds each
+    volatility with its column's first finite squared return, not a full-array statistic.
 
     Args:
         prices: Date-by-ticker price panel with an ordered DatetimeIndex. Prices
@@ -87,7 +88,8 @@ def estimate_current_ewma_covar(prices: pd.DataFrame,
         return state. Units are fractional log-return squared, annualized when
         apply_an_factor is True.
     """
-    returns = compute_returns_from_prices(prices=prices, returns_freq=returns_freq, demean=demean, span=span)
+    returns = compute_returns_from_prices(prices=prices, returns_freq=returns_freq, demean=demean,
+                                          span=span)
     x = returns.to_numpy()
     if is_apply_vol_normalised_returns:
         covar_tensor_txy, _, _ = qis.compute_ewm_covar_tensor_vol_norm_returns(
@@ -101,7 +103,8 @@ def estimate_current_ewma_covar(prices: pd.DataFrame,
         an_factor = qis.infer_annualisation_factor_from_df(data=returns)
     else:
         an_factor = 1.0
-    current_covar = pd.DataFrame(an_factor * covar_t, columns=returns.columns, index=returns.columns)
+    current_covar = pd.DataFrame(an_factor * covar_t, columns=returns.columns,
+                                 index=returns.columns)
     return current_covar
 
 
@@ -115,9 +118,10 @@ class EwmaCovarEstimator(CovarEstimator):
     The class implements no identity shrinkage.
 
     Current fits use all supplied prices. Rolling fits compute the full tensor
-    and select return-grid observations. The normalized-return option starts
-    volatility from the full-array mean square, so future data can affect earlier
-    rolling estimates. See docs/covariance_estimators.md for that limitation.
+    and select return-grid observations. Since qis 5.31.0 the normalized-return
+    option seeds each volatility with its column's first finite squared return, so
+    with either kernel later data change no earlier rolling estimate. See
+    docs/covariance_estimators.md for the timing qualifications.
 
     Attributes:
         rebalancing_freq: Inherited calendar frequency selecting rolling outputs,
@@ -193,8 +197,9 @@ class EwmaCovarEstimator(CovarEstimator):
         The method computes one full covariance tensor before selecting QIS
         rebalancing indicators within time_period, inclusively. History before the
         start still contributes to estimation. The end date filters outputs without
-        truncating inputs, so the normalized-return option retains its full-array
-        volatility-initialization limitation.
+        truncating inputs; both kernels are causal recursions (since qis 5.31.0 for
+        the normalized-return option), so each selected matrix equals a current fit
+        on the prices through its date.
 
         This schedule uses return-grid observations and need not match the calendar
         keys produced by FactorCovarEstimator. Returned dates do not establish when
@@ -233,7 +238,7 @@ class EwmaCovarEstimator(CovarEstimator):
 
         # rebalancing indicator aligned to returns index
         rebalancing_schedule = qis.generate_rebalancing_indicators(df=returns, freq=freq)
-        if np.all(rebalancing_schedule == False):
+        if np.all(rebalancing_schedule == False):  # noqa: E712
             raise ValueError(
                 f"rebalancing schedule is empty for return period "
                 f"{qis.get_time_period(df=returns).to_str()} and rebalancing_freq={freq}"
