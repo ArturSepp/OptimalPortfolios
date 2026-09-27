@@ -6,7 +6,8 @@ myst:
       carry, scoring conventions, time-varying clusters, and reproducible diagnostics.
 ---
 
-# Alpha signals — `optimalportfolios.alphas`
+# Alpha signals
+<a id="alpha-signals--optimalportfoliosalphas"></a><a id="alpha-signals-optimalportfolios-alphas"></a>
 
 *Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-03-15](https://github.com/ArturSepp/OptimalPortfolios/commit/ce4d4c3469216d807079af2c52f5a85775d9c572)*
 
@@ -43,6 +44,18 @@ strategies in the references. In particular, the residual signal constructors us
 benchmark; the cited residual-return studies use their own estimation and portfolio rules.
 
 ## Inputs, notation, and assumptions
+
+| Convention | This article |
+|---|---|
+| Return basis | Log returns at each asset's native cadence; momentum subtracts the benchmark's log return when one is supplied; carry is a supplied annual decimal yield |
+| Estimation grid | Monthly (`ME`) in the worked example, 97 month ends from 2016-12-31 to 2024-12-31, with G and H quarterly (`QE`) in the cadence example; spans count observations at the cadence; constructor defaults are `ME`, and `W-WED` for carry and rolling means |
+| Rebalancing grid | None for the signals, which are formation-date values on their return grid; year ends (`YE`) for the HCGL fit that supplies loadings and clusters; quarter ends (`QE`) for the rank profiler |
+| Covariance units | None enter the signals; volatility normalisation is per period for momentum and residual signals and annualised for carry |
+| Expected returns | None; scores are cross-sectional standardisations, not return forecasts, and `estimate_rolling_ewma_means` returns annualised EWMA log-return means |
+| Weight state | None, except the rank profiler's equal-weight top-quantile targets, held as units by the qis backtester without costs |
+| Solver | CVXPY with CLARABEL for the HCGL factor fit; the signals need no solver |
+
+The notation follows the [conventions page](conventions.md#notation).
 
 Supply positive finite adjusted price or NAV levels in a consistent currency and economic
 return basis. A price panel has dates in its index and asset identifiers in its columns.
@@ -146,15 +159,15 @@ The raw-beta path replaces exact zero loadings with NaN. A zero or missing score
 needs interpretation in its scoring context. A low-beta characteristic does not itself
 construct a beta-neutral or leveraged betting-against-beta portfolio.
 
-**Point-in-time beta estimation:** these beta-based constructors call
-`qis.EwmLinearModel.fit` with `init_type=qis.InitType.X0`. With `mean_adj_type=EWMA`, each
-running mean starts at its column's first return, including a late-starting asset's first
-return after inception. Later observations therefore cannot alter earlier low-beta,
-residual-momentum or residual-reversal signals, and both `EWMA` and
-`mean_adj_type=qis.MeanAdjType.NONE` pass the future-observation checks on this fixture.
-`NONE` regresses through the origin, which changes the estimator's meaning. Before
-OptimalPortfolios 7.8.1 the running means started from the full-sample mean (`InitType.MEAN`),
-so later data moved the first few years of each asset's signals.
+**Point-in-time beta estimation:** the low-beta, residual-momentum and residual-reversal
+constructors, standard and cluster, call `qis.EwmLinearModel.fit` with
+`init_type=qis.InitType.X0`. With `mean_adj_type=EWMA`, each running mean starts at its
+column's first return, including a late-starting asset's first return after inception, and the
+regression moments start at zero. A beta dated $t$ therefore uses only returns up to $t$, and
+later observations cannot alter earlier signals, under `EWMA` or under
+`mean_adj_type=qis.MeanAdjType.NONE`. `NONE` regresses through the origin, which changes the
+estimator's meaning. A late starter's first return is centred to zero, so its first beta is an
+exact zero and is reported missing.
 
 #### Residual Momentum
 
@@ -274,12 +287,21 @@ not exercised by the basic examples below.
 
 ## Worked example
 
+The fifteen Python blocks below run in order with the core dependencies. They are excerpts of
+the canonical script
+[`examples/docs/alphas_module_readme.py`](../examples/docs/alphas_module_readme.py), which runs
+them and asserts every number and property on this page against a reference computed a
+different way:
+
+```console
+python -m examples.docs.alphas_module_readme
+```
+
 ### Fixed synthetic inputs
 
-Run the blocks below in order with core dependencies. Eight synthetic assets, two factors,
-a benchmark and annual carry inputs cover 97 monthly price dates, 2016-12-31 through
-2024-12-31. The paths are deterministic and require no data files, network or random seed.
-All prices share one illustrative currency and total-return basis.
+Eight synthetic assets, two factors, a benchmark and annual carry inputs cover 97 monthly price
+dates, 2016-12-31 through 2024-12-31. The paths are deterministic and require no data files,
+network or random seed. All prices share one illustrative currency and total-return basis.
 
 ```python
 import numpy as np
@@ -506,6 +528,30 @@ print(score_comparison.round(6))
 F's input is clipped to 5 only in the standard calculation. Its nonzero cluster score
 comes from fallback statistics, despite membership in a small cluster.
 
+The figure applies the same comparison to a separate synthetic universe: nine monthly price
+paths with constant log drifts, five equity-like and four bond-like, so each asset's
+twelve-month classic momentum equals its annual drift. Both clusters have more than three
+members, so each is scored with its own sample statistics: within-cluster scores have mean
+zero and sample standard deviation one in each cluster.
+
+![Left: classic momentum of nine synthetic assets scored across all nine; the equity-like
+cluster mean is positive and the bond-like cluster mean negative, every bond-like asset scores
+below zero, and the strongest bond-like asset ranks fifth with a score of -0.29. Right: the
+same signal scored within each cluster; both cluster means are zero, the strongest bond-like
+asset scores 1.07 and ranks second, and the weakest equity-like asset falls from seventh to
+ninth.](images/alpha_scoring_cross_section_vs_cluster.png)
+
+*Figure: twelve-month classic momentum of a separate nine-asset synthetic universe at
+31 December 2024, scored across the cross-section by `compute_classic_momentum_alpha` and
+within an equity-like and a bond-like cluster by `compute_classic_momentum_cluster_alpha`.
+Drawn by the `exhibit` function of the canonical script; the
+[analytics gallery](analytics_gallery.md) lists its provenance.*
+
+> **Insight.** Scoring within clusters removes each cluster's average signal level before
+> assets are compared. In the figure, the strongest bond-like asset scores -0.29 across all
+> nine assets and ranks fifth, behind four equity-like assets; within its cluster it scores
+> 1.07 and ranks second. The weakest equity-like asset falls from seventh to last.
+
 ### Cadence and fixed-group examples
 
 G and H now report only quarterly. The hard skip is one **native** period for each bucket.
@@ -629,7 +675,7 @@ src/optimalportfolios/alphas/
 [alpha-layer exports](../src/optimalportfolios/alphas/__init__.py) are the import contracts.
 The development runner is `python -m optimalportfolios.alphas.signals.run_local.signals_run`
 in a checkout; its `Locals` enum selects manual scenarios. It is not the offline verification
-entry point for this article.
+entry point for this article; the canonical script is.
 
 ### Signal Matrix
 
@@ -676,10 +722,12 @@ individual signatures. They do not share one universal interface.
 
 Only `alpha_scores` is required. The
 [container source](../src/optimalportfolios/alphas/alpha_data.py) defines the exact fields.
-`get_alphas_snapshot` requires the requested date in `alpha_scores`. If that date is absent
-from another populated component, it takes that component's **last row**, even if it is later.
-Align components explicitly before historical snapshots; this convenience method is not a causal
-as-of join.
+`get_alphas_snapshot` requires the requested date in `alpha_scores`.
+
+> **Pitfall.** `get_alphas_snapshot` is not an as-of join. If the requested date is absent from
+> another populated component, it takes that component's **last row**, even when that row is
+> later than the date, so a historical snapshot can contain future values. Align every
+> component to the `alpha_scores` index before taking historical snapshots.
 
 ### Evaluation entry points and verification context
 
@@ -696,18 +744,11 @@ Statistical calculations and plotting remain in
 [QIS](https://github.com/ArturSepp/QuantInvestStrats); factor fitting and cluster discovery
 remain in [FactorLasso](https://github.com/ArturSepp/FactorLasso).
 
-On the maintainer's Windows host, first run the repository's C-local setup and use
-`C:\Python\OptimalPortfolios312\Scripts\python.exe`. Execute source checks and tests from a
-C-local source export, as specified by [AGENTS.md](https://github.com/ArturSepp/OptimalPortfolios/blob/main/AGENTS.md):
-
-```text
-python tools/check_docs.py --files docs/alphas_module_readme.md
-python -m pytest src/optimalportfolios/tests/alpha_signals_documentation_test.py
-```
-
-The local 2026-09-14 verification uses OptimalPortfolios 7.6.0 working source,
-QIS 5.26.0, FactorLasso 0.18.0, pandas 3.0.5, NumPy 2.5.2, CVXPY 1.9.2 and CLARABEL 0.11.1.
-This does not certify the existing lockfile's QIS 5.22.3 environment.
+The [canonical script](../examples/docs/alphas_module_readme.py) runs the worked example and
+checks each signal against the page's formulas, the scoring rules and their fallbacks, the
+cluster extraction, the container and the evaluation outputs, and it changes later inputs to
+confirm that no earlier signal or score moves. The test suite runs it, and so does the offline
+examples lane of CI.
 
 ## Interpretation and limitations
 
@@ -719,10 +760,11 @@ Ties are resolved by column order. A top-quantile profile ranks and equal-weight
 does not optimise their covariance or control factor exposures.
 
 Avoid `MeanAdjType.INSAMPLE` in historical trading signals: it uses the full-sample mean.
-Future-observation checks pass for all six families, including their cluster variants, on
-this fixture; the three beta-based families pass under both the default `EWMA` and the
-explicit `NONE` mean adjustment. These checks cannot establish when a supplied price, carry
-input or factor loading was actually available.
+The canonical script changes later prices, benchmark, carry and cluster labels and asserts
+that no earlier raw signal or score moves, for all six families, standard and cluster, and
+for the three beta-based families under both the default `EWMA` and the explicit `NONE` mean
+adjustment. These checks cannot establish when a supplied price, carry input or factor loading
+was actually available.
 Changing the reporting cadence changes both the observations and the meaning of scalar spans.
 
 ### Empirical Findings

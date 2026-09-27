@@ -261,6 +261,237 @@
       ],
       "question": "What happens to NAV and holdings when a price is missing between rebalancings, on a rebalance date, and at the opening trade?",
       "sample": "Two synthetic assets over four business days in January 2024, with one missing price; no simulation."
+    },
+    {
+      "id": "risk_budgeting_contributions",
+      "path": "docs/images/risk_budgeting_contributions.png",
+      "script": "examples/docs/risk_budgeting.py",
+      "function": "exhibit",
+      "parameters": {
+        "ASSETS": [
+          "Equity",
+          "Bonds",
+          "Diversifier"
+        ],
+        "COVARIANCE": [
+          [
+            0.04,
+            0.004,
+            0.002
+          ],
+          [
+            0.004,
+            0.01,
+            0.001
+          ],
+          [
+            0.002,
+            0.001,
+            0.022
+          ]
+        ],
+        "RISK_BUDGETS": [
+          0.5,
+          0.3,
+          0.2
+        ],
+        "SLACK_CAP": 0.8,
+        "EQUITY_CAP": 0.25
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/risk_budgeting.md"
+      ],
+      "question": "Are the risk budgets met when a weight bound binds?",
+      "sample": "The page's fixed three-asset covariance with risk budgets of 50%, 30% and 20%, solved with slack 80% caps and with Equity capped at 25%; no simulation."
+    },
+    {
+      "id": "overlay_floor_allocation",
+      "path": "docs/images/overlay_floor_allocation.png",
+      "script": "examples/docs/overlay_tail_floor.py",
+      "function": "exhibit",
+      "parameters": {
+        "ASSETS": [
+          "Core",
+          "Defensive A",
+          "Defensive B",
+          "Carry C",
+          "Carry D"
+        ],
+        "VOLS": [
+          0.1,
+          0.15,
+          0.12,
+          0.1,
+          0.08
+        ],
+        "SHARPES": [
+          0.6,
+          0.35,
+          0.3,
+          0.9,
+          1.0
+        ],
+        "BETAS": [
+          1.0,
+          -0.3,
+          -0.2,
+          0.6,
+          0.4
+        ],
+        "BEAR_SCORES": [
+          -0.8,
+          0.6,
+          0.35,
+          -0.45,
+          -0.3
+        ],
+        "IDIOSYNCRATIC_FLOOR": 1e-06,
+        "OVERLAY_BUDGET": 1.0,
+        "FLOOR_FIRST": -0.08,
+        "FLOOR_LAST": 0.009,
+        "FLOOR_COUNT": 90
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/overlay_tail_floor.md"
+      ],
+      "question": "How do the overlay sleeve and the portfolio's model risk and return change as the linear tail floor tightens from non-binding to near its reachable maximum?",
+      "sample": "The page's synthetic core and four overlays, solved at 90 floors from -0.08 to 0.009; no simulation."
+    },
+    {
+      "id": "tracking_error_constraint_cost",
+      "path": "docs/images/tracking_error_constraint_cost.png",
+      "script": "examples/docs/minimum_tracking_error.py",
+      "function": "exhibit",
+      "parameters": {
+        "LADDER_ASSETS": [
+          "US equity",
+          "Europe equity",
+          "EM equity",
+          "Govt bonds",
+          "Credit"
+        ],
+        "LADDER_VOLS": [
+          0.16,
+          0.18,
+          0.22,
+          0.06,
+          0.08
+        ],
+        "LADDER_CORR": [
+          [
+            1.0,
+            0.8,
+            0.7,
+            -0.1,
+            0.4
+          ],
+          [
+            0.8,
+            1.0,
+            0.75,
+            -0.05,
+            0.4
+          ],
+          [
+            0.7,
+            0.75,
+            1.0,
+            0.0,
+            0.45
+          ],
+          [
+            -0.1,
+            -0.05,
+            0.0,
+            1.0,
+            0.5
+          ],
+          [
+            0.4,
+            0.4,
+            0.45,
+            0.5,
+            1.0
+          ]
+        ],
+        "LADDER_BENCHMARK": [
+          0.35,
+          0.15,
+          0.1,
+          0.25,
+          0.15
+        ],
+        "LADDER_HOLDINGS": [
+          0.3,
+          0.1,
+          0.1,
+          0.35,
+          0.15
+        ],
+        "EXCLUDED_ASSET": "EM equity",
+        "CAPPED_ASSET": "US equity",
+        "ASSET_CAP": 0.3,
+        "EQUITY_ASSETS": [
+          "US equity",
+          "Europe equity",
+          "EM equity"
+        ],
+        "EQUITY_MAX": 0.5,
+        "TURNOVER_MAX": 0.3,
+        "HIGHLIGHTED_STEPS": [
+          1,
+          4
+        ]
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/minimum_tracking_error.md"
+      ],
+      "question": "What does each added constraint cost in ex-ante tracking error against the benchmark?",
+      "sample": "Fixed volatilities and correlations of a stylised five-asset universe with a 60/40 benchmark and fixed current holdings; constraints added one at a time; no simulation."
+    },
+    {
+      "id": "alpha_scoring_cross_section_vs_cluster",
+      "path": "docs/images/alpha_scoring_cross_section_vs_cluster.png",
+      "script": "examples/docs/alphas_module_readme.py",
+      "function": "exhibit",
+      "parameters": {
+        "PANEL_START": "2023-10-31",
+        "FORMATION_DATE": "2024-12-31",
+        "TRENDS": {
+          "Equity A": 0.22,
+          "Equity B": 0.16,
+          "Equity C": 0.12,
+          "Equity D": 0.08,
+          "Equity E": 0.02,
+          "Bond A": 0.05,
+          "Bond B": 0.03,
+          "Bond C": 0.0,
+          "Bond D": -0.03
+        },
+        "CLUSTERS": {
+          "Equity A": "Equity-like",
+          "Equity B": "Equity-like",
+          "Equity C": "Equity-like",
+          "Equity D": "Equity-like",
+          "Equity E": "Equity-like",
+          "Bond A": "Bond-like",
+          "Bond B": "Bond-like",
+          "Bond C": "Bond-like",
+          "Bond D": "Bond-like"
+        },
+        "LOOKBACK": 12,
+        "SKIP": 1,
+        "MIN_CLUSTER_SIZE": 3
+      },
+      "documents": [
+        "docs/alphas_module_readme.md",
+        "docs/analytics_gallery.md"
+      ],
+      "question": "How does scoring one signal within clusters change the ranking of assets compared with scoring it across the whole cross-section?",
+      "sample": "Nine synthetic month-end price paths with constant log drifts, five equity-like and four bond-like, October 2023 to December 2024; twelve-month classic momentum at 31 December 2024; no simulation."
     }
   ]
 }

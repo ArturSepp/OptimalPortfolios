@@ -32,6 +32,18 @@ see the [qis software citation](https://github.com/ArturSepp/QuantInvestStrats/b
 
 ## Inputs, notation, and assumptions
 
+| Convention | This article |
+|---|---|
+| Return basis | None; the solvers take a covariance matrix and sample no returns. `rolling_risk_budgeting` uses prices only to drift the previous weights and to order its output columns |
+| Estimation grid | None; the examples supply fixed synthetic covariance matrices, and covariance estimation is outside these functions |
+| Rebalancing grid | One decision date per `wrapper_risk_budgeting` call; `rolling_risk_budgeting` solves at each key of `covar_dict`, in order |
+| Covariance units | Annual, fractional return squared in the examples (0.040 is a 20% volatility); consumed in caller units, and the wrapper raises positive variances below `0.001**2` to that floor |
+| Expected returns | None; risk budgeting uses only the covariance and the budgets |
+| Weight state | Long-only, fully invested target weights. The rolling path passes each date's weights, drifted by prices, as the next `weights_0`, which serves freezing and the fallback |
+| Solver | In-house, no CVXPY: cyclical coordinate descent (CCD) with the default box and no group rows, otherwise ADMM with a CCD step and a `quadprog` projection; the script's reference solve uses CVXPY with CLARABEL |
+
+The notation follows the [conventions page](conventions.md#notation). In addition:
+
 | Symbol | Meaning and units |
 |---|---|
 | $w$ | $n$-asset capital-weight vector; fractions of NAV |
@@ -120,12 +132,20 @@ $$
 A zero-pinned asset is handled outside the positive logarithmic domain. Group capital bounds constrain $L_g^\top w$;
 they are not bounds on the sum of risk contributions.
 
-The implementation uses a homogeneous auxiliary-variable formulation with cyclical coordinate
-descent (CCD) and the alternating direction method of multipliers (ADMM) for constrained
-problems. Instrument and group bounds apply to the
-normalized portfolio together with full investment. It does not clip an unconstrained solution
-and then renormalize it. Exact target shares are recovered when no additional bound binds;
-otherwise budgets express preferences in the constrained objective.
+The solver works with unnormalized positions $y$ and weights $w = y/\sum_j y_j$. On $y$ every
+instrument and group bound is homogeneous, and the solver minimizes
+$\tfrac12 y^\top Q y - \lambda\sum_i b_i\log y_i$, where $Q$ is the covariance divided by its
+largest diagonal entry and $\lambda$ is a positive numerical scale that does not change $w$.
+With the default $[0, 1]$ box and no group rows, exact cyclical coordinate descent (CCD) solves
+it: each coordinate update is the positive root of a quadratic. Any other bound, even a slack
+one, routes the solve through the alternating direction method of multipliers (ADMM), which
+alternates a CCD proximal step with a `quadprog` projection onto the homogeneous constraint
+faces. Only a converged, feasible solution is returned; the solver has no SciPy fallback.
+
+Instrument and group bounds apply to the normalized portfolio together with full investment.
+It does not clip an unconstrained solution and then renormalize it. Exact target shares are
+recovered when no additional bound binds; otherwise budgets express preferences in the
+constrained objective.
 
 [Richard and Roncalli (2019)](https://arxiv.org/abs/1902.05710) discuss constrained risk budgeting
 and the scaling-compatibility problem. The formula above states this package's current
@@ -174,10 +194,22 @@ Euler risk shares over groups.
 
 ## Worked example
 
+The four Python blocks below run in order and need no download, data file or random seed. They
+are excerpts of the canonical script
+[`examples/docs/risk_budgeting.py`](../examples/docs/risk_budgeting.py), which runs them and
+asserts every number and property on this page against a reference computed a different way:
+an independent conic solve of the same objective, the closed-form diagonal solution, the
+optimality conditions of a binding cap and the group-budget formula:
+
+```console
+python -m examples.docs.risk_budgeting
+```
+
 ### Minimal offline example
 
-This fixed synthetic example retains the original three-asset covariance and target budgets.
-The covariance is annualized. The 80% per-asset cap is slack at the solution.
+This fixed synthetic example has three assets, an annualized covariance and target budgets of
+50%, 30% and 20%. The 80% per-asset cap is slack at the solution: without it, the
+solve takes the pure CCD route and returns the same weights.
 
 ```python
 import pandas as pd
@@ -221,6 +253,56 @@ Unrounded weights sum to one. The higher-volatility Equity asset needs about 30.
 to contribute 50% of risk in this covariance model. This is a calculation example, not an
 empirical performance result.
 
+### When a weight bound binds
+
+Cap Equity at 25%, below its 30.1% solution, and keep the other inputs of the first example:
+
+```python
+capped_constraints = opt.Constraints(
+    is_long_only=True,
+    max_weights=pd.Series([0.25, 0.80, 0.80], index=assets),
+)
+capped_weights = opt.wrapper_risk_budgeting(
+    pd_covar=covar,
+    constraints=capped_constraints,
+    risk_budget=budgets,
+)
+capped_shares = qis.compute_portfolio_risk_contribution_ratios(
+    weights=capped_weights, covar=covar,
+)
+print(pd.concat([capped_weights.rename("weight"),
+                 capped_shares.rename("risk share")], axis=1))
+```
+
+The result, rounded to three decimals, is:
+
+| Asset | Capital weight | Target risk share | Achieved risk share |
+|---|---:|---:|---:|
+| Equity | 0.250 | 0.50 | 0.394 |
+| Bonds | 0.479 | 0.30 | 0.368 |
+| Diversifier | 0.271 | 0.20 | 0.238 |
+
+The cap binds and no asset meets its budget. In this example, stationarity of the objective
+under full investment gives $r_i = b_i + c w_i$ for both assets below their caps, with one
+multiplier $c \ge 0$, and the capped asset absorbs the difference: $r_k = b_k - c(1 - w_k)$.
+The solve is not the first solution clipped at 25% with the released capital spread pro rata.
+
+![Left: risk shares of the three assets against their target budgets of 50%, 30% and 20%.
+Without a binding bound each share equals its budget; with Equity capped at 25%, Equity carries
+39% of the risk, Bonds 37% and Diversifier 24%. Right: capital weights; the cap moves Equity
+from 30% to 25% and raises Bonds from 44% to 48% and Diversifier from 26% to
+27%.](images/risk_budgeting_contributions.png)
+
+*Figure: target budgets and achieved risk shares of the worked example with the 80% caps slack
+and with Equity capped at 25%, and the capital weights of both solves. Drawn by the `exhibit`
+function of the canonical script; the [analytics gallery](analytics_gallery.md) lists its
+provenance.*
+
+> **Insight.** When a cap binds, no asset meets its budget. Each free asset overshoots by the
+> same multiple of its capital weight, 0.141 here, and the capped asset falls short by their
+> total excess. Bonds therefore takes 1.77 times the excess of Diversifier, the ratio of their
+> weights, not the 1.5 ratio of their budgets.
+
 ### Independent diagonal-covariance check
 
 For uncorrelated assets with volatilities $\sigma_i \gt 0$, positive budgets, no binding bounds
@@ -258,9 +340,10 @@ print(diagonal_weights.round(6).tolist())  # [0.5, 0.5]
 print(diagonal_shares.round(6).tolist())   # [0.8, 0.2]
 ```
 
-The repository test checks this closed-form result independently of the solver. It also compares
-the original correlated example with the existing independent conic reference used by the
-solver tests. Risk-contribution reporting continues to use qis.
+The canonical script checks this closed-form result independently of the solver and compares
+both correlated examples with an independent conic solve of the same objective. Risk
+contributions are reported by qis; the script recomputes every reported share as
+$w_i(\Sigma w)_i / w^\top\Sigma w$.
 
 ### Partially classified groups
 
@@ -288,6 +371,7 @@ print(group_budgets.tolist())  # [0.5, 0.25, 0.25, 0.0]
 |---|---|
 | `wrapper_risk_budgeting` | One covariance DataFrame; optional asset-indexed Series/dict budgets; returns a weight Series by default |
 | `rolling_risk_budgeting` | Price panel, covariance-date dictionary, and static Series, date-by-asset DataFrame or `None` budgets; returns dated target weights |
+| `opt_risk_budgeting` | NumPy covariance, `Constraints` and budget array, with no filtering, variance floor or freezing; returns a weight array, or the fallback after a failed solve |
 | `compute_group_risk_budgets` | Group Series or date-by-asset membership DataFrame; returns budgets with matching labels/shape |
 | `compute_hierarchical_risk_parity_weights` | Covariance DataFrame and linkage array; returns long-only, fully invested weights |
 
@@ -304,17 +388,12 @@ explicit schedule. `PortfolioObjective.EQUAL_RISK_CONTRIBUTION` selects this pat
 [rolling implementation timing](rolling_backtests.md) and qis determine their application.
 
 The [risk-allocation sources](https://github.com/ArturSepp/OptimalPortfolios/tree/main/src/optimalportfolios/optimization/risk_allocation)
-and [API reference](api.rst) describe the public entry points. The example blocks in this article
-are canonical and executed in document order by:
-
-```console
-python -m pytest src/optimalportfolios/tests/risk_budgeting_documentation_test.py -q
-```
-
-Use the repository's prescribed external Python and C-local setup for contributor checks.
-Examples were verified on 2026-09-13 against the working source declaring OptimalPortfolios
-7.6.0, with qis 5.26.0. Rounded weights are illustrative and may vary slightly with numerical
-dependencies. This does not certify a published 7.6.0 artifact.
+and [API reference](api.rst) describe the public entry points. The
+[canonical script](../examples/docs/risk_budgeting.py) runs the worked example and checks its
+weights against an independent conic solve, the closed-form diagonal solution and the
+optimality conditions of the binding cap, together with the filtering, freezing, fallback and
+rolling statements under the limitations below. The test suite runs it, and so does the offline
+examples lane of CI.
 
 ## Interpretation and limitations
 
@@ -355,6 +434,11 @@ dependencies. This does not certify a published 7.6.0 artifact.
   shares explicitly from the complete covariance rather than treating reduced diagnostics as
   a full risk decomposition.
 
+> **Pitfall.** An infeasible mandate does not raise. With a 20% cap on each of the three example
+> assets the caps sum to 60%, the solver fails, and `wrapper_risk_budgeting` logs a warning and
+> returns all-zero weights, or `weights_0` when one is supplied. Check that the weights sum to
+> one and recompute the risk shares before using a result.
+
 Budgets describe the supplied risk model, not future realized contributions. Binding constraints,
 estimation error and changes in correlation can all create a gap between target and achieved risk.
 
@@ -364,8 +448,8 @@ estimation error and changes in correlation can all create a gap between target 
 - [Rolling backtests](rolling_backtests.md)
 - [Covariance estimators](covariance_estimators.md)
 - [API reference](api.rst)
-- [Canonical risk-budgeting example](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/solvers/risk_budgeting.py)
-  (network-data example)
+- [Risk-budgeting example on market data](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/solvers/risk_budgeting.py)
+  (needs a network connection)
 - [Offline solver comparison](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/comparisons/risk_budgeting_ccd_vs_scipy.py)
 - [Rendered risk-budgeting guide](https://optimalportfolios.readthedocs.io/en/latest/risk_budgeting.html)
 

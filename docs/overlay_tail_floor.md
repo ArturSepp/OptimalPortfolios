@@ -38,6 +38,18 @@ fixed core, fixed exposure, asset bounds, compatible sleeve budgets and one line
 
 ## Inputs, notation, and assumptions
 
+| Convention | This article |
+|---|---|
+| Return basis | Arithmetic excess-return exposures on one capital base, linear in the weights; the solver converts no log returns |
+| Estimation grid | None; `create_synthetic_inputs` supplies fixed annual moments, with no sample, window or regime selection |
+| Rebalancing grid | None; one static solve per floor, and the risk-model date 2024-12-31 is a synthetic key |
+| Covariance units | Annual decimal-return variance of a one-factor model whose factor is the core (volatility 0.10), with an idiosyncratic variance floor of $10^{-6}$ |
+| Expected returns | Supplied annual expected excess returns `means`, Sharpe ratio times volatility, define the objective; the floor coefficients enter separately as `asset_returns` |
+| Weight state | Exposures per unit of capital: core fixed at 1.0, long-only overlays summing to 1.0, total 2.0; `weights_0` appears only as the prior of the infeasibility probe |
+| Solver | CVXPY with CLARABEL on the fixed-exposure Charnes–Cooper path of `cvx_maximize_portfolio_sharpe`; an exposure band routes to SciPy SLSQP |
+
+The notation follows the [conventions page](conventions.md#notation). In addition:
+
 | Symbol | Meaning and convention |
 |---|---|
 | $w$ | $n$ dimensionless exposures in a common capital unit. |
@@ -115,9 +127,10 @@ k\ell_i\leq y_i\leq k u_i.
 $$
 
 Here $\ell_i,u_i$ are asset lower and upper bounds. Multiple sleeves can use
-`group_lower_upper_constraints` with disjoint membership columns and equal group lower/upper
-budgets. Keep total exposure fixed too: the current Sharpe entry point dispatches by equality
-of `min_exposure` and `max_exposure`, not by inferring an equality from group rows.
+`group_lower_upper_constraints`, a `GroupLowerUpperConstraints` with disjoint membership columns
+and equal group lower/upper budgets. Keep total exposure fixed too: the current Sharpe entry
+point dispatches by equality of `min_exposure` and `max_exposure`, not by inferring an equality
+from group rows.
 
 **Linear floor.** The current CVXPY return-row compiler emits
 `asset_returns @ y >= target_return` without multiplying the right side by $k$.
@@ -145,10 +158,18 @@ is a separate constraint vector in this pattern.
 
 ## Worked example
 
-Run these Python blocks in order from a source checkout. They reuse the unchanged input factory
-in [the original synthetic example](../examples/solvers/overlay_tail_floor.py), with one core
-and four overlays, a one-factor covariance and fixed characteristic coefficients. No market
-data or random draws are used.
+The seven Python blocks on this page, three here and four in the next two sections, run in
+order and need no market data or random draw. They are excerpts of the canonical script
+[`examples/docs/overlay_tail_floor.py`](../examples/docs/overlay_tail_floor.py), which runs them
+and asserts every number and property on this page against a reference computed a different
+way. The blocks reuse the input factory and helper of
+[the original synthetic example](../examples/solvers/overlay_tail_floor.py), with one core and
+four overlays, a one-factor covariance and fixed characteristic coefficients, so they run from
+a source checkout:
+
+```console
+python -m examples.docs.overlay_tail_floor
+```
 
 ```python
 from dataclasses import replace
@@ -230,9 +251,9 @@ The positive floor concentrates more exposure in Defensive A. This is a conseque
 synthetic coefficients and covariance, not a finding about investable strategies.
 
 For risk, build the canonical `qis.RiskModel` through `optimalportfolios.build_risk_model`.
-Tracking error against a zero exposure vector equals portfolio volatility. The reported
-model excess Sharpe is the supplied expected excess return divided by this risk; it is not
-an ex-post QIS performance statistic.
+Its `compute_tre_at_date` tracking error against a zero exposure vector equals portfolio
+volatility. The reported model excess Sharpe is the supplied expected excess return divided by
+this risk; it is not an ex-post QIS performance statistic.
 
 ```python
 risk_date = pd.Timestamp("2024-12-31")  # Synthetic risk-model key, not a data cutoff.
@@ -265,8 +286,29 @@ The two constrained solutions satisfy the floor at equality within numerical tol
 For these inputs only, Carry C and Carry D are zero and the overlay budget is split between
 the defensive assets. The floor then gives
 $w_{\mathrm{Defensive\ A}}=(b_0+0.038)/0.048$, which independently reproduces their displayed
-weights. Feasibility alone does not prove optimality; the article tests also verify first-order
-conditions against the unused overlays.
+weights. Feasibility alone does not prove optimality; the canonical script also verifies
+first-order conditions against the unused overlays.
+
+Solving the same problem for 90 floors, 0.001 apart from −0.08 to 0.009, traces the path
+between these cases. Volatility dips slightly and then rises from 12.3% to 16.0%; the expected
+excess return falls while carry leaves the sleeve and recovers as Defensive A replaces
+Defensive B.
+
+![Left: stacked overlay weights of Defensive A, Defensive B, Carry C and Carry D against the
+floor from −0.08 to 0.009; the sleeve always sums to 1 and is unchanged until the floor passes
+the no-floor contribution of −0.060, after which Carry C shrinks to zero, then Carry D, while
+Defensive A grows to almost the whole sleeve. Right: volatility and expected excess return in
+annual percent; both are flat while the floor is loose, volatility then dips and rises to 16%,
+and expected excess return falls to about 10.7% before recovering to about 11.2%.](images/overlay_floor_allocation.png)
+
+*Figure: the overlay sleeve and the portfolio's model risk and return as the floor tightens, for
+the inputs of the worked example. Drawn by the `exhibit` function of the canonical script; the
+[analytics gallery](analytics_gallery.md) lists its provenance.*
+
+> **Insight.** A floor changes nothing until it exceeds the no-floor allocation's own
+> contribution, −0.0603 here; every tighter floor binds at equality. Carry C leaves the sleeve
+> first, then Carry D, and at the reachable maximum of 0.01 the whole sleeve must sit in
+> Defensive A, the overlay with the largest coefficient.
 
 ## Implementation in optimalportfolios
 
@@ -295,8 +337,9 @@ the `target_return` residual measures $\widetilde a^\top w\geq0$. It equals the 
 only when the exposure equality is satisfied; check the budget and the floor together.
 Compliance covers the encoded specification and does not establish the quality of the proxy.
 
-The labelled wrapper returns a weight Series and an outcome. With this complete input panel
-and explicit configuration it agrees with the raw call and the original example helper:
+The labelled wrapper `wrapper_maximize_portfolio_sharpe` returns a weight Series and an
+outcome. With this complete input panel and an explicit `OptimiserConfig` it agrees with the
+raw call and the original example helper:
 
 ```python
 config = opt.OptimiserConfig(apply_total_to_good_ratio=False)
@@ -321,21 +364,19 @@ The raw call is positional internally: covariance rows/columns, means, coefficie
 and bounds must have identical asset order. The labelled wrapper filters unusable assets and
 aligns supported fields; it can change the effective universe. Reject missing mandatory-core
 inputs before solving. Reassess the floor and budgets after filtering rather than assuming the
-same mandate survived. The example disables automatic universe-ratio bound rescaling explicitly.
+same mandate survived. The wrapper's default configuration enables automatic universe-ratio
+bound rescaling; the example disables it explicitly with `apply_total_to_good_ratio=False`.
 
 Source owners: [constraint compilation](../src/optimalportfolios/optimization/constraints/backends.py),
 [residual evaluation](../src/optimalportfolios/optimization/constraints/analytics.py),
 [solver outcomes](../src/optimalportfolios/optimization/solver_diagnostics.py), and
 [risk-model adapter](../src/optimalportfolios/covar_estimation/risk_model_adapter.py).
 
-From a C-local source export, using the external interpreter and setup described in
-[AGENTS.md](https://github.com/ArturSepp/OptimalPortfolios/blob/main/AGENTS.md):
-
-```text
-python examples/solvers/overlay_tail_floor.py
-python tools/check_docs.py --files docs/overlay_tail_floor.md
-python -m pytest src/optimalportfolios/tests/overlay_tail_floor_documentation_test.py
-```
+The [canonical script](../examples/docs/overlay_tail_floor.py) runs the seven blocks with
+sockets blocked. It checks the allocations against a linear-algebra solution and a first-order
+optimality certificate, the risk table against the quadratic form, the compiled CVXPY and SciPy
+rows at known points, several sleeves as group rows, and the fallback and limitation probes. The
+test suite runs it, and so does the offline examples lane of CI.
 
 ## Interpretation and limitations
 
@@ -413,15 +454,16 @@ The first call illustrates the unscaled nonzero CVXPY right-hand side; the secon
 the missing SLSQP return row. Their rejected fallback weights must not be interpreted as
 optimized overlays.
 
+> **Pitfall.** Do not pass a nonzero floor directly as `target_return` on the fixed-exposure
+> path. CLARABEL reports `optimal` for the unscaled row, validation then rejects the breached
+> floor, and with no prior or benchmark the outcome falls back to zero weights, which also break
+> the fixed core and the total exposure. Shift the coefficients to `a - b0 / E` and keep
+> `target_return=0.0`.
+
 A linear characteristic floor does not control the full loss distribution or nonlinear option
 payoffs. Use a common scenario/regime definition to make coefficients additive. If the tail
 sample is chosen separately for each asset, their individual tail statistics generally do not
 aggregate into a portfolio tail statistic.
-
-Local verification on 2026-09-14 used OptimalPortfolios 7.6.0 working source, QIS 5.26.0,
-FactorLasso 0.18.0, NumPy 2.5.2, pandas 3.0.5, CVXPY 1.9.2 and CLARABEL 0.11.1.
-This does not certify the existing lockfile's QIS 5.22.3 environment. No numerical implementation
-or original example was changed. Sphinx, GitHub and VS Code previews require separate review.
 
 ## See also
 

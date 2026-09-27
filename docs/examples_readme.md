@@ -55,7 +55,7 @@ scenario; it does not execute every branch of a `Locals` enum.
 ### Unattended execution lanes
 
 The [classifier and runner](../.github/scripts/run_examples.py) derives lanes from Python imports.
-Its current inventory is **13 offline, 20 network, 33 unattended examples**. The **4 local-data workflows** ending in
+Its current inventory is **17 offline, 20 network, 37 unattended examples**. The **4 local-data workflows** ending in
 `*_local.py` are excluded. Each catalogue row below states the classification.
 
 ```console
@@ -210,8 +210,8 @@ Follow the CSV workflow's separate fetch/load commands and explicit C-local `--d
 
 The profiler compares equal-weighted portfolios selected by signal rank with an equal-weight
 universe benchmark. It isolates a selection rule without solving a portfolio optimization.
-Read the [alpha-signal guide](alphas_module_readme.md), including its current beta-initialization
-timing limitation, before interpreting the example as a historical trading result.
+Read the [alpha-signal guide](alphas_module_readme.md), including its timing conventions, before
+interpreting the example as a historical trading result.
 
 ## `reports/` — portfolio reports
 
@@ -223,17 +223,21 @@ timing limitation, before interpreting the example as a historical trading resul
 
 Each script is the canonical example of one documentation page: the page shows excerpts of
 it, and the script asserts every number the page quotes. The test suite runs every script,
-and some also draw the page's teaching exhibit. All but one run offline after
-`pip install optimalportfolios`; the CSV risk-model script imports a repository example, so
-it needs a source checkout.
+and some also draw the page's teaching exhibit. Most run offline after
+`pip install optimalportfolios`; the CSV risk-model and overlay scripts import a repository
+example, so they need a source checkout.
 
 | Source | Lane | Purpose and prerequisites |
 |---|---|---|
+| [Alpha signals](../examples/docs/alphas_module_readme.py) | Offline | The worked examples of the [alpha signals](alphas_module_readme.md) page: every signal family against its formula, cross-sectional and within-cluster scoring, cluster extraction, mixed cadences, point-in-time signals, the `AlphasData` container and the profiler. |
 | [ROSAA case study](../examples/docs/app_rosaa_multi_asset_allocation.py) | Offline | The configuration of the [ROSAA case study](app_rosaa_multi_asset_allocation.md) on a synthetic panel with known loadings: a rolling HCGL factor covariance, strategic risk budgets and a tactical alpha-over-tracking-error overlay, with the mechanism asserted at every quarter end. |
 | [Covariance estimators](../examples/docs/covariance_estimators.py) | Offline | The worked example of the [covariance estimators](covariance_estimators.md) page: direct EWMA covariance against an explicit weighted sum, three monthly observations against exact weights, an HCGL factor covariance assembled from its components, input cutoffs, and rolling estimates unchanged by later prices. |
 | [Incomplete histories](../examples/docs/incomplete_histories.py) | Offline | The worked example of the [incomplete histories](incomplete_histories.md) page: frozen bounds from a stored baseline, drift with a missing price, three holdings paths against an exact ledger of units and cash, covariance filtering and an EWMA state reset. |
 | [Maximum diversification](../examples/docs/maximum_diversification.py) | Offline | The worked example of the [maximum diversification](maximum_diversification.md) page: inverse-volatility weights for two assets, the correlation-matrix identity checked against CVXPY, the equal-correlation property, a binding cap, and a rolling allocation on simulated prices. |
+| [Minimum tracking error](../examples/docs/minimum_tracking_error.py) | Offline | The worked example of the [minimum tracking error](minimum_tracking_error.md) page: a capped allocation against an optimality certificate, the rolling table, input filtering and covariance stabilization, and the tracking-error cost of each added constraint. |
 | [Mixed-frequency data](../examples/docs/mixed_frequency_data.py) | Offline | The worked example of the [mixed-frequency data](mixed_frequency_data.md) page: monthly and quarterly return buckets, momentum windows against endpoint ratios, per-cadence scoring, and a mixed-frequency factor covariance against native per-bucket fits. |
+| [Overlay tail floor](../examples/docs/overlay_tail_floor.py) | Offline | The worked example of the [overlay tail floor](overlay_tail_floor.md) page: the fixed core and sleeve, the floor against an equality solution and an optimality certificate, the floor coefficients and their rescaling, and the sleeve as the floor tightens. Imports the repository solver demo, so it needs a source checkout. |
+| [Risk budgeting](../examples/docs/risk_budgeting.py) | Offline | The worked example of the [risk budgeting](risk_budgeting.md) page: budgets met against an independent conic solve, the closed-form diagonal case, group budgets, and a binding cap against its optimality conditions. |
 | [Rolling factor risk model from CSV](../examples/docs/rolling_factor_covar_from_csv.py) | Network | The worked example of the [rolling factor risk model from CSV](rolling_factor_covar_from_csv.md) page: a six-file bundle round trip, FX-converted returns against endpoint wealth, every snapshot covariance summed term by term, the `load` command in a fresh process, loader defects and repairs, and the Yahoo fetch on synthetic closes. It opens no connection; the classifier lists it as network because the repository example it imports holds the Yahoo fetcher. Needs a source checkout. |
 
 ## Recommended reading order for newcomers

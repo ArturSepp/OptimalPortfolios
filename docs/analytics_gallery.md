@@ -188,6 +188,34 @@ price; no simulation. **Producer:** the `exhibit` function of
 [`examples/docs/incomplete_histories.py`](../examples/docs/incomplete_histories.py).
 **Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
 
+## Alpha signals
+
+A teaching exhibit of the [alpha signals](alphas_module_readme.md) page. Scored across all nine
+assets, twelve-month momentum ranks the equity-like assets first; scored within each cluster,
+each group is centred on its own mean, so the strongest bond-like asset rises from fifth to
+second and the weakest equity-like asset falls to last.
+
+![Left: cross-sectional momentum scores of nine assets, with each cluster's mean. Right: the same signal scored within each cluster, with the rank of each asset.](images/alpha_scoring_cross_section_vs_cluster.png)
+
+**Sample:** nine synthetic month-end price paths with constant log drifts, five equity-like and
+four bond-like, October 2023 to December 2024; no simulation. **Producer:** the `exhibit`
+function of [`examples/docs/alphas_module_readme.py`](../examples/docs/alphas_module_readme.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Risk budgeting
+
+A teaching exhibit of the [risk budgeting](risk_budgeting.md) page. With slack caps, each
+asset's share of portfolio risk equals its budget of 50%, 30% or 20%; capping Equity at 25%
+leaves no asset at its budget, and the released risk goes to the free assets in proportion to
+their capital weights, not their budgets.
+
+![Left: target budgets and achieved risk shares with slack caps and with Equity capped at 25%. Right: the capital weights of both solves.](images/risk_budgeting_contributions.png)
+
+**Sample:** the page's fixed three-asset covariance, solved with slack 80% caps and with Equity
+capped at 25%; no simulation. **Producer:** the `exhibit` function of
+[`examples/docs/risk_budgeting.py`](../examples/docs/risk_budgeting.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
 ## Maximum diversification
 
 A teaching exhibit of the [maximum diversification](maximum_diversification.md) page. The
@@ -202,6 +230,34 @@ ratio, and the excluded credit asset has 0.70.
 function of [`examples/docs/maximum_diversification.py`](../examples/docs/maximum_diversification.py),
 run by [the teaching-exhibit tool](../tools/docs_analytics/teaching.py). **Configuration:**
 [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Minimum tracking error
+
+A teaching exhibit of the [minimum tracking error](minimum_tracking_error.md) page. Starting
+from the benchmark itself, excluding one asset, capping another, limiting a group and limiting
+turnover each add ex-ante tracking error, from 0% to 2.06% a year; the right panel shows where
+the covariance sends the displaced weight at two of the steps.
+
+![Left: ex-ante tracking error after each cumulative constraint. Right: active weights at the exclusion step and the turnover step.](images/tracking_error_constraint_cost.png)
+
+**Sample:** fixed volatilities and correlations of a stylised five-asset universe with a 60/40
+benchmark and fixed current holdings; no simulation. **Producer:** the `exhibit` function of
+[`examples/docs/minimum_tracking_error.py`](../examples/docs/minimum_tracking_error.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Overlay tail floor
+
+A teaching exhibit of the [overlay tail floor](overlay_tail_floor.md) page. A floor changes
+nothing until it exceeds the unconstrained sleeve's floor exposure; tighter floors bind at
+equality, move the sleeve from the carry overlays to the defensive ones, and near the reachable
+maximum leave it all in one defensive overlay, at a lower model return.
+
+![Left: the overlay sleeve by floor level, stacked by overlay. Right: the portfolio's model volatility and expected excess return against the floor.](images/overlay_floor_allocation.png)
+
+**Sample:** the page's synthetic core and four overlays, solved at 90 floors from -0.08 to
+0.009; no simulation. **Producer:** the `exhibit` function of
+[`examples/docs/overlay_tail_floor.py`](../examples/docs/overlay_tail_floor.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
 
 ## ROSAA layers
 

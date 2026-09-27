@@ -193,10 +193,10 @@ joint = alphas.profile_alpha_signals(
 ```
 
 For custom parameters or a signal without a profiler adapter, compute its panel first and
-pass it to the profile core. The
-[default beta-initialization limitation](../../../docs/alphas_module_readme.md#low-beta)
-also affects the low-beta and residual-momentum profiler paths; their adapters do not expose
-`mean_adj_type`. Handle any alternative construction explicitly and verify its timing.
+pass it to the profile core. The low-beta and residual-momentum profiler adapters do not
+expose `mean_adj_type`; they use the constructors' point-in-time default, described under
+[low beta](../../../docs/alphas_module_readme.md#low-beta). Handle any alternative
+construction explicitly and verify its timing.
 
 ## Example
 
@@ -219,7 +219,7 @@ Use the owning test directory:
 | A signal constructor or alignment rule | [signals/tests](./signals/tests/__init__.py) |
 | Ranking, profiler adapters or report orchestration | [profile/tests](./profile/tests/__init__.py) |
 | Containers, diagnostics or additional backtest helpers | [alphas/tests](./tests/__init__.py) |
-| Published signal definitions, examples and timing | [Article contracts](../tests/alpha_signals_documentation_test.py) |
+| Published signal definitions, examples and timing | The article's [canonical script](../../../examples/docs/alphas_module_readme.py), run by [`documentation_examples_test.py`](../tests/documentation_examples_test.py) |
 
 The [component runner](./signals/run_local/signals_run.py) uses `Locals` and
 `run_local(local=...)` for manual diagnostics. It reads the configured local ETF CSV through
@@ -236,12 +236,11 @@ python tools/check_docs.py --files src/optimalportfolios/alphas/README.md
 python -m pytest src/optimalportfolios/alphas/profile/tests
 python -m pytest src/optimalportfolios/alphas/signals/tests
 python -m pytest src/optimalportfolios/alphas/tests
-python -m pytest src/optimalportfolios/tests/alpha_signals_documentation_test.py
+python -m examples.docs.alphas_module_readme
 ```
 
-The article contracts retain strict expected failures for the separately recorded default-beta
-timing defect. A change to those outcomes requires review of the numerical fix and documentation.
-Keep tests deterministic and offline; preserve the frozen fixture and existing seeds. Add public
+The article's canonical script asserts that no later observation changes an earlier signal, for
+every standard and cluster family. Keep tests deterministic and offline; preserve the frozen fixture and existing seeds. Add public
 imports at their owning `__init__.py`, and verify the root re-export contract when it is affected.
 
 ## References
