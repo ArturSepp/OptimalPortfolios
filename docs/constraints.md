@@ -35,19 +35,31 @@ backend enforces it.
 
 ## Inputs, notation, and assumptions
 
-The formulas below use:
+| Convention | This article |
+|---|---|
+| Return basis | None; the constraint layer samples no returns. `asset_returns` and `target_return` are expected returns in one caller-chosen horizon and scaling, annual fractions in the examples |
+| Estimation grid | None; covariance, expected returns, alphas and beta loadings are inputs, fixed synthetic values in the examples. `compute_benchmark_beta_loadings_from_covar` derives beta loadings from the supplied covariance and estimates nothing |
+| Rebalancing grid | One decision per compilation or residual evaluation; `update_with_valid_tickers` aligns the policy for one rebalance, and the rolling solvers call it at each date |
+| Covariance units | The caller's units, never annualised or resampled, including by `max_target_portfolio_vol_an`; volatility and tracking-error limits are in its square-root units. The examples use annual fractional return squared: 0.0324 is an 18% volatility |
+| Expected returns | `asset_returns` feed the hard `target_return` floor; the `alphas` argument of `set_cvx_utility_objective_constraints` feeds the utility term $\alpha^\top(w-w^{\mathrm{bm}})$. Neither is estimated here |
+| Weight state | Target weights as fractions of NAV. `weights_0` holds the pre-trade weights for turnover and freezing, and turnover rows are skipped without it; `benchmark_weights` anchors active risk and deviations |
+| Solver | None inside the layer, which compiles rows: CVXPY rows for every family, SciPy callbacks and PyRB-style matrices for subsets. The examples solve with CVXPY and CLARABEL; `evaluate_constraint_residuals` audits a candidate without a solver |
+
+The notation follows the [conventions page](conventions.md#notation). In addition:
 
 | Symbol | Meaning and dimensions |
 |---|---|
-| $w,b,w_0$ | Ordered $n$-asset portfolio, benchmark and pre-trade weight vectors |
-| $\mu,\alpha$ | Expected-return and alpha vectors, with $n$ entries |
-| $\Sigma$ | Covariance matrix of size $n \times n$ in the supplied variance units |
+| $w,w^{\mathrm{bm}},w_0$ | Ordered $N$-asset portfolio, benchmark and pre-trade weight vectors |
+| $\mu,\alpha$ | Expected-return and alpha vectors, with $N$ entries |
+| $\Sigma$ | Covariance matrix of size $N \times N$ in the supplied variance units |
 | $B$ | Covariance factor, with $BB^\top=\Sigma_{\mathrm{stabilized}}$ |
-| $L,L_g$ | Assets-by-groups/factors loadings and the $n$-entry column for group $g$ |
-| $a,a_g$ | Active weights $w-b$ and their group-masked vector |
+| $L,L_g$ | Assets-by-groups/factors loadings and the $N$-entry column for group $g$ |
+| $d,d_g$ | Active weights $w-w^{\mathrm{bm}}$ and their group-masked vector |
 | $c$ | Portfolio-level turnover multipliers, `turnover_costs` |
 | $h$ | Per-asset benchmark-beta loadings; distinct from turnover multipliers |
-| $b_C$ | Benchmark constituent weights when the joint covariance uses a separate constituent set $C$ |
+| $\beta(w)$ | Portfolio beta to the benchmark, $h^\top w$; not the factor loadings of the conventions page |
+| $\lambda_{\mathrm{TE}},\lambda_{\mathrm{TO}},\lambda_g$ | Utility penalty weights; not the EWMA decay of the conventions page |
+| $w^{\mathrm{bm}}_C$ | Benchmark constituent weights when the joint covariance uses a separate constituent set $C$ |
 | $\odot$ | Elementwise multiplication |
 
 Weights, exposure, and turnover are fractions of NAV. `0.05` therefore means 5%. Exposure is
@@ -71,8 +83,9 @@ date. The constraint compiler itself does not estimate data or apply a trading l
 and drift-aware backtesting use [qis](https://github.com/ArturSepp/QuantInvestStrats); see its
 [software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).
 
-The Python fragments below run in document order with these shared imports. The complete
-forced example also supplies its own inputs and imports.
+The Python blocks below run in page order after these shared imports; each is an excerpt of the
+[canonical script](../examples/docs/constraints.py) of this page. The complete forced example
+also supplies its own inputs and imports.
 
 ```python
 from optimalportfolios.optimization.constraints import (
@@ -113,10 +126,12 @@ limit.
 | `group_turnover_constraint` | Group-weighted L1 trading budgets; requires `weights_0` |
 | `sector_deviation_constraints`, `style_deviation_constraints` | Absolute active-loading limits; require benchmark weights |
 | `benchmark_beta_constraint` | Linear bounds on portfolio beta; requires per-date beta loadings |
+| `constraint_enforcement_type`, `tre_utility_weight`, `turnover_utility_weight` | Hard or utility policy for wrappers and analytics, and the total tracking-error and turnover penalty weights of utility mode, `1.0` and `0.40` by default |
 
 The supporting fields `benchmark_weights`, `weights_0`, `asset_returns`, and `turnover_costs` do
 nothing by themselves. They supply the reference vectors needed by another configured limit or
-utility term.
+utility term. The eighteen fields in the first column and these four are the 22 fields of
+`Constraints`.
 
 `Constraints()` defaults to a long-only, fully invested portfolio: $w_i\ge0$ and
 $\sum_iw_i=1$. There are no explicit per-name boxes unless they are supplied.
@@ -220,26 +235,26 @@ penalty coefficient.
 
 ### Benchmark-relative risk
 
-Let active weights be $a=w-b$.
+Let active weights be $d=w-w^{\mathrm{bm}}$.
 
 #### Total tracking error
 
 The hard limit is:
 
 $$
-\operatorname{TE}(w,b)=\sqrt{a^\top\Sigma a}\le\tau.
+\mathrm{TE}(w)=\sqrt{d^\top\Sigma d}\le\tau.
 $$
 
 `benchmark_weights` and a covariance or factorization are required. In factorized form the hard
-row is $\lVert B^\top a\rVert_2\le\tau$.
+row is $\lVert B^\top d\rVert_2\le\tau$.
 
 #### Group tracking error
 
 `GroupTrackingErrorConstraint` masks the active vector before computing risk:
 
 $$
-a_g=L_g\odot(w-b), \qquad
-\operatorname{TE}_g=\sqrt{a_g^\top\Sigma a_g}\le\tau_g.
+d_g=L_g\odot(w-w^{\mathrm{bm}}), \qquad
+\mathrm{TE}_g=\sqrt{d_g^\top\Sigma d_g}\le\tau_g.
 $$
 
 This is not the same as multiplying total TE by a group's portfolio weight. Cross-covariances
@@ -322,7 +337,7 @@ missing side remains `NaN` rather than inventing a bound.
 `BenchmarkDeviationConstraints` implements the same formula for both fields:
 
 $$
-\lvert L_g^\top(w-b)\rvert\le d_g.
+\lvert L_g^\top(w-w^{\mathrm{bm}})\rvert\le\delta_g.
 $$
 
 The difference is interpretation:
@@ -389,7 +404,7 @@ equivalent to assuming zero starting weights.
 
 #### Group turnover
 
-For each group:
+`GroupTurnoverConstraint` holds one L1 trading budget per group. For each group:
 
 $$
 \sum_i\lvert L_{ig}(w_i-w_{0,i})\rvert\le T_g.
@@ -431,11 +446,11 @@ At least one side of the range is required. A rolling optimizer should keep stat
 inject the current date's loadings with `.with_loadings(...)` before compilation.
 
 When portfolio assets and constituents $C$ are in one joint covariance, with constituent
-weights $b_C$, the loadings are:
+weights $w^{\mathrm{bm}}_C$, the loadings are:
 
 $$
-h=\frac{\Sigma_{\mathrm{assets},C}b_C}
-        {b_C^\top\Sigma_{C,C}b_C}.
+h=\frac{\Sigma_{\mathrm{assets},C}w^{\mathrm{bm}}_C}
+        {(w^{\mathrm{bm}}_C)^\top\Sigma_{C,C}w^{\mathrm{bm}}_C}.
 $$
 
 ```python
@@ -494,14 +509,19 @@ objective trade-offs. With total penalties its maximization objective has the fo
 
 $$
 \begin{aligned}
-&\alpha^\top(w-b)\\
-&\quad-\lambda_{TE}(w-b)^\top\Sigma(w-b)\\
-&\quad-\lambda_{TO}\sum_i\lvert c_i(w_i-w_{0,i})\rvert.
+&\alpha^\top d\\
+&\quad-\lambda_{\mathrm{TE}}d^\top\Sigma d\\
+&\quad-\lambda_{\mathrm{TO}}\sum_i\lvert c_i(w_i-w_{0,i})\rvert,
+\qquad d=w-w^{\mathrm{bm}}.
 \end{aligned}
 $$
 
 Tracking error is penalized as **variance**, not volatility. Group TE similarly contributes
-$-\lambda_g a_g^\top\Sigma a_g$. Turnover is penalized as full L1 turnover.
+$-\lambda_g d_g^\top\Sigma d_g$. Turnover is penalized as full L1 turnover. Here
+$\lambda_{\mathrm{TE}}$ is `tre_utility_weight` and $\lambda_{\mathrm{TO}}$ is
+`turnover_utility_weight`, `1.0` and `0.40` by default. The total tracking-error penalty needs
+`benchmark_weights` even when no alphas are supplied; set `tre_utility_weight=None` to compile a
+utility problem without a benchmark.
 
 The hard rows retained by the generic utility builder are:
 
@@ -553,12 +573,24 @@ objective use narrower paths:
 | max return at target volatility, benchmark-relative | active variance penalty | shared utility path | `target_vol` is not converted into lambda or retained as a hard cap |
 | max return at target volatility, absolute | portfolio variance penalty | total turnover penalty | manual path; group utility precedence is not used |
 | min variance at target return | portfolio or active variance is the objective | total turnover penalty | return floor stays hard; `tre_utility_weight` is not added |
-| alpha with target return and `soft_tracking_error=True` | total TE utility | total and group turnover are explicitly re-added as hard caps | the flag is separate from the enforcement enum and is active only with a benchmark |
+| alpha with target return and `soft_tracking_error=True` | total TE utility | configured total and group turnover caps are re-added as hard rows; with neither cap, the total turnover penalty is kept | the flag is separate from the enforcement enum and is active only with a benchmark |
 
 This is why the backend table says “generic utility” and why a target-volatility argument should
 not be read as a universal penalty calibration.
 
 ## Worked example
+
+Every Python block on this page, including those of the sections above, is an excerpt of the
+canonical script [`examples/docs/constraints.py`](../examples/docs/constraints.py). It runs the
+blocks in page order and asserts every number and property the page states against a reference
+computed a different way: hand arithmetic of the small examples, explicit quadratic forms and L1
+sums, the binding rows and dual certificate of the forced optimum, an independent CVXPY solve of
+the utility example written from raw arrays, and the closed-form solution of a tracking-error
+penalty:
+
+```console
+python -m examples.docs.constraints
+```
 
 ### A complete forced-constraint example
 
@@ -754,7 +786,14 @@ print(utility_solution.round(6))
 This produces approximately `Equity=0.411341`, `Bond=0.438660`, and `Gold=0.150000`. Because the
 group TE and group-turnover objects exist and carry utility weights, their penalties replace the
 total penalties in this generic builder. The hard group caps stored on the same objects do not
-constrain this utility solve.
+constrain this utility solve. The canonical script checks both: raising `tre_utility_weight` and
+`turnover_utility_weight` to `1000`, or shrinking the group caps to `1e-6`, leaves the
+allocation unchanged.
+
+> **Pitfall.** Changing `constraint_enforcement_type` does not change a direct compile.
+> `set_cvx_all_constraints()` builds the same 20 hard rows for `utility_constraints` as for the
+> forced example, and the forced objective solves to the same allocation. Call
+> `set_cvx_utility_objective_constraints()` or a public utility solver to get penalties.
 
 A lambda is a trade-off, not a feasibility guarantee. Analytics therefore retain breached soft
 limits as visible records while marking them non-binding:
@@ -786,25 +825,61 @@ The result is:
 `passed=True` here means “does not determine hard compliance,” not “is below the displayed soft
 reference limit.” The positive `violation` preserves the magnitude for reporting.
 
+### What changes when a limit becomes a penalty
+
+A smaller problem isolates one limit. It keeps the covariance, benchmark and alphas of the
+example, stays long-only and fully invested, and maximizes the active expected return
+$\alpha^\top(w-w^{\mathrm{bm}})$ under a 2% tracking-error limit and no other row. The forced
+solve keeps the limit as a hard row. Each utility solve drops the row and subtracts
+`tre_utility_weight` times the active variance instead:
+
+| Solve | Equity weight | Tracking error | Excess over 2% | Active expected return |
+|---|---:|---:|---:|---:|
+| Hard limit | 0.556 | 2.00% | 0.00% | 0.27% |
+| `tre_utility_weight=1` | 0.803 | 6.66% | 4.66% | 0.89% |
+| `tre_utility_weight=2` | 0.626 | 3.33% | 1.33% | 0.44% |
+| `tre_utility_weight=3` | 0.568 | 2.22% | 0.22% | 0.30% |
+| `tre_utility_weight=5` | 0.521 | 1.33% | 0.00% | 0.18% |
+| `tre_utility_weight=10` | 0.485 | 0.67% | 0.00% | 0.09% |
+| `tre_utility_weight=20` | 0.468 | 0.33% | 0.00% | 0.04% |
+
+No weight reaches zero, so each penalty solve has the closed form
+$d=\Sigma^{-1}(\alpha-\kappa\mathbf{1})/(2\lambda_{\mathrm{TE}})$, with $\kappa$ chosen so that
+$d$ sums to zero: tracking error and active return both fall as $1/\lambda_{\mathrm{TE}}$. The
+excess over the limit shrinks as the weight grows and is zero from 5 on, where the limit is slack
+and active return is given up. The residual evaluator reports each excess as a soft `violation`
+with `passed=True`, as above.
+
+![Left: tracking error of the penalty solves against tre_utility_weight on a log scale, 6.66%
+at a weight of 1, then 3.33%, 2.22%, 1.33%, 0.67% and 0.33% at 2, 3, 5, 10 and 20, with the
+2% hard limit as a dashed line; the curve crosses the limit at the shadow price 3.33, and the
+shaded area above the limit is the excess. Right: active expected return, from 0.89% at a weight
+of 1 to 0.04% at 20, against 0.27% for the forced solve; a penalty solve earns more only while
+it exceeds the limit.](images/constraint_enforcement_hard_vs_soft.png)
+
+*Figure: tracking error and active expected return of the penalty solves as `tre_utility_weight`
+grows, against the forced solve with a hard 2% limit. Drawn by the `exhibit` function of the
+canonical script; the [analytics gallery](analytics_gallery.md) lists its provenance.*
+
+> **Insight.** A penalty weight prices tracking error; it does not bound it. Every solve above
+> earns 0.133 of active return per unit of tracking error, and the weight only chooses how far
+> along that line to go. Only a weight equal to the limit's shadow price, the dual value of the
+> hard row, 3.33 here, reproduces the forced solve, and that price moves with the alphas and the
+> covariance.
+
 ## Implementation in optimalportfolios
 
-The examples use the existing constraint facade and low-level compilers. Their canonical
-source is this article; the repository test extracts and executes its `python` fences in order.
-The final `OptimizationOutcome` fragment is explicitly illustrative because it depends on a
-wrapper result supplied by the caller.
-
-After the repository's external-environment setup, run:
-
-```console
-python -m pytest src/optimalportfolios/tests/constraints_documentation_test.py -q
-```
+The examples use the public constraint facade and its low-level compilers. The
+[canonical script](../examples/docs/constraints.py) runs every block of this page, checks the
+forced allocation against its optimality certificate, the utility allocation against an
+independent solve and the penalty solves against their closed form, and asserts the alignment,
+freezing, waiver and diagnostic statements below. The test suite runs it, and so does the
+offline examples lane of CI.
 
 Review the [constraint implementation](https://github.com/ArturSepp/OptimalPortfolios/tree/main/src/optimalportfolios/optimization/constraints)
 and [solver diagnostics](https://github.com/ArturSepp/OptimalPortfolios/blob/main/src/optimalportfolios/optimization/solver_diagnostics.py)
-for the public calculation contracts. The original guide remains at the same source basename
-and site URL. Examples were checked on 2026-09-13 with OptimalPortfolios 7.6.0, qis 5.26.0 and
-CVXPY 1.9.2 using CLARABEL; the saved working-source hashes accompany the implementation report.
-Rounded allocations are illustrative outputs, not cross-platform bitwise guarantees.
+for the public calculation contracts. Rounded allocations are solver outputs, not
+cross-platform bitwise guarantees.
 
 ### Backend capability matrix
 
@@ -931,7 +1006,8 @@ aligned.group_lower_upper_constraints.group_max_allocation["Illiquid"]
 The `1e-8` increment is a numerical feasibility cushion. The symmetric rule lowers a group
 floor to the loading-weighted sum of post-freeze per-name maxima minus `1e-8`. The waiver applies
 only to a group with a frozen member and a mismatch introduced by freezing: a group bound that
-was already infeasible against the pre-freeze boxes is not repaired.
+was already infeasible against the pre-freeze boxes is not repaired, and the aligned constructor
+rejects it with `ValueError` once the mismatch exceeds its `1e-4` tolerance.
 
 The separate `1e-4` threshold determines whether a mismatch is material enough for a structured
 relaxation record. Smaller reconciliations are logged at debug level unless they breach the
@@ -939,7 +1015,8 @@ configured relaxation tolerance or exposure budget. It is not the amount added t
 
 `max_relaxation_tol` controls log escalation only; it does not cap, reject, or undo a waiver.
 `relax_frozen_group_bounds=False` disables the waiver so the infeasible selected trade set remains
-visible. Negative-only signed loading groups remain valid solver rows but do not create a
+visible: in the example above the aligned constructor raises `ValueError` for the 0.05 overhang.
+Negative-only signed loading groups remain valid solver rows but do not create a
 frozen-membership waiver.
 
 ## Interpretation and limitations
@@ -1004,10 +1081,11 @@ supported analytics interface; it is more reliable than parsing formatted diagno
 
 Public solver wrappers return an `OptimizationOutcome` carrying the exact aligned constraints,
 covariance factorization, and residual tuple used for acceptance. Given the `outcome` returned
-by the chosen wrapper, this illustrative fragment reads it
-(it is excluded from the executable article sequence because no wrapper is called here):
+by the chosen wrapper, this block reads it. The canonical script runs it on the outcome of
+`wrapper_minimise_tracking_error` for the forced example's constraints: that solve holds the
+benchmark, and all 21 residuals pass.
 
-```python +SKIP
+```python
 outcome.compliant
 outcome.residuals_frame()
 hard_breaches = [
@@ -1019,7 +1097,8 @@ hard_breaches = [
 
 `accepted` and `compliant` answer different questions. `accepted` says whether the solver vector
 was used instead of a fallback. `compliant` says whether all emitted hard residuals pass. A
-fallback is not assumed to satisfy the mandate.
+fallback is not assumed to satisfy the mandate: with an unreachable 10% return floor the same
+wrapper falls back to `weights_0`, and that outcome is neither accepted nor compliant.
 
 ### Configuration checklist
 

@@ -37,8 +37,9 @@
     },
     "docs/constraints.md": {
       "form": "methodology",
-      "status": "pending",
-      "review": "M2a source migration, executable examples, scoped checks, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-13. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R3d (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the excerpt rule and the GitHub math rules (and the convention card on methodology pages); the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Sole owner of the 22 Constraints fields. Teaching exhibit constraint_enforcement_hard_vs_soft.png. The block-executing harness is retired.",
+      "example": "examples/docs/constraints.py"
     },
     "docs/conventions.md": {
       "form": "utility",
@@ -96,8 +97,9 @@
     },
     "docs/optimization_module_readme.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "M4c utility migration, 11 offline executable blocks, independent allocation/target/constraint references, 32 guide cases and 857 focused tests passed on 2026-09-14. All six controlled defects were detected. Strict Sphinx HTML/linkcheck and Sphinx browser review pass: five display equations, eight tables and all 38 old HTML IDs. Solver configuration, dispatch, return types and fallback limitations are documented without numerical changes. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R3d (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the excerpt rule and the GitHub math rules (and the convention card on methodology pages); the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Utility router. Decision diagram redrawn (0.84 in the column); apply_total_to_good_ratio tabled for all 22 entry points. The harness is retired; the solver outcome sections move to M21 in R4.",
+      "example": "examples/docs/optimization_module_readme.py"
     },
     "docs/overlay_tail_floor.md": {
       "form": "methodology",
@@ -128,8 +130,9 @@
     },
     "docs/rolling_backtests.md": {
       "form": "methodology",
-      "status": "pending",
-      "review": "M4a rolling-backtests source migration, both executable examples, independent holdings/cost references, 173 focused tests, strict Sphinx HTML/linkcheck and three-equation Sphinx browser review passed on 2026-09-13. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R3d (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the excerpt rule and the GitHub math rules (and the convention card on methodology pages); the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Links the conventions timing diagram. Teaching exhibit target_vs_drifted_weights.png. The harness is retired.",
+      "example": "examples/docs/rolling_backtests.py"
     },
     "docs/rolling_factor_covar_from_csv.md": {
       "form": "methodology",
@@ -144,13 +147,15 @@
     },
     "docs/stress_testing_with_options.md": {
       "form": "methodology",
-      "status": "pending",
-      "review": "End-to-end numerical verification, cached replay, 25 integration tests and strict Sphinx build pass. Report layouts inspected, including a rendered PDF cluster page. Browser renders 49 MathJax expressions without errors. GitHub and VS Code viewer checks remain pending."
+      "status": "adopted",
+      "review": "R3d (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the excerpt rule and the GitHub math rules (and the convention card on methodology pages); the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. New offline canonical script for the scenario and repricing equations; the frozen market-data run stays as runner output. Teaching exhibit option_stress_scenarios.png.",
+      "example": "examples/docs/stress_testing_with_options.py"
     },
     "docs/turnover_and_transaction_costs.md": {
       "form": "methodology",
-      "status": "pending",
-      "review": "M4a turnover/cost source migration, both preserved examples and their extensions, independent allocation and currency-ledger references, 249 focused tests, strict Sphinx HTML/linkcheck and four-equation Sphinx browser review passed on 2026-09-13. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R3d (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the excerpt rule and the GitHub math rules (and the convention card on methodology pages); the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. No-trade threshold of the L1 penalty stated and asserted. Teaching exhibit turnover_penalty_tradeoff.png. The harness is retired.",
+      "example": "examples/docs/turnover_and_transaction_costs.py"
     },
     "src/optimalportfolios/alphas/README.md": {
       "form": "utility",

@@ -259,6 +259,47 @@ maximum leave it all in one defensive overlay, at a lower model return.
 [`examples/docs/overlay_tail_floor.py`](../examples/docs/overlay_tail_floor.py).
 **Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
 
+## Portfolio constraints
+
+A teaching exhibit of the [portfolio constraints](constraints.md) page. A hard 2% tracking-error
+row holds the solve at the limit; the same limit as a penalty lets tracking error exceed it by an
+amount that shrinks as the penalty weight grows, and only the row's shadow price, 3.33 here,
+reproduces the forced solve.
+
+![Left: ex-ante tracking error against the 2% limit for six penalty weights and for the hard row. Right: the active expected return of the same solves.](images/constraint_enforcement_hard_vs_soft.png)
+
+**Sample:** the page's synthetic three-asset example with a 45/40/15 benchmark, solved with a
+hard tracking-error row and at six penalty weights; no simulation. **Producer:** the `exhibit`
+function of [`examples/docs/constraints.py`](../examples/docs/constraints.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Rolling backtests
+
+A teaching exhibit of the [rolling backtests](rolling_backtests.md) page. Between quarterly
+trades, held weights drift with prices away from the targets in force; each trade, one
+observation after its decision date, resets them, and the gap peaks the day before a trade.
+
+![Left: target and held weights of three assets through 2020 and 2021, with the quarterly trades. Right: the sum of absolute differences between held and target weights.](images/target_vs_drifted_weights.png)
+
+**Sample:** a seeded synthetic business-day panel of three assets with weekly EWMA covariances,
+minimum-variance targets capped at 60% and eight quarterly trades. **Producer:** the `exhibit`
+function of [`examples/docs/rolling_backtests.py`](../examples/docs/rolling_backtests.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Turnover and transaction costs
+
+A teaching exhibit of the [turnover and transaction costs](turnover_and_transaction_costs.md)
+page. Raising `turnover_utility_weight` moves the solution along a frontier from the benchmark,
+with 30% turnover, to the current holdings, with none; trading stops at a finite weight, 0.3851
+in this example, given by the spread of the marginal active risks.
+
+![Left: full L1 turnover against ex-ante tracking error, one point per labelled penalty weight. Right: turnover against the penalty weight, with the no-trade threshold.](images/turnover_penalty_tradeoff.png)
+
+**Sample:** a synthetic four-asset problem with a 50/20/25/5 benchmark and 40/25/20/15
+holdings, solved at 51 penalty weights; no simulation. **Producer:** the `exhibit` function of
+[`examples/docs/turnover_and_transaction_costs.py`](../examples/docs/turnover_and_transaction_costs.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
 ## ROSAA layers
 
 A teaching exhibit of the [ROSAA case study](app_rosaa_multi_asset_allocation.md). On a
@@ -271,6 +312,20 @@ alphas at a 3% ex-ante tracking error at every quarter end.
 **Sample:** synthetic monthly panel of three factors and eight asset classes, December 2004 to
 June 2025, seed 11; quarter ends from December 2014. **Producer:** the `exhibit` function of
 [`examples/docs/app_rosaa_multi_asset_allocation.py`](../examples/docs/app_rosaa_multi_asset_allocation.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Stress testing with options
+
+A teaching exhibit of the [stress testing with options](stress_testing_with_options.md) page.
+For a book of stocks with short calls and puts, each Equity scenario's P&L splits into a delta
+part, linear in the moves, and a gamma part from full option repricing; the short options lose
+against their delta line in both directions.
+
+![Left: delta part, gamma part and total P&L of the book for Equity moves of -30% to +30%. Right: the short options' full-repricing P&L against their delta line, with the gamma gap shaded.](images/option_stress_scenarios.png)
+
+**Sample:** an offline three-stock book with a fixed three-factor model and conditionally
+completed Equity moves; no simulation. **Producer:** the `exhibit` function of
+[`examples/docs/stress_testing_with_options.py`](../examples/docs/stress_testing_with_options.py).
 **Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
 
 ## Reproduce and update
