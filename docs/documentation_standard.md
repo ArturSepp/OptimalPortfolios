@@ -183,6 +183,26 @@ identity, sample period, actual source version and generation record. Captions e
 alt text describes the comparison. Inspect labels, legends and tables at normal page width and
 full resolution. Keep strategy colors and units consistent across comparable exhibits.
 
+A **teaching exhibit** is a synthetic figure drawn by the canonical script of the page that shows
+it: a function of `examples/docs/<page>.py` draws the figure and returns its plotted table and the
+numerical checks it illustrates. It is registered in
+[`tools/docs_analytics/teaching.json`](../tools/docs_analytics/teaching.json) with the script's
+constants that fix its inputs, the pages that display it, its question and its sample, and it is
+published in `docs/images/` with a [manifest](images/analytics_manifest.json) of the image, table
+and script hashes, the checks, the software versions and a review note:
+
+```console
+python -m tools.docs_analytics.teaching --all --output-root <new-C-local-bundle>
+python -m tools.docs_analytics.teaching --publish <that-bundle> --review "<what was inspected>"
+python -m tools.docs_analytics.run --verify
+```
+
+`--all` refuses a parameter that differs from the script or a failing check, and publication
+refuses a stale or altered bundle. `run --verify` checks the README previews against their receipt
+and every teaching exhibit against its manifest and the current script, so editing a canonical
+script requires regenerating its exhibit. The README-preview registry is separate because its
+publication receipt embeds that registry verbatim.
+
 A **diagram** is Mermaid source in a fenced `mermaid` block. It renders natively on GitHub and,
 through `sphinxcontrib-mermaid`, on the site; VS Code needs an extension, so each diagram is
 followed by a sentence that states its content in words. A diagram carries no data, is reviewed as
@@ -319,7 +339,7 @@ These gates answer different questions:
 | `check_docs.py --source-all` | Every inventoried human source meets the source standard; pending reviews stay explicit; every public object and mapped field has one owner; no retired paper title is used. |
 | `readthedocs_config_test.py` | The hosted build's commands survive the Read the Docs shell wrapper and call uv by path. |
 | `tools.docs_analytics.run --list` | Every displayed image is registered, including its document consumers. |
-| `tools.docs_analytics.publish --verify` | Committed previews match their dated review receipt and current coverage registry. |
+| `tools.docs_analytics.run --verify` | Committed README previews match their dated review receipt and current coverage registry, and every teaching exhibit matches its manifest and the current canonical script. |
 | `tools.docs_analytics.run --all` | Current source and locked dependencies generate a complete, internally validated offline bundle. |
 | Strict Sphinx HTML and linkcheck | The site builds without warnings and external links pass the configured link policy. |
 

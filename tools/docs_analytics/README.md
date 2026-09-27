@@ -456,3 +456,26 @@ Use the frozen qis synthetic universe for new market-panel teaching examples whe
 Preserve the established OptimalPortfolios multiasset fixture and existing simulation seeds.
 A live-data refresh must be explicit and retain its input snapshot: a fixed end date alone does
 not freeze a provider's adjusted history.
+
+## Teaching exhibits
+
+Teaching exhibits are the figures of the documentation articles. Each is drawn by the canonical
+script of its page, `examples/docs/<page>.py`, and registered in [`teaching.json`](teaching.json)
+with the script's constants that fix its inputs. The registry of the six README previews is kept
+separate, because their publication receipt embeds `registry.json` verbatim and would otherwise
+fail verification. [`teaching.py`](teaching.py) implements three steps:
+
+1. `--all --output-root <new-C-local-directory>` loads each script without running its main
+   block, compares the registered parameters with the script's constants, calls the drawing
+   function and writes the PNG, a CSV of the plotted table and a manifest with hashes, checks and
+   software versions. It refuses an existing directory, a differing parameter and a failing check.
+2. Inspect every image at full resolution and at the 736-pixel article width.
+3. `--publish <bundle> --review "<note>"` copies the images into `docs/images/` and writes
+   `docs/images/analytics_manifest.json` with the review note. It refuses a bundle whose images,
+   scripts or checks no longer match.
+
+`--verify`, and `python -m tools.docs_analytics.run --verify` for both kinds of exhibit, check the
+committed images against the manifest and the manifest against the current scripts. The
+[image-coverage check](registry.py) counts the teaching exhibits, so every displayed figure is
+registered with the pages that show it.
+

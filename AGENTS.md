@@ -209,7 +209,9 @@ and has no reference left in this repository. To run the examples, install what 
   source files, so redirecting only build output is insufficient. No new setup wrapper is needed.
 - Generate analytics C-locally. The generated-output exception covers the six registered
   README previews under `examples/figures/` and their shared `analytics_manifest.json`,
-  after the implemented registry/publisher validates the complete visually reviewed bundle.
+  after the implemented registry/publisher validates the complete visually reviewed bundle, and
+  the teaching exhibits registered in `tools/docs_analytics/teaching.json` under `docs/images/`
+  with their `analytics_manifest.json`, published by `tools.docs_analytics.teaching`.
   Follow the OP supplement's generation, validation, publication, and verification procedure.
   Full factsheets, PDFs, downloads and temporary output remain excluded.
 - Preserve executable README and quickstart/notebook contracts, frozen fixtures, seeds,

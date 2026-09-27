@@ -55,7 +55,7 @@ scenario; it does not execute every branch of a `Locals` enum.
 ### Unattended execution lanes
 
 The [classifier and runner](../.github/scripts/run_examples.py) derives lanes from Python imports.
-Its current inventory is **8 offline, 19 network, 27 unattended examples**. The **4 local-data workflows** ending in
+Its current inventory is **10 offline, 19 network, 29 unattended examples**. The **4 local-data workflows** ending in
 `*_local.py` are excluded. Each catalogue row below states the classification.
 
 ```console
@@ -92,6 +92,7 @@ examples/
   covar_estimation/  covariance and factor-model examples
   alphas/            signal profiling
   reports/           manually prepared portfolio reports
+  docs/              canonical scripts of the documentation pages
   figures/           existing documentation previews
 ```
 
@@ -218,6 +219,17 @@ timing limitation, before interpreting the example as a historical trading resul
 | Source | Lane | Purpose and prerequisites |
 |---|---|---|
 | [Options stress report](../examples/reports/stress_testing_with_options_local.py) | Local | A stock-and-option stress report using FCGL clusters, QIS stress-report APIs and VOP pricing. Requires `vanilla_option_pricers` and `yfinance`; fetches Yahoo prices unless a verified cache is available. Use explicit C-local cache and fresh output paths. See the [stress-testing guide](stress_testing_with_options.md). |
+
+## `docs/` — canonical scripts of documentation pages
+
+Each script is the canonical example of one documentation page: the page shows excerpts of
+it, and the script asserts every number the page quotes. The scripts run offline after
+`pip install optimalportfolios`, and some also draw the page's teaching exhibit.
+
+| Source | Lane | Purpose and prerequisites |
+|---|---|---|
+| [ROSAA case study](../examples/docs/app_rosaa_multi_asset_allocation.py) | Offline | The configuration of the [ROSAA case study](app_rosaa_multi_asset_allocation.md) on a synthetic panel with known loadings: a rolling HCGL factor covariance, strategic risk budgets and a tactical alpha-over-tracking-error overlay, with the mechanism asserted at every quarter end. |
+| [Maximum diversification](../examples/docs/maximum_diversification.py) | Offline | The worked example of the [maximum diversification](maximum_diversification.md) page: inverse-volatility weights for two assets, the correlation-matrix identity checked against CVXPY, the equal-correlation property, a binding cap, and a rolling allocation on simulated prices. |
 
 ## Recommended reading order for newcomers
 

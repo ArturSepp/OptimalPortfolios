@@ -45,8 +45,9 @@ flowchart TD
     Q4 -- "no" --> MV["Maximum Sharpe, quadratic utility,<br/>or CARA utility for fat tails"]
 ```
 
-In words: without expected returns, choose a risk-based objective, or minimum tracking error when
-a benchmark is given; with expected returns or alphas, choose the tactical solver against a
+In words: without expected returns, choose a risk-based objective, such as
+[maximum diversification](maximum_diversification.md), or minimum tracking error when a
+benchmark is given; with expected returns or alphas, choose the tactical solver against a
 benchmark, the strategic solvers for a return or volatility target, and otherwise maximum Sharpe,
 quadratic utility or, when returns are fat-tailed, CARA utility under a Gaussian mixture. The
 [conventions page](conventions.md#objectives-and-their-inputs) lists the exact inputs of each, and
