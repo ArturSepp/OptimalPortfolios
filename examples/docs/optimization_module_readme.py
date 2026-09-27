@@ -1,6 +1,6 @@
 """Canonical script of docs/optimization_module_readme.md.
 
-The page's eleven Python blocks are excerpts of ``main`` and run here in the same order; every
+The page's nine Python blocks are excerpts of ``main`` and run here in the same order; every
 number and property the page states is asserted after them against a reference computed a
 different way: the closed-form optima of the diagonal fixture (inverse variance, inverse
 volatility, the half-gamma utility, the tangency portfolio, the two-equality return floor and the
@@ -648,33 +648,6 @@ def main() -> None:
     # Gold at 0.17 = 0.20 - 0.03, where unconstrained minimum variance holds 0.735 and 0.057.
     np.testing.assert_allclose(deviations[1:], [0.05, -0.03], rtol=0.0, atol=1e-6)
     assert held[1] < 0.50 - 0.04 and inverse_variance[2:4].sum() > 0.73
-
-    outcome.residuals_frame()
-    hard_breaches = [
-        residual
-        for residual in outcome.constraint_residuals
-        if residual.hard and not residual.passed
-    ]
-
-    # The accepted minimum-variance outcome records residuals and none of its hard rows fails.
-    assert hard_breaches == [] and not outcome.residuals_frame().empty
-    assert all(residual.passed for residual in outcome.constraint_residuals if residual.hard)
-
-    impossible = replace(constraints, max_weights=pd.Series(0.10, index=tickers))
-    fallback_weights, rejected = opt.wrapper_quadratic_optimisation(
-        pd_covar, impossible, weights_0=benchmark, optimiser_config=config,
-        context="guide: deliberate infeasibility",
-    )
-    print(rejected.accepted, rejected.fallback_source, rejected.compliant)
-    # False weights_0 False
-
-    # Five caps of 0.10 sum to 0.5, short of unit exposure. The prior equal weights come back
-    # unprojected, so a hard cap fails and the fallback is neither accepted nor compliant.
-    assert 5 * 0.10 < 1.0
-    assert not rejected.accepted and not rejected.compliant
-    assert rejected.fallback_source == "weights_0"
-    pd.testing.assert_series_equal(fallback_weights, benchmark, check_names=False)
-    assert any(residual.hard and not residual.passed for residual in rejected.constraint_residuals)
     print("optimization_module_readme: all page statements verified.")
 
 

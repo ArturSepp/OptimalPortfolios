@@ -567,7 +567,7 @@ Validation is not a complete audit of the delivered bytes:
   solver, penalty, span or factor/rebalance-frequency choices.
 - The factor-covariance path currently demeans factor returns independently of the top-level
   `demean` field; the LASSO model does use that setting. See
-  [covariance estimators](covariance_estimators.md#interpretation-and-limitations).
+  [factor covariance with HCGL](factor_covariance_hcgl.md#implementation-in-optimalportfolios).
 
 Archive source-file hashes, package/solver versions, calibration and data-vintage information
 with the bundle when reproducibility matters. The example does not generate this provenance
@@ -577,7 +577,7 @@ dependencies; saving the inputs is not a guarantee of bitwise solver output acro
 
 ## See also
 
-- [Covariance estimators](covariance_estimators.md): model selection, units and demeaning limits.
+- [Factor covariance with HCGL](factor_covariance_hcgl.md) and [covariance estimators](covariance_estimators.md): model selection, units and demeaning limits.
 - [Mixed-frequency data](mixed_frequency_data.md): observation, estimation and rebalance clocks.
 - [Rolling backtests](rolling_backtests.md): use dated covariances at portfolio formation time.
 - [API reference](api.rst): exported estimators, containers and adapters.

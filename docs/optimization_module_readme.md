@@ -4,7 +4,7 @@ myst:
     description: >-
       Choose a portfolio objective in OptimalPortfolios by the inputs you have, then call it:
       objective dispatch, solver configuration, labelled and numerical interfaces, return
-      types, constraints, solver outcomes and offline examples.
+      types, constraints and offline examples, with links to solver outcomes.
 ---
 
 <a id="optimization-module"></a>
@@ -56,7 +56,7 @@ fixed core with an optimised sleeve is the [overlay tail floor](overlay_tail_flo
 
 ## Start with an auditable allocation
 
-The eleven Python blocks on this page run in order and need no download, data file or random
+The nine Python blocks on this page run in order and need no download, data file or random
 seed. They are excerpts of the canonical script
 [`examples/docs/optimization_module_readme.py`](../examples/docs/optimization_module_readme.py),
 which runs them and asserts every number and property on this page against a reference computed
@@ -113,6 +113,8 @@ For this diagonal, fully invested minimum-variance example, weights are proporti
 **variance**, not inverse volatility. The displayed values are rounded from the computed result.
 The tuple contains labelled weights and an `OptimizationOutcome`; checking only that weights
 exist does not establish that the solver succeeded.
+[Solver outcomes](solver_numerics_and_outcomes.md#acceptance-and-fallback) explains what
+`accepted` and `compliant` mean.
 
 ## Architecture
 
@@ -201,12 +203,9 @@ The layers describe responsibilities, not one universal signature.
 | Dedicated `opt_*` | Run the SciPy or CCD/ADMM numerical backend. | Weight array; inspect that function's contract. |
 
 The Sharpe wrapper retains its outcome tuple even when variable net exposure selects SciPy.
-An outcome's numerical weights and aligned constraints refer to the **filtered** universe;
-the accompanying wrapper Series is reindexed to the original universe. They need not have
-the same length.
-
-Rolling weight tables do not retain a per-date outcome object. Use single-date wrappers when
-outcomes must be stored, or consume the package's structured logging in the application.
+What an `OptimizationOutcome` holds, when a solve is accepted, the fallback order, the
+constraint residuals and the per-date outcome log of one rolling function are described in
+[covariance factorisation, solver outcomes and constraint residuals](solver_numerics_and_outcomes.md#acceptance-and-fallback).
 `PortfolioOptimisationResult` is a separate reporting container with risk-model context;
 it is not returned automatically by the dispatcher.
 
@@ -217,18 +216,22 @@ constraint subset and return type. Export additions are public API changes and f
 ## OptimiserConfig
 
 The [configuration source](../src/optimalportfolios/optimization/config.py) defines eight fields.
-The dataclass is frozen; create a replacement to change a setting.
+The dataclass is frozen; create a replacement to change a setting. Six of them act on the
+numerical layer and are specified on the
+[solver-outcomes page](solver_numerics_and_outcomes.md#implementation-in-optimalportfolios);
+`apply_total_to_good_ratio` is described below and `use_drifted_weights_0` in
+[rolling backtests](rolling_backtests.md).
 
 | Field | Dataclass default | Scope |
 |---|---|---|
-| `solver` | `"CLARABEL"` | CVXPY backend selection; ignored by fixed SciPy and risk-budgeting paths. |
-| `verbose` | `False` | Backend verbosity where consumed. |
+| `solver` | `"CLARABEL"` | CVXPY backend selection; ignored by fixed SciPy and risk-budgeting paths. [Details](solver_numerics_and_outcomes.md#implementation-in-optimalportfolios). |
+| `verbose` | `False` | Backend verbosity where consumed. [Details](solver_numerics_and_outcomes.md#implementation-in-optimalportfolios). |
 | `apply_total_to_good_ratio` | `False` | Allow supported wrappers to rescale selected bounds/budgets after exclusion. |
 | `use_drifted_weights_0` | `True` | Supported rolling paths drift prior targets using observed prices. |
-| `diagnose_infeasibility` | `True` | Additional diagnosis in the alpha-over-TE wrapper. |
-| `validate_inputs` | `True` | Additional pre-solve input checks in the alpha-over-TE wrapper. |
-| `max_constraint_relaxation` | `None` | Logging escalation threshold for frozen-bound relaxation where forwarded. |
-| `factorize_covar` | `True` | Reuse covariance factorization in compatible CVXPY risk expressions. |
+| `diagnose_infeasibility` | `True` | Additional diagnosis in the alpha-over-TE wrapper. [Details](solver_numerics_and_outcomes.md#diagnostics-around-the-solve). |
+| `validate_inputs` | `True` | Additional pre-solve input checks in the alpha-over-TE wrapper. [Details](solver_numerics_and_outcomes.md#diagnostics-around-the-solve). |
+| `max_constraint_relaxation` | `None` | Logging escalation threshold for frozen-bound relaxation where forwarded. [Details](solver_numerics_and_outcomes.md#diagnostics-around-the-solve). |
+| `factorize_covar` | `True` | Reuse covariance factorization in compatible CVXPY risk expressions. [Details](solver_numerics_and_outcomes.md#how-a-solve-uses-the-factor). |
 
 ```python
 default_config = opt.OptimiserConfig()
@@ -255,10 +258,11 @@ directly; the config flag does not disable that calculation.
 > configuration uses its own default and raises the 0.25 caps of the five remaining assets to
 > 0.30, that is 0.25 × 6/5; with `OptimiserConfig()` the caps stay at 0.25.
 
-`max_constraint_relaxation` is a logging threshold, **not a hard limit that prevents relaxation**.
-The alpha-over-TE wrapper forwards it to constraint alignment. The two additional diagnostic
-flags do not turn off ordinary post-solve validation, and other wrappers need not consume them.
-SciPy tolerance/iteration options remain solver-specific rather than universal config fields.
+`max_constraint_relaxation` is a logging threshold, **not a hard limit that prevents relaxation**,
+and the two diagnostic flags add checks without turning off ordinary post-solve validation; the
+[solver-outcomes page](solver_numerics_and_outcomes.md#diagnostics-around-the-solve) specifies
+all three. SciPy tolerance/iteration options remain solver-specific rather than universal config
+fields.
 
 Drifting a previous target is distinct from executing trades. Price gaps can make the drift
 helper retain its input. See [rolling backtests](rolling_backtests.md) for timing and
@@ -589,14 +593,16 @@ Different groups may have different trading budgets.
 Construction-time checks detect some unreachable group bounds and single-asset dominance
 conflicts. They do not prove the complete feasible set is nonempty. Signed loadings, overlapping
 groups, return/risk targets and trading limits need the canonical constraints and solver checks.
-The deliberate infeasibility example below passes construction and is rejected by the solver.
+The deliberately infeasible example on the
+[solver-outcomes page](solver_numerics_and_outcomes.md#worked-example) passes construction and
+is rejected by the solver.
 
 ### NaN handling and universe filtering
 
-Many wrappers call `filter_covar_and_vectors_for_nans`, excluding invalid covariance assets
-and, where enabled, nonfinite objective vectors. Filtering rules differ by wrapper.
-A caller can explicitly request a variance floor in the filtering helper; no floor is applied
-by default. Exclusion, flooring and covariance factorization are separate operations.
+Wrappers that take a labelled covariance call `filter_covar_and_vectors_for_nans` before the
+solve. Which assets it removes, what its optional variance floor does and how the filtered
+covariance is then factorised are described in
+[covariance factorisation, solver outcomes and constraint residuals](solver_numerics_and_outcomes.md#filtering-the-universe).
 
 `update_with_valid_tickers` aligns flat vectors and nested loading blocks and injects current
 weights/benchmarks. Supported ratio scaling changes selected per-asset bounds, total turnover
@@ -606,48 +612,12 @@ specification. See [incomplete histories](incomplete_histories.md).
 
 ### Structured constraint inspection
 
-The [outcome implementation](../src/optimalportfolios/optimization/solver_diagnostics.py) records
-acceptance, status, fallback source, aligned constraints, covariance factorization and residuals.
-The original inspection example now refers to the minimum-variance outcome constructed above:
-
-```python
-outcome.residuals_frame()
-hard_breaches = [
-    residual
-    for residual in outcome.constraint_residuals
-    if residual.hard and not residual.passed
-]
-```
-
-`accepted` means the solver's candidate passed its acceptance checks. `compliant` evaluates
-the stored **hard** residuals, with their tolerances. Soft penalties are not hard compliance
-tests, and an empty residual collection is not a universal certification.
-For an independent candidate use
-`evaluate_constraint_residuals(weights, constraints, covar=...)` on an aligned specification.
-
-A rejected solve can still return finite weights. The shared fallback order is finite
-`weights_0`, then finite benchmark weights, then zeros; it does not project those candidates
-back into the new feasible set:
-
-```python
-impossible = replace(constraints, max_weights=pd.Series(0.10, index=tickers))
-fallback_weights, rejected = opt.wrapper_quadratic_optimisation(
-    pd_covar, impossible, weights_0=benchmark, optimiser_config=config,
-    context="guide: deliberate infeasibility",
-)
-print(rejected.accepted, rejected.fallback_source, rejected.compliant)
-# False weights_0 False
-```
-
-Five caps of 0.10 cannot support unit exposure. The prior equal-weight vector is returned and
-fails those caps, so both acceptance and compliance are false. This example intentionally
-produces a rejection log. A returned fallback, including zeros, does not itself decide whether
-an application should trade, retry or skip a rebalance.
-
-CVXPY `optimal_inaccurate` results may be accepted after feasibility checks and logged as
-degraded; numerical solver errors can enter fallback handling. This is not a guarantee that
-every input/configuration exception is caught. SciPy and dedicated risk-budgeting entry points
-have their own validation and diagnostics contracts.
+An `OptimizationOutcome` records acceptance, status, fallback source, aligned constraints,
+covariance factorization and residuals.
+[Covariance factorisation, solver outcomes and constraint residuals](solver_numerics_and_outcomes.md#constraint-residuals)
+states the acceptance checks and tolerances, reads `residuals_frame()`, audits other weights
+with `evaluate_constraint_residuals`, and runs a deliberately infeasible solve through the
+fallback order.
 
 ## Test pattern
 
@@ -679,7 +649,7 @@ diagnostic that may plot or use local data.
 
 ### Verification context and limits
 
-The [canonical script](../examples/docs/optimization_module_readme.py) runs the eleven blocks
+The [canonical script](../examples/docs/optimization_module_readme.py) runs the nine blocks
 with network connections refused. It checks each displayed allocation against the closed-form
 optimum of the diagonal fixture (inverse variance, inverse volatility, the half-gamma utility,
 the tangency portfolio, the two-equality return floor and the tracking-error ellipsoid) and the
@@ -687,7 +657,7 @@ CARA weights against simple alternatives under the stated mixture utility. It al
 group and deviation limits from the published loadings, the configuration table and the
 `apply_total_to_good_ratio` default of every public entry point, each dispatcher route with its
 parameter scope and mean estimation, the Sharpe backend choice, the rolling schedule and
-execution lag, the absence of look-ahead, and the rejected fallback. The test suite runs it, and
+execution lag, and the absence of look-ahead. The test suite runs it, and
 so does the offline examples lane of CI. No alpha estimation is used in these fixed-input
 examples.
 

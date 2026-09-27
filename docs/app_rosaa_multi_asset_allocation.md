@@ -187,6 +187,7 @@ histories that the repository does not hold.
 ## See also
 
 - [Risk budgeting](risk_budgeting.md)
+- [Factor covariance with HCGL](factor_covariance_hcgl.md)
 - [Covariance estimators](covariance_estimators.md)
 - [Portfolio constraints](constraints.md)
 - [Choosing an objective](optimization_module_readme.md)

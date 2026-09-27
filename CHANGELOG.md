@@ -130,6 +130,21 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     8 (including the alpha-over-tracking-error pair) to `False`.
   - The constraints page states that, since 7.8.0, `soft_tracking_error=True` keeps the total
     turnover penalty when no turnover cap is configured.
+- Documentation site, fourth stage, first batch of new methodology pages (no package change):
+  factor covariance with HCGL, ex-ante risk contributions and betas with the hand-off to
+  `qis.RiskModel`, and covariance factorisation, solver outcomes and constraint residuals. Each
+  follows the canonical-script contract.
+  - The factor-model sections of the covariance estimators page move to the factor covariance
+    page, which leaves the covariance estimators page on EWMA. The solver-outcome sections of the
+    objective router move to the solver numerics page.
+  - New teaching exhibits: the systematic and residual variance split under orthogonal and
+    empirical residuals; capital weights against risk shares for four objectives on one
+    covariance; and what the eigenvalue floor changes as two proxies become collinear.
+  - The conventions and constraints pages now state that only the CVXPY-family wrappers, maximum
+    Sharpe included, return an `OptimizationOutcome`; the SciPy wrappers and risk budgeting return
+    a Series.
+  - `tools/check_docs.py` now reads the target of a link whose label wraps lines, such as long
+    image alt text, so a missing exhibit is reported before the Sphinx build.
 
 ## [7.8.0] - 2026-09-23
 

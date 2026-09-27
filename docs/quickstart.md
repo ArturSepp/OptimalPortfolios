@@ -206,7 +206,7 @@ Changing only the dispatcher's `rebalancing_freq` does not rebuild that dictiona
 Configure the `lasso_model` and compatible return frequencies for the intended factor method;
 HCGL is an explicit model choice. Generic factor estimation belongs to
 [FactorLasso](https://github.com/ArturSepp/FactorLasso).
-Follow the [factor covariance guide](covariance_estimators.md) for a complete input example.
+Follow the [factor covariance guide](factor_covariance_hcgl.md) for a complete input example.
 
 For tracking-error or alpha-over-tracking-error construction, use the dedicated interfaces
 documented in the solver guide; they are not additional members of this six-value enum.

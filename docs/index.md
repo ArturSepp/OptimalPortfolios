@@ -81,10 +81,10 @@ simulates the holdings with price drift, implementation lag and transaction cost
 | Step of the diagram | Pages |
 |---|---|
 | Estimation grid | [Mixed-frequency data](mixed_frequency_data.md), [incomplete histories](incomplete_histories.md) |
-| Risk model | [Covariance estimators](covariance_estimators.md), [rolling factor risk model from CSV](rolling_factor_covar_from_csv.md) |
+| Risk model | [Covariance estimators](covariance_estimators.md), [factor covariance with HCGL](factor_covariance_hcgl.md), [rolling factor risk model from CSV](rolling_factor_covar_from_csv.md), [ex-ante risk contributions and betas](portfolio_risk_analytics.md) |
 | Expected returns | [Alpha signals](alphas_module_readme.md) |
 | Objective and constraints | [Choosing an objective](optimization_module_readme.md), [risk budgeting](risk_budgeting.md), [maximum diversification](maximum_diversification.md), [minimum tracking error](minimum_tracking_error.md), [overlay tail floor](overlay_tail_floor.md), [constraints](constraints.md) |
-| Solve and check the outcome | [Choosing an objective](optimization_module_readme.md), [constraints](constraints.md) |
+| Solve and check the outcome | [Choosing an objective](optimization_module_readme.md), [constraints](constraints.md), [solver numerics and outcomes](solver_numerics_and_outcomes.md) |
 | Dated target weights and qis backtest | [Rolling backtests](rolling_backtests.md), [turnover and transaction costs](turnover_and_transaction_costs.md) |
 
 <a id="signals-and-risk-estimates"></a>
@@ -98,10 +98,16 @@ simulates the holdings with price drift, implementation lag and transaction cost
 
 ## Risk models
 
-- [Covariance estimators](covariance_estimators.md): EWMA and sparse factor covariance, return
-  conventions, spans against half-lives, annualisation and point-in-time inputs.
+- [Covariance estimators](covariance_estimators.md): EWMA covariance and the estimator contract
+  shared with the factor model: return conventions, spans against half-lives, annualisation and
+  point-in-time inputs.
+- [Factor covariance with HCGL](factor_covariance_hcgl.md): the factor covariance with sparse
+  HCGL loadings, orthogonal and empirical residuals, cadence penalties and the point-in-time
+  contract.
 - [Rolling factor risk model from CSV](rolling_factor_covar_from_csv.md): rebuild a rolling
   factor risk model from six CSV inputs and connect it to the qis risk model.
+- [Ex-ante risk contributions, betas and the qis risk model](portfolio_risk_analytics.md):
+  Euler risk contributions, benchmark betas and the hand-off to `qis.RiskModel`.
 
 ## Expected returns and signals
 
@@ -128,6 +134,8 @@ simulates the holdings with price drift, implementation lag and transaction cost
 
 - [Portfolio constraints](constraints.md): exposure, box, tracking-error, turnover, group and
   beta limits, hard against utility enforcement, units and backend coverage.
+- [Covariance factorisation, solver outcomes and constraint residuals](solver_numerics_and_outcomes.md):
+  the eigenvalue floor, outcome acceptance, fallbacks and residuals.
 
 <a id="backtests-and-applied-examples"></a>
 
@@ -230,7 +238,9 @@ incomplete_histories
 :caption: Risk models
 
 covariance_estimators
+factor_covariance_hcgl
 rolling_factor_covar_from_csv
+portfolio_risk_analytics
 ```
 
 ```{toctree}
@@ -259,6 +269,7 @@ overlay_tail_floor
 :caption: Constraints and solving
 
 constraints
+solver_numerics_and_outcomes
 ```
 
 ```{toctree}

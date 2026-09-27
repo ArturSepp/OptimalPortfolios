@@ -186,12 +186,15 @@ The rules for each solver family are in
 | Risk budgeting | Cyclical coordinate descent or ADMM with a quadprog projection |
 | Hierarchical risk parity | Recursive bisection over a supplied linkage |
 
-Each single-date solve returns an `OptimizationOutcome`. It is `accepted` when the solver's own
-weights are used; a solution reported as `optimal_inaccurate` is accepted if it is feasible. A
-rejected solve falls back to the drifted pre-trade weights $w_0$, then to the benchmark weights,
-then to zeros. The fallback is not equal weights, and it is not projected onto the constraints.
-Solver settings are the fields of `OptimiserConfig`, described in
-[choosing an objective](optimization_module_readme.md).
+The single-date CVXPY-family wrappers, maximum Sharpe included, return an
+`OptimizationOutcome`; the SciPy wrappers (maximum diversification, CARA utility) and risk
+budgeting return a weight Series. An outcome is `accepted` when the solver's own weights are
+used; a solution reported as `optimal_inaccurate` is accepted if it is feasible. A rejected solve
+falls back to the drifted pre-trade weights $w_0$, then to the benchmark weights, then to zeros.
+The fallback is not equal weights, and it is not projected onto the constraints.
+[Solver numerics and outcomes](solver_numerics_and_outcomes.md) states the acceptance rules, the
+covariance factorisation and the numerical fields of `OptimiserConfig`; the others are described
+in [choosing an objective](optimization_module_readme.md).
 
 > **Pitfall.** `OptimiserConfig.apply_total_to_good_ratio`, which rescales the turnover limit
 > and per-asset maxima when assets are excluded, is `False` on the dataclass. The dispatcher, the
@@ -267,5 +270,7 @@ single-date and numerical entry points.
 - [Choosing an objective](optimization_module_readme.md)
 - [Portfolio constraints](constraints.md)
 - [Rolling backtests](rolling_backtests.md)
-- [Covariance estimators](covariance_estimators.md)
+- [Covariance estimators](covariance_estimators.md) and [factor covariance with HCGL](factor_covariance_hcgl.md)
+- [Ex-ante risk contributions and betas](portfolio_risk_analytics.md)
+- [Solver numerics and outcomes](solver_numerics_and_outcomes.md)
 - [qis notation and conventions](https://quantinveststrats.readthedocs.io/en/stable/notation_and_conventions.html)

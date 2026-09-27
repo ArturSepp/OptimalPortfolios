@@ -49,7 +49,7 @@
     "docs/covariance_estimators.md": {
       "form": "methodology",
       "status": "adopted",
-      "review": "R3b (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. The normalized-return EWMA kernel is point in time since qis 5.31.0 and asserted so; the unread factor demean field is stated. The factor sections move to M05 in R4.",
+      "review": "R3b (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. The normalized-return EWMA kernel is point in time since qis 5.31.0 and asserted so; the unread factor demean field is stated. R4 (2026-09-27): the factor sections moved to factor_covariance_hcgl, leaving pointer sections; the card is EWMA-only and the Pitfall is on rolling EWMA keys. Rechecked with the same checks.",
       "example": "examples/docs/covariance_estimators.py"
     },
     "docs/documentation_standard.md": {
@@ -60,6 +60,12 @@
       "form": "utility",
       "status": "adopted",
       "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Lockfile note replaced by a link to the installation guide; the router rewrite follows in R9."
+    },
+    "docs/factor_covariance_hcgl.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/factor_covariance_hcgl.py",
+      "review": "R4 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M05. Takes the factor sections of covariance_estimators. Teaching exhibit factor_covariance_variance_split.png."
     },
     "docs/incomplete_histories.md": {
       "form": "methodology",
@@ -98,7 +104,7 @@
     "docs/optimization_module_readme.md": {
       "form": "utility",
       "status": "adopted",
-      "review": "R3d (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the excerpt rule and the GitHub math rules (and the convention card on methodology pages); the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Utility router. Decision diagram redrawn (0.84 in the column); apply_total_to_good_ratio tabled for all 22 entry points. The harness is retired; the solver outcome sections move to M21 in R4.",
+      "review": "R3d (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the excerpt rule and the GitHub math rules (and the convention card on methodology pages); the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Utility router. Decision diagram redrawn (0.84 in the column); apply_total_to_good_ratio tabled for all 22 entry points. The harness is retired. R4 (2026-09-27): the solver-outcome sections moved to solver_numerics_and_outcomes, leaving pointers; nine blocks. Rechecked with the same checks.",
       "example": "examples/docs/optimization_module_readme.py"
     },
     "docs/overlay_tail_floor.md": {
@@ -111,6 +117,12 @@
       "form": "utility",
       "status": "adopted",
       "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). The 7.6.0 line now describes the dated review and links the changelog for later releases."
+    },
+    "docs/portfolio_risk_analytics.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/portfolio_risk_analytics.py",
+      "review": "R4 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M07. Benchmark weights that do not sum to one scale the loadings, stated as the Pitfall and asserted. Teaching exhibit risk_contributions_vs_weights.png."
     },
     "docs/quickstart.md": {
       "form": "utility",
@@ -144,6 +156,12 @@
       "form": "utility",
       "status": "adopted",
       "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Drift-helper link corrected to utils/weights_drift.py; the Mermaid diagrams follow in R9."
+    },
+    "docs/solver_numerics_and_outcomes.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/solver_numerics_and_outcomes.py",
+      "review": "R4 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M21. Takes the solver-outcome sections of the router; solve-and-fallback diagram. Teaching exhibit covariance_conditioning.png."
     },
     "docs/stress_testing_with_options.md": {
       "form": "methodology",
@@ -179,16 +197,6 @@
       "title": "Universe data and appraisal unsmoothing",
       "stage": "R5"
     },
-    "docs/factor_covariance_hcgl.md": {
-      "form": "methodology",
-      "title": "Factor covariance with HCGL",
-      "stage": "R4"
-    },
-    "docs/portfolio_risk_analytics.md": {
-      "form": "methodology",
-      "title": "Ex-ante risk contributions, betas and the qis risk model",
-      "stage": "R4"
-    },
     "docs/signal_diagnostics_and_profiling.md": {
       "form": "methodology",
       "title": "Signal diagnostics and alpha-rank portfolios",
@@ -223,11 +231,6 @@
       "form": "methodology",
       "title": "Tactical allocation: alpha over tracking error and yield targets",
       "stage": "R7"
-    },
-    "docs/solver_numerics_and_outcomes.md": {
-      "form": "methodology",
-      "title": "Covariance factorisation, solver outcomes and constraint residuals",
-      "stage": "R4"
     },
     "docs/app_crypto_allocation.md": {
       "form": "case_study",

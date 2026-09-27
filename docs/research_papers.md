@@ -40,7 +40,7 @@ Asset Allocation for Multi-Asset Portfolios*. The Journal of Portfolio Managemen
 The ROSAA framework, of which optimalportfolios is the reference implementation. It contributes:
 
 - the covariance estimated with a hierarchical-clustering group LASSO factor model, assembled as
-  $\Sigma = \beta \Sigma_F \beta^{\top} + D$ (see [covariance estimators](covariance_estimators.md)
+  $\Sigma = \beta \Sigma_F \beta^{\top} + D$ (see [factor covariance with HCGL](factor_covariance_hcgl.md)
   and FactorLasso);
 - strategic allocation by constrained risk budgeting (see [risk budgeting](risk_budgeting.md));
 - tactical allocation as alpha over a tracking-error budget against the strategic benchmark (see
