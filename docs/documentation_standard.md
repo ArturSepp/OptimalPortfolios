@@ -638,12 +638,14 @@ build. Offline regeneration and the external-link gate run in GitHub Actions; ho
 reviewed committed previews. Build-system bootstrap packages, operating-system libraries and
 the Python patch version are not fully pinned by the application lockfile.
 
-The configuration runs uv as a module, `python -m uv`, because pip does not put the uv entry
-point on the build `PATH`. A bare `uv` command failed every hosted build from 2026-09-14 to
-2026-09-26 while `docs.yml` stayed green, since that workflow builds in its own environment.
-Read the Docs also wraps each build-job command, unescaped, in `/bin/sh -c '<command>'`, so a
-command must not contain a single quote. `readthedocs_config_test.py` enforces both rules in the
-test matrix of every pull request.
+The configuration installs uv into its own directory beside the virtualenv and calls that binary
+by path in every step. Read the Docs does not put pip's uv entry point on the build `PATH`, and
+once the project virtualenv exists it puts that environment's `bin` directory first, so neither a
+bare `uv` nor `python -m uv` is reliable there. A bare `uv` failed every hosted build from
+2026-09-14 to 2026-09-26 while `docs.yml` stayed green, since that workflow builds in its own
+environment. Read the Docs also wraps each build-job command, unescaped, in
+`/bin/sh -c '<command>'`, so a command must not contain a single quote.
+`readthedocs_config_test.py` enforces these rules in the test matrix of every pull request.
 The daily [external documentation health workflow](../.github/workflows/link-health.yml) now
 fails when the newest finished build of `latest` did not succeed. The `stable` version rebuilds
 only from a release tag.
