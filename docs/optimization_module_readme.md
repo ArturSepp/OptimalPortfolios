@@ -33,32 +33,42 @@ The objectives differ first in what they need: a covariance only, expected retur
 well, a benchmark to measure against, or a return or volatility target.
 
 ```mermaid
-flowchart TD
-    Q1{"Expected returns<br/>or alphas?"}
-    Q1 -- "no" --> Q2{"A benchmark<br/>to track?"}
-    Q2 -- "yes" --> MTE["Minimum tracking error"]
-    Q2 -- "no" --> RISK["Risk-based: minimum variance,<br/>risk budgeting, hierarchical<br/>risk parity, maximum diversification"]
-    Q1 -- "yes" --> Q3{"Measured against<br/>a benchmark?"}
-    Q3 -- "yes" --> TAA["Tactical: alpha over<br/>tracking error"]
-    Q3 -- "no" --> Q4{"A return or<br/>volatility target?"}
-    Q4 -- "yes" --> SAA["Strategic: target return<br/>or target volatility"]
-    Q4 -- "no" --> MV["Maximum Sharpe, quadratic utility,<br/>or CARA utility for fat tails"]
+flowchart LR
+    Q1{"Expected<br/>returns<br/>or alphas?"}
+    Q1 -- "no" --> Q2{"Benchmark?"}
+    Q2 -- "yes" --> MTE["Minimum<br/>tracking error"]
+    Q2 -- "no" --> RISK["Risk-based:<br/>min variance,<br/>risk budgeting,<br/>hierarchical<br/>risk parity, max<br/>diversification"]
+    Q1 -- "yes" --> Q3{"Benchmark?"}
+    Q3 -- "yes" --> TAA["Tactical:<br/>alpha over<br/>tracking error"]
+    Q3 -- "no" --> Q4{"Return or<br/>volatility<br/>target?"}
+    Q4 -- "yes" --> SAA["Strategic:<br/>target return<br/>or volatility"]
+    Q4 -- "no" --> MV["Max Sharpe,<br/>quadratic or<br/>CARA utility"]
 ```
 
-In words: without expected returns, choose a risk-based objective, such as
-[maximum diversification](maximum_diversification.md), or minimum tracking error when a
-benchmark is given; with expected returns or alphas, choose the tactical solver against a
-benchmark, the strategic solvers for a return or volatility target, and otherwise maximum Sharpe,
-quadratic utility or, when returns are fat-tailed, CARA utility under a Gaussian mixture. The
-[conventions page](conventions.md#objectives-and-their-inputs) lists the exact inputs of each, and
-the [dispatch flow](#dispatch-flow) below maps them to functions. A fixed core with an optimised
-sleeve is the [overlay tail floor](overlay_tail_floor.md).
+In words: without expected returns, choose minimum tracking error when a benchmark is given and
+otherwise a risk-based objective: minimum variance, risk budgeting, hierarchical risk parity or
+[maximum diversification](maximum_diversification.md); with expected returns or alphas, choose the
+tactical solver against a benchmark, the strategic solvers for a return or volatility target, and
+otherwise maximum Sharpe, quadratic utility or, when returns are fat-tailed, CARA utility under a
+Gaussian mixture. The [conventions page](conventions.md#objectives-and-their-inputs) lists the
+exact inputs of each, and the [dispatch flow](#dispatch-flow) below maps them to functions. A
+fixed core with an optimised sleeve is the [overlay tail floor](overlay_tail_floor.md).
 
 ## Start with an auditable allocation
 
-Run the Python blocks on this page in order. This fixed, synthetic five-asset example supplies
-annual-decimal expected returns and a diagonal annual covariance matrix, with full investment,
-long-only positions and unit per-asset caps. It does not estimate market forecasts or download data.
+The eleven Python blocks on this page run in order and need no download, data file or random
+seed. They are excerpts of the canonical script
+[`examples/docs/optimization_module_readme.py`](../examples/docs/optimization_module_readme.py),
+which runs them and asserts every number and property on this page against a reference computed
+a different way:
+
+```console
+python -m examples.docs.optimization_module_readme
+```
+
+This fixed, synthetic five-asset example supplies annual-decimal expected returns and a diagonal
+annual covariance matrix, with full investment, long-only positions and unit per-asset caps. It
+does not estimate market forecasts or download data.
 
 ```python
 import numpy as np
@@ -115,7 +125,7 @@ src/optimalportfolios/optimization/
   portfolio_result.py             reporting container using qis.RiskModel
   constraints/                    public facade and policy/backend owners
   general/                        quadratic, Sharpe, diversification, CARA and minimum TE
-  risk_allocation/                constrained risk budgeting and its numerical solver
+  risk_allocation/                risk budgeting and its solver, group budgets, HRP
   saa/                            return-floor and volatility-budget solvers
   taa/                            alpha/TE and alpha/yield solvers
   <component>/tests/              automated offline contracts
@@ -131,8 +141,9 @@ have separate owners. Pure benchmark-beta analytics live in `optimalportfolios.u
 
 [General solvers](../src/optimalportfolios/optimization/general/__init__.py) include both
 standalone objectives and minimum tracking error relative to a benchmark.
-[Risk allocation](../src/optimalportfolios/optimization/risk_allocation/risk_budgeting.py) owns
-constrained risk budgeting; there is no `general/risk_budgeting.py` implementation.
+[Risk allocation](../src/optimalportfolios/optimization/risk_allocation/__init__.py) owns
+constrained risk budgeting, group risk budgets and hierarchical risk parity; there is no
+`general/risk_budgeting.py` implementation.
 
 [SAA](../src/optimalportfolios/optimization/saa/__init__.py) maps expected returns and return/volatility
 targets into strategic allocations. Supplying a benchmark to its risk-minimising formulation
@@ -227,11 +238,22 @@ assert default_config.use_drifted_weights_0
 assert not legacy_drift_config.use_drifted_weights_0
 ```
 
-Many general wrappers and the dispatcher explicitly default to
-`OptimiserConfig(apply_total_to_good_ratio=True)`, even though constructing the dataclass alone
-gives `False`. Minimum-TE and the SAA wrappers default to `False`. Pass an explicit config when
-comparing calls. CARA rolling currently computes its universe ratio directly; the config flag
-does not disable that calculation.
+Constructing the dataclass alone gives `apply_total_to_good_ratio=False`, but many entry points
+default to `OptimiserConfig(apply_total_to_good_ratio=True)`. The defaults of the public entry
+points that take `optimiser_config` split as follows:
+
+| Default | Entry points |
+|---|---|
+| `OptimiserConfig(apply_total_to_good_ratio=True)` | `compute_rolling_optimal_weights` and `backtest_rolling_optimal_portfolio`; the rolling and single-date functions of quadratic optimisation, maximum Sharpe, maximum diversification, CARA mixture, risk budgeting and alpha with target return (`rolling_maximise_alpha_with_target_return`, `wrapper_maximise_alpha_with_target_return`) |
+| `OptimiserConfig()`, so `False` | The rolling and single-date functions of minimum tracking error, the two SAA solvers and alpha over tracking error (`rolling_maximise_alpha_over_tre`, `wrapper_maximise_alpha_over_tre`) |
+
+Pass an explicit config when comparing calls. CARA rolling currently computes its universe ratio
+directly; the config flag does not disable that calculation.
+
+> **Pitfall.** Passing `OptimiserConfig()` is not the same as passing no configuration. When a
+> sixth, zero-variance asset is excluded, `wrapper_quadratic_optimisation` without a
+> configuration uses its own default and raises the 0.25 caps of the five remaining assets to
+> 0.30, that is 0.25 × 6/5; with `OptimiserConfig()` the caps stay at 0.25.
 
 `max_constraint_relaxation` is a logging threshold, **not a hard limit that prevents relaxation**.
 The alpha-over-TE wrapper forwards it to constraint alignment. The two additional diagnostic
@@ -311,6 +333,10 @@ CARA produce Series. Equal risk budgets and diversification both give inverse-vo
 on this particular diagonal, unconstrained-interior fixture. They need not agree when covariance
 or constraints change. See [risk budgeting](risk_budgeting.md) and
 [minimum tracking error](minimum_tracking_error.md) for the full methodologies.
+
+> **Insight.** The objective alone moves the allocation, even with identical inputs. Minimum
+> variance weights by inverse variance and holds 50.9% in Bond A and 5.7% in Gold; equal risk
+> budgets and maximum diversification weight by inverse volatility and hold 34.5% and 11.5%.
 
 ### Strategic and tactical examples
 
@@ -420,9 +446,9 @@ is internal. With the complete fixture above, the three compiler calls are execu
 ```python
 covar = pd_covar.to_numpy()
 w = cvx.Variable(len(tickers))
-constraints.set_cvx_all_constraints(w, covar)     # → list of cvxpy constraints
-constraints.set_scipy_constraints(covar)           # → (list of dicts, bounds) for scipy
-constraints.set_pyrb_constraints(covar)            # → (bounds, C, d) for the risk-budgeting solver
+constraints.set_cvx_all_constraints(w, covar)  # → list of cvxpy constraints
+constraints.set_scipy_constraints(covar)       # → (list of dicts, bounds) for scipy
+constraints.set_pyrb_constraints(covar)        # → (bounds, C, d) for the risk-budgeting solver
 
 cvx_rows = constraints.set_cvx_all_constraints(w, covar)
 scipy_rows, scipy_bounds = constraints.set_scipy_constraints(covar)
@@ -628,11 +654,11 @@ have their own validation and diagnostics contracts.
 Automated tests are ordinary `*_test.py` modules in the owning `tests/` directory.
 Use the repository's external interpreter and C-local setup described in
 [AGENTS.md](https://github.com/ArturSepp/OptimalPortfolios/blob/main/AGENTS.md).
-From a C-local source export, the focused guide commands are:
+From a C-local source export, the focused commands for this page and the constraint tests are:
 
 ```text
 python tools/check_docs.py --files docs/optimization_module_readme.md
-python -m pytest src/optimalportfolios/tests/optimization_guide_documentation_test.py
+python -m examples.docs.optimization_module_readme
 python -m pytest src/optimalportfolios/optimization/constraints/tests/constraints_test.py -v
 python -m pytest src/optimalportfolios/optimization/constraints/tests/constraints_test.py -k group -v
 ```
@@ -653,11 +679,17 @@ diagnostic that may plot or use local data.
 
 ### Verification context and limits
 
-The 2026-09-14 local verification uses OptimalPortfolios 7.6.0 working source, QIS 5.26.0,
-FactorLasso 0.18.0, pandas 3.0.5, NumPy 2.5.2, CVXPY 1.9.2 and CLARABEL 0.11.1.
-It does not certify the existing lockfile's QIS 5.22.3 environment.
-No alpha estimation is used in these fixed-input examples.
-Sphinx rendering, GitHub preview and VS Code preview require separate review.
+The [canonical script](../examples/docs/optimization_module_readme.py) runs the eleven blocks
+with network connections refused. It checks each displayed allocation against the closed-form
+optimum of the diagonal fixture (inverse variance, inverse volatility, the half-gamma utility,
+the tangency portfolio, the two-equality return floor and the tracking-error ellipsoid) and the
+CARA weights against simple alternatives under the stated mixture utility. It also checks the
+group and deviation limits from the published loadings, the configuration table and the
+`apply_total_to_good_ratio` default of every public entry point, each dispatcher route with its
+parameter scope and mean estimation, the Sharpe backend choice, the rolling schedule and
+execution lag, the absence of look-ahead, and the rejected fallback. The test suite runs it, and
+so does the offline examples lane of CI. No alpha estimation is used in these fixed-input
+examples.
 
 ## References
 

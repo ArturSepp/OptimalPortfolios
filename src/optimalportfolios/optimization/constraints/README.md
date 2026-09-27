@@ -372,7 +372,7 @@ Run checks from a C-local source export; the commands below assume that setup.
 | Compiler rows and backend differences | [Compilation](./tests/backend_compilation_test.py), [translation contracts](./tests/constraint_translation_contract_test.py) and [SciPy group validation](./tests/scipy_group_validation_test.py). |
 | Universe alignment and frozen policy | [Rebalancing](./tests/rebalancing_constraints_test.py) and [frozen overshoots](./tests/frozen_overshoot_relaxation_test.py). |
 | Hard/soft mandates and residuals | [Utility policy](./tests/utility_mandate_policy_test.py), [tracking error](./tests/tracking_error_policy_test.py) and [solver diagnostics](../tests/solver_diagnostics_test.py). |
-| Public methodology and examples | [Constraint article tests](../../tests/constraints_documentation_test.py). |
+| Public methodology and examples | The article's [canonical script](../../../../examples/docs/constraints.py), run by [`documentation_examples_test.py`](../../tests/documentation_examples_test.py). |
 
 Run all constraint-owned contracts:
 
@@ -390,7 +390,7 @@ Check this guide's source and the authoritative article's executable contracts:
 
 ```text
 python tools/check_docs.py --files src/optimalportfolios/optimization/constraints/README.md
-python -m pytest src/optimalportfolios/tests/constraints_documentation_test.py
+python -m examples.docs.constraints
 ```
 
 Manual formatting and inspection belong in

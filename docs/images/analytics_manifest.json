@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-09-27T08:33:51+00:00",
+  "generated_at_utc": "2026-09-27T09:21:36+00:00",
   "platform": "Windows-11-10.0.26200-SP0",
   "versions": {
     "python": "3.12.14",
@@ -552,10 +552,344 @@
         "docs/alphas_module_readme.md",
         "docs/analytics_gallery.md"
       ]
+    },
+    "turnover_penalty_tradeoff": {
+      "path": "docs/images/turnover_penalty_tradeoff.png",
+      "script": "examples/docs/turnover_and_transaction_costs.py",
+      "script_sha256": "f92bb5fa8d3eb5e813bdbc5de5058269d154560c8718e8d39e29869e6fb38500",
+      "image_sha256": "a16cbf44d6b64094a11ffea78a0cf6e942113983127b1d42794b07119fc5c648",
+      "table_sha256": "d50308716e513cbbce786f365f2ba501315fcf2bc36ec06234cde71c6f452bec",
+      "parameters": {
+        "PENALTY_ASSETS": [
+          "Equity",
+          "Credit",
+          "Govt bonds",
+          "Gold"
+        ],
+        "PENALTY_VOLS": [
+          0.16,
+          0.08,
+          0.05,
+          0.15
+        ],
+        "PENALTY_CORR": [
+          [
+            1.0,
+            0.6,
+            -0.2,
+            0.1
+          ],
+          [
+            0.6,
+            1.0,
+            0.3,
+            0.1
+          ],
+          [
+            -0.2,
+            0.3,
+            1.0,
+            0.2
+          ],
+          [
+            0.1,
+            0.1,
+            0.2,
+            1.0
+          ]
+        ],
+        "PENALTY_BENCHMARK": [
+          0.5,
+          0.2,
+          0.25,
+          0.05
+        ],
+        "PENALTY_HOLDINGS": [
+          0.4,
+          0.25,
+          0.2,
+          0.15
+        ],
+        "TRACKING_ERROR_WEIGHT": 100.0,
+        "PENALTY_WEIGHT_MAX": 0.5,
+        "PENALTY_WEIGHT_STEPS": 50,
+        "LABELLED_PENALTY_WEIGHTS": [
+          0.0,
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3,
+          0.4
+        ]
+      },
+      "checks": {
+        "turnover_never_rises": true,
+        "tracking_error_never_falls": true,
+        "zero_weight_holds_benchmark": true,
+        "no_trade_at_and_above_threshold": true,
+        "trades_below_threshold": true,
+        "matches_exact_first_order_solution": true,
+        "package_stats_match_explicit": true,
+        "every_solve_accepted_and_compliant": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/turnover_and_transaction_costs.md"
+      ]
+    },
+    "option_stress_scenarios": {
+      "path": "docs/images/option_stress_scenarios.png",
+      "script": "examples/docs/stress_testing_with_options.py",
+      "script_sha256": "a4763ef6d2be9eadc14094b41e191d1ff24b37d81e29eb3bef6b440d3fa72551",
+      "image_sha256": "12fa6de3ed0666b8f9de976a0d5917bd03af6c9940df9752497731aea39d908a",
+      "table_sha256": "44e3bd8b90373c8163ed01e8b90d160ae0e7ef4f3d63dda7876067336cb196f9",
+      "parameters": {
+        "FACTORS": [
+          "Equity",
+          "Rates",
+          "Commodities"
+        ],
+        "FACTOR_VOLS": [
+          0.16,
+          0.07,
+          0.25
+        ],
+        "FACTOR_CORR": [
+          [
+            1.0,
+            -0.3,
+            0.3
+          ],
+          [
+            -0.3,
+            1.0,
+            -0.1
+          ],
+          [
+            0.3,
+            -0.1,
+            1.0
+          ]
+        ],
+        "STOCKS": [
+          "Stock A",
+          "Stock B",
+          "Stock C"
+        ],
+        "LOADINGS": [
+          [
+            1.2,
+            -0.3,
+            0.0
+          ],
+          [
+            0.9,
+            0.2,
+            0.1
+          ],
+          [
+            1.4,
+            -0.5,
+            0.2
+          ]
+        ],
+        "SPOTS": [
+          152.0,
+          83.0,
+          236.0
+        ],
+        "BUDGET_PER_STOCK": 1000000,
+        "CALL_MONEYNESS": [
+          1.05,
+          1.04,
+          1.06
+        ],
+        "PUT_MONEYNESS": [
+          0.95,
+          0.96,
+          0.94
+        ],
+        "MATURITIES": [
+          0.25,
+          0.4,
+          0.6
+        ],
+        "CALL_VOLS": [
+          0.28,
+          0.24,
+          0.36
+        ],
+        "PUT_VOL_SPREAD": 0.04,
+        "PUT_RATIO": 1.5,
+        "RATE": 0.04,
+        "MULTIPLIER": 100,
+        "EQUITY_MOVES": [
+          -0.3,
+          -0.2,
+          -0.1,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "GRID_STEP": 0.01
+      },
+      "checks": {
+        "parts_sum_to_total": true,
+        "gamma_part_negative_off_zero": true,
+        "gamma_part_is_the_options": true,
+        "options_below_delta_line": true,
+        "options_delta_line_within_one_percent": true,
+        "zero_shock_zero_pnl": true,
+        "left_panel_has_every_scenario": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/stress_testing_with_options.md"
+      ]
+    },
+    "target_vs_drifted_weights": {
+      "path": "docs/images/target_vs_drifted_weights.png",
+      "script": "examples/docs/rolling_backtests.py",
+      "script_sha256": "5107a5c1f92a27e9d1bbb0f36a54065d660500ee063c8d50d66f9f504d659b53",
+      "image_sha256": "28e6883146d19574393aaadfbd744df160d27a2c9128066e5f662916a7887ea2",
+      "table_sha256": "39b6ec9749765254a008e47148a3d5e1d03dc13ad51df074c4ecd03f735e2742",
+      "parameters": {
+        "EXHIBIT_ASSETS": [
+          "Equity",
+          "Bonds",
+          "Diversifier"
+        ],
+        "EXHIBIT_DRIFTS": [
+          0.08,
+          0.02,
+          0.04
+        ],
+        "EXHIBIT_VOLS": [
+          0.18,
+          0.05,
+          0.1
+        ],
+        "EXHIBIT_CORR": [
+          [
+            1.0,
+            -0.2,
+            0.3
+          ],
+          [
+            -0.2,
+            1.0,
+            0.1
+          ],
+          [
+            0.3,
+            0.1,
+            1.0
+          ]
+        ],
+        "EXHIBIT_DATES": [
+          "2019-01-01",
+          "2021-12-31"
+        ],
+        "EXHIBIT_DECISIONS": [
+          "2019-12-01",
+          "2021-12-31"
+        ],
+        "EXHIBIT_RETURNS_FREQ": "W-WED",
+        "EXHIBIT_SPAN": 26,
+        "EXHIBIT_MAX_WEIGHT": 0.6,
+        "EXHIBIT_LAG": 1,
+        "SEED": 3
+      },
+      "checks": {
+        "ledger_units_match_backtester": true,
+        "weights_from_units_and_prices_match_holdings": true,
+        "weights_from_units_and_prices_equal_targets_after_each_trade": true,
+        "drift_helper_anchored_at_each_trade_matches_holdings": true,
+        "each_trade_one_observation_after_its_decision": true,
+        "distance_zero_at_trades_and_positive_between": true,
+        "peak_distance_on_the_day_before_a_trade": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/rolling_backtests.md"
+      ]
+    },
+    "constraint_enforcement_hard_vs_soft": {
+      "path": "docs/images/constraint_enforcement_hard_vs_soft.png",
+      "script": "examples/docs/constraints.py",
+      "script_sha256": "2478a5c7715d010cd99914644d456374fb4a6de6be7336357fa573544674007a",
+      "image_sha256": "f3f0ab870fbc651ba3fa21b7d67beaf24a1858c1147498487aa78443dbe4ea0d",
+      "table_sha256": "424f51c3806866250fbab6234f65dcc95e69487dd156d42d868221db5a3d1409",
+      "parameters": {
+        "ASSETS": [
+          "Equity",
+          "Bond",
+          "Gold"
+        ],
+        "COVARIANCE": [
+          [
+            0.0324,
+            0.0018,
+            0.0024
+          ],
+          [
+            0.0018,
+            0.0064,
+            0.0006
+          ],
+          [
+            0.0024,
+            0.0006,
+            0.0144
+          ]
+        ],
+        "BENCHMARK": [
+          0.45,
+          0.4,
+          0.15
+        ],
+        "ALPHAS": [
+          0.03,
+          0.005,
+          0.01
+        ],
+        "TRACKING_ERROR_LIMIT": 0.02,
+        "PENALTY_WEIGHTS": [
+          1.0,
+          2.0,
+          3.0,
+          5.0,
+          10.0,
+          20.0
+        ],
+        "SOLVER_OPTIONS": {
+          "solver": "CLARABEL",
+          "tol_gap_abs": 1e-10,
+          "tol_gap_rel": 1e-10,
+          "tol_feas": 1e-10,
+          "max_iter": 500
+        }
+      },
+      "checks": {
+        "hard_solve_meets_limit": true,
+        "hard_limit_binds": true,
+        "excess_falls_with_penalty_weight": true,
+        "smallest_weight_exceeds_limit": true,
+        "largest_weight_leaves_limit_slack": true,
+        "penalty_solves_match_closed_form": true,
+        "shadow_price_matches_closed_form": true,
+        "penalty_at_shadow_price_reproduces_hard_solve": true,
+        "excess_reported_as_soft_violation": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/constraints.md"
+      ]
     }
   },
   "review": {
-    "note": "Inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27. risk_budgeting_contributions: budgets as dashed targets, value labels clear, cap in the right-panel legend. tracking_error_constraint_cost: cumulative steps with values, highlighted steps coloured as in the active-weight panel, legend clear of bars. overlay_floor_allocation: stacked sleeve with direct labels, binding point marked in both panels, one annual-% axis. alpha_scoring_cross_section_vs_cluster: cluster colours shared by both panels, rank labels in a column, cluster means dashed. The four earlier exhibits are byte-identical to their published images; the four new ones are byte-identical to the reviewed previews.",
-    "published_at_utc": "2026-09-27T08:34:01+00:00"
+    "note": "Inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27. constraint_enforcement_hard_vs_soft: limit and forced solve dashed, shadow price marked in both panels, labels in ink. target_vs_drifted_weights: targets dashed, trades as grey lines, distance series in ink with the peak annotated. turnover_penalty_tradeoff: labelled penalty weights on the frontier, no-trade threshold marked. option_stress_scenarios: delta and gamma parts with the total as dots; the gamma gap shaded against the delta line; labels in ink. The eight earlier exhibits are byte-identical to their published images; the four new ones are byte-identical to the reviewed previews.",
+    "published_at_utc": "2026-09-27T09:21:53+00:00"
   }
 }

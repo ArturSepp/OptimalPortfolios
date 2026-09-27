@@ -179,10 +179,13 @@ example, such as the CSV risk-model page, needs a checkout instead and says so o
 `src/optimalportfolios/tests/documentation_examples_test.py` runs every script in the test suite,
 and the examples workflow runs them again in their lane.
 
-Pages written earlier are checked by their own documentation tests under
-`src/optimalportfolios/tests/`, and they move to the canonical-script contract when they are
-revised: the page's checks move into its script, and its test is removed in the same change. Preserve the quickstart's executed README and Python/notebook parity checks. Label
-fragments with missing context as illustrative; do not present them as standalone commands.
+Every methodology page and the objective router follow this contract. Three utility pages keep
+their own tests under `src/optimalportfolios/tests/`, because those check facts rather than
+execute page blocks: `installation_documentation_test.py` checks the recipes against the
+packaging metadata, `quickstart_documentation_test.py` the quickstart script's claims and output,
+and `examples_documentation_test.py` the catalogue against the example classifier. Preserve the
+quickstart's executed README and Python/notebook parity checks. Label fragments with missing
+context as illustrative; do not present them as standalone commands.
 
 ## Analytical conventions and figures
 

@@ -116,6 +116,20 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     time since 7.8.1.dev1; its script asserts it for every standard and cluster family. The
     risk-budgeting page describes the solver routing the code uses: CCD with the default box and
     no group rows, otherwise ADMM with a `quadprog` projection.
+- Documentation site, third stage, last batch (no package change): the constraints, rolling
+  backtests, turnover and transaction costs, and stress testing with options pages and the
+  objective router move to the canonical-script contract and are adopted; every methodology page
+  now is. Four more block-executing test modules are retired.
+  - New teaching exhibits: a tracking-error limit as a hard row and as a penalty; target against
+    drifted weights through quarterly trades; the turnover penalty frontier; and the P&L of an
+    option book split into delta and gamma parts by scenario.
+  - The stress-testing page gains an offline script for its scenario completion and option
+    repricing; its frozen market-data run stays as the local runner's output.
+  - The router's decision diagram is redrawn to read at column width, and its
+    `apply_total_to_good_ratio` table now covers every public entry point: 14 default to `True`,
+    8 (including the alpha-over-tracking-error pair) to `False`.
+  - The constraints page states that, since 7.8.0, `soft_tracking_error=True` keeps the total
+    turnover penalty when no turnover cap is configured.
 
 ## [7.8.0] - 2026-09-23
 

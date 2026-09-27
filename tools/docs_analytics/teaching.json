@@ -492,6 +492,305 @@
       ],
       "question": "How does scoring one signal within clusters change the ranking of assets compared with scoring it across the whole cross-section?",
       "sample": "Nine synthetic month-end price paths with constant log drifts, five equity-like and four bond-like, October 2023 to December 2024; twelve-month classic momentum at 31 December 2024; no simulation."
+    },
+    {
+      "id": "turnover_penalty_tradeoff",
+      "path": "docs/images/turnover_penalty_tradeoff.png",
+      "script": "examples/docs/turnover_and_transaction_costs.py",
+      "function": "exhibit",
+      "parameters": {
+        "PENALTY_ASSETS": [
+          "Equity",
+          "Credit",
+          "Govt bonds",
+          "Gold"
+        ],
+        "PENALTY_VOLS": [
+          0.16,
+          0.08,
+          0.05,
+          0.15
+        ],
+        "PENALTY_CORR": [
+          [
+            1.0,
+            0.6,
+            -0.2,
+            0.1
+          ],
+          [
+            0.6,
+            1.0,
+            0.3,
+            0.1
+          ],
+          [
+            -0.2,
+            0.3,
+            1.0,
+            0.2
+          ],
+          [
+            0.1,
+            0.1,
+            0.2,
+            1.0
+          ]
+        ],
+        "PENALTY_BENCHMARK": [
+          0.5,
+          0.2,
+          0.25,
+          0.05
+        ],
+        "PENALTY_HOLDINGS": [
+          0.4,
+          0.25,
+          0.2,
+          0.15
+        ],
+        "TRACKING_ERROR_WEIGHT": 100.0,
+        "PENALTY_WEIGHT_MAX": 0.5,
+        "PENALTY_WEIGHT_STEPS": 50,
+        "LABELLED_PENALTY_WEIGHTS": [
+          0.0,
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3,
+          0.4
+        ]
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/turnover_and_transaction_costs.md"
+      ],
+      "question": "How does raising turnover_utility_weight trade turnover against ex-ante tracking error, and at what weight does trading stop?",
+      "sample": "A synthetic four-asset problem with a 50/20/25/5 benchmark and 40/25/20/15 holdings, solved at 51 penalty weights from 0 to 0.5; no simulation."
+    },
+    {
+      "id": "option_stress_scenarios",
+      "path": "docs/images/option_stress_scenarios.png",
+      "script": "examples/docs/stress_testing_with_options.py",
+      "function": "exhibit",
+      "parameters": {
+        "FACTORS": [
+          "Equity",
+          "Rates",
+          "Commodities"
+        ],
+        "FACTOR_VOLS": [
+          0.16,
+          0.07,
+          0.25
+        ],
+        "FACTOR_CORR": [
+          [
+            1.0,
+            -0.3,
+            0.3
+          ],
+          [
+            -0.3,
+            1.0,
+            -0.1
+          ],
+          [
+            0.3,
+            -0.1,
+            1.0
+          ]
+        ],
+        "STOCKS": [
+          "Stock A",
+          "Stock B",
+          "Stock C"
+        ],
+        "LOADINGS": [
+          [
+            1.2,
+            -0.3,
+            0.0
+          ],
+          [
+            0.9,
+            0.2,
+            0.1
+          ],
+          [
+            1.4,
+            -0.5,
+            0.2
+          ]
+        ],
+        "SPOTS": [
+          152.0,
+          83.0,
+          236.0
+        ],
+        "BUDGET_PER_STOCK": 1000000,
+        "CALL_MONEYNESS": [
+          1.05,
+          1.04,
+          1.06
+        ],
+        "PUT_MONEYNESS": [
+          0.95,
+          0.96,
+          0.94
+        ],
+        "MATURITIES": [
+          0.25,
+          0.4,
+          0.6
+        ],
+        "CALL_VOLS": [
+          0.28,
+          0.24,
+          0.36
+        ],
+        "PUT_VOL_SPREAD": 0.04,
+        "PUT_RATIO": 1.5,
+        "RATE": 0.04,
+        "MULTIPLIER": 100,
+        "EQUITY_MOVES": [
+          -0.3,
+          -0.2,
+          -0.1,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "GRID_STEP": 0.01
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/stress_testing_with_options.md"
+      ],
+      "question": "How do factor shocks and option repricing combine in a portfolio stress test?",
+      "sample": "An offline three-stock book with short calls and puts, a fixed three-factor model, loadings, spots and volatilities, and conditionally completed Equity moves of -30% to +30%; no simulation."
+    },
+    {
+      "id": "target_vs_drifted_weights",
+      "path": "docs/images/target_vs_drifted_weights.png",
+      "script": "examples/docs/rolling_backtests.py",
+      "function": "exhibit",
+      "parameters": {
+        "EXHIBIT_ASSETS": [
+          "Equity",
+          "Bonds",
+          "Diversifier"
+        ],
+        "EXHIBIT_DRIFTS": [
+          0.08,
+          0.02,
+          0.04
+        ],
+        "EXHIBIT_VOLS": [
+          0.18,
+          0.05,
+          0.1
+        ],
+        "EXHIBIT_CORR": [
+          [
+            1.0,
+            -0.2,
+            0.3
+          ],
+          [
+            -0.2,
+            1.0,
+            0.1
+          ],
+          [
+            0.3,
+            0.1,
+            1.0
+          ]
+        ],
+        "EXHIBIT_DATES": [
+          "2019-01-01",
+          "2021-12-31"
+        ],
+        "EXHIBIT_DECISIONS": [
+          "2019-12-01",
+          "2021-12-31"
+        ],
+        "EXHIBIT_RETURNS_FREQ": "W-WED",
+        "EXHIBIT_SPAN": 26,
+        "EXHIBIT_MAX_WEIGHT": 0.6,
+        "EXHIBIT_LAG": 1,
+        "SEED": 3
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/rolling_backtests.md"
+      ],
+      "question": "How far do held weights drift from target weights between quarterly rebalancings?",
+      "sample": "A seeded synthetic business-day panel of three assets, 2019 to 2021, with weekly EWMA covariances, minimum-variance targets capped at 60% and eight quarterly trades with a one-observation lag, plotted from January 2020."
+    },
+    {
+      "id": "constraint_enforcement_hard_vs_soft",
+      "path": "docs/images/constraint_enforcement_hard_vs_soft.png",
+      "script": "examples/docs/constraints.py",
+      "function": "exhibit",
+      "parameters": {
+        "ASSETS": [
+          "Equity",
+          "Bond",
+          "Gold"
+        ],
+        "COVARIANCE": [
+          [
+            0.0324,
+            0.0018,
+            0.0024
+          ],
+          [
+            0.0018,
+            0.0064,
+            0.0006
+          ],
+          [
+            0.0024,
+            0.0006,
+            0.0144
+          ]
+        ],
+        "BENCHMARK": [
+          0.45,
+          0.4,
+          0.15
+        ],
+        "ALPHAS": [
+          0.03,
+          0.005,
+          0.01
+        ],
+        "TRACKING_ERROR_LIMIT": 0.02,
+        "PENALTY_WEIGHTS": [
+          1.0,
+          2.0,
+          3.0,
+          5.0,
+          10.0,
+          20.0
+        ],
+        "SOLVER_OPTIONS": {
+          "solver": "CLARABEL",
+          "tol_gap_abs": 1e-10,
+          "tol_gap_rel": 1e-10,
+          "tol_feas": 1e-10,
+          "max_iter": 500
+        }
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/constraints.md"
+      ],
+      "question": "What changes when a tracking-error limit becomes a penalty: how far does the solve exceed the limit, and what active return does that buy, as the penalty weight grows?",
+      "sample": "The page's synthetic three-asset example with a 45/40/15 benchmark and alphas of 3.0%, 0.5% and 1.0%, solved with a hard 2% tracking-error row and at six penalty weights; no simulation."
     }
   ]
 }
