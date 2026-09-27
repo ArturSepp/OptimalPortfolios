@@ -201,7 +201,7 @@ CSVs; publication still requires the separate visual-review record.
 
 The operator procedure for these previews, with every command, producer family, provenance
 field and publication step, is kept with the tooling in
-[`tools/docs_analytics/README.md`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/docs_analytics/README.md). The sections below summarise it and keep their
+[`tools/docs_analytics/README.md`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/tools/docs_analytics). The sections below summarise it and keep their
 anchors for incoming links.
 
 <a id="analytics-registry-and-refresh-planning"></a>
@@ -219,45 +219,42 @@ python -m tools.docs_analytics.validate --run-root <that-run>
 ```
 
 `--list` checks that every displayed image is registered, `--all` generates a complete bundle into
-a new directory and refuses an incomplete one, and `validate` reads the bundle back. See
-[registry, planning and generation](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/docs_analytics/README.md#analytics-registry-planning-and-generation).
+a new directory and refuses an incomplete one, and `validate` reads the bundle back. Details are in the section *Analytics registry, planning and generation* of the [tooling README](https://github.com/ArturSepp/OptimalPortfolios/tree/main/tools/docs_analytics).
 
 ### Portfolio-report family preview
 
 One producer draws the three report previews of a synthetic backtest, with their supporting CSV
-tables and a family manifest. See [the portfolio-report family](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/docs_analytics/README.md#portfolio-report-family-preview).
+tables and a family manifest. Details are in the section *Portfolio-report family preview* of the [tooling README](https://github.com/ArturSepp/OptimalPortfolios/tree/main/tools/docs_analytics).
 
 ### Span-sensitivity family preview
 
 One preview compares fixed weekly EWMA spans of 5, 13, 26, 52 and 104 on the portfolio-report
-baseline. See [the span-sensitivity family](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/docs_analytics/README.md#span-sensitivity-family-preview).
+baseline. Details are in the section *Span-sensitivity family preview* of the [tooling README](https://github.com/ArturSepp/OptimalPortfolios/tree/main/tools/docs_analytics).
 
 ### Optimizer-comparison family preview
 
 One preview compares minimum variance, maximum diversification and equal risk budgets on the
-same baseline. See [the optimizer-comparison family](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/docs_analytics/README.md#optimizer-comparison-family-preview).
+same baseline. Details are in the section *Optimizer-comparison family preview* of the [tooling README](https://github.com/ArturSepp/OptimalPortfolios/tree/main/tools/docs_analytics).
 
 ### Covariance-comparison family preview
 
 One preview compares six covariance estimators under the same minimum-variance objective on a
-simulation with known factors. See
-[the covariance-comparison family](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/docs_analytics/README.md#covariance-comparison-family-preview).
+simulation with known factors. Details are in the section *Covariance-comparison family preview* of the [tooling README](https://github.com/ArturSepp/OptimalPortfolios/tree/main/tools/docs_analytics).
 
 ### Producer contract and provenance
 
 The registry records each producer's configuration explicitly; no field is inferred from a legacy
-script's defaults, and every output is hashed with its inputs, source and environment. See
-[the producer contract](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/docs_analytics/README.md#producer-contract-and-provenance).
+script's defaults, and every output is hashed with its inputs, source and environment. Details are in the section *Producer contract and provenance* of the [tooling README](https://github.com/ArturSepp/OptimalPortfolios/tree/main/tools/docs_analytics).
 
 ### Reviewed preview publication
 
 Only a complete, validated bundle with a separate visual-review record may replace the committed
-previews. See [reviewed publication](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/docs_analytics/README.md#reviewed-preview-publication).
+previews. Details are in the section *Reviewed preview publication* of the [tooling README](https://github.com/ArturSepp/OptimalPortfolios/tree/main/tools/docs_analytics).
 
 ### Publication recovery
 
 Publication keeps a C-local backup and a recovery journal, because replacing several files is not
-one filesystem transaction. See [publication recovery](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/docs_analytics/README.md#publication-recovery).
+one filesystem transaction. Details are in the section *Publication recovery* of the [tooling README](https://github.com/ArturSepp/OptimalPortfolios/tree/main/tools/docs_analytics).
 
 ## Verification and migration
 
