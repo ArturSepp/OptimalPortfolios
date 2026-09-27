@@ -26,13 +26,26 @@ The [complete executable example](../examples/covar_estimation/rolling_factor_co
 separates `fetch`, which acquires Yahoo teaching proxies, from `load`, which estimates
 entirely from saved inputs. Neither stage requires ROSAA or a private package.
 
-```text
-six source CSVs
-  -> qis.FactorsData + qis.FxRatesData + native asset prices + metadata + settings
-  -> reference-currency log returns, grouped by observation cadence
-  -> FactorCovarEstimator -> RollingFactorCovarData
-  -> dated covariance matrices and qis.RiskModel
+```mermaid
+flowchart LR
+    F["futures_risk_<br/>factors.csv"] --> FD["qis.FactorsData"]
+    S["fx_hedging_data_<br/>fx_spots.csv"] --> FX["qis.FxRatesData"]
+    R["fx_hedging_data_<br/>domestic_rates.csv"] --> FX
+    P["asset_prices.csv"] --> AR["Reference-currency<br/>asset returns<br/>by cadence"]
+    M["asset_metadata.csv"] --> AR
+    FX --> AR
+    C["risk_model_<br/>settings.csv"] --> AR
+    C --> E["FactorCovarEstimator<br/>rolling fit:<br/>RollingFactorCovarData<br/>and qis.RiskModel"]
+    FD --> E
+    AR --> E
 ```
+
+In words: the factor NAV file becomes `qis.FactorsData`; the spot and rate files become
+`qis.FxRatesData`, which converts the native asset prices into reference-currency returns
+according to the currency, hedge ratio and return frequency of each asset in the metadata file;
+the settings file fixes that conversion and the estimator's calibration; and the rolling fit of
+`FactorCovarEstimator` returns the dated snapshots in `RollingFactorCovarData`, which
+`opt.build_risk_model` wraps as a `qis.RiskModel`.
 
 Factor NAVs and FX rates alone are insufficient: the asset universe, native currencies,
 hedge ratios, return cadences, reference currency and estimation settings also matter.
@@ -40,6 +53,18 @@ The default uses monthly returns and annual snapshots. Snapshot cadence does not
 determine the observation frequency or the annualisation multiplier.
 
 ## Inputs, notation, and assumptions
+
+| Convention | This article |
+|---|---|
+| Return basis | Log returns, which the loader requires (`is_log_returns=True`): factor returns from the factor NAVs, asset returns converted to the reference currency. Total returns by default; `is_excess_returns=True` subtracts starting reference cash from asset returns only |
+| Estimation grid | Factor returns at `factor_returns_freq`; asset returns in one bucket per metadata `return_frequency`. Both bundles here are monthly (`ME`) |
+| Rebalancing grid | Snapshot dates at `rebalancing_freq` from `estimation_start` to `estimation_end`: year ends (`YE`), 2019 to 2022 in the worked example. Each fit uses all inputs up to its date |
+| Covariance units | Annual, in squared log returns: the EWMA factor covariance times 12 for monthly factor returns, each residual variance times its bucket's annualisation factor |
+| Expected returns | None; the page builds a risk model only |
+| Weight state | None; the equal-weight factor exposures that the `load` stage prints are a report, not a portfolio |
+| Solver | CVXPY with CLARABEL (the `solver` setting) for the HCGL LASSO regressions, with `reg_lambda=1e-05` |
+
+The notation follows the [conventions page](conventions.md#notation).
 
 ### The six-file CSV contract
 
@@ -83,8 +108,8 @@ demo uses 36 observations for each. `rebalancing_freq=YE` selects snapshot dates
 `estimation_start` is the first requested snapshot boundary, not an instruction to discard
 earlier training history. Keep enough history before it for warm-up.
 
-Let $N$ be the asset count and $M$ the factor count. At snapshot $t$, $B_t$ is the
-$N \times M$ loading matrix, $\Sigma_{f,t}$ the annualised $M \times M$ factor covariance,
+Let $N$ be the asset count and $M$ the factor count. At snapshot $t$, $\beta_t$ is the
+$N \times M$ loading matrix, $\Sigma_{F,t}$ the annualised $M \times M$ factor covariance,
 and $D_t$ the diagonal matrix of annualised residual variances. Betas and R-squared are
 dimensionless. Covariance entries have squared-return units per year.
 
@@ -130,8 +155,9 @@ $$
 $$
 
 QIS obtains $S$ by dividing the local USD-per-currency column by the reference column.
-For monthly returns its forward ratio is
-$K=(1+r_{\mathrm{ref},t-1}/12)/(1+r_{\mathrm{loc},t-1}/12)$.
+With $y_{\mathrm{loc}}$ and $y_{\mathrm{ref}}$ the annual short rates of the two currencies,
+its forward ratio for monthly returns is
+$K=(1+y_{\mathrm{ref},t-1}/12)/(1+y_{\mathrm{loc},t-1}/12)$.
 Other supported cadences use their frequency-based year fraction. This is a fixed
 frequency accrual convention, not an actual-day-count interest calculation.
 The hedge and interest rates are taken from the start of the return period.
@@ -147,17 +173,23 @@ Here $c_{\mathrm{ref},t-1}$ is the starting reference rate times the period's ye
 fraction. Arithmetic excess would instead subtract that cash return in simple space.
 Changing `is_excess_returns` on assets does not transform the factor NAVs.
 
-The FX wrapper groups assets by native return cadence. It also replaces **every exact
-zero return with NaN**, including genuine flat observations. The initial synthetic return
-is missing. Assess the effect of this policy for stale or infrequently marked assets;
-forward-filled source prices do not establish when a valuation became available.
+The FX wrapper groups assets by native return cadence. The initial synthetic return of each
+asset is missing. Forward-filled source prices do not establish when a valuation became
+available.
+
+> **Pitfall.** By default (`zero_return_to_nan=True`) the FX wrapper replaces **every exact
+> zero return with NaN**, including a genuine flat period: if the `Domestic` price of the
+> worked example repeats for one month, that month's return leaves the estimation sample. The
+> example's `load` stage keeps the default; a direct call to `compute_fx_adjusted_returns` with
+> `zero_return_to_nan=False` keeps the zero. Assess the policy for stale or infrequently marked
+> assets.
 
 ### Numerical reconstruction check
 
 The default covariance includes one unit of residual variance:
 
 $$
-\Sigma_{\mathrm{asset},t}=B_t\Sigma_{f,t}B_t^{\mathsf{T}}+D_t.
+\Sigma_t=\beta_t\Sigma_{F,t}\beta_t^{\top}+D_t.
 $$
 
 The rolling wrapper truncates factor prices and each return bucket through each
@@ -165,24 +197,46 @@ snapshot date before fitting. This verifies a timestamp cutoff; it does not supp
 publication lags or restore the historical vintage of revised source data.
 Covariance and residual risk are annualised using their estimation cadences.
 
-The executable example checks every snapshot's aligned reconstruction with
+> **Insight.** With fewer factors than assets, $\beta_t\Sigma_{F,t}\beta_t^{\top}$ is
+> singular: its rank is at most $M$, two for the three assets of the worked example. The
+> residual diagonal $D_t$ is what makes the asset covariance positive definite; in every
+> snapshot of the worked example, its smallest eigenvalue is at least the smallest residual
+> variance.
+
+The example's `load` stage checks every snapshot's aligned reconstruction with
 `rtol=1e-12` and `atol=1e-14`, rejects non-finite entries, and rejects a minimum
 eigenvalue below `-1e-10`. These checks establish internal consistency, not forecast
 accuracy or an independent certification of solver optimality.
 
 ## Worked example
 
+The Python blocks below, and the two under
+[Implementation in optimalportfolios](#implementation-in-optimalportfolios), run in order. They
+are excerpts of the canonical script
+[`examples/docs/rolling_factor_covar_from_csv.py`](../examples/docs/rolling_factor_covar_from_csv.py),
+which runs them with every socket connection blocked, replaces the Yahoo download of the fetch
+block with synthetic closes, and asserts every number and property on this page against a
+reference computed a different way:
+
+```console
+python -m examples.docs.rolling_factor_covar_from_csv
+```
+
+Run the script, or the blocks, from a source checkout with core dependencies: they import the
+repository example, which is not part of the wheel.
+
 ### Create an offline six-file bundle
 
-Run the following blocks in order from a source checkout with core dependencies.
 This deterministic teaching sample uses 73 monthly price dates, two synthetic CHF factor
 NAVs and three assets. There is no network call, vendor data or random seed. The simulated
 native prices deliberately exercise unhedged USD, hedged USD and same-currency CHF paths;
 they are not designed to recover particular economic betas.
 
-The block creates a fresh bundle with `tempfile.mkdtemp` and prints its directory. On this Windows host, first run the
-C-local setup under [Install and run](#install-and-run), which routes temporary files
-outside OneDrive. Keep the resulting six files if you want to repeat the same calculation.
+The block creates a fresh bundle with `tempfile.mkdtemp` and prints its directory. The
+canonical script keeps that directory inside a temporary directory that it removes; run by
+hand, the block leaves the six files in place, so keep them if you want to repeat the same
+calculation. On the maintainer's Windows host, first run the C-local setup under
+[Install and run](#install-and-run), which routes temporary files outside OneDrive.
 
 ```python
 from dataclasses import replace
@@ -237,7 +291,9 @@ qis.save_df_dict_to_csv(
 )
 qis.save_df_to_csv(asset_prices, file_name="asset_prices", local_path=str(data_dir))
 qis.save_df_to_csv(metadata, file_name="asset_metadata", local_path=str(data_dir))
-qis.save_df_to_csv(settings.to_frame(), file_name="risk_model_settings", local_path=str(data_dir))
+qis.save_df_to_csv(
+    settings.to_frame(), file_name="risk_model_settings", local_path=str(data_dir),
+)
 print(data_dir)
 ```
 
@@ -375,16 +431,16 @@ The expected structural result is:
 | Betas / factor covariance / asset covariance | 3 × 2 / 2 × 2 / 3 × 3 |
 | Return / covariance convention | Monthly CHF total log returns / annualised covariance |
 
-No solver-specific beta or volatility is presented as a universal baseline. The regression
-tests execute these blocks, independently derive converted returns from endpoint wealth
-and starting cash rates, reconstruct every covariance, and perturb future inputs to check
+No solver-specific beta or volatility is presented as a universal baseline. The canonical
+script derives the converted returns independently from endpoint wealth and starting cash
+rates, reconstructs every covariance term by term, and perturbs future inputs to check
 earlier snapshots.
 
 ## Implementation in optimalportfolios
 
 ### Install and run
 
-The script lives in the repository-only `examples/` tree, which is absent from the wheel.
+The CSV example lives in the repository-only `examples/` tree, which is absent from the wheel.
 Run module commands from a checkout. The core installation suffices for `load`; the
 optional `data` extra adds the Yahoo fetch dependency.
 
@@ -404,7 +460,7 @@ only the final `load` command. On another host, use its configured interpreter a
 explicit local output directory. A copied standalone script accepts
 `python rolling_factor_covar_from_csv.py load --data-dir /absolute/local/bundle`.
 
-The script's current default directory is `<checkout>/tmp/yahoo_factor_risk_model`,
+The CSV example's default directory is `<checkout>/tmp/yahoo_factor_risk_model`,
 and its default mode is `all` (fetch followed by load). **Always supply `--data-dir`**;
 the default is unsuitable for this repository's OneDrive output policy.
 `fetch` replaces the six named files and is not transactional. Choose a fresh directory,
@@ -412,11 +468,13 @@ then preserve the complete successful bundle before sharing it.
 
 ### Fetch and persist
 
-This optional live-data block is separate from the offline walkthrough. It needs a fresh
-destination and the data extra. Replace the path placeholder with an absolute local directory;
-this block was not executed against Yahoo during this migration.
+This optional block downloads live data when run by hand. It needs the `data` extra and a
+fresh destination: replace the relative path placeholder with an absolute local directory.
+The canonical script runs it in a temporary working directory with the download replaced by
+synthetic closes. That checks the request, the business-day grid, the inverted CHF quote, the
+two rates, the metadata and the construction of the factor NAVs, not Yahoo's data.
 
-```python +SKIP
+```python
 from pathlib import Path
 
 from examples.covar_estimation.rolling_factor_covar_from_csv import (
@@ -458,17 +516,19 @@ for OP rolling optimizers.
 | `x_covar` | Annualised factor covariance. |
 | `y_betas` | Dimensionless asset-by-factor loadings. |
 | `y_variances` | Annualised total and residual variances; annual-scaled alpha; dimensionless R-squared. |
-| `residuals` | In the inspected implementation, annualisation factor times (asset log return minus fitted factor contribution), without subtracting alpha. It is not the raw residual series whose sample variance can be substituted for `D`. |
+| `residuals` | The annualisation factor times (asset log return minus fitted factor contribution), without subtracting alpha. It is not the raw residual series whose sample variance can be substituted for `D`. |
 
 The public adapter is in [risk_model_adapter.py](../src/optimalportfolios/covar_estimation/risk_model_adapter.py);
 estimation is in [factor_covar_estimator.py](../src/optimalportfolios/covar_estimation/factor_covar_estimator.py).
 [QIS](https://github.com/ArturSepp/QuantInvestStrats) owns FX conversion and risk reporting.
 [FactorLasso](https://github.com/ArturSepp/FactorLasso) owns LASSO fitting and the covariance containers.
 
-The local verification on 2026-09-14 used an OptimalPortfolios 7.6.0 working-source export,
-QIS 5.26.0, FactorLasso 0.18.0, pandas 3.0.5, NumPy 2.5.2, CVXPY 1.9.2 and CLARABEL 0.11.1.
-These are the inspected versions, not a claim that the lockfile resolves to them.
-The pinned QIS 5.22.3 environment still needs separate reconciliation and verification.
+The [canonical script](../examples/docs/rolling_factor_covar_from_csv.py) runs the worked
+example and checks the round trip of every file, the converted, excess and zero returns, each
+snapshot's reconstruction and units, the `load` command in a fresh process without `yfinance`
+or sockets, the loader's rejections and repairs, and historical input cutoffs. The test suite
+runs it. The examples workflow runs it in its scheduled network lane, because the repository
+example it imports also contains the Yahoo fetcher; the script itself opens no connection.
 
 ## Interpretation and limitations
 
@@ -493,11 +553,13 @@ four **loaded** time-series panels.
 
 Validation is not a complete audit of the delivered bytes:
 
-- Asset prices are sorted before checking. FX spots are forward-filled and rates are
-  reindexed/forward-filled to the spot grid by `qis.FxRatesData` before checking.
-  Thus repaired gaps or an extended rate grid can pass; source freshness must be audited separately.
-- Factor and spot date indexes must still be sorted and unique. The loader does not enforce
-  the USD anchor's value, a common first date, or enough effective observations for every fit.
+- Asset prices are sorted before checking. `qis.FxRatesData` sorts the FX spots and rates,
+  forward-fills the spots and forward-fills the rates onto the spot dates before checking.
+  Thus unsorted FX files, repaired gaps or an extended rate grid can pass; source freshness
+  must be audited separately.
+- Factor dates must still be sorted and unique, and spot dates unique. The loader does not
+  enforce the USD anchor's value, a common first date, or enough effective observations for
+  every fit.
 - Extra files and extra settings are accepted. Count settings are parsed with
   `int(float(value))`, so fractional counts are truncated. Deliver integer counts explicitly.
 - Asset-frequency validity is checked on loading; unknown LASSO model names are rejected
@@ -523,8 +585,10 @@ dependencies; saving the inputs is not a guarantee of bitwise solver output acro
 
 ## References
 
-- [Canonical CSV example](../examples/covar_estimation/rolling_factor_covar_from_csv.py),
+- [Repository CSV example](../examples/covar_estimation/rolling_factor_covar_from_csv.py),
   source for filenames, defaults, loading and reconstruction checks.
+- [Canonical script of this page](../examples/docs/rolling_factor_covar_from_csv.py), which
+  asserts its statements.
 - [QIS FX conversion source](https://github.com/ArturSepp/QuantInvestStrats/blob/main/src/qis/market_data/fx_rates_data.py)
   and [QIS software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).
 - [FactorLasso source](https://github.com/ArturSepp/FactorLasso)

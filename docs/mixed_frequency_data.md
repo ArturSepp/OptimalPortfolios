@@ -42,6 +42,18 @@ Sparse factor regression is delegated to
 
 ## Inputs, notation, and assumptions
 
+| Convention | This article |
+|---|---|
+| Return basis | Log returns within each cadence bucket; `UniverseData.get_asset_returns_dict` returns arithmetic returns unless `is_log_returns=True` |
+| Estimation grid | One bucket per cadence: monthly (`ME`) for the liquid assets, quarterly (`QE`) for the private asset |
+| Rebalancing grid | Quarter ends (`QE`) for the rolling factor covariance; signals are formation-date values |
+| Covariance units | Annual, fractional log-return squared: the monthly factor covariance times 12, each residual variance times 12 or 4 by bucket |
+| Expected returns | None; momentum outputs are raw signals and cross-sectional scores, not return forecasts |
+| Weight state | None; the page builds inputs, not weights |
+| Solver | CVXPY with CLARABEL for the LASSO factor fits |
+
+The notation follows the [conventions page](conventions.md#notation).
+
 Use finite positive total-return prices or NAVs in a consistent currency, with unique asset
 labels and an ordered, unique `DatetimeIndex`. A price-only series omits distributions;
 a return convention cannot repair that omission.
@@ -163,7 +175,15 @@ the intended schedule and subsequent implementation convention. For homogeneous 
 
 ## Worked example
 
-Run the following six Python blocks in order. They need no download, data file or random seed.
+The six Python blocks below run in order and need no download, data file or random seed. They
+are excerpts of the canonical script
+[`examples/docs/mixed_frequency_data.py`](../examples/docs/mixed_frequency_data.py), which runs
+them and asserts every number and property on this page against a reference computed a
+different way:
+
+```console
+python -m examples.docs.mixed_frequency_data
+```
 
 ### Create monthly prices and quarterly NAV observations
 
@@ -206,8 +226,12 @@ returns_by_frequency = qis.compute_asset_returns_dict(
 ```
 
 `"ME"` contains 73 rows and two assets; `"QE"` contains 25 rows and one asset. Each
-starts with a zero. Do not fill the quarterly **return panel** onto the monthly grid
-and treat repeated values as independent monthly observations.
+starts with a zero.
+
+> **Pitfall.** Do not fill the quarterly **return panel** onto the monthly grid and treat the
+> repeated values as independent monthly observations. The bucket has 25 returns, not 73. Each
+> repeat carries a quarter's variance but is annualised as a month, which for independent
+> returns overstates the annual variance about threefold, and the repeats are not independent.
 
 ### Compute EWMA momentum at each cadence
 
@@ -251,6 +275,20 @@ in March. Values below are cumulative log returns rounded to six decimals.
 At 31 December 2023 the monthly window runs from 30 November 2022 to 30 November
 2023. The quarterly window runs from 30 September 2022 to 30 September 2023.
 Both include a year of returns but exclude different latest intervals.
+
+![Left: at the 31 December 2023 formation date, the two monthly assets use 12 monthly returns
+from November 2022 to November 2023, and the private asset uses 4 quarterly returns from
+September 2022 to September 2023; the skipped latest interval is dotted. Right: the raw classic
+momentum of the private asset stays flat in January and February 2024 and updates at the March
+quarter end, while the monthly assets update every month.](images/mixed_frequency_grids.png)
+
+*Figure: the observations that enter each asset's classic momentum, and the carried quarterly
+signal, for the panel of the worked example. Drawn by the `exhibit` function of the canonical
+script; the [analytics gallery](analytics_gallery.md) lists its provenance.*
+
+> **Insight.** A shared formation date does not mean a shared window. With one skipped period
+> per cadence, the monthly windows end on 30 November and the quarterly window on 30 September,
+> so the signals compare returns over different years.
 
 Both momentum calls return missing `Private Assets` **scores** because it is the only
 quarterly asset. Its finite raw signal is not evidence of a usable cross-sectional score.
@@ -342,18 +380,9 @@ Ordinary sources: [universe adapter](../src/optimalportfolios/universe/universe_
 Generated signatures are in the [API reference](api.rst). QIS owns the
 [return sampler](https://github.com/ArturSepp/QuantInvestStrats/blob/main/src/qis/perfstats/returns.py).
 
-The [article verification](../src/optimalportfolios/tests/mixed_frequency_data_documentation_test.py)
-executes these blocks and checks returns, observation windows, per-cadence variance units,
-scoring, stale updates and historical input cutoffs. From a configured contributor environment:
-
-```console
-python -m pytest src/optimalportfolios/tests/mixed_frequency_data_documentation_test.py -q
-```
-
-Locally verified on 14 September 2026 with OptimalPortfolios 7.6.0 working source,
-qis 5.26.0, factorlasso 0.18.0 and Python 3.12.14. The supplied environment differs from
-the existing lockfile; this is not a claim that the locked installation was tested.
-GitHub and VS Code preview checks remain pending.
+The [canonical script](../examples/docs/mixed_frequency_data.py) runs the worked example and
+checks returns, observation windows, per-cadence variance units, scoring, stale updates and
+historical input cutoffs. The test suite runs it, and so does the offline examples lane of CI.
 
 ## Interpretation and limitations
 
@@ -379,10 +408,9 @@ GitHub and VS Code preview checks remain pending.
   correct serial dependence, appraisal smoothing, stale marks or asynchronous exposure changes.
   The factor residual diagonal omits cross-asset residual covariance.
 - **Timing and configuration limits:** the
-  [covariance article](covariance_estimators.md#interpretation-and-limitations) records the
-  normalized direct-EWMA initialization limitation and the unwired top-level factor
-  `demean` field. The current example explicitly slices histories and uses unnormalized
-  covariance; production numerical behavior is unchanged.
+  [covariance article](covariance_estimators.md#interpretation-and-limitations) records that
+  the top-level factor `demean` field is not read; set regression demeaning on the
+  `LassoModel`. A current factor fit needs explicitly sliced inputs, as in the example above.
 
 ## See also
 

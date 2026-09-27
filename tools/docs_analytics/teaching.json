@@ -197,6 +197,70 @@
       ],
       "question": "How do risk budgets translate into strategic weights, and do the tactical tilts spend the tracking-error budget in the direction of the alphas?",
       "sample": "Synthetic monthly panel of three factors and eight asset classes with known loadings, December 2004 to June 2025, seed 11; quarter ends 2014-12 to 2025-06."
+    },
+    {
+      "id": "mixed_frequency_grids",
+      "path": "docs/images/mixed_frequency_grids.png",
+      "script": "examples/docs/mixed_frequency_data.py",
+      "function": "exhibit",
+      "parameters": {
+        "ASSETS": [
+          "Global Equity",
+          "Government Bonds",
+          "Private Assets"
+        ],
+        "FORMATION_DATE": "2023-12-31",
+        "LOOKBACK": {
+          "ME": 12,
+          "QE": 4
+        },
+        "SKIP": {
+          "ME": 1,
+          "QE": 1
+        }
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/mixed_frequency_data.md"
+      ],
+      "question": "Which observations enter each asset's classic momentum when monthly and quarterly assets share a formation date, and how is a quarterly signal carried between quarter ends?",
+      "sample": "Deterministic synthetic panel of two monthly series and quarter-end NAVs, December 2018 to December 2024; no simulation."
+    },
+    {
+      "id": "incomplete_histories_price_gaps",
+      "path": "docs/images/incomplete_histories_price_gaps.png",
+      "script": "examples/docs/incomplete_histories.py",
+      "function": "exhibit",
+      "parameters": {
+        "GAP_DAYS": [
+          "2024-01-02",
+          "2024-01-03",
+          "2024-01-04",
+          "2024-01-05"
+        ],
+        "LIQUID_PRICES": [
+          100.0,
+          110.0,
+          120.0,
+          130.0
+        ],
+        "GAPPED_PRICES": [
+          100.0,
+          null,
+          110.0,
+          120.0
+        ],
+        "TARGET_WEIGHTS": [
+          0.6,
+          0.4
+        ]
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/incomplete_histories.md"
+      ],
+      "question": "What happens to NAV and holdings when a price is missing between rebalancings, on a rebalance date, and at the opening trade?",
+      "sample": "Two synthetic assets over four business days in January 2024, with one missing price; no simulation."
     }
   ]
 }

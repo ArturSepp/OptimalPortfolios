@@ -92,6 +92,20 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     statements about an unreconciled lockfile that had been resolved.
   - Eleven pages are adopted: the home, conventions, research-papers, installation, quickstart,
     examples, gallery, software-design and comparison pages and the two R2 pilots.
+- Documentation site, third stage, second batch (no package change): the mixed-frequency data,
+  incomplete histories, covariance estimators and CSV risk-model pages move to the
+  canonical-script contract and are adopted.
+  - Each page's Python blocks are excerpts of `examples/docs/<page>.py`, which runs them and
+    asserts the page against independent references; the four test modules that executed the
+    Markdown blocks are replaced by `documentation_examples_test.py`, which runs every page
+    script.
+  - New teaching exhibits show which observations enter each asset's momentum window on a
+    monthly and quarterly panel, and what a missing price does to NAV and holdings between
+    rebalancings, on a rebalance date and at entry. The CSV page gains a diagram of its six-file
+    workflow.
+  - Stale statements are corrected: the normalized-return EWMA kernel is point in time since qis
+    5.31.0; `qis.FxRatesData` sorts FX spots and rates; the FX wrapper's zero-return policy can
+    be switched off with `zero_return_to_nan=False`.
 
 ## [7.8.0] - 2026-09-23
 

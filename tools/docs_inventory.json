@@ -46,8 +46,9 @@
     },
     "docs/covariance_estimators.md": {
       "form": "methodology",
-      "status": "pending",
-      "review": "M4b source migration, six executable examples, independent EWMA/factor-component references, future-input timing checks, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-14. The normalized-return timing and factor demeaning-field limitations are documented without numerical changes. Common-frequency residual correlation revised on 2026-09-20 to preserve current MATF variances: source checks, independent numerical and correlation-state tests, installed equity parity and strict Sphinx HTML pass. Visual checks of this addition in Sphinx, GitHub and VS Code remain pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R3b (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. The normalized-return EWMA kernel is point in time since qis 5.31.0 and asserted so; the unread factor demean field is stated. The factor sections move to M05 in R4.",
+      "example": "examples/docs/covariance_estimators.py"
     },
     "docs/documentation_standard.md": {
       "form": "utility",
@@ -60,8 +61,9 @@
     },
     "docs/incomplete_histories.md": {
       "form": "methodology",
-      "status": "pending",
-      "review": "M4a source migration, six executable examples, independent units/cash and covariance-state references, scoped checks, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-13. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R3b (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Teaching exhibit incomplete_histories_price_gaps.png.",
+      "example": "examples/docs/incomplete_histories.py"
     },
     "docs/index.md": {
       "form": "utility",
@@ -86,8 +88,9 @@
     },
     "docs/mixed_frequency_data.md": {
       "form": "methodology",
-      "status": "pending",
-      "review": "M4b source migration, six executable blocks, independent return-window and covariance-unit references, per-cadence scoring and future-input checks, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-14. All three original examples are preserved. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R3b (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Teaching exhibit mixed_frequency_grids.png.",
+      "example": "examples/docs/mixed_frequency_data.py"
     },
     "docs/optimization_module_readme.md": {
       "form": "utility",
@@ -126,8 +129,9 @@
     },
     "docs/rolling_factor_covar_from_csv.md": {
       "form": "methodology",
-      "status": "pending",
-      "review": "M4b source migration, seven executable offline blocks, independent FX/cash and covariance references, future-input checks, 153 focused tests, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-14. The seven original examples and all legacy anchors are preserved; loader, residual-unit and output-path limitations are explicit. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R3b (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Mermaid diagram of the six-file workflow; the script runs from a checkout, in the network lane.",
+      "example": "examples/docs/rolling_factor_covar_from_csv.py"
     },
     "docs/software_design.md": {
       "form": "utility",

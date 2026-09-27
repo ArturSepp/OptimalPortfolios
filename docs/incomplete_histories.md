@@ -31,6 +31,18 @@ identifies that delegated calculation layer.
 
 ## Inputs, notation, and assumptions
 
+| Convention | This article |
+|---|---|
+| Return basis | Simple price returns in the drift example; supplied per-observation returns in the EWMA kernel example; `EwmaCovarEstimator` itself samples log returns |
+| Estimation grid | Two quarter-end decision dates for the policy panels and the drift; four business days for the holdings paths; three observations for the EWMA kernel |
+| Rebalancing grid | Explicit target dates: one opening trade, or trades on the first two days in the rebalance-on-gap path; implementation lag zero |
+| Covariance units | Annual return-squared in the filtering example; per observation, not annualised, in the EWMA kernel example |
+| Expected returns | None |
+| Weight state | Baseline `weights_0` drifted to the decision date by `apply_drift_to_weights_0`; executed units and cash in the qis holdings paths |
+| Solver | None; the page aligns constraints and simulates holdings without a solve |
+
+The notation follows the [conventions page](conventions.md#notation). In addition:
+
 | Input or symbol | Meaning and units |
 |---|---|
 | `prices` | Floating-point prices, with an ordered `DatetimeIndex` and unique ticker columns. |
@@ -129,8 +141,8 @@ for the full fallback contract.
 
 ### Price gaps at implementation
 
-The following describes the checked qis 5.26.0 implementation. A missing opening price yields
-zero units for that leg; its intended allocation remains cash and is not redistributed.
+The following describes the qis implementation of the locked environment, which the canonical
+script of this page checks. A missing opening price yields zero units for that leg; its intended allocation remains cash and is not redistributed.
 When prices later appear, entry waits for another scheduled rebalance.
 
 For an already-held leg, the outcome depends on whether a rebalance occurs:
@@ -152,7 +164,14 @@ prices or costs can make executing the same target weight trade units.
 
 ## Worked example
 
-All inputs here are synthetic teaching cases. Run the six Python blocks in order.
+All inputs here are synthetic teaching cases. The six Python blocks run in order; they are
+excerpts of the canonical script
+[`examples/docs/incomplete_histories.py`](../examples/docs/incomplete_histories.py), which runs
+them and asserts every number on this page against an exact ledger of units and cash:
+
+```console
+python -m examples.docs.incomplete_histories
+```
 
 ### Separate policy panels
 
@@ -216,6 +235,10 @@ Starting from NAV 100, the liquid position grows from 60 to 72 and the flat fall
 remains valued at 40 in this approximation. Total NAV is 112. The resulting weights are
 **0.642857** and **0.357143**, respectively. The missing ratio does not preserve a 40% weight.
 
+> **Insight.** A leg whose price is missing is carried at a flat price, not at a fixed weight.
+> Its weight still falls when the rest of the portfolio grows, because every weight shares the
+> NAV denominator.
+
 ### Missing prices in three holdings paths
 
 ```python
@@ -263,6 +286,21 @@ The held-gap path owns 0.6 liquid units and 0.4 gapped units throughout. In the 
 path, 3 January changes those holdings to 0.36 and zero, with cash 26.40. The original gapped
 units do not return when their price returns. The late-entry path owns 0.6 liquid units,
 zero gapped units and cash 40 throughout. Its missing allocation is never redistributed.
+
+![Left: NAV of the three paths over four business days; the hold-through-gap and
+rebalance-on-gap paths both fall to 66 on 3 January, when the gapped price is missing, after
+which the held path recovers to 126 and the rebalanced path stays near 70; the missing-opening-price
+path rises from 100 to 118. Right: in the rebalance-on-gap path, the gapped holding is replaced
+by cash of 26.40 from 3 January and never returns.](images/incomplete_histories_price_gaps.png)
+
+*Figure: the three holdings paths of the example, and the holdings of the rebalance-on-gap path.
+Drawn by the `exhibit` function of the canonical script; the
+[analytics gallery](analytics_gallery.md) lists its provenance.*
+
+> **Pitfall.** A missing price on a rebalance date clears a held position without liquidation
+> proceeds: the gapped units become zero and do not return when the price does. An optimizer
+> freeze does not prevent this, because qis never receives it. Resolve the missing price, or
+> pass no target on that date, as in the hold-through-gap path.
 
 ### Filtering is separate from history eligibility
 
@@ -317,19 +355,10 @@ tolerance as a substitute for input validation.
 
 ### Reproduction and verification context
 
-The six Python blocks above are canonical sequential examples.
-[Executable tests](../src/optimalportfolios/tests/incomplete_histories_documentation_test.py)
-check them against independent position-value and covariance-state references, including the
-displayed table:
-
-```console
-python -m pytest src/optimalportfolios/tests/incomplete_histories_documentation_test.py
-```
-
-Local verification used the OptimalPortfolios 7.6.0 working source, qis 5.26.0,
-CVXPY 1.9.2 and CLARABEL 0.11.1 on Python 3.12.14. The repository lockfile currently records
-qis 5.22.3, so this is an explicitly recorded environment check, not a locked-environment result.
-The tests characterize the imported implementation and should be reviewed when it changes.
+The [canonical script](../examples/docs/incomplete_histories.py) checks the six blocks against
+independent position-value and covariance-state references, including the displayed table. The
+test suite runs it, and so does the offline examples lane of CI. Its checks characterise the
+imported implementation of qis, so a change in qis's gap handling fails them.
 
 ## Interpretation and limitations
 

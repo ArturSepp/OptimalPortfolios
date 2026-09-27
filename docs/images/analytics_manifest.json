@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-09-27T05:11:22+00:00",
+  "generated_at_utc": "2026-09-27T07:19:25+00:00",
   "platform": "Windows-11-10.0.26200-SP0",
   "versions": {
     "python": "3.12.14",
@@ -218,10 +218,83 @@
         "docs/analytics_gallery.md",
         "docs/app_rosaa_multi_asset_allocation.md"
       ]
+    },
+    "mixed_frequency_grids": {
+      "path": "docs/images/mixed_frequency_grids.png",
+      "script": "examples/docs/mixed_frequency_data.py",
+      "script_sha256": "2020d584c6b2ea16331d38598a8395af1f1dd9069a0294a5ef40d0ddfcae347a",
+      "image_sha256": "1c45d191df58d071ad21cf5a7be1a1ec257ad16c35495e38ceab1ca5884131c5",
+      "table_sha256": "547836425ad581fd76815528a815bb744a5a8caf696078d8deabd384cce96715",
+      "parameters": {
+        "ASSETS": [
+          "Global Equity",
+          "Government Bonds",
+          "Private Assets"
+        ],
+        "FORMATION_DATE": "2023-12-31",
+        "LOOKBACK": {
+          "ME": 12,
+          "QE": 4
+        },
+        "SKIP": {
+          "ME": 1,
+          "QE": 1
+        }
+      },
+      "checks": {
+        "windows_match_endpoint_ratios": true,
+        "monthly_window_ends_one_month_before_formation": true,
+        "quarterly_window_ends_one_quarter_before_formation": true,
+        "private_signal_carried_until_march": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/mixed_frequency_data.md"
+      ]
+    },
+    "incomplete_histories_price_gaps": {
+      "path": "docs/images/incomplete_histories_price_gaps.png",
+      "script": "examples/docs/incomplete_histories.py",
+      "script_sha256": "2c838705018b2d053d9fd58c663df4b3b286fe0a5453f32b908baaad5e14dca1",
+      "image_sha256": "f86115ec21e5eff74c9d95a06acd82b76ce2e912d53e2bbb46d23a28b149dccb",
+      "table_sha256": "72a1f003c8f31d549dff5a49d2d4acfa6e416ab0d37ee0edca8404c960f2ac97",
+      "parameters": {
+        "GAP_DAYS": [
+          "2024-01-02",
+          "2024-01-03",
+          "2024-01-04",
+          "2024-01-05"
+        ],
+        "LIQUID_PRICES": [
+          100.0,
+          110.0,
+          120.0,
+          130.0
+        ],
+        "GAPPED_PRICES": [
+          100.0,
+          null,
+          110.0,
+          120.0
+        ],
+        "TARGET_WEIGHTS": [
+          0.6,
+          0.4
+        ]
+      },
+      "checks": {
+        "nav_matches_ledger": true,
+        "gapped_units_cleared_on_rebalance": true,
+        "cash_left_after_clearing": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/incomplete_histories.md"
+      ]
     }
   },
   "review": {
-    "note": "Inspected at full resolution (1500x660 px) by the agent on 2026-09-27. max_diversification_identity: byte-identical to the reviewed bundle 3. rosaa_saa_taa_layers: tick labels clear after rotation, legend clear of bars, labels legible at 736 px; values match the script's assertions (Govt 41% for a 10% budget, 3% tracking error at 43 quarter ends). Owner review pending at the R2 gate.",
-    "published_at_utc": "2026-09-27T05:11:40+00:00"
+    "note": "Inspected at full resolution (1500x660 px) by the agent on 2026-09-27. mixed_frequency_grids: observation windows and skipped intervals labelled per row, formation line clear of labels, step lines end with a held segment, direct labels on the right panel; values match the script (windows end 30 Nov and 30 Sep 2023). incomplete_histories_price_gaps: the coinciding paths stay visible (dashed), right-panel colours are shades of that path's orange, NAV 100/66/69.6/73.2 and cash 26.40 match the ledger. max_diversification_identity and rosaa_saa_taa_layers: byte-identical to the published R2 images.",
+    "published_at_utc": "2026-09-27T07:41:10+00:00"
   }
 }
