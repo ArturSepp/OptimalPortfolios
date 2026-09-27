@@ -71,6 +71,16 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     Insight/Pitfall callouts are added to the site.
   - The analytics operator procedure moves from the documentation standard to
     `tools/docs_analytics/README.md`; the standard keeps its rules and section anchors.
+- Documentation site, second stage (no package change): the first article written to the
+  canonical-script contract, *Maximum diversification*, proves that under long-only full
+  investment the portfolio is the minimum-variance portfolio of the correlation matrix rescaled by
+  inverse volatility, and that every held asset has correlation 1/DR with it; its script checks
+  both against CVXPY. The first case study reports the ROSAA article's design and results and runs
+  its three layers offline on a synthetic panel. Teaching exhibits are drawn by the canonical
+  scripts of their pages and published with `tools/docs_analytics/teaching.py` into `docs/images/`;
+  `tools.docs_analytics.run --verify` checks them together with the README previews, in the Read
+  the Docs pre-build and in `docs.yml`. The canonical scripts under `examples/docs/` run in the
+  offline examples lane.
 
 ## [7.8.0] - 2026-09-23
 

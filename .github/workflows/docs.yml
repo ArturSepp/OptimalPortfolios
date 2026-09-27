@@ -47,8 +47,8 @@ jobs:
           --basetemp="$AGENT_LOCAL_ROOT/tests"
       - name: Check displayed-image registration
         run: uv run --no-sync python -m tools.docs_analytics.run --list
-      - name: Verify published preview integrity
-        run: uv run --no-sync python -m tools.docs_analytics.publish --verify --repo-root "$PWD"
+      - name: Verify published preview integrity and teaching exhibits
+        run: uv run --no-sync python -m tools.docs_analytics.run --verify
       - name: Generate and validate the complete offline analytics bundle
         run: >-
           uv run --no-sync python -m tools.docs_analytics.run --all

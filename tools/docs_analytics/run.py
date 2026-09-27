@@ -246,10 +246,12 @@ def main(argv: list[str] | None = None) -> int:
     actions.add_argument('--plan', action='store_true', help='Print or save a refresh plan.')
     actions.add_argument('--all', action='store_true',
                         help='Generate and validate every implemented producer.')
+    actions.add_argument('--verify', action='store_true',
+                         help='Verify the README previews and the teaching exhibits.')
     parser.add_argument(
         '--output-root', type=Path, help='New C-local task directory for a plan/run.')
     args = parser.parse_args(argv)
-    if args.list and args.output_root:
+    if (args.list or args.verify) and args.output_root:
         parser.error('--output-root applies to --plan or --all')
     if args.all and not args.output_root:
         parser.error('--all requires --output-root')
@@ -260,9 +262,24 @@ def main(argv: list[str] | None = None) -> int:
                 producer = asset['producer']
                 print(f'{asset["id"]}: {producer} [{registry["producers"][producer]["status"]}]'
                       f' -> {asset["path"]}')
+            from tools.docs_analytics.teaching import load_teaching
+            teaching = load_teaching()
+            for exhibit in teaching:
+                print(f'{exhibit["id"]}: teaching [{exhibit["script"]}] -> {exhibit["path"]}')
             print(f'{len(registry["assets"])} legacy previews; '
                   f'{len(registry["producers"])} producer families; '
+                  f'{len(teaching)} teaching exhibits; '
                   f'{len(registry["non_analytics"])} non-analytics images.')
+            return 0
+        if args.verify:
+            # Both publication records: the README previews against their dated receipt, and the
+            # teaching exhibits against their manifest and the current canonical scripts.
+            from tools.docs_analytics.publish import verify_published
+            from tools.docs_analytics.teaching import verify
+            verify_published(ROOT)
+            teaching = verify(ROOT)
+            print('Verified 6 published previews against dated provenance and '
+                  f'{len(teaching.get("exhibits", {}))} teaching exhibits against their manifest.')
             return 0
         plan = build_plan()
         if args.all:

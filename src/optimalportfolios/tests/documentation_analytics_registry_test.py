@@ -49,6 +49,15 @@ def replica(root, tooling, tmp_path):
     path = repo / registry.REGISTRY_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(spec), encoding='utf-8')
+    # The copied gallery also shows teaching exhibits; image coverage reads them from
+    # teaching.json, so the replica carries that registry and every page that displays them.
+    teaching = root / 'tools/docs_analytics/teaching.json'
+    if teaching.is_file():
+        (repo / 'tools/docs_analytics/teaching.json').write_bytes(teaching.read_bytes())
+        for exhibit in json.loads(teaching.read_text(encoding='utf-8'))['exhibits']:
+            for name in (*exhibit['documents'], exhibit['script']):
+                (repo / name).parent.mkdir(parents=True, exist_ok=True)
+                (repo / name).write_bytes((root / name).read_bytes())
     return repo, spec
 
 
@@ -275,7 +284,7 @@ def test_cli_plans_with_only_the_standard_library_and_all_fails_without_writing(
     _, runner = tooling
     original_root = root
     root, spec = replica
-    for name in ('run.py', 'registry.py', 'validate.py'):
+    for name in ('run.py', 'registry.py', 'validate.py', 'teaching.py'):
         relative = Path('tools/docs_analytics') / name
         (root / relative).write_bytes((original_root / relative).read_bytes())
     spec['producers']['covariance_comparison']['status'] = 'pending'

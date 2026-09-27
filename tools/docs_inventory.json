@@ -28,6 +28,12 @@
       "reason": "Tracked RST entry; docs/conf.py generates its reference body into docs/_generated from the symbols section.",
       "review": "R1 (2026-09-27): the flat hand-kept list of 138 entries is replaced by a body generated at build time from the symbols section, grouped by owning page, with parameter maps. Object URLs under generated/ are kept."
     },
+    "docs/app_rosaa_multi_asset_allocation.md": {
+      "form": "case_study",
+      "status": "pending",
+      "example": "examples/docs/app_rosaa_multi_asset_allocation.py",
+      "review": "R2 pilot (2026-09-27): study design and results read from the published article (author-shared copy) by section and exhibit; the script asserts the mechanism on a synthetic panel. Pending the owner review of R2 and viewer checks."
+    },
     "docs/constraints.md": {
       "form": "methodology",
       "status": "pending",
@@ -66,6 +72,12 @@
       "form": "utility",
       "status": "pending",
       "review": "M4d utility migration, six installation recipe/import cases and 57 focused tests passed on 2026-09-14. Five deliberate defects were detected and restored checks passed. The unchanged offline quickstart, notebook parity, pip check and local wheel metadata inspection passed. Strict Sphinx HTML/linkcheck and Sphinx browser review pass: three tables, the original article anchor/all 15 old HTML IDs and five matching source-download links. The three published extras are distinguished from contributor groups without dependency changes. Locked environment reconciliation and GitHub/VS Code viewer checks remain pending; this page is not yet fully adopted."
+    },
+    "docs/maximum_diversification.md": {
+      "form": "methodology",
+      "status": "pending",
+      "example": "examples/docs/maximum_diversification.py",
+      "review": "R2 pilot (2026-09-27): written to the canonical-script contract; the script asserts every quoted number and the exhibit is drawn from it. Pending the owner review of R2 and viewer checks."
     },
     "docs/minimum_tracking_error.md": {
       "form": "methodology",
@@ -179,11 +191,6 @@
       "title": "Hierarchical risk parity and cluster risk budgets",
       "stage": "R5"
     },
-    "docs/maximum_diversification.md": {
-      "form": "methodology",
-      "title": "Maximum diversification",
-      "stage": "R2"
-    },
     "docs/mean_variance_objectives.md": {
       "form": "methodology",
       "title": "Minimum variance, quadratic utility and maximum Sharpe",
@@ -208,11 +215,6 @@
       "form": "methodology",
       "title": "Covariance factorisation, solver outcomes and constraint residuals",
       "stage": "R4"
-    },
-    "docs/app_rosaa_multi_asset_allocation.md": {
-      "form": "case_study",
-      "title": "Strategic and tactical allocation with HCGL covariance (ROSAA)",
-      "stage": "R2"
     },
     "docs/app_crypto_allocation.md": {
       "form": "case_study",

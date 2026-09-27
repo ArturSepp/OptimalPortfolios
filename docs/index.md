@@ -83,7 +83,7 @@ simulates the holdings with price drift, implementation lag and transaction cost
 | Estimation grid | [Mixed-frequency data](mixed_frequency_data.md), [incomplete histories](incomplete_histories.md) |
 | Risk model | [Covariance estimators](covariance_estimators.md), [rolling factor risk model from CSV](rolling_factor_covar_from_csv.md) |
 | Expected returns | [Alpha signals](alphas_module_readme.md) |
-| Objective and constraints | [Choosing an objective](optimization_module_readme.md), [risk budgeting](risk_budgeting.md), [minimum tracking error](minimum_tracking_error.md), [overlay tail floor](overlay_tail_floor.md), [constraints](constraints.md) |
+| Objective and constraints | [Choosing an objective](optimization_module_readme.md), [risk budgeting](risk_budgeting.md), [maximum diversification](maximum_diversification.md), [minimum tracking error](minimum_tracking_error.md), [overlay tail floor](overlay_tail_floor.md), [constraints](constraints.md) |
 | Solve and check the outcome | [Choosing an objective](optimization_module_readme.md), [constraints](constraints.md) |
 | Dated target weights and qis backtest | [Rolling backtests](rolling_backtests.md), [turnover and transaction costs](turnover_and_transaction_costs.md) |
 
@@ -116,6 +116,9 @@ simulates the holdings with price drift, implementation lag and transaction cost
   the rolling dispatcher, solver configuration, return types and solver outcomes.
 - [Risk budgeting](risk_budgeting.md): Euler risk contributions, constrained budgets, group
   budgets and hierarchical risk parity.
+- [Maximum diversification](maximum_diversification.md): the diversification ratio, why the
+  solution is the minimum-variance portfolio of the correlation matrix, and the equal-correlation
+  property of the assets it holds.
 - [Minimum tracking error](minimum_tracking_error.md): the allocation closest in risk to a
   supplied benchmark under the constraints.
 - [Overlay optimisation with a fixed core](overlay_tail_floor.md): a fixed core exposure and an
@@ -137,6 +140,13 @@ simulates the holdings with price drift, implementation lag and transaction cost
 
 ## Applications
 
+Case studies report the evidence of the research papers in context: the study design, the
+configuration in package terms, the paper's results, and what the study does and does not
+show.
+
+- [Strategic and tactical allocation with HCGL covariance (ROSAA)](app_rosaa_multi_asset_allocation.md):
+  the three layers of the framework in The Journal of Portfolio Management, its study design
+  and results, and the same configuration run offline.
 - [Stress testing with options and FCGL clusters](stress_testing_with_options.md): factor
   scenarios and option repricing for a stock-and-option portfolio. It needs network data and
   local prerequisites, and it does not optimise the positions.
@@ -238,6 +248,7 @@ alphas_module_readme
 
 optimization_module_readme
 risk_budgeting
+maximum_diversification
 minimum_tracking_error
 overlay_tail_floor
 ```
@@ -264,6 +275,7 @@ turnover_and_transaction_costs
 :maxdepth: 2
 :caption: Applications
 
+app_rosaa_multi_asset_allocation
 stress_testing_with_options
 ```
 

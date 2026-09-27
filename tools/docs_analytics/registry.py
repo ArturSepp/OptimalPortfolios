@@ -93,7 +93,7 @@ def image_references(text: str) -> list[str]:
 def documents(root: Path) -> list[Path]:
     """Discover human documentation while excluding generated Sphinx directories."""
     paths = {source_file(root, 'README.md')}
-    excluded = {'generated', '_templates', '_build'}
+    excluded = {'generated', '_generated', '_templates', '_build'}
     for path in (root / 'docs').rglob('*'):
         relative = path.relative_to(root / 'docs')
         if (path.is_file() and path.suffix in {'.md', '.rst'}
@@ -103,11 +103,26 @@ def documents(root: Path) -> list[Path]:
     return sorted(paths)
 
 
+def teaching_pairs(root: Path) -> set:
+    """Return ``(document, image)`` pairs of the teaching exhibits in ``teaching.json``.
+
+    The teaching registry is a separate file because the README-preview publication receipt
+    embeds this registry verbatim; its schema is validated by ``tools.docs_analytics.teaching``.
+    """
+    path = root / 'tools' / 'docs_analytics' / 'teaching.json'
+    if not path.is_file():
+        return set()
+    teaching = json.loads(path.read_text(encoding='utf-8'))
+    return {(document, exhibit['path'])
+            for exhibit in teaching.get('exhibits', []) for document in exhibit['documents']}
+
+
 def check_coverage(registry: dict, root: Path = ROOT) -> None:
     """Require explicit classification for every displayed image and reject unused records."""
     expected = {(document, asset['path'])
                 for asset in registry['assets'] for document in asset['documents']}
     expected |= {(item['document'], item['url']) for item in registry['non_analytics']}
+    expected |= teaching_pairs(root)
     observed = set()
     for document in documents(root):
         name = document.relative_to(root).as_posix()

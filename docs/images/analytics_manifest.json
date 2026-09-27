@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "kind": "documentation_teaching_exhibits",
+  "generated_at_utc": "2026-09-27T05:11:22+00:00",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "versions": {
+    "python": "3.12.14",
+    "optimalportfolios": "7.8.1.dev1",
+    "qis": "5.31.0",
+    "factorlasso": "0.20.0",
+    "numpy": "2.5.2",
+    "pandas": "3.0.5",
+    "scipy": "1.18.0",
+    "cvxpy": "1.9.2",
+    "matplotlib": "3.11.1"
+  },
+  "exhibits": {
+    "max_diversification_identity": {
+      "path": "docs/images/max_diversification_identity.png",
+      "script": "examples/docs/maximum_diversification.py",
+      "script_sha256": "8ba4bc43a716a7c45c8e25849f3fe335f775e9ab4a3523552fcda7baa584fc03",
+      "image_sha256": "4c4ce1196c4f1f65ba2be117fe635247f70a0240a7a5fe1dc55cbd62fb1aef45",
+      "table_sha256": "3031281898616f021871e7192367edef3663fe35e64aa036936873f88664661c",
+      "parameters": {
+        "TICKERS": [
+          "Govt",
+          "Credit",
+          "US eq",
+          "Intl eq",
+          "EM eq",
+          "Cmdty"
+        ],
+        "VOLS": [
+          0.05,
+          0.07,
+          0.16,
+          0.17,
+          0.21,
+          0.24
+        ],
+        "CORR": [
+          [
+            1.0,
+            0.5,
+            -0.2,
+            -0.2,
+            -0.15,
+            -0.05
+          ],
+          [
+            0.5,
+            1.0,
+            0.4,
+            0.4,
+            0.45,
+            0.2
+          ],
+          [
+            -0.2,
+            0.4,
+            1.0,
+            0.85,
+            0.75,
+            0.3
+          ],
+          [
+            -0.2,
+            0.4,
+            0.85,
+            1.0,
+            0.8,
+            0.35
+          ],
+          [
+            -0.15,
+            0.45,
+            0.75,
+            0.8,
+            1.0,
+            0.4
+          ],
+          [
+            -0.05,
+            0.2,
+            0.3,
+            0.35,
+            0.4,
+            1.0
+          ]
+        ],
+        "HELD": 0.0001
+      },
+      "checks": {
+        "routes_agree": true,
+        "held_correlations_equal_inverse_ratio": true,
+        "excluded_correlations_exceed_inverse_ratio": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/maximum_diversification.md"
+      ]
+    },
+    "rosaa_saa_taa_layers": {
+      "path": "docs/images/rosaa_saa_taa_layers.png",
+      "script": "examples/docs/app_rosaa_multi_asset_allocation.py",
+      "script_sha256": "cdb9076e0a2e072141e816fb5b5a375afb7f8eaf8008e7ad22a2c74e8135aa14",
+      "image_sha256": "1411d388f3a2b55cafea7a229be22214cd1a106cf8787bf9e7d20e144e81f2a3",
+      "table_sha256": "78b118093497d04ee3db60a08f8e23026046c457333423867222f0cef4aace08",
+      "parameters": {
+        "SEED": 11,
+        "FACTORS": [
+          "Equity",
+          "Rates",
+          "Credit"
+        ],
+        "ASSETS": [
+          "Govt",
+          "IG credit",
+          "HY credit",
+          "DM equity",
+          "EM equity",
+          "Real estate",
+          "Hedge funds",
+          "Commodities"
+        ],
+        "LOADINGS": [
+          [
+            -0.1,
+            0.9,
+            0.0
+          ],
+          [
+            0.1,
+            0.6,
+            0.5
+          ],
+          [
+            0.4,
+            0.2,
+            0.8
+          ],
+          [
+            1.0,
+            0.0,
+            0.1
+          ],
+          [
+            1.2,
+            0.0,
+            0.3
+          ],
+          [
+            0.7,
+            0.3,
+            0.2
+          ],
+          [
+            0.3,
+            0.0,
+            0.2
+          ],
+          [
+            0.4,
+            -0.1,
+            0.1
+          ]
+        ],
+        "RESIDUAL_VOLS": [
+          0.01,
+          0.01,
+          0.02,
+          0.02,
+          0.04,
+          0.04,
+          0.02,
+          0.06
+        ],
+        "FACTOR_VOLS": [
+          0.045,
+          0.02,
+          0.02
+        ],
+        "FACTOR_CORR": [
+          [
+            1.0,
+            -0.2,
+            0.5
+          ],
+          [
+            -0.2,
+            1.0,
+            0.1
+          ],
+          [
+            0.5,
+            0.1,
+            1.0
+          ]
+        ],
+        "RISK_BUDGETS": [
+          0.1,
+          0.1,
+          0.1,
+          0.25,
+          0.15,
+          0.1,
+          0.1,
+          0.1
+        ],
+        "TRACKING_ERROR": 0.03
+      },
+      "checks": {
+        "tracking_error_at_budget": true,
+        "govt_weight_exceeds_three_budgets": true,
+        "tilts_follow_alphas": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/app_rosaa_multi_asset_allocation.md"
+      ]
+    }
+  },
+  "review": {
+    "note": "Inspected at full resolution (1500x660 px) by the agent on 2026-09-27. max_diversification_identity: byte-identical to the reviewed bundle 3. rosaa_saa_taa_layers: tick labels clear after rotation, legend clear of bars, labels legible at 736 px; values match the script's assertions (Govt 41% for a 10% budget, 3% tracking error at 43 quarter ends). Owner review pending at the R2 gate.",
+    "published_at_utc": "2026-09-27T05:11:40+00:00"
+  }
+}

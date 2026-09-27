@@ -34,6 +34,8 @@ review. A fixed sample ending in 2025 is separate from the date the image was ge
 | How does covariance smoothing affect this example? | [Span sensitivity](#covariance-span-sensitivity) |
 | How do three objectives behave with common risk inputs? | [Objective comparison](#portfolio-objectives) |
 | How do estimates compare with a known simulated covariance? | [Covariance estimators](#covariance-estimators) |
+| Why does the maximum diversification portfolio hold what it holds? | [Maximum diversification](#maximum-diversification) |
+| How do the strategic and tactical layers of ROSAA divide the work? | [ROSAA layers](#rosaa-layers) |
 
 Select a preview to open its full-resolution image. The
 [offline quickstart](quickstart.md) provides a smaller executable introduction, and the
@@ -159,6 +161,35 @@ curves and one-date covariance errors do not establish an estimator ranking.
 **Producer:** [covariance comparison](../tools/docs_analytics/covariance_comparison.py).
 **Configuration:** [analytics registry](../tools/docs_analytics/registry.json).
 
+## Maximum diversification
+
+A teaching exhibit of the [maximum diversification](maximum_diversification.md) page. The
+SLSQP weights of the package and the minimum-variance weights of the correlation matrix,
+rescaled by inverse volatility and computed by CVXPY, agree for a stylised six-asset universe;
+every held asset has correlation 0.570 with the portfolio, the inverse of its diversification
+ratio, and the excluded credit asset has 0.70.
+
+![Left: SLSQP and CVXPY routes give the same weights for six assets, with government bonds at 72% and credit not held. Right: held assets have correlation 0.570 with the portfolio; excluded credit has 0.70.](images/max_diversification_identity.png)
+
+**Sample:** fixed volatilities and correlations; no simulation. **Producer:** the `exhibit`
+function of [`examples/docs/maximum_diversification.py`](../examples/docs/maximum_diversification.py),
+run by [the teaching-exhibit tool](../tools/docs_analytics/teaching.py). **Configuration:**
+[teaching registry](../tools/docs_analytics/teaching.json).
+
+## ROSAA layers
+
+A teaching exhibit of the [ROSAA case study](app_rosaa_multi_asset_allocation.md). On a
+synthetic panel with known factor loadings, the strategic allocation meets its risk budgets
+with capital weights that differ from them, and the tactical tilts against it follow the
+alphas at a 3% ex-ante tracking error at every quarter end.
+
+![Left: risk budgets and the strategic weights that meet them for eight asset classes. Right: tactical active weights against alpha scores at 43 quarter ends.](images/rosaa_saa_taa_layers.png)
+
+**Sample:** synthetic monthly panel of three factors and eight asset classes, December 2004 to
+June 2025, seed 11; quarter ends from December 2014. **Producer:** the `exhibit` function of
+[`examples/docs/app_rosaa_multi_asset_allocation.py`](../examples/docs/app_rosaa_multi_asset_allocation.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
 ## Reproduce and update
 
 From a source checkout with the documented contributor environment and C-local setup, one
@@ -178,6 +209,15 @@ to compare repeated runs, validate the bundle, review each preview at full resol
 article width, and publish the six images with their shared provenance record. Full tables
 and intermediate output remain C-local. Preview paths are stable; the
 [provenance file](../examples/figures/analytics_manifest.json) identifies their reviewed generation.
+
+Teaching exhibits are drawn by the canonical scripts of their pages and have their own
+[manifest](images/analytics_manifest.json), which records the script, parameters, checks and
+software versions of each image:
+
+~~~console
+python -m tools.docs_analytics.teaching --all --output-root <new-C-local-bundle>
+python -m tools.docs_analytics.teaching --verify
+~~~
 
 ## See also
 

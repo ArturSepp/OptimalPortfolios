@@ -20,7 +20,7 @@ build:
     pre_build:
       - '"$READTHEDOCS_VIRTUALENV_PATH/bin/python" tools/check_docs.py --source-all'
       - '"$READTHEDOCS_VIRTUALENV_PATH/bin/python" -m tools.docs_analytics.run --list'
-      - '"$READTHEDOCS_VIRTUALENV_PATH/bin/python" -m tools.docs_analytics.publish --verify --repo-root "$PWD"'
+      - '"$READTHEDOCS_VIRTUALENV_PATH/bin/python" -m tools.docs_analytics.run --verify'
 sphinx:
   configuration: docs/conf.py
   fail_on_warning: true

@@ -1,0 +1,202 @@
+{
+  "schema_version": 1,
+  "description": "Teaching exhibits of the documentation articles, drawn by the canonical script of the page that shows them. Validated and run by tools/docs_analytics/teaching.py; README previews are in registry.json.",
+  "exhibits": [
+    {
+      "id": "max_diversification_identity",
+      "path": "docs/images/max_diversification_identity.png",
+      "script": "examples/docs/maximum_diversification.py",
+      "function": "exhibit",
+      "parameters": {
+        "TICKERS": [
+          "Govt",
+          "Credit",
+          "US eq",
+          "Intl eq",
+          "EM eq",
+          "Cmdty"
+        ],
+        "VOLS": [
+          0.05,
+          0.07,
+          0.16,
+          0.17,
+          0.21,
+          0.24
+        ],
+        "CORR": [
+          [
+            1.0,
+            0.5,
+            -0.2,
+            -0.2,
+            -0.15,
+            -0.05
+          ],
+          [
+            0.5,
+            1.0,
+            0.4,
+            0.4,
+            0.45,
+            0.2
+          ],
+          [
+            -0.2,
+            0.4,
+            1.0,
+            0.85,
+            0.75,
+            0.3
+          ],
+          [
+            -0.2,
+            0.4,
+            0.85,
+            1.0,
+            0.8,
+            0.35
+          ],
+          [
+            -0.15,
+            0.45,
+            0.75,
+            0.8,
+            1.0,
+            0.4
+          ],
+          [
+            -0.05,
+            0.2,
+            0.3,
+            0.35,
+            0.4,
+            1.0
+          ]
+        ],
+        "HELD": 0.0001
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/maximum_diversification.md"
+      ],
+      "question": "Is the maximum diversification portfolio the minimum-variance portfolio of the correlation matrix, rescaled by inverse volatility, and do its held assets share one correlation with it?",
+      "sample": "Fixed volatilities and correlations of a stylised six-asset universe; no simulation."
+    },
+    {
+      "id": "rosaa_saa_taa_layers",
+      "path": "docs/images/rosaa_saa_taa_layers.png",
+      "script": "examples/docs/app_rosaa_multi_asset_allocation.py",
+      "function": "exhibit",
+      "parameters": {
+        "SEED": 11,
+        "FACTORS": [
+          "Equity",
+          "Rates",
+          "Credit"
+        ],
+        "ASSETS": [
+          "Govt",
+          "IG credit",
+          "HY credit",
+          "DM equity",
+          "EM equity",
+          "Real estate",
+          "Hedge funds",
+          "Commodities"
+        ],
+        "LOADINGS": [
+          [
+            -0.1,
+            0.9,
+            0.0
+          ],
+          [
+            0.1,
+            0.6,
+            0.5
+          ],
+          [
+            0.4,
+            0.2,
+            0.8
+          ],
+          [
+            1.0,
+            0.0,
+            0.1
+          ],
+          [
+            1.2,
+            0.0,
+            0.3
+          ],
+          [
+            0.7,
+            0.3,
+            0.2
+          ],
+          [
+            0.3,
+            0.0,
+            0.2
+          ],
+          [
+            0.4,
+            -0.1,
+            0.1
+          ]
+        ],
+        "RESIDUAL_VOLS": [
+          0.01,
+          0.01,
+          0.02,
+          0.02,
+          0.04,
+          0.04,
+          0.02,
+          0.06
+        ],
+        "FACTOR_VOLS": [
+          0.045,
+          0.02,
+          0.02
+        ],
+        "FACTOR_CORR": [
+          [
+            1.0,
+            -0.2,
+            0.5
+          ],
+          [
+            -0.2,
+            1.0,
+            0.1
+          ],
+          [
+            0.5,
+            0.1,
+            1.0
+          ]
+        ],
+        "RISK_BUDGETS": [
+          0.1,
+          0.1,
+          0.1,
+          0.25,
+          0.15,
+          0.1,
+          0.1,
+          0.1
+        ],
+        "TRACKING_ERROR": 0.03
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/app_rosaa_multi_asset_allocation.md"
+      ],
+      "question": "How do risk budgets translate into strategic weights, and do the tactical tilts spend the tracking-error budget in the direction of the alphas?",
+      "sample": "Synthetic monthly panel of three factors and eight asset classes with known loadings, December 2004 to June 2025, seed 11; quarter ends 2014-12 to 2025-06."
+    }
+  ]
+}
