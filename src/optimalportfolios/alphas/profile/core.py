@@ -8,8 +8,8 @@ QIS owns holdings simulation, performance statistics and factsheets. It holds
 units between rebalances, so realized weights drift with prices. The core
 returns alpha strategies followed by one equal-weight benchmark.
 
-The source checkout's docs/alphas_module_readme.md documents methodology and
-limitations; src/optimalportfolios/alphas/README.md gives an offline workflow.
+The source checkout's docs/signal_diagnostics_and_profiling.md documents methodology
+and limitations; src/optimalportfolios/alphas/README.md gives an offline workflow.
 """
 import numpy as np
 import pandas as pd
@@ -199,7 +199,8 @@ def compute_alpha_rank_analysis_table(multi_portfolio_data: qis.MultiPortfolioDa
 
     rows = []
     for portfolio_data, ticker in zip(multi_portfolio_data.portfolio_datas, tickers):
-        turnover = portfolio_data.get_turnover(is_agg=True, roll_period=None, time_period=time_period)
+        turnover = portfolio_data.get_turnover(is_agg=True, roll_period=None,
+                                               time_period=time_period)
         turnover = turnover.iloc[:, 0] if isinstance(turnover, pd.DataFrame) else turnover
         years = (turnover.index[-1] - turnover.index[0]).days / 365.25
         annualised_turnover = float(turnover.sum()) / years if years > 0.0 else float('nan')

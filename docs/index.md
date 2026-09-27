@@ -86,6 +86,7 @@ simulates the holdings with price drift, implementation lag and transaction cost
 | Objective and constraints | [Choosing an objective](optimization_module_readme.md), [risk budgeting](risk_budgeting.md), [implied risk budgets](implied_risk_budgets.md), [hierarchical risk parity and cluster budgets](hierarchical_risk_parity_and_cluster_budgets.md), [maximum diversification](maximum_diversification.md), [mean-variance objectives](mean_variance_objectives.md), [target return and target volatility](strategic_allocation_targets.md), [CARA utility under Gaussian mixtures](cara_gaussian_mixture.md), [minimum tracking error](minimum_tracking_error.md), [alpha over tracking error](alpha_over_tracking_error.md), [overlay tail floor](overlay_tail_floor.md), [constraints](constraints.md) |
 | Solve and check the outcome | [Choosing an objective](optimization_module_readme.md), [constraints](constraints.md), [solver numerics and outcomes](solver_numerics_and_outcomes.md) |
 | Dated target weights and qis backtest | [Rolling backtests](rolling_backtests.md), [turnover and transaction costs](turnover_and_transaction_costs.md) |
+| The whole pipeline, applied | [ROSAA](app_rosaa_multi_asset_allocation.md), [cryptocurrencies in diversified portfolios](app_crypto_allocation.md), [capital market assumptions to strategic allocation](app_cma_strategic_allocation.md), [stress testing with options](stress_testing_with_options.md) |
 
 <a id="signals-and-risk-estimates"></a>
 

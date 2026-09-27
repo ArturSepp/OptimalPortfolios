@@ -2,8 +2,9 @@
 myst:
   html_meta:
     description: >-
-      OptimalPortfolios architecture: dated estimates, rolling construction, solver
-      backends, constraint handling, and delegation to FactorLasso and QIS.
+      OptimalPortfolios architecture: data flow from dated estimates through rolling
+      construction to QIS execution, subpackage imports, solver backends, constraint
+      handling, and delegation to FactorLasso and QIS.
 ---
 
 # Software design and boundaries
@@ -38,41 +39,109 @@ owns portfolio construction and its financial input preparation. Some historical
 functions remain in this repository; their presence does not establish a separate canonical
 analytics layer.
 
-The ordinary workflow is:
+The ordinary workflow runs from dated estimates to a simulated portfolio:
 
-```text
-prices and dated inputs
-          |
-          v
-estimation: OptimalPortfolios + FactorLasso/QIS
-          |
-          v
-rolling construction <--- previous target + price drift
-          |          <--- constraints and dealing inputs
-          v
-dated target weights
-          |
-          v
-QIS execution: units, implementation lag and cash costs
-          |
-          v
-PortfolioData and reports
+```mermaid
+flowchart TB
+    subgraph decide ["OptimalPortfolios: estimation and construction"]
+        direction LR
+        P["Prices and<br/>dated inputs"] --> E["Estimation with<br/>FactorLasso or QIS:<br/>covariances, expected<br/>returns or alphas"]
+        E --> R["Rolling<br/>construction"]
+        S["Previous target<br/>plus price drift"] --> R
+        C["Constraints and<br/>dealing inputs"] --> R
+        R --> W["Dated target<br/>weights"]
+    end
+    subgraph execute ["QIS: execution and reports"]
+        direction LR
+        Q["Units, implementation<br/>lag and cash costs"] --> D["PortfolioData<br/>and reports"]
+    end
+    decide --> execute
 ```
 
-The rolling construction state uses prior targets and supplied prices. The convenience
-backtest function computes the targets first and then invokes QIS; executed QIS holdings are
-not automatically fed back into each optimizer decision. Use explicit current holdings when
-calling a single-date wrapper for a live decision.
+In words: from prices and other dated inputs, OptimalPortfolios estimates dated covariances
+and, for the objectives that need them, expected returns or alphas, with FactorLasso and QIS
+supplying the estimation primitives; its rolling construction combines those estimates with the
+previous target drifted by prices and with the constraints and dealing inputs to produce dated
+target weights, which QIS turns into units traded after the implementation lag and charged cash
+costs, returning `PortfolioData` for the reports.
+
+The rolling construction state is the previous target, drifted with the supplied prices when
+`OptimiserConfig.use_drifted_weights_0` is `True` (see [holdings as state](#holdings-as-state)).
+The convenience backtest function
+[`backtest_rolling_optimal_portfolio`](../src/optimalportfolios/optimization/wrapper_rolling_portfolios.py)
+computes the whole target panel with `compute_rolling_optimal_weights` before it calls
+`qis.backtest_model_portfolio`, so the holdings that QIS simulates after lag and costs are never
+fed back into an optimizer decision. For a live decision, supply the current holdings
+explicitly: as the `weights_0` argument of a single-date wrapper, or as `Constraints.weights_0`
+for `wrapper_maximize_cara_mixture`, which has no such argument.
+
+## Package modules and imports
+
+The subpackages form layers. Each arrow points from an importing subpackage to a subpackage or
+external package that it imports:
+
+```mermaid
+flowchart LR
+    subgraph pkg ["optimalportfolios"]
+        reports["reports"]
+        subgraph optimization ["optimization"]
+            direction TB
+            result["portfolio_result"] ~~~ dispatcher["wrapper_rolling_portfolios"]
+            dispatcher --> solvers["general, risk_allocation,<br/>saa, taa"] --> constraints["constraints"]
+            result --> constraints
+        end
+        alphas["alphas"]
+        covar["covar_estimation"]
+        universe["universe"]
+        utils["utils"]
+    end
+    qis(["qis"])
+    factorlasso(["factorlasso"])
+    cvxpy(["cvxpy"])
+    scipy(["scipy"])
+    quadprog(["quadprog"])
+    reports --> optimization
+    reports --> alphas & covar
+    optimization --> alphas & covar & utils
+    optimization --> factorlasso & cvxpy & scipy & quadprog
+    covar --> factorlasso
+    alphas -.-> factorlasso
+    alphas --> scipy
+    utils --> scipy
+    pkg --> qis
+```
+
+In words: `reports` imports `optimization`, `alphas` and `covar_estimation`; inside
+`optimization` the rolling dispatcher imports the solver families, which, like
+`portfolio_result`, import `constraints`; `optimization` also imports `alphas`,
+`covar_estimation` and `utils`, which, like `universe`, import no other subpackage; every
+subpackage imports QIS, while FactorLasso, CVXPY, SciPy and quadprog are imported only where an
+arrow points to them, the dotted arrow marking FactorLasso imports made inside a function or for
+type checking.
+
+An arrow A → B means that at least one module of A imports B; an arrow that leaves a box stands
+for the modules inside it. The graph was read from the import statements of the package source,
+excluding `tests` and `run_local` directories. Three arrows from `optimization` rest on one module
+each: the dispatcher imports `alphas` for its EWMA expected returns (`estimate_rolling_ewma_means`),
+and `portfolio_result` imports `covar_estimation` for `build_risk_model` and FactorLasso for its
+factor-covariance container. The diagram omits the package
+root, whose `__init__.py` re-exports every subpackage and some FactorLasso names and whose
+`config.py` defines `PortfolioObjective`; the shared `optimization` modules `config.py`,
+`covar_factorization.py` and `solver_diagnostics.py`; and the matplotlib and seaborn plotting
+imports. The only module that imports pybloqs is
+[`portfolio_result_pybloqs.py`](../src/optimalportfolios/reports/portfolio_result_pybloqs.py),
+which no other package module imports, so `import optimalportfolios` does not need it.
 
 ## Architectural boundaries
 
 ### Point-in-time estimation
 
-The [`CovarEstimator` interface](../src/optimalportfolios/covar_estimation/covar_estimator.py)
-separates estimation from construction. EWMA and factor estimators expose
-`fit_rolling_covars(...)` as a dictionary from decision dates to labeled, annualized covariance
-matrices. Their inputs differ: EWMA accepts an asset-price panel; the factor estimator also
-needs factor prices and asset returns organized by estimation frequency.
+The abstract [`CovarEstimator` interface](../src/optimalportfolios/covar_estimation/covar_estimator.py),
+which the package root does not re-export, separates estimation from construction. EWMA and
+factor estimators expose `fit_rolling_covars(...)` as a dictionary from decision dates to
+labeled, annualized covariance matrices. Their inputs differ: EWMA accepts an asset-price panel;
+the factor estimator instead takes factor prices and asset returns grouped by estimation
+frequency.
 
 That common output permits covariance-based objectives to reuse estimates. It does not make
 every dispatcher branch an identical experiment:
@@ -85,8 +154,8 @@ every dispatcher branch an identical experiment:
 
 The dispatcher covers the six members of
 [`PortfolioObjective`](../src/optimalportfolios/config.py). Minimum tracking error,
-alpha-over-tracking-error, target-return allocation and hierarchical risk parity have separate
-public entry points. The [optimization guide](optimization_module_readme.md) maps those routes.
+alpha-over-tracking-error, target-return and target-volatility allocation and hierarchical risk
+parity have separate public entry points. The [optimization guide](optimization_module_readme.md) maps those routes.
 
 A date key identifies the intended information date; it does not prove that the supplied data
 were available then. Supply covariance keys in chronological order, with consistent asset labels,

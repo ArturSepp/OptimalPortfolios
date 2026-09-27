@@ -190,6 +190,35 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     columns; its exhibit is derived from that tracked panel.
   - The MATF-CMA case study is synthetic: it builds the workflow from CMAs to a strategic
     allocation with the package and reproduces none of the paper's results.
+- Documentation site, consolidation (no package change): every page is adopted, and
+  `tools/check_docs.py --all` passes.
+  - The examples guide becomes "Examples and recipes", with a table mapping each task to its
+    article, canonical script and standalone examples by lane.
+  - The software design page draws the workflow and the package's module imports as Mermaid
+    diagrams, and corrects the factor estimator's inputs and the note on state feedback.
+  - The analytics gallery lists all 31 exhibits, and the landing table links every article.
+  - The README names `factorlasso.cluster_lineage` for cluster lineage, where it advertised the
+    deprecated `risk_labelling` aliases, and lists the ten example folders.
+  - `linkcheck_ignore` covers the DOIs of publishers that answer HTTP 403 to automated clients.
+- Docstrings and comments only, no code change (checked against the previous source with the
+  docstrings removed): stale or wrong statements found while writing the methodology pages are
+  corrected in 25 modules and two examples. Among them:
+  - `PortfolioObjective`, `UniverseData` (all ten fields) and `FactorCovarEstimator`
+    (`reg_lambda_freq_dict`) are documented;
+  - the EWMA covariance docstrings say the normalised-return kernel is point in time since
+    qis 5.31.0, and the alpha profilers say the same of their constructors since 7.8.1.dev1;
+  - the solver descriptions: risk budgeting (CCD, or ADMM with a `quadprog` projection;
+    `weights_0` is not a start), maximum Sharpe (SLSQP whenever the exposure is a range; not
+    invariant to a risk-free rate; only the exposure, box and group rows are rescaled), the
+    target-return and target-volatility solvers (the utility form ignores `target_vol`), the
+    CARA mixture (expected utility; the fallback order) and the tactical solvers;
+  - `compute_benchmark_beta_loadings_from_covar` needs benchmark weights that sum to one, and
+    the unsmoothing copy uses the qis default AR(2) filter.
+- The ROSAA example in `papers/robust_optimisation_jpm_2026` uses
+  `LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO` (the old member no longer exists), passes the
+  documented `factor_covar_span=36` (the default is 52) and writes its factsheet to the
+  configured output directory instead of a hard-coded path; its README follows.
+- A risk-budgeting test uses the anonymised sleeve names of the matching example.
 
 ## [7.8.0] - 2026-09-23
 

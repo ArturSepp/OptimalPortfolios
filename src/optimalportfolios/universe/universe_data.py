@@ -73,11 +73,21 @@ class UniverseData:
     """Immutable container for a single investment universe.
 
     Attributes:
-        prices: Asset prices. DatetimeIndex, columns = asset names.
-        metadata: Asset attributes. Index = asset names.
-        metadata_fields: Enum class defining required metadata columns.
-        group_loadings_level1: Asset-to-group binary mapping for level 1.
-        group_loadings_level2: Asset-to-group binary mapping for level 2.
+        prices: Required price panel: a DatetimeIndex by one column per asset.
+        metadata: Required asset attributes, one row per asset, indexed by asset name.
+        metadata_fields: Enum whose values name the metadata columns that must be
+            present and free of nulls; default MetadataField.
+        group_loadings_level1: Optional loadings of a first grouping, one row per asset
+            and one column per group; default None.
+        group_loadings_level2: Optional loadings of a second grouping, same layout;
+            default None. Which grouping is level 1 or 2 is the caller's convention.
+        liquidity_ac_id: Asset-class value that marks cash-like assets, default 'Liquidity'.
+        equity_ac_id: Asset-class value that marks equities, default 'Equities'.
+        bond_ac_id: Asset-class value that marks bonds, default 'Bonds'.
+        pe_asset_id: Name of the appraisal-valued private-equity asset, default None.
+            The four identifiers are stored as given; none is checked.
+        validate_on_init: Whether construction calls validate(), default True. With False
+            the instance is built unchecked and validate() can be called later.
     """
     prices: pd.DataFrame
     metadata: pd.DataFrame
@@ -114,7 +124,8 @@ class UniverseData:
             group_loadings_level2 = None
 
         return UniverseData(prices=prices, metadata=metadata, metadata_fields=self.metadata_fields,
-                            group_loadings_level1=group_loadings_level1, group_loadings_level2=group_loadings_level2)
+                            group_loadings_level1=group_loadings_level1,
+                            group_loadings_level2=group_loadings_level2)
 
 
     def validate(self) -> None:
@@ -218,8 +229,10 @@ class UniverseData:
             prices=prices[assets],
             metadata=metadata.loc[assets],
             metadata_fields=metadata_fields,
-            group_loadings_level1=group_loadings_level1.loc[assets] if group_loadings_level1 is not None else None,
-            group_loadings_level2=group_loadings_level2.loc[assets] if group_loadings_level2 is not None else None,
+            group_loadings_level1=group_loadings_level1.loc[assets]
+                if group_loadings_level1 is not None else None,
+            group_loadings_level2=group_loadings_level2.loc[assets]
+                if group_loadings_level2 is not None else None,
         )
 
     @classmethod

@@ -304,7 +304,7 @@ examples/                          # Repository-only worked examples
 | Alpha construction | Momentum, low beta, risk-adjusted carry, managers alpha, residual momentum, residual reversal and rolling EWMA means; fixed-group and time-varying cluster scoring are supported. |
 | Alpha evaluation | Rank-portfolio profiling, cross-backtests, `AlphasData`, IC/IR panels, component diagnostics and comparison tables. |
 | Covariance and dependence | Current/rolling EWMA and HCGL sparse factor covariance; Pearson, Spearman and Gerber dependence choices, configurable correlation-distance transforms through `factorlasso`, and current/rolling covariance diagnostic reports. |
-| Risk-cluster analytics | Persistent cluster lineage, births/deaths/splits/merges and report tables/figures through `analyze_risk_clusters()` and `run_risk_label_report()`. |
+| Risk-cluster analytics | Persistent cluster lineage, births/deaths/splits/merges and report tables/figures through `factorlasso.cluster_lineage` (`analyze_cluster_lineage()` and `run_cluster_lineage_report()`); the `analyze_risk_clusters()` and `run_risk_label_report()` aliases in `optimalportfolios.covar_estimation.risk_labelling` are deprecated. |
 | General optimisation | Minimum variance, quadratic utility, maximum Sharpe, maximum diversification, CARA Gaussian-mixture utility and minimum tracking error. |
 | Risk allocation | Constrained risk budgeting, point-in-time group risk budgets, date-varying rolling budgets, group Euler-risk attribution and external-linkage hierarchical risk parity. |
 | SAA and TAA optimisation | Minimum variance at target return, maximum return at target volatility, alpha over tracking error and alpha at target portfolio return. |
@@ -461,28 +461,32 @@ See the [optimisation module guide](https://optimalportfolios.readthedocs.io/en/
 
 ## Examples
 
-The `examples/` folder is organised into six purpose-folders. The
-[examples guide](docs/examples_readme.md) maps every demo to its
-role; the headlines are:
+The `examples/` folder is organised by purpose. The
+[examples and recipes guide](docs/examples_readme.md) maps every task to its article, canonical
+script and standalone examples, with each example's offline, network or local-data lane:
 
 ```text
 examples/
-├── data/                  Universe fixtures (fetch_benchmark_universe_data, fetch_minimal_universe_data)
-├── solvers/               One demo per single-objective solver
-├── backtests/             End-to-end rolling backtest workflows
-├── comparisons/           A-vs-B sweeps (covar / optimiser / parameter / drift policy)
-├── covar_estimation/      Covariance estimator demos
-└── alphas/                Alpha signal profiling demos (rank-based profiler)
+├── getting_started/       Canonical offline quickstart and its notebook mirror
+├── data/                  Shared Yahoo loaders and local universe builders
+├── solvers/               Objective-specific examples
+├── backtests/             Complete rolling workflows
+├── comparisons/           Comparisons of methods or configurations
+├── covar_estimation/      Covariance and factor-model examples
+├── alphas/                Signal profiling
+├── reports/               Manually prepared portfolio reports
+├── docs/                  Canonical scripts of the documentation pages
+└── figures/               Existing documentation previews
 ```
 
 ### Recommended reading order for newcomers
 
-1. [`examples/data/universe.py`](examples/data/universe.py) — understand the shared fixture.
-2. [`examples/backtests/minimal_backtest.py`](examples/backtests/minimal_backtest.py) — see one full workflow end-to-end.
-3. [`examples/solvers/min_variance.py`](examples/solvers/min_variance.py) — minimal solver demo with both single-date and rolling forms.
-4. [`examples/solvers/minimum_tracking_error.py`](examples/solvers/minimum_tracking_error.py) — covariance-closest feasible portfolio relative to a benchmark.
-5. [`examples/solvers/tracking_error.py`](examples/solvers/tracking_error.py) — the production TAA pattern (alpha + benchmark + TE constraint).
-6. [`examples/comparisons/optimisers.py`](examples/comparisons/optimisers.py) — see how objectives differ on the same universe.
+1. [Quickstart](docs/quickstart.md) — the smallest offline portfolio workflow.
+2. [`examples/backtests/multiasset_saa.py`](examples/backtests/multiasset_saa.py) — another offline workflow with group metadata and objective choices.
+3. [`examples/data/universe.py`](examples/data/universe.py) and [`examples/backtests/minimal_backtest.py`](examples/backtests/minimal_backtest.py) — downloaded prices and reporting.
+4. [`examples/solvers/min_variance.py`](examples/solvers/min_variance.py) and [`examples/solvers/minimum_tracking_error.py`](examples/solvers/minimum_tracking_error.py) — covariance-based construction.
+5. [`examples/solvers/tracking_error.py`](examples/solvers/tracking_error.py) — benchmark-relative allocation with a signal.
+6. [`examples/comparisons/optimisers.py`](examples/comparisons/optimisers.py) — how objectives differ on the same universe.
 
 ### Highlighted demos
 

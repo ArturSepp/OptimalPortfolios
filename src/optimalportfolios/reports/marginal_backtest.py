@@ -1,5 +1,6 @@
 """
-implement marginal backtest to stress marginal contribution from adding one asset to the investable universe
+implement marginal backtest to stress marginal contribution from adding one asset to the
+investable universe
 """
 
 # packages
@@ -38,29 +39,37 @@ class OptimisationParams(NamedTuple):
     marginal_asset_ew_weight: float = 0.02  # allocation for equal weight
     first_asset_target_weight: float = 0.75  # first asset is the benchmark
     rebalancing_freq: str = 'QE'  # when portfolio weigths are updated
-    roll_window: int = 6*12  # hw many periods of returns_freq are used estimation of mv returns and mixture, default 6y
+    roll_window: int = 6*12  # hw many periods of returns_freq are used estimation of mv returns
+                             # and mixture, default 6y
     returns_freq: str = 'ME'  # frequency of returns
     span: int = 24   # for ewma window in terms of returns freq
     carra: float = 0.5  # carra parameter
     n_mixures: int = 3
     rebalancing_costs: float = 0.0010  # 10 bp
-    weight_implementation_lag: Optional[int] = 1  # for daily prices, t day weight is implemented at t+1 day
+    weight_implementation_lag: Optional[int] = 1  # for daily prices, t day weight is implemented
+                                                  # at t+1 day
 
     def to_dict(self) -> Dict[str, Any]:
         """Return the parameters as a plain dict, for logging and report headers."""
         return self._asdict()
 
 
-def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion to backtest portfolio
+def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion to backtest
+                                                                # portfolio
                                          marginal_asset: str,  # this is asset we test for inclusion
-                                         time_period: TimePeriod = None,  # for computing portfolio weights
-                                         perf_time_period: TimePeriod = None,  # for report portfolio weights
+                                         time_period: TimePeriod = None,  # for computing portfolio
+                                                                          # weights
+                                         perf_time_period: TimePeriod = None,  # for report
+                                                                               # portfolio weights
                                          is_alternatives: bool = True,  #
-                                         optimisation_type: OptimisationType = OptimisationType.MIXTURE,
-                                         marginal_asset_ew_weight: float = 0.02,  # allocation for equal weight
-                                         first_asset_target_weight: float = 0.75,  # first asset is the benchmark
+                                         optimisation_type: OptimisationType =
+                                             OptimisationType.MIXTURE,
+                                         marginal_asset_ew_weight: float = 0.02,  # allocation for
+                                                                                  # equal weight
+                                         first_asset_target_weight: float = 0.75,  # first asset is
+                                                                                   # the benchmark
                                          rebalancing_freq: str = 'QE',
-                                         roll_window: int = 20,  # hw many rebalancing_freq periods are used for roll_window
+                                         roll_window: int = 20,  # returns_freq obs per MIXTURE fit
                                          returns_freq: str = 'ME',
                                          span: int = 24,
                                          carra: float = 0.5,
@@ -74,7 +83,8 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
     test marginal inclusion of an asset to the optimal portfolio mix
     is_unconstrained = False, defines an asset with a fixed weight
     False: defines max/min weight for the marginal asset
-    True: define the fixed allocation to the first (benchmark asset), then remaining and the marginal are flexible
+    True: define the fixed allocation to the first (benchmark asset), then remaining and the
+        marginal are flexible
     """
 
     prices_with_asset = prices
@@ -87,14 +97,18 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
         weight_max_wo = None
 
         # ew
-        ew_weights_wo = pd.Series(len(prices_without_asset.columns) / len(prices_without_asset.columns), index=prices_without_asset.columns)
+        ew_weights_wo = pd.Series(len(prices_without_asset.columns)
+                                  / len(prices_without_asset.columns),
+                                  index=prices_without_asset.columns)
         ew_weight = (1.0 - marginal_asset_ew_weight) / (len(prices_with_asset.columns) - 1)
         ew_weights_with = pd.Series(ew_weight, index=prices_with_asset.columns)
         ew_weights_with.iloc[0] = marginal_asset_ew_weight
 
         # erc
-        budget_with = pd.Series(1.0, index=prices_with_asset.columns) / len(prices_with_asset.columns)
-        budget_wo = pd.Series(1.0, index=prices_without_asset.columns) / len(prices_without_asset.columns)
+        budget_with = pd.Series(1.0, index=prices_with_asset.columns) / len(
+            prices_with_asset.columns)
+        budget_wo = pd.Series(1.0, index=prices_without_asset.columns) / len(
+            prices_without_asset.columns)
 
     else:
         # for mvo
@@ -113,14 +127,17 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
         ew_weights_wo = pd.Series(ew_weight, index=prices_without_asset.columns)
         ew_weights_wo.iloc[0] = first_asset_target_weight
 
-        ew_weight = (1.0 - marginal_asset_ew_weight * (1.0 - first_asset_target_weight)) / (len(prices_with_asset.columns) - 2)
+        ew_weight = (1.0 - marginal_asset_ew_weight * (1.0 - first_asset_target_weight)) / (
+            len(prices_with_asset.columns) - 2)
         ew_weights_with = pd.Series(ew_weight, index=prices_with_asset.columns)
         ew_weights_with.iloc[0] = first_asset_target_weight
         ew_weights_with.iloc[1] = marginal_asset_ew_weight * (1.0 - first_asset_target_weight)
 
         # erc
-        budget_with = (1.0 - first_asset_target_weight) * pd.Series(1.0, index=prices_with_asset.columns) / (len(prices_with_asset.columns) - 1)
-        budget_wo = (1.0 - first_asset_target_weight) * pd.Series(1.0, index=prices_without_asset.columns) / (len(prices_without_asset.columns) - 1)
+        budget_with = (1.0 - first_asset_target_weight) * pd.Series(
+            1.0, index=prices_with_asset.columns) / (len(prices_with_asset.columns) - 1)
+        budget_wo = (1.0 - first_asset_target_weight) * pd.Series(
+            1.0, index=prices_without_asset.columns) / (len(prices_without_asset.columns) - 1)
         budget_with.iloc[0] = first_asset_target_weight
         budget_wo.iloc[0] = first_asset_target_weight
 
@@ -129,12 +146,14 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
     ticker_with = f"{optimisation_type.value} with {marginal_asset}"
 
     # default ewma estimator
-    covar_estimator = EwmaCovarEstimator(returns_freq=returns_freq, rebalancing_freq=rebalancing_freq, span=span)
+    covar_estimator = EwmaCovarEstimator(returns_freq=returns_freq,
+                                         rebalancing_freq=rebalancing_freq, span=span)
     covar_dict = covar_estimator.fit_rolling_covars(prices=prices, time_period=time_period)
     if optimisation_type == OptimisationType.EW:
         weights_wo = ew_weights_wo
         weights_with = ew_weights_with
-        ticker_with = f"{optimisation_type.value} with {marginal_asset} {marginal_asset_ew_weight: 0.0%}"
+        ticker_with = (
+            f"{optimisation_type.value} with {marginal_asset} {marginal_asset_ew_weight: 0.0%}")
 
     elif optimisation_type == OptimisationType.ERC:
         constraints = Constraints()
@@ -149,10 +168,14 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
 
     elif optimisation_type == OptimisationType.MAX_DIV:
         weights_wo = rolling_maximise_diversification(prices=prices_without_asset,
-                                                          constraints=Constraints(min_weights=weight_min_wo, max_weights=weight_max_wo),
+                                                          constraints=Constraints(
+                                                              min_weights=weight_min_wo,
+                                                              max_weights=weight_max_wo),
                                                           covar_dict=covar_dict)
         weights_with = rolling_maximise_diversification(prices=prices_with_asset,
-                                                            constraints=Constraints(min_weights=weight_min_with, max_weights=weight_max_with),
+                                                            constraints=Constraints(
+                                                                min_weights=weight_min_with,
+                                                                max_weights=weight_max_with),
                                                             covar_dict=covar_dict)
 
     elif optimisation_type == OptimisationType.MAX_SHARPE:
@@ -163,7 +186,9 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
                                                 span=span, annualize=True)
         weights_wo = rolling_maximize_portfolio_sharpe(prices=prices_without_asset,
                                                            expected_returns=means_wo,
-                                                           constraints=Constraints(min_weights=weight_min_wo, max_weights=weight_max_wo),
+                                                           constraints=Constraints(
+                                                               min_weights=weight_min_wo,
+                                                               max_weights=weight_max_wo),
                                                            covar_dict=covar_dict)
         means_with = estimate_rolling_ewma_means(prices=prices_with_asset,
                                                 rebalancing_dates=rebalancing_dates,
@@ -171,12 +196,16 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
                                                 span=span, annualize=True)
         weights_with = rolling_maximize_portfolio_sharpe(prices=prices_with_asset,
                                                              expected_returns=means_with,
-                                                             constraints=Constraints(min_weights=weight_min_with, max_weights=weight_max_with),
+                                                             constraints=Constraints(
+                                                                 min_weights=weight_min_with,
+                                                                 max_weights=weight_max_with),
                                                              covar_dict=covar_dict)
 
     elif optimisation_type == OptimisationType.MIXTURE:
         weights_wo = rolling_maximize_cara_mixture(prices=prices_without_asset,
-                                                       constraints=Constraints(min_weights=weight_min_wo, max_weights=weight_max_wo),
+                                                       constraints=Constraints(
+                                                           min_weights=weight_min_wo,
+                                                           max_weights=weight_max_wo),
                                                        time_period=time_period,
                                                        returns_freq=returns_freq,
                                                        rebalancing_freq=rebalancing_freq,
@@ -185,7 +214,9 @@ def backtest_marginal_optimal_portfolios(prices: pd.DataFrame,  # for inclusion 
                                                        roll_window=roll_window)
 
         weights_with = rolling_maximize_cara_mixture(prices=prices_with_asset,
-                                                         constraints=Constraints(min_weights=weight_min_with, max_weights=weight_max_with),
+                                                         constraints=Constraints(
+                                                             min_weights=weight_min_with,
+                                                             max_weights=weight_max_with),
                                                          time_period=time_period,
                                                          returns_freq=returns_freq,
                                                          rebalancing_freq=rebalancing_freq,

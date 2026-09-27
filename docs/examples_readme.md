@@ -2,11 +2,13 @@
 myst:
   html_meta:
     description: >-
-      Find runnable OptimalPortfolios examples by workflow and data requirements:
-      offline fixtures, Yahoo downloads, local datasets, outputs and development runners.
+      Find OptimalPortfolios examples by task: each article with its canonical script and
+      standalone examples, their offline, network or local-data lanes, commands and outputs.
 ---
 
-# Examples
+<a id="examples"></a>
+
+# Examples and recipes
 
 *Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-05-17](https://github.com/ArturSepp/OptimalPortfolios/commit/703689ff9ca14faf1e5cdb8fcac222d092705405)*
 
@@ -14,10 +16,60 @@ Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolio
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 The repository's examples demonstrate portfolio construction, covariance estimation and
-reporting. This guide maps each Python example to its data requirements and purpose.
+reporting. The task table below leads from what you want to do to the article that explains it,
+the article's canonical script and the standalone examples; the catalogue after it maps each
+Python example to its data requirements and purpose.
 [QIS](https://github.com/ArturSepp/QuantInvestStrats) supplies backtesting, analytics and plots;
 [FactorLasso](https://github.com/ArturSepp/FactorLasso) supplies sparse factor estimation and
 clustering used by the relevant examples.
+
+## Find an example by task
+
+Each row names a task and the article that explains it. The article's canonical script under
+`examples/docs/` holds the code the article excerpts and asserts every number the article quotes
+(see [executable examples](documentation_standard.md#executable-examples)). The standalone
+examples under `examples/` are separate scripts on the same method, often on downloaded or local
+data. The lane in parentheses is the one the catalogue below assigns
+([unattended execution lanes](#unattended-execution-lanes)): Offline and Network come from the
+classifier, where Network means that `yfinance` is reachable from the script's imports, and Local
+marks a `*_local.py` workflow whose data you prepare first. Every canonical script is offline
+except the CSV risk model's, which opens no connection itself but imports the repository
+example that holds the Yahoo fetcher. For a first run, start with the
+[offline quickstart](quickstart.md).
+
+| Task | Article | Canonical script | Standalone examples |
+|---|---|---|---|
+| Build a universe with group loadings; unsmooth appraisal-based prices | [Universe data and unsmoothing](universe_data_and_unsmoothing.md) | [`universe_data_and_unsmoothing.py`](../examples/docs/universe_data_and_unsmoothing.py) (Offline) | [`data/universe.py`](../examples/data/universe.py) (Network), [`data/sp500_universe_local.py`](../examples/data/sp500_universe_local.py) (Local) |
+| Combine assets observed at different frequencies | [Mixed-frequency data](mixed_frequency_data.md) | [`mixed_frequency_data.py`](../examples/docs/mixed_frequency_data.py) (Offline) | [`covar_estimation/demo_covar_different_estimation_freqs.py`](../examples/covar_estimation/demo_covar_different_estimation_freqs.py) (Offline) |
+| Handle late starts, missing prices, index membership and frozen positions | [Incomplete histories](incomplete_histories.md) | [`incomplete_histories.py`](../examples/docs/incomplete_histories.py) (Offline) | [`comparisons/sp500_minvar_spans_local.py`](../examples/comparisons/sp500_minvar_spans_local.py) (Local) |
+| Estimate an EWMA covariance and choose its span | [Covariance estimators](covariance_estimators.md) | [`covariance_estimators.py`](../examples/docs/covariance_estimators.py) (Offline) | [`comparisons/parameter_sensitivity.py`](../examples/comparisons/parameter_sensitivity.py) (Network), [`comparisons/sp500_minvar_spans_local.py`](../examples/comparisons/sp500_minvar_spans_local.py) (Local) |
+| Estimate a sparse factor covariance | [Factor covariance with HCGL](factor_covariance_hcgl.md) | [`factor_covariance_hcgl.py`](../examples/docs/factor_covariance_hcgl.py) (Offline) | [`covar_estimation/simulate_factor_returns.py`](../examples/covar_estimation/simulate_factor_returns.py) (Offline), [`covar_estimation/lasso_covar_estimation.py`](../examples/covar_estimation/lasso_covar_estimation.py) (Network), [`comparisons/covar_estimators.py`](../examples/comparisons/covar_estimators.py) (Network) |
+| Build and use a factor risk model from CSV files | [Rolling factor risk model from CSV](rolling_factor_covar_from_csv.md) | [`rolling_factor_covar_from_csv.py`](../examples/docs/rolling_factor_covar_from_csv.py) (Network) | [`covar_estimation/rolling_factor_covar_from_csv.py`](../examples/covar_estimation/rolling_factor_covar_from_csv.py) (Network) |
+| Compute risk contributions and benchmark betas | [Ex-ante risk contributions and betas](portfolio_risk_analytics.md) | [`portfolio_risk_analytics.py`](../examples/docs/portfolio_risk_analytics.py) (Offline) | — |
+| Build alpha signals | [Alpha signals](alphas_module_readme.md) | [`alphas_module_readme.py`](../examples/docs/alphas_module_readme.py) (Offline) | [`alphas/profile_alpha_signals.py`](../examples/alphas/profile_alpha_signals.py) (Network) |
+| Diagnose signals and profile alpha-rank portfolios | [Signal diagnostics](signal_diagnostics_and_profiling.md) | [`signal_diagnostics_and_profiling.py`](../examples/docs/signal_diagnostics_and_profiling.py) (Offline) | [`alphas/profile_alpha_signals.py`](../examples/alphas/profile_alpha_signals.py) (Network) |
+| Choose an objective and configure the solver | [Choosing an objective](optimization_module_readme.md) | [`optimization_module_readme.py`](../examples/docs/optimization_module_readme.py) (Offline) | [`backtests/multiasset_saa.py`](../examples/backtests/multiasset_saa.py) (Offline), [`comparisons/optimisers.py`](../examples/comparisons/optimisers.py) (Network) |
+| Allocate to target risk budgets | [Risk budgeting](risk_budgeting.md) | [`risk_budgeting.py`](../examples/docs/risk_budgeting.py) (Offline) | [`solvers/risk_budgeting.py`](../examples/solvers/risk_budgeting.py) (Network), [`comparisons/risk_budgeting_ccd_vs_scipy.py`](../examples/comparisons/risk_budgeting_ccd_vs_scipy.py) (Offline) |
+| Infer the risk budgets of a target allocation | [Implied risk budgets](implied_risk_budgets.md) | [`implied_risk_budgets.py`](../examples/docs/implied_risk_budgets.py) (Offline) | [`backtests/balanced_risk_budgets.py`](../examples/backtests/balanced_risk_budgets.py) (Network), [`solvers/inverse_risk_budget_bonds.py`](../examples/solvers/inverse_risk_budget_bonds.py) (Offline) |
+| Allocate by hierarchical risk parity or cluster budgets | [Hierarchical risk parity and cluster budgets](hierarchical_risk_parity_and_cluster_budgets.md) | [`hierarchical_risk_parity_and_cluster_budgets.py`](../examples/docs/hierarchical_risk_parity_and_cluster_budgets.py) (Offline) | [`comparisons/hrp_linkage_semantics.py`](../examples/comparisons/hrp_linkage_semantics.py) (Offline) |
+| Maximise diversification | [Maximum diversification](maximum_diversification.md) | [`maximum_diversification.py`](../examples/docs/maximum_diversification.py) (Offline) | [`solvers/max_diversification.py`](../examples/solvers/max_diversification.py) (Network), [`comparisons/parameter_sensitivity.py`](../examples/comparisons/parameter_sensitivity.py) (Network) |
+| Minimise variance, or maximise quadratic utility or the Sharpe ratio | [Mean-variance objectives](mean_variance_objectives.md) | [`mean_variance_objectives.py`](../examples/docs/mean_variance_objectives.py) (Offline) | [`solvers/min_variance.py`](../examples/solvers/min_variance.py) (Network), [`solvers/max_sharpe.py`](../examples/solvers/max_sharpe.py) (Network) |
+| Meet a target return or a target volatility | [Target return and target volatility](strategic_allocation_targets.md) | [`strategic_allocation_targets.py`](../examples/docs/strategic_allocation_targets.py) (Offline) | — |
+| Allow for fat tails with CARA utility | [CARA utility under Gaussian mixtures](cara_gaussian_mixture.md) | [`cara_gaussian_mixture.py`](../examples/docs/cara_gaussian_mixture.py) (Offline) | [`solvers/carra_mixture.py`](../examples/solvers/carra_mixture.py) (Network) |
+| Stay as close as possible to a benchmark | [Minimum tracking error](minimum_tracking_error.md) | [`minimum_tracking_error.py`](../examples/docs/minimum_tracking_error.py) (Offline) | [`solvers/minimum_tracking_error.py`](../examples/solvers/minimum_tracking_error.py) (Network) |
+| Allocate alpha within a tracking-error budget or with a yield target | [Alpha over tracking error](alpha_over_tracking_error.md) | [`alpha_over_tracking_error.py`](../examples/docs/alpha_over_tracking_error.py) (Offline) | [`solvers/tracking_error.py`](../examples/solvers/tracking_error.py) (Network), [`solvers/target_return.py`](../examples/solvers/target_return.py) (Network) |
+| Optimise a sleeve over a fixed core under a tail floor | [Overlay tail floor](overlay_tail_floor.md) | [`overlay_tail_floor.py`](../examples/docs/overlay_tail_floor.py) (Offline) | [`solvers/overlay_tail_floor.py`](../examples/solvers/overlay_tail_floor.py) (Offline) |
+| Set and check portfolio constraints | [Portfolio constraints](constraints.md) | [`constraints.py`](../examples/docs/constraints.py) (Offline) | [`solvers/long_short.py`](../examples/solvers/long_short.py) (Network) |
+| Read solver outcomes, fallbacks and constraint residuals | [Solver numerics and outcomes](solver_numerics_and_outcomes.md) | [`solver_numerics_and_outcomes.py`](../examples/docs/solver_numerics_and_outcomes.py) (Offline) | — |
+| Run a rolling backtest with drift, lag and costs | [Rolling backtests](rolling_backtests.md) | [`rolling_backtests.py`](../examples/docs/rolling_backtests.py) (Offline) | [`getting_started/production_quickstart.py`](../examples/getting_started/production_quickstart.py) (Offline), [`backtests/minimal_backtest.py`](../examples/backtests/minimal_backtest.py) (Network) |
+| Limit turnover and account for transaction costs | [Turnover and transaction costs](turnover_and_transaction_costs.md) | [`turnover_and_transaction_costs.py`](../examples/docs/turnover_and_transaction_costs.py) (Offline) | [`comparisons/drift_policy.py`](../examples/comparisons/drift_policy.py) (Network) |
+| Case study: strategic and tactical allocation with HCGL covariance | [ROSAA case study](app_rosaa_multi_asset_allocation.md) | [`app_rosaa_multi_asset_allocation.py`](../examples/docs/app_rosaa_multi_asset_allocation.py) (Offline) | — |
+| Case study: cryptocurrencies in a diversified portfolio | [Cryptocurrency case study](app_crypto_allocation.md) | [`app_crypto_allocation.py`](../examples/docs/app_crypto_allocation.py) (Offline) | — |
+| Case study: from capital market assumptions to a strategic allocation | [MATF-CMA case study](app_cma_strategic_allocation.md) | [`app_cma_strategic_allocation.py`](../examples/docs/app_cma_strategic_allocation.py) (Offline) | — |
+| Stress test a stock-and-option book | [Stress testing with options](stress_testing_with_options.md) | [`stress_testing_with_options.py`](../examples/docs/stress_testing_with_options.py) (Offline) | [`reports/stress_testing_with_options_local.py`](../examples/reports/stress_testing_with_options_local.py) (Local) |
+
+The local tracking-error decomposition in `backtests/` is left out of this table: it is a
+historical illustration whose formulas differ from the current risk analytics.
 
 ## Run an example
 
@@ -87,7 +139,7 @@ examples/
   data/              shared Yahoo loaders and local universe builders
   solvers/           objective-specific examples
   backtests/         complete rolling workflows
-  comparisons/      comparisons of methods or configurations
+  comparisons/       comparisons of methods or configurations
   covar_estimation/  covariance and factor-model examples
   alphas/            signal profiling
   reports/           manually prepared portfolio reports
@@ -143,12 +195,12 @@ constraints differ; consult the [optimization guide](optimization_module_readme.
 
 | Source | Lane | Purpose |
 |---|---|---|
-| [Minimum variance](../examples/solvers/min_variance.py) | Network | `rolling_quadratic_optimisation` with `MIN_VARIANCE`. |
+| [Minimum variance](../examples/solvers/min_variance.py) | Network | `rolling_quadratic_optimisation` with its default `MIN_VARIANCE` objective. |
 | [Minimum tracking error](../examples/solvers/minimum_tracking_error.py) | Network | `wrapper_minimise_tracking_error` and `rolling_minimise_tracking_error`; find a feasible portfolio close to a benchmark. |
 | [Maximum Sharpe](../examples/solvers/max_sharpe.py) | Network | `rolling_maximize_portfolio_sharpe` with estimated means and covariance. |
 | [Maximum diversification](../examples/solvers/max_diversification.py) | Network | `rolling_maximise_diversification`; compare portfolio diversification under constraints. |
 | [Risk budgeting](../examples/solvers/risk_budgeting.py) | Network | `rolling_risk_budgeting` with equal or specified risk budgets. |
-| [JuneX inverse risk-budget boundary](../examples/solvers/inverse_risk_budget_bonds.py) | Offline | Synthetic JuneX-shaped inputs show why negative average marginal risk contribution or persistent overweight at a tiny positive budget requires fixing the affected central weight before fitting the other risk budgets. No private inputs are required. |
+| [Inverse risk-budget boundary](../examples/solvers/inverse_risk_budget_bonds.py) | Offline | Synthetic central weights of an equity sleeve, a residual sleeve and two bond indices, under three illustrative covariance regimes, show why a non-positive average marginal risk contribution, or an overweight that persists at a tiny positive budget, requires holding the affected asset at its central weight while the other risk budgets are fitted. No private inputs, network or local files are required. |
 | [CARA mixture](../examples/solvers/carra_mixture.py) | Network | `rolling_maximize_cara_mixture`; expected utility under a fitted Gaussian mixture. The filename retains the historical `carra` spelling. |
 | [Alpha with a tracking-error budget](../examples/solvers/tracking_error.py) | Network | `rolling_maximise_alpha_over_tre`; alpha allocation relative to an ETF benchmark. |
 | [Alpha with a target return](../examples/solvers/target_return.py) | Network | `rolling_maximise_alpha_with_target_return`; includes yield and price-return inputs from its own loader. |
@@ -161,7 +213,7 @@ constraints differ; consult the [optimization guide](optimization_module_readme.
 |---|---|---|
 | [Minimal ETF backtest](../examples/backtests/minimal_backtest.py) | Network | Download eight ETFs, estimate covariance, solve and produce QIS factsheets. Writes a PDF and three preview images; see output handling below. |
 | [Multiasset strategic allocation](../examples/backtests/multiasset_saa.py) | Offline | Uses the packaged monthly fixture, a 36-observation EWMA span and annual decisions. The default `OBJECTIVE_SWEEP` prints final weights for three covariance-based objectives; other branches compare NAVs or apply group constraints. |
-| [Balanced risk budgets](../examples/backtests/balanced_risk_budgets.py) | Network | Infer risk budgets from a 60/40 allocation and compare weights with risk contributions. |
+| [Balanced risk budgets](../examples/backtests/balanced_risk_budgets.py) | Network | Infer risk budgets from a static 55/35/10 SPY/IEF/GLD allocation (a flag in the script switches to 60/40 SPY/IEF) and compare the weights and risk contributions of the risk-budgeted and static portfolios. The default `ILLUSTRATE_WEIGHTS` scenario writes a PDF to the configured output path. |
 | [Tracking-error decomposition](../examples/backtests/tracking_error_decomposition_local.py) | Local | Loads `dow30_prices.csv` through `get_resource_path()`; configure the resource path or prepare the input there. The copy under `examples/data/` is not selected automatically. Imports `yfinance` even when its download helper is not called. Compares total-risk contributions with standalone diagonal-risk magnitudes. |
 
 For current risk-model analytics, use the QIS implementation described in the
@@ -225,8 +277,9 @@ historical trading result.
 Each script is the canonical example of one documentation page: the page shows excerpts of
 it, and the script asserts every number the page quotes. The test suite runs every script,
 and some also draw the page's teaching exhibit. Most run offline after
-`pip install optimalportfolios`; the CSV risk-model and overlay scripts import a repository
-example, so they need a source checkout.
+`pip install optimalportfolios`. Three need a source checkout: the CSV risk-model and overlay
+scripts import a repository example, and the cryptocurrency script reads the tracked 2023 panel
+under `papers/`.
 
 | Source | Lane | Purpose and prerequisites |
 |---|---|---|

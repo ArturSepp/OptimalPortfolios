@@ -640,10 +640,10 @@ def test_explicit_positive_mrc_pin_matches_full_covariance_kkt_reference() -> No
     np.testing.assert_allclose(forward, np.tile(target, (len(forward), 1)), atol=1e-3)
 
 
-def make_junex_boundary_case() -> tuple[pd.DataFrame, pd.Series,
+def make_sleeve_boundary_case() -> tuple[pd.DataFrame, pd.Series,
                                         Dict[pd.Timestamp, pd.DataFrame]]:
-    """Compress JuneX's central mix into four sleeves and three covariance regimes."""
-    assets = ['JuneX equity', 'JuneX other', 'LUATTRUU Index', 'LD19TRUU Index']
+    """Compress XXX's central mix into four sleeves and three covariance regimes."""
+    assets = ['XXX equity', 'XXX other', 'LUATTRUU Index', 'LD19TRUU Index']
     target = pd.Series([0.65, 0.198925, 0.1253, 0.025775], index=assets)
     vol = np.array([0.20, 0.12, 0.06, 0.07])
     covars = {}
@@ -661,9 +661,9 @@ def make_junex_boundary_case() -> tuple[pd.DataFrame, pd.Series,
     return prices, target, covars
 
 
-def test_junex_boundary_automatically_pins_two_distinct_failure_modes() -> None:
+def test_sleeve_boundary_automatically_pins_two_distinct_failure_modes() -> None:
     """A positive-average-RC asset can still be infeasible at a positive budget."""
-    prices, target, covars = make_junex_boundary_case()
+    prices, target, covars = make_sleeve_boundary_case()
     diagnostics = risk_budgeting_module._target_risk_contributions(target, covars, None)
     assert diagnostics.loc['LUATTRUU Index', 'average_rc'] < 0.0
     assert diagnostics.loc['LD19TRUU Index', 'average_rc'] > 0.0
@@ -693,8 +693,8 @@ def test_junex_boundary_automatically_pins_two_distinct_failure_modes() -> None:
 
 def test_boundary_probe_does_not_require_the_optimizer_to_reach_the_floor(
         monkeypatch) -> None:
-    """A forward floor probe catches the JuneX jump after an incomplete fit."""
-    prices, target, covars = make_junex_boundary_case()
+    """A forward floor probe catches the XXX jump after an incomplete fit."""
+    prices, target, covars = make_sleeve_boundary_case()
     original_fixed_point = risk_budgeting_module._solve_inverse_risk_budget_fixed_point
     unfinished = np.array([0.91, 0.089, 0.0, 0.001])
 
@@ -748,19 +748,19 @@ def test_boundary_screen_requires_overweight_and_a_budget_at_its_floor() -> None
 
 def test_floor_probe_skips_an_infeasible_remaining_budget_cap() -> None:
     """A positive floor cannot be forced if the other budget caps cannot sum to one."""
-    prices, target, covars = make_junex_boundary_case()
+    prices, target, covars = make_sleeve_boundary_case()
     probe = risk_budgeting_module._probe_inverse_budget_floor(
         asset='LD19TRUU Index', budgets=np.array([0.5, 0.0, 0.0, 0.5]),
         lower_bounds=np.array([1e-4, 0.0, 0.0, 1e-4]),
         upper_bounds=np.array([0.99, 0.0, 0.0, 0.99]),
         prices=prices, given_weights=target.to_numpy(), covar_dict=covars,
-        ewma_span=None, fixed_weights=target[['JuneX other', 'LUATTRUU Index']])
+        ewma_span=None, fixed_weights=target[['XXX other', 'LUATTRUU Index']])
     assert probe is None
 
 
 def test_failed_boundary_trial_still_raises_instead_of_zeroing_a_budget(monkeypatch) -> None:
     """A floor-overweight candidate is fixed only after a validated complete refit."""
-    prices, target, covars = make_junex_boundary_case()
+    prices, target, covars = make_sleeve_boundary_case()
     real_evaluation = risk_budgeting_module._evaluate_inverse_risk_budget
 
     def reject_trial(**kwargs):
@@ -780,7 +780,7 @@ def test_failed_boundary_trial_still_raises_instead_of_zeroing_a_budget(monkeypa
 
 def test_boundary_trial_result_is_checked_with_the_forward_solver(monkeypatch) -> None:
     """A trial-returned budget cannot bypass the full-path fit tolerance."""
-    prices, target, covars = make_junex_boundary_case()
+    prices, target, covars = make_sleeve_boundary_case()
     seen = []
 
     def return_bad_trial(**kwargs):
