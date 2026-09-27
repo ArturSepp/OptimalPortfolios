@@ -1524,6 +1524,163 @@
       ],
       "question": "How do risk aversion and a crash component change the allocation?",
       "sample": "Fixed annual parameters of a stylised three-asset, three-component mixture; no simulation."
+    },
+    {
+      "id": "alpha_rank_quantiles",
+      "path": "docs/images/alpha_rank_quantiles.png",
+      "script": "examples/docs/signal_diagnostics_and_profiling.py",
+      "function": "exhibit",
+      "parameters": {
+        "SEED": 11,
+        "N_ASSETS": 500,
+        "MONTHS": 240,
+        "FIRST_DATE": "2005-12-31",
+        "RHO": 0.1,
+        "MU": 0.005,
+        "VOL": 0.05,
+        "MARKET_VOL": 0.04,
+        "QUANTILES": 5,
+        "ROLLING_MONTHS": 12
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/signal_diagnostics_and_profiling.md"
+      ],
+      "question": "Does the signal rank returns, and how stable is its IC?",
+      "sample": "500 synthetic assets with 240 month-end returns from January 2006 to December 2025, seed 11, and a score with population rank IC 0.0955."
+    },
+    {
+      "id": "alpha_over_te_active_weights",
+      "path": "docs/images/alpha_over_te_active_weights.png",
+      "script": "examples/docs/alpha_over_tracking_error.py",
+      "function": "exhibit",
+      "parameters": {
+        "TICKERS": [
+          "Govt bonds",
+          "Credit",
+          "US equity",
+          "Europe equity",
+          "EM equity",
+          "Gold"
+        ],
+        "VOLS": [
+          0.05,
+          0.07,
+          0.16,
+          0.17,
+          0.21,
+          0.15
+        ],
+        "CORR": [
+          [
+            1.0,
+            0.5,
+            -0.2,
+            -0.2,
+            -0.15,
+            0.1
+          ],
+          [
+            0.5,
+            1.0,
+            0.4,
+            0.4,
+            0.45,
+            0.15
+          ],
+          [
+            -0.2,
+            0.4,
+            1.0,
+            0.85,
+            0.75,
+            0.1
+          ],
+          [
+            -0.2,
+            0.4,
+            0.85,
+            1.0,
+            0.8,
+            0.15
+          ],
+          [
+            -0.15,
+            0.45,
+            0.75,
+            0.8,
+            1.0,
+            0.25
+          ],
+          [
+            0.1,
+            0.15,
+            0.1,
+            0.15,
+            0.25,
+            1.0
+          ]
+        ],
+        "BENCHMARK": [
+          0.3,
+          0.15,
+          0.25,
+          0.1,
+          0.1,
+          0.1
+        ],
+        "ALPHAS": [
+          -0.0025,
+          0.007,
+          -0.016,
+          -0.0085,
+          0.021,
+          0.0
+        ],
+        "TE_BUDGET": 0.02,
+        "EXHIBIT_BUDGETS": [
+          0.0025,
+          0.005,
+          0.0075,
+          0.01,
+          0.0125,
+          0.015,
+          0.0175,
+          0.02,
+          0.0225,
+          0.025,
+          0.0275,
+          0.03,
+          0.0325,
+          0.035,
+          0.0375,
+          0.04,
+          0.0425,
+          0.045,
+          0.0475,
+          0.05,
+          0.0525,
+          0.055,
+          0.0575,
+          0.06,
+          0.0625,
+          0.065,
+          0.0675,
+          0.07,
+          0.0725,
+          0.075,
+          0.0775,
+          0.08
+        ],
+        "WEIGHT_TOL": 0.0001,
+        "TE_TOL": 1e-06
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/alpha_over_tracking_error.md"
+      ],
+      "question": "Do active weights follow the closed form, and how does IR scale with the TE budget?",
+      "sample": "Fixed volatilities, correlations, benchmark and alphas of a stylised six-asset universe; 32 tracking-error budgets from 0.25% to 8%, with and without long-only bounds; no simulation."
     }
   ]
 }

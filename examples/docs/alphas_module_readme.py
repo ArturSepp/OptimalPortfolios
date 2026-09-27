@@ -833,32 +833,13 @@ def main() -> None:
             == 17.0).all()
     assert_raises(KeyError, data.get_alphas_snapshot, pd.Timestamp("2000-01-31"))
 
-    profiles = alphas.backtest_alpha_rank_portfolio(
-        prices=prices, alpha_scores={"Momentum": mom_score, "Low beta": beta_score},
-        quantile=0.25, rebalancing_freq="QE",
-        time_period=qis.TimePeriod("2021-12-31", "2024-12-31"),
-    )
-    component_panels = alphas.signal_diagnostics_panel(data)
-    diagnostics = alphas.run_signal_diagnostics(
-        asset_returns_dict={
-            "ME": qis.to_returns(prices, freq="ME", is_log_returns=True, drop_first=True)
-        },
-        signal=mom_score, horizons=(1, 3), is_log_returns=True,
-    )
     mean_dates = pd.date_range("2023-03-31", "2024-12-31", freq="QE")
     annual_log_means = alphas.estimate_rolling_ewma_means(
         prices, rebalancing_dates=list(mean_dates), returns_freq="ME", span=12, annualize=True,
     )
 
-    # Two signal strategies and the equal-weight benchmark, without costs; eight populated
-    # score panels; two horizons; eight dates by eight assets of annual EWMA log means.
-    assert [leg.ticker for leg in profiles.portfolio_datas] == ["Momentum", "Low beta",
-                                                                "Equal Weight"]
-    for leg in profiles.portfolio_datas:
-        assert np.allclose(leg.realized_costs, 0.0)
-    score_fields = [name for name in ALPHAS_DATA_FIELDS if name.endswith(("score", "scores"))]
-    assert sorted(component_panels) == sorted(score_fields) and len(component_panels) == 8
-    assert len(diagnostics.horizon_labels) == 2
+    # Eight dates by eight assets of annual EWMA log means, equal to an explicit EWMA seeded at
+    # the first return and multiplied by 12.
     returns = log_returns(prices).iloc[1:]
     all_means = pd.DataFrame(12 * seeded_ewma(returns.to_numpy(), span=12),
                              index=returns.index, columns=returns.columns)
@@ -874,19 +855,6 @@ def main() -> None:
         returns_freq="ME", span=12)
     assert between.iloc[0].isna().all()
     np.testing.assert_allclose(between.iloc[1], all_means.loc["2024-10-31"], rtol=1e-11)
-    # Ranking: ceil(quantile x assets), ties by column order, and a mask of non-missing
-    # values only, so an infinite score with a negative price is still selected.
-    ties = pd.DataFrame([[3.0, 3.0, 2.0, 1.0, 0.0, -1.0, -2.0, -3.0]], index=[probe_date],
-                        columns=prices.columns)
-    top = alphas.compute_top_quantile_equal_weights(ties, prices.loc[ties.index], quantile=0.125)
-    np.testing.assert_array_equal(top.iloc[0], [1, 0, 0, 0, 0, 0, 0, 0])
-    np.testing.assert_array_equal(alphas.compute_top_quantile_equal_weights(
-        ties, prices.loc[ties.index], quantile=0.3).iloc[0], [1 / 3] * 3 + [0] * 5)
-    ties.iloc[0, -1] = np.inf
-    negative = prices.loc[ties.index].copy()
-    negative.iloc[0, -1] = -1.0
-    assert alphas.compute_top_quantile_equal_weights(ties, negative,
-                                                     quantile=0.125).iloc[0, -1] == 1.0
 
     # The figure and the Insight: each asset's classic momentum is its annual drift; both
     # clusters exceed three members, so within-cluster scores have mean zero and sample

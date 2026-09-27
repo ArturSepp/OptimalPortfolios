@@ -55,7 +55,7 @@ scenario; it does not execute every branch of a `Locals` enum.
 ### Unattended execution lanes
 
 The [classifier and runner](../.github/scripts/run_examples.py) derives lanes from Python imports.
-Its current inventory is **31 offline, 20 network, 51 unattended examples**. The **4 local-data workflows** ending in
+Its current inventory is **33 offline, 20 network, 53 unattended examples**. The **4 local-data workflows** ending in
 `*_local.py` are excluded. Each catalogue row below states the classification.
 
 ```console
@@ -210,8 +210,9 @@ Follow the CSV workflow's separate fetch/load commands and explicit C-local `--d
 
 The profiler compares equal-weighted portfolios selected by signal rank with an equal-weight
 universe benchmark. It isolates a selection rule without solving a portfolio optimization.
-Read the [alpha-signal guide](alphas_module_readme.md), including its timing conventions, before
-interpreting the example as a historical trading result.
+Read the [alpha-signal guide](alphas_module_readme.md), including its timing conventions, and
+[signal diagnostics and alpha-rank portfolios](signal_diagnostics_and_profiling.md) before interpreting the example as a
+historical trading result.
 
 ## `reports/` — portfolio reports
 
@@ -229,7 +230,8 @@ example, so they need a source checkout.
 
 | Source | Lane | Purpose and prerequisites |
 |---|---|---|
-| [Alpha signals](../examples/docs/alphas_module_readme.py) | Offline | The worked examples of the [alpha signals](alphas_module_readme.md) page: every signal family against its formula, cross-sectional and within-cluster scoring, cluster extraction, mixed cadences, point-in-time signals, the `AlphasData` container and the profiler. |
+| [Alpha over tracking error](../examples/docs/alpha_over_tracking_error.py) | Offline | The worked example of the [alpha over tracking error](alpha_over_tracking_error.md) page: the closed-form active weights against the solver, the tracking error from `qis.RiskModel`, the utility weight that reproduces the forced solve, group limits and the yield-target variant. |
+| [Alpha signals](../examples/docs/alphas_module_readme.py) | Offline | The worked examples of the [alpha signals](alphas_module_readme.md) page: every signal family against its formula, cross-sectional and within-cluster scoring, cluster extraction, mixed cadences, point-in-time signals, the `AlphasData` container and rolling EWMA means. |
 | [ROSAA case study](../examples/docs/app_rosaa_multi_asset_allocation.py) | Offline | The configuration of the [ROSAA case study](app_rosaa_multi_asset_allocation.md) on a synthetic panel with known loadings: a rolling HCGL factor covariance, strategic risk budgets and a tactical alpha-over-tracking-error overlay, with the mechanism asserted at every quarter end. |
 | [CARA utility under Gaussian mixtures](../examples/docs/cara_gaussian_mixture.py) | Offline | The worked example of the [CARA mixture](cara_gaussian_mixture.md) page: the closed-form objective against Monte Carlo, the one-component reduction to mean-variance, the in-house mixture fit and its annualisation, and a crash component's effect on the allocation. |
 | [Portfolio constraints](../examples/docs/constraints.py) | Offline | The worked examples of the [portfolio constraints](constraints.md) page: a forced solve against an optimality certificate, hard and soft residuals, universe alignment and frozen-group waivers, and a tracking-error limit as a hard row and as a penalty. |
@@ -248,6 +250,7 @@ example, so they need a source checkout.
 | [Risk budgeting](../examples/docs/risk_budgeting.py) | Offline | The worked example of the [risk budgeting](risk_budgeting.md) page: budgets met against an independent conic solve, the closed-form diagonal case, and a binding cap against its optimality conditions. |
 | [Rolling backtests](../examples/docs/rolling_backtests.py) | Offline | The worked examples of the [rolling backtests](rolling_backtests.md) page: a toy unit ledger, drift against executed holdings, a monthly rolling backtest with costs and lag, and target against drifted weights through quarterly trades. |
 | [Rolling factor risk model from CSV](../examples/docs/rolling_factor_covar_from_csv.py) | Network | The worked example of the [rolling factor risk model from CSV](rolling_factor_covar_from_csv.md) page: a six-file bundle round trip, FX-converted returns against endpoint wealth, every snapshot covariance summed term by term, the `load` command in a fresh process, loader defects and repairs, and the Yahoo fetch on synthetic closes. It opens no connection; the classifier lists it as network because the repository example it imports holds the Yahoo fetcher. Needs a source checkout. |
+| [Signal diagnostics](../examples/docs/signal_diagnostics_and_profiling.py) | Offline | The worked example of the [signal diagnostics](signal_diagnostics_and_profiling.md) page: the rank IC of a synthetic score against its population value, quintile portfolios and their spread, the rank profiler and the per-component diagnostics, and a score's value inside an optimiser. |
 | [Solver numerics and outcomes](../examples/docs/solver_numerics_and_outcomes.py) | Offline | The worked example of the [solver numerics](solver_numerics_and_outcomes.md) page: the floored factorisation, NaN filtering, outcome acceptance, fallbacks, residuals and the elastic feasibility diagnosis. |
 | [Target return and target volatility](../examples/docs/strategic_allocation_targets.py) | Offline | The worked example of the [strategic allocation](strategic_allocation_targets.md) page on the packaged monthly fixture: the frontier duality round trip at a return and a volatility target, infeasible and slack targets, and where the utility form meets the hard one. |
 | [Stress testing with options](../examples/docs/stress_testing_with_options.py) | Offline | An offline version of the [stress testing](stress_testing_with_options.md) workflow: a fixed factor model, Black-Scholes repricing of short options, conditional scenario completion, and the P&L split into delta and gamma parts. |

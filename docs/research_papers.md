@@ -44,7 +44,7 @@ The ROSAA framework, of which optimalportfolios is the reference implementation.
   and FactorLasso);
 - strategic allocation by constrained risk budgeting (see [risk budgeting](risk_budgeting.md));
 - tactical allocation as alpha over a tracking-error budget against the strategic benchmark (see
-  [choosing an objective](optimization_module_readme.md)).
+  [tactical allocation](alpha_over_tracking_error.md)).
 
 The [ROSAA case study](app_rosaa_multi_asset_allocation.md) reports its study design and
 results and runs the same configuration offline.

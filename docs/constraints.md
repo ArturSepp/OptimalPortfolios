@@ -1125,6 +1125,7 @@ Before running a constrained optimizer:
 ## See also
 
 - [Minimum tracking error](minimum_tracking_error.md)
+- [Tactical allocation: alpha over tracking error and yield targets](alpha_over_tracking_error.md)
 - [Risk budgeting](risk_budgeting.md)
 - [Turnover and transaction costs](turnover_and_transaction_costs.md)
 - [Incomplete histories and frozen positions](incomplete_histories.md)

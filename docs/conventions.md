@@ -213,8 +213,8 @@ in [choosing an objective](optimization_module_readme.md).
 | [CARA utility under Gaussian mixtures](cara_gaussian_mixture.md) | Prices only; it fits its own mixture and ignores the covariance |
 | [Strategic target return or target volatility](strategic_allocation_targets.md) | Covariance, expected returns and targets; optional benchmark |
 | Minimum tracking error | Covariance and a benchmark |
-| Tactical alpha over tracking error | Covariance, alphas, a benchmark and a tracking-error limit |
-| Tactical alpha with a target return | Covariance, alphas, yields and targets; optional benchmark |
+| [Tactical alpha over tracking error](alpha_over_tracking_error.md) | Covariance, alphas, a benchmark and a tracking-error limit |
+| [Tactical alpha with a target return](alpha_over_tracking_error.md#the-yield-target-variant) | Covariance, alphas, yields and targets; optional benchmark |
 | Overlay with a tail floor | Covariance, excess means, a fixed core and a linear floor, through the maximum-Sharpe solver |
 
 [Choosing an objective](optimization_module_readme.md) maps each objective to its rolling,
@@ -259,7 +259,8 @@ single-date and numerical entry points.
 - **Risk contribution.** $\mathrm{RC}_i$; the contributions sum to $\sigma(w)$.
 - **SAA, TAA.** Strategic and tactical asset allocation. SAA maps expected returns and return
   or volatility targets to a long-run allocation; TAA takes alpha-driven active positions
-  against a benchmark under a tracking-error budget.
+  against a benchmark under a tracking-error budget; see
+  [tactical allocation](alpha_over_tracking_error.md).
 - **Tail floor.** A minimum on a supplied linear characteristic of the overlay, used as a proxy
   for downside protection; it is not an expected shortfall.
 - **TE, TRE.** Ex-ante tracking error $\mathrm{TE}(w)$; function names write it `tre`.

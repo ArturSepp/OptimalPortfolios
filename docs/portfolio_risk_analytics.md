@@ -587,6 +587,7 @@ they use the covariance of an exact grid date and apply no annualisation.
 - [Risk budgeting](risk_budgeting.md)
 - [Maximum diversification](maximum_diversification.md)
 - [Minimum tracking error](minimum_tracking_error.md)
+- [Tactical allocation: alpha over tracking error and yield targets](alpha_over_tracking_error.md)
 - [Portfolio constraints](constraints.md)
 - [Rolling factor covariance from CSV](rolling_factor_covar_from_csv.md)
 - [Conventions, notation and glossary](conventions.md)

@@ -255,6 +255,21 @@ four bond-like, October 2023 to December 2024; no simulation. **Producer:** the 
 function of [`examples/docs/alphas_module_readme.py`](../examples/docs/alphas_module_readme.py).
 **Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
 
+## Signal diagnostics
+
+A teaching exhibit of the [signal diagnostics and alpha-rank portfolios](signal_diagnostics_and_profiling.md) page. A
+synthetic score whose population rank information coefficient is 0.0955 sorts 500 assets into
+quintile portfolios whose values fan out in rank order, while the monthly rank IC scatters widely
+around its population value.
+
+![Left: the values of the five quintile portfolios sorted by the score, on a log scale. Right: the
+monthly rank IC with its 12-month mean and the population value.](images/alpha_rank_quantiles.png)
+
+**Sample:** 500 synthetic assets with 240 month-end returns from January 2006 to December 2025,
+seed 11. **Producer:** the `exhibit` function of
+[`examples/docs/signal_diagnostics_and_profiling.py`](../examples/docs/signal_diagnostics_and_profiling.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
 ## Risk budgeting
 
 A teaching exhibit of the [risk budgeting](risk_budgeting.md) page. With slack caps, each
@@ -378,6 +393,21 @@ the covariance sends the displaced weight at two of the steps.
 **Sample:** fixed volatilities and correlations of a stylised five-asset universe with a 60/40
 benchmark and fixed current holdings; no simulation. **Producer:** the `exhibit` function of
 [`examples/docs/minimum_tracking_error.py`](../examples/docs/minimum_tracking_error.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Alpha over tracking error
+
+A teaching exhibit of the [alpha over tracking error](alpha_over_tracking_error.md) page. Under a 2%
+tracking-error budget the long-only active weights equal the closed form, and the information
+ratio stays at 0.336 until a weight bound binds at a 3.82% budget; without weight bounds it does
+not fall.
+
+![Left: long-only active weights at a 2% budget against the closed form. Right: the information
+ratio against the tracking-error budget, with and without long-only bounds.](images/alpha_over_te_active_weights.png)
+
+**Sample:** fixed volatilities, correlations, benchmark and alphas of a stylised six-asset
+universe; no simulation. **Producer:** the `exhibit` function of
+[`examples/docs/alpha_over_tracking_error.py`](../examples/docs/alpha_over_tracking_error.py).
 **Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
 
 ## Overlay tail floor
