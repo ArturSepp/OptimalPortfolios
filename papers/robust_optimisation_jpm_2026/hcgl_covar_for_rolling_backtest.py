@@ -19,6 +19,7 @@ import qis as qis
 from optimalportfolios import (Constraints, LassoModelType,
                                LassoModel, FactorCovarEstimator,
                                rolling_risk_budgeting)
+from optimalportfolios import local_path as lp
 
 
 # 1. define the investment universe and allocation by asset classes
@@ -48,7 +49,7 @@ def fetch_universe_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
 universe_prices, risk_factor_prices, group_data = fetch_universe_data()
 
 # 2. set lasso model
-lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO_CLUSTERS,
+lasso_model = LassoModel(model_type=LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
                          reg_lambda=1e-5,
                          span=36,
                          warmup_period=12)
@@ -56,6 +57,7 @@ lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO_CLUSTERS,
 # 3. set covar estimator
 covar_estimator = FactorCovarEstimator(lasso_model=lasso_model,
                                        factor_returns_freq='ME',
+                                       factor_covar_span=36,
                                        rebalancing_freq='QE')
 
 # 4. compute asset returns dict at monthly frequency (matching factor_returns_freq)
@@ -106,8 +108,8 @@ figs = qis.generate_strategy_benchmark_factsheet_plt(multi_portfolio_data=multi_
 
 # 10. save report
 qis.save_figs_to_pdf(figs=figs,
-                     file_name=f"saa_risk_budget_portfolio_factsheet",
+                     file_name="saa_risk_budget_portfolio_factsheet",
                      orientation='landscape',
-                     local_path="C://Users//Artur//OneDrive//analytics//outputs")
+                     local_path=lp.get_output_path())
 
 plt.show()
