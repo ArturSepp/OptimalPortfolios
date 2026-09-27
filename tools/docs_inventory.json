@@ -35,6 +35,18 @@
       "reason": "Tracked RST entry; docs/conf.py generates its reference body into docs/_generated from the symbols section.",
       "review": "R1 (2026-09-27): the flat hand-kept list of 138 entries is replaced by a body generated at build time from the symbols section, grouped by owning page, with parameter maps. Object URLs under generated/ are kept."
     },
+    "docs/app_cma_strategic_allocation.md": {
+      "form": "case_study",
+      "status": "adopted",
+      "example": "examples/docs/app_cma_strategic_allocation.py",
+      "review": "R8 (2026-09-27): new case study written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the case-study form, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. A3. Synthetic workflow; the MATF paper cited only in its public SSRN version (D2), no paper data or result; D4 open. Teaching exhibit cma_decomposition_saa.png."
+    },
+    "docs/app_crypto_allocation.md": {
+      "form": "case_study",
+      "status": "adopted",
+      "example": "examples/docs/app_crypto_allocation.py",
+      "review": "R8 (2026-09-27): new case study written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the case-study form, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. A2. Paper design and results by section; current API on the frozen 2023 panel with ETF-derived columns only (owner decision D3). Paper-derived exhibit crypto_allocation_by_method.png."
+    },
     "docs/app_rosaa_multi_asset_allocation.md": {
       "form": "case_study",
       "status": "adopted",
@@ -239,18 +251,7 @@
       "review": "M4 contributor-guide migration verified on 2026-09-14: attribution and QIS ownership/citation, public import levels, aligned input ordering, frozen-policy semantics, backend return values and compliance limitations now follow current source. The original residual inputs are preserved; all three Python blocks pass offline, with independent turnover and diagonal-covariance tracking-error references and reorder/freeze checks. All 334 existing focused tests, the documentation checker, strict HTML and default offline SCS development runner pass. A temporary C-local Sphinx include retains all 12 legacy anchors; its four tables, 226 local-link occurrences and 24 downloads from 22 source files were checked. Scoped strict linkcheck verifies five working URLs after rate-limit retries, with no ignored URLs. Production code, API exports, fixtures and seeds are unchanged. GitHub/VS Code rendering remains pending; this page is not yet fully adopted."
     }
   },
-  "planned": {
-    "docs/app_crypto_allocation.md": {
-      "form": "case_study",
-      "title": "Cryptocurrencies in diversified portfolios",
-      "stage": "R8"
-    },
-    "docs/app_cma_strategic_allocation.md": {
-      "form": "case_study",
-      "title": "From capital market assumptions to strategic allocation (MATF-CMA)",
-      "stage": "R8"
-    }
-  },
+  "planned": {},
   "symbols": {
     "docs/universe_data_and_unsmoothing.md": [
       "UniverseData",

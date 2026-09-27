@@ -543,6 +543,7 @@ wrappers:
 - [Turnover and transaction costs](turnover_and_transaction_costs.md)
 - [Ex-ante risk contributions and betas](portfolio_risk_analytics.md)
 - [Strategic and tactical allocation with HCGL covariance (ROSAA)](app_rosaa_multi_asset_allocation.md)
+- [From capital market assumptions to strategic allocation (MATF-CMA)](app_cma_strategic_allocation.md)
 - [Alpha signals](alphas_module_readme.md)
 - [Solver numerics and outcomes](solver_numerics_and_outcomes.md)
 - [Choosing an objective](optimization_module_readme.md)

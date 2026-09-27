@@ -471,7 +471,8 @@ Configuration fields not covered above:
 - [Mixed-frequency data](mixed_frequency_data.md) and [incomplete histories](incomplete_histories.md).
 - [Rolling factor covariance from CSV](rolling_factor_covar_from_csv.md): the same estimator on a
   saved bundle.
-- [Strategic and tactical allocation with HCGL covariance (ROSAA)](app_rosaa_multi_asset_allocation.md).
+- [Strategic and tactical allocation with HCGL covariance (ROSAA)](app_rosaa_multi_asset_allocation.md)
+  and [from capital market assumptions to strategic allocation](app_cma_strategic_allocation.md).
 - [Risk budgeting](risk_budgeting.md) and [conventions](conventions.md).
 - FactorLasso: [factor covariance assembly](https://factorlasso.readthedocs.io/en/latest/factor_covariance_assembly.html),
   [group penalties, HCGL and FCGL](https://factorlasso.readthedocs.io/en/latest/group_penalties_hcgl_fcgl.html),

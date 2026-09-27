@@ -179,6 +179,12 @@ show.
 - [Strategic and tactical allocation with HCGL covariance (ROSAA)](app_rosaa_multi_asset_allocation.md):
   the three layers of the framework in The Journal of Portfolio Management, its study design
   and results, and the same configuration run offline.
+- [Cryptocurrencies in diversified portfolios](app_crypto_allocation.md): the four allocation methods of the
+  cryptocurrency paper in Risk, its study design and results, and the current API on the
+  frozen 2023 panel, ETF-derived columns only.
+- [From capital market assumptions to strategic allocation (MATF-CMA)](app_cma_strategic_allocation.md): CMAs and
+  covariance from one loading matrix, and a strategic allocation by alpha over tracking error
+  against mandate benchmarks, on synthetic inputs.
 - [Stress testing with options and FCGL clusters](stress_testing_with_options.md): factor
   scenarios and option repricing for a stock-and-option portfolio. It needs network data and
   local prerequisites, and it does not optimise the positions.
@@ -319,6 +325,8 @@ turnover_and_transaction_costs
 :caption: Applications
 
 app_rosaa_multi_asset_allocation
+app_crypto_allocation
+app_cma_strategic_allocation
 stress_testing_with_options
 ```
 

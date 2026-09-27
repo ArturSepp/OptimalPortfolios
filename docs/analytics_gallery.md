@@ -496,6 +496,38 @@ June 2025, seed 11; quarter ends from December 2014. **Producer:** the `exhibit`
 [`examples/docs/app_rosaa_multi_asset_allocation.py`](../examples/docs/app_rosaa_multi_asset_allocation.py).
 **Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
 
+## Cryptocurrency allocation
+
+A paper-derived exhibit of the [cryptocurrencies in diversified portfolios](app_crypto_allocation.md) case
+study, run with the current API on the frozen 2023 panel of the paper. In the all-alternatives
+template with BTC, the median BTC weight is 5.3% under equal risk contribution, 6.3% under
+maximum diversification and 10.9% under maximum Sharpe, and CARA utility with three mixture
+components holds the most.
+
+![Two panels of BTC weights at each quarter end from March 2016 to June 2023 for four methods,
+with the median marked, in the all-alternatives and the balanced templates.](images/crypto_allocation_by_method.png)
+
+**Sample:** the tracked price panel of the cryptocurrency paper, ETF-derived columns only (BTC,
+private equity, real estate, commodities, gold and a 60/40 proxy), monthly log returns and 30
+quarter ends from 31 March 2016 to 30 June 2023. **Producer:** the `exhibit` function of
+[`examples/docs/app_crypto_allocation.py`](../examples/docs/app_crypto_allocation.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Capital market assumptions
+
+A teaching exhibit of the [capital market assumptions to strategic allocation](app_cma_strategic_allocation.md)
+case study. One loading matrix gives the factor-implied part of each CMA; two one-point residual
+adjustments, small beside the factor parts, turn a sold-out hedge-fund position into a 3.4-point
+overweight at a 1% tracking-error budget.
+
+![Left: the factor-implied and residual parts of eight synthetic CMAs. Right: active weights against
+the benchmark with and without the residual adjustments.](images/cma_decomposition_saa.png)
+
+**Sample:** fixed synthetic loadings, factor premia and residual adjustments of eight asset classes
+and four factors; no simulation. **Producer:** the `exhibit` function of
+[`examples/docs/app_cma_strategic_allocation.py`](../examples/docs/app_cma_strategic_allocation.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
 ## Stress testing with options
 
 A teaching exhibit of the [stress testing with options](stress_testing_with_options.md) page.
