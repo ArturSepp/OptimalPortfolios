@@ -7,9 +7,12 @@ build:
   jobs:
     # pip does not put the uv entry point on the build PATH, so uv runs as a module. A bare
     # `uv` failed every build from 2026-09-14 to 2026-09-26 with "uv: not found".
+    # Read the Docs runs each command as /bin/sh -c '<command>' without escaping it, so a
+    # command must not contain a single quote (readthedocs_config_test.py enforces both rules).
+    # `--python 3.12` asks uv for a base interpreter of the build.tools.python version.
     create_environment:
       - python -m pip install uv==0.12.13
-      - python -m uv venv --python "$(python -c 'import sys; print(sys.executable)')" "$READTHEDOCS_VIRTUALENV_PATH"
+      - python -m uv venv --python 3.12 "$READTHEDOCS_VIRTUALENV_PATH"
     install:
       - UV_PROJECT_ENVIRONMENT="$READTHEDOCS_VIRTUALENV_PATH" python -m uv sync --locked --extra docs
     pre_build:
