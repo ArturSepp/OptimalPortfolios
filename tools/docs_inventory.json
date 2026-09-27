@@ -9,8 +9,8 @@
   "pages": {
     "README.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "M5b utility source migration and gallery integration. Local verification is recorded in agents/DOCS_M5B_GALLERY_IMPLEMENTATION_REPORT.md; GitHub/VS Code review remains pending, so full adoption is pending."
+      "status": "adopted",
+      "review": "R9 (2026-09-27): adopted. Passes the adopted-page checks of tools/check_docs.py (form, links, math, ownership); the GitHub Markdown API and VS Code renderings agree; names in code checked against the package source and the installed qis and factorlasso. Stale fact fixed: the risk-cluster row now names factorlasso.cluster_lineage and marks the risk_labelling aliases deprecated. The README reduction (F11) and the citation strings (D4) are left for the owner."
     },
     "docs/alpha_over_tracking_error.md": {
       "form": "methodology",
@@ -27,7 +27,7 @@
     "docs/analytics_gallery.md": {
       "form": "utility",
       "status": "adopted",
-      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors)."
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). R9 (2026-09-27): the chooser lists all 31 exhibits and the introduction counts previews and teaching exhibits."
     },
     "docs/api.rst": {
       "form": "api",
@@ -83,7 +83,7 @@
     "docs/examples_readme.md": {
       "form": "utility",
       "status": "adopted",
-      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Lockfile note replaced by a link to the installation guide; the router rewrite follows in R9."
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Lockfile note replaced by a link to the installation guide; R9 (2026-09-27): \"Examples and recipes\", with a task table mapping 28 tasks to their article, canonical script and standalone examples by lane; stale rows corrected."
     },
     "docs/factor_covariance_hcgl.md": {
       "form": "methodology",
@@ -112,7 +112,7 @@
     "docs/index.md": {
       "form": "utility",
       "status": "adopted",
-      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Inline subscripts rewritten so that GitHub renders the construction formula paragraph."
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Inline subscripts rewritten so that GitHub renders the construction formula paragraph. R9 (2026-09-27): the landing table links every article, the case studies included."
     },
     "docs/installation.md": {
       "form": "utility",
@@ -203,7 +203,7 @@
     "docs/software_design.md": {
       "form": "utility",
       "status": "adopted",
-      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Drift-helper link corrected to utils/weights_drift.py; the Mermaid diagrams follow in R9."
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Drift-helper link corrected to utils/weights_drift.py; R9 (2026-09-27): the ASCII workflow became a Mermaid data-flow diagram, and a Mermaid module diagram drawn from an AST scan of the imports was added; the state-feedback paragraph, the factor estimator inputs and the entry-point list were corrected against source."
     },
     "docs/solver_numerics_and_outcomes.md": {
       "form": "methodology",
@@ -237,18 +237,18 @@
     },
     "src/optimalportfolios/alphas/README.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "M4 contributor-guide migration verified on 2026-09-14: the module map, named-panel profiling API, carry import levels, example link and development workflow are reconciled with current source. One offline example and two supplied-context fragments pass; classic momentum also matches an independent price-endpoint reference. All 327 existing focused tests pass with six unchanged strict default-beta timing expected failures. The documentation checker, strict HTML and scoped linkcheck (seven working URLs) pass. A temporary C-local Sphinx include was visually reviewed: three tables, five preserved legacy anchors, 216 local-link occurrences and 26 matching downloads from 24 source files. Production code, fixtures, exports and seeds are unchanged. GitHub/VS Code review remains pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R9 (2026-09-27): adopted. Passes the adopted-page checks of tools/check_docs.py (form, links, math, ownership); the GitHub Markdown API and VS Code renderings agree; names in code checked against the package source and the installed qis and factorlasso. The selector's limitations link the signal diagnostics page since R7."
     },
     "src/optimalportfolios/covar_estimation/README.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "M4 contributor-guide migration verified on 2026-09-14: current module/export ownership, container fields, annualization, QIS risk/report integration and runner prerequisites are documented. Duplicated formulas now link to the authoritative methodology; all 24 legacy headings/anchors are retained. Four sequential offline examples and one optional plotting fragment pass, with independent EWMA and factor-component references. All 195 existing focused tests, the source checker and strict Sphinx HTML pass. Scoped linkcheck verifies nine working URLs with one established SSRN exception. A temporary C-local Sphinx include was visually reviewed: seven tables, 245 local-link occurrences and 22 byte-matching source downloads. Production code, fixtures, seeds and public exports are unchanged. GitHub/VS Code review remains pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R9 (2026-09-27): adopted. Passes the adopted-page checks of tools/check_docs.py (form, links, math, ownership); the GitHub Markdown API and VS Code renderings agree; names in code checked against the package source and the installed qis and factorlasso. Factor links point to the factor covariance page since R4."
     },
     "src/optimalportfolios/optimization/constraints/README.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "M4 contributor-guide migration verified on 2026-09-14: attribution and QIS ownership/citation, public import levels, aligned input ordering, frozen-policy semantics, backend return values and compliance limitations now follow current source. The original residual inputs are preserved; all three Python blocks pass offline, with independent turnover and diagonal-covariance tracking-error references and reorder/freeze checks. All 334 existing focused tests, the documentation checker, strict HTML and default offline SCS development runner pass. A temporary C-local Sphinx include retains all 12 legacy anchors; its four tables, 226 local-link occurrences and 24 downloads from 22 source files were checked. Scoped strict linkcheck verifies five working URLs after rate-limit retries, with no ignored URLs. Production code, API exports, fixtures and seeds are unchanged. GitHub/VS Code rendering remains pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R9 (2026-09-27): adopted. Passes the adopted-page checks of tools/check_docs.py (form, links, math, ownership); the GitHub Markdown API and VS Code renderings agree; names in code checked against the package source and the installed qis and factorlasso. No change needed."
     }
   },
   "planned": {},
