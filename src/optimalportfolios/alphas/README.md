@@ -66,8 +66,8 @@ realized weights drift with prices.
 Higher scores are preferred. The selector checks non-missing prices and scores; it does not
 fully validate positivity or finiteness. Ties follow price-column order. A fraction of `1.0`
 selects all assets eligible under that score panel, which need not equal the benchmark universe.
-See the methodology article's
-[limitations](../../../docs/alphas_module_readme.md#interpretation-and-limitations).
+See the signal diagnostics article's
+[limitations](../../../docs/signal_diagnostics_and_profiling.md#interpretation-and-limitations).
 
 Choose the price sample explicitly before profiling. In the profile core, `time_period`
 filters target rows rather than ending the price history; simulated NAV can continue beyond

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-09-27T13:56:22+00:00",
+  "generated_at_utc": "2026-09-27T14:01:55+00:00",
   "platform": "Windows-11-10.0.26200-SP0",
   "versions": {
     "python": "3.12.14",
@@ -508,7 +508,7 @@
     "alpha_scoring_cross_section_vs_cluster": {
       "path": "docs/images/alpha_scoring_cross_section_vs_cluster.png",
       "script": "examples/docs/alphas_module_readme.py",
-      "script_sha256": "30b99fd2fbd6486b60f4c13e53ca7fbe2ad1dd8f33577d52817a020b164f4d1c",
+      "script_sha256": "69b97caefb625ab93d934e6eb1fe5605ee05491f2a82ca544971bb93bddfa095",
       "image_sha256": "9dced35a18fe531090674b5b266346e1c216a89347ee844b116bff0221dbca7d",
       "table_sha256": "e32465f33d2dc9b7086b8abb526b7dfe3f8911ce125102d878da3cb82388f022",
       "parameters": {
@@ -1674,10 +1674,180 @@
         "docs/analytics_gallery.md",
         "docs/cara_gaussian_mixture.md"
       ]
+    },
+    "alpha_rank_quantiles": {
+      "path": "docs/images/alpha_rank_quantiles.png",
+      "script": "examples/docs/signal_diagnostics_and_profiling.py",
+      "script_sha256": "d9157058f995772e46ffa8eb6aef215f72a72e1a89c1a6d01deabf9ef5e93db3",
+      "image_sha256": "ef511729f2b07b5c5921549d9c815648476f4b2531e4d173ceaabea96b6fc92b",
+      "table_sha256": "9af54199a7c013587f4c2f9b4b49b99820611baf861db7d62116150272b1dbbd",
+      "parameters": {
+        "SEED": 11,
+        "N_ASSETS": 500,
+        "MONTHS": 240,
+        "FIRST_DATE": "2005-12-31",
+        "RHO": 0.1,
+        "MU": 0.005,
+        "VOL": 0.05,
+        "MARKET_VOL": 0.04,
+        "QUANTILES": 5,
+        "ROLLING_MONTHS": 12
+      },
+      "checks": {
+        "quintile_means_fall_from_top_to_bottom": true,
+        "final_navs_fall_from_top_to_bottom": true,
+        "mean_rank_ic_within_one_standard_error": true,
+        "rank_ic_is_the_per_date_spearman_correlation": true,
+        "rolling_ic_stays_positive": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/signal_diagnostics_and_profiling.md"
+      ]
+    },
+    "alpha_over_te_active_weights": {
+      "path": "docs/images/alpha_over_te_active_weights.png",
+      "script": "examples/docs/alpha_over_tracking_error.py",
+      "script_sha256": "d91105946703b9cd676fda580fde9d84c3d5114fe2520be102c2be2b5e7da4ed",
+      "image_sha256": "0ac89e0ef60c581798bc2afe31fbe734562749534990a7fc1d99f284f655bcb8",
+      "table_sha256": "870aaf314a98b60991459ccd775eae120177c57301feb17a1d1e30ace79613c6",
+      "parameters": {
+        "TICKERS": [
+          "Govt bonds",
+          "Credit",
+          "US equity",
+          "Europe equity",
+          "EM equity",
+          "Gold"
+        ],
+        "VOLS": [
+          0.05,
+          0.07,
+          0.16,
+          0.17,
+          0.21,
+          0.15
+        ],
+        "CORR": [
+          [
+            1.0,
+            0.5,
+            -0.2,
+            -0.2,
+            -0.15,
+            0.1
+          ],
+          [
+            0.5,
+            1.0,
+            0.4,
+            0.4,
+            0.45,
+            0.15
+          ],
+          [
+            -0.2,
+            0.4,
+            1.0,
+            0.85,
+            0.75,
+            0.1
+          ],
+          [
+            -0.2,
+            0.4,
+            0.85,
+            1.0,
+            0.8,
+            0.15
+          ],
+          [
+            -0.15,
+            0.45,
+            0.75,
+            0.8,
+            1.0,
+            0.25
+          ],
+          [
+            0.1,
+            0.15,
+            0.1,
+            0.15,
+            0.25,
+            1.0
+          ]
+        ],
+        "BENCHMARK": [
+          0.3,
+          0.15,
+          0.25,
+          0.1,
+          0.1,
+          0.1
+        ],
+        "ALPHAS": [
+          -0.0025,
+          0.007,
+          -0.016,
+          -0.0085,
+          0.021,
+          0.0
+        ],
+        "TE_BUDGET": 0.02,
+        "EXHIBIT_BUDGETS": [
+          0.0025,
+          0.005,
+          0.0075,
+          0.01,
+          0.0125,
+          0.015,
+          0.0175,
+          0.02,
+          0.0225,
+          0.025,
+          0.0275,
+          0.03,
+          0.0325,
+          0.035,
+          0.0375,
+          0.04,
+          0.0425,
+          0.045,
+          0.0475,
+          0.05,
+          0.0525,
+          0.055,
+          0.0575,
+          0.06,
+          0.0625,
+          0.065,
+          0.0675,
+          0.07,
+          0.0725,
+          0.075,
+          0.0775,
+          0.08
+        ],
+        "WEIGHT_TOL": 0.0001,
+        "TE_TOL": 1e-06
+      },
+      "checks": {
+        "every_solve_accepted": true,
+        "te_equals_budget": true,
+        "closed_form_at_shown_budget": true,
+        "ir_flat_without_bounds": true,
+        "ir_flat_until_first_bound": true,
+        "ir_falls_after_first_bound": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/alpha_over_tracking_error.md"
+      ]
     }
   },
   "review": {
-    "note": "Republished on 2026-09-27 after the CI matrix showed version-dependent statements: strategic_allocation_targets.py now accepts both outcomes of a target Series that starts late (CVXPY 1.9 raises ValueError; CVXPY 1.7 falls back to zeros), and cara_gaussian_mixture.py compares its SLSQP grid with CVXPY to 5e-4 (SciPy 1.15 differs by up to 1.05e-4 at risk aversion 0.6). Both scripts pass under the Python 3.10 pins (CVXPY 1.7.5, NumPy 2.2.6, SciPy 1.15.3). All twenty-one images are byte-identical to those inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27.",
-    "published_at_utc": "2026-09-27T13:56:27+00:00"
+    "note": "Republished on 2026-09-27 on top of the R6 follow-up c8d301c, with the R7 scripts (the alpha page lost its profiling blocks). All twenty-three images are byte-identical to those inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27: alpha_rank_quantiles and alpha_over_te_active_weights are new in R7, the twenty-one earlier exhibits unchanged.",
+    "published_at_utc": "2026-09-27T14:02:01+00:00"
   }
 }

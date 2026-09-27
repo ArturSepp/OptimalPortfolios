@@ -109,7 +109,8 @@ A construction limit is therefore not a guarantee about subsequently realised tu
 utility formulation. A configured penalty field alone does not switch every solver into it:
 every `Constraints` carries `turnover_utility_weight=0.40` and `tre_utility_weight=1.0` by
 default, and the forced-constraint solve of the budget example below reads neither. With
-`ConstraintEnforcementType.UTILITY_CONSTRAINTS`, `wrapper_maximise_alpha_over_tre` maximises
+`ConstraintEnforcementType.UTILITY_CONSTRAINTS`, `wrapper_maximise_alpha_over_tre`
+([tactical allocation](alpha_over_tracking_error.md)) maximises
 
 $$
 \alpha^{\top}d-\kappa_{\mathrm{TE}}d^{\top}\Sigma d

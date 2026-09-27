@@ -252,8 +252,8 @@ row.
 
 ### Diagnostics around the solve
 
-Three configuration fields act only in `wrapper_maximise_alpha_over_tre`; the other wrappers
-ignore them.
+Three configuration fields act only in `wrapper_maximise_alpha_over_tre`
+([tactical allocation](alpha_over_tracking_error.md)); the other wrappers ignore them.
 
 - `validate_inputs`, default `True`, runs a pre-solve input contract: covariance integrity and
   conditioning, box caps against the budget, group reachability and the benchmark against its

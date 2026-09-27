@@ -82,8 +82,8 @@ simulates the holdings with price drift, implementation lag and transaction cost
 |---|---|
 | Estimation grid | [Mixed-frequency data](mixed_frequency_data.md), [incomplete histories](incomplete_histories.md), [universe data and unsmoothing](universe_data_and_unsmoothing.md) |
 | Risk model | [Covariance estimators](covariance_estimators.md), [factor covariance with HCGL](factor_covariance_hcgl.md), [rolling factor risk model from CSV](rolling_factor_covar_from_csv.md), [ex-ante risk contributions and betas](portfolio_risk_analytics.md) |
-| Expected returns | [Alpha signals](alphas_module_readme.md) |
-| Objective and constraints | [Choosing an objective](optimization_module_readme.md), [risk budgeting](risk_budgeting.md), [implied risk budgets](implied_risk_budgets.md), [hierarchical risk parity and cluster budgets](hierarchical_risk_parity_and_cluster_budgets.md), [maximum diversification](maximum_diversification.md), [mean-variance objectives](mean_variance_objectives.md), [target return and target volatility](strategic_allocation_targets.md), [CARA utility under Gaussian mixtures](cara_gaussian_mixture.md), [minimum tracking error](minimum_tracking_error.md), [overlay tail floor](overlay_tail_floor.md), [constraints](constraints.md) |
+| Expected returns | [Alpha signals](alphas_module_readme.md), [signal diagnostics and alpha-rank portfolios](signal_diagnostics_and_profiling.md) |
+| Objective and constraints | [Choosing an objective](optimization_module_readme.md), [risk budgeting](risk_budgeting.md), [implied risk budgets](implied_risk_budgets.md), [hierarchical risk parity and cluster budgets](hierarchical_risk_parity_and_cluster_budgets.md), [maximum diversification](maximum_diversification.md), [mean-variance objectives](mean_variance_objectives.md), [target return and target volatility](strategic_allocation_targets.md), [CARA utility under Gaussian mixtures](cara_gaussian_mixture.md), [minimum tracking error](minimum_tracking_error.md), [alpha over tracking error](alpha_over_tracking_error.md), [overlay tail floor](overlay_tail_floor.md), [constraints](constraints.md) |
 | Solve and check the outcome | [Choosing an objective](optimization_module_readme.md), [constraints](constraints.md), [solver numerics and outcomes](solver_numerics_and_outcomes.md) |
 | Dated target weights and qis backtest | [Rolling backtests](rolling_backtests.md), [turnover and transaction costs](turnover_and_transaction_costs.md) |
 
@@ -116,6 +116,9 @@ simulates the holdings with price drift, implementation lag and transaction cost
 
 - [Alpha signals](alphas_module_readme.md): momentum, low beta, residual momentum and reversal,
   carry and managers' alpha, with cross-sectional and within-cluster scoring.
+- [Signal diagnostics and alpha-rank portfolios](signal_diagnostics_and_profiling.md): the rank information
+  coefficient and its stability, quantile portfolios, per-component diagnostics and the rank
+  profiler.
 
 <a id="construction-and-constraints"></a>
 
@@ -145,6 +148,9 @@ simulates the holdings with price drift, implementation lag and transaction cost
   a crash component does to the allocation.
 - [Minimum tracking error](minimum_tracking_error.md): the allocation closest in risk to a
   supplied benchmark under the constraints.
+- [Tactical allocation: alpha over tracking error and yield targets](alpha_over_tracking_error.md): the
+  closed-form active weights under a tracking-error budget, the utility form, group limits
+  and the yield-target variant.
 - [Overlay optimisation with a fixed core](overlay_tail_floor.md): a fixed core exposure and an
   optimised sleeve under a linear downside floor.
 
@@ -268,6 +274,7 @@ portfolio_risk_analytics
 :caption: Expected returns and signals
 
 alphas_module_readme
+signal_diagnostics_and_profiling
 ```
 
 ```{toctree}
@@ -284,6 +291,7 @@ mean_variance_objectives
 strategic_allocation_targets
 cara_gaussian_mixture
 minimum_tracking_error
+alpha_over_tracking_error
 overlay_tail_floor
 ```
 

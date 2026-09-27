@@ -12,10 +12,16 @@
       "status": "pending",
       "review": "M5b utility source migration and gallery integration. Local verification is recorded in agents/DOCS_M5B_GALLERY_IMPLEMENTATION_REPORT.md; GitHub/VS Code review remains pending, so full adoption is pending."
     },
+    "docs/alpha_over_tracking_error.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/alpha_over_tracking_error.py",
+      "review": "R7 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M18. Closed-form active weights proved and asserted; the default turnover penalty (Pitfall). Teaching exhibit alpha_over_te_active_weights.png."
+    },
     "docs/alphas_module_readme.md": {
       "form": "methodology",
       "status": "adopted",
-      "review": "R3c (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Title \"Alpha signals\", with both old title anchors kept. The beta-based signals are point in time (7.8.1.dev1) and asserted so; the old strict expected failures are gone. Teaching exhibit alpha_scoring_cross_section_vs_cluster.png.",
+      "review": "R3c (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Title \"Alpha signals\", with both old title anchors kept. The beta-based signals are point in time (7.8.1.dev1) and asserted so; the old strict expected failures are gone. Teaching exhibit alpha_scoring_cross_section_vs_cluster.png. R7 (2026-09-27): the profiling and diagnostics subsections moved to signal_diagnostics_and_profiling, leaving pointers; rolling EWMA means stay under their own H3. Rechecked with the same checks.",
       "example": "examples/docs/alphas_module_readme.py"
     },
     "docs/analytics_gallery.md": {
@@ -176,6 +182,12 @@
       "review": "R3b (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Mermaid diagram of the six-file workflow; the script runs from a checkout, in the network lane.",
       "example": "examples/docs/rolling_factor_covar_from_csv.py"
     },
+    "docs/signal_diagnostics_and_profiling.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/signal_diagnostics_and_profiling.py",
+      "review": "R7 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M09. Takes the profiling and diagnostics subsections of alphas_module_readme. Rank IC of a Gaussian score against qis; the string horizon labels (Pitfall). Teaching exhibit alpha_rank_quantiles.png."
+    },
     "docs/software_design.md": {
       "form": "utility",
       "status": "adopted",
@@ -228,16 +240,6 @@
     }
   },
   "planned": {
-    "docs/signal_diagnostics_and_profiling.md": {
-      "form": "methodology",
-      "title": "Signal diagnostics and alpha-rank portfolios",
-      "stage": "R7"
-    },
-    "docs/alpha_over_tracking_error.md": {
-      "form": "methodology",
-      "title": "Tactical allocation: alpha over tracking error and yield targets",
-      "stage": "R7"
-    },
     "docs/app_crypto_allocation.md": {
       "form": "case_study",
       "title": "Cryptocurrencies in diversified portfolios",

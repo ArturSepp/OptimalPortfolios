@@ -172,6 +172,16 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     the CARA mixture's fitted weekly components are annualised as one-year regimes.
   - `tools/docs_analytics/teaching.py` draws each exhibit with its own matplotlib settings, so
     a setting one exhibit changes no longer reaches the exhibits drawn after it.
+- Documentation site, fourth stage, fourth batch of new methodology pages (no package change):
+  signal diagnostics and alpha-rank portfolios, and tactical allocation by alpha over tracking
+  error and yield targets. Each follows the canonical-script contract.
+  - The profiling and diagnostics subsections of the alpha signals page move to the signal
+    diagnostics page; the alpha page keeps pointers and its exhibit, which is unchanged.
+  - New teaching exhibits: quintile portfolios and the rolling rank IC of a synthetic score; and
+    active weights against the closed form, with the information ratio against the
+    tracking-error budget with and without long-only bounds.
+  - The router states that the soft tracking-error path of the yield-target solver keeps its
+    turnover penalty when no turnover cap is set (since 7.8.0).
 
 ## [7.8.0] - 2026-09-23
 

@@ -3,7 +3,7 @@ myst:
   html_meta:
     description: >-
       Alpha signal construction in OptimalPortfolios: momentum, beta, residual signals,
-      carry, scoring conventions, time-varying clusters, and reproducible diagnostics.
+      carry, scoring conventions, time-varying clusters, and the AlphasData container.
 ---
 
 # Alpha signals
@@ -16,8 +16,9 @@ Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios
 
 An alpha signal is a dated characteristic used to compare assets when forming a portfolio.
 The `optimalportfolios.alphas` layer computes raw characteristics, transforms them into
-scores, and provides containers and evaluation tools. A score is not automatically an
-expected return, a portfolio weight, or evidence of investment skill.
+scores, and provides containers and evaluation tools; the evaluation tools are described on
+[signal diagnostics and alpha-rank portfolios](signal_diagnostics_and_profiling.md). A score is
+not automatically an expected return, a portfolio weight, or evidence of investment skill.
 
 ## Overview
 
@@ -49,10 +50,10 @@ benchmark; the cited residual-return studies use their own estimation and portfo
 |---|---|
 | Return basis | Log returns at each asset's native cadence; momentum subtracts the benchmark's log return when one is supplied; carry is a supplied annual decimal yield |
 | Estimation grid | Monthly (`ME`) in the worked example, 97 month ends from 2016-12-31 to 2024-12-31, with G and H quarterly (`QE`) in the cadence example; spans count observations at the cadence; constructor defaults are `ME`, and `W-WED` for carry and rolling means |
-| Rebalancing grid | None for the signals, which are formation-date values on their return grid; year ends (`YE`) for the HCGL fit that supplies loadings and clusters; quarter ends (`QE`) for the rank profiler |
+| Rebalancing grid | None for the signals, which are formation-date values on their return grid; year ends (`YE`) for the HCGL fit that supplies loadings and clusters; quarter ends (`QE`) for the dates requested from `estimate_rolling_ewma_means` in the example |
 | Covariance units | None enter the signals; volatility normalisation is per period for momentum and residual signals and annualised for carry |
 | Expected returns | None; scores are cross-sectional standardisations, not return forecasts, and `estimate_rolling_ewma_means` returns annualised EWMA log-return means |
-| Weight state | None, except the rank profiler's equal-weight top-quantile targets, held as units by the qis backtester without costs |
+| Weight state | None: signals and scores are not weights; the rank profiler's targets are described on [signal diagnostics and alpha-rank portfolios](signal_diagnostics_and_profiling.md) |
 | Solver | CVXPY with CLARABEL for the HCGL factor fit; the signals need no solver |
 
 The notation follows the [conventions page](conventions.md#notation).
@@ -620,35 +621,27 @@ At 2024-12-31 the snapshot has eight asset rows and 16 populated component colum
 no dedicated classic-momentum, reversal or carry fields; keep additional panels in a named
 dictionary when evaluating those signals.
 
-### Profiling and diagnostics
+### Rolling EWMA means
 
-The rank profiler compares top-quarter selections with an equal-weight-all benchmark.
-This example uses quarterly rebalancing and the default zero transaction costs. Every leg
-runs through QIS's holdings backtester. The separate diagnostic call evaluates signals against
-future log-return horizons retrospectively; these estimates are not inputs known at formation time.
+`estimate_rolling_ewma_means` returns annualised EWMA log-return means on requested dates, here
+the quarter ends of 2023 and 2024:
 
 ```python
-profiles = alphas.backtest_alpha_rank_portfolio(
-    prices=prices, alpha_scores={"Momentum": mom_score, "Low beta": beta_score},
-    quantile=0.25, rebalancing_freq="QE",
-    time_period=qis.TimePeriod("2021-12-31", "2024-12-31"),
-)
-component_panels = alphas.signal_diagnostics_panel(data)
-diagnostics = alphas.run_signal_diagnostics(
-    asset_returns_dict={
-        "ME": qis.to_returns(prices, freq="ME", is_log_returns=True, drop_first=True)
-    },
-    signal=mom_score, horizons=(1, 3), is_log_returns=True,
-)
 mean_dates = pd.date_range("2023-03-31", "2024-12-31", freq="QE")
 annual_log_means = alphas.estimate_rolling_ewma_means(
     prices, rebalancing_dates=list(mean_dates), returns_freq="ME", span=12, annualize=True,
 )
 ```
 
-The profile contains two signal strategies and one benchmark. The diagnostic panel enumerates
-eight populated score components; the rolling-mean result has eight requested dates and eight assets.
-These structural results establish that the workflow executes, not that the signals predict returns.
+The result has eight requested dates and eight assets. A requested date between two observations
+receives the latest estimate, and a date before the return sample remains missing.
+
+### Profiling and diagnostics
+
+Rank-portfolio profiles and signal diagnostics, which evaluate scores against realised future
+returns, are described on
+[signal diagnostics and alpha-rank portfolios](signal_diagnostics_and_profiling.md). That page
+checks them on a synthetic score with a known information coefficient.
 
 ## Implementation in optimalportfolios
 
@@ -731,22 +724,15 @@ Only `alpha_scores` is required. The
 
 ### Evaluation entry points and verification context
 
-[Profiling](../src/optimalportfolios/alphas/profile/core.py) provides
-`backtest_alpha_rank_portfolio`, `compute_top_quantile_equal_weights`,
-`compute_alpha_rank_analysis_table` and `generate_alpha_profile_report`.
-Signal-specific `profile_*` functions and `profile_alpha_signals` are exported from
-`optimalportfolios.alphas`. Report output belongs in an explicit local output directory.
-
-[Signal diagnostics](../src/optimalportfolios/alphas/signal_diagnostics.py) provides
-`signal_diagnostics_panel`, `run_signal_diagnostics`,
-`run_signal_diagnostics_per_component` and `compare_signal_diagnostics`.
-Statistical calculations and plotting remain in
-[QIS](https://github.com/ArturSepp/QuantInvestStrats); factor fitting and cluster discovery
-remain in [FactorLasso](https://github.com/ArturSepp/FactorLasso).
+The entry points of the rank profiler and of the signal diagnostics, and what they add to
+[QIS](https://github.com/ArturSepp/QuantInvestStrats), are listed in the
+[implementation section](signal_diagnostics_and_profiling.md#implementation-in-optimalportfolios)
+of the signal diagnostics page. Factor fitting and cluster discovery remain in
+[FactorLasso](https://github.com/ArturSepp/FactorLasso).
 
 The [canonical script](../examples/docs/alphas_module_readme.py) runs the worked example and
 checks each signal against the page's formulas, the scoring rules and their fallbacks, the
-cluster extraction, the container and the evaluation outputs, and it changes later inputs to
+cluster extraction, the container and the rolling means, and it changes later inputs to
 confirm that no earlier signal or score moves. The test suite runs it, and so does the offline
 examples lane of CI.
 
@@ -754,10 +740,9 @@ examples lane of CI.
 
 Use sufficiently long histories and distinguish missing observations from zero signals.
 Warm-up, zero-beta masking, degenerate group dispersion and cluster fallback have different
-effects. The ranking helper currently checks non-missing prices and scores, not full positivity
-and finiteness; prevalidate inputs rather than treating this mask as a complete eligibility rule.
-Ties are resolved by column order. A top-quantile profile ranks and equal-weights assets; it
-does not optimise their covariance or control factor exposures.
+effects. The eligibility, tie and selection rules of rank-based profiles, and their limitations,
+are stated on
+[signal diagnostics and alpha-rank portfolios](signal_diagnostics_and_profiling.md#interpretation-and-limitations).
 
 Avoid `MeanAdjType.INSAMPLE` in historical trading signals: it uses the full-sample mean.
 The canonical script changes later prices, benchmark, carry and cluster labels and asserts
@@ -772,11 +757,13 @@ Changing the reporting cadence changes both the observations and the meaning of 
 A performance claim needs a reproducible universe, sample, data vintage, signal settings,
 benchmark, rebalance rule, cost convention and comparison statistic. The worked examples here
 verify definitions and execution. They do not establish that cluster scoring outperforms fixed
-groups or that residual signals identify manager skill. Use the profiling and diagnostics
-interfaces to evaluate a specified dataset and disclose the resulting design choices.
+groups or that residual signals identify manager skill. Use the
+[profiling and diagnostics interfaces](signal_diagnostics_and_profiling.md) to evaluate a
+specified dataset and disclose the resulting design choices.
 
 ## See also
 
+- [Signal diagnostics and alpha-rank portfolios](signal_diagnostics_and_profiling.md): information coefficients, quantile portfolios and the rank profiler.
 - [Mixed-frequency data](mixed_frequency_data.md): native cadences, hard lookbacks and timing.
 - [Factor covariance with HCGL](factor_covariance_hcgl.md) and [covariance estimators](covariance_estimators.md): factor models and annualisation.
 - [CSV factor risk model](rolling_factor_covar_from_csv.md): persisted input and loading contracts.
