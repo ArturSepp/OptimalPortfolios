@@ -201,6 +201,10 @@ and has no reference left in this repository. To run the examples, install what 
 - Register pages and adoption status in `tools/docs_inventory.json`. Run `python tools/check_docs.py`
   with the prescribed interpreter; `--files <paths>` checks a revision batch and `--all` requires
   complete migration. Keep pending legacy pages explicit and API/autosummary sources separate.
+  The inventory also assigns every public object (`symbols`, `external_symbols` for re-exports)
+  and every field of the mapped configuration dataclasses (`parameters`) to one page, lists
+  `planned` pages and the public `papers` ledger; a new export or dataclass field needs an owner
+  or the checker fails. `docs/conf.py` generates the API page body from it at build time.
 - Build from a C-local source export using the existing setup/launcher. Autosummary writes
   source files, so redirecting only build output is insufficient. No new setup wrapper is needed.
 - Generate analytics C-locally. The generated-output exception covers the six registered

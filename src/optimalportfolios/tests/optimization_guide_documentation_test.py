@@ -12,7 +12,7 @@ import pandas as pd
 import pytest
 
 LEGACY_HEADINGS = [
-    'Optimization Module',
+    'Choosing an objective: dispatch, configuration and results',
     'Architecture',
     'Submodule roles',
     'Dispatch flow',
@@ -85,6 +85,8 @@ def test_structure_legacy_headings_and_examples(article, root):
     assert not checker['check_local_links'](
         article, root / 'docs/optimization_module_readme.md', root)
     assert set(LEGACY_HEADINGS) <= set(re.findall(r'^#{1,4} (.+)$', article, re.M))
+    # The page was retitled in stage R1; its old title fragment stays as an explicit anchor.
+    assert '<a id="optimization-module"></a>' in article
     blocks = re.findall(r'^```python\n(.*?)^```', article, re.M | re.S)
     preserved = blocks.copy()
     backend = blocks[5]
