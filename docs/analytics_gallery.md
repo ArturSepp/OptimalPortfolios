@@ -188,6 +188,42 @@ price; no simulation. **Producer:** the `exhibit` function of
 [`examples/docs/incomplete_histories.py`](../examples/docs/incomplete_histories.py).
 **Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
 
+## Factor covariance with HCGL
+
+A teaching exhibit of the [factor covariance with HCGL](factor_covariance_hcgl.md) page. Orthogonal
+and empirical residuals give every asset the same systematic and residual variance; they differ
+in the residual covariances. Three private assets share a shock that the factors do not span, and
+an equal-weight portfolio of them has a residual variance of 0.00019 with orthogonal residuals
+and 0.00040 when the empirical residual correlations enter with full weight.
+
+![Left: stacked bars of systematic and residual annual variance for eight assets, identical under
+orthogonal and empirical residuals. Right: residual variance of equal weights in the three private
+assets, rising from 0.00019 with orthogonal residuals to 0.00040 as residual covariances are
+added.](images/factor_covariance_variance_split.png)
+
+**Sample:** synthetic month ends from December 2004 to December 2024, seed 5: four factors, five
+monthly and three quarterly assets with known loadings and a shock common to the private assets;
+HCGL fit at 31 December 2023. **Producer:** the `exhibit` function of
+[`examples/docs/factor_covariance_hcgl.py`](../examples/docs/factor_covariance_hcgl.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Ex-ante risk contributions
+
+A teaching exhibit of the [ex-ante risk contributions](portfolio_risk_analytics.md) page. On one
+covariance, equal weights put 42% of the risk in emerging-market equity; minimum variance has
+risk shares equal to its weights; equal risk contribution gives each asset 20% of the risk with
+45% of the capital in government bonds; maximum diversification holds 67% of the capital in
+government bonds and 41% of the risk.
+
+![Left: stacked capital weights of equal weight, minimum variance, equal risk contribution and
+maximum diversification on one five-asset covariance. Right: the Euler risk shares of the same
+portfolios.](images/risk_contributions_vs_weights.png)
+
+**Sample:** the page's fixed five-asset, three-factor covariance snapshot; no simulation.
+**Producer:** the `exhibit` function of
+[`examples/docs/portfolio_risk_analytics.py`](../examples/docs/portfolio_risk_analytics.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
 ## Alpha signals
 
 A teaching exhibit of the [alpha signals](alphas_module_readme.md) page. Scored across all nine
@@ -271,6 +307,23 @@ reproduces the forced solve.
 **Sample:** the page's synthetic three-asset example with a 45/40/15 benchmark, solved with a
 hard tracking-error row and at six penalty weights; no simulation. **Producer:** the `exhibit`
 function of [`examples/docs/constraints.py`](../examples/docs/constraints.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Solver numerics and outcomes
+
+A teaching exhibit of the [solver numerics and outcomes](solver_numerics_and_outcomes.md) page.
+As two private proxies approach collinearity, the smallest eigenvalue of the covariance falls
+toward zero and the condition number grows as the inverse of the correlation gap. The eigenvalue
+floor raises only the smallest eigenvalue, to 1e-10, and caps the condition number at the
+largest eigenvalue over the floor; the other five eigenvalues are unchanged.
+
+![Left: the six eigenvalues of the covariance with the private pair nearly collinear, on a log
+scale, with the smallest raised to the floor. Right: the condition number against one minus the
+correlation of the pair, before and after the floor.](images/covariance_conditioning.png)
+
+**Sample:** fixed volatilities and correlations of a six-asset universe whose private pair
+approaches a duplicate proxy; no simulation. **Producer:** the `exhibit` function of
+[`examples/docs/solver_numerics_and_outcomes.py`](../examples/docs/solver_numerics_and_outcomes.py).
 **Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
 
 ## Rolling backtests

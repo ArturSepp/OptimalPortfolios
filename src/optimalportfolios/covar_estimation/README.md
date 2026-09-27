@@ -81,13 +81,13 @@ methodology. Keep new derivations there and verify them against the implementati
 
 ### Factor Model Covariance Decomposition
 
-See [factor and HCGL covariance](../../../docs/covariance_estimators.md#factor-and-hcgl-covariance).
+See [factor and HCGL covariance](../../../docs/factor_covariance_hcgl.md#the-factor-model-and-its-covariance).
 Loadings use assets on rows and factors on columns. The residual term is diagonal;
 `residual_var_weight` changes that term without refitting the model.
 
 ### Variance Decomposition per Asset
 
-The same [factor methodology](../../../docs/covariance_estimators.md#factor-and-hcgl-covariance)
+The same [factor methodology](../../../docs/factor_covariance_hcgl.md#the-factor-model-and-its-covariance)
 distinguishes systematic and residual variance. The stored R² diagnostic comes from the
 regression fit, with the adapter's missing-value filling and lower clipping; it need not
 equal a ratio recomputed from the separately estimated annual factor covariance.
@@ -95,7 +95,7 @@ equal a ratio recomputed from the separately estimated annual factor covariance.
 ### Mixed-Frequency Annualisation
 
 See [mixed-frequency data](../../../docs/mixed_frequency_data.md) and the
-[covariance units contract](../../../docs/covariance_estimators.md#factor-and-hcgl-covariance).
+[covariance units contract](../../../docs/factor_covariance_hcgl.md#the-factor-model-and-its-covariance).
 Factor covariance and residual variances use their respective cadences. A supplied
 `x_covar` must already have compatible annual units and factor labels. Observation frequency,
 smoothing span and covariance output schedule are separate settings.
@@ -117,7 +117,7 @@ The class has no shrinkage-to-identity parameter.
 
 The direct rolling normalized-return option is point in time from qis 5.31.0, which seeds its
 volatility with each column's first squared return. For historical work, follow the
-[timing qualifications](../../../docs/covariance_estimators.md#current-fits-and-rolling-dates):
+[timing qualifications](../../../docs/factor_covariance_hcgl.md#the-point-in-time-contract):
 an ordinary current factor fit does not truncate inputs merely because `estimation_date`
 was supplied. The factor estimator's top-level `demean` field also does not control the
 internal factor-covariance demeaning. Keep these numerical corrections separate from documentation.
@@ -162,7 +162,7 @@ Let N denote assets, M factors and T the residual time index.
 
 Do not treat the residual panel as an unscaled per-observation series or recover residual
 variance by taking its ordinary sample variance. See the
-[implementation qualifications](../../../docs/covariance_estimators.md#implementation-in-optimalportfolios).
+[implementation qualifications](../../../docs/factor_covariance_hcgl.md#implementation-in-optimalportfolios).
 
 | Operation on a current snapshot | Result |
 |---|---|
@@ -415,7 +415,8 @@ numerical corrections separately with independent references.
 
 ## References
 
-- [Covariance methodology and implementation references](../../../docs/covariance_estimators.md).
+- [Covariance methodology and implementation references](../../../docs/covariance_estimators.md); the factor model in
+  [factor covariance with HCGL](../../../docs/factor_covariance_hcgl.md).
 - [OptimalPortfolios software citation](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 - [QIS software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).
 - [FactorLasso software citation](https://github.com/ArturSepp/FactorLasso/blob/main/CITATION.cff).

@@ -775,6 +775,10 @@ def check_local_links(text: str, path: Path, root: Path) -> list[Issue]:
     for number, line in visible:
         prose = re.sub(r'(`+).*?\1', '', line)
         links = re.findall(r'\[[^\]\n]*\]\((<[^>\n]+>|[^\s)]+)(?:\s+[^)]*)?\)', prose)
+        # A label that wraps lines, such as long image alt text, closes on a later line.
+        wrapped = re.match(r'^[^\[\]]*\]\((<[^>\n]+>|[^\s)]+)(?:\s+[^)]*)?\)', prose)
+        if wrapped:
+            links.append(wrapped[1])
         definition = re.match(r'^\s{0,3}\[[^\]^]+\]:\s*(<[^>\n]+>|\S+)', prose)
         if definition:
             links.append(definition[1])

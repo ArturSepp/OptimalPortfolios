@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-09-27T09:21:36+00:00",
+  "generated_at_utc": "2026-09-27T11:17:37+00:00",
   "platform": "Windows-11-10.0.26200-SP0",
   "versions": {
     "python": "3.12.14",
     "optimalportfolios": "7.8.1.dev1",
-    "qis": "5.31.0",
+    "qis": "5.32.0",
     "factorlasso": "0.20.0",
     "numpy": "2.5.2",
     "pandas": "3.0.5",
@@ -886,10 +886,350 @@
         "docs/analytics_gallery.md",
         "docs/constraints.md"
       ]
+    },
+    "risk_contributions_vs_weights": {
+      "path": "docs/images/risk_contributions_vs_weights.png",
+      "script": "examples/docs/portfolio_risk_analytics.py",
+      "script_sha256": "3fc8011c61be3ce3c9f5b7901a8ea2ac69feb05013c246f2d0c230848a94ac35",
+      "image_sha256": "233eccb48e1271703a2d5b2b94edd098453dd13e76af3b8160d0a6b7241c4336",
+      "table_sha256": "4825d3c35d5ca40286e4208c3309cc08802928a9c98b3de8742068338830b836",
+      "parameters": {
+        "TICKERS": [
+          "Govt",
+          "Credit",
+          "US eq",
+          "EM eq",
+          "Gold"
+        ],
+        "FACTORS": [
+          "Rates",
+          "Equity",
+          "Commodities"
+        ],
+        "FACTOR_VOLS": [
+          0.06,
+          0.16,
+          0.2
+        ],
+        "FACTOR_CORR": [
+          [
+            1.0,
+            -0.2,
+            0.0
+          ],
+          [
+            -0.2,
+            1.0,
+            0.3
+          ],
+          [
+            0.0,
+            0.3,
+            1.0
+          ]
+        ],
+        "LOADINGS": [
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.8,
+            0.3,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.2,
+            0.3
+          ],
+          [
+            0.4,
+            0.1,
+            0.6
+          ]
+        ],
+        "RESIDUAL_VOLS": [
+          0.01,
+          0.03,
+          0.05,
+          0.1,
+          0.1
+        ]
+      },
+      "checks": {
+        "capital_weights_sum_to_one": true,
+        "risk_shares_sum_to_one": true,
+        "erc_risk_shares_equal": true,
+        "min_variance_risk_shares_equal_weights": true,
+        "max_diversification_risk_shares_equal_volatility_shares": true,
+        "package_shares_match_euler_formula": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/portfolio_risk_analytics.md"
+      ]
+    },
+    "covariance_conditioning": {
+      "path": "docs/images/covariance_conditioning.png",
+      "script": "examples/docs/solver_numerics_and_outcomes.py",
+      "script_sha256": "96aa5050edeb07a4c21b04ff527e67e1dd5cb816fe141faacd633ec9611f43af",
+      "image_sha256": "12940cdc3be09158e8380c8abef979d05b9cad13196f951ff6433e91457ae6b9",
+      "table_sha256": "3dd5cbc96d9b7bfec37cb5be23d573ccbdce72cb251c181a0fcf7bd94f545bf5",
+      "parameters": {
+        "TICKERS": [
+          "Govt",
+          "Credit",
+          "Equity",
+          "Private A",
+          "Private B",
+          "Gold"
+        ],
+        "VOLS": [
+          0.06,
+          0.08,
+          0.16,
+          0.12,
+          0.12,
+          0.15
+        ],
+        "CORR": [
+          [
+            1.0,
+            0.3,
+            -0.2,
+            0.0,
+            0.0,
+            0.1
+          ],
+          [
+            0.3,
+            1.0,
+            0.3,
+            0.2,
+            0.2,
+            0.1
+          ],
+          [
+            -0.2,
+            0.3,
+            1.0,
+            0.4,
+            0.4,
+            0.0
+          ],
+          [
+            0.0,
+            0.2,
+            0.4,
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.2,
+            0.4,
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.1,
+            0.1,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "PAIR": [
+          "Private A",
+          "Private B"
+        ],
+        "FLOOR": 1e-10,
+        "GAPS": [
+          0.1,
+          0.01,
+          0.001,
+          0.0001,
+          1e-05,
+          1e-06,
+          1e-07,
+          1e-08,
+          1e-09,
+          1e-10,
+          1e-11,
+          1e-12,
+          1e-13
+        ],
+        "SPECTRUM_GAP": 1e-12
+      },
+      "checks": {
+        "floored_spectrum_at_or_above_floor": true,
+        "eigenvalues_above_floor_unchanged": true,
+        "one_eigenvalue_raised": true,
+        "floored_condition_number_capped": true,
+        "conditioning_unchanged_above_floor": true,
+        "raw_condition_number_exceeds_1e12": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/solver_numerics_and_outcomes.md"
+      ]
+    },
+    "factor_covariance_variance_split": {
+      "path": "docs/images/factor_covariance_variance_split.png",
+      "script": "examples/docs/factor_covariance_hcgl.py",
+      "script_sha256": "d1a90685625c3700bf4018326c1eed5bfd5b9dd51d36a4abbef45419a86f50af",
+      "image_sha256": "df44432e853c3a95842ac3896e05458736e0c6c82ab8588eb600fb988d5ac2f0",
+      "table_sha256": "f0d9db963551224ad06b9ae4335abdb749c43d167242e81a66cf5a0781748136",
+      "parameters": {
+        "SEED": 5,
+        "FACTORS": [
+          "Equity",
+          "Rates",
+          "Credit",
+          "Commodities"
+        ],
+        "MONTHLY": [
+          "Govt",
+          "Credit",
+          "DM equity",
+          "EM equity",
+          "Commodities"
+        ],
+        "QUARTERLY": [
+          "Private equity",
+          "Real estate",
+          "Infrastructure"
+        ],
+        "ASSETS": [
+          "Govt",
+          "Credit",
+          "DM equity",
+          "EM equity",
+          "Commodities",
+          "Private equity",
+          "Real estate",
+          "Infrastructure"
+        ],
+        "LOADINGS": [
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.1,
+            0.5,
+            0.7,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.1,
+            0.0,
+            0.2,
+            0.2
+          ],
+          [
+            0.2,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.8,
+            0.0,
+            0.3,
+            0.0
+          ],
+          [
+            0.4,
+            0.4,
+            0.2,
+            0.0
+          ],
+          [
+            0.3,
+            0.3,
+            0.0,
+            0.2
+          ]
+        ],
+        "FACTOR_VOLS": [
+          0.045,
+          0.02,
+          0.02,
+          0.06
+        ],
+        "FACTOR_CORR": [
+          [
+            1.0,
+            -0.2,
+            0.5,
+            0.3
+          ],
+          [
+            -0.2,
+            1.0,
+            0.1,
+            -0.1
+          ],
+          [
+            0.5,
+            0.1,
+            1.0,
+            0.2
+          ],
+          [
+            0.3,
+            -0.1,
+            0.2,
+            1.0
+          ]
+        ],
+        "RESIDUAL_VOLS": [
+          0.003,
+          0.006,
+          0.01,
+          0.02,
+          0.02,
+          0.008,
+          0.006,
+          0.005
+        ],
+        "PRIVATE_SHOCK_VOL": 0.006,
+        "AS_OF": "2023-12-31"
+      },
+      "checks": {
+        "systematic_plus_residual_is_total_orthogonal": true,
+        "systematic_plus_residual_is_total_empirical": true,
+        "orthogonal_has_no_residual_covariance": true,
+        "retention_is_linear_in_rho": true,
+        "empirical_more_than_doubles_private_residual_variance": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/factor_covariance_hcgl.md"
+      ]
     }
   },
   "review": {
-    "note": "Inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27. constraint_enforcement_hard_vs_soft: limit and forced solve dashed, shadow price marked in both panels, labels in ink. target_vs_drifted_weights: targets dashed, trades as grey lines, distance series in ink with the peak annotated. turnover_penalty_tradeoff: labelled penalty weights on the frontier, no-trade threshold marked. option_stress_scenarios: delta and gamma parts with the total as dots; the gamma gap shaded against the delta line; labels in ink. The eight earlier exhibits are byte-identical to their published images; the four new ones are byte-identical to the reviewed previews.",
-    "published_at_utc": "2026-09-27T09:21:53+00:00"
+    "note": "Inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27. factor_covariance_variance_split: systematic and residual parts stacked per asset; residual variances and covariances of the private portfolio stacked by residual type; formula labels in ink. risk_contributions_vs_weights: capital weights and risk shares of four objectives with in-segment percentages in ink and one shared legend. covariance_conditioning: floor and cap dashed, the raised eigenvalue annotated with an arrow, input and floored series distinguished by marker as well as colour. The twelve earlier exhibits are byte-identical to their published images; the three new ones are byte-identical to the reviewed previews.",
+    "published_at_utc": "2026-09-27T11:18:26+00:00"
   }
 }

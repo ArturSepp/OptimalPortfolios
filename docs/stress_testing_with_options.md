@@ -613,7 +613,7 @@ two-group partition. The test suite runs it, and so does the offline examples la
 
 ## See also
 
-- [Covariance estimators](covariance_estimators.md): OP factor estimation and annual covariance.
+- [Factor covariance with HCGL](factor_covariance_hcgl.md): OP factor estimation and annual covariance.
 - [Rolling factor covariance from prices](rolling_factor_covar_from_csv.md): return preparation and rolling interfaces.
 - [QIS options stress guide](https://github.com/ArturSepp/QuantInvestStrats/blob/main/docs/stress_testing_with_options.md): the matched EWMA example and VOP pricing formulas.
 - [QIS instrument stress interface](https://github.com/ArturSepp/QuantInvestStrats/blob/main/docs/portfolio_stress.md): custom payoff and reporting contracts.

@@ -2,8 +2,9 @@
 myst:
   html_meta:
     description: >-
-      EWMA and sparse factor covariance estimators in OptimalPortfolios:
-      return conventions, annualization, point-in-time inputs and executable examples.
+      EWMA covariance and the shared covariance-estimator contract in OptimalPortfolios: return
+      conventions, the EWMA recursion, annualization, point-in-time inputs and executable
+      examples; the sparse factor estimator has its own page.
 ---
 
 # Covariance estimators
@@ -16,6 +17,8 @@ Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios
 A covariance estimator summarizes the scale and joint variation of asset returns.
 OptimalPortfolios provides direct EWMA and sparse factor estimators with a shared output:
 one labeled asset covariance matrix, or a dictionary of matrices keyed by decision date.
+This page covers the EWMA estimator and that shared contract; the factor estimator is described
+in [Factor covariance with HCGL](factor_covariance_hcgl.md).
 
 ## Overview
 
@@ -28,26 +31,26 @@ some objectives also require expected returns, signals, benchmarks or other inpu
 | Estimator | Appropriate model | Main qualification |
 |---|---|---|
 | `EwmaCovarEstimator` | A direct estimate for assets sampled at one return frequency. | A short history or wide universe can produce a noisy or singular matrix. |
-| `FactorCovarEstimator` | Sparse factor exposures, frequency-specific asset buckets, or an HCGL risk model. | Requires factor prices, a configured `LassoModel` and sufficient history in every bucket. |
+| `FactorCovarEstimator` | Sparse factor exposures, frequency-specific asset buckets, or an HCGL risk model; see [Factor covariance with HCGL](factor_covariance_hcgl.md). | Requires factor prices, a configured `LassoModel` and sufficient history in every bucket. |
 
 OptimalPortfolios orchestrates return alignment, fitting dates and annualization.
 [qis](https://github.com/ArturSepp/QuantInvestStrats) supplies return conversion, EWMA kernels and
 calendar utilities ([citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff)).
-[factorlasso](https://github.com/ArturSepp/FactorLasso) supplies sparse regression, clustering and
-factor decomposition containers
+[factorlasso](https://github.com/ArturSepp/FactorLasso) supplies the sparse regression, clustering
+and factor decomposition containers of the factor estimator
 ([citation](https://github.com/ArturSepp/FactorLasso/blob/main/CITATION.cff)).
 
 ## Inputs, notation, and assumptions
 
 | Convention | This article |
 |---|---|
-| Return basis | Log returns: `EwmaCovarEstimator` takes log differences of prices sampled at `returns_freq`; factor fits take supplied log asset returns and log factor-price differences on each bucket's dates |
-| Estimation grid | Weekly Wednesdays (`"W-WED"`, the default `returns_freq`) with span 52 in the direct example; month ends (`"ME"`) in the three-observation and factor examples |
-| Rebalancing grid | Quarter ends (`"QE"`, the default `rebalancing_freq`): the direct wrapper reports the first weekly observation on or after each quarter end, the factor wrapper fits at calendar quarter ends |
-| Covariance units | Annual, fractional log-return squared: the EWMA state times the observations per year of the sampled returns (52 weekly, 12 monthly); factor covariance and residual variances are annualized by their own cadences |
+| Return basis | Log returns: `EwmaCovarEstimator` takes log differences of prices sampled at `returns_freq` |
+| Estimation grid | Weekly Wednesdays (`"W-WED"`, the default `returns_freq`) with span 52 in the direct example; month ends (`"ME"`) with span 3 in the three-observation example |
+| Rebalancing grid | Quarter ends (`"QE"`, the default `rebalancing_freq`): the rolling wrapper reports the first weekly observation on or after each quarter end |
+| Covariance units | Annual, fractional log-return squared: the EWMA state times the observations per year of the sampled returns (52 weekly, 12 monthly) |
 | Expected returns | None |
 | Weight state | None; the page estimates covariance matrices, not weights |
-| Solver | CVXPY with CLARABEL, the `LassoModel` default, for the factor fits; the EWMA estimators solve nothing |
+| Solver | None; the EWMA estimators solve nothing |
 
 The notation follows the [conventions page](conventions.md#notation). In addition:
 
@@ -57,8 +60,7 @@ The notation follows the [conventions page](conventions.md#notation). In additio
 | $m_t$, $u_t$ | EWMA mean vector and returns after the configured mean adjustment. |
 | $s$, $\lambda$ | Span in return observations and corresponding decay factor. |
 | $a$, $S_t$ | Observations per year and unannualized EWMA covariance state. |
-| $\Sigma_y$, $\Sigma_x$ | Annual asset covariance and annual factor covariance, in fractional return-squared units. |
-| $\beta$, $D$ | Dimensionless asset-by-factor loadings and annual residual covariance (diagonal by default). |
+| $\Sigma_y$ | Annual asset covariance, in fractional return-squared units. |
 | `rebalancing_freq` | Frequency for reported estimation dates; it does not set return sampling frequency. |
 
 Inputs use ordered `DatetimeIndex` rows and unique, consistently ordered instrument labels.
@@ -66,16 +68,10 @@ The price panel should represent the intended total-return convention; these est
 add omitted distributions. The direct estimator constructs $r_{i,t}=\log(P_{i,t}/P_{i,t-1})$
 after qis sampling at `returns_freq`.
 
-For factor estimation, `risk_factor_prices` contains factor prices. `asset_returns_dict` contains
-already constructed asset **returns**, keyed by their frequency codes, such as `"ME"` and `"QE"`.
-Each asset belongs in exactly one bucket. Supply compatible log-return conventions: the adapter
-constructs log factor returns on each bucket's observation dates and does not convert supplied
-asset returns from simple to log form.
-
-Factor covariance has its own `factor_returns_freq` and `factor_covar_span`. Regression and
-clustering have their own `LassoModel` configuration, including frequency-specific span maps.
-A span of 24 monthly observations and a span of 24 quarterly observations represent different
-calendar histories. See [mixed-frequency data](mixed_frequency_data.md).
+The factor estimator takes factor prices and already constructed asset log returns by frequency
+bucket instead; its inputs and their clocks are described in
+[Factor covariance with HCGL](factor_covariance_hcgl.md#inputs-notation-and-assumptions) and
+[mixed-frequency data](mixed_frequency_data.md).
 
 ## Methodology
 
@@ -135,109 +131,32 @@ move earlier matrices even when `time_period.end` was earlier.
 
 ### Factor and HCGL covariance
 
-Hierarchical cluster group LASSO (HCGL) groups assets for joint sparse factor selection.
-The default factor covariance assembly is:
-
-$$
-\Sigma_y = \beta\Sigma_x\beta^{\mathsf T} + D.
-$$
-
-For $N$ assets and $M$ factors, loadings have shape $N\times M$, factor covariance is
-$M\times M$, and the result is $N\times N$. The default `residual_type="orthogonal"`
-uses the stored residual diagonal. The optional `"empirical"` choice scales common-period
-EWMA correlations by current MATF residual standard deviations. Both assume zero factor-residual cross covariance.
-
-`residual_var_weight` scales the selected residual covariance, including its off-diagonal entries. Its default is 1.0; zero gives the
-factor-only component. Very small values that the assembly treats as numerically close to zero
-also omit that term. Lowering residual weight changes the model rather than merely its display.
-
-For each asset-return bucket, factor prices are aligned to that bucket's dates with historical
-forward-filling, then converted to log returns. FactorLasso fits the configured LASSO or group
-model, including `HIERARCHICAL_CLUSTER_GROUP_LASSO` for HCGL. Betas and residual fit statistics
-come from that fit; the adapter annualizes residual variances with the bucket's frequency code.
-
-When `x_covar` is omitted, the adapter estimates factor covariance at `factor_returns_freq` and
-annualizes it using the frequency conversion to a year. A supplied `x_covar` is used as provided:
-it must already be annualized and ordered consistently with factor labels. Factor covariance
-and residual variance must be in compatible units before assembly.
-
-The estimator's top-level `demean` field currently does not control the factor covariance fit:
-that call uses `demean=True` internally. Regression demeaning is controlled separately by
-`LassoModel.demean`. This is a verified implementation qualification, not an interchangeable
-configuration choice.
+The factor estimator assembles $\Sigma_y = \beta \Sigma_F \beta^{\top} + D$ from FactorLasso
+loadings, a qis factor covariance and residual variances, each in annual units. Its methodology
+has moved to
+[Factor covariance with HCGL](factor_covariance_hcgl.md#the-factor-model-and-its-covariance).
 
 ### Common-frequency empirical residual covariance
 
-Configure `FactorCovarEstimator(residual_type="empirical", lasso_model=...)` to prepare
-empirical residual risk during fitting. Native frequency, beta span, periods per year and
-stored/raw residual multiplier are captured per asset. The default common grid is the lowest
-native frequency: monthly plus quarterly funds use QE. Monthly-only equities retain ME.
-`residual_covar_freq` and `residual_covar_span` optionally override the grid and its EWMA span.
-
-For asset $i$, let $A_i$ denote native observations per year and let $s_i$ denote its stored
-residual multiplier. The adapter currently uses $s_i=A_i$. Recover raw log residuals before
-summing complete native intervals $k$ within common period $q$:
-
-$$
-R_{i,q}=\sum_{k\in q}\frac{\widetilde r_{i,k}}{s_i},
-\qquad C=\operatorname{EWMAcorr}(R_q),
-\qquad D_t=S_t[(1-\rho)I+\rho C]S_t.
-$$
-
-Here $S_t$ contains current MATF annual residual standard deviations and
-$\rho$ is `residual_corr_weight` in $[0,1]$ (default 1). FactorLasso subtracts a causal
-EWMA mean and discards its initial zero deviation before estimating correlation.
-Constant positive per-asset scaling and common EWMA weight normalization cancel.
-Native annual-alpha residuals remain unchanged. The residual diagonal is exactly the
-current MATF diagonal at every retention setting; zero retention reproduces orthogonal
-risk. `residual_var_weight` separately multiplies the entire residual block.
-Factor covariance may continue using weekly returns and span 52.
-
-The default common span is the lowest-frequency bucket's beta span: monthly span 36 plus
-quarterly span 12 gives quarterly span 12. If an explicitly coarser grid is chosen, native
-decay is raised to the ratio of native to common periods per year. An explicit residual span
-counts common periods. Different beta spans within the lowest-frequency bucket require an
-explicit choice.
-
-Leading and trailing incomplete periods are excluded; an internal gap fails. Intervals must
-nest exactly: weekly residuals straddling quarter ends need reconstruction from finer source
-returns. Business-day panels use the declared pandas business-day calendar. There is no
-prorating, interpolation or extrapolation. Annualisation assumes linear time scaling; summation
-provides observed quarterly covariances, but cannot establish absence of serial dependence.
-
-A prepared estimate records its last complete observation period and its actual fit/availability
-date. A historical quarter is never assigned a covariance fitted using later betas. The rolling
-producer holds its last prepared correlation between complete common-period updates,
-while current betas, factor covariance and MATF residual variances continue to update. The input data
-must themselves represent the information available at the fit date; publication lags and NAV
-revisions remain the data producer's responsibility.
+The empirical residual covariance of the factor estimator, which estimates residual correlation on
+a common return grid, is described in
+[Factor covariance with HCGL](factor_covariance_hcgl.md#residual-covariance-orthogonal-and-empirical).
 
 ### Current fits and rolling dates
 
-A current EWMA fit uses the complete supplied price panel. In the ordinary factor current-fit
-path, `estimation_date` can be only a metadata label; it does not automatically truncate all
-inputs. Slice factor prices and every return bucket through the intended date before calling
-a current fit, including when supplying an external factor covariance. Empirical current
-fits truncate all fitted inputs at `estimation_date`; a supplied factor covariance must still
-respect that cutoff.
+A current EWMA fit uses the complete supplied price panel; slice the prices through the intended
+date for a historical fit. The direct EWMA wrapper computes a tensor on the return grid and
+selects scheduled observations, so its keys are return-grid dates.
 
-> **Pitfall.** A date label is not a cutoff. In the worked example, an ordinary current factor
-> fit on the whole history with `estimation_date` set to 31 December 2022 differs from the fit on
-> inputs sliced through that date, and even reverses the sign of the Equity-Bonds covariance.
-
-`fit_rolling_factor_covars` explicitly slices each input through every scheduled date and uses
-an expanding history. An active cluster smoother is delegated to FactorLasso over the causal
-estimation schedule. The rolling wrapper checks each bucket's row count against `warmup_period`;
-that is not a per-asset completeness or investability check.
-
-The direct EWMA wrapper computes a tensor on the return grid and selects scheduled observations.
-The factor wrapper generates calendar estimation dates and fits at those dates. Consequently,
+The factor wrapper instead fits at calendar dates, slicing every input through each date, and its
+ordinary current fit treats `estimation_date` as a label, not a cutoff; see
+[the point-in-time contract](factor_covariance_hcgl.md#the-point-in-time-contract). Consequently,
 the two wrappers need not produce identical keys for the same frequency string. Neither output
 date independently guarantees that the upstream observations were actually available then.
 
 ## Worked example
 
-The six Python blocks below run in order on fixed synthetic data and need no download, data file
+The four Python blocks below run in order on fixed synthetic data and need no download, data file
 or random seed. They are excerpts of the canonical script
 [`examples/docs/covariance_estimators.py`](../examples/docs/covariance_estimators.py), which runs
 them and asserts every number on this page, and its main properties, against a reference
@@ -247,8 +166,8 @@ computed a different way:
 python -m examples.docs.covariance_estimators
 ```
 
-The small EWMA example gives an exact arithmetic reference; the HCGL example demonstrates an
-actual fit and component assembly.
+The small EWMA example gives an exact arithmetic reference. The factor example is on the
+[factor covariance page](factor_covariance_hcgl.md#worked-example).
 
 ### Create weekly total-return prices
 
@@ -309,56 +228,13 @@ demeaning off to expose the recursion; it does not change the class default.
 
 ### Construct factor prices and asset returns
 
-```python
-monthly_dates = pd.date_range("2018-12-31", periods=73, freq="ME")
-m = np.arange(72, dtype=float)
-factor_returns = np.column_stack([
-    0.003 + 0.025 * np.sin(m / 3),
-    0.001 + 0.018 * np.cos(m / 5),
-])
-factor_prices = pd.DataFrame(
-    100.0 * np.exp(np.vstack([np.zeros(2), np.cumsum(factor_returns, axis=0)])),
-    index=monthly_dates, columns=["Growth", "Rates"],
-)
-asset_values = (
-    factor_returns @ np.array([[0.9, 0.1], [0.2, 0.8], [0.5, 0.4]]).T
-    + 0.004 * np.column_stack([np.cos(m / 2), np.sin(m / 4), np.cos(m / 6)])
-)
-asset_returns = pd.DataFrame(
-    asset_values, index=monthly_dates[1:], columns=["Equity", "Bonds", "Balanced"],
-)
-```
-
-These monthly asset returns already use the same log convention as the factor-price differences.
-Their generating loadings are inputs to this teaching simulation; the fitted penalized loadings
-need not recover them exactly.
+The factor example now builds four factors and eight assets on a monthly and a quarterly grid; see
+[Factor covariance with HCGL](factor_covariance_hcgl.md#construct-factor-prices-and-asset-returns).
 
 ### Fit HCGL at an explicit cutoff
 
-```python
-from factorlasso import LassoModel, LassoModelType
-
-factor_estimator = opt.FactorCovarEstimator(
-    lasso_model=LassoModel(
-        model_type=LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
-        reg_lambda=1e-5, span=24, warmup_period=12, n_clusters=2,
-    ),
-    factor_returns_freq="ME", factor_covar_span=24, rebalancing_freq="QE",
-)
-as_of = monthly_dates[48]
-factor_data = factor_estimator.fit_current_factor_covars(
-    risk_factor_prices=factor_prices.loc[:as_of],
-    asset_returns_dict={"ME": asset_returns.loc[:as_of]},
-    estimation_date=as_of,
-)
-factor_covar = factor_data.get_y_covar()
-factor_only = factor_data.get_y_covar(residual_var_weight=0.0)
-scaled_residual_covar = factor_data.get_y_covar(residual_var_weight=0.35)
-```
-
-The cutoff is **31 December 2022**. The fitted object contains three asset rows and two factor
-columns. All three assembled outputs are 3-by-3 matrices in annual units. Moving residual weight
-from 1.0 to 0.35 changes only the diagonal; it does not refit betas or factor covariance.
+The HCGL fit at an explicit cutoff, with each component checked against an independent reference,
+is on the [factor covariance page](factor_covariance_hcgl.md#fit-hcgl-at-an-explicit-cutoff).
 
 ### Obtain rolling matrices
 
@@ -367,18 +243,15 @@ import qis
 
 ewma_period = qis.TimePeriod(dates[60], dates[100])
 rolling_covars = estimator.fit_rolling_covars(prices=prices, time_period=ewma_period)
-factor_period = qis.TimePeriod(monthly_dates[47], monthly_dates[54])
-rolling_factor_covars = factor_estimator.fit_rolling_covars(
-    risk_factor_prices=factor_prices,
-    asset_returns_dict={"ME": asset_returns},
-    time_period=factor_period,
-)
 ```
 
-In these fixtures, the EWMA keys are **6 April, 6 July and 5 October 2022**, on the weekly
-observation grid. The factor keys are **31 December 2022, 31 March and 30 June 2023**, on calendar
-quarter ends. The two examples use different input histories and periods; they illustrate the
-date contracts rather than compare investment performance.
+In this fixture, the EWMA keys are **6 April, 6 July and 5 October 2022**, on the weekly
+observation grid. Rolling factor matrices are keyed by calendar quarter ends instead; see
+[rolling fits](factor_covariance_hcgl.md#rolling-fits-are-point-in-time).
+
+> **Pitfall.** Rolling EWMA keys are return-grid dates, not calendar quarter ends. With weekly
+> Wednesday returns and quarter-end rebalancing, the example's keys are 6 April, 6 July and
+> 5 October 2022, so a lookup of 31 March 2022 finds no matrix.
 
 ## Implementation in optimalportfolios
 
@@ -387,48 +260,21 @@ date contracts rather than compare investment performance.
 | `EwmaCovarEstimator.fit_current_covar` | Price panel to one annual covariance matrix. |
 | `EwmaCovarEstimator.fit_rolling_covars` | Price panel and reporting period to a date-keyed dictionary. |
 | `estimate_current_ewma_covar` | The function behind `fit_current_covar`; `apply_an_factor=False` keeps per-observation units. |
-| `FactorCovarEstimator.fit_current_covar` | Factor prices and asset-return buckets to one assembled annual matrix. |
-| `FactorCovarEstimator.fit_rolling_covars` | The factor inputs and period to a dictionary of assembled matrices. |
-| `fit_current_factor_covars` / `fit_rolling_factor_covars` | Factor-specific methods retaining betas, residual statistics, clustering and decomposition metadata. |
 
-The input signatures differ even though the output contract is shared. The direct class has no
+`FactorCovarEstimator` has the same two methods with its own inputs, and factor-specific methods
+that keep every component; see
+[its implementation](factor_covariance_hcgl.md#implementation-in-optimalportfolios). The input
+signatures differ even though the output contract is shared. The direct class has no
 separate shrinkage-to-identity parameter. The legacy exported `estimate_rolling_ewma_covar`
 function is a QIS re-export; do not assume its defaults and date semantics are identical to this
 class.
 
-Factor decomposition fields include `y_betas`, `x_covar`, `y_variances` and, where applicable,
-`clusters`, `linkages` and `cutoffs`. Cluster identifiers are prefixed by their frequency bucket.
-The reported `residuals` panel is scaled by each bucket's annualization factor, and is constructed
-without subtracting a fitted intercept. It is not the original per-observation residual series;
-do not recompute $D$ as its ordinary sample variance.
-
-With prepared empirical correlation, `rolling.get_y_covars(residual_type="empirical",
-residual_corr_weight=0.5)` retains half of the empirical off-diagonal dependence. It needs
-no getter span or scale. Optional `dates` queries select the latest available fitted snapshot;
-retrieval does not refit. `rolling.get_residual_covars(residual_type="empirical")` assembles
-annual residual matrices at every fit/query date. `rolling.get_residual_correlations()` returns
-unique dimensionless correlation vintages keyed by availability date. Native metadata and
-common-period returns reside in `residual_metadata` and `residual_correlation`, and survive
-filtering and Excel save/load. Decomposition getters still default to orthogonal residuals;
-shared estimator methods use the configured `residual_type` and `residual_corr_weight`.
-
-This opt-in requires FactorLasso's correlation API (version 0.19.0 or newer).
-Older supported releases continue to serve the default orthogonal mode. Correlation is the only
-prepared empirical state. Configure its grid and span during preparation; covariance retrieval
-has no span or annualisation arguments. Rebuild earlier development covariance snapshots from
-source returns and saved betas. No migration or legacy covariance compatibility layer is provided.
-
-The fitting helper mutates the supplied `LassoModel` with the final bucket's fitted state.
-Use returned decomposition objects for combined results. Reusing a configuration object does
-not make its attached last-fit state a record of all buckets or dates.
-
 ### Reproduction and verification context
 
 The [canonical script](../examples/docs/covariance_estimators.py) runs the worked example and
-checks the EWMA weighted sums, the exact three-observation weights, the factor-component
-assembly and annualization, the empirical residual retention, the input cutoffs and the
-future-input timing properties. The test suite runs it, and so does the offline examples lane
-of CI.
+checks the EWMA weighted sums, the exact three-observation weights, the rolling key dates and the
+future-price timing properties of both EWMA kernels. The test suite runs it, and so does the
+offline examples lane of CI.
 
 ## Interpretation and limitations
 
@@ -440,24 +286,21 @@ values after the chosen asset policy, symmetry, eigenvalues and marginal volatil
 Some solver paths factorize or regularize the supplied matrix; inspect their diagnostics rather
 than treating solver acceptance as a certificate of data quality.
 
-Zero-filled missing betas or residual variances can make an absent-history asset look riskless.
-Eligibility and warm-up policy remain separate from matrix assembly. Sparse factor structure,
-cluster choices, residual scaling and return normalization all change the risk model.
-
 For historical use, preserve data as it was known on each date. Both direct EWMA kernels, the
 ordinary one and the optional normalized-return one, pass a future-price perturbation check in
 the worked example, and each of their rolling matrices equals a current fit on the prices
-through its date. Rolling factor fitting explicitly
-truncates inputs; an orthogonal current fit without factor references requires the caller's
-explicit input cutoff. A long warm-up may reduce
-initialization effects but does not prove that look-ahead is absent.
+through its date. A long warm-up may reduce initialization effects but does not prove that
+look-ahead is absent.
 
-The factor adapter stores its top-level `demean` field but does not read it: with `demean=False`
-the worked example's factor covariance and betas are unchanged. Set regression demeaning through
-`LassoModel.demean`; see [factor and HCGL covariance](#factor-and-hcgl-covariance).
+The factor estimator has its own limitations, among them zero-filled assets that look riskless,
+the residual weight, and a top-level `demean` field that it stores but does not read; set
+regression demeaning through `LassoModel.demean`. See
+[Factor covariance with HCGL](factor_covariance_hcgl.md#interpretation-and-limitations).
 
 ## See also
 
+- [Factor covariance with HCGL](factor_covariance_hcgl.md) for the sparse factor estimator,
+  its residual types and its point-in-time contract.
 - [Rolling factor covariance from CSV](rolling_factor_covar_from_csv.md) for the complete
   Yahoo-to-CSV and CSV-to-HCGL workflow, including the ROSAA-free MATF handoff.
 - [Mixed-frequency data](mixed_frequency_data.md) and [incomplete histories](incomplete_histories.md).

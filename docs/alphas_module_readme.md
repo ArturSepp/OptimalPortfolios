@@ -778,7 +778,7 @@ interfaces to evaluate a specified dataset and disclose the resulting design cho
 ## See also
 
 - [Mixed-frequency data](mixed_frequency_data.md): native cadences, hard lookbacks and timing.
-- [Covariance estimators](covariance_estimators.md): factor models and annualisation.
+- [Factor covariance with HCGL](factor_covariance_hcgl.md) and [covariance estimators](covariance_estimators.md): factor models and annualisation.
 - [CSV factor risk model](rolling_factor_covar_from_csv.md): persisted input and loading contracts.
 - [Rolling backtests](rolling_backtests.md): applying formation-date decisions to holdings.
 - [Examples](examples_readme.md): profiling workflows and other entry points.

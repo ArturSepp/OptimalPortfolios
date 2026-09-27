@@ -167,7 +167,7 @@ and $v_{\epsilon,i}^{(f_i)}$ the residual variance estimate in asset $i$'s retur
 The default assembly includes the full residual diagonal. The result has annual
 fractional-return-squared units. Different sampling intervals can change the estimate even
 after annualization; scale conversion does not make them statistically equivalent.
-See [covariance estimators](covariance_estimators.md) for the complete decomposition contract.
+See [factor covariance with HCGL](factor_covariance_hcgl.md) for the complete decomposition contract.
 
 `rebalancing_freq` controls rolling covariance output dates. Portfolio decisions must use
 the intended schedule and subsequent implementation convention. For homogeneous data,
@@ -408,7 +408,7 @@ historical input cutoffs. The test suite runs it, and so does the offline exampl
   correct serial dependence, appraisal smoothing, stale marks or asynchronous exposure changes.
   The factor residual diagonal omits cross-asset residual covariance.
 - **Timing and configuration limits:** the
-  [covariance article](covariance_estimators.md#interpretation-and-limitations) records that
+  [factor covariance article](factor_covariance_hcgl.md#implementation-in-optimalportfolios) records that
   the top-level factor `demean` field is not read; set regression demeaning on the
   `LassoModel`. A current factor fit needs explicitly sliced inputs, as in the example above.
 

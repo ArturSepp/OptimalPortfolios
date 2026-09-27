@@ -201,6 +201,13 @@ def test_local_links_check_files_without_interpreting_examples(tmp_path):
         assert len(issues) == 1
         assert ('Missing local' in issues[0].message
                 or 'leaves the repository' in issues[0].message)
+    # Image alt text that wraps lines is still resolved on the line that closes the label.
+    wrapped = '\n![Left: a long description that\ncontinues here](images/{}.png)\n'
+    (docs / 'images').mkdir()
+    (docs / 'images' / 'present.png').write_bytes(b'png')
+    assert not CHECKER['check_local_links'](HEADER + wrapped.format('present'), path, tmp_path)
+    issues = CHECKER['check_local_links'](HEADER + wrapped.format('absent'), path, tmp_path)
+    assert len(issues) == 1 and 'images/absent.png' in issues[0].message
 
 
 @pytest.fixture

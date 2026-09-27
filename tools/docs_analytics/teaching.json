@@ -791,6 +791,326 @@
       ],
       "question": "What changes when a tracking-error limit becomes a penalty: how far does the solve exceed the limit, and what active return does that buy, as the penalty weight grows?",
       "sample": "The page's synthetic three-asset example with a 45/40/15 benchmark and alphas of 3.0%, 0.5% and 1.0%, solved with a hard 2% tracking-error row and at six penalty weights; no simulation."
+    },
+    {
+      "id": "risk_contributions_vs_weights",
+      "path": "docs/images/risk_contributions_vs_weights.png",
+      "script": "examples/docs/portfolio_risk_analytics.py",
+      "function": "exhibit",
+      "parameters": {
+        "TICKERS": [
+          "Govt",
+          "Credit",
+          "US eq",
+          "EM eq",
+          "Gold"
+        ],
+        "FACTORS": [
+          "Rates",
+          "Equity",
+          "Commodities"
+        ],
+        "FACTOR_VOLS": [
+          0.06,
+          0.16,
+          0.2
+        ],
+        "FACTOR_CORR": [
+          [
+            1.0,
+            -0.2,
+            0.0
+          ],
+          [
+            -0.2,
+            1.0,
+            0.3
+          ],
+          [
+            0.0,
+            0.3,
+            1.0
+          ]
+        ],
+        "LOADINGS": [
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.8,
+            0.3,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.2,
+            0.3
+          ],
+          [
+            0.4,
+            0.1,
+            0.6
+          ]
+        ],
+        "RESIDUAL_VOLS": [
+          0.01,
+          0.03,
+          0.05,
+          0.1,
+          0.1
+        ]
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/portfolio_risk_analytics.md"
+      ],
+      "question": "How do capital weights and risk shares differ across equal weight, minimum variance, equal risk contribution and maximum diversification on one covariance?",
+      "sample": "The page's fixed five-asset, three-factor covariance snapshot; no simulation."
+    },
+    {
+      "id": "covariance_conditioning",
+      "path": "docs/images/covariance_conditioning.png",
+      "script": "examples/docs/solver_numerics_and_outcomes.py",
+      "function": "exhibit",
+      "parameters": {
+        "TICKERS": [
+          "Govt",
+          "Credit",
+          "Equity",
+          "Private A",
+          "Private B",
+          "Gold"
+        ],
+        "VOLS": [
+          0.06,
+          0.08,
+          0.16,
+          0.12,
+          0.12,
+          0.15
+        ],
+        "CORR": [
+          [
+            1.0,
+            0.3,
+            -0.2,
+            0.0,
+            0.0,
+            0.1
+          ],
+          [
+            0.3,
+            1.0,
+            0.3,
+            0.2,
+            0.2,
+            0.1
+          ],
+          [
+            -0.2,
+            0.3,
+            1.0,
+            0.4,
+            0.4,
+            0.0
+          ],
+          [
+            0.0,
+            0.2,
+            0.4,
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.2,
+            0.4,
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.1,
+            0.1,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "PAIR": [
+          "Private A",
+          "Private B"
+        ],
+        "FLOOR": 1e-10,
+        "GAPS": [
+          0.1,
+          0.01,
+          0.001,
+          0.0001,
+          1e-05,
+          1e-06,
+          1e-07,
+          1e-08,
+          1e-09,
+          1e-10,
+          1e-11,
+          1e-12,
+          1e-13
+        ],
+        "SPECTRUM_GAP": 1e-12
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/solver_numerics_and_outcomes.md"
+      ],
+      "question": "What does the eigenvalue floor change as two proxies become collinear?",
+      "sample": "Fixed volatilities and correlations of a six-asset universe whose private pair approaches a duplicate proxy; no simulation."
+    },
+    {
+      "id": "factor_covariance_variance_split",
+      "path": "docs/images/factor_covariance_variance_split.png",
+      "script": "examples/docs/factor_covariance_hcgl.py",
+      "function": "exhibit",
+      "parameters": {
+        "SEED": 5,
+        "FACTORS": [
+          "Equity",
+          "Rates",
+          "Credit",
+          "Commodities"
+        ],
+        "MONTHLY": [
+          "Govt",
+          "Credit",
+          "DM equity",
+          "EM equity",
+          "Commodities"
+        ],
+        "QUARTERLY": [
+          "Private equity",
+          "Real estate",
+          "Infrastructure"
+        ],
+        "ASSETS": [
+          "Govt",
+          "Credit",
+          "DM equity",
+          "EM equity",
+          "Commodities",
+          "Private equity",
+          "Real estate",
+          "Infrastructure"
+        ],
+        "LOADINGS": [
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.1,
+            0.5,
+            0.7,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.1,
+            0.0,
+            0.2,
+            0.2
+          ],
+          [
+            0.2,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.8,
+            0.0,
+            0.3,
+            0.0
+          ],
+          [
+            0.4,
+            0.4,
+            0.2,
+            0.0
+          ],
+          [
+            0.3,
+            0.3,
+            0.0,
+            0.2
+          ]
+        ],
+        "FACTOR_VOLS": [
+          0.045,
+          0.02,
+          0.02,
+          0.06
+        ],
+        "FACTOR_CORR": [
+          [
+            1.0,
+            -0.2,
+            0.5,
+            0.3
+          ],
+          [
+            -0.2,
+            1.0,
+            0.1,
+            -0.1
+          ],
+          [
+            0.5,
+            0.1,
+            1.0,
+            0.2
+          ],
+          [
+            0.3,
+            -0.1,
+            0.2,
+            1.0
+          ]
+        ],
+        "RESIDUAL_VOLS": [
+          0.003,
+          0.006,
+          0.01,
+          0.02,
+          0.02,
+          0.008,
+          0.006,
+          0.005
+        ],
+        "PRIVATE_SHOCK_VOL": 0.006,
+        "AS_OF": "2023-12-31"
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/factor_covariance_hcgl.md"
+      ],
+      "question": "Do both residual types give each asset the same variance, and how much residual variance does a portfolio of assets sharing an unspanned shock collect under each?",
+      "sample": "Synthetic month ends from December 2004 to December 2024, seed 5: four factors, five monthly and three quarterly assets with known loadings and a shock common to the private assets; HCGL fit at 31 December 2023."
     }
   ]
 }

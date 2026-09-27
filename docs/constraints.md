@@ -1079,8 +1079,10 @@ This deliberately invalid candidate reports breaches in the Equity cap, total an
 both group allocations, Risk-assets deviation, and benchmark beta. The structured frame is the
 supported analytics interface; it is more reliable than parsing formatted diagnostic text.
 
-Public solver wrappers return an `OptimizationOutcome` carrying the exact aligned constraints,
-covariance factorization, and residual tuple used for acceptance. Given the `outcome` returned
+The CVXPY-family solver wrappers, maximum Sharpe included, return an `OptimizationOutcome`
+carrying the exact aligned constraints, covariance factorization, and residual tuple used for
+acceptance; [solver numerics and outcomes](solver_numerics_and_outcomes.md) states the
+acceptance rules. Given the `outcome` returned
 by the chosen wrapper, this block reads it. The canonical script runs it on the outcome of
 `wrapper_minimise_tracking_error` for the forced example's constraints: that solve holds the
 benchmark, and all 21 residuals pass.
