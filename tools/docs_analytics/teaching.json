@@ -1681,6 +1681,221 @@
       ],
       "question": "Do active weights follow the closed form, and how does IR scale with the TE budget?",
       "sample": "Fixed volatilities, correlations, benchmark and alphas of a stylised six-asset universe; 32 tracking-error budgets from 0.25% to 8%, with and without long-only bounds; no simulation."
+    },
+    {
+      "id": "crypto_allocation_by_method",
+      "path": "docs/images/crypto_allocation_by_method.png",
+      "script": "examples/docs/app_crypto_allocation.py",
+      "function": "exhibit",
+      "parameters": {
+        "METHODS": {
+          "ERC": "EQUAL_RISK_CONTRIBUTION",
+          "MaxDiv": "MAX_DIVERSIFICATION",
+          "MaxSharpe": "MAXIMUM_SHARPE_RATIO",
+          "CARA-3": "MAX_CARA_MIXTURE"
+        },
+        "SPAN": 30,
+        "ROLL_WINDOW": 60,
+        "CARRA": 0.5,
+        "N_MIXTURES": 3,
+        "BALANCED_WEIGHT": 0.75,
+        "REPORT_START": "2016-03-31",
+        "REPORT_END": "2023-06-30",
+        "HELD": 0.0001,
+        "FROZEN_PANEL": "papers/crypto_allocation_risk_2023/data/crypto_allocation_prices.csv",
+        "FROZEN_COLUMNS": [
+          "60/40",
+          "BTC",
+          "PE",
+          "RealEstate",
+          "Commodities",
+          "Gold"
+        ],
+        "TEMPLATES": {
+          "100% Alts with BTC": false,
+          "75%/25% Balanced/Alts with BTC": true
+        }
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/app_crypto_allocation.md"
+      ],
+      "question": "How much does each method allocate to the crypto asset?",
+      "sample": "Paper-derived, current API on the frozen 2023 panel: the tracked price panel of the cryptocurrency paper, ETF-derived columns only (BTC, PE, RealEstate, Commodities, Gold, 60/40), monthly log returns, 30 quarter ends from 31 March 2016 to 30 June 2023."
+    },
+    {
+      "id": "cma_decomposition_saa",
+      "path": "docs/images/cma_decomposition_saa.png",
+      "script": "examples/docs/app_cma_strategic_allocation.py",
+      "function": "exhibit",
+      "parameters": {
+        "FACTORS": [
+          "Equity",
+          "Rates",
+          "Credit",
+          "Commodities"
+        ],
+        "ASSETS": [
+          "Govt bonds",
+          "IG credit",
+          "HY credit",
+          "DM equity",
+          "EM equity",
+          "Real estate",
+          "Hedge funds",
+          "Commodities"
+        ],
+        "LOADINGS": [
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.1,
+            0.7,
+            0.6,
+            0.0
+          ],
+          [
+            0.4,
+            0.2,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.2,
+            0.0,
+            0.2,
+            0.2
+          ],
+          [
+            0.6,
+            0.4,
+            0.2,
+            0.0
+          ],
+          [
+            0.3,
+            0.0,
+            0.2,
+            0.1
+          ],
+          [
+            0.2,
+            -0.1,
+            0.0,
+            1.0
+          ]
+        ],
+        "FACTOR_VOLS": [
+          0.15,
+          0.06,
+          0.05,
+          0.18
+        ],
+        "FACTOR_CORR": [
+          [
+            1.0,
+            -0.2,
+            0.5,
+            0.3
+          ],
+          [
+            -0.2,
+            1.0,
+            0.1,
+            -0.1
+          ],
+          [
+            0.5,
+            0.1,
+            1.0,
+            0.2
+          ],
+          [
+            0.3,
+            -0.1,
+            0.2,
+            1.0
+          ]
+        ],
+        "PREMIA": [
+          0.045,
+          0.01,
+          0.015,
+          0.02
+        ],
+        "RESIDUAL_VOLS": [
+          0.02,
+          0.02,
+          0.03,
+          0.03,
+          0.05,
+          0.08,
+          0.035,
+          0.06
+        ],
+        "ADJUSTMENTS": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -0.01,
+          0.01,
+          0.0
+        ],
+        "RISK_FREE_RATE": 0.03,
+        "TE_BUDGET": 0.01,
+        "BENCHMARKS": {
+          "Conservative": [
+            0.35,
+            0.2,
+            0.05,
+            0.15,
+            0.05,
+            0.05,
+            0.1,
+            0.05
+          ],
+          "Balanced": [
+            0.2,
+            0.15,
+            0.05,
+            0.3,
+            0.1,
+            0.05,
+            0.1,
+            0.05
+          ],
+          "Growth": [
+            0.1,
+            0.05,
+            0.05,
+            0.45,
+            0.15,
+            0.05,
+            0.1,
+            0.05
+          ]
+        },
+        "SHOWN_MANDATE": "Balanced",
+        "HELD": 1e-06
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/app_cma_strategic_allocation.md"
+      ],
+      "question": "How do factor premia and residual adjustments build the CMAs, and what allocation do they imply?",
+      "sample": "Fixed synthetic loadings, factor premia and residual adjustments of eight asset classes and four factors at 31 December 2025; no simulation."
     }
   ]
 }

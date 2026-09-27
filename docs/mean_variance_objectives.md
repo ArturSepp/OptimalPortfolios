@@ -640,6 +640,7 @@ plots the portfolios it is given and computes no frontier; its code is in
 - [Overlay optimisation with a fixed core and linear side constraints](overlay_tail_floor.md)
 - [Alpha signals](alphas_module_readme.md)
 - [Conventions, notation and glossary](conventions.md)
+- [Cryptocurrencies in diversified portfolios](app_crypto_allocation.md)
 - [Research papers and replication](research_papers.md)
 
 ## References

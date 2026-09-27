@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-09-27T14:01:55+00:00",
+  "generated_at_utc": "2026-09-27T14:10:38+00:00",
   "platform": "Windows-11-10.0.26200-SP0",
   "versions": {
     "python": "3.12.14",
@@ -1844,10 +1844,238 @@
         "docs/analytics_gallery.md",
         "docs/alpha_over_tracking_error.md"
       ]
+    },
+    "crypto_allocation_by_method": {
+      "path": "docs/images/crypto_allocation_by_method.png",
+      "script": "examples/docs/app_crypto_allocation.py",
+      "script_sha256": "3e0a00dd1201d0ef0a81a9e71e6bdcd115ad2fba45d974e4e391f55b01ec8d70",
+      "image_sha256": "27ca33468b16b31f7b252d3f92986a10ad32fdb479a91208c1bfa300b097b539",
+      "table_sha256": "63b9b9b67b706715f72e43c8f430b46930c95a60b956f0b88707169214a76723",
+      "parameters": {
+        "METHODS": {
+          "ERC": "EQUAL_RISK_CONTRIBUTION",
+          "MaxDiv": "MAX_DIVERSIFICATION",
+          "MaxSharpe": "MAXIMUM_SHARPE_RATIO",
+          "CARA-3": "MAX_CARA_MIXTURE"
+        },
+        "SPAN": 30,
+        "ROLL_WINDOW": 60,
+        "CARRA": 0.5,
+        "N_MIXTURES": 3,
+        "BALANCED_WEIGHT": 0.75,
+        "REPORT_START": "2016-03-31",
+        "REPORT_END": "2023-06-30",
+        "HELD": 0.0001,
+        "FROZEN_PANEL": "papers/crypto_allocation_risk_2023/data/crypto_allocation_prices.csv",
+        "FROZEN_COLUMNS": [
+          "60/40",
+          "BTC",
+          "PE",
+          "RealEstate",
+          "Commodities",
+          "Gold"
+        ],
+        "TEMPLATES": {
+          "100% Alts with BTC": false,
+          "75%/25% Balanced/Alts with BTC": true
+        }
+      },
+      "checks": {
+        "etf_columns_only": true,
+        "report_window": true,
+        "weights_finite": true,
+        "weights_sum_to_one": true,
+        "cara_largest_median": true,
+        "risk_based_always_hold": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/app_crypto_allocation.md"
+      ]
+    },
+    "cma_decomposition_saa": {
+      "path": "docs/images/cma_decomposition_saa.png",
+      "script": "examples/docs/app_cma_strategic_allocation.py",
+      "script_sha256": "d71771668ec7fa847b50a72edef4fcbcdda2b26f7b5c721ffffe8c7731c8949c",
+      "image_sha256": "091f0cb35884859123d11ad2d2248bb51f2be616f0a2cc9d91a0bff7c64df5fa",
+      "table_sha256": "e3add24e7e07783f1aeba92b9abcb62ed7c0dd32d403c8f94d2a85b7c77ec898",
+      "parameters": {
+        "FACTORS": [
+          "Equity",
+          "Rates",
+          "Credit",
+          "Commodities"
+        ],
+        "ASSETS": [
+          "Govt bonds",
+          "IG credit",
+          "HY credit",
+          "DM equity",
+          "EM equity",
+          "Real estate",
+          "Hedge funds",
+          "Commodities"
+        ],
+        "LOADINGS": [
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.1,
+            0.7,
+            0.6,
+            0.0
+          ],
+          [
+            0.4,
+            0.2,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.2,
+            0.0,
+            0.2,
+            0.2
+          ],
+          [
+            0.6,
+            0.4,
+            0.2,
+            0.0
+          ],
+          [
+            0.3,
+            0.0,
+            0.2,
+            0.1
+          ],
+          [
+            0.2,
+            -0.1,
+            0.0,
+            1.0
+          ]
+        ],
+        "FACTOR_VOLS": [
+          0.15,
+          0.06,
+          0.05,
+          0.18
+        ],
+        "FACTOR_CORR": [
+          [
+            1.0,
+            -0.2,
+            0.5,
+            0.3
+          ],
+          [
+            -0.2,
+            1.0,
+            0.1,
+            -0.1
+          ],
+          [
+            0.5,
+            0.1,
+            1.0,
+            0.2
+          ],
+          [
+            0.3,
+            -0.1,
+            0.2,
+            1.0
+          ]
+        ],
+        "PREMIA": [
+          0.045,
+          0.01,
+          0.015,
+          0.02
+        ],
+        "RESIDUAL_VOLS": [
+          0.02,
+          0.02,
+          0.03,
+          0.03,
+          0.05,
+          0.08,
+          0.035,
+          0.06
+        ],
+        "ADJUSTMENTS": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -0.01,
+          0.01,
+          0.0
+        ],
+        "RISK_FREE_RATE": 0.03,
+        "TE_BUDGET": 0.01,
+        "BENCHMARKS": {
+          "Conservative": [
+            0.35,
+            0.2,
+            0.05,
+            0.15,
+            0.05,
+            0.05,
+            0.1,
+            0.05
+          ],
+          "Balanced": [
+            0.2,
+            0.15,
+            0.05,
+            0.3,
+            0.1,
+            0.05,
+            0.1,
+            0.05
+          ],
+          "Growth": [
+            0.1,
+            0.05,
+            0.05,
+            0.45,
+            0.15,
+            0.05,
+            0.1,
+            0.05
+          ]
+        },
+        "SHOWN_MANDATE": "Balanced",
+        "HELD": 1e-06
+      },
+      "checks": {
+        "cma_is_factor_part_plus_adjustment": true,
+        "both_solves_accepted": true,
+        "tracking_error_at_budget": true,
+        "hedge_funds_sold_without_adjustments": true,
+        "hedge_funds_overweight_with_adjustments": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/app_cma_strategic_allocation.md"
+      ]
     }
   },
   "review": {
-    "note": "Republished on 2026-09-27 on top of the R6 follow-up c8d301c, with the R7 scripts (the alpha page lost its profiling blocks). All twenty-three images are byte-identical to those inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27: alpha_rank_quantiles and alpha_over_te_active_weights are new in R7, the twenty-one earlier exhibits unchanged.",
-    "published_at_utc": "2026-09-27T14:02:01+00:00"
+    "note": "Inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27. crypto_allocation_by_method (paper-derived, current API on the frozen 2023 panel, ETF-derived columns only): one dot per quarter end for four methods in two templates, the median as a bar and in the tick labels, header note in ink. cma_decomposition_saa (synthetic): factor-implied parts and residual adjustments of eight CMAs; active weights with and without the adjustments at a 1% tracking-error budget, legends below the bars. The twenty-three earlier exhibits are byte-identical to their published images; the two new ones are byte-identical to the reviewed previews.",
+    "published_at_utc": "2026-09-27T14:10:51+00:00"
   }
 }

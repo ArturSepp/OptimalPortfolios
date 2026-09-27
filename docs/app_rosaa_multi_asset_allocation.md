@@ -187,6 +187,7 @@ histories that the repository does not hold.
 ## See also
 
 - [Risk budgeting](risk_budgeting.md)
+- [From capital market assumptions to strategic allocation (MATF-CMA)](app_cma_strategic_allocation.md)
 - [Tactical allocation: alpha over tracking error and yield targets](alpha_over_tracking_error.md)
 - [Factor covariance with HCGL](factor_covariance_hcgl.md)
 - [Covariance estimators](covariance_estimators.md)

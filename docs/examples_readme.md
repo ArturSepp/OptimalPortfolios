@@ -55,7 +55,7 @@ scenario; it does not execute every branch of a `Locals` enum.
 ### Unattended execution lanes
 
 The [classifier and runner](../.github/scripts/run_examples.py) derives lanes from Python imports.
-Its current inventory is **33 offline, 20 network, 53 unattended examples**. The **4 local-data workflows** ending in
+Its current inventory is **35 offline, 20 network, 55 unattended examples**. The **4 local-data workflows** ending in
 `*_local.py` are excluded. Each catalogue row below states the classification.
 
 ```console
@@ -232,6 +232,8 @@ example, so they need a source checkout.
 |---|---|---|
 | [Alpha over tracking error](../examples/docs/alpha_over_tracking_error.py) | Offline | The worked example of the [alpha over tracking error](alpha_over_tracking_error.md) page: the closed-form active weights against the solver, the tracking error from `qis.RiskModel`, the utility weight that reproduces the forced solve, group limits and the yield-target variant. |
 | [Alpha signals](../examples/docs/alphas_module_readme.py) | Offline | The worked examples of the [alpha signals](alphas_module_readme.md) page: every signal family against its formula, cross-sectional and within-cluster scoring, cluster extraction, mixed cadences, point-in-time signals, the `AlphasData` container and rolling EWMA means. |
+| [Capital market assumptions to strategic allocation](../examples/docs/app_cma_strategic_allocation.py) | Offline | The script of the [MATF-CMA case study](app_cma_strategic_allocation.md): CMAs and covariance from one synthetic loading matrix, and the strategic allocation by alpha over tracking error against mandate benchmarks. |
+| [Cryptocurrencies in diversified portfolios](../examples/docs/app_crypto_allocation.py) | Offline | The script of the [cryptocurrency case study](app_crypto_allocation.md): the four methods on a synthetic panel with a fat-tailed asset, and on the tracked 2023 price panel of the paper (ETF-derived columns only); needs a source checkout for that panel. |
 | [ROSAA case study](../examples/docs/app_rosaa_multi_asset_allocation.py) | Offline | The configuration of the [ROSAA case study](app_rosaa_multi_asset_allocation.md) on a synthetic panel with known loadings: a rolling HCGL factor covariance, strategic risk budgets and a tactical alpha-over-tracking-error overlay, with the mechanism asserted at every quarter end. |
 | [CARA utility under Gaussian mixtures](../examples/docs/cara_gaussian_mixture.py) | Offline | The worked example of the [CARA mixture](cara_gaussian_mixture.md) page: the closed-form objective against Monte Carlo, the one-component reduction to mean-variance, the in-house mixture fit and its annualisation, and a crash component's effect on the allocation. |
 | [Portfolio constraints](../examples/docs/constraints.py) | Offline | The worked examples of the [portfolio constraints](constraints.md) page: a forced solve against an optimality certificate, hard and soft residuals, universe alignment and frozen-group waivers, and a tracking-error limit as a hard row and as a penalty. |

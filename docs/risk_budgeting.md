@@ -406,6 +406,7 @@ estimation error and changes in correlation can all create a gap between target 
 
 - [HRP and cluster risk budgets](hierarchical_risk_parity_and_cluster_budgets.md)
 - [Portfolio constraints](constraints.md)
+- [Cryptocurrencies in diversified portfolios](app_crypto_allocation.md)
 - [Rolling backtests](rolling_backtests.md)
 - [Covariance estimators](covariance_estimators.md)
 - [API reference](api.rst)

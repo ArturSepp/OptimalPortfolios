@@ -237,7 +237,7 @@ single-date and numerical entry points.
 - **CARA utility.** Constant absolute risk aversion, $-\exp(-\gamma W)$ for wealth $W$; its
   expectation has a closed form under a Gaussian mixture.
 - **CMA.** Capital market assumption: a forward-looking expected return, volatility or
-  correlation used as a strategic input.
+  correlation used as a strategic input; see the [MATF-CMA case study](app_cma_strategic_allocation.md).
 - **Diversification ratio.** $\sum_i w_i \sigma_i / \sigma(w)$, the weighted average asset
   volatility over the portfolio volatility.
 - **Drift.** The change of weights between decisions caused by relative price moves.

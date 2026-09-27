@@ -60,7 +60,8 @@ cryptocurrency: equal risk contributions, maximum diversification, maximum Sharp
 CARA utility under a Gaussian mixture fitted to returns. Each is an objective of the package (see
 [choosing an objective](optimization_module_readme.md), [mean-variance objectives](mean_variance_objectives.md) and
 [CARA utility under Gaussian mixtures](cara_gaussian_mixture.md)); the manuscript source is tracked in the
-repository.
+repository. The [cryptocurrency case study](app_crypto_allocation.md) reports its study design and results
+and runs the four methods offline on the tracked price panel.
 
 ### Capital market assumptions from multi-asset tradable factors
 
@@ -69,7 +70,9 @@ Allocation Using Multi-Asset Tradable Factors*. Working paper,
 [SSRN 6785958](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6785958).
 
 The paper derives capital market assumptions from multi-asset tradable factors and uses them for
-strategic asset allocation. On this site it is cited only in its public SSRN version.
+strategic asset allocation. On this site it is cited only in its public SSRN version. The
+[MATF-CMA case study](app_cma_strategic_allocation.md) builds the workflow from CMAs to a strategic allocation
+with the package on synthetic inputs; it reproduces none of the paper's results.
 
 ## Reproducing the papers
 
@@ -80,8 +83,8 @@ requirements. The table summarises what a public checkout can run.
 | Paper | Folder | What a public checkout reproduces |
 |---|---|---|
 | ROSAA | [`robust_optimisation_jpm_2026`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/robust_optimisation_jpm_2026) | A methodological example of the HCGL covariance and risk-budgeted strategic allocation. It downloads its ETF panel with `yfinance`, carries no frozen inputs and records no environment, so it is not an exact rebuild of the published exhibits. |
-| Cryptocurrencies | [`crypto_allocation_risk_2023`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/crypto_allocation_risk_2023) | The manuscript source, the analysis code, historical price files and offline replication tests, which CI runs on every push. The full update route needs licensed Bloomberg data, so the headline numbers are not promised to reproduce exactly. |
-| Capital market assumptions | [`cma_data`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/cma_data) | A manifest-verified snapshot of the configuration tables behind the capital market assumptions, with tests that CI runs on every push. Licensed index, factor-history and provider panels are omitted. |
+| Cryptocurrencies | [`crypto_allocation_risk_2023`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/crypto_allocation_risk_2023) | The manuscript source, the analysis code and historical price files; no CI workflow runs this folder's tests. The [cryptocurrency case study](app_crypto_allocation.md) runs the four methods offline on the tracked price panel. The full update route needs licensed Bloomberg data, so the headline numbers are not promised to reproduce exactly. |
+| Capital market assumptions | [`cma_data`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/cma_data) | A manifest-verified snapshot of the configuration tables behind the capital market assumptions, with tests that the required checks run on every pull request to `main`. Licensed index, factor-history and provider panels are omitted. |
 
 Frozen package versions are quoted only from a committed manifest; where a folder records no
 environment, none is inferred.

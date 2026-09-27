@@ -182,6 +182,14 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     tracking-error budget with and without long-only bounds.
   - The router states that the soft tracking-error path of the yield-target solver keeps its
     turnover penalty when no turnover cap is set (since 7.8.0).
+- Documentation site, fourth stage, the two remaining case studies (no package change):
+  cryptocurrencies in diversified portfolios, and from capital market assumptions to strategic
+  allocation (MATF-CMA). Each follows the canonical-script contract.
+  - The cryptocurrency case study reports the paper's design and results by section and runs the
+    four methods with the current API on the frozen 2023 panel, using only its ETF-derived
+    columns; its exhibit is derived from that tracked panel.
+  - The MATF-CMA case study is synthetic: it builds the workflow from CMAs to a strategic
+    allocation with the package and reproduces none of the paper's results.
 
 ## [7.8.0] - 2026-09-23
 

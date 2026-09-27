@@ -503,6 +503,7 @@ starts from the drifted previous weights, the solve at $\gamma = 10$ returns the
 - [Portfolio constraints](constraints.md)
 - [Covariance factorisation, solver outcomes and constraint residuals](solver_numerics_and_outcomes.md)
 - [Conventions, notation and glossary](conventions.md)
+- [Cryptocurrencies in diversified portfolios](app_crypto_allocation.md)
 - [Research papers and replication](research_papers.md)
 
 ## References
