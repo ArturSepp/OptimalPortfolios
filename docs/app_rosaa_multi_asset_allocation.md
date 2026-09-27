@@ -179,14 +179,16 @@ The paper folder
 [`papers/robust_optimisation_jpm_2026`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/robust_optimisation_jpm_2026)
 holds a methodological example of the covariance and strategic layers. It downloads ETF prices
 with `yfinance` and differs from the article: it uses two price factors, equal risk budgets and
-10 basis points of costs, and has no tactical layer. As written, it fails at the model
-configuration, because it uses an enum member that FactorLasso has since renamed to
-`LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO`. The article's own inputs are licensed index
-histories that the repository does not hold.
+10 basis points of costs, and has no tactical layer. It uses the article's spans of 36 months
+for the betas and the factor covariance and writes its factsheet to the configured output
+directory. The article's own inputs are licensed index histories that the repository does not
+hold.
 
 ## See also
 
 - [Risk budgeting](risk_budgeting.md)
+- [From capital market assumptions to strategic allocation (MATF-CMA)](app_cma_strategic_allocation.md)
+- [Tactical allocation: alpha over tracking error and yield targets](alpha_over_tracking_error.md)
 - [Factor covariance with HCGL](factor_covariance_hcgl.md)
 - [Covariance estimators](covariance_estimators.md)
 - [Portfolio constraints](constraints.md)

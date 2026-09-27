@@ -13,6 +13,21 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY_PATH = Path('tools/docs_analytics/registry.json')
+# README.md is also the PyPI description, where relative image paths do not resolve, so it may
+# display a repository image by its absolute URL on the main branch. Coverage reads such a URL
+# as the repository path it names.
+REPOSITORY_FILE_URLS = (
+    'https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/',
+    'https://github.com/ArturSepp/OptimalPortfolios/raw/main/',
+)
+
+
+def repository_path(url: str) -> str | None:
+    """Return the repository path of an absolute main-branch file URL, or None for other URLs."""
+    for prefix in REPOSITORY_FILE_URLS:
+        if url.startswith(prefix):
+            return unquote(urlsplit(url[len(prefix):]).path)
+    return None
 
 
 def relative_path(value: str) -> PurePosixPath:
@@ -128,7 +143,11 @@ def check_coverage(registry: dict, root: Path = ROOT) -> None:
         name = document.relative_to(root).as_posix()
         for url in image_references(document.read_text(encoding='utf-8')):
             parsed = urlsplit(url)
-            if parsed.scheme or parsed.netloc:
+            in_repository = repository_path(url)
+            if in_repository is not None:
+                # The file must exist with the exact case, as for a relative path.
+                target = source_file(root, in_repository).relative_to(root).as_posix()
+            elif parsed.scheme or parsed.netloc:
                 target = url
             else:
                 if parsed.path.startswith(('/', '\\')):

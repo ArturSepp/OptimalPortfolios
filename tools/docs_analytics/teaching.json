@@ -1111,6 +1111,791 @@
       ],
       "question": "Do both residual types give each asset the same variance, and how much residual variance does a portfolio of assets sharing an unspanned shock collect under each?",
       "sample": "Synthetic month ends from December 2004 to December 2024, seed 5: four factors, five monthly and three quarterly assets with known loadings and a shock common to the private assets; HCGL fit at 31 December 2023."
+    },
+    {
+      "id": "unsmoothing_autocorrelation",
+      "path": "docs/images/unsmoothing_autocorrelation.png",
+      "script": "examples/docs/universe_data_and_unsmoothing.py",
+      "function": "exhibit",
+      "parameters": {
+        "TICKERS": [
+          "Govt",
+          "Credit",
+          "Equity",
+          "PE"
+        ],
+        "NAMES": [
+          "Government bonds",
+          "Credit",
+          "Listed equity",
+          "Private equity"
+        ],
+        "ASSET_CLASSES": [
+          "Bonds",
+          "Bonds",
+          "Equities",
+          "Equities"
+        ],
+        "MEANS": [
+          0.03,
+          0.04,
+          0.07,
+          0.08
+        ],
+        "VOLS": [
+          0.05,
+          0.08,
+          0.16,
+          0.2
+        ],
+        "CORR": [
+          [
+            1.0,
+            0.5,
+            -0.2,
+            -0.1
+          ],
+          [
+            0.5,
+            1.0,
+            0.4,
+            0.4
+          ],
+          [
+            -0.2,
+            0.4,
+            1.0,
+            0.7
+          ],
+          [
+            -0.1,
+            0.4,
+            0.7,
+            1.0
+          ]
+        ],
+        "PHI": 0.6,
+        "START": "1989-12-31",
+        "END": "2024-12-31",
+        "SEED": 19
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/universe_data_and_unsmoothing.md"
+      ],
+      "question": "How much autocorrelation and volatility does unsmoothing restore to an appraisal-smoothed private-asset series?",
+      "sample": "A seeded synthetic quarterly panel from December 1989 to December 2024, seed 19, whose private-equity column is appraisal-smoothed with phi 0.6; the simulated true returns are known."
+    },
+    {
+      "id": "implied_budgets_round_trip",
+      "path": "docs/images/implied_budgets_round_trip.png",
+      "script": "examples/docs/implied_risk_budgets.py",
+      "function": "exhibit",
+      "parameters": {
+        "ASSETS": [
+          "Equity",
+          "Bonds",
+          "Gold"
+        ],
+        "VOLS": [
+          0.16,
+          0.07,
+          0.15
+        ],
+        "EQUITY_GOLD": 0.1,
+        "BONDS_GOLD": 0.2,
+        "TARGET_WEIGHTS": [
+          0.4,
+          0.45,
+          0.15
+        ],
+        "STOCK_BOND_PATH": [
+          -0.7,
+          0.4
+        ],
+        "REBALANCES": 12,
+        "FIRST_REBALANCE": "2023-03-31",
+        "TOLERANCE": 0.001
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/implied_risk_budgets.md"
+      ],
+      "question": "What static risk budgets reproduce a target allocation on average, and how far do the weights they imply drift from it date by date?",
+      "sample": "Three assets with fixed volatilities and a stock-bond correlation drifting from -0.7 to 0.4 over twelve quarter ends from 31 March 2023; no simulation."
+    },
+    {
+      "id": "hrp_vs_erc_weights",
+      "path": "docs/images/hrp_vs_erc_weights.png",
+      "script": "examples/docs/hierarchical_risk_parity_and_cluster_budgets.py",
+      "function": "exhibit",
+      "parameters": {
+        "ASSETS": [
+          "US govt",
+          "EU govt",
+          "UK govt",
+          "JP govt",
+          "US equity",
+          "EU equity",
+          "Commodities",
+          "Gold"
+        ],
+        "BLOCKS": [
+          "Bonds",
+          "Bonds",
+          "Bonds",
+          "Bonds",
+          "Equities",
+          "Equities",
+          "Real assets",
+          "Real assets"
+        ],
+        "BLOCK_NAMES": [
+          "Bonds",
+          "Equities",
+          "Real assets"
+        ],
+        "BLOCK_CORR": [
+          [
+            0.6,
+            -0.1,
+            0.1
+          ],
+          [
+            -0.1,
+            0.8,
+            0.3
+          ],
+          [
+            0.1,
+            0.3,
+            0.4
+          ]
+        ],
+        "VOLS": [
+          0.05,
+          0.05,
+          0.06,
+          0.04,
+          0.16,
+          0.18,
+          0.2,
+          0.15
+        ],
+        "N_CLUSTERS": 3
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/hierarchical_risk_parity_and_cluster_budgets.md"
+      ],
+      "question": "How do HRP, equal risk contribution and equal cluster budgets divide capital and risk among the blocks of one universe?",
+      "sample": "A fixed eight-asset universe of four government bonds, two equity markets and two real assets with block correlations; no simulation."
+    },
+    {
+      "id": "efficient_frontier_objectives",
+      "path": "docs/images/efficient_frontier_objectives.png",
+      "script": "examples/docs/mean_variance_objectives.py",
+      "function": "exhibit",
+      "parameters": {
+        "TICKERS": [
+          "Govt",
+          "Credit",
+          "US eq",
+          "EM eq",
+          "Gold"
+        ],
+        "MEANS": [
+          0.005,
+          0.02,
+          0.045,
+          0.055,
+          0.025
+        ],
+        "VOLS": [
+          0.05,
+          0.07,
+          0.15,
+          0.19,
+          0.15
+        ],
+        "CORR": [
+          [
+            1.0,
+            0.3,
+            -0.2,
+            -0.1,
+            0.1
+          ],
+          [
+            0.3,
+            1.0,
+            0.3,
+            0.25,
+            0.1
+          ],
+          [
+            -0.2,
+            0.3,
+            1.0,
+            0.5,
+            0.0
+          ],
+          [
+            -0.1,
+            0.25,
+            0.5,
+            1.0,
+            0.2
+          ],
+          [
+            0.1,
+            0.1,
+            0.0,
+            0.2,
+            1.0
+          ]
+        ],
+        "GAMMAS": [
+          5.0,
+          10.0,
+          20.0,
+          50.0
+        ],
+        "SHOWN_GAMMA": 5.0
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/mean_variance_objectives.md"
+      ],
+      "question": "Where do minimum variance, utility and maximum Sharpe sit on the frontier?",
+      "sample": "Fixed expected excess returns, volatilities and correlations of five assets; no simulation."
+    },
+    {
+      "id": "saa_target_duality",
+      "path": "docs/images/saa_target_duality.png",
+      "script": "examples/docs/strategic_allocation_targets.py",
+      "function": "exhibit",
+      "parameters": {
+        "RETURNS_FREQ": "ME",
+        "EWMA_SPAN": 36,
+        "REBALANCING_FREQ": "YE",
+        "BACKTEST_START": "31Dec2005",
+        "MAX_WEIGHT": 0.25,
+        "GROUP_MIN": {
+          "Fixed Income": 0.2
+        },
+        "GROUP_MAX": {
+          "Equity": 0.6,
+          "Alternatives": 0.4
+        },
+        "DATE": "2025-12-31",
+        "CASH_RATE": 0.02,
+        "SHARPE_RATIO": 0.3,
+        "TARGET_VOL": 0.05,
+        "FRONTIER_RETURNS": [
+          0.03,
+          0.035,
+          0.04,
+          0.045,
+          0.05,
+          0.055
+        ],
+        "FRONTIER_VOLS": [
+          0.02,
+          0.03,
+          0.04,
+          0.05,
+          0.06,
+          0.07,
+          0.08,
+          0.09
+        ],
+        "PENALTY_WEIGHTS": [
+          0.5,
+          1.0,
+          2.0,
+          5.0,
+          10.0,
+          20.0,
+          50.0
+        ],
+        "WEIGHT_TOL": 0.001,
+        "MOMENT_TOL": 1e-05
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/strategic_allocation_targets.md"
+      ],
+      "question": "Do the target-return and target-volatility solvers trace the same frontier, hard and soft?",
+      "sample": "The packaged 19-instrument monthly fixture with an EWMA covariance (span 36) at 31 December 2025 and equal-Sharpe expected returns; no simulation."
+    },
+    {
+      "id": "cara_mixture_allocation",
+      "path": "docs/images/cara_mixture_allocation.png",
+      "script": "examples/docs/cara_gaussian_mixture.py",
+      "function": "exhibit",
+      "parameters": {
+        "TICKERS": [
+          "Bonds",
+          "Equities",
+          "Crypto"
+        ],
+        "CRYPTO": 2,
+        "PROBS": [
+          0.8,
+          0.15,
+          0.05
+        ],
+        "MEANS": [
+          [
+            0.02,
+            0.11,
+            0.5
+          ],
+          [
+            0.04,
+            -0.06,
+            -0.2
+          ],
+          [
+            0.06,
+            -0.3,
+            -1.5
+          ]
+        ],
+        "VOLS": [
+          [
+            0.05,
+            0.13,
+            0.6
+          ],
+          [
+            0.07,
+            0.2,
+            0.8
+          ],
+          [
+            0.08,
+            0.3,
+            0.7
+          ]
+        ],
+        "CORR": [
+          [
+            1.0,
+            -0.2,
+            0.0
+          ],
+          [
+            -0.2,
+            1.0,
+            0.3
+          ],
+          [
+            0.0,
+            0.3,
+            1.0
+          ]
+        ],
+        "GAMMA": 5.0,
+        "GAMMA_GRID": [
+          0.5,
+          0.6,
+          0.75,
+          0.9,
+          1.0,
+          1.25,
+          1.5,
+          1.75,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0
+        ]
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/cara_gaussian_mixture.md"
+      ],
+      "question": "How do risk aversion and a crash component change the allocation?",
+      "sample": "Fixed annual parameters of a stylised three-asset, three-component mixture; no simulation."
+    },
+    {
+      "id": "alpha_rank_quantiles",
+      "path": "docs/images/alpha_rank_quantiles.png",
+      "script": "examples/docs/signal_diagnostics_and_profiling.py",
+      "function": "exhibit",
+      "parameters": {
+        "SEED": 11,
+        "N_ASSETS": 500,
+        "MONTHS": 240,
+        "FIRST_DATE": "2005-12-31",
+        "RHO": 0.1,
+        "MU": 0.005,
+        "VOL": 0.05,
+        "MARKET_VOL": 0.04,
+        "QUANTILES": 5,
+        "ROLLING_MONTHS": 12
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/signal_diagnostics_and_profiling.md"
+      ],
+      "question": "Does the signal rank returns, and how stable is its IC?",
+      "sample": "500 synthetic assets with 240 month-end returns from January 2006 to December 2025, seed 11, and a score with population rank IC 0.0955."
+    },
+    {
+      "id": "alpha_over_te_active_weights",
+      "path": "docs/images/alpha_over_te_active_weights.png",
+      "script": "examples/docs/alpha_over_tracking_error.py",
+      "function": "exhibit",
+      "parameters": {
+        "TICKERS": [
+          "Govt bonds",
+          "Credit",
+          "US equity",
+          "Europe equity",
+          "EM equity",
+          "Gold"
+        ],
+        "VOLS": [
+          0.05,
+          0.07,
+          0.16,
+          0.17,
+          0.21,
+          0.15
+        ],
+        "CORR": [
+          [
+            1.0,
+            0.5,
+            -0.2,
+            -0.2,
+            -0.15,
+            0.1
+          ],
+          [
+            0.5,
+            1.0,
+            0.4,
+            0.4,
+            0.45,
+            0.15
+          ],
+          [
+            -0.2,
+            0.4,
+            1.0,
+            0.85,
+            0.75,
+            0.1
+          ],
+          [
+            -0.2,
+            0.4,
+            0.85,
+            1.0,
+            0.8,
+            0.15
+          ],
+          [
+            -0.15,
+            0.45,
+            0.75,
+            0.8,
+            1.0,
+            0.25
+          ],
+          [
+            0.1,
+            0.15,
+            0.1,
+            0.15,
+            0.25,
+            1.0
+          ]
+        ],
+        "BENCHMARK": [
+          0.3,
+          0.15,
+          0.25,
+          0.1,
+          0.1,
+          0.1
+        ],
+        "ALPHAS": [
+          -0.0025,
+          0.007,
+          -0.016,
+          -0.0085,
+          0.021,
+          0.0
+        ],
+        "TE_BUDGET": 0.02,
+        "EXHIBIT_BUDGETS": [
+          0.0025,
+          0.005,
+          0.0075,
+          0.01,
+          0.0125,
+          0.015,
+          0.0175,
+          0.02,
+          0.0225,
+          0.025,
+          0.0275,
+          0.03,
+          0.0325,
+          0.035,
+          0.0375,
+          0.04,
+          0.0425,
+          0.045,
+          0.0475,
+          0.05,
+          0.0525,
+          0.055,
+          0.0575,
+          0.06,
+          0.0625,
+          0.065,
+          0.0675,
+          0.07,
+          0.0725,
+          0.075,
+          0.0775,
+          0.08
+        ],
+        "WEIGHT_TOL": 0.0001,
+        "TE_TOL": 1e-06
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/alpha_over_tracking_error.md"
+      ],
+      "question": "Do active weights follow the closed form, and how does IR scale with the TE budget?",
+      "sample": "Fixed volatilities, correlations, benchmark and alphas of a stylised six-asset universe; 32 tracking-error budgets from 0.25% to 8%, with and without long-only bounds; no simulation."
+    },
+    {
+      "id": "crypto_allocation_by_method",
+      "path": "docs/images/crypto_allocation_by_method.png",
+      "script": "examples/docs/app_crypto_allocation.py",
+      "function": "exhibit",
+      "parameters": {
+        "METHODS": {
+          "ERC": "EQUAL_RISK_CONTRIBUTION",
+          "MaxDiv": "MAX_DIVERSIFICATION",
+          "MaxSharpe": "MAXIMUM_SHARPE_RATIO",
+          "CARA-3": "MAX_CARA_MIXTURE"
+        },
+        "SPAN": 30,
+        "ROLL_WINDOW": 60,
+        "CARRA": 0.5,
+        "N_MIXTURES": 3,
+        "BALANCED_WEIGHT": 0.75,
+        "REPORT_START": "2016-03-31",
+        "REPORT_END": "2023-06-30",
+        "HELD": 0.0001,
+        "FROZEN_PANEL": "papers/crypto_allocation_risk_2023/data/crypto_allocation_prices.csv",
+        "FROZEN_COLUMNS": [
+          "60/40",
+          "BTC",
+          "PE",
+          "RealEstate",
+          "Commodities",
+          "Gold"
+        ],
+        "TEMPLATES": {
+          "100% Alts with BTC": false,
+          "75%/25% Balanced/Alts with BTC": true
+        }
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/app_crypto_allocation.md"
+      ],
+      "question": "How much does each method allocate to the crypto asset?",
+      "sample": "Paper-derived, current API on the frozen 2023 panel: the tracked price panel of the cryptocurrency paper, ETF-derived columns only (BTC, PE, RealEstate, Commodities, Gold, 60/40), monthly log returns, 30 quarter ends from 31 March 2016 to 30 June 2023."
+    },
+    {
+      "id": "cma_decomposition_saa",
+      "path": "docs/images/cma_decomposition_saa.png",
+      "script": "examples/docs/app_cma_strategic_allocation.py",
+      "function": "exhibit",
+      "parameters": {
+        "FACTORS": [
+          "Equity",
+          "Rates",
+          "Credit",
+          "Commodities"
+        ],
+        "ASSETS": [
+          "Govt bonds",
+          "IG credit",
+          "HY credit",
+          "DM equity",
+          "EM equity",
+          "Real estate",
+          "Hedge funds",
+          "Commodities"
+        ],
+        "LOADINGS": [
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.1,
+            0.7,
+            0.6,
+            0.0
+          ],
+          [
+            0.4,
+            0.2,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.2,
+            0.0,
+            0.2,
+            0.2
+          ],
+          [
+            0.6,
+            0.4,
+            0.2,
+            0.0
+          ],
+          [
+            0.3,
+            0.0,
+            0.2,
+            0.1
+          ],
+          [
+            0.2,
+            -0.1,
+            0.0,
+            1.0
+          ]
+        ],
+        "FACTOR_VOLS": [
+          0.15,
+          0.06,
+          0.05,
+          0.18
+        ],
+        "FACTOR_CORR": [
+          [
+            1.0,
+            -0.2,
+            0.5,
+            0.3
+          ],
+          [
+            -0.2,
+            1.0,
+            0.1,
+            -0.1
+          ],
+          [
+            0.5,
+            0.1,
+            1.0,
+            0.2
+          ],
+          [
+            0.3,
+            -0.1,
+            0.2,
+            1.0
+          ]
+        ],
+        "PREMIA": [
+          0.045,
+          0.01,
+          0.015,
+          0.02
+        ],
+        "RESIDUAL_VOLS": [
+          0.02,
+          0.02,
+          0.03,
+          0.03,
+          0.05,
+          0.08,
+          0.035,
+          0.06
+        ],
+        "ADJUSTMENTS": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -0.01,
+          0.01,
+          0.0
+        ],
+        "RISK_FREE_RATE": 0.03,
+        "TE_BUDGET": 0.01,
+        "BENCHMARKS": {
+          "Conservative": [
+            0.35,
+            0.2,
+            0.05,
+            0.15,
+            0.05,
+            0.05,
+            0.1,
+            0.05
+          ],
+          "Balanced": [
+            0.2,
+            0.15,
+            0.05,
+            0.3,
+            0.1,
+            0.05,
+            0.1,
+            0.05
+          ],
+          "Growth": [
+            0.1,
+            0.05,
+            0.05,
+            0.45,
+            0.15,
+            0.05,
+            0.1,
+            0.05
+          ]
+        },
+        "SHOWN_MANDATE": "Balanced",
+        "HELD": 1e-06
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/app_cma_strategic_allocation.md"
+      ],
+      "question": "How do factor premia and residual adjustments build the CMAs, and what allocation do they imply?",
+      "sample": "Fixed synthetic loadings, factor premia and residual adjustments of eight asset classes and four factors at 31 December 2025; no simulation."
     }
   ]
 }

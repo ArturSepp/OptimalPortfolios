@@ -10,10 +10,13 @@ where RC_i is asset i's risk contribution, b_i is the risk budget, and
 these budgets. With binding bounds it minimizes log(sigma(w)) - sum(b_i log(w_i))
 on the fully invested feasible set; risk contributions need not equal the budgets.
 
-The primary solver is the scale-consistent CCD / ADMM-CCD formulation in
+The primary solver is the scale-consistent formulation in
 ``risk_budgeting_solver.py``, which represents instrument bounds, group bounds
-and full investment jointly. The separate scipy SLSQP entry point is not an
-automatic fallback and is not recommended for production use.
+and full investment jointly. With the default [0, 1] box and no group rows it is
+solved by cyclical coordinate descent (CCD); any other bound or a group row
+routes it through ADMM, which alternates a CCD step with a ``quadprog``
+projection onto the constraint faces. The separate scipy SLSQP entry point is
+not an automatic fallback and is not recommended for production use.
 
 Special features:
     - Date-varying budgets: rolling allocation accepts either one static budget
@@ -78,7 +81,9 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
     specifies the target fraction of portfolio risk contributed by each asset.
 
     Args:
-        prices: Asset price panel. Used for column alignment.
+        prices: Asset price panel. Used for column alignment and, when
+            ``optimiser_config.use_drifted_weights_0`` is set, to drift the
+            previous weights to each date before they are passed as ``weights_0``.
         constraints: Portfolio constraints.
         risk_budget: Static target budgets as an asset-indexed Series, or point-in-time
             budgets as a date-by-asset DataFrame. Zero-budget assets are excluded
@@ -149,7 +154,7 @@ def rolling_risk_budgeting(prices: pd.DataFrame,
                                           rebalancing_indicators=rebalancing_indicators_t,
                                           optimiser_config=optimiser_config,
                                           context=str(pd.Timestamp(date).date()))
-        weights_0 = weights_  # warm-start next period
+        weights_0 = weights_  # next date's weights_0: freezing and fallback, not a solver start
         prev_date = date
         weights[date] = weights_
     weights = pd.DataFrame.from_dict(weights, orient='index')
@@ -184,7 +189,9 @@ def wrapper_risk_budgeting(pd_covar: pd.DataFrame,
     Args:
         pd_covar: Covariance matrix (N x N) as DataFrame.
         constraints: Portfolio constraints.
-        weights_0: Previous-period weights for warm-start / fallback / freezing.
+        weights_0: Previous-period weights for freezing and for the fallback of a
+            rejected solve. The solver does not start from them: it starts from the
+            inverse-volatility portfolio projected onto the feasible set.
         risk_budget: Target risk budgets. Dict or pd.Series.
         rebalancing_indicators: Binary series for position freezing.
         optimiser_config: Solver configuration.
@@ -302,7 +309,11 @@ def opt_risk_budgeting(covar: np.ndarray,
                        context: str = ''
                        ) -> np.ndarray:
     """
-    Solve constrained risk budgeting using the internal CCD / ADMM-CCD solver.
+    Solve constrained risk budgeting using the internal solver.
+
+    ``solve_constrained_risk_budgeting`` runs cyclical coordinate descent (CCD)
+    with the default [0, 1] box and no group rows, and otherwise ADMM, which
+    alternates a CCD step with a ``quadprog`` projection onto the constraint faces.
 
     Args:
         covar: Covariance matrix (N x N).
@@ -311,7 +322,9 @@ def opt_risk_budgeting(covar: np.ndarray,
         verbose: If True, print constraint slack diagnostics after solving.
 
     Returns:
-        Optimal weights (N,). Falls back to weights_0 or zeros on failure.
+        Optimal weights (N,). When the solver fails or ``validate_rb_solution``
+        rejects its result, the fallback is ``constraints.weights_0``, else the
+        benchmark weights, else zeros.
     """
     n = covar.shape[0]
     if risk_budget is None:
@@ -355,7 +368,9 @@ def opt_risk_budgeting_scipy(covar: np.ndarray,
         risk_budget: Target risk budgets (N,). If None, equal budgets used.
 
     Returns:
-        Optimal weights (N,). Falls back to weights_0 or zeros if not solved.
+        Optimal weights (N,). When ``validate_scipy_solution`` rejects the
+        result, the fallback is ``constraints.weights_0``, else the benchmark
+        weights, else zeros.
     """
     n = covar.shape[0]
     if constraints.weights_0 is not None:

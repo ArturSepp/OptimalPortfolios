@@ -1,7 +1,11 @@
 """Gaussian mixture estimation and plotting without an sklearn dependency.
 
-``fit_gmm`` is an EM fit equivalent to ``sklearn.mixture.GaussianMixture`` with
-``covariance_type='full'``. ``Params`` holds a fitted mixture in pandas form for
+``fit_gmm`` fits the model of ``sklearn.mixture.GaussianMixture`` with
+``covariance_type='full'`` by its own EM, so fitted parameters can differ from
+scikit-learn's: it initialises from scipy ``kmeans2`` seeded with
+``RandomState(random_state)``, 3 by default, stops when the total log-likelihood
+changes by less than ``tol`` (default 1e-6), and computes responsibilities from
+densities without log-sum-exp. ``Params`` holds a fitted mixture in pandas form for
 reporting, and the plotting and rolling helpers back the mixture-based
 optimisation examples and regime diagnostics.
 """
@@ -133,7 +137,14 @@ def fit_gmm(x: np.ndarray,
             ) -> GMMResult:
     """
     Fit Gaussian Mixture Model via EM algorithm.
-    Drop-in replacement for sklearn.mixture.GaussianMixture with covariance_type='full'.
+
+    The model is that of sklearn.mixture.GaussianMixture with covariance_type='full',
+    with reg_covar added to each covariance diagonal; the fit is its own and can give
+    different parameters. It initialises from scipy kmeans2 (minit='points') seeded with
+    np.random.RandomState(random_state), stops when the total (not per-sample)
+    log-likelihood changes by less than tol, and computes responsibilities from densities
+    without log-sum-exp, so a point far from every component gets all-zero
+    responsibilities instead of ones that sum to one.
     """
     means, covariances, weights = _initialize_gmm(x, n_components, random_state)
 
@@ -197,7 +208,8 @@ class Params:
         return pd.concat([probs, means, std], axis=1, sort=False)
 
     def get_all_params(self, columns: List[str], vol_scaler: float = 1.0
-                       ) -> Tuple[pd.DataFrame, pd.DataFrame, Union[pd.Series, Dict[str, pd.DataFrame]]]:
+                       ) -> Tuple[pd.DataFrame, pd.DataFrame,
+                                  Union[pd.Series, Dict[str, pd.DataFrame]]]:
         """Per-component means, vols and correlations over the named features.
 
         Args:
@@ -215,13 +227,15 @@ class Params:
         vols = []
         for idx, column in enumerate(columns):
             means.append(pd.Series([vol_scaler*mean[idx] for mean in self.means], name=column))
-            vols.append(pd.Series([np.sqrt(vol_scaler)*np.sqrt(covar[idx][idx]) for covar in self.covars], name=column))
+            vols.append(pd.Series([np.sqrt(vol_scaler)*np.sqrt(covar[idx][idx])
+                                   for covar in self.covars], name=column))
         means = pd.concat(means, axis=1, sort=False)
         means.index.name = 'cluster'
         vols = pd.concat(vols, axis=1, sort=False)
         vols.index.name = 'cluster'
         if len(columns) == 2:
-            corrs = pd.Series([covar[0][1] / np.sqrt(covar[0][0]*covar[1][1]) for covar in self.covars])
+            corrs = pd.Series([covar[0][1] / np.sqrt(covar[0][0]*covar[1][1])
+                               for covar in self.covars])
         else:
             corrs = {}
             for idx, covar in enumerate(self.covars):
@@ -304,8 +318,10 @@ def plot_mixure1(x: np.ndarray,
 
     # create necessary things to plot
     x_axis = np.linspace(1.25*np.min(x), 1.25*np.max(x), 100)
-    y_axis0 = ss.norm.pdf(x_axis, float(mean[0][0]), np.sqrt(float(covs[0][0][0]))) * weights[0]  # 1st gaussian
-    y_axis1 = ss.norm.pdf(x_axis, float(mean[1][0]), np.sqrt(float(covs[1][0][0]))) * weights[1]  # 2nd gaussian
+    y_axis0 = ss.norm.pdf(x_axis, float(mean[0][0]),
+                          np.sqrt(float(covs[0][0][0]))) * weights[0]  # 1st gaussian
+    y_axis1 = ss.norm.pdf(x_axis, float(mean[1][0]),
+                          np.sqrt(float(covs[1][0][0]))) * weights[1]  # 2nd gaussian
     ax.hist(x, 10, density=True, color='lightblue')
     ax.plot(x_axis, y_axis0, lw=3, c='C0')
     ax.plot(x_axis, y_axis1, lw=3, c='C1')

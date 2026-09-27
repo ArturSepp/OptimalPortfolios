@@ -24,30 +24,35 @@ def copy_universe_data_with_unsmoothed_prices(
         max_value_for_beta: Optional[float] = 0.75,
         is_log_returns: bool = True,
 ) -> UniverseData:
-    """Return a new UniverseData with AR(1)-unsmoothed prices for selected assets.
+    """Return a new UniverseData with AR-unsmoothed prices for selected assets.
 
     Illiquid or appraisal-valued assets (e.g. private equity, real estate)
     exhibit serial correlation that understates true volatility. This function
-    applies AR(1) unsmoothing to the flagged assets while leaving the rest
-    unchanged, then wraps the result in a fresh UniverseData instance.
+    applies qis.compute_ar_unsmoothed_prices to the flagged assets while leaving
+    the rest unchanged, then wraps the result in a fresh UniverseData instance.
+    It does not pass ar_order, so qis applies its default rolling AR(2) filter,
+    not AR(1); for AR(1), call qis.compute_ar_unsmoothed_prices with ar_order=1.
 
     Args:
         universe_data: Source universe (not mutated).
         assets_for_unsmoothing: Boolean Series indexed by asset names.
             True = apply unsmoothing to that asset.
-        freq: Return frequency for AR(1) estimation.
+        freq: Return frequency for the AR estimation.
             Either a single pandas offset string (e.g. 'QE') applied to all
             assets, or a per-asset Series of offset strings.
         unsmooth_span: EWMA span (in periods) for rolling beta estimation.
         mean_adj_type: Method for mean-adjusting returns before estimation.
         warmup_period: Number of initial periods excluded from estimation.
-        max_value_for_beta: Upper bound on estimated AR(1) coefficient;
-            prevents over-correction when autocorrelation is very high.
+        max_value_for_beta: Upper bound on the sum of the estimated AR
+            coefficients; prevents over-correction when autocorrelation is very high.
         is_log_returns: If True, compute log-returns; otherwise simple returns.
 
     Returns:
         A new UniverseData with identical metadata and group loadings,
-        but with unsmoothed prices for the flagged assets.
+        but with unsmoothed prices for the flagged assets. The copy keeps
+        metadata_fields, equity_ac_id, bond_ac_id, pe_asset_id and
+        validate_on_init, but not liquidity_ac_id, which resets to its default
+        'Liquidity'. When no asset is flagged, the input universe itself is returned.
 
     Raises:
         ValueError: If assets_for_unsmoothing or freq index does not match

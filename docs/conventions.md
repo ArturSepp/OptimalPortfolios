@@ -209,12 +209,12 @@ in [choosing an objective](optimization_module_readme.md).
 | Minimum variance, maximum diversification | Covariance |
 | Risk budgeting, including equal risk contributions | Covariance and optional risk budgets |
 | Hierarchical risk parity | Covariance and a linkage; no `Constraints` |
-| Quadratic utility, maximum Sharpe ratio | Covariance and expected returns, which the dispatcher estimates from prices |
-| CARA utility under Gaussian mixtures | Prices only; it fits its own mixture and ignores the covariance |
-| Strategic target return or target volatility | Covariance, expected returns and targets; optional benchmark |
+| [Quadratic utility, maximum Sharpe ratio](mean_variance_objectives.md) | Covariance and expected returns, which the dispatcher estimates from prices |
+| [CARA utility under Gaussian mixtures](cara_gaussian_mixture.md) | Prices only; it fits its own mixture and ignores the covariance |
+| [Strategic target return or target volatility](strategic_allocation_targets.md) | Covariance, expected returns and targets; optional benchmark |
 | Minimum tracking error | Covariance and a benchmark |
-| Tactical alpha over tracking error | Covariance, alphas, a benchmark and a tracking-error limit |
-| Tactical alpha with a target return | Covariance, alphas, yields and targets; optional benchmark |
+| [Tactical alpha over tracking error](alpha_over_tracking_error.md) | Covariance, alphas, a benchmark and a tracking-error limit |
+| [Tactical alpha with a target return](alpha_over_tracking_error.md#the-yield-target-variant) | Covariance, alphas, yields and targets; optional benchmark |
 | Overlay with a tail floor | Covariance, excess means, a fixed core and a linear floor, through the maximum-Sharpe solver |
 
 [Choosing an objective](optimization_module_readme.md) maps each objective to its rolling,
@@ -237,7 +237,7 @@ single-date and numerical entry points.
 - **CARA utility.** Constant absolute risk aversion, $-\exp(-\gamma W)$ for wealth $W$; its
   expectation has a closed form under a Gaussian mixture.
 - **CMA.** Capital market assumption: a forward-looking expected return, volatility or
-  correlation used as a strategic input.
+  correlation used as a strategic input; see the [MATF-CMA case study](app_cma_strategic_allocation.md).
 - **Diversification ratio.** $\sum_i w_i \sigma_i / \sigma(w)$, the weighted average asset
   volatility over the portfolio volatility.
 - **Drift.** The change of weights between decisions caused by relative price moves.
@@ -249,8 +249,8 @@ single-date and numerical entry points.
   that FactorLasso estimates for the factor covariance.
 - **Freezing.** Pinning an existing position so that a solve cannot change it.
 - **GMM.** Gaussian mixture model, fitted to returns for the CARA objective.
-- **HRP.** Hierarchical risk parity: recursive bisection of a cluster tree with inverse-variance
-  splits.
+- **HRP.** [Hierarchical risk parity](hierarchical_risk_parity_and_cluster_budgets.md): recursive bisection of a cluster tree with
+  inverse-variance splits.
 - **MDP.** Maximum diversification portfolio: the weights that maximise the diversification
   ratio.
 - **Overlay.** A sleeve optimised on top of a fixed core exposure.
@@ -259,7 +259,8 @@ single-date and numerical entry points.
 - **Risk contribution.** $\mathrm{RC}_i$; the contributions sum to $\sigma(w)$.
 - **SAA, TAA.** Strategic and tactical asset allocation. SAA maps expected returns and return
   or volatility targets to a long-run allocation; TAA takes alpha-driven active positions
-  against a benchmark under a tracking-error budget.
+  against a benchmark under a tracking-error budget; see
+  [tactical allocation](alpha_over_tracking_error.md).
 - **Tail floor.** A minimum on a supplied linear characteristic of the overlay, used as a proxy
   for downside protection; it is not an expected shortfall.
 - **TE, TRE.** Ex-ante tracking error $\mathrm{TE}(w)$; function names write it `tre`.
@@ -273,4 +274,6 @@ single-date and numerical entry points.
 - [Covariance estimators](covariance_estimators.md) and [factor covariance with HCGL](factor_covariance_hcgl.md)
 - [Ex-ante risk contributions and betas](portfolio_risk_analytics.md)
 - [Solver numerics and outcomes](solver_numerics_and_outcomes.md)
+- [Universe data and appraisal unsmoothing](universe_data_and_unsmoothing.md)
+- [Implied risk budgets](implied_risk_budgets.md) and [hierarchical risk parity and cluster risk budgets](hierarchical_risk_parity_and_cluster_budgets.md)
 - [qis notation and conventions](https://quantinveststrats.readthedocs.io/en/stable/notation_and_conventions.html)

@@ -9,19 +9,25 @@
   "pages": {
     "README.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "M5b utility source migration and gallery integration. Local verification is recorded in agents/DOCS_M5B_GALLERY_IMPLEMENTATION_REPORT.md; GitHub/VS Code review remains pending, so full adoption is pending."
+      "status": "adopted",
+      "review": "R9 (2026-09-27): adopted. Passes the adopted-page checks of tools/check_docs.py (form, links, math, ownership); the GitHub Markdown API and VS Code renderings agree; names in code checked against the package source and the installed qis and factorlasso. Stale fact fixed: the risk-cluster row now names factorlasso.cluster_lineage and marks the risk_labelling aliases deprecated. The README reduction (F11) and the citation strings (D4) are left for the owner."
+    },
+    "docs/alpha_over_tracking_error.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/alpha_over_tracking_error.py",
+      "review": "R7 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M18. Closed-form active weights proved and asserted; the default turnover penalty (Pitfall). Teaching exhibit alpha_over_te_active_weights.png."
     },
     "docs/alphas_module_readme.md": {
       "form": "methodology",
       "status": "adopted",
-      "review": "R3c (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Title \"Alpha signals\", with both old title anchors kept. The beta-based signals are point in time (7.8.1.dev1) and asserted so; the old strict expected failures are gone. Teaching exhibit alpha_scoring_cross_section_vs_cluster.png.",
+      "review": "R3c (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Title \"Alpha signals\", with both old title anchors kept. The beta-based signals are point in time (7.8.1.dev1) and asserted so; the old strict expected failures are gone. Teaching exhibit alpha_scoring_cross_section_vs_cluster.png. R7 (2026-09-27): the profiling and diagnostics subsections moved to signal_diagnostics_and_profiling, leaving pointers; rolling EWMA means stay under their own H3. Rechecked with the same checks.",
       "example": "examples/docs/alphas_module_readme.py"
     },
     "docs/analytics_gallery.md": {
       "form": "utility",
       "status": "adopted",
-      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors)."
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). R9 (2026-09-27): the chooser lists all 31 exhibits and the introduction counts previews and teaching exhibits."
     },
     "docs/api.rst": {
       "form": "api",
@@ -29,11 +35,29 @@
       "reason": "Tracked RST entry; docs/conf.py generates its reference body into docs/_generated from the symbols section.",
       "review": "R1 (2026-09-27): the flat hand-kept list of 138 entries is replaced by a body generated at build time from the symbols section, grouped by owning page, with parameter maps. Object URLs under generated/ are kept."
     },
+    "docs/app_cma_strategic_allocation.md": {
+      "form": "case_study",
+      "status": "adopted",
+      "example": "examples/docs/app_cma_strategic_allocation.py",
+      "review": "R8 (2026-09-27): new case study written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the case-study form, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. A3. Synthetic workflow; the MATF paper cited only in its public SSRN version (D2), no paper data or result; D4 open. Teaching exhibit cma_decomposition_saa.png."
+    },
+    "docs/app_crypto_allocation.md": {
+      "form": "case_study",
+      "status": "adopted",
+      "example": "examples/docs/app_crypto_allocation.py",
+      "review": "R8 (2026-09-27): new case study written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the case-study form, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. A2. Paper design and results by section; current API on the frozen 2023 panel with ETF-derived columns only (owner decision D3). Paper-derived exhibit crypto_allocation_by_method.png."
+    },
     "docs/app_rosaa_multi_asset_allocation.md": {
       "form": "case_study",
       "status": "adopted",
       "example": "examples/docs/app_rosaa_multi_asset_allocation.py",
       "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). R2 pilot, reviewed by the owner."
+    },
+    "docs/cara_gaussian_mixture.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/cara_gaussian_mixture.py",
+      "review": "R6 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M16. Closed-form objective, one-component reduction and the in-house EM fit asserted; the annualisation of fitted components (Pitfall). Teaching exhibit cara_mixture_allocation.png."
     },
     "docs/constraints.md": {
       "form": "methodology",
@@ -59,13 +83,25 @@
     "docs/examples_readme.md": {
       "form": "utility",
       "status": "adopted",
-      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Lockfile note replaced by a link to the installation guide; the router rewrite follows in R9."
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Lockfile note replaced by a link to the installation guide; R9 (2026-09-27): \"Examples and recipes\", with a task table mapping 28 tasks to their article, canonical script and standalone examples by lane; stale rows corrected."
     },
     "docs/factor_covariance_hcgl.md": {
       "form": "methodology",
       "status": "adopted",
       "example": "examples/docs/factor_covariance_hcgl.py",
       "review": "R4 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M05. Takes the factor sections of covariance_estimators. Teaching exhibit factor_covariance_variance_split.png."
+    },
+    "docs/hierarchical_risk_parity_and_cluster_budgets.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/hierarchical_risk_parity_and_cluster_budgets.py",
+      "review": "R5 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M12. Takes the group-budget, HRP and partially classified group sections of risk_budgeting. Teaching exhibit hrp_vs_erc_weights.png."
+    },
+    "docs/implied_risk_budgets.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/implied_risk_budgets.py",
+      "review": "R5 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M11. Hold rule for hedging assets stated and asserted. Teaching exhibit implied_budgets_round_trip.png."
     },
     "docs/incomplete_histories.md": {
       "form": "methodology",
@@ -76,7 +112,7 @@
     "docs/index.md": {
       "form": "utility",
       "status": "adopted",
-      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Inline subscripts rewritten so that GitHub renders the construction formula paragraph."
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Inline subscripts rewritten so that GitHub renders the construction formula paragraph. R9 (2026-09-27): the landing table links every article, the case studies included."
     },
     "docs/installation.md": {
       "form": "utility",
@@ -88,6 +124,12 @@
       "status": "adopted",
       "example": "examples/docs/maximum_diversification.py",
       "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). R2 pilot, reviewed by the owner; thin spaces removed and an inline > written as \\gt for GitHub."
+    },
+    "docs/mean_variance_objectives.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/mean_variance_objectives.py",
+      "review": "R6 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M14. Closed forms and the two-fund utility mix asserted; the Charnes-Cooper route and its volatility-cap Pitfall asserted. Teaching exhibit efficient_frontier_objectives.png."
     },
     "docs/minimum_tracking_error.md": {
       "form": "methodology",
@@ -137,7 +179,7 @@
     "docs/risk_budgeting.md": {
       "form": "methodology",
       "status": "adopted",
-      "review": "R3c (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Solver routing stated as the code does it; new binding-cap block. Teaching exhibit risk_budgeting_contributions.png. The HRP section moves to M12 in R5.",
+      "review": "R3c (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Solver routing stated as the code does it; new binding-cap block. Teaching exhibit risk_budgeting_contributions.png. R5 (2026-09-27): the group-budget, HRP and partially classified group sections moved to hierarchical_risk_parity_and_cluster_budgets, leaving pointer sections and the linked anchors. Rechecked with the same checks.",
       "example": "examples/docs/risk_budgeting.py"
     },
     "docs/rolling_backtests.md": {
@@ -152,16 +194,28 @@
       "review": "R3b (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Mermaid diagram of the six-file workflow; the script runs from a checkout, in the network lane.",
       "example": "examples/docs/rolling_factor_covar_from_csv.py"
     },
+    "docs/signal_diagnostics_and_profiling.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/signal_diagnostics_and_profiling.py",
+      "review": "R7 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M09. Takes the profiling and diagnostics subsections of alphas_module_readme. Rank IC of a Gaussian score against qis; the string horizon labels (Pitfall). Teaching exhibit alpha_rank_quantiles.png."
+    },
     "docs/software_design.md": {
       "form": "utility",
       "status": "adopted",
-      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Drift-helper link corrected to utils/weights_drift.py; the Mermaid diagrams follow in R9."
+      "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Drift-helper link corrected to utils/weights_drift.py; R9 (2026-09-27): the ASCII workflow became a Mermaid data-flow diagram, and a Mermaid module diagram drawn from an AST scan of the imports was added; the state-feedback paragraph, the factor estimator inputs and the entry-point list were corrected against source."
     },
     "docs/solver_numerics_and_outcomes.md": {
       "form": "methodology",
       "status": "adopted",
       "example": "examples/docs/solver_numerics_and_outcomes.py",
       "review": "R4 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M21. Takes the solver-outcome sections of the router; solve-and-fallback diagram. Teaching exhibit covariance_conditioning.png."
+    },
+    "docs/strategic_allocation_targets.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/strategic_allocation_targets.py",
+      "review": "R6 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M15. Frontier duality proved and asserted on the packaged fixture; the utility form of the target-volatility solver ignores target_vol (Pitfall). Teaching exhibit saa_target_duality.png."
     },
     "docs/stress_testing_with_options.md": {
       "form": "methodology",
@@ -175,74 +229,29 @@
       "review": "R3d (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the excerpt rule and the GitHub math rules (and the convention card on methodology pages); the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. No-trade threshold of the L1 penalty stated and asserted. Teaching exhibit turnover_penalty_tradeoff.png. The harness is retired.",
       "example": "examples/docs/turnover_and_transaction_costs.py"
     },
+    "docs/universe_data_and_unsmoothing.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/universe_data_and_unsmoothing.py",
+      "review": "R5 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M03. The AR(2) default of the unsmoothing copy and the identifiers lost in transforms are stated and asserted. Teaching exhibit unsmoothing_autocorrelation.png, with autocorrelation and volatility on separate axes."
+    },
     "src/optimalportfolios/alphas/README.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "M4 contributor-guide migration verified on 2026-09-14: the module map, named-panel profiling API, carry import levels, example link and development workflow are reconciled with current source. One offline example and two supplied-context fragments pass; classic momentum also matches an independent price-endpoint reference. All 327 existing focused tests pass with six unchanged strict default-beta timing expected failures. The documentation checker, strict HTML and scoped linkcheck (seven working URLs) pass. A temporary C-local Sphinx include was visually reviewed: three tables, five preserved legacy anchors, 216 local-link occurrences and 26 matching downloads from 24 source files. Production code, fixtures, exports and seeds are unchanged. GitHub/VS Code review remains pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R9 (2026-09-27): adopted. Passes the adopted-page checks of tools/check_docs.py (form, links, math, ownership); the GitHub Markdown API and VS Code renderings agree; names in code checked against the package source and the installed qis and factorlasso. The selector's limitations link the signal diagnostics page since R7."
     },
     "src/optimalportfolios/covar_estimation/README.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "M4 contributor-guide migration verified on 2026-09-14: current module/export ownership, container fields, annualization, QIS risk/report integration and runner prerequisites are documented. Duplicated formulas now link to the authoritative methodology; all 24 legacy headings/anchors are retained. Four sequential offline examples and one optional plotting fragment pass, with independent EWMA and factor-component references. All 195 existing focused tests, the source checker and strict Sphinx HTML pass. Scoped linkcheck verifies nine working URLs with one established SSRN exception. A temporary C-local Sphinx include was visually reviewed: seven tables, 245 local-link occurrences and 22 byte-matching source downloads. Production code, fixtures, seeds and public exports are unchanged. GitHub/VS Code review remains pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R9 (2026-09-27): adopted. Passes the adopted-page checks of tools/check_docs.py (form, links, math, ownership); the GitHub Markdown API and VS Code renderings agree; names in code checked against the package source and the installed qis and factorlasso. Factor links point to the factor covariance page since R4."
     },
     "src/optimalportfolios/optimization/constraints/README.md": {
       "form": "utility",
-      "status": "pending",
-      "review": "M4 contributor-guide migration verified on 2026-09-14: attribution and QIS ownership/citation, public import levels, aligned input ordering, frozen-policy semantics, backend return values and compliance limitations now follow current source. The original residual inputs are preserved; all three Python blocks pass offline, with independent turnover and diagonal-covariance tracking-error references and reorder/freeze checks. All 334 existing focused tests, the documentation checker, strict HTML and default offline SCS development runner pass. A temporary C-local Sphinx include retains all 12 legacy anchors; its four tables, 226 local-link occurrences and 24 downloads from 22 source files were checked. Scoped strict linkcheck verifies five working URLs after rate-limit retries, with no ignored URLs. Production code, API exports, fixtures and seeds are unchanged. GitHub/VS Code rendering remains pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R9 (2026-09-27): adopted. Passes the adopted-page checks of tools/check_docs.py (form, links, math, ownership); the GitHub Markdown API and VS Code renderings agree; names in code checked against the package source and the installed qis and factorlasso. No change needed."
     }
   },
-  "planned": {
-    "docs/universe_data_and_unsmoothing.md": {
-      "form": "methodology",
-      "title": "Universe data and appraisal unsmoothing",
-      "stage": "R5"
-    },
-    "docs/signal_diagnostics_and_profiling.md": {
-      "form": "methodology",
-      "title": "Signal diagnostics and alpha-rank portfolios",
-      "stage": "R7"
-    },
-    "docs/implied_risk_budgets.md": {
-      "form": "methodology",
-      "title": "Implied risk budgets from target weights",
-      "stage": "R5"
-    },
-    "docs/hierarchical_risk_parity_and_cluster_budgets.md": {
-      "form": "methodology",
-      "title": "Hierarchical risk parity and cluster risk budgets",
-      "stage": "R5"
-    },
-    "docs/mean_variance_objectives.md": {
-      "form": "methodology",
-      "title": "Minimum variance, quadratic utility and maximum Sharpe",
-      "stage": "R6"
-    },
-    "docs/strategic_allocation_targets.md": {
-      "form": "methodology",
-      "title": "Strategic allocation: target return and target volatility",
-      "stage": "R6"
-    },
-    "docs/cara_gaussian_mixture.md": {
-      "form": "methodology",
-      "title": "CARA utility under Gaussian mixtures",
-      "stage": "R6"
-    },
-    "docs/alpha_over_tracking_error.md": {
-      "form": "methodology",
-      "title": "Tactical allocation: alpha over tracking error and yield targets",
-      "stage": "R7"
-    },
-    "docs/app_crypto_allocation.md": {
-      "form": "case_study",
-      "title": "Cryptocurrencies in diversified portfolios",
-      "stage": "R8"
-    },
-    "docs/app_cma_strategic_allocation.md": {
-      "form": "case_study",
-      "title": "From capital market assumptions to strategic allocation (MATF-CMA)",
-      "stage": "R8"
-    }
-  },
+  "planned": {},
   "symbols": {
     "docs/universe_data_and_unsmoothing.md": [
       "UniverseData",

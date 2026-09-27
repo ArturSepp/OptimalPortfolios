@@ -65,8 +65,11 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
     Compute rolling alpha-maximising portfolios with tracking error control.
 
     Args:
-        prices: Asset price panel. Used for column alignment.
-        alphas: Alpha signals per asset. Forward-filled. None for pure tracking.
+        prices: Asset price panel, used for column alignment and, when
+            ``use_drifted_weights_0`` is set, to drift the previous weights to each date.
+        alphas: Alpha signals per asset. Forward-filled. ``None`` gives pure
+            benchmark tracking only in utility mode (``UTILITY_CONSTRAINTS``); in
+            the default forced mode it raises ``AttributeError``.
         constraints: Portfolio constraints including TE budget.
         benchmark_weights: SAA benchmark. Series (static) or DataFrame (time-varying).
         covar_dict: Pre-computed covariance matrices keyed by rebalancing date.
@@ -87,10 +90,12 @@ def rolling_maximise_alpha_over_tre(prices: pd.DataFrame,
         alphas = alphas.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)
 
     if isinstance(benchmark_weights, pd.DataFrame):
-        benchmark_weights = benchmark_weights.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)
+        benchmark_weights = benchmark_weights.reindex(index=rebalancing_dates,
+                                                      method='ffill').fillna(0.0)
     else:
         benchmark_weights = benchmark_weights.to_frame(
-            name=rebalancing_dates[0]).T.reindex(index=rebalancing_dates, method='ffill').fillna(0.0)
+            name=rebalancing_dates[0]).T.reindex(index=rebalancing_dates,
+                                                 method='ffill').fillna(0.0)
 
     if rebalancing_indicators is not None:
         rebalancing_indicators = rebalancing_indicators.reindex(index=rebalancing_dates).fillna(0.0)
@@ -167,10 +172,14 @@ def wrapper_maximise_alpha_over_tre(pd_covar: pd.DataFrame,
 
     Args:
         pd_covar: Covariance matrix (N x N) as DataFrame.
-        alphas: Alpha signal per asset. None for pure tracking.
+        alphas: Alpha signal per asset. ``None`` is accepted only by the utility
+            path (``UTILITY_CONSTRAINTS``, ``cvx_maximise_tre_utility``), where it
+            gives pure benchmark tracking; the forced path raises
+            ``AttributeError`` on ``None``.
         benchmark_weights: SAA benchmark weights.
         constraints: Portfolio constraints including TE budget.
-        weights_0: Previous-period weights for warm-start / turnover.
+        weights_0: Previous-period weights: the turnover baseline and the
+            fallback. The solver is not warm-started from them.
         rebalancing_indicators: Binary series for position freezing.
         optimiser_config: Solver configuration.
         context: Rebalance label included in solver diagnostics.

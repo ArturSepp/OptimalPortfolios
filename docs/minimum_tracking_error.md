@@ -409,6 +409,7 @@ requires a separate return-history analysis.
 ## See also
 
 - [Constraints and solver contracts](constraints.md)
+- [Tactical allocation: alpha over tracking error and yield targets](alpha_over_tracking_error.md)
 - [Rolling backtests](rolling_backtests.md)
 - [Covariance estimators](covariance_estimators.md)
 - [Risk budgeting](risk_budgeting.md)

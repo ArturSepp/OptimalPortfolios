@@ -2,8 +2,10 @@
 Portfolio optimisation using quadratic objective functions.
 
 Implements minimum variance and quadratic utility (mean-variance) portfolio
-optimisation via CVXPY, with support for rolling rebalancing, NaN-aware
-covariance filtering, and vol-targeting via bisection.
+optimisation via CVXPY, with support for rolling rebalancing and NaN-aware
+covariance filtering. The module does no volatility targeting: a
+``max_target_portfolio_vol_an`` cap on ``Constraints`` enters only as a hard
+constraint row.
 
 Supported objectives:
     - MIN_VARIANCE: min w' Σ w  s.t. constraints
@@ -43,16 +45,19 @@ def rolling_quadratic_optimisation(prices: pd.DataFrame,
                                    constraints: Constraints,
                                    covar_dict: Dict[pd.Timestamp, pd.DataFrame],
                                    inclusion_indicators: Optional[pd.DataFrame] = None,
-                                   portfolio_objective: PortfolioObjective = PortfolioObjective.MIN_VARIANCE,
+                                   portfolio_objective: PortfolioObjective =
+                                       PortfolioObjective.MIN_VARIANCE,
                                    expected_returns: pd.DataFrame = None,  # QUADRATIC_UTILITY only
                                    carra: float = 1.0,
-                                   optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True)
+                                   optimiser_config: OptimiserConfig = OptimiserConfig(
+                                       apply_total_to_good_ratio=True)
                                    ) -> pd.DataFrame:
     """
     Compute rolling quadratic portfolio optimisation at each rebalancing date.
 
     Args:
-        prices: Asset price panel. Used for column alignment.
+        prices: Asset price panel, used for column alignment and, when
+            ``use_drifted_weights_0`` is set, to drift the previous weights to each date.
         constraints: Portfolio constraints.
         covar_dict: Pre-computed covariance matrices keyed by rebalancing date.
         inclusion_indicators: Optional binary DataFrame for asset eligibility.
@@ -77,7 +82,8 @@ def rolling_quadratic_optimisation(prices: pd.DataFrame,
 
     if inclusion_indicators is not None:
         inclusion_indicators1 = inclusion_indicators.reindex(columns=tickers)
-        inclusion_indicators1 = inclusion_indicators1.reindex(index=rebalancing_schedule, method='ffill')
+        inclusion_indicators1 = inclusion_indicators1.reindex(index=rebalancing_schedule,
+                                                              method='ffill')
     else:
         inclusion_indicators1 = pd.DataFrame(1.0, index=rebalancing_schedule, columns=tickers)
 
@@ -117,11 +123,13 @@ def rolling_quadratic_optimisation(prices: pd.DataFrame,
 def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
                                    constraints: Constraints,
                                    inclusion_indicators: pd.Series = None,
-                                   portfolio_objective: PortfolioObjective = PortfolioObjective.MIN_VARIANCE,
+                                   portfolio_objective: PortfolioObjective =
+                                       PortfolioObjective.MIN_VARIANCE,
                                    means: pd.Series = None,  # required for QUADRATIC_UTILITY
                                    weights_0: pd.Series = None,
                                    carra: float = 1.0,
-                                   optimiser_config: OptimiserConfig = OptimiserConfig(apply_total_to_good_ratio=True),
+                                   optimiser_config: OptimiserConfig = OptimiserConfig(
+                                       apply_total_to_good_ratio=True),
                                    context: str = ''
                                    ) -> Tuple[pd.Series, OptimizationOutcome]:
     """
@@ -134,7 +142,8 @@ def wrapper_quadratic_optimisation(pd_covar: pd.DataFrame,
         portfolio_objective: MIN_VARIANCE or QUADRATIC_UTILITY.
         means: Expected returns per asset. Required for QUADRATIC_UTILITY;
             filtered alongside the covariance for NaN/excluded assets.
-        weights_0: Previous-period weights for warm-start / fallback.
+        weights_0: Previous-period weights: the turnover baseline and the
+            fallback. The solver is not warm-started from them.
         carra: Risk aversion coefficient for QUADRATIC_UTILITY.
         optimiser_config: Solver configuration.
         context: Rebalance label included in solver diagnostics.

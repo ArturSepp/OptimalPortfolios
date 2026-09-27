@@ -174,7 +174,9 @@ The candidate `[0.60, 0.30]` passes: total exposure is `0.90`, A is in `[0.10, 0
 
 For Charnes--Cooper transformations, `exposure_scaler=k` scales exposure, per-name boxes, and
 group-allocation rows. Other rows are not automatically homogenized; the scaler is an internal
-solver feature, not a general way to lever every constraint family.
+solver feature, not a general way to lever every constraint family. The
+[mean-variance objectives](mean_variance_objectives.md) page shows a volatility cap that makes the
+maximum-Sharpe solve infeasible for this reason.
 
 #### Constructor validation
 
@@ -192,7 +194,9 @@ ultimately use NumPy arrays, which cannot recover a misplaced pandas label.
 
 #### Minimum target return
 
-The target-return floor is linear and remains hard in both enforcement modes:
+The target-return floor is linear and remains hard in both enforcement modes (the
+return-floor solver that uses it is described in
+[strategic allocation: target return and target volatility](strategic_allocation_targets.md)):
 
 $$
 \mu^\top w \ge r_{target}.
@@ -1121,6 +1125,7 @@ Before running a constrained optimizer:
 ## See also
 
 - [Minimum tracking error](minimum_tracking_error.md)
+- [Tactical allocation: alpha over tracking error and yield targets](alpha_over_tracking_error.md)
 - [Risk budgeting](risk_budgeting.md)
 - [Turnover and transaction costs](turnover_and_transaction_costs.md)
 - [Incomplete histories and frozen positions](incomplete_histories.md)

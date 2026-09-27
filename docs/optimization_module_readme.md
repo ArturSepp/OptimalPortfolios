@@ -46,11 +46,12 @@ flowchart LR
 ```
 
 In words: without expected returns, choose minimum tracking error when a benchmark is given and
-otherwise a risk-based objective: minimum variance, risk budgeting, hierarchical risk parity or
+otherwise a risk-based objective: minimum variance, [risk budgeting](risk_budgeting.md),
+[hierarchical risk parity](hierarchical_risk_parity_and_cluster_budgets.md) or
 [maximum diversification](maximum_diversification.md); with expected returns or alphas, choose the
-tactical solver against a benchmark, the strategic solvers for a return or volatility target, and
-otherwise maximum Sharpe, quadratic utility or, when returns are fat-tailed, CARA utility under a
-Gaussian mixture. The [conventions page](conventions.md#objectives-and-their-inputs) lists the
+tactical solver against a benchmark, the [strategic solvers](strategic_allocation_targets.md) for a return or
+volatility target, and otherwise [maximum Sharpe or quadratic utility](mean_variance_objectives.md) or, when
+returns are fat-tailed, [CARA utility under a Gaussian mixture](cara_gaussian_mixture.md). The [conventions page](conventions.md#objectives-and-their-inputs) lists the
 exact inputs of each, and the [dispatch flow](#dispatch-flow) below maps them to functions. A
 fixed core with an optimised sleeve is the [overlay tail floor](overlay_tail_floor.md).
 
@@ -285,16 +286,16 @@ definition. The dispatcher's log-return means are a modelling input, not a repor
 
 | Family | Owning file | Backend and important qualification |
 |---|---|---|
-| Minimum variance / quadratic utility | [quadratic.py](../src/optimalportfolios/optimization/general/quadratic.py) | CVXPY with consistent return/covariance units. |
-| Maximum Sharpe | [max_sharpe.py](../src/optimalportfolios/optimization/general/max_sharpe.py) | Fixed net exposure uses a convex transformed problem; variable net exposure uses SLSQP. |
+| [Minimum variance / quadratic utility](mean_variance_objectives.md) | [quadratic.py](../src/optimalportfolios/optimization/general/quadratic.py) | CVXPY with consistent return/covariance units. |
+| [Maximum Sharpe](mean_variance_objectives.md) | [max_sharpe.py](../src/optimalportfolios/optimization/general/max_sharpe.py) | Fixed net exposure uses a convex transformed problem; variable net exposure uses SLSQP. |
 | Maximum diversification | [max_diversification.py](../src/optimalportfolios/optimization/general/max_diversification.py) | SLSQP ratio optimisation; a weight vector is not proof of a global optimum. |
 | Risk budgeting | [risk_budgeting.py](../src/optimalportfolios/optimization/risk_allocation/risk_budgeting.py) | Internal CCD/ADMM; constrained risk contributions can miss requested budgets. |
-| CARA mixture | [carra_mixture.py](../src/optimalportfolios/optimization/general/carra_mixture.py) | SLSQP on the fixed mixture's exponential utility; rolling also estimates the mixture. |
+| [CARA mixture](cara_gaussian_mixture.md) | [carra_mixture.py](../src/optimalportfolios/optimization/general/carra_mixture.py) | SLSQP on the fixed mixture's exponential utility; rolling also estimates the mixture. |
 | Minimum tracking error | [minimum_tracking_error.py](../src/optimalportfolios/optimization/general/minimum_tracking_error.py) | Direct CVXPY entry point; not in the dispatcher enum. |
-| SAA return floor | [min_variance_target_return.py](../src/optimalportfolios/optimization/saa/min_variance_target_return.py) | Minimise variance or benchmark-relative variance with a return floor. |
-| SAA volatility budget | [max_return_target_vol.py](../src/optimalportfolios/optimization/saa/max_return_target_vol.py) | Maximise expected return; hard budget and utility formulations differ. |
-| TAA alpha/TE | [maximise_alpha_over_tre.py](../src/optimalportfolios/optimization/taa/maximise_alpha_over_tre.py) | Hard mode maximises active alpha under a TE cap; it does not maximise an alpha/TE ratio. |
-| TAA alpha/yield | [maximise_alpha_with_target_yield.py](../src/optimalportfolios/optimization/taa/maximise_alpha_with_target_yield.py) | Public function suffix is `with_target_return`; `yields` supplies the return-floor vector. |
+| [SAA return floor](strategic_allocation_targets.md) | [min_variance_target_return.py](../src/optimalportfolios/optimization/saa/min_variance_target_return.py) | Minimise variance or benchmark-relative variance with a return floor. |
+| [SAA volatility budget](strategic_allocation_targets.md) | [max_return_target_vol.py](../src/optimalportfolios/optimization/saa/max_return_target_vol.py) | Maximise expected return; hard budget and utility formulations differ. |
+| [TAA alpha/TE](alpha_over_tracking_error.md) | [maximise_alpha_over_tre.py](../src/optimalportfolios/optimization/taa/maximise_alpha_over_tre.py) | Hard mode maximises active alpha under a TE cap; it does not maximise an alpha/TE ratio. |
+| [TAA alpha/yield](alpha_over_tracking_error.md#the-yield-target-variant) | [maximise_alpha_with_target_yield.py](../src/optimalportfolios/optimization/taa/maximise_alpha_with_target_yield.py) | Public function suffix is `with_target_return`; `yields` supplies the return-floor vector. |
 
 ### General portfolio examples
 
@@ -335,8 +336,9 @@ raw_outcome = opt.cvx_quadratic_optimisation(
 The three CVXPY wrapper examples produce outcome tuples; risk budgeting, diversification and
 CARA produce Series. Equal risk budgets and diversification both give inverse-volatility weights
 on this particular diagonal, unconstrained-interior fixture. They need not agree when covariance
-or constraints change. See [risk budgeting](risk_budgeting.md) and
-[minimum tracking error](minimum_tracking_error.md) for the full methodologies.
+or constraints change. See [risk budgeting](risk_budgeting.md),
+[minimum tracking error](minimum_tracking_error.md) and [alpha over tracking error](alpha_over_tracking_error.md)
+for the full methodologies.
 
 > **Insight.** The objective alone moves the allocation, even with identical inputs. Minimum
 > variance weights by inverse variance and holds 50.9% in Bond A and 5.7% in Gold; equal risk
@@ -347,7 +349,8 @@ or constraints change. See [risk budgeting](risk_budgeting.md) and
 Expected returns and the yield floor are annual decimals here. The volatility budget 0.12 and
 TE budget 0.03 mean annual volatility of 12% and 3%, because the supplied covariance is annual.
 Alpha scores are separate, dimensionless inputs. The utility penalty's coefficient has to be
-interpreted with their scale and the risk measure.
+interpreted with their scale and the risk measure; [signal diagnostics](signal_diagnostics_and_profiling.md) relates the
+scale an alpha needs to its information coefficient.
 
 ```python
 return_weights, return_outcome = opt.wrapper_min_variance_target_return(
@@ -484,7 +487,9 @@ The generic utility builder does not impose a configured maximum-volatility cap.
 objectives can supply a variance penalty instead.
 
 Alpha/yield uses its separate `soft_tracking_error` switch. With a benchmark, its soft-TE path
-keeps the yield floor **and total/group turnover hard**, while dropping the scalar hard TE cap.
+keeps the yield floor and any configured total or group turnover cap hard, keeps the turnover
+penalty when no cap is set (since 7.8.0), and drops the scalar hard TE cap; see
+[the yield-target variant](alpha_over_tracking_error.md#the-yield-target-variant).
 Do not infer its behaviour from the generic utility mode or from its filename alone.
 
 ### Backend and enforcement capabilities

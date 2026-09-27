@@ -1,12 +1,13 @@
 """
 Run Minimum Variance portfolio optimiser for S&P 500 universe.
-Cross-backtest sensitivity of EWMA span for factor covariance estimation.
+Cross-backtest sensitivity of the EWMA span of the asset covariance (EwmaCovarEstimator).
 
-Spans tested correspond to half-life periods in weekly returns:
-    26  = 6 months
-    52  = 1 year
-    104 = 2 years
-    208 = 4 years
+Spans tested count weekly return observations; they are spans, not half-lives
+(decay 1 - 2 / (span + 1), half-life about 0.35 * span):
+    26  = 6 months of weekly returns, half-life 9 weeks
+    52  = 1 year, half-life 18 weeks
+    104 = 2 years, half-life 36 weeks
+    208 = 4 years, half-life 72 weeks
 """
 
 import pandas as pd
@@ -37,8 +38,9 @@ def run_cross_backtest(prices: pd.DataFrame,
         inclusion_indicators: S&P 500 inclusion indicators DataFrame.
         group_data: Sector group universe Series.
         time_period: Backtest time period.
-        spans: List of EWMA spans for factor covariance estimation.
-            26=6m, 52=1y, 104=2y, 208=4y half-life in weekly returns.
+        spans: List of EWMA spans for asset covariance estimation, in weekly
+            return observations: 26=6m, 52=1y, 104=2y, 208=4y of weekly returns.
+            They are spans, not half-lives.
 
     Returns:
         List of PortfolioData objects, one per span.

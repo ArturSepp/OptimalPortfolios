@@ -117,6 +117,44 @@ def test_generation_refuses_drift_and_failing_checks(toy, teaching, change, mess
         module.generate(root / 'bundle', root)
 
 
+STYLE_SCRIPT = '''"""Toy canonical script that changes a global style setting."""
+import matplotlib
+import pandas as pd
+
+SIZE = 1
+
+
+def exhibit(path):
+    """Record the tick label colour it finds, then change it for any later exhibit."""
+    found = matplotlib.rcParams['xtick.labelcolor']
+    matplotlib.rcParams['xtick.labelcolor'] = 'red'
+    path.write_bytes(b'style image')
+    return {'table': pd.DataFrame({'found': [found]}), 'checks': {'ok': True}}
+'''
+
+
+def test_generation_isolates_style_between_exhibits(toy, teaching):
+    """A style setting one exhibit changes does not reach the exhibits drawn after it."""
+    import matplotlib
+    import pandas as pd
+
+    root, registry = toy
+    module, _ = teaching
+    default = matplotlib.rcParams['xtick.labelcolor']
+    (root / 'examples/docs/style.py').write_text(STYLE_SCRIPT, encoding='utf-8')
+    for name in ('first', 'second'):
+        registry['exhibits'].append({
+            'id': name, 'path': f'docs/images/{name}.png', 'script': 'examples/docs/style.py',
+            'function': 'exhibit', 'parameters': {'SIZE': 1}, 'documents': ['docs/page.md'],
+            'question': 'Style?', 'sample': 'None.'})
+    save(root, registry)
+    module.generate(root / 'bundle', root)
+    found = [pd.read_csv(root / 'bundle/tables' / f'{name}.csv')['found'][0]
+             for name in ('first', 'second')]
+    assert found == [default, default]
+    assert matplotlib.rcParams['xtick.labelcolor'] == default
+
+
 @pytest.mark.parametrize('field,value,message', [
     ('path', 'examples/figures/toy_exhibit.png', 'docs/images/<id>.png'),
     ('script', 'examples/toy.py', 'examples/docs script'),

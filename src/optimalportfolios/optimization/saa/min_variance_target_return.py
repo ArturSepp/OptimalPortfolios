@@ -75,10 +75,17 @@ def rolling_min_variance_target_return(prices: pd.DataFrame,
     Compute rolling minimum-variance portfolios with a target return floor.
 
     Args:
-        prices: Asset price panel for column alignment.
+        prices: Asset price panel, used for column alignment and, when
+            ``use_drifted_weights_0`` is set, to drift the previous weights to each date.
         expected_returns: Expected returns per asset. Forward-filled to
-            rebalancing dates.
-        target_returns: Minimum portfolio return at each date.
+            rebalancing dates; dates before its first row get zero expected
+            returns.
+        target_returns: Minimum portfolio return at each date, forward-filled to
+            the keys of ``covar_dict``. Dates before its first entry get a missing
+            target: with CVXPY 1.9 the solve raises ``ValueError``, which this
+            function does not catch; with CVXPY 1.7 the solution fails validation
+            and the date takes the ``validate_solution`` fallback (zeros without
+            ``weights_0`` or a benchmark).
         constraints: Portfolio constraints.
         benchmark_weights: Optional benchmark. Series (static) or DataFrame
             (time-varying). None for absolute variance minimisation.
@@ -161,10 +168,14 @@ def wrapper_min_variance_target_return(pd_covar: pd.DataFrame,
     Args:
         pd_covar: Covariance matrix (N x N) as DataFrame.
         expected_returns: Expected returns per asset for the return constraint.
-        target_return: Minimum portfolio return (α'w >= target_return).
+        target_return: Minimum portfolio return (α'w >= target_return). A target
+            above the best single-asset expected return is lowered to it with a
+            warning; under caps or group bands the lowered target can still be
+            infeasible, and the solve is then rejected and falls back.
         constraints: Portfolio constraints.
         benchmark_weights: Optional benchmark for TE-based risk.
-        weights_0: Previous-period weights for warm-start / turnover.
+        weights_0: Previous-period weights: the turnover baseline and the
+            fallback. The solver is not warm-started from them.
         rebalancing_indicators: Binary series for position freezing.
         optimiser_config: Solver configuration.
         context: Rebalance label included in solver diagnostics.
@@ -172,7 +183,8 @@ def wrapper_min_variance_target_return(pd_covar: pd.DataFrame,
     Returns:
         Portfolio weights and the structured solver outcome.
     """
-    # sanity check: target return must be achievable
+    # cap the target only at the best single-asset expected return; under caps or group
+    # bands the clamped target can still be infeasible, and the solve then falls back
     max_return = expected_returns.reindex(pd_covar.index).max()
     if target_return > max_return + 1e-8:
         warnings.warn(

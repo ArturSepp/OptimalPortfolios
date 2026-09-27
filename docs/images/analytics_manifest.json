@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-09-27T11:50:37+00:00",
+  "generated_at_utc": "2026-09-27T14:10:38+00:00",
   "platform": "Windows-11-10.0.26200-SP0",
   "versions": {
     "python": "3.12.14",
@@ -295,7 +295,7 @@
     "risk_budgeting_contributions": {
       "path": "docs/images/risk_budgeting_contributions.png",
       "script": "examples/docs/risk_budgeting.py",
-      "script_sha256": "6c69f390dfc00b8622be652f32c31babfb42684b7cedfb211ce11ed148252906",
+      "script_sha256": "6de67866c47edb65633c5671611b4a6ff0066512895f60413a31f021b913d558",
       "image_sha256": "0f469178455316260afe018675c0a292bb00c57e11ab0f0af04a519383841f18",
       "table_sha256": "eb5d78b6c069fbc5beb3d10d31e17027031e736fd78dd930745177128b5ffd6a",
       "parameters": {
@@ -508,7 +508,7 @@
     "alpha_scoring_cross_section_vs_cluster": {
       "path": "docs/images/alpha_scoring_cross_section_vs_cluster.png",
       "script": "examples/docs/alphas_module_readme.py",
-      "script_sha256": "30b99fd2fbd6486b60f4c13e53ca7fbe2ad1dd8f33577d52817a020b164f4d1c",
+      "script_sha256": "69b97caefb625ab93d934e6eb1fe5605ee05491f2a82ca544971bb93bddfa095",
       "image_sha256": "9dced35a18fe531090674b5b266346e1c216a89347ee844b116bff0221dbca7d",
       "table_sha256": "e32465f33d2dc9b7086b8abb526b7dfe3f8911ce125102d878da3cb82388f022",
       "parameters": {
@@ -1226,10 +1226,856 @@
         "docs/analytics_gallery.md",
         "docs/factor_covariance_hcgl.md"
       ]
+    },
+    "unsmoothing_autocorrelation": {
+      "path": "docs/images/unsmoothing_autocorrelation.png",
+      "script": "examples/docs/universe_data_and_unsmoothing.py",
+      "script_sha256": "6fea8501ffedb2ff8df0f3de372db3cab365ed75f120619fbb5045f7424c5c17",
+      "image_sha256": "6d0ef03b9579037dd6388385caac5e7ba4d13ab698d77b311a9dec6b2cb516a9",
+      "table_sha256": "79e14794b0ab5af2e3ece2fd6d68d389823b9ba8fcc24c1ce5c9edbb19293137",
+      "parameters": {
+        "TICKERS": [
+          "Govt",
+          "Credit",
+          "Equity",
+          "PE"
+        ],
+        "NAMES": [
+          "Government bonds",
+          "Credit",
+          "Listed equity",
+          "Private equity"
+        ],
+        "ASSET_CLASSES": [
+          "Bonds",
+          "Bonds",
+          "Equities",
+          "Equities"
+        ],
+        "MEANS": [
+          0.03,
+          0.04,
+          0.07,
+          0.08
+        ],
+        "VOLS": [
+          0.05,
+          0.08,
+          0.16,
+          0.2
+        ],
+        "CORR": [
+          [
+            1.0,
+            0.5,
+            -0.2,
+            -0.1
+          ],
+          [
+            0.5,
+            1.0,
+            0.4,
+            0.4
+          ],
+          [
+            -0.2,
+            0.4,
+            1.0,
+            0.7
+          ],
+          [
+            -0.1,
+            0.4,
+            0.7,
+            1.0
+          ]
+        ],
+        "PHI": 0.6,
+        "START": "1989-12-31",
+        "END": "2024-12-31",
+        "SEED": 19
+      },
+      "checks": {
+        "autocorrelation_falls": true,
+        "volatility_rises": true,
+        "other_columns_unchanged": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/universe_data_and_unsmoothing.md"
+      ]
+    },
+    "implied_budgets_round_trip": {
+      "path": "docs/images/implied_budgets_round_trip.png",
+      "script": "examples/docs/implied_risk_budgets.py",
+      "script_sha256": "a54f09d7761f7636d440c78a51f2fcace5ca4abce01d2febc534ab5af43fffe9",
+      "image_sha256": "31a10ac37d988c7001c06b10fb40390f1582df1a847ef8a68090b0d99259f64d",
+      "table_sha256": "36cf1ee96f0b4fd35427ee4a6958e8d96c0bc3e90abb03018cb660bc50190ff6",
+      "parameters": {
+        "ASSETS": [
+          "Equity",
+          "Bonds",
+          "Gold"
+        ],
+        "VOLS": [
+          0.16,
+          0.07,
+          0.15
+        ],
+        "EQUITY_GOLD": 0.1,
+        "BONDS_GOLD": 0.2,
+        "TARGET_WEIGHTS": [
+          0.4,
+          0.45,
+          0.15
+        ],
+        "STOCK_BOND_PATH": [
+          -0.7,
+          0.4
+        ],
+        "REBALANCES": 12,
+        "FIRST_REBALANCE": "2023-03-31",
+        "TOLERANCE": 0.001
+      },
+      "checks": {
+        "implied_budgets_sum_to_one": true,
+        "round_trip_where_all_contributions_positive": true,
+        "hedging_dates_have_no_admissible_budget": true,
+        "average_weight_matches_target": true,
+        "average_is_the_simple_mean": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/implied_risk_budgets.md"
+      ]
+    },
+    "hrp_vs_erc_weights": {
+      "path": "docs/images/hrp_vs_erc_weights.png",
+      "script": "examples/docs/hierarchical_risk_parity_and_cluster_budgets.py",
+      "script_sha256": "1fc9058af1ed4e1a293b9dcac1e676480c18ea8ad653c9254b4df38ffc63079e",
+      "image_sha256": "75a8225a17bec7149909eb1333a62be897cd397ffc664d26d6b227ff782f9064",
+      "table_sha256": "028a39b6046331460fa2197d855806819315c06d1407db7159c061c27d1dc295",
+      "parameters": {
+        "ASSETS": [
+          "US govt",
+          "EU govt",
+          "UK govt",
+          "JP govt",
+          "US equity",
+          "EU equity",
+          "Commodities",
+          "Gold"
+        ],
+        "BLOCKS": [
+          "Bonds",
+          "Bonds",
+          "Bonds",
+          "Bonds",
+          "Equities",
+          "Equities",
+          "Real assets",
+          "Real assets"
+        ],
+        "BLOCK_NAMES": [
+          "Bonds",
+          "Equities",
+          "Real assets"
+        ],
+        "BLOCK_CORR": [
+          [
+            0.6,
+            -0.1,
+            0.1
+          ],
+          [
+            -0.1,
+            0.8,
+            0.3
+          ],
+          [
+            0.1,
+            0.3,
+            0.4
+          ]
+        ],
+        "VOLS": [
+          0.05,
+          0.05,
+          0.06,
+          0.04,
+          0.16,
+          0.18,
+          0.2,
+          0.15
+        ],
+        "N_CLUSTERS": 3
+      },
+      "checks": {
+        "weights_sum_to_one": true,
+        "hrp_weights_positive": true,
+        "first_split_separates_bonds": true,
+        "hrp_blocks_follow_bisection": true,
+        "hrp_matches_independent_bisection": true,
+        "erc_equal_risk_shares": true,
+        "cluster_budgets_met": true,
+        "clusters_are_blocks": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/hierarchical_risk_parity_and_cluster_budgets.md"
+      ]
+    },
+    "efficient_frontier_objectives": {
+      "path": "docs/images/efficient_frontier_objectives.png",
+      "script": "examples/docs/mean_variance_objectives.py",
+      "script_sha256": "a3fe4eefff347d18b4ff1f937a1ad43ffcf3601f7e6c8350ac88b287218d3045",
+      "image_sha256": "dfbdb1cbe50abbce590d02e2401302d119ba2fad0c0c6cbadd21fce90605c9e4",
+      "table_sha256": "c185d4b5226022c99aba96e1d519de66a3e2b75c7da59854d61523c205a02bc3",
+      "parameters": {
+        "TICKERS": [
+          "Govt",
+          "Credit",
+          "US eq",
+          "EM eq",
+          "Gold"
+        ],
+        "MEANS": [
+          0.005,
+          0.02,
+          0.045,
+          0.055,
+          0.025
+        ],
+        "VOLS": [
+          0.05,
+          0.07,
+          0.15,
+          0.19,
+          0.15
+        ],
+        "CORR": [
+          [
+            1.0,
+            0.3,
+            -0.2,
+            -0.1,
+            0.1
+          ],
+          [
+            0.3,
+            1.0,
+            0.3,
+            0.25,
+            0.1
+          ],
+          [
+            -0.2,
+            0.3,
+            1.0,
+            0.5,
+            0.0
+          ],
+          [
+            -0.1,
+            0.25,
+            0.5,
+            1.0,
+            0.2
+          ],
+          [
+            0.1,
+            0.1,
+            0.0,
+            0.2,
+            1.0
+          ]
+        ],
+        "GAMMAS": [
+          5.0,
+          10.0,
+          20.0,
+          50.0
+        ],
+        "SHOWN_GAMMA": 5.0
+      },
+      "checks": {
+        "min_variance_matches_closed_form": true,
+        "max_sharpe_matches_tangency": true,
+        "utility_points_on_frontier": true,
+        "tangency_ratio_is_slope": true,
+        "shown_utility_is_two_fund_mix": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/mean_variance_objectives.md"
+      ]
+    },
+    "saa_target_duality": {
+      "path": "docs/images/saa_target_duality.png",
+      "script": "examples/docs/strategic_allocation_targets.py",
+      "script_sha256": "6246f4bb34b4d8a7ae67148a63e81939b4176f7c3e2116eb2a1c271f469999cc",
+      "image_sha256": "f69751ef1e1030f0932cc8de3d1c6069543627c6ef132ef36c6ec372ffaafe69",
+      "table_sha256": "28310dfc102cf46971f494eedd989822384e0b2e7f159425625397433e62995e",
+      "parameters": {
+        "RETURNS_FREQ": "ME",
+        "EWMA_SPAN": 36,
+        "REBALANCING_FREQ": "YE",
+        "BACKTEST_START": "31Dec2005",
+        "MAX_WEIGHT": 0.25,
+        "GROUP_MIN": {
+          "Fixed Income": 0.2
+        },
+        "GROUP_MAX": {
+          "Equity": 0.6,
+          "Alternatives": 0.4
+        },
+        "DATE": "2025-12-31",
+        "CASH_RATE": 0.02,
+        "SHARPE_RATIO": 0.3,
+        "TARGET_VOL": 0.05,
+        "FRONTIER_RETURNS": [
+          0.03,
+          0.035,
+          0.04,
+          0.045,
+          0.05,
+          0.055
+        ],
+        "FRONTIER_VOLS": [
+          0.02,
+          0.03,
+          0.04,
+          0.05,
+          0.06,
+          0.07,
+          0.08,
+          0.09
+        ],
+        "PENALTY_WEIGHTS": [
+          0.5,
+          1.0,
+          2.0,
+          5.0,
+          10.0,
+          20.0,
+          50.0
+        ],
+        "WEIGHT_TOL": 0.001,
+        "MOMENT_TOL": 1e-05
+      },
+      "checks": {
+        "round_trips_return_the_same_weights": true,
+        "utility_solutions_are_on_the_frontier": true,
+        "utility_at_shadow_price_is_the_hard_solution": true,
+        "utility_volatility_falls_as_phi_grows": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/strategic_allocation_targets.md"
+      ]
+    },
+    "cara_mixture_allocation": {
+      "path": "docs/images/cara_mixture_allocation.png",
+      "script": "examples/docs/cara_gaussian_mixture.py",
+      "script_sha256": "552ad072d99487ad54c66a52fdd247727f027c6e35999e9606dbdf2c9f892458",
+      "image_sha256": "46dd3d45488ce43e53a944fc66050facbd1028f1fe99a42b88c8f83c32cc0c0e",
+      "table_sha256": "4eac5805db32fd3a79c6328b94b9d90fd67d0c10e858920b06f7e9a3518f833e",
+      "parameters": {
+        "TICKERS": [
+          "Bonds",
+          "Equities",
+          "Crypto"
+        ],
+        "CRYPTO": 2,
+        "PROBS": [
+          0.8,
+          0.15,
+          0.05
+        ],
+        "MEANS": [
+          [
+            0.02,
+            0.11,
+            0.5
+          ],
+          [
+            0.04,
+            -0.06,
+            -0.2
+          ],
+          [
+            0.06,
+            -0.3,
+            -1.5
+          ]
+        ],
+        "VOLS": [
+          [
+            0.05,
+            0.13,
+            0.6
+          ],
+          [
+            0.07,
+            0.2,
+            0.8
+          ],
+          [
+            0.08,
+            0.3,
+            0.7
+          ]
+        ],
+        "CORR": [
+          [
+            1.0,
+            -0.2,
+            0.0
+          ],
+          [
+            -0.2,
+            1.0,
+            0.3
+          ],
+          [
+            0.0,
+            0.3,
+            1.0
+          ]
+        ],
+        "GAMMA": 5.0,
+        "GAMMA_GRID": [
+          0.5,
+          0.6,
+          0.75,
+          0.9,
+          1.0,
+          1.25,
+          1.5,
+          1.75,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0
+        ]
+      },
+      "checks": {
+        "one_component_matches_closed_form": true,
+        "three_components_match_cvxpy": true,
+        "crash_lowers_crypto_weight": true,
+        "crypto_weight_falls_with_gamma": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/cara_gaussian_mixture.md"
+      ]
+    },
+    "alpha_rank_quantiles": {
+      "path": "docs/images/alpha_rank_quantiles.png",
+      "script": "examples/docs/signal_diagnostics_and_profiling.py",
+      "script_sha256": "d9157058f995772e46ffa8eb6aef215f72a72e1a89c1a6d01deabf9ef5e93db3",
+      "image_sha256": "ef511729f2b07b5c5921549d9c815648476f4b2531e4d173ceaabea96b6fc92b",
+      "table_sha256": "9af54199a7c013587f4c2f9b4b49b99820611baf861db7d62116150272b1dbbd",
+      "parameters": {
+        "SEED": 11,
+        "N_ASSETS": 500,
+        "MONTHS": 240,
+        "FIRST_DATE": "2005-12-31",
+        "RHO": 0.1,
+        "MU": 0.005,
+        "VOL": 0.05,
+        "MARKET_VOL": 0.04,
+        "QUANTILES": 5,
+        "ROLLING_MONTHS": 12
+      },
+      "checks": {
+        "quintile_means_fall_from_top_to_bottom": true,
+        "final_navs_fall_from_top_to_bottom": true,
+        "mean_rank_ic_within_one_standard_error": true,
+        "rank_ic_is_the_per_date_spearman_correlation": true,
+        "rolling_ic_stays_positive": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/signal_diagnostics_and_profiling.md"
+      ]
+    },
+    "alpha_over_te_active_weights": {
+      "path": "docs/images/alpha_over_te_active_weights.png",
+      "script": "examples/docs/alpha_over_tracking_error.py",
+      "script_sha256": "d91105946703b9cd676fda580fde9d84c3d5114fe2520be102c2be2b5e7da4ed",
+      "image_sha256": "0ac89e0ef60c581798bc2afe31fbe734562749534990a7fc1d99f284f655bcb8",
+      "table_sha256": "870aaf314a98b60991459ccd775eae120177c57301feb17a1d1e30ace79613c6",
+      "parameters": {
+        "TICKERS": [
+          "Govt bonds",
+          "Credit",
+          "US equity",
+          "Europe equity",
+          "EM equity",
+          "Gold"
+        ],
+        "VOLS": [
+          0.05,
+          0.07,
+          0.16,
+          0.17,
+          0.21,
+          0.15
+        ],
+        "CORR": [
+          [
+            1.0,
+            0.5,
+            -0.2,
+            -0.2,
+            -0.15,
+            0.1
+          ],
+          [
+            0.5,
+            1.0,
+            0.4,
+            0.4,
+            0.45,
+            0.15
+          ],
+          [
+            -0.2,
+            0.4,
+            1.0,
+            0.85,
+            0.75,
+            0.1
+          ],
+          [
+            -0.2,
+            0.4,
+            0.85,
+            1.0,
+            0.8,
+            0.15
+          ],
+          [
+            -0.15,
+            0.45,
+            0.75,
+            0.8,
+            1.0,
+            0.25
+          ],
+          [
+            0.1,
+            0.15,
+            0.1,
+            0.15,
+            0.25,
+            1.0
+          ]
+        ],
+        "BENCHMARK": [
+          0.3,
+          0.15,
+          0.25,
+          0.1,
+          0.1,
+          0.1
+        ],
+        "ALPHAS": [
+          -0.0025,
+          0.007,
+          -0.016,
+          -0.0085,
+          0.021,
+          0.0
+        ],
+        "TE_BUDGET": 0.02,
+        "EXHIBIT_BUDGETS": [
+          0.0025,
+          0.005,
+          0.0075,
+          0.01,
+          0.0125,
+          0.015,
+          0.0175,
+          0.02,
+          0.0225,
+          0.025,
+          0.0275,
+          0.03,
+          0.0325,
+          0.035,
+          0.0375,
+          0.04,
+          0.0425,
+          0.045,
+          0.0475,
+          0.05,
+          0.0525,
+          0.055,
+          0.0575,
+          0.06,
+          0.0625,
+          0.065,
+          0.0675,
+          0.07,
+          0.0725,
+          0.075,
+          0.0775,
+          0.08
+        ],
+        "WEIGHT_TOL": 0.0001,
+        "TE_TOL": 1e-06
+      },
+      "checks": {
+        "every_solve_accepted": true,
+        "te_equals_budget": true,
+        "closed_form_at_shown_budget": true,
+        "ir_flat_without_bounds": true,
+        "ir_flat_until_first_bound": true,
+        "ir_falls_after_first_bound": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/alpha_over_tracking_error.md"
+      ]
+    },
+    "crypto_allocation_by_method": {
+      "path": "docs/images/crypto_allocation_by_method.png",
+      "script": "examples/docs/app_crypto_allocation.py",
+      "script_sha256": "3e0a00dd1201d0ef0a81a9e71e6bdcd115ad2fba45d974e4e391f55b01ec8d70",
+      "image_sha256": "27ca33468b16b31f7b252d3f92986a10ad32fdb479a91208c1bfa300b097b539",
+      "table_sha256": "63b9b9b67b706715f72e43c8f430b46930c95a60b956f0b88707169214a76723",
+      "parameters": {
+        "METHODS": {
+          "ERC": "EQUAL_RISK_CONTRIBUTION",
+          "MaxDiv": "MAX_DIVERSIFICATION",
+          "MaxSharpe": "MAXIMUM_SHARPE_RATIO",
+          "CARA-3": "MAX_CARA_MIXTURE"
+        },
+        "SPAN": 30,
+        "ROLL_WINDOW": 60,
+        "CARRA": 0.5,
+        "N_MIXTURES": 3,
+        "BALANCED_WEIGHT": 0.75,
+        "REPORT_START": "2016-03-31",
+        "REPORT_END": "2023-06-30",
+        "HELD": 0.0001,
+        "FROZEN_PANEL": "papers/crypto_allocation_risk_2023/data/crypto_allocation_prices.csv",
+        "FROZEN_COLUMNS": [
+          "60/40",
+          "BTC",
+          "PE",
+          "RealEstate",
+          "Commodities",
+          "Gold"
+        ],
+        "TEMPLATES": {
+          "100% Alts with BTC": false,
+          "75%/25% Balanced/Alts with BTC": true
+        }
+      },
+      "checks": {
+        "etf_columns_only": true,
+        "report_window": true,
+        "weights_finite": true,
+        "weights_sum_to_one": true,
+        "cara_largest_median": true,
+        "risk_based_always_hold": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/app_crypto_allocation.md"
+      ]
+    },
+    "cma_decomposition_saa": {
+      "path": "docs/images/cma_decomposition_saa.png",
+      "script": "examples/docs/app_cma_strategic_allocation.py",
+      "script_sha256": "d71771668ec7fa847b50a72edef4fcbcdda2b26f7b5c721ffffe8c7731c8949c",
+      "image_sha256": "091f0cb35884859123d11ad2d2248bb51f2be616f0a2cc9d91a0bff7c64df5fa",
+      "table_sha256": "e3add24e7e07783f1aeba92b9abcb62ed7c0dd32d403c8f94d2a85b7c77ec898",
+      "parameters": {
+        "FACTORS": [
+          "Equity",
+          "Rates",
+          "Credit",
+          "Commodities"
+        ],
+        "ASSETS": [
+          "Govt bonds",
+          "IG credit",
+          "HY credit",
+          "DM equity",
+          "EM equity",
+          "Real estate",
+          "Hedge funds",
+          "Commodities"
+        ],
+        "LOADINGS": [
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.1,
+            0.7,
+            0.6,
+            0.0
+          ],
+          [
+            0.4,
+            0.2,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.2,
+            0.0,
+            0.2,
+            0.2
+          ],
+          [
+            0.6,
+            0.4,
+            0.2,
+            0.0
+          ],
+          [
+            0.3,
+            0.0,
+            0.2,
+            0.1
+          ],
+          [
+            0.2,
+            -0.1,
+            0.0,
+            1.0
+          ]
+        ],
+        "FACTOR_VOLS": [
+          0.15,
+          0.06,
+          0.05,
+          0.18
+        ],
+        "FACTOR_CORR": [
+          [
+            1.0,
+            -0.2,
+            0.5,
+            0.3
+          ],
+          [
+            -0.2,
+            1.0,
+            0.1,
+            -0.1
+          ],
+          [
+            0.5,
+            0.1,
+            1.0,
+            0.2
+          ],
+          [
+            0.3,
+            -0.1,
+            0.2,
+            1.0
+          ]
+        ],
+        "PREMIA": [
+          0.045,
+          0.01,
+          0.015,
+          0.02
+        ],
+        "RESIDUAL_VOLS": [
+          0.02,
+          0.02,
+          0.03,
+          0.03,
+          0.05,
+          0.08,
+          0.035,
+          0.06
+        ],
+        "ADJUSTMENTS": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -0.01,
+          0.01,
+          0.0
+        ],
+        "RISK_FREE_RATE": 0.03,
+        "TE_BUDGET": 0.01,
+        "BENCHMARKS": {
+          "Conservative": [
+            0.35,
+            0.2,
+            0.05,
+            0.15,
+            0.05,
+            0.05,
+            0.1,
+            0.05
+          ],
+          "Balanced": [
+            0.2,
+            0.15,
+            0.05,
+            0.3,
+            0.1,
+            0.05,
+            0.1,
+            0.05
+          ],
+          "Growth": [
+            0.1,
+            0.05,
+            0.05,
+            0.45,
+            0.15,
+            0.05,
+            0.1,
+            0.05
+          ]
+        },
+        "SHOWN_MANDATE": "Balanced",
+        "HELD": 1e-06
+      },
+      "checks": {
+        "cma_is_factor_part_plus_adjustment": true,
+        "both_solves_accepted": true,
+        "tracking_error_at_budget": true,
+        "hedge_funds_sold_without_adjustments": true,
+        "hedge_funds_overweight_with_adjustments": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/app_cma_strategic_allocation.md"
+      ]
     }
   },
   "review": {
-    "note": "Republished on 2026-09-27 after examples/docs/portfolio_risk_analytics.py switched its regression-check draws from Generator.multivariate_normal to a Cholesky factor, so the same seed gives the same returns on every LAPACK build (macOS CI drew different returns). The exhibit does not use the draws: all fifteen images are byte-identical to the published ones, which were inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27.",
-    "published_at_utc": "2026-09-27T11:50:40+00:00"
+    "note": "Inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27. crypto_allocation_by_method (paper-derived, current API on the frozen 2023 panel, ETF-derived columns only): one dot per quarter end for four methods in two templates, the median as a bar and in the tick labels, header note in ink. cma_decomposition_saa (synthetic): factor-implied parts and residual adjustments of eight CMAs; active weights with and without the adjustments at a 1% tracking-error budget, legends below the bars. The twenty-three earlier exhibits are byte-identical to their published images; the two new ones are byte-identical to the reviewed previews.",
+    "published_at_utc": "2026-09-27T14:10:51+00:00"
   }
 }

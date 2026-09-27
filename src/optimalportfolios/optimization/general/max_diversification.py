@@ -51,7 +51,8 @@ def rolling_maximise_diversification(
     Compute rolling maximum diversification portfolios.
 
     Args:
-        prices: Asset price panel. Used for column alignment.
+        prices: Asset price panel, used for column alignment and, when
+            ``use_drifted_weights_0`` is set, to drift the previous weights to each date.
         constraints: Portfolio constraints.
         covar_dict: Pre-computed covariance matrices keyed by rebalancing date.
         optimiser_config: Solver configuration.

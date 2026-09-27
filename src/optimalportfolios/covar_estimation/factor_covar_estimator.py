@@ -15,7 +15,7 @@ Supplied factor covariance must already have compatible annual units.
 An orthogonal current fit without factor references does not truncate inputs from
 an estimation_date label. Empirical current fits truncate inputs at that cutoff.
 The rolling wrapper slices each input through the scheduled date. See
-docs/covariance_estimators.md for cutoff, normalization and demeaning qualifications.
+docs/factor_covariance_hcgl.md for cutoff, normalization and demeaning qualifications.
 
 Reference:
     Sepp A., Ossa I., and Kastenholz M. (2026),
@@ -380,7 +380,8 @@ class FactorCovarEstimator(CovarEstimator):
         include_factors_in_clustering: Add factor returns as clustering references
             for HCGL/FCGL. References are excluded from response fitting, pooled signs,
             group sizes, residuals and asset covariance. Explicit partitions take
-            precedence; reported trees retain the induced asset merge heights.
+            precedence; reported trees retain the induced asset merge heights. Enabling
+            requires an HCGL or FCGL lasso_model, checked at construction.
         factor_clustering_freqs: Optional nonempty sequence of asset-return cadences
             receiving references when enabled. None includes every cadence.
         residual_type: 'orthogonal' (default diagonal) or 'empirical' (prepared
@@ -391,6 +392,12 @@ class FactorCovarEstimator(CovarEstimator):
             bucket's beta span, converting decay if an explicitly coarser grid is chosen.
         residual_corr_weight: Empirical correlation retention in [0, 1], default 1.
             Separate from residual_var_weight, which scales the entire residual risk block.
+        reg_lambda_freq_dict: Optional fixed penalty per asset-return cadence, replacing
+            lasso_model.reg_lambda in that cadence's fit, current or rolling; the model's
+            scalar value is restored afterwards. Checked at fit time, not at construction:
+            every fitted cadence needs an entry (else KeyError) and values must be finite
+            and nonnegative (else ValueError). Values are not rescaled as histories grow.
+            None, the default, keeps the scalar penalty for every cadence.
 
     Example:
         Illustrative calls: supply factors, returns_dict and time_period first.
