@@ -46,7 +46,8 @@ flowchart LR
 ```
 
 In words: without expected returns, choose minimum tracking error when a benchmark is given and
-otherwise a risk-based objective: minimum variance, risk budgeting, hierarchical risk parity or
+otherwise a risk-based objective: minimum variance, [risk budgeting](risk_budgeting.md),
+[hierarchical risk parity](hierarchical_risk_parity_and_cluster_budgets.md) or
 [maximum diversification](maximum_diversification.md); with expected returns or alphas, choose the
 tactical solver against a benchmark, the strategic solvers for a return or volatility target, and
 otherwise maximum Sharpe, quadratic utility or, when returns are fat-tailed, CARA utility under a

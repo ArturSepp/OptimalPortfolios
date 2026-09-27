@@ -1,10 +1,11 @@
 """Canonical script of docs/risk_budgeting.md.
 
-The page's four Python blocks are excerpts of ``main`` and run here in the same order; every
+The page's three Python blocks are excerpts of ``main`` and run here in the same order; every
 number and property the page states is asserted after them against a reference computed a
 different way: an independent conic solve of the same objective with CVXPY, the closed-form
-diagonal solution, the optimality conditions of a binding cap solved by root finding, a
-two-asset budget equation and the group-budget formula. Risk shares are recomputed as
+diagonal solution, the optimality conditions of a binding cap solved by root finding and a
+two-asset budget equation. The group-budget example moved with its checks to
+``examples/docs/hierarchical_risk_parity_and_cluster_budgets.py``. Risk shares are recomputed as
 ``w * (Sigma w) / (w' Sigma w)`` rather than read from qis. The script runs offline after
 ``pip install optimalportfolios`` and needs no data file or random seed:
 
@@ -91,17 +92,6 @@ def two_asset_reference(covar, budgets) -> np.ndarray:
     share = brentq(lambda x: risk_shares([x, 1.0 - x], covar)[0] - target, 1e-9, 1 - 1e-9,
                    xtol=1e-15)
     return np.array([share, 1.0 - share])
-
-
-def group_reference(groups: dict, exponent: float) -> dict:
-    """Group budget n_g**alpha / sum n_h**alpha, split equally among classified members."""
-    sizes = {}
-    for label in groups.values():
-        if label is not None:
-            sizes[label] = sizes.get(label, 0) + 1
-    total = sum(size ** exponent for size in sizes.values())
-    return {asset: 0.0 if label is None else sizes[label] ** exponent / total / sizes[label]
-            for asset, label in groups.items()}
 
 
 def solves(slack_cap: float, equity_cap: float) -> dict:
@@ -313,45 +303,6 @@ def main() -> None:
                                        risk_budget=pd.Series(0.5, index=diagonal_assets))
     np.testing.assert_allclose(equal, [1 / 3, 2 / 3], atol=1e-6, rtol=0.0)
     assert not np.allclose(equal, [0.2, 0.8], atol=1e-2)
-
-    memberships = pd.Series({
-        "Equity": "Growth",
-        "Bonds": "Defensive",
-        "Diversifier": "Defensive",
-        "Unclassified": None,
-    })
-    group_budgets = opt.compute_group_risk_budgets(
-        groups=memberships, group_size_exponent=0.0,
-    )
-    print(group_budgets.tolist())  # [0.5, 0.25, 0.25, 0.0]
-
-    # The group formula: equal group budgets 0.50 and 2 x 0.25; the unclassified asset gets 0.
-    labels = {asset: label if isinstance(label, str) else None
-              for asset, label in memberships.items()}
-    expected = group_reference(labels, 0.0)
-    np.testing.assert_allclose(group_budgets, list(expected.values()), atol=1e-12, rtol=0.0)
-    np.testing.assert_allclose(group_budgets, [0.5, 0.25, 0.25, 0.0], atol=1e-12, rtol=0.0)
-    assert abs(group_budgets.sum() - 1.0) <= 1e-12 and group_budgets["Unclassified"] == 0.0
-    # The exponent table: 1 gives equal asset budgets; 0.5 makes each group's aggregate budget
-    # proportional to the square root of its size.
-    for exponent in (0.5, 1.0):
-        result = opt.compute_group_risk_budgets(groups=memberships,
-                                                group_size_exponent=exponent)
-        np.testing.assert_allclose(result, list(group_reference(labels, exponent).values()),
-                                   atol=1e-12, rtol=0.0)
-    np.testing.assert_allclose(opt.compute_group_risk_budgets(
-        groups=memberships, group_size_exponent=1.0).iloc[:3], 1 / 3, atol=1e-12)
-    root = opt.compute_group_risk_budgets(groups=memberships, group_size_exponent=0.5)
-    assert np.isclose((root["Bonds"] + root["Diversifier"]) / root["Equity"], np.sqrt(2))
-    # No classified asset raises; a membership panel is transformed row by row.
-    assert_raises(ValueError, opt.compute_group_risk_budgets,
-                  groups=pd.Series({"A": None, "B": None}))
-    panel = pd.DataFrame([memberships.tolist(), ["Growth", "Growth", "Defensive", None]],
-                         index=pd.to_datetime(["2024-03-29", "2024-06-28"]),
-                         columns=memberships.index)
-    by_row = opt.compute_group_risk_budgets(groups=panel)
-    np.testing.assert_allclose(by_row.iloc[0], group_budgets, atol=1e-12)
-    np.testing.assert_allclose(by_row.iloc[1], [0.25, 0.25, 0.5, 0.0], atol=1e-12)
 
     # Limitations. Zero, negative and missing budgets are excluded from the solve.
     for excluded in ([0.5, 0.0, 0.5], [0.5, -0.2, 0.5], [0.5, np.nan, 0.5]):
