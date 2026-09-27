@@ -236,7 +236,9 @@ def main() -> None:
     assert (grid['three components'] < grid['one component'] - 0.005).all()
     assert (np.diff(grid['one component']) < 0).all()
     assert (np.diff(grid['three components']) < 0).all()
-    assert (grid['three components'] - grid['three components, CVXPY']).abs().max() < 1e-4
+    # SLSQP stops on an absolute ftol of the raw objective, so across SciPy versions its grid
+    # solutions agree with CVXPY to a few 1e-5, up to about 1e-4 at the lowest risk aversions.
+    assert (grid['three components'] - grid['three components, CVXPY']).abs().max() < 5e-4
     interior = grid['closed form is long-only'].astype(bool)
     assert list(grid.index[~interior]) == [0.5]
     assert (grid['one component'] - grid['one component, closed form'])[
@@ -465,7 +467,7 @@ def exhibit(path) -> dict:
                 interior].abs().max() < 1e-4
             and np.abs(one - budget_mean_variance(mean, covar, GAMMA)).max() < 1e-4),
         'three_components_match_cvxpy': bool(
-            (three_series - table['three components, CVXPY']).abs().max() < 1e-4
+            (three_series - table['three components, CVXPY']).abs().max() < 5e-4
             and np.abs(three - cvxpy_mixture_optimum(GAMMA)).max() < 1e-4),
         'crash_lowers_crypto_weight': bool((three_series < one_series - 0.005).all()),
         'crypto_weight_falls_with_gamma': bool((np.diff(one_series) < 0).all()

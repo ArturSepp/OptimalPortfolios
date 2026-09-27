@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-09-27T13:19:22+00:00",
+  "generated_at_utc": "2026-09-27T13:56:22+00:00",
   "platform": "Windows-11-10.0.26200-SP0",
   "versions": {
     "python": "3.12.14",
@@ -1513,7 +1513,7 @@
     "saa_target_duality": {
       "path": "docs/images/saa_target_duality.png",
       "script": "examples/docs/strategic_allocation_targets.py",
-      "script_sha256": "2ea9dc542fda8369be457e5bff00863eb35fd7178166609674073adcda1fa8bf",
+      "script_sha256": "6246f4bb34b4d8a7ae67148a63e81939b4176f7c3e2116eb2a1c271f469999cc",
       "image_sha256": "f69751ef1e1030f0932cc8de3d1c6069543627c6ef132ef36c6ec372ffaafe69",
       "table_sha256": "28310dfc102cf46971f494eedd989822384e0b2e7f159425625397433e62995e",
       "parameters": {
@@ -1577,7 +1577,7 @@
     "cara_mixture_allocation": {
       "path": "docs/images/cara_mixture_allocation.png",
       "script": "examples/docs/cara_gaussian_mixture.py",
-      "script_sha256": "272f1501ad048ec600332f9631c6db44bec5404758f33dc4a780c2bf7e949415",
+      "script_sha256": "552ad072d99487ad54c66a52fdd247727f027c6e35999e9606dbdf2c9f892458",
       "image_sha256": "46dd3d45488ce43e53a944fc66050facbd1028f1fe99a42b88c8f83c32cc0c0e",
       "table_sha256": "4eac5805db32fd3a79c6328b94b9d90fd67d0c10e858920b06f7e9a3518f833e",
       "parameters": {
@@ -1677,7 +1677,7 @@
     }
   },
   "review": {
-    "note": "Inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27. efficient_frontier_objectives: frontier with the inefficient branch dashed, minimum variance, maximum Sharpe and four utility portfolios labelled in ink, the line from the origin dotted; weights of the three portfolios as grouped bars. saa_target_duality: the three routes as distinct markers on one frontier with a shared legend; the utility volatility against the penalty weight on a log axis, with the 5% target, the minimum-variance level and the shadow price marked. cara_mixture_allocation: crypto weight against risk aversion on a log axis with direct labels, and all weights at risk aversion 5 with values in ink. Generation now isolates matplotlib settings per exhibit, so the HRP exhibit no longer passes its ink tick labels to the exhibits drawn after it; the eighteen earlier exhibits are byte-identical to their published images and the three new ones to the reviewed previews.",
-    "published_at_utc": "2026-09-27T13:20:16+00:00"
+    "note": "Republished on 2026-09-27 after the CI matrix showed version-dependent statements: strategic_allocation_targets.py now accepts both outcomes of a target Series that starts late (CVXPY 1.9 raises ValueError; CVXPY 1.7 falls back to zeros), and cara_gaussian_mixture.py compares its SLSQP grid with CVXPY to 5e-4 (SciPy 1.15 differs by up to 1.05e-4 at risk aversion 0.6). Both scripts pass under the Python 3.10 pins (CVXPY 1.7.5, NumPy 2.2.6, SciPy 1.15.3). All twenty-one images are byte-identical to those inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27.",
+    "published_at_utc": "2026-09-27T13:56:27+00:00"
   }
 }

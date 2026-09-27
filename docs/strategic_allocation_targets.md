@@ -563,8 +563,9 @@ directly.
 - Dates before the first row of `expected_returns` receive zero expected returns. The return
   solver then lowers its target to zero with a warning and returns the minimum-variance portfolio;
   the volatility solver has a zero objective, and every feasible portfolio solves it. Dates before
-  the first entry of the target Series receive no target, and CVXPY raises a `ValueError` for the
-  missing value.
+  the first entry of the target Series receive no target. With CVXPY 1.9 the solve raises a
+  `ValueError` for the missing value, which the rolling function does not catch; with CVXPY 1.7
+  it returns a solution that fails validation, and the date falls back to zeros.
 - A fixed penalty weight does not hold a volatility target over time: at $\phi = 4.46$, the
   shadow price of the end-2025 target, the rolling utility solutions range from 4.1% to 5.3%
   volatility across the 21 year ends.

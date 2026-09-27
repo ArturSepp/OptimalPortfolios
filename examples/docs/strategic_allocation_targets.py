@@ -351,15 +351,18 @@ def main() -> None:
         assert (np.abs(held.loc[date] - drifted).max() < 1e-6) == feasible
         held_years += feasible
     assert held_years == 8 and len(dates) - 1 == 20
+    # A target Series that starts after the first date leaves that date without a target. CVXPY
+    # 1.9 raises ValueError, which the rolling function does not catch; CVXPY 1.7 returns a
+    # solution that fails validation, and the date falls back to zeros.
     try:
-        op.rolling_min_variance_target_return(
+        late = op.rolling_min_variance_target_return(
             prices=data.prices, expected_returns=cma_table,
             target_returns=pd.Series(TARGET_RETURN, index=dates[1:2]),
             constraints=constraints, benchmark_weights=None, covar_dict=covar_dict)
     except ValueError as error:
         assert 'NaN' in str(error)
     else:
-        raise AssertionError('a target series that starts after the first date should raise')
+        assert late.iloc[0].abs().sum() == 0.0 and abs(late.iloc[1].sum() - 1.0) < 1e-6
     print('strategic_allocation_targets: all page statements verified.')
 
 
