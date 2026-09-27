@@ -186,10 +186,10 @@ estimator rather than portfolio construction.
 | `optimization` | The rolling dispatcher, the general, risk-allocation, SAA and TAA solvers, `Constraints`, `OptimiserConfig` and solver diagnostics | [choosing an objective](https://optimalportfolios.readthedocs.io/en/latest/optimization_module_readme.html), [constraints](https://optimalportfolios.readthedocs.io/en/latest/constraints.html), [solver outcomes](https://optimalportfolios.readthedocs.io/en/latest/solver_numerics_and_outcomes.html) |
 | `universe` | `UniverseData` and its transforms, such as unsmoothing | [universe data](https://optimalportfolios.readthedocs.io/en/latest/universe_data_and_unsmoothing.html) |
 | `utils` | Risk contributions, benchmark betas, weight drift, NaN filtering, Gaussian mixtures | [risk contributions and betas](https://optimalportfolios.readthedocs.io/en/latest/portfolio_risk_analytics.html) |
-| `reports` | Result plots, marginal backtests and optional PyBloqs reports | [analytics gallery](docs/analytics_gallery.md) |
+| `reports` | Result plots, marginal backtests and optional PyBloqs reports | [analytics gallery](https://optimalportfolios.readthedocs.io/en/latest/analytics_gallery.html) |
 
 The [software-design guide](https://optimalportfolios.readthedocs.io/en/latest/software_design.html) draws the module imports, and the
-[API reference](docs/api.rst) lists every public object.
+[API reference](https://optimalportfolios.readthedocs.io/en/latest/api.html) lists every public object.
 
 ### Analytics at a glance
 
@@ -281,7 +281,7 @@ Optional extras keep network-data and reporting integrations out of the core ins
 
 For both runtime integrations, install `optimalportfolios[data,reports]`. There is no `jupyter`
 or `dev` extra; tests and static checks are the PEP 735 `test` and `lint` dependency groups, and
-[CONTRIBUTING.md](CONTRIBUTING.md) describes the contributor environment.
+[CONTRIBUTING.md](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CONTRIBUTING.md) describes the contributor environment.
 
 ## Portfolio optimisers
 
@@ -329,11 +329,11 @@ examples/
 
 #### Optimal portfolio backtest
 
-[`examples/backtests/minimal_backtest.py`](examples/backtests/minimal_backtest.py) fetches eight
+[`examples/backtests/minimal_backtest.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/backtests/minimal_backtest.py) fetches eight
 ETFs, estimates an EWMA covariance, solves maximum diversification each quarter, backtests with
 transaction costs and writes a qis factsheet. The previews in this section are offline teaching
 exhibits on a fixed synthetic sample ending 31 December 2025, produced by the scripts named with
-each; the [shared provenance record](examples/figures/analytics_manifest.json) records their
+each; the [shared provenance record](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/figures/analytics_manifest.json) records their
 inputs, configuration, software versions and visual review.
 
 [![Synthetic maximum-diversification portfolio growth and drawdowns](examples/figures/example_portfolio_factsheet1.PNG)](examples/figures/example_portfolio_factsheet1.PNG)
@@ -342,22 +342,22 @@ inputs, configuration, software versions and visual review.
 #### Customised reporting
 
 `PortfolioData` from [qis](https://github.com/ArturSepp/QuantInvestStrats) plots NAV, weights and
-return scatters. The preview from [`portfolio_reports.py`](tools/docs_analytics/portfolio_reports.py)
+return scatters. The preview from [`portfolio_reports.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/docs_analytics/portfolio_reports.py)
 shows quarterly target weights and realised trading costs.
 
 [![Synthetic portfolio target weights and quarterly trading costs](examples/figures/example_customised_report.PNG)](examples/figures/example_customised_report.PNG)
 
 #### Parameter sensitivity backtest
 
-[`examples/comparisons/parameter_sensitivity.py`](examples/comparisons/parameter_sensitivity.py)
+[`examples/comparisons/parameter_sensitivity.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/comparisons/parameter_sensitivity.py)
 backtests one method across estimation parameters; the preview from
-[`span_sensitivity.py`](tools/docs_analytics/span_sensitivity.py) compares five EWMA spans.
+[`span_sensitivity.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/docs_analytics/span_sensitivity.py) compares five EWMA spans.
 
 [![Synthetic maximum-diversification performance and trading costs across EWMA spans](examples/figures/max_diversification_span.PNG)](examples/figures/max_diversification_span.PNG)
 
 #### Multi-optimiser cross-backtest
 
-[`examples/comparisons/optimisers.py`](examples/comparisons/optimisers.py) runs several objectives
+[`examples/comparisons/optimisers.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/comparisons/optimisers.py) runs several objectives
 through `compute_rolling_optimal_weights()`; the preview from
 [`optimiser_comparison.py`](tools/docs_analytics/optimiser_comparison.py) compares minimum
 variance, maximum diversification and equal risk budgets on shared inputs.
@@ -366,30 +366,30 @@ variance, maximum diversification and equal risk budgets on shared inputs.
 
 #### Multi-covariance-estimator backtest
 
-[`examples/comparisons/covar_estimators.py`](examples/comparisons/covar_estimators.py) backtests one
+[`examples/comparisons/covar_estimators.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/comparisons/covar_estimators.py) backtests one
 objective with several covariance estimators; the preview from
-[`covariance_comparison.py`](tools/docs_analytics/covariance_comparison.py) compares six estimators
+[`covariance_comparison.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/docs_analytics/covariance_comparison.py) compares six estimators
 on one known-factor simulation, which does not establish an estimator ranking.
 
 [![Synthetic minimum-variance performance and covariance errors for six estimators](examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)](examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)
 
 #### Drift-policy comparison (new in v5.3.1)
 
-[`examples/comparisons/drift_policy.py`](examples/comparisons/drift_policy.py) compares
+[`examples/comparisons/drift_policy.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/comparisons/drift_policy.py) compares
 `OptimiserConfig.use_drifted_weights_0 = True` (the default) with `False` under a binding
 turnover budget; see [turnover and transaction costs](https://optimalportfolios.readthedocs.io/en/latest/turnover_and_transaction_costs.html).
 
 #### Optimal allocation to cryptocurrencies
 
 The paper's replication code is in
-[`papers/crypto_allocation_risk_2023`](papers/crypto_allocation_risk_2023/README.md); the
+[`papers/crypto_allocation_risk_2023`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/papers/crypto_allocation_risk_2023/README.md); the
 [cryptocurrency case study](https://optimalportfolios.readthedocs.io/en/latest/app_crypto_allocation.html) reports its design and results and runs
 the four methods offline.
 
 #### Robust optimisation of strategic and tactical asset allocation
 
 The paper's example is in
-[`papers/robust_optimisation_jpm_2026`](papers/robust_optimisation_jpm_2026/README.md); the
+[`papers/robust_optimisation_jpm_2026`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/papers/robust_optimisation_jpm_2026/README.md); the
 [ROSAA case study](https://optimalportfolios.readthedocs.io/en/latest/app_rosaa_multi_asset_allocation.html) reports the framework, its study
 design and results, and runs the same configuration offline.
 
