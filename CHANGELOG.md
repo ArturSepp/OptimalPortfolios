@@ -42,6 +42,12 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   Python 3.12. The daily `link-health.yml` run gains a job, `.github/scripts/check_rtd_build.py`,
   that fails when the newest finished `latest` build did not succeed. `stable` keeps the old
   site until the next release tag.
+- The first build after that fix failed at the next command with a shell syntax error. Read the
+  Docs runs each `build.jobs` command as `/bin/sh -c '<command>'` without escaping it, and the
+  `--python "$(python -c '...')"` argument contained single quotes. The environment is now
+  created with `python -m uv venv --python 3.12`. `readthedocs_config_test.py` rejects a single
+  quote or a bare `uv` in any build-job command, so the test matrix of every pull request catches
+  both failures, which `docs.yml` cannot see.
 
 ## [7.8.0] - 2026-09-23
 
