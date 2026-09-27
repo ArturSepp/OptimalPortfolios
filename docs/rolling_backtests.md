@@ -300,10 +300,11 @@ so the September decision can be implemented in October and carried afterwards.
 | `compute_rolling_optimal_weights` | Objective, constraints and inputs produce targets; no realised holdings or NAV. |
 | `backtest_rolling_optimal_portfolio` | Computes targets, filters them if requested, then delegates holdings simulation to qis. |
 | `apply_drift_to_weights_0` | A prior target and two price anchors produce a construction baseline. |
-| `round_weights_to_pct` | Fully invested weights produce percentages to two decimals by the largest-remainder method, for reporting. |
+| `round_weights_to_pct` | Fully invested weights produce percentages to two decimals that sum to exactly 100, for reporting. |
 
-`round_weights_to_pct` is for reports, not for trading. It floors each percentage to two
-decimals and hands the shortfall from 100 to the largest remainders, one hundredth each. An
+`round_weights_to_pct` is for reports, not for trading. For fully invested weights, its
+percentages sum to exactly 100. It floors each percentage to two decimals and hands the
+shortfall from 100 to the largest remainders, one hundredth each. An
 equal three-asset allocation rounds naively to 33.33% each, a total of 99.99%; the helper
 reports 33.34%, 33.33% and 33.33%, and every target of the monthly example above also adds
 to 100.
