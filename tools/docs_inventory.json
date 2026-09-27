@@ -35,6 +35,12 @@
       "example": "examples/docs/app_rosaa_multi_asset_allocation.py",
       "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). R2 pilot, reviewed by the owner."
     },
+    "docs/cara_gaussian_mixture.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/cara_gaussian_mixture.py",
+      "review": "R6 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M16. Closed-form objective, one-component reduction and the in-house EM fit asserted; the annualisation of fitted components (Pitfall). Teaching exhibit cara_mixture_allocation.png."
+    },
     "docs/constraints.md": {
       "form": "methodology",
       "status": "adopted",
@@ -100,6 +106,12 @@
       "status": "adopted",
       "example": "examples/docs/maximum_diversification.py",
       "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). R2 pilot, reviewed by the owner; thin spaces removed and an inline > written as \\gt for GitHub."
+    },
+    "docs/mean_variance_objectives.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/mean_variance_objectives.py",
+      "review": "R6 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M14. Closed forms and the two-fund utility mix asserted; the Charnes-Cooper route and its volatility-cap Pitfall asserted. Teaching exhibit efficient_frontier_objectives.png."
     },
     "docs/minimum_tracking_error.md": {
       "form": "methodology",
@@ -175,6 +187,12 @@
       "example": "examples/docs/solver_numerics_and_outcomes.py",
       "review": "R4 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M21. Takes the solver-outcome sections of the router; solve-and-fallback diagram. Teaching exhibit covariance_conditioning.png."
     },
+    "docs/strategic_allocation_targets.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/strategic_allocation_targets.py",
+      "review": "R6 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M15. Frontier duality proved and asserted on the packaged fixture; the utility form of the target-volatility solver ignores target_vol (Pitfall). Teaching exhibit saa_target_duality.png."
+    },
     "docs/stress_testing_with_options.md": {
       "form": "methodology",
       "status": "adopted",
@@ -214,21 +232,6 @@
       "form": "methodology",
       "title": "Signal diagnostics and alpha-rank portfolios",
       "stage": "R7"
-    },
-    "docs/mean_variance_objectives.md": {
-      "form": "methodology",
-      "title": "Minimum variance, quadratic utility and maximum Sharpe",
-      "stage": "R6"
-    },
-    "docs/strategic_allocation_targets.md": {
-      "form": "methodology",
-      "title": "Strategic allocation: target return and target volatility",
-      "stage": "R6"
-    },
-    "docs/cara_gaussian_mixture.md": {
-      "form": "methodology",
-      "title": "CARA utility under Gaussian mixtures",
-      "stage": "R6"
     },
     "docs/alpha_over_tracking_error.md": {
       "form": "methodology",

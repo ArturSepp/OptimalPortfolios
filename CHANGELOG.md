@@ -158,6 +158,20 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     unsmoothing restores to a private-equity series.
   - The universe page states the observed behaviour where the code and its docstrings differ:
     the unsmoothing copy runs the qis AR(2) default, and resets `liquidity_ac_id`.
+- Documentation site, fourth stage, third batch of new methodology pages (no package change):
+  minimum variance, quadratic utility and maximum Sharpe; strategic allocation with a target
+  return or a target volatility; and CARA utility under Gaussian mixtures. Each follows the
+  canonical-script contract; no content moves.
+  - New teaching exhibits: the three mean-variance objectives on one frontier; the target-return,
+    target-volatility and utility routes on one frontier, with the penalty weight at which the
+    utility form meets a volatility target; and the allocation to a fat-tailed asset against risk
+    aversion with one and three mixture components.
+  - The pages state where the code differs from its docstrings: the Charnes–Cooper route of
+    maximum Sharpe rescales only the exposure, box and group rows, so a volatility cap can make
+    it infeasible; the utility form of the target-volatility solver ignores `target_vol`; and
+    the CARA mixture's fitted weekly components are annualised as one-year regimes.
+  - `tools/docs_analytics/teaching.py` draws each exhibit with its own matplotlib settings, so
+    a setting one exhibit changes no longer reaches the exhibits drawn after it.
 
 ## [7.8.0] - 2026-09-23
 

@@ -209,9 +209,9 @@ in [choosing an objective](optimization_module_readme.md).
 | Minimum variance, maximum diversification | Covariance |
 | Risk budgeting, including equal risk contributions | Covariance and optional risk budgets |
 | Hierarchical risk parity | Covariance and a linkage; no `Constraints` |
-| Quadratic utility, maximum Sharpe ratio | Covariance and expected returns, which the dispatcher estimates from prices |
-| CARA utility under Gaussian mixtures | Prices only; it fits its own mixture and ignores the covariance |
-| Strategic target return or target volatility | Covariance, expected returns and targets; optional benchmark |
+| [Quadratic utility, maximum Sharpe ratio](mean_variance_objectives.md) | Covariance and expected returns, which the dispatcher estimates from prices |
+| [CARA utility under Gaussian mixtures](cara_gaussian_mixture.md) | Prices only; it fits its own mixture and ignores the covariance |
+| [Strategic target return or target volatility](strategic_allocation_targets.md) | Covariance, expected returns and targets; optional benchmark |
 | Minimum tracking error | Covariance and a benchmark |
 | Tactical alpha over tracking error | Covariance, alphas, a benchmark and a tracking-error limit |
 | Tactical alpha with a target return | Covariance, alphas, yields and targets; optional benchmark |

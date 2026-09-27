@@ -58,7 +58,8 @@ October 2023. [Risk](https://www.risk.net/cutting-edge/7957914/optimal-allocatio
 The paper compares four allocation methods for a diversified portfolio with a
 cryptocurrency: equal risk contributions, maximum diversification, maximum Sharpe ratio and
 CARA utility under a Gaussian mixture fitted to returns. Each is an objective of the package (see
-[choosing an objective](optimization_module_readme.md)); the manuscript source is tracked in the
+[choosing an objective](optimization_module_readme.md), [mean-variance objectives](mean_variance_objectives.md) and
+[CARA utility under Gaussian mixtures](cara_gaussian_mixture.md)); the manuscript source is tracked in the
 repository.
 
 ### Capital market assumptions from multi-asset tradable factors
