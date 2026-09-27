@@ -106,6 +106,16 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   - Stale statements are corrected: the normalized-return EWMA kernel is point in time since qis
     5.31.0; `qis.FxRatesData` sorts FX spots and rates; the FX wrapper's zero-return policy can
     be switched off with `zero_return_to_nan=False`.
+- Documentation site, third stage, third batch (no package change): the alpha signals, risk
+  budgeting, minimum tracking error and overlay tail floor pages move to the canonical-script
+  contract and are adopted; four more block-executing test modules are retired.
+  - New teaching exhibits: cross-sectional against within-cluster scores of one signal; target
+    budgets against achieved risk shares when a cap binds; the tracking-error cost of each added
+    constraint; and the overlay sleeve, risk and return as the tail floor tightens.
+  - The alpha page is titled "Alpha signals" and states that the beta-based signals are point in
+    time since 7.8.1.dev1; its script asserts it for every standard and cluster family. The
+    risk-budgeting page describes the solver routing the code uses: CCD with the default box and
+    no group rows, otherwise ADMM with a `quadprog` projection.
 
 ## [7.8.0] - 2026-09-23
 

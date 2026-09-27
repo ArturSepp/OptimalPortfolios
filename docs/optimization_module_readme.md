@@ -656,8 +656,7 @@ diagnostic that may plot or use local data.
 The 2026-09-14 local verification uses OptimalPortfolios 7.6.0 working source, QIS 5.26.0,
 FactorLasso 0.18.0, pandas 3.0.5, NumPy 2.5.2, CVXPY 1.9.2 and CLARABEL 0.11.1.
 It does not certify the existing lockfile's QIS 5.22.3 environment.
-The [alpha guide](alphas_module_readme.md) records a separate default beta-initialisation
-timing defect. No alpha estimation is used in these fixed-input examples.
+No alpha estimation is used in these fixed-input examples.
 Sphinx rendering, GitHub preview and VS Code preview require separate review.
 
 ## References

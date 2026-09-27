@@ -14,8 +14,9 @@
     },
     "docs/alphas_module_readme.md": {
       "form": "methodology",
-      "status": "pending",
-      "review": "M4c source migration, 15 offline executable blocks, independent signal/scoring references, 43 passing article cases were verified on 2026-09-14. The focused suite has 386 passes and the same six expected failures. Strict Sphinx HTML/linkcheck and Sphinx browser review pass. The timing limitation is documented without numerical changes. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R3c (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Title \"Alpha signals\", with both old title anchors kept. The beta-based signals are point in time (7.8.1.dev1) and asserted so; the old strict expected failures are gone. Teaching exhibit alpha_scoring_cross_section_vs_cluster.png.",
+      "example": "examples/docs/alphas_module_readme.py"
     },
     "docs/analytics_gallery.md": {
       "form": "utility",
@@ -83,8 +84,9 @@
     },
     "docs/minimum_tracking_error.md": {
       "form": "methodology",
-      "status": "pending",
-      "review": "M2c source migration, executable examples, independent allocation reference, covariance-scale and timing checks, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-13. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R3c (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Notation aligned with the conventions page. Teaching exhibit tracking_error_constraint_cost.png.",
+      "example": "examples/docs/minimum_tracking_error.py"
     },
     "docs/mixed_frequency_data.md": {
       "form": "methodology",
@@ -99,8 +101,9 @@
     },
     "docs/overlay_tail_floor.md": {
       "form": "methodology",
-      "status": "pending",
-      "review": "M4c methodology migration, seven offline blocks, independent allocation/floor/risk references, 25 article cases and 882 focused tests passed on 2026-09-14. All six deliberate defects were detected; the original synthetic example is unchanged. Strict Sphinx HTML/linkcheck and Sphinx browser review pass: six display equations, four tables and all 18 old HTML IDs. Fixed-exposure floor scaling and the missing SLSQP return row are documented without numerical changes. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R3c (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Imports the repository solver demo, so its script needs a checkout. Teaching exhibit overlay_floor_allocation.png.",
+      "example": "examples/docs/overlay_tail_floor.py"
     },
     "docs/package_comparison.md": {
       "form": "utility",
@@ -119,8 +122,9 @@
     },
     "docs/risk_budgeting.md": {
       "form": "methodology",
-      "status": "pending",
-      "review": "M2b source migration, executable examples, independent references, scoped checks, strict Sphinx HTML/linkcheck and Sphinx browser review passed on 2026-09-13. GitHub and VS Code viewer checks remain pending; this page is not yet fully adopted."
+      "status": "adopted",
+      "review": "R3c (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Solver routing stated as the code does it; new binding-cap block. Teaching exhibit risk_budgeting_contributions.png. The HRP section moves to M12 in R5.",
+      "example": "examples/docs/risk_budgeting.py"
     },
     "docs/rolling_backtests.md": {
       "form": "methodology",

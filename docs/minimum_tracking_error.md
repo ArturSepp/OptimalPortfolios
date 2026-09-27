@@ -2,8 +2,9 @@
 myst:
   html_meta:
     description: >-
-      Minimum tracking error in OptimalPortfolios: benchmark-relative construction,
-      covariance units, solver diagnostics, and offline analytics through qis.RiskModel.
+      Minimum tracking error in OptimalPortfolios: benchmark-relative construction, the
+      tracking-error cost of each added constraint, covariance units, solver diagnostics, and
+      offline analytics through qis.RiskModel.
 ---
 
 # Minimum tracking error
@@ -35,12 +36,25 @@ The convex quadratic formulation follows the framework in
 
 ## Inputs, notation, and assumptions
 
+| Convention | This article |
+|---|---|
+| Return basis | Fractional simple returns, as the supplied covariance assumes; no return series is sampled, and the rolling block drifts weights by simple price ratios |
+| Estimation grid | None; every covariance is a fixed synthetic input, not an estimate |
+| Rebalancing grid | One synthetic snapshot, 31 January 2024, for the single-date solve and `qis.RiskModel`; the covariance-dictionary keys, three 2024 month ends, for `rolling_minimise_tracking_error` |
+| Covariance units | Annualized fractional return-squared, as supplied; neither the optimizer nor `qis.RiskModel` rescales it, so tracking error is annualized fractional volatility |
+| Expected returns | None; the objective holds no return forecast |
+| Weight state | Single date: `weights_0` sets the turnover baseline and the first fallback (the benchmark in the worked example, current holdings in the constraint-cost example); rolling: the previous target drifted by price ratios (`use_drifted_weights_0=True`) |
+| Solver | CVXPY with CLARABEL, the `OptimiserConfig` default, on an eigendecomposed covariance (`factorize_covar=True`) |
+
+The notation follows the [conventions page](conventions.md#notation). The table below restates
+the symbols this page uses with their input contracts.
+
 | Symbol or input | Meaning and contract |
 |---|---|
-| $n$ | Number of assets in the optimization universe. |
-| $w$, $w_b$ | Portfolio and benchmark weight vectors of length $n$, in fractions of NAV. A weight of 0.35 means 35%. |
-| $d$ | Active weights, defined as $w-w_b$. |
-| $\Sigma$ | Symmetric $n \times n$ covariance of fractional asset returns, in a stated variance scale. |
+| $N$ | Number of assets in the optimization universe. |
+| $w$, $w^{\mathrm{bm}}$ | Portfolio and benchmark weight vectors of length $N$, in fractions of NAV. A weight of 0.35 means 35%. |
+| $d$ | Active weights, defined as $w-w^{\mathrm{bm}}$. |
+| $\Sigma$ | Symmetric $N \times N$ covariance of fractional asset returns, in a stated variance scale. |
 | $\mathcal{F}$ | Feasible set defined by the applicable hard constraints. |
 | `pd_covar` | Covariance DataFrame with unique asset labels; index and columns must match in the same order. |
 | `benchmark_weights` | Finite Series for one date or a static rolling benchmark; a DataFrame supplies dated benchmark observations to the rolling function. |
@@ -69,16 +83,16 @@ decision date; the solver does not validate how the estimate was produced.
 Active variance and its square root, ex-ante tracking-error volatility, are
 
 $$
-d = w-w_b,\qquad
-\operatorname{TE}(w;\Sigma)
-= \sqrt{d^{\mathsf{T}}\Sigma d}.
+d = w-w^{\mathrm{bm}},\qquad
+\mathrm{TE}(w;\Sigma)
+= \sqrt{d^{\top}\Sigma d}.
 $$
 
 The optimization minimizes active variance over the feasible set:
 
 $$
 w^\star \in \arg\min_{w\in\mathcal{F}}
-(w-w_b)^{\mathsf{T}}\Sigma(w-w_b).
+(w-w^{\mathrm{bm}})^{\top}\Sigma(w-w^{\mathrm{bm}}).
 $$
 
 Minimizing the nonnegative variance also minimizes its square root. This is a covariance
@@ -89,19 +103,21 @@ For the long-only, fully invested example, the feasible set is
 
 $$
 \mathcal{F}
-= \left\lbrace w:\ \sum_{i=1}^{n}w_i=1,\quad 0\leq w_i\leq u_i\right\rbrace,
+= \left\lbrace w:\ \sum_{i=1}^{N}w_i=1,\quad 0\leq w_i\leq u_i\right\rbrace,
 $$
 
 where $u_i$ is the cap for asset $i$. Other exposure policies are available through
 [Constraints](constraints.md). Linear constraints give a convex quadratic program;
-compatible convex risk constraints extend the feasible set specification.
+compatible convex risk constraints extend the feasible set specification. Adding a
+constraint can only shrink $\mathcal{F}$, so the minimum tracking error cannot fall; the
+worked example measures [what each added constraint costs](#what-each-added-constraint-costs).
 
 ### Covariance scale
 
 For a positive scalar $c$ and the same weights,
 
 $$
-\operatorname{TE}(w;c\Sigma)=\sqrt{c}\operatorname{TE}(w;\Sigma).
+\mathrm{TE}(w;c\Sigma)=\sqrt{c}\mathrm{TE}(w;\Sigma).
 $$
 
 Scaling the objective covariance alone preserves the mathematical optimum when the
@@ -118,12 +134,19 @@ assumption for the caller.
 
 ## Worked example
 
-These are synthetic teaching inputs. The covariance, benchmark, and bounds preserve the
-original three-asset example. A starts at a benchmark weight of 50% but has a 35% cap.
+These are synthetic teaching inputs. A starts at a benchmark weight of 50% but has a 35% cap.
+The block runs offline on a core installation. It validates benchmark coverage, requires an
+accepted and compliant solve, and delegates tracking-error measurement to `qis.RiskModel`
+through `optimalportfolios.build_risk_model`.
 
-The following block runs offline on a core installation. It validates benchmark coverage,
-requires an accepted and compliant solve, and delegates tracking-error measurement to
-`qis.RiskModel` through `optimalportfolios.build_risk_model`.
+Both Python blocks of this page are excerpts of the canonical script
+[`examples/docs/minimum_tracking_error.py`](../examples/docs/minimum_tracking_error.py), which
+runs them in order and asserts every number and property on this page against a reference
+computed a different way:
+
+```console
+python -m examples.docs.minimum_tracking_error
+```
 
 ```python
 import numpy as np
@@ -184,9 +207,9 @@ The rounded weights are fractions of NAV:
 | B | 0.300000 | 0.369643 | 0.069643 |
 | C | 0.200000 | 0.280357 | 0.080357 |
 
-Annualized tracking error: **3.072781%** in the verified run. Small differences in the
-last digits are solver-dependent. A's cap binds, and the other assets absorb its
-15-percentage-point reduction. Neither B nor C reaches its cap.
+Annualized tracking error: **3.072781%**. The last digits depend on where the solver stops;
+the exact allocation of the next subsection gives 3.072778%. A's cap binds, and the other
+assets absorb its 15-percentage-point reduction. Neither B nor C reaches its cap.
 
 This covariance needs no eigenvalue flooring, so the original and solver covariance
 agree to floating-point precision. `RiskModel` uses an exact covariance-grid date and
@@ -195,7 +218,7 @@ does not infer annualization from that date.
 ### Independent allocation check
 
 Fix $w_A=0.35$ and write $w_B=0.30+x$, $w_C=0.35-x$. Then
-$d=(-0.15,x,0.15-x)^{\mathsf{T}}$. Setting the directional derivative for a transfer
+$d=(-0.15,x,0.15-x)^{\top}$. Setting the directional derivative for a transfer
 between B and C to zero gives
 
 $$
@@ -207,8 +230,41 @@ $$
 The gradient components for B and C agree. The component for A is smaller, so reducing
 A from its cap and moving that weight to B or C increases the objective. Together with
 positive definiteness and feasibility, these first-order conditions certify the
-displayed allocation independently of CVXPY. The executable checks use this certificate;
+displayed allocation independently of CVXPY. The canonical script uses this certificate;
 tracking-error analytics remain in qis.
+
+### What each added constraint costs
+
+The same objective on a larger stylised universe shows how constraints accumulate. Its five
+assets are US, European and emerging-market (EM) equity, government bonds and credit, with
+annual volatilities from 6% to 22%. The benchmark is a 60/40 mix: 35%, 15% and 10% in the
+equities, 25% and 15% in the bonds. Current holdings are 30%, 10%, 10%, 35% and 15%.
+Constraints are added one at a time, and each step keeps the previous ones, so the feasible
+set only shrinks and the minimum tracking error cannot fall. The canonical script solves every
+step again with SciPy's SLSQP and computes each tracking error as the explicit quadratic form.
+
+The fully invested, long-only benchmark is feasible, so the first step has zero tracking error.
+Excluding EM equity with a zero cap raises it to 1.38%, capping US equity at 30% to 1.57%,
+limiting equity to 50% to 1.86%, and limiting turnover from the current holdings to 30% to
+2.06%. Turnover is the total $\lVert w-w_0\rVert_1$, with no half factor. Selling EM equity
+into European equity uses 20 of the 30 points; the remaining 10 buy one 5-point switch from
+government bonds into credit, where the solve without the turnover limit switches 17.3 points.
+
+![Left: minimum tracking error at each step, from 0.00% for the fully invested, long-only
+benchmark to 1.38% after excluding EM equity, 1.57% after capping US equity at 30%, 1.86% after
+limiting equity to 50% and 2.06% after limiting turnover to 30%. Right: active weights after the
+exclusion, where EM equity's 10 points go to European equity, credit and US equity while
+government bonds are sold, and with all four constraints, where US equity is 5 points under and
+European equity, government bonds and credit are each 5 points over.](images/tracking_error_constraint_cost.png)
+
+*Figure: the minimum tracking error of the five-asset example as constraints are added, and its
+active weights after the first and the last constraint. Drawn by the `exhibit` function of the
+canonical script; the [analytics gallery](analytics_gallery.md) lists its provenance.*
+
+> **Insight.** Covariance, not benchmark proportions, decides where displaced weight goes. The
+> zero cap on EM equity moves its 10 points into European equity (6.0), credit (5.0) and US
+> equity (2.8), and sells 3.8 points of government bonds: the mix of the remaining assets that
+> best tracks EM equity.
 
 ## Implementation in optimalportfolios
 
@@ -284,20 +340,12 @@ implementation lag and transaction-cost convention.
 
 ### Reproduction and verification context
 
-The Python blocks above are the canonical offline examples for this article.
-[Their executable tests](../src/optimalportfolios/tests/minimum_tracking_error_documentation_test.py)
-check the displayed results and an independent allocation reference:
-
-```console
-python -m pytest src/optimalportfolios/tests/minimum_tracking_error_documentation_test.py -q
-```
-
-On Windows, use the repository's external interpreter and generated-state setup in
-[AGENTS.md](https://github.com/ArturSepp/OptimalPortfolios/blob/main/AGENTS.md).
-The examples were verified on 2026-09-13 against a source export of the local
-OptimalPortfolios 7.6.0 working tree, with installed qis 5.26.0, CVXPY 1.9.2 and
-CLARABEL 0.11.1. This identifies the local verification environment rather than
-certifying a published artifact or locked CI run.
+The [canonical script](../examples/docs/minimum_tracking_error.py) runs both blocks and checks
+the displayed allocation and tracking error against the closed-form allocation, the
+covariance-scale identity, the rolling benchmark timing and first-date turnover baseline, every
+step of the constraint-cost example against an SLSQP solve, and the filtering, stabilization
+and fallback statements below. The test suite runs it, and so does the offline examples lane
+of CI.
 
 The existing [one-step and rolling example](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/solvers/minimum_tracking_error.py)
 demonstrates a larger workflow and downloads market data; it is separate from the
@@ -320,6 +368,12 @@ to excluded benchmark holdings no longer enter the solve. Consequently, this can
 differ from minimizing full-universe tracking error with excluded portfolio weights
 fixed at zero. Assess the final portfolio against the intended full benchmark using
 a complete risk model.
+
+> **Pitfall.** Excluding a benchmark holding with `inclusion_indicators` is not the same as
+> capping it at zero. In the five-asset example, the filtered solve no longer sees EM equity's
+> covariances and puts 8.2 of its 10 points into government bonds, the lowest-variance asset.
+> Against the full benchmark its tracking error is 2.10%, against 1.38% for the zero cap. Use a
+> zero `max_weights` entry when the full benchmark is the reference.
 
 The current single-date wrapper fills a missing benchmark **label** with zero during
 alignment; an explicit NaN on a retained asset raises an error. The rolling interface
