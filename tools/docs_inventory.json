@@ -67,6 +67,18 @@
       "example": "examples/docs/factor_covariance_hcgl.py",
       "review": "R4 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M05. Takes the factor sections of covariance_estimators. Teaching exhibit factor_covariance_variance_split.png."
     },
+    "docs/hierarchical_risk_parity_and_cluster_budgets.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/hierarchical_risk_parity_and_cluster_budgets.py",
+      "review": "R5 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M12. Takes the group-budget, HRP and partially classified group sections of risk_budgeting. Teaching exhibit hrp_vs_erc_weights.png."
+    },
+    "docs/implied_risk_budgets.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/implied_risk_budgets.py",
+      "review": "R5 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M11. Hold rule for hedging assets stated and asserted. Teaching exhibit implied_budgets_round_trip.png."
+    },
     "docs/incomplete_histories.md": {
       "form": "methodology",
       "status": "adopted",
@@ -137,7 +149,7 @@
     "docs/risk_budgeting.md": {
       "form": "methodology",
       "status": "adopted",
-      "review": "R3c (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Solver routing stated as the code does it; new binding-cap block. Teaching exhibit risk_budgeting_contributions.png. The HRP section moves to M12 in R5.",
+      "review": "R3c (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Solver routing stated as the code does it; new binding-cap block. Teaching exhibit risk_budgeting_contributions.png. R5 (2026-09-27): the group-budget, HRP and partially classified group sections moved to hierarchical_risk_parity_and_cluster_budgets, leaving pointer sections and the linked anchors. Rechecked with the same checks.",
       "example": "examples/docs/risk_budgeting.py"
     },
     "docs/rolling_backtests.md": {
@@ -175,6 +187,12 @@
       "review": "R3d (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the excerpt rule and the GitHub math rules (and the convention card on methodology pages); the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. No-trade threshold of the L1 penalty stated and asserted. Teaching exhibit turnover_penalty_tradeoff.png. The harness is retired.",
       "example": "examples/docs/turnover_and_transaction_costs.py"
     },
+    "docs/universe_data_and_unsmoothing.md": {
+      "form": "methodology",
+      "status": "adopted",
+      "example": "examples/docs/universe_data_and_unsmoothing.py",
+      "review": "R5 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M03. The AR(2) default of the unsmoothing copy and the identifiers lost in transforms are stated and asserted. Teaching exhibit unsmoothing_autocorrelation.png, with autocorrelation and volatility on separate axes."
+    },
     "src/optimalportfolios/alphas/README.md": {
       "form": "utility",
       "status": "pending",
@@ -192,25 +210,10 @@
     }
   },
   "planned": {
-    "docs/universe_data_and_unsmoothing.md": {
-      "form": "methodology",
-      "title": "Universe data and appraisal unsmoothing",
-      "stage": "R5"
-    },
     "docs/signal_diagnostics_and_profiling.md": {
       "form": "methodology",
       "title": "Signal diagnostics and alpha-rank portfolios",
       "stage": "R7"
-    },
-    "docs/implied_risk_budgets.md": {
-      "form": "methodology",
-      "title": "Implied risk budgets from target weights",
-      "stage": "R5"
-    },
-    "docs/hierarchical_risk_parity_and_cluster_budgets.md": {
-      "form": "methodology",
-      "title": "Hierarchical risk parity and cluster risk budgets",
-      "stage": "R5"
     },
     "docs/mean_variance_objectives.md": {
       "form": "methodology",

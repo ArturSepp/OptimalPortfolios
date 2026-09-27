@@ -145,6 +145,19 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     a Series.
   - `tools/check_docs.py` now reads the target of a link whose label wraps lines, such as long
     image alt text, so a missing exhibit is reported before the Sphinx build.
+- Documentation site, fourth stage, second batch of new methodology pages (no package change):
+  implied risk budgets from target weights, hierarchical risk parity and cluster risk budgets,
+  and universe data and appraisal unsmoothing. Each follows the canonical-script contract.
+  - The group-budget, hierarchical risk parity and partially classified group sections of the
+    risk budgeting page move to the hierarchical risk parity page, which leaves the risk
+    budgeting page on the solver. The README's cluster-aware allocation section links the new
+    page.
+  - New teaching exhibits: the implied budgets of a target and the weights of one fitted budget
+    vector as the stock-bond correlation drifts; capital and risk by block under HRP, equal risk
+    contribution and equal cluster budgets; and the autocorrelation and volatility that
+    unsmoothing restores to a private-equity series.
+  - The universe page states the observed behaviour where the code and its docstrings differ:
+    the unsmoothing copy runs the qis AR(2) default, and resets `liquidity_ac_id`.
 
 ## [7.8.0] - 2026-09-23
 

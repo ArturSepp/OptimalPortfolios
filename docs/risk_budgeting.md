@@ -3,7 +3,7 @@ myst:
   html_meta:
     description: >-
       Risk budgeting in OptimalPortfolios: Euler risk contributions, normalized budgets,
-      constrained allocation, group budgets, hierarchical risk parity, and offline examples.
+      constrained allocation with a binding bound, and offline examples.
 ---
 
 # Risk budgeting
@@ -21,8 +21,9 @@ correlations and binding constraints determine the resulting allocation.
 
 Use risk budgeting when an allocation policy is expressed through risk shares rather than
 expected returns. Equal risk contribution (ERC) is the special case of equal asset budgets.
-This article covers the volatility-based risk-budgeting solver, group-to-asset budget design,
-and the separate hierarchical risk parity allocation function.
+This article covers the volatility-based risk-budgeting solver. Group-to-asset budget design and
+the separate hierarchical risk parity allocation are described in
+[HRP and cluster risk budgets](hierarchical_risk_parity_and_cluster_budgets.md).
 
 OptimalPortfolios owns portfolio construction. [qis](https://github.com/ArturSepp/QuantInvestStrats)
 provides the risk-contribution analytics used below and the holdings simulation/reporting layer;
@@ -52,14 +53,12 @@ The notation follows the [conventions page](conventions.md#notation). In additio
 | $\mathrm{RC}_i$ | Asset $i$'s Euler contribution to portfolio volatility |
 | $r_i$ | Asset $i$'s dimensionless fraction of portfolio volatility |
 | $b_i$ | Normalized target risk share; positive on the eligible free universe |
-| $G_g,n_g$ | Classified asset set for group $g$ and its member count |
-| $B_g,\alpha$ | Aggregate group risk budget and group-size exponent |
 
 Supply a symmetric covariance DataFrame with unique, identically ordered asset labels on both
 axes. The model assumes a valid positive-semidefinite covariance and positive portfolio variance;
 a positive-definite matrix with positive asset variances avoids degenerate risk-budget problems.
-Covariance, budgets, group labels and tradability information must be available at the decision
-date. These functions do not estimate covariance or convert its frequency.
+Covariance, budgets and tradability information must be available at the decision date. These
+functions do not estimate covariance or convert its frequency.
 
 Finite positive input budgets are normalized over the surviving assets, so proportional scores
 such as `[50, 30, 20]` and fractional shares `[0.50, 0.30, 0.20]` define the same target.
@@ -154,52 +153,25 @@ numerical references for this homogeneous formulation.
 
 ### Group risk budgets
 
-`compute_group_risk_budgets` converts a complete or partially classified partition into
-asset-level targets. For the nonempty groups at the current observation:
-
-$$
-B_g=\frac{n_g^\alpha}{\sum_h n_h^\alpha},
-\qquad
-b_i=\frac{B_g}{n_g}\quad\text{for }i\in G_g.
-$$
-
-| `group_size_exponent` | Allocation of target risk |
-|---|---|
-| `0` | Equal aggregate budget for each available group |
-| `1` | Equal budget for each classified asset |
-| `0.5` | Aggregate group budget proportional to the square root of group size |
-
-Each asset has one group label. Missing labels receive zero budget; an observation with no
-classified assets raises `ValueError`. A membership DataFrame is transformed row by row,
-without using future classifications. Labels can represent statistical clusters, sectors or
-asset classes. This is a budget-design convention; matching these targets still depends on
-the covariance, constraints and tradable universe.
+Budgets for this solver can be set per group rather than per asset. `compute_group_risk_budgets`
+turns group or cluster labels into asset-level budgets to pass as `risk_budget`; its formula,
+exponents and point-in-time panels are described in
+[HRP and cluster risk budgets](hierarchical_risk_parity_and_cluster_budgets.md#group-risk-budgets).
 
 ### Hierarchical risk parity
 
-`compute_hierarchical_risk_parity_weights` implements the recursive-bisection allocation
-described by [López de Prado (2016)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2708678).
-It orders assets using a supplied SciPy linkage and splits ordered blocks recursively. Each
-split allocates capital inversely to the two block variances, measured using within-block
-inverse-variance portfolios.
-
-Tree estimation remains outside OptimalPortfolios. [factorlasso](https://github.com/ArturSepp/FactorLasso)
-can construct the linkage; this function consumes it and the labelled covariance matrix.
-See the [factorlasso software citation](https://github.com/ArturSepp/FactorLasso/blob/main/CITATION.cff).
-
-HRP does not take a `Constraints` object or a target risk-budget vector. Its weights need not
-equal the ERC or prescribed-budget solution. Use
-`qis.compute_group_portfolio_risk_contribution_ratios` to aggregate the resulting portfolio's
-Euler risk shares over groups.
+Hierarchical risk parity is a separate allocation rule that takes a covariance and a linkage, and
+no budgets or `Constraints`. [HRP and cluster risk budgets](hierarchical_risk_parity_and_cluster_budgets.md#recursive-bisection)
+describes it and compares it with this solver under cluster budgets.
 
 ## Worked example
 
-The four Python blocks below run in order and need no download, data file or random seed. They
+The three Python blocks below run in order and need no download, data file or random seed. They
 are excerpts of the canonical script
 [`examples/docs/risk_budgeting.py`](../examples/docs/risk_budgeting.py), which runs them and
 asserts every number and property on this page against a reference computed a different way:
-an independent conic solve of the same objective, the closed-form diagonal solution, the
-optimality conditions of a binding cap and the group-budget formula:
+an independent conic solve of the same objective, the closed-form diagonal solution and the
+optimality conditions of a binding cap:
 
 ```console
 python -m examples.docs.risk_budgeting
@@ -347,21 +319,10 @@ $w_i(\Sigma w)_i / w^\top\Sigma w$.
 
 ### Partially classified groups
 
-With one Growth asset and two Defensive assets, equal group budgets assign `0.50` to Growth
-and `0.25` to each Defensive member. An unclassified asset receives zero:
-
-```python
-memberships = pd.Series({
-    "Equity": "Growth",
-    "Bonds": "Defensive",
-    "Diversifier": "Defensive",
-    "Unclassified": None,
-})
-group_budgets = opt.compute_group_risk_budgets(
-    groups=memberships, group_size_exponent=0.0,
-)
-print(group_budgets.tolist())  # [0.5, 0.25, 0.25, 0.0]
-```
+The group-budget example, with one Growth asset, two Defensive assets and an unclassified asset
+that receives a zero budget, is worked on the page
+[HRP and cluster risk budgets](hierarchical_risk_parity_and_cluster_budgets.md#partially-classified-groups),
+together with a comparison of cluster budgets, ERC and HRP.
 
 ## Implementation in optimalportfolios
 
@@ -372,8 +333,7 @@ print(group_budgets.tolist())  # [0.5, 0.25, 0.25, 0.0]
 | `wrapper_risk_budgeting` | One covariance DataFrame; optional asset-indexed Series/dict budgets; returns a weight Series by default |
 | `rolling_risk_budgeting` | Price panel, covariance-date dictionary, and static Series, date-by-asset DataFrame or `None` budgets; returns dated target weights |
 | `opt_risk_budgeting` | NumPy covariance, `Constraints` and budget array, with no filtering, variance floor or freezing; returns a weight array, or the fallback after a failed solve |
-| `compute_group_risk_budgets` | Group Series or date-by-asset membership DataFrame; returns budgets with matching labels/shape |
-| `compute_hierarchical_risk_parity_weights` | Covariance DataFrame and linkage array; returns long-only, fully invested weights |
+| `compute_group_risk_budgets`, `compute_hierarchical_risk_parity_weights` | Group labels to budgets for `risk_budget`, and the separate HRP allocation; see [HRP and cluster risk budgets](hierarchical_risk_parity_and_cluster_budgets.md) |
 
 For rolling allocations, each covariance date must have an exact budget row when budgets are a
 DataFrame: missing dates raise `ValueError` rather than selecting a future or nearest observation.
@@ -444,6 +404,7 @@ estimation error and changes in correlation can all create a gap between target 
 
 ## See also
 
+- [HRP and cluster risk budgets](hierarchical_risk_parity_and_cluster_budgets.md)
 - [Portfolio constraints](constraints.md)
 - [Rolling backtests](rolling_backtests.md)
 - [Covariance estimators](covariance_estimators.md)
@@ -461,9 +422,5 @@ estimation error and changes in correlation can all create a gap between target 
 - Richard, J.-C., and Roncalli, T. (2019).
   [Constrained Risk Budgeting Portfolios: Theory, Algorithms, Applications & Puzzles](https://arxiv.org/abs/1902.05710).
   arXiv:1902.05710. The package contract above distinguishes its normalized formulation.
-- López de Prado, M. (2016).
-  [Building Diversified Portfolios that Outperform Out-of-Sample](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2708678).
-  The Journal of Portfolio Management. DOI: 10.3905/jpm.2016.42.4.059.
 - [OptimalPortfolios software citation](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 - [qis software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).
-- [factorlasso software citation](https://github.com/ArturSepp/FactorLasso/blob/main/CITATION.cff).

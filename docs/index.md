@@ -80,10 +80,10 @@ simulates the holdings with price drift, implementation lag and transaction cost
 
 | Step of the diagram | Pages |
 |---|---|
-| Estimation grid | [Mixed-frequency data](mixed_frequency_data.md), [incomplete histories](incomplete_histories.md) |
+| Estimation grid | [Mixed-frequency data](mixed_frequency_data.md), [incomplete histories](incomplete_histories.md), [universe data and unsmoothing](universe_data_and_unsmoothing.md) |
 | Risk model | [Covariance estimators](covariance_estimators.md), [factor covariance with HCGL](factor_covariance_hcgl.md), [rolling factor risk model from CSV](rolling_factor_covar_from_csv.md), [ex-ante risk contributions and betas](portfolio_risk_analytics.md) |
 | Expected returns | [Alpha signals](alphas_module_readme.md) |
-| Objective and constraints | [Choosing an objective](optimization_module_readme.md), [risk budgeting](risk_budgeting.md), [maximum diversification](maximum_diversification.md), [minimum tracking error](minimum_tracking_error.md), [overlay tail floor](overlay_tail_floor.md), [constraints](constraints.md) |
+| Objective and constraints | [Choosing an objective](optimization_module_readme.md), [risk budgeting](risk_budgeting.md), [implied risk budgets](implied_risk_budgets.md), [hierarchical risk parity and cluster budgets](hierarchical_risk_parity_and_cluster_budgets.md), [maximum diversification](maximum_diversification.md), [minimum tracking error](minimum_tracking_error.md), [overlay tail floor](overlay_tail_floor.md), [constraints](constraints.md) |
 | Solve and check the outcome | [Choosing an objective](optimization_module_readme.md), [constraints](constraints.md), [solver numerics and outcomes](solver_numerics_and_outcomes.md) |
 | Dated target weights and qis backtest | [Rolling backtests](rolling_backtests.md), [turnover and transaction costs](turnover_and_transaction_costs.md) |
 
@@ -95,6 +95,9 @@ simulates the holdings with price drift, implementation lag and transaction cost
   EWMA spans and signal horizons, and when each observation becomes available.
 - [Incomplete histories and frozen positions](incomplete_histories.md): eligibility, warmup,
   frozen target weights and missing prices in rolling workflows and in the qis backtester.
+- [Universe data and appraisal unsmoothing](universe_data_and_unsmoothing.md): the
+  `UniverseData` container, its group loadings and identifiers, and unsmoothing an
+  appraisal-smoothed private-asset series before estimation.
 
 ## Risk models
 
@@ -120,8 +123,14 @@ simulates the holdings with price drift, implementation lag and transaction cost
 
 - [Choosing an objective](optimization_module_readme.md): which objective fits which inputs,
   the rolling dispatcher, solver configuration, return types and solver outcomes.
-- [Risk budgeting](risk_budgeting.md): Euler risk contributions, constrained budgets, group
-  budgets and hierarchical risk parity.
+- [Risk budgeting](risk_budgeting.md): Euler risk contributions, target budgets and the
+  allocation when a weight bound binds.
+- [Implied risk budgets from target weights](implied_risk_budgets.md): the budgets that
+  reproduce a target allocation, the hold rule for hedging assets, and one budget vector
+  fitted to a rolling path.
+- [Hierarchical risk parity and cluster risk budgets](hierarchical_risk_parity_and_cluster_budgets.md):
+  recursive bisection over a linkage, group budgets split within groups, and how both
+  compare with equal risk contribution.
 - [Maximum diversification](maximum_diversification.md): the diversification ratio, why the
   solution is the minimum-variance portfolio of the correlation matrix, and the equal-correlation
   property of the assets it holds.
@@ -230,6 +239,7 @@ examples_readme
 
 mixed_frequency_data
 incomplete_histories
+universe_data_and_unsmoothing
 ```
 
 ```{toctree}
@@ -258,6 +268,8 @@ alphas_module_readme
 
 optimization_module_readme
 risk_budgeting
+implied_risk_budgets
+hierarchical_risk_parity_and_cluster_budgets
 maximum_diversification
 minimum_tracking_error
 overlay_tail_floor

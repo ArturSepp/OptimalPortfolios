@@ -354,7 +354,7 @@ raw market data and the `factorlasso` solver:
 <a id="group-risk-budgets"></a>
 <a id="hierarchical-risk-parity"></a>
 
-See the [risk-budgeting guide](https://optimalportfolios.readthedocs.io/en/latest/risk_budgeting.html) for group risk budgets and hierarchical risk parity, including rolling cluster labels.
+See [hierarchical risk parity and cluster risk budgets](https://optimalportfolios.readthedocs.io/en/latest/hierarchical_risk_parity_and_cluster_budgets.html) for group risk budgets and hierarchical risk parity, including date-by-asset cluster labels, and the [risk-budgeting guide](https://optimalportfolios.readthedocs.io/en/latest/risk_budgeting.html) for the solver that group budgets feed.
 
 ## Alpha signals module
 

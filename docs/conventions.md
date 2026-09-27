@@ -249,8 +249,8 @@ single-date and numerical entry points.
   that FactorLasso estimates for the factor covariance.
 - **Freezing.** Pinning an existing position so that a solve cannot change it.
 - **GMM.** Gaussian mixture model, fitted to returns for the CARA objective.
-- **HRP.** Hierarchical risk parity: recursive bisection of a cluster tree with inverse-variance
-  splits.
+- **HRP.** [Hierarchical risk parity](hierarchical_risk_parity_and_cluster_budgets.md): recursive bisection of a cluster tree with
+  inverse-variance splits.
 - **MDP.** Maximum diversification portfolio: the weights that maximise the diversification
   ratio.
 - **Overlay.** A sleeve optimised on top of a fixed core exposure.
@@ -273,4 +273,6 @@ single-date and numerical entry points.
 - [Covariance estimators](covariance_estimators.md) and [factor covariance with HCGL](factor_covariance_hcgl.md)
 - [Ex-ante risk contributions and betas](portfolio_risk_analytics.md)
 - [Solver numerics and outcomes](solver_numerics_and_outcomes.md)
+- [Universe data and appraisal unsmoothing](universe_data_and_unsmoothing.md)
+- [Implied risk budgets](implied_risk_budgets.md) and [hierarchical risk parity and cluster risk budgets](hierarchical_risk_parity_and_cluster_budgets.md)
 - [qis notation and conventions](https://quantinveststrats.readthedocs.io/en/stable/notation_and_conventions.html)

@@ -188,6 +188,23 @@ price; no simulation. **Producer:** the `exhibit` function of
 [`examples/docs/incomplete_histories.py`](../examples/docs/incomplete_histories.py).
 **Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
 
+## Universe data and unsmoothing
+
+A teaching exhibit of the [universe data and unsmoothing](universe_data_and_unsmoothing.md) page.
+Appraisal smoothing with a weight of 0.6 on the previous reported return halves the reported
+volatility of private equity and makes its returns autocorrelated. Unsmoothing lowers the lag-1
+autocorrelation from 0.61 to -0.04, against -0.02 for the true returns, and raises the annualised
+volatility from 10.2% to 20.5%, against 20.4%.
+
+![Left: cumulative log returns of reported, unsmoothed and simulated true private equity. Middle:
+their lag-1 autocorrelations. Right: their annualised volatilities.](images/unsmoothing_autocorrelation.png)
+
+**Sample:** a seeded synthetic quarterly panel of four assets from December 1989 to December 2024,
+seed 19, whose private-equity column is appraisal-smoothed; the simulated true returns are known.
+**Producer:** the `exhibit` function of
+[`examples/docs/universe_data_and_unsmoothing.py`](../examples/docs/universe_data_and_unsmoothing.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
 ## Factor covariance with HCGL
 
 A teaching exhibit of the [factor covariance with HCGL](factor_covariance_hcgl.md) page. Orthogonal
@@ -250,6 +267,40 @@ their capital weights, not their budgets.
 **Sample:** the page's fixed three-asset covariance, solved with slack 80% caps and with Equity
 capped at 25%; no simulation. **Producer:** the `exhibit` function of
 [`examples/docs/risk_budgeting.py`](../examples/docs/risk_budgeting.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Implied risk budgets
+
+A teaching exhibit of the [implied risk budgets](implied_risk_budgets.md) page. As the stock-bond
+correlation drifts from -0.7 to 0.4 over twelve quarter ends, the implied risk budget of Bonds in
+a 40/45/15 target rises from -8% to 25%; on the first two dates Bonds hedge the portfolio and no
+non-negative budget reproduces the target. One static budget vector of about 70.6%, 14.5% and
+14.9% reproduces the target only on average: its forward weight in Bonds moves from 59% to 32%.
+
+![Left: the implied risk budgets of the target at each quarter end, with the fitted static budgets
+dashed and the dates of negative Bonds budgets shaded. Right: the forward weights under the fitted
+budgets, their running averages and the target weights.](images/implied_budgets_round_trip.png)
+
+**Sample:** three assets with fixed volatilities and a stock-bond correlation drifting from -0.7
+to 0.4 over twelve quarter ends from 31 March 2023; no simulation. **Producer:** the `exhibit`
+function of [`examples/docs/implied_risk_budgets.py`](../examples/docs/implied_risk_budgets.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Hierarchical risk parity
+
+A teaching exhibit of the
+[hierarchical risk parity and cluster risk budgets](hierarchical_risk_parity_and_cluster_budgets.md)
+page. On a universe of four government bonds, two equity markets and two real assets, HRP puts
+91% of the capital and 90% of the risk in the bonds; equal risk contribution puts 76% of the
+capital there for 50% of the risk, and equal cluster budgets 69% of the capital for a third.
+
+![Left: the single-linkage tree of the eight assets, with the first HRP split between the bonds
+and the rest. Right: capital and risk shares by block for HRP, equal risk contribution and equal
+cluster budgets.](images/hrp_vs_erc_weights.png)
+
+**Sample:** a fixed eight-asset universe of four government bonds, two equity markets and two real
+assets with block correlations; no simulation. **Producer:** the `exhibit` function of
+[`examples/docs/hierarchical_risk_parity_and_cluster_budgets.py`](../examples/docs/hierarchical_risk_parity_and_cluster_budgets.py).
 **Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
 
 ## Maximum diversification
