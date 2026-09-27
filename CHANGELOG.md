@@ -26,6 +26,18 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   derivative for linesearch) and validates it for feasibility like a converged solve. Such
   stops land next to the optimum; rejecting them fell back to drifted previous weights, which
   breached a 0.2 weight cap on the ubuntu CI runners. Solves that converge are unchanged.
+- `round_weights_to_pct` now sums to exactly 100 for fully invested weights, as documented. Its
+  largest-remainder step counted the bumps as `int(shortfall * 10**decimals)`, and
+  floating-point error put that product just below an integer, 28.999999999999996 for a
+  shortfall of 0.29, so a bump was lost: 29 weights of 0.033399 and their complement reported
+  a total of 99.99. At two decimals this happened whenever 29, 57, 58 or 113 to 116 bumps were
+  due, so only allocations of thirty or more assets were affected. The count is now taken on
+  the integer-valued floors, which sum exactly. Reported percentages change only where a bump
+  was lost; floors above 100, which need weights summing above one, are still left unbumped.
+  The docstring example, which naive rounding also got right, now uses an equal three-asset
+  allocation, which naive rounding reports as 99.99. `round_weights_to_pct_test.py` checks
+  random allocations of 2 to 150 assets at 0, 1 and 2 decimals against exact arithmetic, and
+  the rolling backtests page states the guarantee again.
 - Add optional fixed `reg_lambda_freq_dict` penalties to `FactorCovarEstimator`
   and `estimate_lasso_factor_covar_data`. Each native return cadence uses its
   calibrated penalty without changing the model's scalar setting. Omitting the

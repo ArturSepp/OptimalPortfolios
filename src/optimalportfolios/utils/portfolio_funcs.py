@@ -100,21 +100,32 @@ def round_weights_to_pct(weights: pd.Series, decimals: int = 2) -> pd.Series:
     Map portfolio weights from [0,1] to percentage [0,100] with rounding
     that preserves the sum to exactly 100.0 using largest remainder method.
 
-    Naive rounding of three near-equal weights gives 99.99; the largest remainder takes the
-    bump, so the reported allocation always adds to exactly 100:
+    Each percentage is floored to ``decimals`` places, and the shortfall from 100 is handed to
+    the largest remainders, one unit of ``10**-decimals`` each. Weights that sum to one
+    therefore give percentages that sum to exactly 100 at ``decimals`` places, each within one
+    unit of its exact value. Floors exceed 100 only when the weights sum above one; nothing is
+    then bumped.
+
+    Naive rounding of an equal three-asset allocation gives 33.33 each, a total of 99.99; the
+    largest remainder takes the bump, so the reported allocation adds to exactly 100:
 
     >>> import pandas as pd
-    >>> pct = round_weights_to_pct(pd.Series([0.3333, 0.3333, 0.3334], index=['a', 'b', 'c']))
-    >>> pct.tolist()
-    [33.33, 33.33, 33.34]
-    >>> float(pct.sum())
-    100.0
+    >>> weights = pd.Series(1.0 / 3.0, index=['a', 'b', 'c'])
+    >>> naive = (100.0 * weights).round(2)
+    >>> naive.tolist(), round(float(naive.sum()), 2)
+    ([33.33, 33.33, 33.33], 99.99)
+    >>> pct = round_weights_to_pct(weights)
+    >>> pct.tolist(), round(float(pct.sum()), 2)
+    ([33.34, 33.33, 33.33], 100.0)
     """
+    scale = 10**decimals
     scaled = weights * 100.0
-    floored = np.floor(scaled * 10**decimals) / 10**decimals
+    units = np.floor(scaled * scale)
+    floored = units / scale
     remainders = scaled - floored
-    shortfall = round(100.0 - floored.sum(), decimals)
-    n_bumps = int(shortfall * 10**decimals)
+    # count the bumps on the integer-valued units, which sum exactly: the former
+    # int(shortfall * 10**decimals) truncated 28.999999999999996 to 28 and lost a bump
+    n_bumps = max(int(100 * scale - units.sum()), 0)
     # bump the largest remainders
     bump_idx = remainders.nlargest(n_bumps).index
     floored.loc[bump_idx] += 10**(-decimals)
