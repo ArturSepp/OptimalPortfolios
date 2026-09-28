@@ -31,8 +31,9 @@ jobs:
     - name: Install the locked test environment
       run: uv sync --group test --locked
 
-    - name: Verify the public CMA snapshot
+    - name: Verify public CMA inputs and offline crypto contracts
       run: >-
         uv run --no-sync pytest
         papers/cma_data/tests
+        papers/crypto_allocation_risk_2023/replication/tests
         -q

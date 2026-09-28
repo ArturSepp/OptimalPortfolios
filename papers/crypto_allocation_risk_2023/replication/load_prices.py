@@ -5,6 +5,7 @@ update_prices_with_yf() uses yfinance + some universe uploaded manually
 NB: CmcScraper stopped working so now only option is to use bloomberg
 """
 import os
+import tempfile
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -22,13 +23,17 @@ from papers.crypto_allocation_risk_2023.replication.bloomberg_snapshot import (
     load_bloomberg_risk_free,
 )
 
-# Repository data and generated-output locations. Replication code lives one level below the paper
-# root; data and outputs remain siblings of replication/.
+# Frozen inputs accompany replication; writable output stays outside OneDrive.
 PAPER_ROOT = Path(__file__).resolve().parent.parent
-LOCAL_PATH = PAPER_ROOT / 'data'
+LOCAL_PATH = Path(__file__).resolve().parent / 'data'
+LICENSED_PATH = LOCAL_PATH / 'local'
+_RUN_ROOT = Path(os.environ.get(
+    'AGENT_LOCAL_ROOT',
+    Path(os.environ.get('LOCALAPPDATA', tempfile.gettempdir())) / 'OptimalPortfolios',
+))
 OUTPUT_PATH = Path(os.environ.get(
     'OPTIMALPORTFOLIOS_OUTPUT_DIR',
-    PAPER_ROOT / 'outputs',
+    _RUN_ROOT / 'outputs' / 'crypto_allocation_risk_2023',
 )).expanduser().resolve()
 
 
@@ -46,12 +51,12 @@ LICENSED_PRICE_FILES = (f'{CTA_PRICE}.xlsx', f'{MACRO_PRICE}.xlsx')
 
 def require_licensed_price_files() -> None:
     """Fail clearly when the two non-redistributable SG workbooks are absent."""
-    missing = [name for name in LICENSED_PRICE_FILES if not (LOCAL_PATH / name).is_file()]
+    missing = [name for name in LICENSED_PRICE_FILES if not (LICENSED_PATH / name).is_file()]
     if missing:
         names = ', '.join(missing)
         raise FileNotFoundError(
             f"Required licensed input file(s) are not redistributed: {names}. "
-            f"Place authorised .xlsx copies in {LOCAL_PATH}. See README.md for the sources."
+            f"Place authorised .xlsx copies in {LICENSED_PATH}. See README.md for the sources."
         )
 
 
@@ -92,8 +97,8 @@ def update_prices_with_yf() -> pd.DataFrame:
 
     # use local copies
     hf = qis.load_df_from_csv(file_name=HFRXGL_PRICE, local_path=LOCAL_PATH)['Index Value'].rename(Assets.HF.value).sort_index()
-    cta = qis.load_df_from_excel(file_name=CTA_PRICE, local_path=LOCAL_PATH).iloc[:, 0].rename(Assets.CTA.value)
-    macro = qis.load_df_from_excel(file_name=MACRO_PRICE, local_path=LOCAL_PATH).iloc[:, 0].rename(Assets.MACRO.value)
+    cta = qis.load_df_from_excel(file_name=CTA_PRICE, local_path=LICENSED_PATH).iloc[:, 0].rename(Assets.CTA.value)
+    macro = qis.load_df_from_excel(file_name=MACRO_PRICE, local_path=LICENSED_PATH).iloc[:, 0].rename(Assets.MACRO.value)
 
     # etfs
     gld = yf.download('GLD', start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].rename(Assets.GLD.value)

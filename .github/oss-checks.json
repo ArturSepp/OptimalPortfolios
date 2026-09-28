@@ -11,6 +11,19 @@
   "preflight": [
     {
       "paths": [
+        "papers/*",
+        ".gitignore",
+        ".github/oss-checks.json",
+        ".github/scripts/check_paper_policy.py",
+        ".github/scripts/paper_policy_test.py"
+      ],
+      "command": [
+        ".github/scripts/check_paper_policy.py",
+        "--source-export"
+      ]
+    },
+    {
+      "paths": [
         "docs/*.md",
         "tools/check_docs.py",
         "tools/docs_inventory.json"
@@ -82,6 +95,7 @@
         "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
         "Install uv and Python",
         "Build the wheel from the source distribution",
+        "Reject research workspaces from built distributions",
         "Assert the wheel carries its test packages and fixture",
         "Install the wheel into a clean environment",
         "Run the shipped suite against the installed wheel"
@@ -122,6 +136,7 @@
       "static": [
         "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
         "Install uv",
+        "Check paper publication policy and regressions",
         "Check stack invariants and the F family",
         "Check docstring coverage"
       ]
@@ -147,7 +162,7 @@
         "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
         "Install uv and Python 3.12",
         "Install the locked test environment",
-        "Verify the public CMA snapshot"
+        "Verify public CMA inputs and offline crypto contracts"
       ]
     }
   },

@@ -56,7 +56,7 @@ GOLDEN_WORKBOOK_SHA256 = (
     "d19e3a5ed62409287a4673c74e29d65bccbaf5df7380acf99bef20f86eee1176"
 )
 GOLDEN_PANEL_PATH = (
-    Path(__file__).resolve().parent.parent / "data" / "crypto_allocation_prices_updated.csv"
+    Path(__file__).resolve().parent / "data" / "crypto_allocation_prices_updated.csv"
 )
 
 # Workbook row 3 is "Median crypto weight".  Columns B:E are ERC, MaxDiv,

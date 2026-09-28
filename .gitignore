@@ -178,8 +178,27 @@ dmypy.json
 /fix_placeholders.sh
 
 
-# Compiled manuscripts: the source and its figures are tracked, the PDF is not.
+# New paper workspaces remain local until explicitly approved in both policy and Git.
+/papers/*
+!/papers/AGENTS.md
+!/papers/README.md
+!/papers/cma_data/
+!/papers/crypto_allocation_risk_2023/
+!/papers/robust_optimisation_jpm_2026/
+
+# Paper publication defaults; exact approved exceptions live beside each paper.
+# Keep these parents traversable so a per-paper .gitignore can approve specific files.
+# Preserve the existing exclusion of reference PDFs outside manuscript bundles.
 papers/**/*.pdf
+/papers/*/paper/*
+/papers/*/presentations/*
+/papers/**/drafts/
+/papers/**/private/
+/papers/**/agents/
+/papers/*/replication/data/*
+/papers/*/replication/data/local/
+/papers/*/replication/outputs/
+/papers/*/replication/.cache/
 
 # The JOSS manuscript is built by joss-paper.yml and uploaded as a workflow artifact.
 /paper.pdf
@@ -209,7 +228,9 @@ papers/achievable_sharpe_faj_2026/
 /papers/cluster_lineage_2026/
 /papers/matf_cma_jpm_2026/
 /papers/layer_attribution_2026/
-# accepted at JOIM; local until the post-acceptance anonymised release
+# Prior-selection manuscript, replication and licensed evidence remain entirely local.
+/papers/prior_targets_2026/
+# JOIM workspace remains local; acceptance alone does not authorize release
 /papers/smart_diversification_joim_2026/
 
 # Reference source documents (books, survey PDFs) are not redistributable.

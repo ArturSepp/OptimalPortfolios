@@ -24,7 +24,7 @@ import pandas as pd
 import qis
 
 
-DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "bloomberg"
+DATA_PATH = Path(__file__).resolve().parent / "data" / "local" / "bloomberg"
 DEFAULT_START_DATE = pd.Timestamp("1997-12-31")
 DEFAULT_AS_OF = pd.Timestamp("2026-09-04")
 

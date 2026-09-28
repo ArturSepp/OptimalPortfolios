@@ -23,6 +23,10 @@ recursive-include src/optimalportfolios/templates *.html
 recursive-include src/optimalportfolios/static *.css *.js
 recursive-include src/optimalportfolios *.yml *.yaml *.json *.txt *.md
 
+# Paper workspaces and private agent records are never distribution content.
+prune papers
+prune agents
+
 # Examples are repository-only: exclude their whole root-level tree from built distributions.
 recursive-exclude examples *
 

@@ -1,0 +1,14 @@
+# Retain only the manuscript source already approved in the public repository.
+!/paper/crypto_allocation_sepp_2023.tex
+
+# Frozen public CSV inputs only. The licensed local/ tree is never reopened.
+/replication/data/*
+!/replication/data/BTC_from_2010.csv
+!/replication/data/HFRX_historical_HFRXGL.csv
+!/replication/data/crypto_allocation_prices.csv
+!/replication/data/crypto_allocation_prices_updated.csv
+
+# Legacy local directories retained; new working notes belong in agents/.
+/update_2026/
+/outputs/*
+!/outputs/.gitignore

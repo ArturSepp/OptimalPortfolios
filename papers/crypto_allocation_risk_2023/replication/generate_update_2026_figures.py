@@ -11,13 +11,13 @@ import numpy as np
 import pandas as pd
 import qis
 
-PAPER_ROOT = Path(__file__).resolve().parent.parent
-UPDATE_PATH = PAPER_ROOT / "update_2026"
-FIGURE_PATH = UPDATE_PATH / "figures"
-OUTPUT_ROOT = PAPER_ROOT / "outputs" / "bbg_20260904" / "published_2024"
+from papers.crypto_allocation_risk_2023.replication.load_prices import OUTPUT_PATH
+
+FIGURE_PATH = OUTPUT_PATH / "update_2026" / "figures"
+OUTPUT_ROOT = OUTPUT_PATH / "bbg_20260904" / "published_2024"
 LEGACY_OUTPUT = OUTPUT_ROOT / "legacy_eth_proxy"
 OBSERVED_OUTPUT = OUTPUT_ROOT / "observed_eth"
-RAW_BLOOMBERG_PRICES = PAPER_ROOT / "data" / "bloomberg" / "bbg_20260904" / "raw_bloomberg_px_last.csv"
+RAW_BLOOMBERG_PRICES = Path(__file__).resolve().parent / "data" / "local" / "bloomberg" / "bbg_20260904" / "raw_bloomberg_px_last.csv"
 PUBLISHED_SAMPLE_END = pd.Timestamp("2023-06-30")
 
 SCENARIO_LABELS = {

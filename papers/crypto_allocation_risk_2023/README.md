@@ -7,16 +7,18 @@ Sepp A. (2023), "Optimal Allocation to Cryptocurrencies in Diversified Portfolio
 
 ## Layout
 
-- `paper/` — working-paper TeX and rendered PDF.
+- `paper/` — existing approved TeX only; PDF is local. The referenced `figs1/` assets are absent, so this is not a complete manuscript build bundle.
 - `replication/` — all Python data, analysis, reporting, and verification code.
 - `update_2026/` — the 2026 update analysis and roadmap.
-- `data/` — redistributable inputs plus gitignored licensed Bloomberg snapshots.
-- `outputs/` — gitignored generated tables, manifests, and reports.
+- `replication/data/` — redistributable inputs plus gitignored licensed Bloomberg snapshots.
+- `replication/tests/` — offline automated contracts.
+- `drafts/`, `private/`, `presentations/`, `agents/` — local sections, created when used.
+- `outputs/` — legacy local results retained for compatibility; new runs use C-local output.
 
 ## Published-paper update first
 
 `replication/published_update.py` is the canonical update runner. It keeps the acquired data,
-analysis code, tables, manifests, and reports inside this paper directory. Its default engine
+analysis code and frozen inputs in replication/, with generated tables, manifests and reports in C-local output. Its default engine
 freezes the August 2024 implementation at OptimalPortfolios commit `6038fba`; `current_v7_1` is an
 explicitly labelled diagnostic, not the published-paper result. See
 [`update_2026/PUBLISHED_UPDATE_2026.md`](update_2026/PUBLISHED_UPDATE_2026.md) for the findings and
@@ -51,13 +53,19 @@ legs (`SPY`, `IEF`, `PSP`, `IYR`, `REET`, `GSG`, `COMT`, and `GLD`) and unadjust
 The 3-month bill yield is converted from percentage points to a decimal rate. `HFRIMDT` is the
 Macro series used by the August 2024 update.
 
-Licensed snapshots live under `data/bloomberg/<snapshot-tag>/` and are gitignored. Each snapshot
+Licensed snapshots live under `replication/data/local/bloomberg/<snapshot-tag>/` and are gitignored. Each snapshot
 contains raw Bloomberg observations, both derived ETH panels, the risk-free series, a coverage
 table, and a SHA-256 manifest. Verification rebuilds every derived panel from the saved raw data and
 checks schema, hashes, cutoff, history, staleness, and gaps.
 
-Generated artifacts default to `outputs/<snapshot-tag>/<engine>/<eth-mode>/` under this directory
-and are also gitignored. The JSON analysis manifest records the exact data-manifest hash, engine,
+Generated artifacts default to
+`<AGENT_LOCAL_ROOT>/outputs/crypto_allocation_risk_2023/<snapshot-tag>/<engine>/<eth-mode>/`,
+or the directory selected by `OPTIMALPORTFOLIOS_OUTPUT_DIR`. Without the agent helper the
+fallback is under the local application-data directory (system temporary directory on hosts
+without `LOCALAPPDATA`), outside the checkout. The old `outputs/` directory remains a local archive. Copy selected cached results
+to the C-local output directory before rerendering them; new update figures are
+written under `<output-root>/update_2026/figures/`.
+The JSON analysis manifest records the exact data-manifest hash, engine,
 runtime versions, reporting starts, parameters, output hashes, and portfolio validation metrics.
 
 ## Verification
@@ -66,7 +74,7 @@ The offline contracts cover the Bloomberg request specification, immutable snaps
 derivations, optimizer constraints, no-look-ahead estimator inputs, and short-history eligibility:
 
 ```powershell
-C:\Python\OptimalPortfolios312\Scripts\python.exe -m pytest papers\crypto_allocation_risk_2023\replication\update_test.py papers\crypto_allocation_risk_2023\replication\parity_2024_test.py -q
+C:\Python\OptimalPortfolios312\Scripts\python.exe -m pytest papers\crypto_allocation_risk_2023\replication\tests\update_test.py papers\crypto_allocation_risk_2023\replication\tests\parity_2024_test.py -q
 ```
 
 When the private archived 2024 panel and workbook are available, opt into the full 16-case numerical
@@ -74,7 +82,7 @@ replay against the workbook oracle:
 
 ```powershell
 $env:RUN_CRYPTO_PARITY_GOLDEN = '1'
-C:\Python\OptimalPortfolios312\Scripts\python.exe -m pytest papers\crypto_allocation_risk_2023\replication\parity_2024_test.py -k private_archived_panel -q
+C:\Python\OptimalPortfolios312\Scripts\python.exe -m pytest papers\crypto_allocation_risk_2023\replication\tests\parity_2024_test.py -k private_archived_panel -q
 Remove-Item Env:RUN_CRYPTO_PARITY_GOLDEN
 ```
 
@@ -83,4 +91,4 @@ Remove-Item Env:RUN_CRYPTO_PARITY_GOLDEN
 The older `replication/article_figures.py`,
 `replication/backtest_portfolios_for_article.py`, and Yahoo/manual-data helpers remain for historical
 reproduction. They are not the Bloomberg-only update pipeline. Redistributable frozen inputs remain
-in `data/`; the two licensed SG workbooks required by the old mixed-source route cannot be shipped.
+in `replication/data/`; the two licensed SG workbooks required by the old mixed-source route cannot be shipped; place authorised copies in `replication/data/local/`.

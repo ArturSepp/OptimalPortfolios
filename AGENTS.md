@@ -116,8 +116,8 @@ A fifteenth job, `wheel`, is the only thing in the repository that tests the **b
 Five further workflows gate the repository without installing it as a dependency of the test matrix. `static.yml` holds the source-only gates — the three ruff stack invariants, `interrogate` docstring coverage at 100%, and `deptry`'s check of declared dependencies against imports, configured with a reason per ignore in `[tool.deptry]` — and runs unconditionally on every pull request, plus on pushes to branches in this repository. The fork guard sits on the push trigger, not on the job: GitHub reports a conditionally skipped job as *successful*, so a job-level `if` would let the PR check go green without ruff or interrogate ever running. `audit.yml` runs daily, plus on pushes and PRs touching `pyproject.toml` or `uv.lock`, and holds the checks whose answers depend on the outside world rather than on the source. It runs `pip-audit` over two different trees. First `uv pip compile --all-extras`, rather than a bare `pip-audit .`, because that form covers only the core dependencies and silently omits every extra — including the user-facing `data` and `reports` ones, and the `docs` toolchain. State that contract narrowly: it audits **one** resolution — the newest tree resolvable today, on Linux, for CPython 3.12 — not every version the open-ended floors permit, and not what Windows, macOS or another interpreter would resolve to. Second, `uv export --locked --all-extras`, which audits the exact pinned set `uv sync --locked` installs; a pin can sit on a vulnerable version long after the floor would resolve past it, and that is invisible to the first. This second tree is why `uv.lock` is a path trigger — without it the trigger would name an input no step consumed. The workflow also resolves fresh core and test-group trees and fails if either contains one of the banned optional modules. This complements, rather than replaces, `ci.yml`: scheduled CI executes the full live-resolution matrix, while the audit checks advisories, extras, and dependency leaks without running package tests. `docs.yml` builds the Sphinx site with warnings as errors and checks external links. Run `interrogate` from the repository root — the `papers/` exclusion in `[tool.interrogate]` is resolved against the working directory.
 
 `replication.yml` is the narrow offline exception to the general `papers/` exclusion. It runs the
-public CMA snapshot and manuscript-parity suites on one Ubuntu/Python 3.12 cell for every push and
-pull request. Those suites verify the committed snapshot hashes and the published numerical claims;
+public CMA snapshot and offline crypto replication suites on one Ubuntu/Python 3.12 cell for every push and
+pull request. Those suites verify snapshot hashes and synthetic/offline replication contracts;
 they do not require the licensed return panels. Other paper scripts remain manual because their
 data, network, or output preconditions cannot be supplied by an unattended runner.
 
@@ -180,9 +180,9 @@ and has no reference left in this repository. To run the examples, install what 
 ## Implementation Directives
 
 - **Preserve Core Logic:** Maintain the existing optimiser defaults, constraint semantics, and rebalancing conventions, as published results heavily depend on them.
-- **Respect Linting Exclusions:** Leave `papers/` exactly as-is; it is deliberately excluded from linting to preserve published code.
+- **Respect Linting Exclusions:** `papers/` stays excluded from blanket lint cleanup. Authorised structural maintenance may move files and update paths/tests, while preserving published algorithms, input bytes, numerical baselines and entry-point behaviour.
 - **Ensure Offline Execution:** Ensure all examples run on free data. Never add a hard dependency on Bloomberg data.
-- **Maintain Clean Commits:** Exclude backtest outputs, factsheets, and generated figures except the explicitly allowlisted, reviewed documentation previews described below.
+- **Maintain Clean Commits:** Exclude backtest outputs, factsheets, and generated figures except the explicitly allowlisted, reviewed documentation previews and approved paper assets described below.
 
 ## Documentation and analytical exhibits
 
@@ -219,6 +219,19 @@ and has no reference left in this repository. To run the examples, install what 
 - Preserve executable README and quickstart/notebook contracts, frozen fixtures, seeds,
   public re-exports and numerical behavior. Record validation and pending checks under `agents/`.
 
+## Paper workspaces
+
+- Follow [papers/AGENTS.md](papers/AGENTS.md) for the six-section layout, publication
+  defaults, approved manuscript files, replication inputs, and checks.
+- This OP-specific exception overrides the root-only agent-artifact default in the
+  generated shared core below: paper-specific roadmaps and working records belong
+  in `papers/<paper_id>/agents/`; repository-wide work stays in root `agents/`.
+  Both locations are ignored. Never broaden this exception to other paper folders.
+- Whole-workspace exclusions remain in force. This layout migration grants no new
+  manuscript, presentation, licensed-data or replication publication permission.
+- Before committing, run `python .github/scripts/check_paper_policy.py` against the
+  staged index. Use `--worktree` to preview unstaged changes. The check also runs in CI.
+
 ## Temporary workspace hygiene
 
 - Do not create `tmp/`, `.pytest*`, `.codex*`, cache, build, analysis, or run directories anywhere
@@ -232,7 +245,7 @@ and has no reference left in this repository. To run the examples, install what 
   fall back to a repository-relative path when that environment variable is unavailable; run the
   helper first.
 - Copy back only intentional durable deliverables. Agent roadmaps and working records remain in
-  the ignored repository-root `agents/` directory under the separate artifact policy.
+  the ignored root `agents/` or paper-specific `papers/<paper_id>/agents/` directory under the OP artifact policy.
 
 <!-- ===== SHARED AGENT CORE (consumer variant) — begin =====
      Generated from SHARED_AGENT_CORE.md in the maintainer's project knowledge. Do not hand-edit

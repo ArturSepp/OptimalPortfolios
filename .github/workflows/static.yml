@@ -71,6 +71,11 @@ jobs:
         # GitHub-hosted runners, and the default `cache-dependency-glob` already covers
         # pyproject.toml and uv.lock. Left at the defaults on purpose.
 
+    - name: Check paper publication policy and regressions
+      run: |
+        python .github/scripts/check_paper_policy.py
+        python .github/scripts/paper_policy_test.py
+
     - name: Check stack invariants and the F family
       # The three stack invariants configured in pyproject.toml -- TID251 (subject packages never
       # import each other), TID253 (an optional extra is never imported at module level) and ICN

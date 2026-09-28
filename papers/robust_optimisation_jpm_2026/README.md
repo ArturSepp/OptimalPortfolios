@@ -13,7 +13,7 @@ Published version: https://www.pm-research.com/content/iijpormgmt/52/4/86
 
 ## What this example demonstrates
 
-The script `hcgl_covar_for_rolling_backtest.py` implements a minimal end-to-end
+The script `replication/hcgl_covar_for_rolling_backtest.py` implements a minimal end-to-end
 pipeline from the paper:
 
 1. **HCGL covariance estimation** — rolling factor model where asset betas
@@ -60,11 +60,12 @@ for TAA tracking error) and the full model (D included, for SAA risk budgeting).
 
 ## Running the example
 
-From a repository checkout, install the data extra and run the script against the current source:
+Public status: the existing methodological example remains tracked. Manuscripts, presentations and local working records are excluded by default. This is not an exact frozen exhibit rebuild.
+
+From a repository checkout, use the prescribed external environment with the data extra installed, and run:
 
 ```bash
-uv sync --extra dev --extra data
-uv run --no-sync python papers/robust_optimisation_jpm_2026/hcgl_covar_for_rolling_backtest.py
+python -m papers.robust_optimisation_jpm_2026.replication.hcgl_covar_for_rolling_backtest
 ```
 
 The script uses `yfinance` to download price data for a 6-asset multi-asset

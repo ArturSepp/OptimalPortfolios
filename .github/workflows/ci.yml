@@ -194,6 +194,9 @@ jobs:
         uv build --sdist --clear --out-dir dist
         uv build --wheel dist/*.tar.gz --out-dir dist
 
+    - name: Reject research workspaces from built distributions
+      run: python .github/scripts/check_paper_policy.py --artifacts dist
+
     - name: Assert the wheel carries its test packages and fixture
       # `pytest --pyargs` on a wheel with no tests in it exits 5 ("no tests collected"), which is a
       # failure but not a legible one. Naming the missing piece here turns a packaging regression

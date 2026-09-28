@@ -16,8 +16,25 @@ snapshot includes the configuration tables used by local paper workspaces and de
 licensed index, factor-history and provider panels. The MATF-CMA manuscript workspace is local and
 gitignored rather than part of the public repository.
 
+`prior_targets_2026/` is an entirely local workspace migrated from FactorLasso. It holds
+the prior-selection manuscript and replication, with MATF versus Bloomberg MAC3 stress
+and exposure comparisons retained as working evidence for the developing paper. Its final
+scope is undecided. The migration does not authorise redistribution of the manuscript,
+replication code or licensed inputs; no exact public reproduction is claimed.
+
 ## Conventions
 
+- [AGENTS.md](AGENTS.md) defines the six-section paper-workspace contract, publication
+  boundaries and the commands that check them. Shared `cma_data/` remains a separate module.
+- The existing crypto TeX is tracked, but its PDF is local and its referenced manuscript
+  figures are absent. The ROSAA folder publishes only the existing methodological example
+  under `replication/`. Neither is presented as a self-contained current manuscript bundle.
+- MATF-CMA, JOIM and the other existing fully excluded research workspaces remain local,
+  including their replication code. Folder maintenance does not change publication rights.
+- `drafts/`, `private/` and per-paper `agents/` are always ignored. `paper/` and
+  `presentations/` require exact approved exceptions. Code and paper-specific tests belong
+  in `replication/`; approved static inputs in `replication/data/`, restricted inputs in
+  `replication/data/local/`. Runtime outputs stay in the prescribed C-local workspace.
 - Each paper folder documents its own run commands and data requirements. A missing input is a
   declared limitation, not something to replace with synthetic or live data silently.
 - Paper folders are repository-only research artifacts and are not installed by
