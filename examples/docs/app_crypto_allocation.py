@@ -11,8 +11,8 @@ every statement of the page in two parts, each against a reference computed a di
    fixed two-asset Gaussian mixture, with no simulation, checks how the direction of the crypto
    tail moves the CARA allocation, against a closed form and CVXPY.
 2. The same configuration runs with the current API on the ETF-derived columns of the tracked
-   2023 panel, ``papers/crypto_allocation_risk_2023/data/crypto_allocation_prices.csv``, and the
-   script asserts the numbers the page quotes from it as "current API on the frozen 2023 panel".
+   2023 panel at ``FROZEN_PANEL``. The script asserts the numbers the page quotes from it as
+   "current API on the frozen 2023 panel".
    Only the columns in ``FROZEN_COLUMNS`` are read; the hedge-fund and SG index columns of that
    file are never loaded.
 
@@ -70,7 +70,7 @@ MIXTURE_CORRELATION = 0.3
 MIXTURE_TAIL_PROBABILITY = 0.03
 MIXTURE_DEVIATION = 3.0
 # The ETF-derived columns of the frozen 2023 panel; no other column of the file is read.
-FROZEN_PANEL = 'papers/crypto_allocation_risk_2023/data/crypto_allocation_prices.csv'
+FROZEN_PANEL = 'papers/crypto_allocation_risk_2023/replication/data/crypto_allocation_prices.csv'
 FROZEN_COLUMNS = ['60/40', 'BTC', 'PE', 'RealEstate', 'Commodities', 'Gold']
 TEMPLATES = {'100% Alts with BTC': False, '75%/25% Balanced/Alts with BTC': True}
 

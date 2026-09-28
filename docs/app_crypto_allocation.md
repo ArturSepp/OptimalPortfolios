@@ -89,7 +89,7 @@ Section, equation and table numbers refer to the manuscript tracked in the repos
   use average log returns in excess of the three-month Treasury-bill rate (Section 3.1).
 
 The repository keeps the study's price panel,
-`papers/crypto_allocation_risk_2023/data/crypto_allocation_prices.csv`.
+`papers/crypto_allocation_risk_2023/replication/data/crypto_allocation_prices.csv`.
 This page reads six of its columns: `60/40`, `BTC`, and the four ETF proxies `PE`, `RealEstate`,
 `Commodities` and `Gold`; the repository's loader,
 [`load_prices.py`](../papers/crypto_allocation_risk_2023/replication/load_prices.py), backfills

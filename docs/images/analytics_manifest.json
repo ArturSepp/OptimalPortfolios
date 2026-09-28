@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-09-27T20:32:33+00:00",
+  "generated_at_utc": "2026-09-28T06:32:40+00:00",
   "platform": "Windows-11-10.0.26200-SP0",
   "versions": {
     "python": "3.12.14",
-    "optimalportfolios": "7.8.1.dev1",
-    "qis": "5.32.0",
-    "factorlasso": "0.20.0",
+    "optimalportfolios": "7.9.0",
+    "qis": "5.31.0",
+    "factorlasso": "0.19.0",
     "numpy": "2.5.2",
     "pandas": "3.0.5",
     "scipy": "1.18.0",
@@ -1859,7 +1859,7 @@
     "crypto_allocation_by_method": {
       "path": "docs/images/crypto_allocation_by_method.png",
       "script": "examples/docs/app_crypto_allocation.py",
-      "script_sha256": "3e0a00dd1201d0ef0a81a9e71e6bdcd115ad2fba45d974e4e391f55b01ec8d70",
+      "script_sha256": "62a3267d6fc6fad55784963d27a1e357d9a9de61ad742dd38db01d3789862f25",
       "image_sha256": "27ca33468b16b31f7b252d3f92986a10ad32fdb479a91208c1bfa300b097b539",
       "table_sha256": "63b9b9b67b706715f72e43c8f430b46930c95a60b956f0b88707169214a76723",
       "parameters": {
@@ -1877,7 +1877,7 @@
         "REPORT_START": "2016-03-31",
         "REPORT_END": "2023-06-30",
         "HELD": 0.0001,
-        "FROZEN_PANEL": "papers/crypto_allocation_risk_2023/data/crypto_allocation_prices.csv",
+        "FROZEN_PANEL": "papers/crypto_allocation_risk_2023/replication/data/crypto_allocation_prices.csv",
         "FROZEN_COLUMNS": [
           "60/40",
           "BTC",
@@ -2086,7 +2086,7 @@
     }
   },
   "review": {
-    "note": "Republished on 2026-09-27 after merging main (R6 to R9 and the README reduction) into the pinned-sign branch: app_rosaa_multi_asset_allocation.py, factor_covariance_hcgl.py and maximum_diversification.py draw through numpy SVD factors whose signs are pinned by SVD_SIGNS, so their seeded draws no longer depend on the LAPACK build. All twenty-five images are byte-identical to those on main, which were inspected at full resolution (1500x660 px) by the coordinator on 2026-09-27.",
-    "published_at_utc": "2026-09-27T20:32:55+00:00"
+    "note": "2026-09-28: inspected crypto_allocation_by_method at page width and full size; labels, legends, units and table remain legible; image and table hashes unchanged after frozen-panel path correction.",
+    "published_at_utc": "2026-09-28T06:32:42+00:00"
   }
 }

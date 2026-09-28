@@ -1713,7 +1713,7 @@
         "REPORT_START": "2016-03-31",
         "REPORT_END": "2023-06-30",
         "HELD": 0.0001,
-        "FROZEN_PANEL": "papers/crypto_allocation_risk_2023/data/crypto_allocation_prices.csv",
+        "FROZEN_PANEL": "papers/crypto_allocation_risk_2023/replication/data/crypto_allocation_prices.csv",
         "FROZEN_COLUMNS": [
           "60/40",
           "BTC",
