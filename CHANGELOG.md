@@ -5,7 +5,12 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [7.8.1.dev1] - 2026-09-25
+## [7.9.0] - 2026-09-28
+
+- Organised public paper workspaces under a common publication policy. Crypto replication inputs
+  and tests now sit beside their code; the offline CMA and crypto contracts run in CI. Paper
+  manuscripts, private inputs and agent records stay outside built distributions, and the
+  staged-source policy check rejects unapproved publication paths.
 
 - **This changes computed values.** The low-beta, residual-momentum and residual-reversal
   alphas (standard and cluster constructors) are now point in time under their default
