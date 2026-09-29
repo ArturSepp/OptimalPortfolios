@@ -98,3 +98,56 @@ def test_rolling_fits_keep_fixed_cadence_penalties_on_each_history():
                 prices.loc[:date], {freq: panel.loc[:date]}, model)
             np.testing.assert_allclose(result.y_betas.loc[panel.columns], reference.y_betas,
                                        rtol=1e-7, atol=1e-9)
+
+
+@pytest.mark.skipif(not hasattr(LassoModel, 'expert_prior_bound_n_std'),
+                    reason='Native bound integration requires optional FactorLasso 0.22 APIs')
+def test_expert_prior_hac_bandwidth_follows_cadence_and_restores_configuration(monkeypatch):
+    """HAC inference uses the selected cadence without leaking overrides after a fit."""
+    from optimalportfolios.covar_estimation.factor_covar_estimator import _model_for_frequency
+    prices, panels = _inputs()
+    model = _model().copy(dict(apply_ols_prior=True, factor_for_prior={'M':'F1','Q':'F2'},
+        expert_prior_bound_n_std=1, expert_prior_hac_lags=3,
+        expert_prior_hac_lags_freq_dict={'ME':3,'QE':1}))
+    assert _model_for_frequency(model, 'QE').expert_prior_hac_lags == 1
+    assert _model_for_frequency(model, 'ME').expert_prior_hac_lags == 3
+    with pytest.raises(KeyError, match='HAC'):
+        _model_for_frequency(model.copy({'span_freq_dict':None}), 'YE')
+    for frequency in ('ME', 'QE'):
+        _fit_lasso_frequency(freq=frequency, asset_returns=panels[frequency],
+            risk_factor_prices=prices, lasso_model=model, verbose=False)
+        assert model.effective_prior_hac_lags_ == {'ME':3,'QE':1}[frequency]
+        assert model.expert_prior_hac_lags == 3
+        assert model.reg_lambda == 1e-5
+    def fail(**kwargs):
+        """Observe the quarterly override before simulating a solver failure."""
+        assert model.expert_prior_hac_lags == 1
+        raise RuntimeError('solver failed')
+    monkeypatch.setattr(model, 'fit', fail)
+    with pytest.raises(RuntimeError, match='solver failed'):
+        _fit_lasso_frequency(freq='QE', asset_returns=panels['QE'],
+            risk_factor_prices=prices, lasso_model=model, verbose=False)
+    assert model.expert_prior_hac_lags == 3
+    assert model.reg_lambda == 1e-5
+
+
+def test_optional_prior_hac_scalar_is_forwarded_and_restored_with_older_models(monkeypatch):
+    """Adapter forwarding remains testable without requiring the new dependency version."""
+    from types import SimpleNamespace
+    from optimalportfolios.covar_estimation import factor_covar_estimator as module
+    prices, panels = _inputs()
+    model = _model()
+    model.expert_prior_hac_lags = 3
+    def frequency_model(**kwargs):
+        """Stand in for a model carrying the optional resolved scalar."""
+        return SimpleNamespace(span=40, cluster_correlation_span=None, expert_prior_hac_lags=1)
+    monkeypatch.setattr(module, '_model_for_frequency', frequency_model)
+    original_fit = model.fit
+    def observe(**kwargs):
+        """Observe the forwarded scalar and run the supported legacy fit."""
+        assert model.expert_prior_hac_lags == 1
+        return original_fit(**kwargs)
+    monkeypatch.setattr(model, 'fit', observe)
+    module._fit_lasso_frequency(freq='QE', asset_returns=panels['QE'],
+        risk_factor_prices=prices, lasso_model=model, verbose=False)
+    assert model.expert_prior_hac_lags == 3

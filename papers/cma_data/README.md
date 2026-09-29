@@ -33,7 +33,8 @@ alpha), equity_regional_addon, rf_rate. With M factors, `betas.csv` is 18 x M,
 `factor_covar.csv` is M x M annualized, and `factor_premia.csv` is
 M x (base, stress, upside). The frozen `2026q2` FAJ cut uses the legacy factor
 panel; `2026q2_custom` remains the historical FAJ replication input.
-JPM now pins `2026_matf_cma_revised_20260925`, extracted 25 September 2026.
+The local JPM replication now pins `2026_matf_cma_literal_lambda_20260928`.
+`2026_matf_cma_native_priors_20260928` records a subsequent prior-bound variant.
 FAJ retains `2026q2_custom_ig_hy_publication`, extracted 24 September 2026.
 The historical eleven-factor, automatic-prior and fixed-IG-prior cuts remain
 immutable. The current assets include `FactorPrior1`, `FactorPrior2`,
@@ -42,7 +43,7 @@ immutable. The current assets include `FactorPrior1`, `FactorPrior2`,
 history panels; `factor_navs.csv` holds optional licensed factor NAVs. The
 manifest stores source/input hashes, production configuration and per-file hashes.
 
-The 25 September JPM revision uses the unchanged 30 June 2026 cutoff,
+The 25 September JPM revision used the unchanged 30 June 2026 cutoff,
 MATF_CUSTOM_IG_HY and the current production FCGL estimator. `FactorPrior1` and
 `FactorPrior2` select single- or joint-factor weighted OLS priors; unmapped assets
 use highest-R² selection. Nonzero prior signs override detected signs, with hard
@@ -52,6 +53,10 @@ The revised JPM fit uses per-response valid-EWMA-mass loss normalization, fixed
 monthly/quarterly penalties and EWMA date-pooled signs. Long-run credit spreads
 are IG 65 bp, HY 400 bp and EM 400 bp; net allowances are 21, 120 and 15 bp.
 The archived FAJ snapshot retains its earlier settings.
+The 28 September literal-lambda snapshot keeps the same cutoff and applies a
+literal 1e-5 penalty at each cadence. The native-prior variant retains that
+penalty and records individual one-HAC-standard-error bounds with no manual PE
+target. Both extracts preserve the 18 paper sleeves from the 182-index fit.
 
 PE alpha admission is 50%, its factor Sharpe anchor is 0.70, ILS admission is 100%,
 and the discretionary EM equity haircut is zero. World and ACWI select `Equity`.
@@ -69,7 +74,7 @@ Earlier snapshots and originally distributed Q2 reports remain unchanged.
 The FAJ draft adopted the publication snapshot on 25 September 2026.
 This final rebuild is not a credit-split-only experiment.
 
-Current manifest SHA-256: `863adc9693616913cfa4b77d6d1fd4117901f5722c6982ced07ad667cd4b9bb0`. See the
+Current pinned manifest SHA-256: `8dc9bab3c58df616d85b0aaccee9bc299c3a301295545eb38c113f583157d37b`. See the
 [JPM replication instructions](../matf_cma_jpm_2026/replication/README.md).
 
 Local licensed input: `providers.csv` contains provider CMA vectors under neutral

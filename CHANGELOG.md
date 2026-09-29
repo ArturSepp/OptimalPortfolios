@@ -5,6 +5,15 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.9.1] - 2026-09-29
+
+- Forward optional FactorLasso expert-prior HAC bandwidths by asset-return cadence;
+  preserve configured scalars after successful or failed fits. Existing estimators
+  without this optional feature retain their behavior.
+
+- Add the public, derived inputs and manifests for the literal-lambda and native-prior
+  CMA paper snapshots. Licensed return histories, factor NAVs and provider inputs remain local.
+
 ## [7.9.0] - 2026-09-28
 
 - Organised public paper workspaces under a common publication policy. Crypto replication inputs

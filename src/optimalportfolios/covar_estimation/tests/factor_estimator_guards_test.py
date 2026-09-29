@@ -378,3 +378,16 @@ def test_invalid_recluster_frequency_is_refused() -> None:
 
     with pytest.raises(ValueError, match="invalid recluster_freq"):
         estimator.fit_rolling_factor_covars(factors, returns, period, assets=ASSETS)
+
+
+def test_optional_expert_hac_map_requires_complete_cadence_coverage():
+    """Resolve supported optional maps without requiring a specific FactorLasso release."""
+    model = _span_model(expert_prior_bound_n_std=1, expert_prior_hac_lags=0,
+                        expert_prior_hac_lags_freq_dict={'ME':3,'QE':1})
+    assert _model_for_frequency(model, 'ME').expert_prior_hac_lags == 3
+    assert _model_for_frequency(model, 'QE').expert_prior_hac_lags == 1
+    assert model.expert_prior_hac_lags == 0
+    with pytest.raises(KeyError, match='HAC'):
+        _model_for_frequency(model, 'YE')
+    model.expert_prior_bound_n_std = None
+    assert _model_for_frequency(model, 'YE') is model

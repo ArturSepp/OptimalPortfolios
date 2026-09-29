@@ -85,6 +85,12 @@ def _model_for_frequency(lasso_model: LassoModel, freq: str) -> LassoModel:
                 "lasso_model.cluster_correlation_span_freq_dict"
             )
         overrides['cluster_correlation_span'] = cluster_span_map[freq]
+    prior_hac_map = getattr(lasso_model, 'expert_prior_hac_lags_freq_dict', None)
+    if (prior_hac_map is not None
+            and getattr(lasso_model, 'expert_prior_bound_n_std', None) is not None):
+        if freq not in prior_hac_map:
+            raise KeyError(f"no expert prior HAC bandwidth for freq={freq}")
+        overrides['expert_prior_hac_lags'] = prior_hac_map[freq]
     return lasso_model.copy(kwargs=overrides) if overrides else lasso_model
 
 
@@ -315,6 +321,9 @@ def _fit_lasso_frequency(
     if hasattr(fit_model, 'cluster_correlation_span'):
         cluster_span_kwargs['cluster_correlation_span'] = cluster_correlation_span
     original_lambda = fit_model.reg_lambda
+    original_prior_hac_lags = getattr(fit_model, 'expert_prior_hac_lags', None)
+    if original_prior_hac_lags is not None:
+        fit_model.expert_prior_hac_lags = frequency_model.expert_prior_hac_lags
     if reg_lambda is not None:
         fit_model.reg_lambda = reg_lambda
     try:
@@ -330,6 +339,8 @@ def _fit_lasso_frequency(
         )
     finally:
         fit_model.reg_lambda = original_lambda
+        if original_prior_hac_lags is not None:
+            fit_model.expert_prior_hac_lags = original_prior_hac_lags
 
     estimation_result = fit_model.estimation_result_
     linkage = precomputed_linkages[freq] if use_precomputed else fit_model.linkage
