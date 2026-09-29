@@ -18,10 +18,6 @@ on:
         description: Also create an optional GitHub Release page
         default: false
         type: boolean
-      skip_tests:
-        description: One-time v7.9.1 expedited publish after independent validation
-        default: false
-        type: boolean
 
 permissions:
   contents: read
@@ -49,21 +45,16 @@ jobs:
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version: "3.12"
-      - name: Restrict expedited publishing to v7.9.1
-        if: inputs.skip_tests
-        run: test "$GITHUB_EVENT_NAME" = "workflow_dispatch" && test "$RELEASE_TAG" = "v7.9.1"
       - name: Resolve the tag and validate release identity
         id: identity
         run: |
           cp .github/scripts/release_guard.py "$RUNNER_TEMP/release_guard.py"
           python "$RUNNER_TEMP/release_guard.py" checkout --tag "$RELEASE_TAG"
       - name: Run the tagged source test suite
-        if: ${{ !inputs.skip_tests }}
         run: |
           uv sync --locked --group test
           uv run --no-sync pytest
       - name: Build the tagged documentation with warnings as errors
-        if: ${{ !inputs.skip_tests }}
         run: |
           uv sync --locked --extra docs
           uv run --no-sync python -m sphinx -E -W --keep-going -b html docs "$RUNNER_TEMP/release-docs"
