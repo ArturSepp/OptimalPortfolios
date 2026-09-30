@@ -42,6 +42,7 @@ _NESTED_TICKER_CONSTRAINT_FIELDS = (
     "sector_deviation_constraints",
     "style_deviation_constraints",
     "benchmark_beta_constraint",
+    "linear_constraints",
 )
 
 
@@ -235,7 +236,8 @@ def build_valid_ticker_constraint_fields(
 
     # Update individual weight constraints — aligned to valid_tickers
     if constraint_spec.min_weights is not None:
-        self_dict['min_weights'] = constraint_spec.min_weights.reindex(index=valid_index, fill_value=0.0)
+        self_dict['min_weights'] = constraint_spec.min_weights.reindex(index=valid_index,
+                                                                       fill_value=0.0)
     if constraint_spec.max_weights is not None:
         max_w = constraint_spec.max_weights.reindex(index=valid_index, fill_value=0.0)
         if total_to_good_ratio is not None:
@@ -251,23 +253,28 @@ def build_valid_ticker_constraint_fields(
     if constraint_spec.turnover_constraint is not None and total_to_good_ratio is not None:
         self_dict['turnover_constraint'] = constraint_spec.turnover_constraint * total_to_good_ratio
     if constraint_spec.turnover_costs is not None:
-        self_dict['turnover_costs'] = constraint_spec.turnover_costs.reindex(index=valid_index, fill_value=1.0)
+        self_dict['turnover_costs'] = constraint_spec.turnover_costs.reindex(index=valid_index,
+                                                                             fill_value=1.0)
 
     # Update portfolio universe — all aligned to valid_tickers
     if weights_0 is not None:
         self_dict['weights_0'] = weights_0.reindex(index=valid_index, fill_value=0.0)
     elif constraint_spec.weights_0 is not None:
-        self_dict['weights_0'] = constraint_spec.weights_0.reindex(index=valid_index, fill_value=0.0)
+        self_dict['weights_0'] = constraint_spec.weights_0.reindex(index=valid_index,
+                                                                   fill_value=0.0)
 
     if asset_returns is not None:
         self_dict['asset_returns'] = asset_returns.reindex(index=valid_index, fill_value=0.0)
     elif constraint_spec.asset_returns is not None:
-        self_dict['asset_returns'] = constraint_spec.asset_returns.reindex(index=valid_index, fill_value=0.0)
+        self_dict['asset_returns'] = constraint_spec.asset_returns.reindex(index=valid_index,
+                                                                           fill_value=0.0)
 
     if benchmark_weights is not None:
-        self_dict['benchmark_weights'] = benchmark_weights.reindex(index=valid_index, fill_value=0.0)
+        self_dict['benchmark_weights'] = benchmark_weights.reindex(index=valid_index,
+                                                                   fill_value=0.0)
     elif constraint_spec.benchmark_weights is not None:
-        self_dict['benchmark_weights'] = constraint_spec.benchmark_weights.reindex(index=valid_index, fill_value=0.0)
+        self_dict['benchmark_weights'] = constraint_spec.benchmark_weights.reindex(
+            index=valid_index, fill_value=0.0)
 
     if target_return is not None:
         self_dict['target_return'] = target_return
@@ -293,9 +300,11 @@ def build_valid_ticker_constraint_fields(
         frozen_weights_0 = (resolved_weights_0.clip(lower=0.0)
                             if constraint_spec.is_long_only else resolved_weights_0)
         if self_dict['min_weights'] is not None:
-            self_dict['min_weights'] = self_dict['min_weights'].where(is_rebalanced, other=frozen_weights_0)
+            self_dict['min_weights'] = self_dict['min_weights'].where(is_rebalanced,
+                                                                      other=frozen_weights_0)
         if self_dict['max_weights'] is not None:
-            self_dict['max_weights'] = self_dict['max_weights'].where(is_rebalanced, other=frozen_weights_0)
+            self_dict['max_weights'] = self_dict['max_weights'].where(is_rebalanced,
+                                                                      other=frozen_weights_0)
 
     # Relax group bounds to accommodate the frozen-position overhang.
     #

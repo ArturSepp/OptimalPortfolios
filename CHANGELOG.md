@@ -5,6 +5,33 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased — 2026-09-30
+
+- Forward all four FactorLasso residual covariance choices: orthogonal, full empirical,
+  exposure-cluster averages and residual-cluster averages. The two cluster choices reuse
+  causal empirical preparation and preserve the native residual variances. Older FactorLasso
+  installations raise an upgrade error for unsupported cluster choices; the library default
+  remains orthogonal.
+
+## [7.10.0] - 2026-09-30
+
+- Add `LinearConstraints` and `Constraints.linear_constraints` for named signed affine
+  policies, with CVXPY/SciPy enforcement, strict universe alignment, signed box
+  reachability checks and named residuals. Benchmark-beta convenience APIs remain supported.
+- **This changes computed values.** Correct nonzero return-floor scaling in fixed-exposure
+  maximum Sharpe and enforce return floors in SciPy compilation. Previously a
+  negative floor could produce accepted but suboptimal allocations; the SciPy compiler
+  omitted floors of either sign, including zero. `set_scipy_constraints` serves every SLSQP
+  objective, so a configured `target_return` is now enforced by maximum Sharpe with an
+  exposure band, maximum diversification, CARA utility under a Gaussian mixture and the SLSQP
+  risk-budgeting path, whose SciPy rows previously omitted it. Existing
+  zero-bound CVXPY encodings retain their mathematical formulation. Other transformed
+  risk/trading rows remain outside this fix.
+- Update the overlay documentation and JOIM companion for the named linear policy and the
+  sample-regime covariance helper in qis. Frozen empirical inputs and published tables are
+  preserved and compared independently before migration. The documentation cites the
+  accepted JOIM paper, Sepp and Kastenholz (2026), by section and equation.
+
 ## [7.9.1] - 2026-09-29
 
 - Forward optional FactorLasso expert-prior HAC bandwidths by asset-return cadence;

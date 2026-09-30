@@ -27,6 +27,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import qis as qis
+import factorlasso as fl
 from typing import Union, Optional, Dict, Any, List
 from dataclasses import dataclass, asdict, fields, replace
 
@@ -54,6 +55,16 @@ _CFCD_SUPPORTS_DERIVED_SIGNS = (
 _CFCD_SUPPORTS_RESIDUAL_CORRELATION = (
     'residual_correlation' in {f.name for f in fields(CurrentFactorCovarData)}
 )
+
+
+def _validate_residual_type(residual_type: str) -> None:
+    """Validate four assembly policies while retaining legacy orthogonal support."""
+    choices = ('orthogonal', 'empirical', 'exposure_cluster', 'residual_cluster')
+    if residual_type not in choices:
+        raise ValueError(f"residual_type must be one of {choices}")
+    if (residual_type in ('exposure_cluster', 'residual_cluster')
+            and residual_type not in tuple(getattr(fl, 'ResidualType', ()))):
+        raise ImportError("Upgrade factorlasso to a version supporting cluster residual covariance")
 
 
 def _model_for_frequency(lasso_model: LassoModel, freq: str) -> LassoModel:
@@ -395,8 +406,12 @@ class FactorCovarEstimator(CovarEstimator):
             requires an HCGL or FCGL lasso_model, checked at construction.
         factor_clustering_freqs: Optional nonempty sequence of asset-return cadences
             receiving references when enabled. None includes every cadence.
-        residual_type: 'orthogonal' (default diagonal) or 'empirical' (prepared
-            common-period correlation scaled by current MATF residual standard deviations).
+        residual_type: 'orthogonal' (default diagonal), 'empirical', 'exposure_cluster',
+            or 'residual_cluster'. All nonorthogonal choices use the same prepared
+            common-period correlation scaled by current MATF residual standard deviations.
+            Cluster choices use signed within-cluster means and zero between clusters;
+            exposure_cluster requires fitted cluster labels. Residual clustering uses
+            Ward/1-rho with cutoff fraction 0.6 in FactorLasso.
         residual_covar_freq: Common residual grid, default lowest native frequency.
             Only complete nested log-return periods can be summed; no extrapolation.
         residual_covar_span: EWMA span in common observations; None uses the lowest
@@ -455,8 +470,7 @@ class FactorCovarEstimator(CovarEstimator):
             ValueError: If factor_clustering_freqs is not a nonempty list/tuple of
                 nonempty strings, or enabled references lack an HCGL/FCGL model.
         """
-        if self.residual_type not in ('orthogonal', 'empirical'):
-            raise ValueError("residual_type must be 'orthogonal' or 'empirical'")
+        _validate_residual_type(self.residual_type)
         if not np.isfinite(self.residual_corr_weight) or not 0 <= self.residual_corr_weight <= 1:
             raise ValueError("residual_corr_weight must be finite and in [0, 1]")
         if self.residual_type == 'orthogonal' and self.residual_corr_weight != 1.:
@@ -568,7 +582,7 @@ class FactorCovarEstimator(CovarEstimator):
         )
         options = ({'residual_type': self.residual_type,
                     'residual_corr_weight': self.residual_corr_weight}
-                   if self.residual_type == 'empirical' else {})
+                   if self.residual_type != 'orthogonal' else {})
         return factor_data.get_y_covar(residual_var_weight=residual_var_weight,
                                        assets=assets, **options)
 
@@ -610,7 +624,7 @@ class FactorCovarEstimator(CovarEstimator):
         )
         options = ({'residual_type': self.residual_type,
                     'residual_corr_weight': self.residual_corr_weight}
-                   if self.residual_type == 'empirical' else {})
+                   if self.residual_type != 'orthogonal' else {})
         return rolling_data.get_y_covars(residual_var_weight=residual_var_weight,
                                          assets=assets, **options)
 
@@ -669,7 +683,7 @@ class FactorCovarEstimator(CovarEstimator):
             Its residual panel is annual-scaled by cadence and excludes factor
             contributions without subtracting the fitted intercept.
         """
-        if self.include_factors_in_clustering or self.residual_type == 'empirical':
+        if self.include_factors_in_clustering or self.residual_type != 'orthogonal':
             estimation_date = estimation_date or max(
                 returns.index[-1] for returns in asset_returns_dict.values()
             )
@@ -723,7 +737,7 @@ class FactorCovarEstimator(CovarEstimator):
             'residual_type': self.residual_type,
             'residual_covar_freq': self.residual_covar_freq,
             'residual_covar_span': self.residual_covar_span,
-        } if self.residual_type == 'empirical' else {})
+        } if self.residual_type != 'orthogonal' else {})
         if self.reg_lambda_freq_dict is not None:
             residual_options['reg_lambda_freq_dict'] = self.reg_lambda_freq_dict
         factor_covar_data = estimate_lasso_factor_covar_data(
@@ -848,7 +862,7 @@ class FactorCovarEstimator(CovarEstimator):
                 estimation_date=estimation_date,
                 **cluster_kwargs,
             )
-            if self.residual_type == 'empirical':
+            if self.residual_type != 'orthogonal':
                 current = covar_datas[estimation_date]
                 prepared = current.residual_correlation
                 if (previous_residual is not None
@@ -936,7 +950,8 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
             Must be provided together with both other precomputed maps.
         precomputed_cutoffs: Matching dendrogram cut distances for supplied
             memberships; all three maps must be supplied together or all be None.
-        residual_type: 'orthogonal' (default) or 'empirical'. Empirical attaches a
+        residual_type: 'orthogonal' (default), 'empirical', 'exposure_cluster', or
+            'residual_cluster'. Every nonorthogonal choice attaches a
             prepared dimensionless correlation, with no factor-residual cross term.
         residual_covar_freq: Common residual grid; None selects the lowest native
             frequency. Raw log residuals are summed only over complete nested periods.
@@ -962,9 +977,8 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
         missing = set(asset_returns_dict) - set(reg_lambda_freq_dict)
         if missing:
             raise KeyError(f'no reg_lambda for cadence(s): {sorted(missing)}')
-    if residual_type not in ('orthogonal', 'empirical'):
-        raise ValueError("residual_type must be 'orthogonal' or 'empirical'")
-    if residual_type == 'empirical':
+    _validate_residual_type(residual_type)
+    if residual_type != 'orthogonal':
         if not _CFCD_SUPPORTS_RESIDUAL_CORRELATION:
             raise ImportError(
                 "Upgrade factorlasso to a version supporting prepared residual correlation"
@@ -1174,7 +1188,7 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
     if _CFCD_SUPPORTS_RESIDUAL_CORRELATION:
         metadata = pd.concat(residual_metadata).reindex(asset_last_betas.index)
         cfcd_kwargs['residual_metadata'] = metadata
-        if residual_type == 'empirical':
+        if residual_type != 'orthogonal':
             from factorlasso import estimate_residual_correlation
 
             annualisation = (qis.get_annualisation_conversion_factor(residual_covar_freq, 'YE')

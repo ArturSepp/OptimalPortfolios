@@ -31,6 +31,7 @@ from optimalportfolios.optimization.constraints import (
     ConstraintEnforcementType,
     Constraints,
     GroupLowerUpperConstraints,
+    LinearConstraints,
     GroupTrackingErrorConstraint,
     GroupTurnoverConstraint,
     compute_eligible_rebalancing_bounds,

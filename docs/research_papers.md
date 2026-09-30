@@ -3,8 +3,9 @@ myst:
   html_meta:
     description: >-
       The research papers behind optimalportfolios: the ROSAA framework in The Journal of
-      Portfolio Management, cryptocurrency allocation in Risk and multi-asset capital market
-      assumptions, with what each paper contributes and what a public checkout reproduces.
+      Portfolio Management, cryptocurrency allocation in Risk, multi-asset capital market
+      assumptions and the convexity premium of portfolio overlays in the Journal of Investment
+      Management, with what each paper contributes and what a public checkout reproduces.
 ---
 
 # Research papers and replication
@@ -24,8 +25,10 @@ Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios
 Pages cite a paper by section and equation. A result from a paper is quoted with its study
 design and is never restated as a general performance claim. Exhibits on this site are either
 regenerated from code and data tracked in the repository or synthetic analogues drawn from a
-page's own script; figures of the papers themselves are not reproduced here. Research that has not
-been published is neither cited nor displayed.
+page's own script; figures of the papers themselves are not reproduced here. An accepted,
+forthcoming article is cited by section and equation for its methods, and is otherwise
+represented only by specifically approved public introductions and synthetic examples; its
+results are not quoted before publication.
 
 ## Papers
 
@@ -74,6 +77,30 @@ strategic asset allocation. On this site it is cited only in its public SSRN ver
 [MATF-CMA case study](app_cma_strategic_allocation.md) builds the workflow from CMAs to a strategic allocation
 with the package on synthetic inputs; it reproduces none of the paper's results.
 
+### The convexity premium of portfolio overlays
+
+Sepp, A., and Kastenholz, M. (2026). *The Convexity Premium of Portfolio Overlays*.
+Journal of Investment Management, forthcoming.
+
+The paper studies an overlay's Sharpe contributions in the core portfolio's Bear, Normal and
+Bull regimes, and the Bear contribution beyond a Gaussian model with the same Sharpe ratio
+and correlation. It contributes:
+
+- the exact regime decomposition of a Sharpe ratio (Section I, Proposition 1 and equation (1)),
+  the convexity premium (Definition 2, equation (4)) and the aggregation of Bear-regime
+  contributions across overlays (Proposition 4, equation (8)), which
+  [qis](https://quantinveststrats.readthedocs.io/en/latest/convexity_premium.html) implements;
+- the regime-mixture covariance of the regime betas (Section II, equation (10), derived in
+  Appendix B), also computed by qis;
+- the overlay allocation with a Bear-regime coverage floor (Section II, program (11)), which OP
+  solves as a fixed-core maximum Sharpe ratio with a named linear row (see
+  [the coverage floor](overlay_tail_floor.md#the-coverage-floor)).
+
+The [public companion](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/smart_diversification_joim_2026)
+introduces the concept and runs the pipeline on a synthetic 60/40 overlay allocation. The paper
+is forthcoming, so its results are not quoted on this site. The manuscript, empirical
+replication and licensed inputs are not included.
+
 ## Reproducing the papers
 
 The paper folders are repository-only research code: they are not installed by
@@ -85,6 +112,7 @@ requirements. The table summarises what a public checkout can run.
 | ROSAA | [`robust_optimisation_jpm_2026`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/robust_optimisation_jpm_2026) | A methodological example of the HCGL covariance and risk-budgeted strategic allocation. It downloads its ETF panel with `yfinance`, carries no frozen inputs and records no environment, so it is not an exact rebuild of the published exhibits. |
 | Cryptocurrencies | [`crypto_allocation_risk_2023`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/crypto_allocation_risk_2023) | The manuscript source, the analysis code and historical price files; no CI workflow runs this folder's tests. The [cryptocurrency case study](app_crypto_allocation.md) runs the four methods offline on the tracked price panel. The full update route needs licensed Bloomberg data, so the headline numbers are not promised to reproduce exactly. |
 | Capital market assumptions | [`cma_data`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/cma_data) | A manifest-verified snapshot of the configuration tables behind the capital market assumptions, with tests that the required checks run on every pull request to `main`. Licensed index, factor-history and provider panels are omitted. |
+| Convexity premium | [`smart_diversification_joim_2026`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/smart_diversification_joim_2026) | A self-contained synthetic 60/40 example, with OP allocation and qis illustrations. No manuscript, licensed observations or empirical paper exhibits are distributed. |
 
 Frozen package versions are quoted only from a committed manifest; where a folder records no
 environment, none is inferred.

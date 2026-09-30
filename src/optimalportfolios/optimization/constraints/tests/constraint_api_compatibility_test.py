@@ -79,6 +79,7 @@ EXPECTED_CONSTRAINT_FIELDS = (
     ('sector_deviation_constraints', None),
     ('style_deviation_constraints', None),
     ('benchmark_beta_constraint', None),
+    ('linear_constraints', None),
 )
 
 EXPECTED_METHOD_PARAMETERS = {

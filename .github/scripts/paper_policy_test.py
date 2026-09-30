@@ -22,6 +22,9 @@ class PaperPolicyTests(unittest.TestCase):
         source = Path(__file__).resolve().parents[2]
         self.write(".gitignore", (source / ".gitignore").read_text(encoding="utf-8"))
         self.write("papers/AGENTS.md", "Paper contract\n")
+        self.write("papers/smart_diversification_joim_2026/.gitignore",
+                   (source / "papers/smart_diversification_joim_2026/.gitignore")
+                   .read_text(encoding="utf-8"))
         self.write("papers/crypto_allocation_risk_2023/.gitignore", "!/paper/current.tex\n")
         self.write("papers/crypto_allocation_risk_2023/paper/current.tex", "Existing approved manuscript\n")
         self.write("papers/crypto_allocation_risk_2023/replication/reproduce.py", "print('example')\n")
@@ -36,6 +39,32 @@ class PaperPolicyTests(unittest.TestCase):
     def test_approved_bundle_passes(self) -> None:
         """Exact approved manuscript files and replication code are publishable."""
         self.assertEqual(check_repository(self.root), [])
+
+    def test_joim_introduction_and_synthetic_example_are_public(self) -> None:
+        """Ordinary staging exposes only the approved introduction, example and its test."""
+        base = "papers/smart_diversification_joim_2026/"
+        public = ["README.md", "run_overlay_example.py",
+                  "replication/tests/overlay_example_test.py"]
+        local = ["replication/reproduce_paper_figures.py", "replication/data/input.csv",
+                 "replication/inputs/long_vol_qis_universe.py", "paper/paper.tex",
+                 "replication/tests/runner_test.py", "replication/results/table.csv"]
+        for name in public + local:
+            self.write(base + name, "fixture\n")
+        git(self.root, "add", ".")
+        indexed = set(git(self.root, "ls-files", "-z").decode().split("\0"))
+        self.assertTrue(all(base + name in indexed for name in public))
+        self.assertFalse(any(base + name in indexed for name in local))
+        self.assertEqual(check_repository(self.root), [])
+
+    def test_joim_extra_exception_cannot_publish_empirical_code(self) -> None:
+        """The narrow source allowlist also rejects a deliberate local ignore override."""
+        base = "papers/smart_diversification_joim_2026/"
+        name = base + "replication/reproduce_paper_figures.py"
+        self.write(base + ".gitignore", "!/replication/\n!/replication/reproduce_paper_figures.py\n")
+        self.write(name, "private empirical runner\n")
+        git(self.root, "add", "-f", base + ".gitignore", name)
+        self.assertTrue(any("protected material" in error and name in error
+                            for error in check_repository(self.root)))
 
     def test_force_added_private_material_fails(self) -> None:
         """Ignore rules do not protect an already staged or force-added file."""

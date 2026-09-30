@@ -58,6 +58,7 @@ constraints/
 ├── benchmarks.py                 # deviation and benchmark-beta specifications
 ├── expressions.py                # shared CVXPY variance/objective expressions
 ├── groups.py                     # allocation, group-TE, and group-turnover specs
+├── linear.py                     # named signed linear policy rows
 ├── run_local/
 │   └── constraints_run.py        # manual formatted constraint diagnostics
 └── tests/
@@ -68,7 +69,9 @@ constraints/
     ├── constraints_test.py
     ├── exposure_policy_test.py
     ├── frozen_overshoot_relaxation_test.py
+    ├── linear_constraints_test.py
     ├── rebalancing_constraints_test.py
+    ├── return_floor_test.py
     ├── scipy_group_validation_test.py
     ├── specialised_constraints_test.py
     ├── tracking_error_policy_test.py
@@ -88,6 +91,7 @@ These modules are implementation owners; import supported names through the faca
 | [`benchmarks.py`](./benchmarks.py) | benchmark-deviation and beta range dataclasses | rolling beta estimation |
 | [`expressions.py`](./expressions.py) | reusable CVXPY covariance-risk and objective-expression leaves | constraint policy |
 | [`groups.py`](./groups.py) | group allocation, group tracking-error, group turnover, merge behavior, and dropped-group records | whole-portfolio risk/trading policy |
+| [`linear.py`](./linear.py) | the frozen `LinearConstraints` policy: named signed loading rows, their bounds, label validation and strict universe alignment | financial interpretation of a row, reachability checks or compilation |
 | [`__init__.py`](./__init__.py) | the supported import surface | implementation logic |
 
 Benchmark-beta loading calculations remain in
@@ -303,14 +307,18 @@ Compilation returns solver inputs; it does not solve or assess a returned alloca
 | `set_cvx_all_constraints(w, covar, ...)` | CVXPY constraint list | Combine with a caller-owned objective for forced enforcement. |
 | `set_cvx_utility_objective_constraints(w, alphas, covar, ...)` | Utility expression, hard constraint list | Maximize the expression or combine it with the chosen solver's objective. |
 | `set_scipy_constraints(covar)` | Callback list, bounds array or `None` | Callbacks use nonnegative feasibility values; only supported families are compiled. |
-| `set_pyrb_constraints(covar)` | Bounds, group matrix, group right-hand side | The group pair can be `None`. Full investment belongs to the risk-budgeting solver. |
+| `set_pyrb_constraints(covar)` | Bounds, group matrix, group right-hand side | The group pair can be `None`. Full investment belongs to the risk-budgeting solver. A configured `linear_constraints` raises `ValueError`. |
 
 A low-level call to `set_cvx_all_constraints` still compiles hard rows if the specification's
 enum is `UTILITY_CONSTRAINTS`. Select the compiler and enforcement policy together;
 changing the enum alone does not change that method's output.
 
-SciPy compiles boxes, net exposure and group allocation. The risk-budgeting matrix helper
-compiles boxes and group allocation. Fields outside those capabilities are not enforced.
+SciPy compiles boxes, net exposure, group allocation, the `target_return` floor and named
+`linear_constraints` rows. Every SLSQP objective that calls `set_scipy_constraints` receives
+them: maximum Sharpe with an exposure band, maximum diversification, CARA utility under a
+Gaussian mixture and the SLSQP risk-budgeting path. The risk-budgeting matrix helper compiles
+boxes and group allocation and rejects named linear rows rather than dropping them. Other
+fields are not enforced by these two backends.
 Use the [backend matrix](../../../../docs/constraints.md#backend-capability-matrix) and
 [full forced/utility examples](../../../../docs/constraints.md#worked-example) for the complete
 contract rather than inferring capabilities from fields on the shared dataclass.

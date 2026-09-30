@@ -2,8 +2,9 @@
 myst:
   html_meta:
     description: >-
-      Fixed-core overlay allocation with a homogeneous linear floor: Sharpe scaling,
-      exposure budgets, reproducible examples, QIS risk checks and solver limitations.
+      Fixed-core overlay allocation with a named linear floor: Sharpe scaling, exposure
+      budgets, the Bear-regime coverage floor, reproducible examples, QIS risk checks and
+      solver limitations.
 ---
 
 # Overlay optimisation with a fixed core and linear side constraints
@@ -16,8 +17,11 @@ Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios
 A fixed-core overlay allocation holds the core exposure constant while choosing an additional
 sleeve under a common objective and constraints. A linear floor imposes a minimum value on a
 supplied weighted characteristic, such as a scenario-return contribution. This article describes
-the fixed-exposure maximum-Sharpe pattern implemented through `Constraints`, with risk
-measurement delegated to [QIS](https://github.com/ArturSepp/QuantInvestStrats).
+the fixed-exposure maximum-Sharpe pattern implemented through `Constraints` and a named
+`LinearConstraints` row, with risk measurement delegated to
+[QIS](https://github.com/ArturSepp/QuantInvestStrats). With the core's Bear-regime loss as the
+characteristic, it is the [coverage-floor allocation](#the-coverage-floor) of Sepp and
+Kastenholz (2026).
 
 ## Overview
 
@@ -61,6 +65,7 @@ The notation follows the [conventions page](conventions.md#notation). In additio
 | $\Sigma$ | Symmetric positive-definite covariance, annual decimal-return variance here. |
 | $a$ | Fixed linear coefficients, with a common horizon and unit across assets. |
 | $b_0$ | Floor in the same units as $a^\top w$; distinct from expected return $\mu^\top w$. |
+| $\theta$ | Coverage floor: the fraction of the core's Bear-regime loss $-a_c$ that the overlays must offset. |
 | $y,k$ | Transformed exposures and positive scale; recovered weights are $w=y/k$. |
 
 For arithmetic excess-return exposures measured on the same capital base, the one-period model is
@@ -88,7 +93,9 @@ optimization; see Cornuéjols and Tütüncü's
 [author-hosted draft, section 8.2](https://www.andrew.cmu.edu/user/gc0v/webpub/OptFinFirstEdition2006.pdf).
 The original Charnes–Cooper paper gives the related
 [homogeneous-variable transformation](https://iiif.library.cmu.edu/file/Cooper_box00010_fld00009_bdl0001_doc0001/Cooper_box00010_fld00009_bdl0001_doc0001.pdf)
-for linear-fractional programs. The floor encoding below follows directly from fixed exposure.
+for linear-fractional programs, and Schaible (1974) extends it to the quadratic-fractional
+programs to which a Sharpe ratio belongs. The floor encoding below follows directly from fixed
+exposure.
 
 The target problem, with optional per-asset bounds added as needed, is
 
@@ -132,10 +139,25 @@ and equal group lower/upper budgets. Keep total exposure fixed too: the current 
 point dispatches by equality of `min_exposure` and `max_exposure`, not by inferring an equality
 from group rows.
 
-**Linear floor.** The current CVXPY return-row compiler emits
-`asset_returns @ y >= target_return` without multiplying the right side by $k$.
-A direct nonzero `target_return=b0` therefore generally represents the wrong transformed
-constraint. Fixed total exposure gives an exact homogeneous encoding:
+**Linear floor.** Supply the floor as a named row of
+[`LinearConstraints`](constraints.md#named-signed-linear-rows) with loadings $a$ and lower bound
+$b_0$. The CVXPY compiler multiplies the bound by the scale, and for a positive scale the
+transformed row is the original one:
+
+$$
+a^\top y\geq k b_0
+\iff a^\top w\geq b_0
+\quad\text{when }k \gt 0.
+$$
+
+`asset_returns=a` with `target_return=b0` compiles the same row. When exposure is a band
+rather than fixed, SciPy enforces the row directly on weights.
+
+**Homogeneous cross-check.** With fixed total exposure the floor also has an exact encoding with
+a zero right side, which needs no scaled bound. Results computed before the return-floor
+correction recorded in the
+[changelog](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CHANGELOG.md) used it, and
+the canonical script keeps it as an independent reference:
 
 $$
 \begin{aligned}
@@ -148,17 +170,46 @@ a^\top w\geq b_0
 \end{aligned}
 $$
 
-Set `asset_returns=a - b0 / E` and `target_return=0.0`. Subtract from **all** coefficients,
-including the core. A zero floor is the special case $\widetilde a=a$.
+For this encoding, set `asset_returns=a - b0 / E` and `target_return=0.0`. Subtract from
+**all** coefficients, including the core. A zero floor is the special case $\widetilde a=a$.
 Changing $E$ requires recomputing the coefficients.
 
 The nonzero floor has not disappeared economically: it is encoded in $\widetilde a$.
 The expected-return vector passed as `means` still defines the objective; `asset_returns`
 is a separate constraint vector in this pattern.
 
+### The coverage floor
+
+Sepp and Kastenholz (2026), Section II, allocate overlays to a fixed core with program (11):
+they maximise the Sharpe ratio of the core plus a long-only overlay sleeve subject to a floor on
+the portfolio's Bear-regime contribution. The Bear regime is the set of periods in which the
+core's own return lies below its 16% quantile (their Definition 1). Let $a_i$ be the annual
+Bear-regime return contribution of asset $i$, its volatility times its Bear-regime Sharpe
+contribution on the core's regimes, and let $a_c \lt 0$ be the core's own Bear-regime loss. With
+the core held at one, the floor of program (11) is
+
+$$
+a_c+\sum_{i\ne c}a_iw_i\geq(1-\theta) a_c ,
+$$
+
+the linear floor $a^\top w\geq b_0$ with $b_0=(1-\theta) a_c$. A coverage $\theta=0$ lets the
+overlays add nothing to the core's Bear-regime loss, and $\theta=1$ requires them to offset it
+in full. An allocation covers $1-a^\top w/a_c$ of the loss, and the reachability bound under
+[Interpretation and limitations](#reachability-and-fallback) gives the largest coverage,
+$\theta_{\max}=-W\max_{i\ne c}a_i/a_c$, when no other constraint binds.
+
+Because the regimes are fixed by the core, the contributions add across overlays, their
+Proposition 4, which keeps the floor linear in the weights. Estimating $a$, the regime
+classification, the Bear-regime Sharpe contributions and the regime-mixture covariance of their
+equation (10), belongs to
+[qis](https://quantinveststrats.readthedocs.io/en/latest/convexity_premium.html); this page
+consumes the coefficients. The paper's
+[synthetic companion](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/smart_diversification_joim_2026)
+runs the whole pipeline, and the [research papers](research_papers.md) page records the paper.
+
 ## Worked example
 
-The seven Python blocks on this page, three here and four in the next two sections, run in
+The Python blocks on this page run in
 order and need no market data or random draw. They are excerpts of the canonical script
 [`examples/docs/overlay_tail_floor.py`](../examples/docs/overlay_tail_floor.py), which runs them
 and asserts every number and property on this page against a reference computed a different
@@ -204,7 +255,8 @@ scores. Its covariance includes an idiosyncratic variance floor of $10^{-6}$; th
 diagonal is therefore 0.010001 rather than exactly 0.010000. Use the returned covariance for risk.
 
 The following calls preserve the original no-floor and zero-floor cases and add a positive
-floor of 0.005 in the characteristic's units. Every case retains its complete outcome:
+floor of 0.005 in the characteristic's units, each as a named row `floor`. Every case retains
+its complete outcome:
 
 ```python
 overlay_budget = 1.0
@@ -223,7 +275,9 @@ specifications = {}
 outcomes = {}
 for label, floor in floors.items():
     spec = base if floor is None else replace(
-        base, asset_returns=a - floor / total_exposure, target_return=0.0,
+        base, linear_constraints=opt.LinearConstraints(
+            loadings=a.to_frame("floor"), lower=pd.Series({"floor": floor}),
+        ),
     )
     specifications[label] = spec
     outcomes[label] = opt.cvx_maximize_portfolio_sharpe(
@@ -248,7 +302,8 @@ print(allocation.round(6))
 
 Values are rounded from the computed weights. Tiny solver-scale exposures display as zero.
 The positive floor concentrates more exposure in Defensive A. This is a consequence of these
-synthetic coefficients and covariance, not a finding about investable strategies.
+synthetic coefficients and covariance, not a finding about investable strategies. The
+homogeneous cross-check reproduces both floored allocations.
 
 For risk, build the canonical `qis.RiskModel` through `optimalportfolios.build_risk_model`.
 Its `compute_tre_at_date` tracking error against a zero exposure vector equals portfolio
@@ -310,32 +365,72 @@ the inputs of the worked example. Drawn by the `exhibit` function of the canonic
 > first, then Carry D, and at the reachable maximum of 0.01 the whole sleeve must sit in
 > Defensive A, the overlay with the largest coefficient.
 
+Read as Bear-regime contributions, the synthetic characteristic gives the core a Bear-regime
+loss of −0.08. The no-floor allocation then covers 24.6% of that loss, the zero floor
+100% and the floor 0.005 106.25%; the reachable maximum 0.01 is a coverage of 112.5%. A
+[coverage floor](#the-coverage-floor) of 40% is the floor $b_0=0.6\times(-0.08)=-0.048$:
+
+```python
+coverage = 0.40
+bear_coverage = opt.LinearConstraints(
+    loadings=a.to_frame("bear_coverage"),
+    lower=pd.Series({"bear_coverage": (1.0 - coverage) * a["Core"]}),
+)
+covered = opt.cvx_maximize_portfolio_sharpe(
+    covar=covar.to_numpy(), means=means.to_numpy(),
+    constraints=replace(base, linear_constraints=bear_coverage),
+    context="overlay article: 40% coverage",
+)
+assert covered.accepted and covered.compliant
+covered_weights = pd.Series(covered.weights, index=tickers)
+realised_coverage = 1.0 - float(a @ covered_weights) / a["Core"]
+maximum_coverage = -overlay_budget * a.drop("Core").max() / a["Core"]
+print(covered_weights.round(6))
+print(round(realised_coverage, 6), round(maximum_coverage, 6))
+# 0.4 1.125
+```
+
+| Asset | 40% coverage |
+|---|---|
+| Core | 1.000000 |
+| Defensive A | 0.350787 |
+| Defensive B | 0.260699 |
+| Carry C | 0.056942 |
+| Carry D | 0.331573 |
+
+The floor binds, so the allocation covers exactly 40%. It keeps all four overlays, moves weight
+from the carry overlays to the defensive ones, and is the allocation of the figure's sweep at
+−0.048. Its model volatility, 11.98%, is below the no-floor 12.34%, while its model excess
+Sharpe ratio falls from 1.005 to 0.997.
+
 ## Implementation in optimalportfolios
 
 ### Verification
 
 The [Sharpe implementation](../src/optimalportfolios/optimization/general/max_sharpe.py)
 returns `OptimizationOutcome` from `cvx_maximize_portfolio_sharpe`. Check `accepted`, then the
-stored hard residuals and the **original** unshifted floor in its own units:
+stored hard residuals and the floor in its own units:
 
 ```python
 selected = outcomes["Floor 0.005"]
 selected_weights = allocation["Floor 0.005"]
-original_margin = float(a @ selected_weights - 0.005)
-encoded_margin = float(specifications["Floor 0.005"].asset_returns @ selected_weights)
-assert abs(original_margin - encoded_margin) < 1e-8
-assert original_margin >= -1e-6
+assert float(a @ selected_weights) >= 0.005 - 1e-6
 assert abs(selected_weights["Core"] - 1.0) < 1e-6
 assert abs(selected_weights.drop("Core").sum() - overlay_budget) < 1e-6
 residuals = selected.residuals_frame()
+floor_row = residuals[residuals["constraint_type"] == "linear"].iloc[0]
+assert floor_row["name"] == "floor" and floor_row["lower"] == 0.005
+assert abs(floor_row["actual"] - float(a @ selected_weights)) < 1e-12
 hard_breaches = [r for r in selected.constraint_residuals if r.hard and not r.passed]
 assert not hard_breaches
 ```
 
-`compliant` evaluates stored hard residuals with their tolerances. For the homogeneous encoding,
-the `target_return` residual measures $\widetilde a^\top w\geq0$. It equals the original margin
-only when the exposure equality is satisfied; check the budget and the floor together.
-Compliance covers the encoded specification and does not establish the quality of the proxy.
+`compliant` evaluates stored hard residuals with their tolerances. The named row is stored as a
+`linear` residual called `floor`, whose `actual` is $a^\top w$ and whose `lower` is $b_0$, both
+in the characteristic's units. With the homogeneous cross-check the `target_return` residual
+instead measures $\widetilde a^\top w\geq0$, which equals the original margin only when the
+exposure equality holds; check the budget and the floor together there. Compliance covers the
+encoded specification and does not establish the quality of the proxy.
 
 The labelled wrapper `wrapper_maximize_portfolio_sharpe` returns a weight Series and an
 outcome. With this complete input panel and an explicit `OptimiserConfig` it agrees with the
@@ -372,10 +467,11 @@ Source owners: [constraint compilation](../src/optimalportfolios/optimization/co
 [solver outcomes](../src/optimalportfolios/optimization/solver_diagnostics.py), and
 [risk-model adapter](../src/optimalportfolios/covar_estimation/risk_model_adapter.py).
 
-The [canonical script](../examples/docs/overlay_tail_floor.py) runs the seven blocks with
-sockets blocked. It checks the allocations against a linear-algebra solution and a first-order
-optimality certificate, the risk table against the quadratic form, the compiled CVXPY and SciPy
-rows at known points, several sleeves as group rows, and the fallback and limitation probes. The
+The [canonical script](../examples/docs/overlay_tail_floor.py) runs the eight blocks with
+sockets blocked. It checks the allocations against a linear-algebra solution, a first-order
+optimality certificate and the homogeneous cross-check, the coverage case against the figure's
+sweep, the risk table against the quadratic form, the compiled CVXPY and SciPy rows at known
+points, several sleeves as group rows, the fallback and the equivalent floor formulations. The
 test suite runs it, and so does the offline examples lane of CI.
 
 ## Interpretation and limitations
@@ -393,14 +489,16 @@ Thus $b_0\leq a_c+W\max_{i\ne c}a_i$ is necessary. It is sufficient for the **li
 when all the budget can be assigned to the maximizing overlay. Extra caps, group requirements
 and objective-domain conditions can prevent a feasible solve even below that bound.
 
-Here the bound is $-0.08+1(0.09)=0.01$. A floor of 0.02 is impossible:
+Here the bound is $-0.08+1(0.09)=0.01$, a coverage of 112.5%. A floor of 0.02 is impossible:
 
 ```python
 maximum_linear = float(a["Core"] + overlay_budget * a.drop("Core").max())
 impossible_floor = 0.02
 assert impossible_floor > maximum_linear
 impossible = replace(
-    base, asset_returns=a - impossible_floor / total_exposure, target_return=0.0,
+    base, linear_constraints=opt.LinearConstraints(
+        loadings=a.to_frame("floor"), lower=pd.Series({"floor": impossible_floor}),
+    ),
     weights_0=allocation["No floor"],
 )
 rejected = opt.cvx_maximize_portfolio_sharpe(
@@ -410,6 +508,10 @@ rejected = opt.cvx_maximize_portfolio_sharpe(
 print(rejected.status, rejected.accepted, rejected.fallback_source, rejected.compliant)
 # infeasible False weights_0 False
 ```
+
+The constructor accepts this row. Its box check lets every overlay reach its own cap of 1.0,
+where the row could reach $-0.08+0.09+0.042=0.052$; only the sleeve budget makes 0.02
+unreachable, and only the solver detects it.
 
 The fallback keeps the prior no-floor allocation and violates the impossible floor. The shared
 fallback preference is finite prior weights, then finite benchmark weights, then zeros.
@@ -422,43 +524,46 @@ separate facts; an application must decide whether to trade, retry or skip.
 The fixed-exposure path does not automatically homogenize every possible side condition.
 Do not assume that a turnover, volatility or benchmark-relative row has been transformed
 correctly merely because it belongs to `Constraints`. This article verifies only the stated
-asset, exposure, sleeve and homogeneous-floor pattern.
+asset, exposure, sleeve and linear-floor pattern.
 
-An exposure band routes the current entry point to SLSQP. Its compiler includes exposure,
-asset bounds and group allocations, but **does not add `asset_returns/target_return`** to the
-optimization problem. Post-solve validation can reject a returned candidate for violating
-that floor; it does not solve the missing constrained problem. Variable exposure is therefore
-not an alternative encoding for this article's floor. This is the implementation's routing
-and support boundary, not a general impossibility of fractional reformulation.
+An exposure band routes the entry point to SLSQP. Its compiler includes exposure,
+asset bounds, group allocations, return floors and named signed linear rows. It optimises
+the ratio directly, so solver convergence does not certify a global optimum.
 
-These two deliberate limitation probes both reach solver status `optimal` on the synthetic
-inputs, then fail acceptance because the original return floor was violated:
+The single-row `target_return` form and the homogeneous cross-check reproduce the named floor
+of 0.005, and SLSQP enforces the named zero floor under an exposure band:
 
 ```python
-direct_nonzero = replace(base, asset_returns=a, target_return=0.005)
-banded = replace(base, min_exposure=1.8, asset_returns=a, target_return=0.0)
-unsupported_outcomes = {}
-for label, spec in {"Unscaled floor": direct_nonzero, "Exposure band": banded}.items():
+direct_floor = replace(base, asset_returns=a, target_return=0.005)
+shifted_floor = replace(base, asset_returns=a - 0.005 / total_exposure, target_return=0.0)
+banded = replace(specifications["Zero floor"], min_exposure=1.8)
+cross_checks = {}
+for label, spec in {"Direct floor": direct_floor, "Shifted floor": shifted_floor,
+                    "Exposure band": banded}.items():
     candidate = opt.cvx_maximize_portfolio_sharpe(
         covar=covar.to_numpy(), means=means.to_numpy(), constraints=spec,
-        context=f"overlay article: limitation probe {label}",
+        context=f"overlay article: floor check {label}",
     )
-    unsupported_outcomes[label] = candidate
+    cross_checks[label] = candidate
     print(label, candidate.solver, candidate.status, candidate.accepted)
-    assert not candidate.accepted
-# Unscaled floor CLARABEL optimal False
-# Exposure band SLSQP optimal False
+    assert candidate.accepted and candidate.compliant
+# Direct floor CLARABEL optimal True
+# Shifted floor CLARABEL optimal True
+# Exposure band SLSQP optimal True
+for label in ("Direct floor", "Shifted floor"):
+    np.testing.assert_allclose(cross_checks[label].weights, allocation["Floor 0.005"],
+                               atol=1e-8)
 ```
 
-The first call illustrates the unscaled nonzero CVXPY right-hand side; the second illustrates
-the missing SLSQP return row. Their rejected fallback weights must not be interpreted as
-optimized overlays.
+Other risk and trading rows remain subject to the transformation limitations already stated.
 
-> **Pitfall.** Do not pass a nonzero floor directly as `target_return` on the fixed-exposure
-> path. CLARABEL reports `optimal` for the unscaled row, validation then rejects the breached
-> floor, and with no prior or benchmark the outcome falls back to zero weights, which also break
-> the fixed core and the total exposure. Shift the coefficients to `a - b0 / E` and keep
-> `target_return=0.0`.
+> **Pitfall.** Before the return-floor correction recorded in the
+> [changelog](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CHANGELOG.md), the
+> compiler did not scale the return-floor bound on this path, and SLSQP omitted it. For a
+> negative bound and a scale greater than one, the transformed floor was too tight: a feasible
+> but suboptimal allocation could still report accepted and compliant. Post-solve feasibility
+> checks cannot certify that the intended optimisation problem was formulated. Compare
+> objective values and allocations against an independent formulation.
 
 A linear characteristic floor does not control the full loss distribution or nonlinear option
 payoffs. Use a common scenario/regime definition to make coefficients additive. If the tail
@@ -472,6 +577,9 @@ aggregate into a portfolio tail statistic.
 - [Rolling backtests](rolling_backtests.md): decision and execution timing.
 - [Turnover and transaction costs](turnover_and_transaction_costs.md): trades, budgets and costs.
 - [Minimum tracking error](minimum_tracking_error.md): benchmark-relative risk and QIS integration.
+- [Research papers](research_papers.md): the convexity-premium paper and its synthetic companion.
+- [qis: the convexity premium and smart diversification](https://quantinveststrats.readthedocs.io/en/latest/convexity_premium.html):
+  the regime contributions that supply a coverage floor's coefficients.
 
 ## References
 
@@ -483,5 +591,11 @@ aggregate into a portfolio tail statistic.
   [Publisher record](https://www.cambridge.org/core/books/optimization-methods-in-finance/FAE3FDF1D69C6B0704EEC81B617B706A).
   [Author-hosted January 2006 draft](https://www.andrew.cmu.edu/user/gc0v/webpub/OptFinFirstEdition2006.pdf),
   section 8.2, "Maximizing the Sharpe Ratio."
+- Schaible, S. (1974). *Parameter-free convex equivalent and dual programs of fractional
+  programming problems*. Zeitschrift für Operations Research, 18(5), 187–196.
+  [DOI 10.1007/BF02026600](https://doi.org/10.1007/BF02026600).
+- Sepp, A. and Kastenholz, M. (2026). *The Convexity Premium of Portfolio Overlays*. Journal of
+  Investment Management, forthcoming. Section II, program (11): the coverage floor; Proposition 4:
+  the aggregation of Bear-regime contributions.
 - [OptimalPortfolios software citation](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 - [QIS software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).

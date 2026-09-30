@@ -1,0 +1,10 @@
+# Public introduction and synthetic example only; all empirical replication stays local.
+/*
+!/.gitignore
+!/README.md
+!/replication/
+/replication/*
+!/replication/tests/
+!/run_overlay_example.py
+/replication/tests/*
+!/replication/tests/overlay_example_test.py

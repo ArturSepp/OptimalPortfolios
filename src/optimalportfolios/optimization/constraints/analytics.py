@@ -31,6 +31,7 @@ _INDEXED_CONSTRAINT_FIELDS = (
     ("sector_deviation_constraints", "factor_loading_mat"),
     ("style_deviation_constraints", "factor_loading_mat"),
     ("benchmark_beta_constraint", "beta_loadings"),
+    ("linear_constraints", "loadings"),
 )
 
 
@@ -361,6 +362,39 @@ def _construction_group_reachability_errors(
     return tuple(errors)
 
 
+def _construction_linear_reachability_errors(
+        constraints: Constraints,
+        atol: float = 1e-10,
+) -> Tuple[str, ...]:
+    """Check signed row extrema over boxes only, without asserting joint feasibility."""
+    block = constraints.linear_constraints
+    if block is None:
+        return ()
+    index = block.loadings.index
+    lower = _optional_series_to_array(constraints.min_weights, index)
+    upper = _optional_series_to_array(constraints.max_weights, index)
+    lower = np.full(len(index), -np.inf) if lower is None else np.where(
+        np.isnan(lower), -np.inf, lower)
+    upper = np.full(len(index), np.inf) if upper is None else np.where(
+        np.isnan(upper), np.inf, upper)
+    if constraints.is_long_only:
+        lower = np.maximum(lower, 0.0)
+    errors = []
+    for name, loading, floor, cap in block.iter_bounds():
+        values = loading.to_numpy()
+        # Zero coefficients contribute zero even when an asset bound is infinite.
+        used = values != 0.0
+        lo = values[used] * lower[used]
+        hi = values[used] * upper[used]
+        minimum = np.minimum(lo, hi).sum()
+        maximum = np.maximum(lo, hi).sum()
+        if floor is not None and maximum < floor - atol:
+            errors.append(f"Linear row '{name}': lower {floor:g} exceeds box maximum {maximum:g}")
+        if cap is not None and minimum > cap + atol:
+            errors.append(f"Linear row '{name}': upper {cap:g} is below box minimum {minimum:g}")
+    return tuple(errors)
+
+
 def _static_reachability_findings(
         constraints: Constraints,
         index: pd.Index,
@@ -613,6 +647,11 @@ def evaluate_constraint_residuals(
             constraints.asset_returns.reindex(index).fillna(0.0).to_numpy() @ w)
         add('target_return', 'portfolio', actual_return,
             lower=constraints.target_return)
+
+    if constraints.linear_constraints is not None:
+        block = constraints.linear_constraints.update(index)
+        for name, loading, lower, upper in block.iter_bounds():
+            add('linear', name, float(loading.to_numpy() @ w), lower=lower, upper=upper)
 
     if risk_covar is not None:
         portfolio_var = max(float(w @ risk_covar @ w), 0.0)

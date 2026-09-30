@@ -194,10 +194,12 @@ and returns $w = y / k$. With the default `factorize_covar=True`, the variance u
 covariance of the
 [solver-outcomes page](solver_numerics_and_outcomes.md#how-a-solve-uses-the-factor). The rows
 are compiled with `exposure_scaler=k`, which multiplies the per-asset bounds `min_weights` and
-`max_weights` and the group-allocation bounds by $k$; a long-only row $y \geq 0$ needs no scale.
+`max_weights`, the group-allocation bounds, the return floor `target_return` and the bounds of
+named `linear_constraints` rows by $k$; a long-only row $y \geq 0$ needs no scale.
 
 **Proposition 5 (the transformation).** Let $E \gt 0$ and let the constraints contain only
-long-only, per-asset and group-allocation bounds. Then the pairs with $k \gt 0$ correspond one to
+long-only, per-asset, group-allocation, return-floor and named linear rows. Then the pairs with
+$k \gt 0$ correspond one to
 one to the feasible portfolios with a positive expected return, and minimising $y^{\top} \Sigma y$
 maximises their Sharpe ratio.
 
@@ -216,9 +218,9 @@ the limitations below.
 Charnes and Cooper (1962) introduced this change of variables for ratios of linear functions on
 a polyhedron, fixing the denominator at one to obtain a linear program. The implementation
 applies it to a ratio whose denominator is a volatility: it fixes the numerator at $E$ and
-minimises the squared denominator, a convex quadratic program. It rescales only the exposure,
-per-asset and group-allocation rows; every other row of `Constraints` is compiled on $y$, not on
-$w$, as the pitfall below shows.
+minimises the squared denominator, a convex quadratic program. It rescales the exposure,
+per-asset, group-allocation, return-floor and named linear rows; every other row of
+`Constraints` is compiled on $y$, not on $w$, as the pitfall below shows.
 
 ### Maximum Sharpe with an exposure band: the SLSQP route
 
@@ -583,12 +585,12 @@ benchmarks, joined by a polynomial fit of order `order`. It returns the matplotl
 plots the portfolios it is given and computes no frontier; its code is in
 [`portfolio_result_plots.py`](../src/optimalportfolios/reports/portfolio_result_plots.py).
 
-> **Pitfall.** On the Charnes–Cooper route only the exposure, per-asset and group-allocation rows
-> are rescaled by $k$. A volatility cap, a return floor, a turnover or a tracking-error limit is
-> compiled on $y = k w$, not on $w$. In the example a volatility cap of 12%, twice the tangency
-> volatility, makes the program infeasible, and the wrapper returns the fallback, here zeros. A
-> return floor can be encoded homogeneously as on the
-> [overlay page](overlay_tail_floor.md#the-encoding).
+> **Pitfall.** On the Charnes–Cooper route only the exposure, per-asset, group-allocation,
+> return-floor and named linear rows are rescaled by $k$. A volatility cap, a turnover or a
+> tracking-error limit is compiled on $y = k w$, not on $w$. In the example a volatility cap of
+> 12%, twice the tangency volatility, makes the program infeasible, and the wrapper returns the
+> fallback, here zeros. A return floor or a signed characteristic floor needs no workaround; the
+> [overlay page](overlay_tail_floor.md#the-encoding) shows how its bound is scaled.
 
 ## Interpretation and limitations
 

@@ -91,13 +91,37 @@ def set_cvx_exposure_constraints(
 def _set_cvx_target_return_constraints(
         constraint_spec: Constraints,
         w: cvx.Variable,
+        exposure_scaler: cvx.Variable = None,
 ) -> List:
-    """Compile the optional minimum-return row."""
+    """Compile the minimum-return row on weights or on y = k*w."""
     if constraint_spec.target_return is None:
         return []
     if constraint_spec.asset_returns is None:
         raise ValueError("asset_returns must be given for target_return constraint")
-    return [constraint_spec.asset_returns.to_numpy() @ w >= constraint_spec.target_return]
+    bound = constraint_spec.target_return
+    if exposure_scaler is not None:
+        bound = exposure_scaler * bound
+    return [constraint_spec.asset_returns.to_numpy() @ w >= bound]
+
+
+def _set_cvx_linear_constraints(
+        constraint_spec: Constraints,
+        w: cvx.Variable,
+        exposure_scaler: cvx.Variable = None,
+) -> List:
+    """Compile signed affine policies on weights or on y = k*w."""
+    block = constraint_spec.linear_constraints
+    if block is None:
+        return []
+    scale = 1.0 if exposure_scaler is None else exposure_scaler
+    rows = []
+    for _, loading, lower, upper in block.iter_bounds():
+        actual = loading.to_numpy() @ w
+        if lower is not None:
+            rows.append(actual >= scale * lower)
+        if upper is not None:
+            rows.append(actual <= scale * upper)
+    return rows
 
 
 def _set_cvx_portfolio_volatility_constraints(
@@ -230,7 +254,8 @@ def _set_cvx_utility_hard_constraints(
     """Compile mandate rows that remain hard under utility enforcement."""
     constraints = constraint_spec.set_cvx_exposure_constraints(
         w=w, exposure_scaler=exposure_scaler)
-    constraints += _set_cvx_target_return_constraints(constraint_spec, w)
+    constraints += _set_cvx_target_return_constraints(constraint_spec, w, exposure_scaler)
+    constraints += _set_cvx_linear_constraints(constraint_spec, w, exposure_scaler)
     constraints += _set_cvx_group_allocation_constraints(
         constraint_spec, w, exposure_scaler=exposure_scaler)
     constraints += _set_cvx_deviation_constraints(
@@ -344,7 +369,8 @@ def set_cvx_all_constraints(
     constraints = constraint_spec.set_cvx_exposure_constraints(
         w=w, exposure_scaler=exposure_scaler)
 
-    constraints += _set_cvx_target_return_constraints(constraint_spec, w)
+    constraints += _set_cvx_target_return_constraints(constraint_spec, w, exposure_scaler)
+    constraints += _set_cvx_linear_constraints(constraint_spec, w, exposure_scaler)
     constraints += _set_cvx_portfolio_volatility_constraints(
         constraint_spec,
         w,
@@ -526,11 +552,20 @@ def set_scipy_constraints(
         'fun': lambda x: np.sum(x) - constraint_spec.min_exposure,
     }]
 
+    if constraint_spec.target_return is not None:
+        if constraint_spec.asset_returns is None:
+            raise ValueError("asset_returns must be given for target_return constraint")
+        constraints.append({
+            'type': 'ineq',
+            'fun': make_min_constraint(constraint_spec.asset_returns.to_numpy(),
+                                       constraint_spec.target_return),
+        })
+
     if constraint_spec.group_lower_upper_constraints is not None:
         gluc = constraint_spec.group_lower_upper_constraints
         for group in gluc.group_loadings.columns:
             group_loading = gluc.group_loadings[group].to_numpy()
-            if np.any(np.isclose(group_loading, 0.0) == False):
+            if np.any(~np.isclose(group_loading, 0.0)):
                 if gluc.group_min_allocation is not None:
                     min_weight = gluc.group_min_allocation.loc[group]
                     if not np.isnan(min_weight):
@@ -545,6 +580,15 @@ def set_scipy_constraints(
                             'type': 'ineq',
                             'fun': make_max_constraint(group_loading, max_weight),
                         }]
+
+    if constraint_spec.linear_constraints is not None:
+        for _, loading, lower, upper in constraint_spec.linear_constraints.iter_bounds():
+            if lower is not None:
+                constraints.append({'type': 'ineq',
+                                    'fun': make_min_constraint(loading.to_numpy(), lower)})
+            if upper is not None:
+                constraints.append({'type': 'ineq',
+                                    'fun': make_max_constraint(loading.to_numpy(), upper)})
 
     bounds = constraint_spec.set_scipy_bounds(covar=covar)
     return constraints, bounds
@@ -565,6 +609,8 @@ def set_pyrb_constraints(
     Returns:
         Tuple of (bounds array, constraint matrix C, constraint vector d).
     """
+    if constraint_spec.linear_constraints is not None:
+        raise ValueError('PyRB matrix compilation does not support linear_constraints')
     bounds = constraint_spec.set_scipy_bounds(covar=covar)
 
     if constraint_spec.group_lower_upper_constraints is not None:
@@ -574,7 +620,7 @@ def set_pyrb_constraints(
 
         for group in gluc.group_loadings.columns:
             group_loading = gluc.group_loadings[group].to_numpy()
-            if np.any(np.isclose(group_loading, 0.0) == False):
+            if np.any(~np.isclose(group_loading, 0.0)):
                 if gluc.group_min_allocation is not None:
                     min_weight = gluc.group_min_allocation.loc[group]
                     if not np.isnan(min_weight):

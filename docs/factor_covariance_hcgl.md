@@ -169,11 +169,21 @@ D = S \left[ (1 - \rho) I + \rho R \right] S ,
 $$
 
 where $R$ is a residual correlation matrix and $\rho$ is `residual_corr_weight`, in $[0, 1]$ with
-default 1; the weight applies only to empirical residuals.
+default 1; the weight applies to each nonorthogonal residual choice.
+
+The four choices are `orthogonal`, `empirical`, `exposure_cluster`, and `residual_cluster`.
+The cluster choices replace $R$ by a block target: each block uses the signed arithmetic
+mean of its off-diagonal residual correlations, the diagonal is one, and correlations
+between blocks are zero. `exposure_cluster` uses the fitted exposure-cluster labels.
+`residual_cluster` clusters the prepared residual correlation with Ward linkage,
+distance `one_minus_rho`, and cutoff fraction 0.6. These are covariance assembly choices;
+they do not change the fitted factor exposures or the clusters used for alpha estimation.
+Both use the same causal, pairwise-available EWMA preparation as `empirical`.
+FactorLasso preserves the original universe's targets when selecting a portfolio subset.
 
 **Proposition 2 (variances are kept).** For every $\rho$ in $[0, 1]$, the diagonal of $D$ is
 $v_1, \dots, v_N$; $\rho = 0$ gives the orthogonal matrix; and $D$ is positive semidefinite.
-Hence both residual types give every asset the same variance, and they differ only in the
+Hence all four residual types give every asset the same variance, and they differ only in the
 covariances between assets.
 
 **Proof.** $R$ has a unit diagonal, so the bracket has a unit diagonal too, and
@@ -194,8 +204,8 @@ $$
 \lambda^{\mathrm{AN}_c / \mathrm{AN}} .
 $$
 
-A leading or trailing incomplete period is left out and an internal gap is an error; nothing is
-prorated or interpolated. FactorLasso's
+An incomplete period remains NaN for the affected asset. Each pair uses its available history
+through FactorLasso's EWMA NaN handling; nothing is prorated or interpolated. FactorLasso's
 [article on empirical residual correlation](https://factorlasso.readthedocs.io/en/latest/empirical_residual_correlation.html)
 gives the aggregation rules.
 

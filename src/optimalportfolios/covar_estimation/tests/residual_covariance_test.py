@@ -205,3 +205,47 @@ def test_empirical_fit_rejects_universe_without_positive_residual_risk(panels):
     prices, returns = panels
     with pytest.raises(ValueError, match="positive residual risk"):
         estimator().fit_current_factor_covars(prices, returns, assets=["future"])
+
+
+@pytest.mark.parametrize("kind", ["exposure_cluster", "residual_cluster"])
+@pytest.mark.skipif("exposure_cluster" not in tuple(getattr(fl, 'ResidualType', ())),
+                    reason="Requires FactorLasso's cluster residual assembly API")
+def test_cluster_policies_prepare_causally_and_forward_assembly(panels, kind):
+    """Both cluster policies share empirical preparation and retain the chosen assembly."""
+    prices, returns = panels
+    # A one-asset cadence falls back to plain LASSO and has no exposure partition.
+    # Supply two assets per cadence to exercise the cluster model on both grids.
+    quarterly = returns['QE'].copy()
+    quarterly['d'] = .5 * quarterly['c'] + .003 * np.sin(np.arange(len(quarterly)))
+    returns = {**returns, 'QE': quarterly}
+    lasso = fl.LassoModel(model_type=fl.LassoModelType.FACTOR_CLUSTER_GROUP_LASSO,
+                         span=36, span_freq_dict={"ME": 36, "QE": 12},
+                         warmup_period=6, reg_lambda=1e-5)
+    model = estimator(lasso_model=lasso, residual_type=kind, residual_corr_weight=.5)
+    cutoff = pd.Timestamp("2021-05-31")
+    current = model.fit_current_factor_covars(prices, returns, estimation_date=cutoff)
+    empirical = estimator(lasso_model=lasso.copy(kwargs={})).fit_current_factor_covars(
+        prices, returns, estimation_date=cutoff)
+    pd.testing.assert_frame_equal(current.y_betas, empirical.y_betas)
+    pd.testing.assert_frame_equal(current.residual_correlation.correlation,
+                                  empirical.residual_correlation.correlation)
+    assert current.residual_correlation.observation_date <= cutoff
+    pd.testing.assert_frame_equal(
+        model.fit_current_covar(prices, returns, estimation_date=cutoff),
+        current.get_y_covar(residual_type=kind, residual_corr_weight=.5),
+    )
+    period = qis.TimePeriod("2021-06-30", "2021-08-31")
+    rolling = model.fit_rolling_factor_covars(prices, returns, period)
+    assert len(rolling.get_residual_correlations()) == 1
+    shared = model.fit_rolling_covars(prices, returns, period)
+    for date, covariance in rolling.get_y_covars(residual_type=kind,
+                                                residual_corr_weight=.5).items():
+        pd.testing.assert_frame_equal(shared[date], covariance)
+
+
+def test_cluster_policy_requires_dependency_support(monkeypatch):
+    """Old FactorLasso releases still support orthogonal fits but cannot ignore new choices."""
+    monkeypatch.setattr(fl, 'ResidualType', ('orthogonal', 'empirical'), raising=False)
+    assert estimator(residual_type='orthogonal').residual_type == 'orthogonal'
+    with pytest.raises(ImportError, match='factorlasso'):
+        estimator(residual_type='residual_cluster')

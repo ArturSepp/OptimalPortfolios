@@ -10,7 +10,16 @@ import tempfile
 import zipfile
 
 
-PUBLIC_WORKSPACES = {"cma_data", "crypto_allocation_risk_2023", "robust_optimisation_jpm_2026"}
+PUBLIC_WORKSPACES = {"cma_data", "crypto_allocation_risk_2023", "robust_optimisation_jpm_2026",
+                     "smart_diversification_joim_2026"}
+
+# This workspace's public scope is the companion, never the empirical replication tree.
+LIMITED_PUBLIC_FILES = {
+    "smart_diversification_joim_2026": {
+        ".gitignore", "README.md", "run_overlay_example.py",
+        "replication/tests/overlay_example_test.py",
+    },
+}
 
 PROBES = (
     "papers/policy_probe/replication/reproduce.py",
@@ -67,6 +76,9 @@ def protected(name: str) -> bool:
         return False
     if len(parts) >= 3 and lower[1] not in PUBLIC_WORKSPACES:
         return True
+    if len(parts) >= 3 and lower[1] in LIMITED_PUBLIC_FILES:
+        if PurePosixPath(*parts[2:]).as_posix() not in LIMITED_PUBLIC_FILES[lower[1]]:
+            return True
     directories = lower[1:-1]
     return bool(set(directories) & {"private", "drafts", "agents"}) or any(
         directories[i:i + 2] == ["data", "local"] for i in range(len(directories))
@@ -116,7 +128,8 @@ def check_repository(
             if name not in approved_files:
                 errors.append(f"publication file needs an exact exception: {name}")
         if len(parts) == 3 and parts[1] != "cma_data" and name.endswith(".py"):
-            if parts[-1] != "__init__.py":
+            if (parts[-1] != "__init__.py"
+                    and parts[-1] not in LIMITED_PUBLIC_FILES.get(parts[1], set())):
                 errors.append(f"paper code belongs in replication/: {name}")
     return errors
 

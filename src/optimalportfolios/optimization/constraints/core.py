@@ -35,6 +35,7 @@ from optimalportfolios.optimization.constraints.alignment import (
 )
 from optimalportfolios.optimization.constraints.analytics import (
     _construction_group_reachability_errors,
+    _construction_linear_reachability_errors,
 )
 from optimalportfolios.optimization.constraints.backends import (
     set_cvx_all_constraints as _set_cvx_all_constraints,
@@ -55,6 +56,7 @@ from optimalportfolios.optimization.constraints.groups import (
     merge_group_lower_upper_constraints,
 )
 from optimalportfolios.optimization.covar_factorization import CovarianceFactorization
+from optimalportfolios.optimization.constraints.linear import LinearConstraints
 
 
 class ConstraintEnforcementType(Enum):
@@ -81,7 +83,8 @@ class Constraints:
 
     Backend compilers enforce their supported families; a populated field alone
     does not establish backend coverage. SciPy compiles boxes, net exposure and
-    group allocation. The PyRB-compatible helper compiles boxes and group rows;
+    group allocation, return floors and signed linear rows. The PyRB-compatible
+    helper compiles boxes and group rows and rejects configured linear rows;
     the risk-budgeting solver owns its full-investment contract.
 
     Sector and style deviations share BenchmarkDeviationConstraints. Sector
@@ -121,6 +124,7 @@ class Constraints:
         sector_deviation_constraints: Benchmark-relative limits on sector loadings.
         style_deviation_constraints: Benchmark-relative limits on style loadings.
         benchmark_beta_constraint: Benchmark-beta range with supplied beta loadings.
+        linear_constraints: Named signed loading rows with lower and upper bounds.
     """
     is_long_only: bool = True
     min_weights: pd.Series = None
@@ -135,7 +139,8 @@ class Constraints:
     target_return: float = None
     asset_returns: pd.Series = None
     max_target_portfolio_vol_an: float = None
-    constraint_enforcement_type: ConstraintEnforcementType = ConstraintEnforcementType.FORCED_CONSTRAINTS
+    constraint_enforcement_type: ConstraintEnforcementType = (
+        ConstraintEnforcementType.FORCED_CONSTRAINTS)
     tre_utility_weight: Optional[float] = 1.0
     turnover_utility_weight: Optional[float] = 0.40
     group_lower_upper_constraints: Optional[GroupLowerUpperConstraints] = None
@@ -144,6 +149,7 @@ class Constraints:
     sector_deviation_constraints: Optional[BenchmarkDeviationConstraints] = None
     style_deviation_constraints: Optional[BenchmarkDeviationConstraints] = None
     benchmark_beta_constraint: Optional[BenchmarkBetaConstraint] = None
+    linear_constraints: Optional[LinearConstraints] = None
 
     def __post_init__(self):
         """Check selected instrument-box and group-reachability conditions.
@@ -177,6 +183,7 @@ class Constraints:
                     )
 
         errors = _construction_group_reachability_errors(self, atol=1e-4)
+        errors += _construction_linear_reachability_errors(self, atol=1e-10)
         if errors:
             raise ValueError(
                 f"Infeasible constraints detected ({len(errors)} violation(s)):\n"
@@ -369,7 +376,8 @@ class Constraints:
             w: Portfolio variable in aligned constraint order.
             covar: Ordered covariance for configured volatility and tracking-error
                 rows when no factorization is supplied.
-            exposure_scaler: Optional scaling for exposure, boxes and group allocation;
+            exposure_scaler: Optional scaling for exposure, boxes, group allocation,
+                return floors and signed linear rows;
                 it does not uniformly scale every policy family.
             covar_factorization: Optional existing solver factorization. Its stabilized
                 covariance takes precedence and upper-risk rows use factor norms.

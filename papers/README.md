@@ -10,8 +10,9 @@ public checkout can run and records package versions only where the repository p
 |---|---|---|---|
 | [`crypto_allocation_risk_2023/`](crypto_allocation_risk_2023/) | Sepp (2023), *Optimal Allocation to Cryptocurrencies in Diversified Portfolios*, *Risk* | Historical CSV files are committed, but the scripts also use live `yfinance` data, one report imports the optional `pybloqs` backend, and no frozen environment is recorded. The repository therefore does not promise exact headline-number reproduction. | Not recorded |
 | [`robust_optimisation_jpm_2026/`](robust_optimisation_jpm_2026/) | Sepp, Ossa and Kastenholz (2026), *Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios*, *The Journal of Portfolio Management* 52(4), 86–120 | The folder demonstrates the published HCGL and risk-budgeting workflow, but downloads its ETF panel from `yfinance` and carries neither frozen inputs nor an environment pin. It is a methodological example, not an exact exhibit rebuild. | Not recorded |
+| [`smart_diversification_joim_2026/`](smart_diversification_joim_2026/) | Sepp and Kastenholz (2026), *The Convexity Premium of Portfolio Overlays*, *Journal of Investment Management*, forthcoming | A public introduction and an offline synthetic 60/40 overlay example using OP optimization and qis illustrations. The manuscript, empirical replication and licensed data remain local. | Not recorded; the README states the minimum and last-tested optimalportfolios and qis versions |
 
-`cma_data/` is the shared, manifest-verified CMA data layer; it is not a third paper. Its public
+`cma_data/` is the shared, manifest-verified CMA data layer; it is not a paper. Its public
 snapshot includes the configuration tables used by local paper workspaces and deliberately omits
 licensed index, factor-history and provider panels. The MATF-CMA manuscript workspace is local and
 gitignored rather than part of the public repository.
@@ -29,11 +30,13 @@ replication code or licensed inputs; no exact public reproduction is claimed.
 - The existing crypto TeX is tracked, but its PDF is local and its referenced manuscript
   figures are absent. The ROSAA folder publishes only the existing methodological example
   under `replication/`. Neither is presented as a self-contained current manuscript bundle.
-- MATF-CMA, JOIM and the other existing fully excluded research workspaces remain local,
-  including their replication code. Folder maintenance does not change publication rights.
+- MATF-CMA and the other fully excluded research workspaces remain local. JOIM exposes
+  only its approved introduction and synthetic example; its empirical replication remains
+  local. Folder maintenance does not change publication rights.
 - `drafts/`, `private/` and per-paper `agents/` are always ignored. `paper/` and
   `presentations/` require exact approved exceptions. Code and paper-specific tests belong
-  in `replication/`; approved static inputs in `replication/data/`, restricted inputs in
+  in `replication/`, except the JOIM companion's `run_overlay_example.py`, which the
+  manuscript cites at the folder root; approved static inputs in `replication/data/`, restricted inputs in
   `replication/data/local/`. Runtime outputs stay in the prescribed C-local workspace.
 - Each paper folder documents its own run commands and data requirements. A missing input is a
   declared limitation, not something to replace with synthetic or live data silently.

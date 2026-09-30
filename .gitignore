@@ -185,6 +185,7 @@ dmypy.json
 !/papers/cma_data/
 !/papers/crypto_allocation_risk_2023/
 !/papers/robust_optimisation_jpm_2026/
+!/papers/smart_diversification_joim_2026/
 
 # Paper publication defaults; exact approved exceptions live beside each paper.
 # Keep these parents traversable so a per-paper .gitignore can approve specific files.
@@ -230,8 +231,7 @@ papers/achievable_sharpe_faj_2026/
 /papers/layer_attribution_2026/
 # Prior-selection manuscript, replication and licensed evidence remain entirely local.
 /papers/prior_targets_2026/
-# JOIM workspace remains local; acceptance alone does not authorize release
-/papers/smart_diversification_joim_2026/
+# JOIM permits only the introduction and synthetic example via its exact local allowlist.
 
 # Reference source documents (books, survey PDFs) are not redistributable.
 papers/references/
@@ -242,3 +242,4 @@ src/optimalportfolios/run_local/data/test_prices.csv
 /papers/crypto_allocation_risk_2023/update_2026
 papers/cma_data/SHARPE_ACCOUNTING.md
 /papers/equity_factors/
+/papers/robust_optimisation_jpm_2026/paper/

@@ -1,11 +1,12 @@
 """Canonical script of docs/overlay_tail_floor.md.
 
-The page's seven Python blocks are excerpts of ``main`` and run here in the same order; every
+The page's eight Python blocks are excerpts of ``main`` and run here in the same order; every
 number and property the page states is asserted after them against a reference computed a
 different way: inputs rebuilt entry by entry from the factor constants, the no-floor optimum by
 linear algebra, the binding-floor optimum from its active face with a first-order certificate,
-risk as an explicit quadratic form, and the compiled CVXPY and SciPy rows evaluated at known
-points. Sockets are blocked throughout.
+the named-row floors against the homogeneous shifted-coefficient encoding, which also draws the
+figure's sweep, risk as an explicit quadratic form, and the compiled CVXPY and SciPy rows
+evaluated at known points. Sockets are blocked throughout.
 
 The page imports the repository example ``examples/solvers/overlay_tail_floor.py``, so the
 script runs from a source checkout with the core install and needs no data file or random seed:
@@ -188,7 +189,9 @@ def main() -> None:
     outcomes = {}
     for label, floor in floors.items():
         spec = base if floor is None else replace(
-            base, asset_returns=a - floor / total_exposure, target_return=0.0,
+            base, linear_constraints=opt.LinearConstraints(
+                loadings=a.to_frame("floor"), lower=pd.Series({"floor": floor}),
+            ),
         )
         specifications[label] = spec
         outcomes[label] = opt.cvx_maximize_portfolio_sharpe(
@@ -240,14 +243,24 @@ def main() -> None:
     assert defensive_a["Floor 0.005"] > defensive_a["Zero floor"] > defensive_a["No floor"]
     normalised = allocation["Floor 0.005"] / allocation["Floor 0.005"].sum()
     assert abs(normalised["Core"] - 0.5) < 1e-6 and abs(a @ normalised - 0.0025) < 1e-6
-    # The encoding shifts all five coefficients by b0 / E = 0.0025, the core included, with a
-    # zero right side; a zero floor leaves the coefficients unchanged.
-    np.testing.assert_allclose(specifications["Floor 0.005"].asset_returns, a - 0.0025,
-                               rtol=0, atol=1e-15)
-    pd.testing.assert_series_equal(specifications["Zero floor"].asset_returns, a)
-    assert specifications["No floor"].asset_returns is None
-    assert specifications["Zero floor"].target_return == 0.0
-    assert specifications["Floor 0.005"].target_return == 0.0
+    # Each floor is one named row on the unshifted coefficients; no return row is configured.
+    for label in ("Zero floor", "Floor 0.005"):
+        row = specifications[label].linear_constraints
+        pd.testing.assert_series_equal(row.loadings["floor"], a, check_names=False)
+        assert row.lower["floor"] == floors[label] and row.upper is None
+        assert specifications[label].asset_returns is None
+        assert specifications[label].target_return is None
+    assert specifications["No floor"].linear_constraints is None
+    # The homogeneous cross-check shifts all five coefficients by b0 / E, 0.0025 for the positive
+    # floor, the core included, with a zero right side; it reproduces both floored allocations.
+    for label in ("Zero floor", "Floor 0.005"):
+        shifted = replace(base, asset_returns=a - floors[label] / total_exposure,
+                          target_return=0.0)
+        cross_check = opt.cvx_maximize_portfolio_sharpe(covar.to_numpy(), means.to_numpy(),
+                                                        shifted)
+        assert cross_check.accepted and cross_check.compliant
+        np.testing.assert_allclose(cross_check.weights, allocation[label], rtol=0, atol=1e-8)
+    np.testing.assert_allclose(shifted.asset_returns, a - 0.0025, rtol=0, atol=1e-15)
     # The identity a'w - b0 = a~'w holds on the exposure equality for any budget and scales with
     # k; off the equality it misses by b0 (1 - e'w / E), so E must match the budget.
     coefficients = a.to_numpy()
@@ -401,28 +414,87 @@ def main() -> None:
     assert (np.diff(replaced["Defensive B"]) < 0.0).all()
     assert (round(100 * expected.min(), 1), round(100 * expected.iloc[-1], 1)) == (10.7, 11.2)
 
+    coverage = 0.40
+    bear_coverage = opt.LinearConstraints(
+        loadings=a.to_frame("bear_coverage"),
+        lower=pd.Series({"bear_coverage": (1.0 - coverage) * a["Core"]}),
+    )
+    covered = opt.cvx_maximize_portfolio_sharpe(
+        covar=covar.to_numpy(), means=means.to_numpy(),
+        constraints=replace(base, linear_constraints=bear_coverage),
+        context="overlay article: 40% coverage",
+    )
+    assert covered.accepted and covered.compliant
+    covered_weights = pd.Series(covered.weights, index=tickers)
+    realised_coverage = 1.0 - float(a @ covered_weights) / a["Core"]
+    maximum_coverage = -overlay_budget * a.drop("Core").max() / a["Core"]
+    print(covered_weights.round(6))
+    print(round(realised_coverage, 6), round(maximum_coverage, 6))
+    # 0.4 1.125
+
+    # A 40% coverage is the floor 0.6 * -0.08 = -0.048, a level of the figure's sweep above the
+    # no-floor contribution: it binds, covers exactly 40%, and equals the sweep's allocation,
+    # which the homogeneous encoding solved.
+    assert abs((1.0 - coverage) * a["Core"] + 0.048) < 1e-15
+    level = int(np.argmin(np.abs(sweep + 0.048)))
+    assert abs(sweep[level] + 0.048) < 1e-12 and sweep[level] > contribution
+    np.testing.assert_allclose(covered_weights, path.iloc[level], rtol=0, atol=2e-6)
+    assert abs(realised_coverage - 0.40) < 1e-6 and abs(maximum_coverage - 1.125) < 1e-12
+    # The page's table. The no-floor allocation covers 24.6%, the zero floor 100% and the floor
+    # 0.005 106.25%; the reachable maximum 0.01 is 1 - 0.01 / -0.08 = 112.5%.
+    np.testing.assert_allclose(covered_weights, [1.0, 0.350787, 0.260699, 0.056942, 0.331573],
+                               rtol=0, atol=5.1e-7)
+    covers = {label: 1.0 - float(a @ allocation[label]) / a["Core"] for label in floors}
+    assert round(100 * covers["No floor"], 1) == 24.6
+    assert abs(covers["Zero floor"] - 1.0) < 1e-6 and abs(covers["Floor 0.005"] - 1.0625) < 1e-6
+    reachable = a["Core"] + overlay_budget * a["Defensive A"]
+    assert abs(1.0 - reachable / a["Core"] - maximum_coverage) < 1e-12
+    # All four overlays stay; weight moves from carry to defensive. Volatility 11.98% is below
+    # the no-floor 12.34%, and the model excess Sharpe ratio falls from 1.005 to 0.997.
+    no_floor_weights = allocation["No floor"]
+    carry, defensive = ["Carry C", "Carry D"], ["Defensive A", "Defensive B"]
+    assert (covered_weights.drop("Core") > 1e-3).all()
+    assert (covered_weights[carry] < no_floor_weights[carry]).all()
+    assert (covered_weights[defensive] > no_floor_weights[defensive]).all()
+    covered_risk = float(np.sqrt(covered_weights @ covar @ covered_weights))
+    covered_sharpe = float(means @ covered_weights) / covered_risk
+    assert round(100 * covered_risk, 2) == 11.98
+    assert round(100 * summary.at["No floor", "Volatility"], 2) == 12.34
+    assert round(covered_sharpe, 3) == 0.997
+    assert round(summary.at["No floor", "Model excess Sharpe"], 3) == 1.005
+
     selected = outcomes["Floor 0.005"]
     selected_weights = allocation["Floor 0.005"]
-    original_margin = float(a @ selected_weights - 0.005)
-    encoded_margin = float(specifications["Floor 0.005"].asset_returns @ selected_weights)
-    assert abs(original_margin - encoded_margin) < 1e-8
-    assert original_margin >= -1e-6
+    assert float(a @ selected_weights) >= 0.005 - 1e-6
     assert abs(selected_weights["Core"] - 1.0) < 1e-6
     assert abs(selected_weights.drop("Core").sum() - overlay_budget) < 1e-6
     residuals = selected.residuals_frame()
+    floor_row = residuals[residuals["constraint_type"] == "linear"].iloc[0]
+    assert floor_row["name"] == "floor" and floor_row["lower"] == 0.005
+    assert abs(floor_row["actual"] - float(a @ selected_weights)) < 1e-12
     hard_breaches = [r for r in selected.constraint_residuals if r.hard and not r.passed]
     assert not hard_breaches
 
-    # The target_return residual records the shifted coefficients against a zero lower bound,
-    # as one hard, passing row.
-    assert "target_return" in set(residuals["constraint_type"])
+    # Each floored case stores one hard, passing linear residual named floor in the
+    # characteristic's units, and no target_return residual.
     for label in ("Zero floor", "Floor 0.005"):
         outcome = outcomes[label]
-        rows = [r for r in outcome.constraint_residuals if r.constraint_type == "target_return"]
-        assert len(rows) == 1
-        encoded = float(specifications[label].asset_returns @ outcome.weights)
-        assert abs(rows[0].actual - encoded) < 1e-12
-        assert rows[0].lower == 0.0 and rows[0].hard and rows[0].passed
+        rows = [r for r in outcome.constraint_residuals if r.constraint_type == "linear"]
+        assert len(rows) == 1 and rows[0].name == "floor"
+        assert abs(rows[0].actual - float(coefficients @ outcome.weights)) < 1e-12
+        assert rows[0].lower == floors[label] and rows[0].hard and rows[0].passed
+        assert all(r.constraint_type != "target_return" for r in outcome.constraint_residuals)
+    # With the homogeneous cross-check the target_return residual measures the shifted
+    # coefficients against zero, which equals the original margin on the exposure equality.
+    shifted = replace(base, asset_returns=a - 0.005 / total_exposure, target_return=0.0)
+    shifted_outcome = opt.cvx_maximize_portfolio_sharpe(covar.to_numpy(), means.to_numpy(),
+                                                        shifted)
+    shifted_rows = [r for r in shifted_outcome.constraint_residuals
+                    if r.constraint_type == "target_return"]
+    assert len(shifted_rows) == 1 and shifted_rows[0].lower == 0.0
+    shifted_actual = shifted_rows[0].actual
+    assert abs(shifted_actual - float(shifted.asset_returns @ shifted_outcome.weights)) < 1e-12
+    assert abs(shifted_actual - (float(coefficients @ shifted_outcome.weights) - 0.005)) < 1e-8
 
     config = opt.OptimiserConfig(apply_total_to_good_ratio=False)
     labelled_weights, labelled_outcome = opt.wrapper_maximize_portfolio_sharpe(
@@ -457,7 +529,9 @@ def main() -> None:
     impossible_floor = 0.02
     assert impossible_floor > maximum_linear
     impossible = replace(
-        base, asset_returns=a - impossible_floor / total_exposure, target_return=0.0,
+        base, linear_constraints=opt.LinearConstraints(
+            loadings=a.to_frame("floor"), lower=pd.Series({"floor": impossible_floor}),
+        ),
         weights_0=allocation["No floor"],
     )
     rejected = opt.cvx_maximize_portfolio_sharpe(
@@ -476,6 +550,11 @@ def main() -> None:
         == ("infeasible", False, "weights_0", False)
     np.testing.assert_array_equal(rejected.weights, allocation["No floor"])
     assert coefficients @ rejected.weights < impossible_floor - 1e-6
+    # The constructor accepted the row: over the boxes alone, where each overlay may reach its own
+    # cap of 1.0, the row reaches -0.08 + 0.09 + 0.042 = 0.052; the sleeve budget is what binds.
+    box_maximum = float(a["Core"] + a.drop("Core").clip(lower=0.0).sum())
+    assert abs(box_maximum - 0.052) < 1e-12 and impossible_floor < box_maximum
+    assert impossible.linear_constraints.lower["floor"] == impossible_floor
     # Fallback order: a finite prior, then a finite benchmark, then zeros.
     benchmark = pd.Series([1.0, 0.25, 0.25, 0.25, 0.25], index=tickers)
     for spec, source, weights in (
@@ -487,42 +566,39 @@ def main() -> None:
         assert fallback.fallback_source == source and not fallback.accepted
         np.testing.assert_array_equal(fallback.weights, weights)
 
-    direct_nonzero = replace(base, asset_returns=a, target_return=0.005)
-    banded = replace(base, min_exposure=1.8, asset_returns=a, target_return=0.0)
-    unsupported_outcomes = {}
-    for label, spec in {"Unscaled floor": direct_nonzero, "Exposure band": banded}.items():
+    direct_floor = replace(base, asset_returns=a, target_return=0.005)
+    shifted_floor = replace(base, asset_returns=a - 0.005 / total_exposure, target_return=0.0)
+    banded = replace(specifications["Zero floor"], min_exposure=1.8)
+    cross_checks = {}
+    for label, spec in {"Direct floor": direct_floor, "Shifted floor": shifted_floor,
+                        "Exposure band": banded}.items():
         candidate = opt.cvx_maximize_portfolio_sharpe(
             covar=covar.to_numpy(), means=means.to_numpy(), constraints=spec,
-            context=f"overlay article: limitation probe {label}",
+            context=f"overlay article: floor check {label}",
         )
-        unsupported_outcomes[label] = candidate
+        cross_checks[label] = candidate
         print(label, candidate.solver, candidate.status, candidate.accepted)
-        assert not candidate.accepted
-    # Unscaled floor CLARABEL optimal False
-    # Exposure band SLSQP optimal False
+        assert candidate.accepted and candidate.compliant
+    # Direct floor CLARABEL optimal True
+    # Shifted floor CLARABEL optimal True
+    # Exposure band SLSQP optimal True
+    for label in ("Direct floor", "Shifted floor"):
+        np.testing.assert_allclose(cross_checks[label].weights, allocation["Floor 0.005"],
+                                   atol=1e-8)
 
-    # The unscaled row: CLARABEL reports optimal, validation rejects the target_return breach and,
-    # with no prior or benchmark, returns zeros, which also break the fixed core and the exposure.
-    assert direct_nonzero.weights_0 is None and direct_nonzero.benchmark_weights is None
-    unscaled = unsupported_outcomes["Unscaled floor"]
-    assert (unscaled.solver, unscaled.status) == ("CLARABEL", "optimal")
-    assert not unscaled.compliant and unscaled.fallback_source == "zeros"
-    assert "target_return" in unscaled.reason
-    np.testing.assert_array_equal(unscaled.weights, 0.0)
-    breaches = unscaled.residuals_frame()
-    breaches = breaches[breaches["hard"] & ~breaches["passed"]]
-    assert set(breaches["constraint_type"]) == {"exposure", "instrument_weight", "target_return"}
-    assert set(breaches.loc[breaches["constraint_type"] == "instrument_weight", "name"]) == {"Core"}
-    # The band: the SLSQP rows cover exposure and bounds but no return row, so the no-floor
-    # allocation, far below the floor, satisfies all of them; validation rejects the result.
+    # The printed solver and status of each check.
+    assert [(c.solver, c.status) for c in cross_checks.values()] == [
+        ("CLARABEL", "optimal"), ("CLARABEL", "optimal"), ("SLSQP", "optimal")]
+    # The band's SciPy rows include the named zero floor, which the no-floor allocation misses by
+    # more than 0.05; SLSQP returns an allocation inside the band that meets it.
+    assert banded.linear_constraints.lower["floor"] == 0.0 and banded.min_exposure == 1.8
     scipy_rows, bounds = banded.set_scipy_constraints(covar.to_numpy())
     point = allocation["No floor"].to_numpy()
-    assert all(float(row["fun"](point)) >= -1e-7 for row in scipy_rows)
-    assert all(low - 1e-7 <= value <= high + 1e-7 for (low, high), value in zip(bounds, point))
-    assert coefficients @ point < -0.05
-    band = unsupported_outcomes["Exposure band"]
-    assert (band.solver, band.status) == ("SLSQP", "optimal")
-    assert not band.compliant and "target_return" in band.reason
+    assert any(np.min(row["fun"](point)) < -0.05 for row in scipy_rows)
+    band = cross_checks["Exposure band"]
+    assert coefficients @ band.weights >= -1e-7
+    assert 1.8 - 1e-6 <= band.weights.sum() <= 2.0 + 1e-6
+    assert "floor" in band.residuals_frame()["name"].tolist()
     print("overlay_tail_floor: all page statements verified.")
 
 

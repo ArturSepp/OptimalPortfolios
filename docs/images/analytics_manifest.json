@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-09-28T06:32:40+00:00",
+  "generated_at_utc": "2026-09-30T18:29:46+00:00",
   "platform": "Windows-11-10.0.26200-SP0",
   "versions": {
     "python": "3.12.14",
-    "optimalportfolios": "7.9.0",
-    "qis": "5.31.0",
-    "factorlasso": "0.19.0",
+    "optimalportfolios": "7.10.0",
+    "qis": "5.33.0",
+    "factorlasso": "0.22.0",
     "numpy": "2.5.2",
     "pandas": "3.0.5",
     "scipy": "1.18.0",
@@ -351,7 +351,7 @@
     "overlay_floor_allocation": {
       "path": "docs/images/overlay_floor_allocation.png",
       "script": "examples/docs/overlay_tail_floor.py",
-      "script_sha256": "f67c2e786e3909c5a63db75d0c95d382e1a2543c8b2cd205d5f8bdf788a582e9",
+      "script_sha256": "446d890fe0a56cfcffcc3d1e228a99cab6803658205f5552772f80ed1f473854",
       "image_sha256": "d550d884fe5c01523055118caa0e147334e7b3aeba49d9652537948dfc4cb4b3",
       "table_sha256": "55749ddf74838a4143007a93e5ecd01820a7a2e6e4ec5050ff576a90cfe34970",
       "parameters": {
@@ -823,7 +823,7 @@
     "constraint_enforcement_hard_vs_soft": {
       "path": "docs/images/constraint_enforcement_hard_vs_soft.png",
       "script": "examples/docs/constraints.py",
-      "script_sha256": "2478a5c7715d010cd99914644d456374fb4a6de6be7336357fa573544674007a",
+      "script_sha256": "d3f666d3d88e9582a705c26463e10bdfa5f7fd32f132421025f90799f0acc166",
       "image_sha256": "f3f0ab870fbc651ba3fa21b7d67beaf24a1858c1147498487aa78443dbe4ea0d",
       "table_sha256": "424f51c3806866250fbab6234f65dcc95e69487dd156d42d868221db5a3d1409",
       "parameters": {
@@ -1092,7 +1092,7 @@
     "factor_covariance_variance_split": {
       "path": "docs/images/factor_covariance_variance_split.png",
       "script": "examples/docs/factor_covariance_hcgl.py",
-      "script_sha256": "dc6ab6cf41c4466eaa03ca2cc975d7c29016845d399bbb7e392ede97089d2648",
+      "script_sha256": "aff2381dab13cc7663bc8085f6ff653929f806815c3344026e93b8110f5c95ca",
       "image_sha256": "df44432e853c3a95842ac3896e05458736e0c6c82ab8588eb600fb988d5ac2f0",
       "table_sha256": "cc33c07a7921bfab0123d0bffe7fe5ffedf8fa922a33bc1601e6891e1bbf3f8c",
       "parameters": {
@@ -2086,7 +2086,7 @@
     }
   },
   "review": {
-    "note": "2026-09-28: inspected crypto_allocation_by_method at page width and full size; labels, legends, units and table remain legible; image and table hashes unchanged after frozen-panel path correction.",
-    "published_at_utc": "2026-09-28T06:32:42+00:00"
+    "note": "2026-09-30: Claude inspected overlay_floor_allocation, constraint_enforcement_hard_vs_soft and factor_covariance_variance_split in the image viewer; titles, labels, legends, units and floor notation are legible. All 25 image and table hashes are identical to the previously reviewed bundle. Refreshed only provenance after canonical-script updates (named linear floor and coverage block on the overlay page, named linear rows on the constraints page, and the earlier factor-covariance script change).",
+    "published_at_utc": "2026-09-30T18:30:15+00:00"
   }
 }

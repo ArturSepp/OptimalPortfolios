@@ -33,7 +33,7 @@ transaction costs, and reporting.**
 [![Monthly](https://static.pepy.tech/badge/optimalportfolios/month)](https://pepy.tech/project/optimalportfolios)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ArturSepp/OptimalPortfolios/blob/main/examples/getting_started/production_quickstart.ipynb)
 
-**Papers:** Sepp, A. (2023), *Optimal Allocation to Cryptocurrencies in Diversified Portfolios*, Risk Magazine — [SSRN 4217841](https://ssrn.com/abstract=4217841) · Sepp, A., Ossa, I. and Kastenholz, M. (2026), *Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios*, [The Journal of Portfolio Management, 52(4), 86–120](https://www.pm-research.com/content/iijpormgmt/52/4/86) · Sepp, A., Hansen, E. and Kastenholz, M. (2026), *Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors* — [SSRN 6785958](https://ssrn.com/abstract=6785958). See [References](#references).
+**Papers:** Sepp, A. (2023), *Optimal Allocation to Cryptocurrencies in Diversified Portfolios*, Risk Magazine — [SSRN 4217841](https://ssrn.com/abstract=4217841) · Sepp, A., Ossa, I. and Kastenholz, M. (2026), *Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios*, [The Journal of Portfolio Management, 52(4), 86–120](https://www.pm-research.com/content/iijpormgmt/52/4/86) · Sepp, A., Hansen, E. and Kastenholz, M. (2026), *Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors* — [SSRN 6785958](https://ssrn.com/abstract=6785958) · Sepp, A. and Kastenholz, M. (2026), *The Convexity Premium of Portfolio Overlays*, Journal of Investment Management, forthcoming — [companion](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/smart_diversification_joim_2026). See [References](#references).
 
 ---
 
@@ -393,6 +393,14 @@ The paper's example is in
 [ROSAA case study](https://optimalportfolios.readthedocs.io/en/latest/app_rosaa_multi_asset_allocation.html) reports the framework, its study
 design and results, and runs the same configuration offline.
 
+#### The convexity premium of portfolio overlays
+
+The paper's synthetic companion is in
+[`papers/smart_diversification_joim_2026`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/papers/smart_diversification_joim_2026/README.md);
+its Section II coverage-floor allocation is the fixed-core maximum Sharpe ratio with a named
+linear row described in the
+[overlay page](https://optimalportfolios.readthedocs.io/en/latest/overlay_tail_floor.html), section *The coverage floor*.
+
 ## Updates
 
 See the [changelog](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CHANGELOG.md) for release history and migration notes.
@@ -420,6 +428,11 @@ Sepp A., Hansen E., and Kastenholz M. (2026),
 "Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors",
 *Under revision at the Journal of Portfolio Management*.
 Available at <https://ssrn.com/abstract=6785958>
+
+Sepp A., and Kastenholz M. (2026),
+"The Convexity Premium of Portfolio Overlays",
+*Journal of Investment Management*, forthcoming.
+Companion code at <https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/smart_diversification_joim_2026>
 
 ## Ecosystem
 
@@ -464,7 +477,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
   year={2026},
-  version={7.9.1},
+  version={7.10.0},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```
@@ -498,6 +511,16 @@ If you use optimalportfolios in your research, please cite it as:
   title={Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors},
   author={Sepp, Artur and Hansen, Emilie H. and Kastenholz, Mika},
   journal={Working Paper},
+  year={2026}
+}
+```
+
+```bibtex
+@article{seppkastenholz2026convexity,
+  title={The Convexity Premium of Portfolio Overlays},
+  author={Sepp, Artur and Kastenholz, Mika},
+  journal={Journal of Investment Management},
+  note={Forthcoming},
   year={2026}
 }
 ```

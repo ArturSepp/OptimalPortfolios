@@ -28,6 +28,7 @@ from optimalportfolios.optimization.constraints.core import (
     ConstraintEnforcementType,
     Constraints,
 )
+from optimalportfolios.optimization.constraints.linear import LinearConstraints
 from optimalportfolios.optimization.constraints.expressions import (
     add_term_to_objective_function,
     cvx_covar_variance,
@@ -58,6 +59,7 @@ __all__ = [
     "GroupLowerUpperConstraints",
     "GroupTrackingErrorConstraint",
     "GroupTurnoverConstraint",
+    "LinearConstraints",
     "RelaxationRecord",
     "add_term_to_objective_function",
     "compute_benchmark_beta_loadings",

@@ -53,7 +53,7 @@ The notation follows the [conventions page](conventions.md#notation). In additio
 | $\mu,\alpha$ | Expected-return and alpha vectors, with $N$ entries |
 | $\Sigma$ | Covariance matrix of size $N \times N$ in the supplied variance units |
 | $B$ | Covariance factor, with $BB^\top=\Sigma_{\mathrm{stabilized}}$ |
-| $L,L_g$ | Assets-by-groups/factors loadings and the $N$-entry column for group $g$ |
+| $L,L_g$ | Assets-by-groups/factors loadings and the $N$-entry column for group $g$; $L_j$ for a named linear row $j$ |
 | $d,d_g$ | Active weights $w-w^{\mathrm{bm}}$ and their group-masked vector |
 | $c$ | Portfolio-level turnover multipliers, `turnover_costs` |
 | $h$ | Per-asset benchmark-beta loadings; distinct from turnover multipliers |
@@ -126,11 +126,12 @@ limit.
 | `group_turnover_constraint` | Group-weighted L1 trading budgets; requires `weights_0` |
 | `sector_deviation_constraints`, `style_deviation_constraints` | Absolute active-loading limits; require benchmark weights |
 | `benchmark_beta_constraint` | Linear bounds on portfolio beta; requires per-date beta loadings |
+| `linear_constraints` | Named signed linear rows with lower/upper bounds in each row's units |
 | `constraint_enforcement_type`, `tre_utility_weight`, `turnover_utility_weight` | Hard or utility policy for wrappers and analytics, and the total tracking-error and turnover penalty weights of utility mode, `1.0` and `0.40` by default |
 
 The supporting fields `benchmark_weights`, `weights_0`, `asset_returns`, and `turnover_costs` do
 nothing by themselves. They supply the reference vectors needed by another configured limit or
-utility term. The eighteen fields in the first column and these four are the 22 fields of
+utility term. The nineteen fields in the first column and these four are the 23 fields of
 `Constraints`.
 
 `Constraints()` defaults to a long-only, fully invested portfolio: $w_i\ge0$ and
@@ -172,8 +173,9 @@ box = Constraints(
 The candidate `[0.60, 0.30]` passes: total exposure is `0.90`, A is in `[0.10, 0.70]`, and B is in
 `[0.00, 0.80]`.
 
-For Charnes--Cooper transformations, `exposure_scaler=k` scales exposure, per-name boxes, and
-group-allocation rows. Other rows are not automatically homogenized; the scaler is an internal
+For Charnes--Cooper transformations, `exposure_scaler=k` scales exposure, per-name boxes,
+group-allocation rows, return floors and signed linear rows. Other rows are not automatically
+homogenized; the scaler is an internal
 solver feature, not a general way to lever every constraint family. The
 [mean-variance objectives](mean_variance_objectives.md) page shows a volatility cap that makes the
 maximum-Sharpe solve infeasible for this reason.
@@ -208,7 +210,11 @@ return_floor = Constraints(asset_returns=returns, target_return=0.05)
 ```
 
 `w=[0.50, 0.50]` produces `0.05` and passes. `w=[0.40, 0.60]` produces `0.044` and fails. A
-configured `target_return` without `asset_returns` raises `ValueError` during CVXPY compilation.
+configured `target_return` without `asset_returns` raises `ValueError` during CVXPY or SciPy
+compilation. The fixed-exposure Sharpe transformation scales the bound by its positive scale;
+the exposure-band SciPy path enforces the floor directly on weights. A floor on any other
+characteristic, or several floors and caps, are
+[named signed linear rows](#named-signed-linear-rows).
 
 #### Maximum portfolio volatility
 
@@ -236,6 +242,60 @@ the solver.
 stored on the object. The generic utility compiler omits the cap. Utility SAA solvers use their
 own variance objective or penalty; they do not convert `max_target_portfolio_vol_an` into a
 penalty coefficient.
+
+### Named signed linear rows
+
+`LinearConstraints(loadings, lower=None, upper=None)` supplies named signed rows through
+`Constraints.linear_constraints`. For each named policy $j$ the row is
+
+$$
+l_j \le L_j^\top w \le u_j.
+$$
+
+Assets index `loadings` and its columns name the policies; each `lower` or `upper` Series is
+indexed by those names. A missing label, `None` or `NaN` leaves that side unbounded, as do a
+lower negative infinity and an upper positive infinity; a policy with neither side emits no row
+and no residual. Coefficients must be finite and labels unique. Each bound is in its own row's
+coefficient units; nothing is rescaled or annualised.
+
+```python
+from optimalportfolios.optimization.constraints import LinearConstraints
+
+characteristics = LinearConstraints(
+    loadings=pd.DataFrame(
+        {"carry": [0.04, 0.01, -0.02], "duration": [0.0, 6.0, 0.0]},
+        index=["Equity", "Bond", "Gold"],
+    ),
+    lower=pd.Series({"carry": 0.015}),
+    upper=pd.Series({"duration": 3.0}),
+)
+signed = Constraints(linear_constraints=characteristics)
+```
+
+For `w=[0.45,0.40,0.15]` carry is `0.019` and duration `2.4`; both pass. For
+`w=[0.20,0.45,0.35]` carry is `0.0055` and misses its floor by `0.0095`; for
+`w=[0.30,0.60,0.10]` duration is `3.6` and exceeds its cap by `0.6`. The rows stay hard in
+both enforcement modes, CVXPY and SciPy compile them, and they appear as `linear` residuals
+under their policy names. The risk-budgeting matrix helper raises `ValueError` rather than
+dropping them. Under the Charnes--Cooper scale $k$ both bounds are multiplied by $k$, as the
+return floor is.
+
+Alignment is strict. `update(valid_tickers)` reorders the rows to the solver universe and raises
+for a universe asset without a loading row, such as a `Cash` asset missing from `loadings`. It
+drops an asset only when that asset's coefficient is exactly zero in every bounded row: removing
+Gold from `characteristics` raises, because Gold has a carry loading, while a duration-only
+policy may drop Equity. An intentionally changed universe requires an explicitly rebuilt policy.
+
+Construction checks both signed extrema of each row over the instrument boxes; a missing box
+side is unbounded, subject to long-only when configured. With caps `[0.30, 0.30, 0.40]` the
+largest attainable carry is `0.015`, so a carry floor of `0.02` raises `ValueError`. These
+necessary checks do not establish joint feasibility with the exposure budget or other policies.
+
+Group allocation also compiles signed loadings. Use it for positive membership, and use named
+linear rows for signed characteristics, whose alignment refuses to drop a nonzero coefficient.
+`BenchmarkBetaConstraint` remains the convenience interface for covariance-derived beta loadings
+refreshed at each rebalance. The [overlay page](overlay_tail_floor.md) applies one named row as a
+floor on the Bear-regime contribution of a fixed-core portfolio.
 
 ### Benchmark-relative risk
 
@@ -891,7 +951,8 @@ cross-platform bitwise guarantees.
 |---|---|---|---|---|
 | Long-only and boxes | Hard | Hard | Bounds/callback | Bounds |
 | Min/max net exposure | Hard | Hard | Two callbacks | Full investment is solver policy; arbitrary bands are not compiled |
-| Target return | Hard | Hard | Unsupported | Unsupported |
+| Target return | Hard | Hard | Callback | Unsupported |
+| Named signed linear rows | Hard | Hard | Callbacks | Explicit error |
 | Portfolio volatility | Hard cap | No generic cap; solver-specific risk objective | Unsupported | Unsupported |
 | Total and group TE | Both hard | Soft; group object takes precedence | Unsupported | Unsupported |
 | Total and group turnover | Both hard | Soft; group object takes precedence | Unsupported | Unsupported |
@@ -1040,10 +1101,15 @@ tolerance and positive group loadings:
 2. loading-weighted asset floors already exceed a group ceiling;
 3. one asset's loading-weighted floor exceeds a group ceiling.
 
+It also rejects a [named linear row](#named-signed-linear-rows) whose lower bound exceeds the
+row's largest value over the instrument boxes, or whose upper bound is below its smallest. That
+check uses signed coefficients and the tighter tolerance `1e-10`, and it ignores the exposure
+budget.
+
 The solver input validator also checks covariance shape/finiteness, global box-versus-budget
 reachability, group reachability, and whether a benchmark is compatible with the configured box
 and exposure policy. These are cheap structural checks, not a proof that every quadratic,
-turnover, deviation, and beta row is jointly feasible.
+turnover, deviation, beta and linear row is jointly feasible.
 
 #### After solving
 

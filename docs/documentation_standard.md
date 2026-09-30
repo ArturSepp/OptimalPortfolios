@@ -156,9 +156,11 @@ citation used everywhere on the site; titles used in earlier versions are listed
 `retired_titles`, and the checker fails when one appears in reader-facing text. The
 [research papers page](research_papers.md) carries each ledger title. Only public papers are in
 the ledger and on the site: a published article or a public working paper is cited by section and
-equation, and its results are quoted with their study design. Research that has not been published
-is neither cited, linked, quoted nor displayed; it may shape an example or a limitation, and a
-fact it contains is stated with its published source or derived on the page.
+equation, and its results are quoted with their study design. An article accepted by a journal is
+cited as forthcoming, by section and equation for its methods, and its results are not quoted
+until it is published. Other research that has not been published is neither cited, linked,
+quoted nor displayed; it may shape an example or a limitation, and a fact it contains is stated
+with its published source or derived on the page.
 
 Other literature is cited when it is already in a module docstring's references, in
 [`paper.bib`](../paper.bib) or in a tracked manuscript's bibliography, or when it has been checked

@@ -215,7 +215,7 @@ in [choosing an objective](optimization_module_readme.md).
 | Minimum tracking error | Covariance and a benchmark |
 | [Tactical alpha over tracking error](alpha_over_tracking_error.md) | Covariance, alphas, a benchmark and a tracking-error limit |
 | [Tactical alpha with a target return](alpha_over_tracking_error.md#the-yield-target-variant) | Covariance, alphas, yields and targets; optional benchmark |
-| Overlay with a tail floor | Covariance, excess means, a fixed core and a linear floor, through the maximum-Sharpe solver |
+| [Overlay with a tail floor](overlay_tail_floor.md) | Covariance, excess means, a fixed core and a linear floor, a named `LinearConstraints` row, through the maximum-Sharpe solver |
 
 [Choosing an objective](optimization_module_readme.md) maps each objective to its rolling,
 single-date and numerical entry points.
@@ -234,10 +234,23 @@ single-date and numerical entry points.
 ## Glossary
 
 - **Active weights.** $d = w - w^{\mathrm{bm}}$, the difference from the benchmark.
+- **Bear regime.** The periods in which the core's or benchmark's return lies below its own 16%
+  quantile; the Normal and Bull regimes are the middle 68% and the top 16%. qis classifies them;
+  see its [regime-conditional performance](https://quantinveststrats.readthedocs.io/en/latest/regime_conditional_performance.html).
+- **Bear-regime contribution.** The part of an asset's Sharpe ratio, or in return units of its
+  annual excess return, earned in the Bear regime; the three regime contributions add up to the
+  total.
 - **CARA utility.** Constant absolute risk aversion, $-\exp(-\gamma W)$ for wealth $W$; its
   expectation has a closed form under a Gaussian mixture.
 - **CMA.** Capital market assumption: a forward-looking expected return, volatility or
   correlation used as a strategic input; see the [MATF-CMA case study](app_cma_strategic_allocation.md).
+- **Convexity premium.** An overlay's Bear-regime Sharpe contribution beyond the value its Sharpe
+  ratio and benchmark correlation imply under joint normality; defined by Sepp and Kastenholz
+  (2026) and computed by qis, see its
+  [convexity premium page](https://quantinveststrats.readthedocs.io/en/latest/convexity_premium.html).
+- **Coverage floor.** A floor on a fixed-core portfolio's Bear-regime contribution, stated as the
+  fraction of the core's Bear-regime loss that the overlays must offset; see the
+  [overlay page](overlay_tail_floor.md#the-coverage-floor).
 - **Diversification ratio.** $\sum_i w_i \sigma_i / \sigma(w)$, the weighted average asset
   volatility over the portfolio volatility.
 - **Drift.** The change of weights between decisions caused by relative price moves.
@@ -261,8 +274,13 @@ single-date and numerical entry points.
   or volatility targets to a long-run allocation; TAA takes alpha-driven active positions
   against a benchmark under a tracking-error budget; see
   [tactical allocation](alpha_over_tracking_error.md).
+- **Smart diversifier.** An overlay whose addition raises both the portfolio's Sharpe ratio and
+  its Bear-regime contribution.
+- **Stacked portfolio.** A core held at full capital with an overlay sleeve on top, so that the
+  exposures sum to more than one; the weights are not normalised.
 - **Tail floor.** A minimum on a supplied linear characteristic of the overlay, used as a proxy
-  for downside protection; it is not an expected shortfall.
+  for downside protection; it is not an expected shortfall. The coverage floor is the tail floor
+  whose characteristic is the Bear-regime contribution.
 - **TE, TRE.** Ex-ante tracking error $\mathrm{TE}(w)$; function names write it `tre`.
 - **Turnover.** The full L1 change of weights between the pre-trade and the target weights.
 

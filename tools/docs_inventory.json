@@ -62,7 +62,7 @@
     "docs/constraints.md": {
       "form": "methodology",
       "status": "adopted",
-      "review": "R3d (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the excerpt rule and the GitHub math rules (and the convention card on methodology pages); the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Sole owner of the 22 Constraints fields. Teaching exhibit constraint_enforcement_hard_vs_soft.png. The block-executing harness is retired.",
+      "review": "R3d (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the excerpt rule and the GitHub math rules (and the convention card on methodology pages); the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Sole owner of the 23 Constraints fields. Teaching exhibit constraint_enforcement_hard_vs_soft.png. The block-executing harness is retired. R10 (2026-09-30): named signed linear rows have their own section and a block asserted by the script, and the feasibility list records their box-extrema check. Source checker, canonical script and a strict Sphinx build from a C-local export pass; GitHub Markdown API and VS Code KaTeX review of this revision pending.",
       "example": "examples/docs/constraints.py"
     },
     "docs/conventions.md": {
@@ -152,7 +152,7 @@
     "docs/overlay_tail_floor.md": {
       "form": "methodology",
       "status": "adopted",
-      "review": "R3c (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Imports the repository solver demo, so its script needs a checkout. Teaching exhibit overlay_floor_allocation.png.",
+      "review": "R3c (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Imports the repository solver demo, so its script needs a checkout. Teaching exhibit overlay_floor_allocation.png. R10 (2026-09-30): the floor is a named LinearConstraints row, the shifted-coefficient encoding is kept as the independent cross-check and still draws the figure's sweep, and a coverage-floor section and a 40% coverage block map Section II, program (11) of Sepp and Kastenholz (2026), cited as forthcoming by section and equation with no results quoted. Schaible (1974) checked against its Crossref record for DOI 10.1007/BF02026600. Source checker, canonical script and a strict Sphinx build from a C-local export pass; GitHub Markdown API and VS Code KaTeX review of this revision pending.",
       "example": "examples/docs/overlay_tail_floor.py"
     },
     "docs/package_comparison.md": {
@@ -251,7 +251,13 @@
       "review": "R9 (2026-09-27): adopted. Passes the adopted-page checks of tools/check_docs.py (form, links, math, ownership); the GitHub Markdown API and VS Code renderings agree; names in code checked against the package source and the installed qis and factorlasso. No change needed."
     }
   },
-  "planned": {},
+  "planned": {
+    "docs/app_smart_diversification_overlays.md": {
+      "form": "case_study",
+      "title": "Smart diversification with portfolio overlays",
+      "note": "Case study of Sepp and Kastenholz (2026), JOIM, forthcoming: the synthetic companion's qis regime estimation and OP coverage-floor allocation as a canonical script. Blocked until qis 5.33.0, which adds qis.regimes.compute_regime_mixture_covar_from_sample, is released and locked in uv.lock; results of the forthcoming paper are not quoted before publication."
+    }
+  },
   "symbols": {
     "docs/universe_data_and_unsmoothing.md": [
       "UniverseData",
@@ -385,6 +391,7 @@
     ],
     "docs/constraints.md": [
       "Constraints",
+      "LinearConstraints",
       "ConstraintEnforcementType",
       "GroupLowerUpperConstraints",
       "GroupTrackingErrorConstraint",
@@ -487,6 +494,9 @@
     }
   },
   "parameters": {
+    "LinearConstraints": {
+      "docs/constraints.md": ["loadings", "lower", "upper"]
+    },
     "Constraints": {
       "docs/constraints.md": [
         "is_long_only",
@@ -510,7 +520,8 @@
         "group_turnover_constraint",
         "sector_deviation_constraints",
         "style_deviation_constraints",
-        "benchmark_beta_constraint"
+        "benchmark_beta_constraint",
+        "linear_constraints"
       ]
     },
     "OptimiserConfig": {
@@ -571,6 +582,16 @@
     }
   },
   "papers": {
+    "smart_diversification": {
+      "title": "The Convexity Premium of Portfolio Overlays",
+      "authors": "Sepp, A. and Kastenholz, M.",
+      "status": "Journal of Investment Management, forthcoming; public synthetic companion only",
+      "citation": "Sepp, A. and Kastenholz, M. (2026). The Convexity Premium of Portfolio Overlays. Journal of Investment Management, forthcoming.",
+      "repository": "papers/smart_diversification_joim_2026",
+      "public_readme": "papers/smart_diversification_joim_2026/README.md",
+      "public_scope": "Introduction, synthetic run_overlay_example.py and its offline tests only; empirical replication and manuscript remain private.",
+      "retired_titles": []
+    },
     "rosaa": {
       "title": "Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios",
       "authors": "Sepp, A., Ossa, I. and Kastenholz, M.",

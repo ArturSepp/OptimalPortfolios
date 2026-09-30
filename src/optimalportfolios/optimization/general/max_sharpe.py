@@ -19,8 +19,9 @@ book rules out k = 0), and solve the equivalent SOCP:
 
     min_y  y'Σy   s.t.  μ'y = c,  constraints(y, k)
 
-then recover w* = y / k. Only the exposure, per-asset and group-allocation
-rows are rescaled by k; any other row is compiled on y, not on w. For a
+then recover w* = y / k. Only the exposure, per-asset, group-allocation,
+return-floor and signed ``linear_constraints`` rows are rescaled by k; any
+other row is compiled on y, not on w. For a
 long-only book with only those rows and a feasible portfolio of positive
 expected return, this yields the global optimum without the initialisation
 sensitivity of direct ratio optimisation.
@@ -184,9 +185,9 @@ def cvx_maximize_portfolio_sharpe(covar: np.ndarray,
         min_z  y'Σy   s.t.  μ'y = c,  constraints(y, k)
 
     The optimal weights are recovered as w* = y / k. Only the exposure,
-    per-asset (``min_weights``, ``max_weights``) and group-allocation rows are
-    compiled with ``exposure_scaler=k`` and so rescaled by k; every other row of
-    ``Constraints``, such as a volatility cap, a return floor, a turnover or a
+    per-asset (``min_weights``, ``max_weights``), group-allocation, return-floor
+    and signed ``linear_constraints`` rows are compiled with ``exposure_scaler=k``;
+    every other row of ``Constraints``, such as a volatility cap, a turnover or a
     tracking-error limit, is compiled on y = k*w, not on w.
 
     The transformation requires a fixed-sum equality constraint on portfolio

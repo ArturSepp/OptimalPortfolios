@@ -33,11 +33,22 @@ paths, snapshot bytes, hashes and consumers. Do not copy it into each paper.
 ## Publication and preservation
 
 - New paper workspaces are entirely ignored by default. The approved public roots
-  are `cma_data/`, `crypto_allocation_risk_2023/` and `robust_optimisation_jpm_2026/`.
+  are `cma_data/`, `crypto_allocation_risk_2023/`, `robust_optimisation_jpm_2026/`,
+  and the limited JOIM companion described below.
   Adding another requires an explicit publication decision, an exact root exception
   in `.gitignore`, and an update to `PUBLIC_WORKSPACES` in the policy checker.
-- Preserve existing full-workspace exclusions, including MATF-CMA and JOIM.
+- Preserve existing full-workspace exclusions, including MATF-CMA.
   Moving folders does not authorise release of any manuscript or replication code.
+- `smart_diversification_joim_2026/` permits only its README, .gitignore,
+  `run_overlay_example.py` and
+  `replication/tests/overlay_example_test.py`. These introduce the paper and run a
+  synthetic illustration. The manuscript, empirical replication code, licensed
+  inputs, outputs and private notes stay ignored. The checker enforces this exact
+  allowlist even when another ignore rule tries to reopen the workspace. The accepted
+  manuscript's bibliography cites the folder at
+  `https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/smart_diversification_joim_2026`,
+  and the OP documentation links its README and runnable file: do not rename or move the
+  folder, `README.md` or `run_overlay_example.py`.
 - Record public status in `papers/README.md` and the paper README: public bundle,
   public replication with local manuscript, or entirely local workspace. Keep
   confidential permission details in `private/`. SSRN permission and acceptance

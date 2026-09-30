@@ -247,16 +247,28 @@ def check_empirical_residuals(factor_prices: pd.DataFrame, buckets: dict, data,
         **history_through(factor_prices, buckets, '2024-02-29')).residual_correlation
     assert february.observation_date == as_of
     assert february.estimation_date == pd.Timestamp('2024-02-29')
-    # An internal gap fails instead of being filled.
+    # The updated FL API keeps internal gaps as NaN on the common grid. Older
+    # supported dependencies retain their strict-gap behavior in this example.
+    from factorlasso import ResidualType
+
     gapped = {'ME': buckets['ME'].copy(), 'QE': buckets['QE']}
     gapped['ME'].iloc[100, 0] = np.nan
-    try:
-        replace(empirical, lasso_model=hcgl_model()).fit_current_factor_covars(
-            **history_through(factor_prices, gapped, AS_OF))
-    except ValueError:
-        pass
+    if 'exposure_cluster' in tuple(ResidualType):
+        gap_fit = replace(empirical, lasso_model=hcgl_model()).fit_current_factor_covars(
+            **history_through(factor_prices, gapped, AS_OF)).residual_correlation
+        gap_date = gapped['ME'].index[100] + pd.offsets.QuarterEnd(0)
+        assert pd.isna(gap_fit.residual_returns.loc[gap_date, MONTHLY[0]])
+        assert gap_fit.residual_returns.loc[gap_date, ASSETS[1:]].notna().all()
+        assert gap_fit.residual_returns.index.equals(prepared.residual_returns.index)
+        assert np.isfinite(gap_fit.correlation.to_numpy()).all()
     else:
-        raise AssertionError('an internal residual gap was accepted')
+        try:
+            replace(empirical, lasso_model=hcgl_model()).fit_current_factor_covars(
+                **history_through(factor_prices, gapped, AS_OF))
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('a legacy dependency accepted an internal residual gap')
     # residual_covar_span counts common periods; an explicitly coarser residual_covar_freq
     # converts the quarterly decay to the new grid; a monthly-only universe stays monthly.
     spanned = replace(empirical, lasso_model=hcgl_model(), residual_covar_span=8)

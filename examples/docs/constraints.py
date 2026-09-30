@@ -1,6 +1,6 @@
 """Canonical script of docs/constraints.md.
 
-The page's sixteen Python blocks are excerpts of ``main`` and run here in the same order; every
+The page's seventeen Python blocks are excerpts of ``main`` and run here in the same order; every
 number and property the page states is asserted after them against a reference computed a
 different way: hand arithmetic of each small example, explicit NumPy quadratic forms and L1 sums
 in place of the residual evaluator, the three binding rows and the dual certificate of the forced
@@ -49,6 +49,7 @@ CONSTRAINTS_FIELDS = [
     'group_lower_upper_constraints', 'group_tracking_error_constraint',
     'group_turnover_constraint', 'sector_deviation_constraints', 'style_deviation_constraints',
     'benchmark_beta_constraint',
+    'linear_constraints',
 ]
 CONSTRAINTS_LOGGER = 'optimalportfolios.optimization.constraints'
 # The reference solves run CLARABEL to tighter tolerances than the page's blocks, so that their
@@ -82,6 +83,30 @@ def record_of(weights, constraints, kind: str, name=None, covar=None):
         if record.constraint_type == kind and (name is None or record.name == name)]
     assert len(records) == 1, records
     return records[0]
+
+
+def scipy_callback_count(constraints, n: int) -> int:
+    """Number of SciPy callbacks compiled for ``n`` assets."""
+    return len(constraints.set_scipy_constraints(np.eye(n))[0])
+
+
+def pyrb_rows(constraints, n: int) -> tuple:
+    """Compile the risk-budgeting matrix rows for ``n`` assets."""
+    return constraints.set_pyrb_constraints(np.eye(n))
+
+
+def charnes_cooper_rows_hold(constraints, feasible, infeasible) -> bool:
+    """Whether rows compiled on y = k w keep a feasible point and reject an infeasible one."""
+    y, k = cvx.Variable(len(feasible)), cvx.Variable(nonneg=True)
+    rows = constraints.set_cvx_all_constraints(w=y, exposure_scaler=k)
+    for scale in (0.5, 4.0):
+        y.value, k.value = scale * np.asarray(feasible, dtype=float), scale
+        if not all(np.max(row.violation()) < 1e-12 for row in rows):
+            return False
+        y.value = scale * np.asarray(infeasible, dtype=float)
+        if not any(np.max(row.violation()) > 0.1 * scale for row in rows):
+            return False
+    return True
 
 
 def explicit_tracking_error(weights, benchmark, covar, loadings=None) -> float:
@@ -315,7 +340,7 @@ def main() -> None:
     )
 
     # Two enforcement policies. Constraints() is long-only and fully invested with no boxes, its
-    # 22 fields are those of the constraint map, and the utility penalty weights default to 1.0
+    # 23 fields are those of the constraint map, and the utility penalty weights default to 1.0
     # for tracking error and 0.40 for turnover.
     utility_type = ConstraintEnforcementType.UTILITY_CONSTRAINTS
     assert [member.name for member in ConstraintEnforcementType] == [
@@ -327,7 +352,7 @@ def main() -> None:
     assert default.tre_utility_weight == 1.0 and default.turnover_utility_weight == 0.40
     assert [field.name for field in dataclasses.fields(Constraints)] == CONSTRAINTS_FIELDS
     supporting = {'benchmark_weights', 'weights_0', 'asset_returns', 'turnover_costs'}
-    assert len(CONSTRAINTS_FIELDS) == 22 and len(set(CONSTRAINTS_FIELDS) - supporting) == 18
+    assert len(CONSTRAINTS_FIELDS) == 23 and len(set(CONSTRAINTS_FIELDS) - supporting) == 19
     assert exposure_rows(default) == ['Inequality', 'Equality']  # w >= 0 and sum(w) == 1
     # Exposure is the signed net sum: [1.20, -0.20] has net exposure 1.00 and gross 1.40.
     net = record_of([1.20, -0.20], Constraints(is_long_only=False), 'exposure')
@@ -431,6 +456,68 @@ def main() -> None:
     assert len(compiled_rows(utility_cap, 2, covar=diagonal)) == 3
     assert len(compiled_rows(vol_cap, 2, covar=diagonal)) == 3
     assert len(compiled_rows(utility_cap, 2, covar=diagonal, utility=True)) == 2
+
+    from optimalportfolios.optimization.constraints import LinearConstraints
+
+    characteristics = LinearConstraints(
+        loadings=pd.DataFrame(
+            {"carry": [0.04, 0.01, -0.02], "duration": [0.0, 6.0, 0.0]},
+            index=["Equity", "Bond", "Gold"],
+        ),
+        lower=pd.Series({"carry": 0.015}),
+        upper=pd.Series({"duration": 3.0}),
+    )
+    signed = Constraints(linear_constraints=characteristics)
+
+    # Carry 0.04 * 0.45 + 0.01 * 0.40 - 0.02 * 0.15 = 0.019 and duration 6 * 0.40 = 2.4 pass;
+    # [0.20, 0.45, 0.35] earns carry 0.0055, 0.0095 short; [0.30, 0.60, 0.10] has duration 3.6.
+    for weights, carry, duration in (([0.45, 0.40, 0.15], 0.019, 2.4),
+                                     ([0.20, 0.45, 0.35], 0.0055, 2.7),
+                                     ([0.30, 0.60, 0.10], 0.016, 3.6)):
+        assert abs(0.04 * weights[0] + 0.01 * weights[1] - 0.02 * weights[2] - carry) < 1e-15
+        assert abs(6.0 * weights[1] - duration) < 1e-14
+        assert abs(record_of(weights, signed, 'linear', 'carry').actual - carry) < 1e-15
+        assert abs(record_of(weights, signed, 'linear', 'duration').actual - duration) < 1e-14
+    assert record_of([0.45, 0.40, 0.15], signed, 'linear', 'carry').passed
+    assert record_of([0.45, 0.40, 0.15], signed, 'linear', 'duration').passed
+    short = record_of([0.20, 0.45, 0.35], signed, 'linear', 'carry')
+    assert not short.passed and abs(short.violation - 0.0095) < 1e-15
+    capped = record_of([0.30, 0.60, 0.10], signed, 'linear', 'duration')
+    assert not capped.passed and abs(capped.violation - 0.6) < 1e-14
+    assert (short.lower, short.upper, capped.lower, capped.upper) == (0.015, None, None, 3.0)
+    # One row per bounded side: long-only and full investment plus two, hard in utility mode as
+    # well; SciPy adds two callbacks; the risk-budgeting matrix helper refuses the rows.
+    assert len(compiled_rows(Constraints(), 3)) == 2 and len(compiled_rows(signed, 3)) == 4
+    utility_signed = signed.copy(constraint_enforcement_type=utility_type,
+                                 tre_utility_weight=None)
+    assert len(compiled_rows(utility_signed, 3, utility=True)) == 4
+    assert record_of([0.20, 0.45, 0.35], utility_signed, 'linear', 'carry').hard
+    assert scipy_callback_count(signed, 3) == scipy_callback_count(Constraints(), 3) + 2
+    assert_raises(ValueError, pyrb_rows, constraints=signed, n=3)
+    # Both bounds are scaled by the Charnes-Cooper scale k: y = k w meets them at every k > 0.
+    assert charnes_cooper_rows_hold(signed, feasible=[0.45, 0.40, 0.15],
+                                    infeasible=[0.30, 0.60, 0.10])
+    # A policy with neither side emits nothing, and NaN is unbounded.
+    unbounded = LinearConstraints(loadings=characteristics.loadings,
+                                  lower=pd.Series({"carry": float("nan")}))
+    assert list(unbounded.iter_bounds()) == []
+    # Alignment reorders, rejects a universe asset without loadings and refuses to drop Gold's
+    # carry coefficient; a duration-only policy may drop Equity, whose coefficient is zero.
+    reordered = characteristics.update(["Bond", "Equity", "Gold"])
+    assert reordered.loadings.index.tolist() == ["Bond", "Equity", "Gold"]
+    assert_raises(ValueError, characteristics.update,
+                  valid_tickers=["Equity", "Bond", "Gold", "Cash"])
+    assert_raises(ValueError, characteristics.update, valid_tickers=["Equity", "Bond"])
+    duration_only = LinearConstraints(loadings=characteristics.loadings[["duration"]],
+                                      upper=pd.Series({"duration": 3.0}))
+    assert duration_only.update(["Bond", "Gold"]).loadings.index.tolist() == ["Bond", "Gold"]
+    # Caps [0.30, 0.30, 0.40] allow at most 0.04 * 0.30 + 0.01 * 0.30 = 0.015 carry, since Gold's
+    # coefficient is negative and long-only floors it at zero; a 0.02 floor is rejected.
+    assert abs(0.04 * 0.30 + 0.01 * 0.30 - 0.015) < 1e-15
+    caps = pd.Series([0.30, 0.30, 0.40], index=ASSETS)
+    assert_raises(ValueError, Constraints, max_weights=caps,
+                  linear_constraints=characteristics.copy(lower=pd.Series({"carry": 0.02})))
+    Constraints(max_weights=caps, linear_constraints=characteristics)
 
     group_tre = GroupTrackingErrorConstraint(
         group_loadings=pd.DataFrame(
@@ -1002,11 +1089,11 @@ def main() -> None:
     assert Constraints(min_weights=0.5 * caps).set_scipy_bounds(two).tolist() == [[0.3, 1.0],
                                                                                   [0.35, 1.0]]
     # SciPy compiles long-only, the exact exposure target as two opposite inequalities and the
-    # four group rows, and no target-return row; PyRB rows are -L'w <= -l and L'w <= u.
+    # four group rows. Target returns have their own row; PyRB rows are -L'w <= -l and L'w <= u.
     callbacks, _ = allocation.set_scipy_constraints(np.zeros((3, 3)))
     assert [callback["type"] for callback in callbacks] == ["ineq"] * 7
     returns_only, _ = return_floor.set_scipy_constraints(two)
-    assert len(returns_only) == 3
+    assert len(returns_only) == 4
     _, rows_c, rows_d = allocation.set_pyrb_constraints(np.zeros((3, 3)))
     assert rows_c.tolist() == [[-1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, -1.0, -1.0],
                                [0.0, 1.0, 1.0]]
