@@ -7,11 +7,6 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased — 2026-09-30
 
-- Forward all four FactorLasso residual covariance choices: orthogonal, full empirical,
-  exposure-cluster averages and residual-cluster averages. The two cluster choices reuse
-  causal empirical preparation and preserve the native residual variances. Older FactorLasso
-  installations raise an upgrade error for unsupported cluster choices; the library default
-  remains orthogonal.
 - Fix checkout detection in `local_path` for the src layout. A checkout was treated as an
   installed package, so with the shipped `settings.yaml` placeholder `get_output_path()` and
   `get_resource_path()` used the current working directory. They now use `<repository>/outputs`
@@ -25,6 +20,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Add `LinearConstraints` and `Constraints.linear_constraints` for named signed affine
   policies, with CVXPY/SciPy enforcement, strict universe alignment, signed box
   reachability checks and named residuals. Benchmark-beta convenience APIs remain supported.
+- Forward all four FactorLasso residual covariance choices: orthogonal, full empirical,
+  exposure-cluster averages and residual-cluster averages. The two cluster choices reuse
+  causal empirical preparation and preserve the native residual variances. Older FactorLasso
+  installations raise an upgrade error for unsupported cluster choices; the library default
+  remains orthogonal.
 - **This changes computed values.** Correct nonzero return-floor scaling in fixed-exposure
   maximum Sharpe and enforce return floors in SciPy compilation. Previously a
   negative floor could produce accepted but suboptimal allocations; the SciPy compiler
