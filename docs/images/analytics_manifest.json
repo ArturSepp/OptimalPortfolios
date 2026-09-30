@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-09-28T06:32:40+00:00",
+  "generated_at_utc": "2026-09-30T19:22:57+00:00",
   "platform": "Windows-11-10.0.26200-SP0",
   "versions": {
     "python": "3.12.14",
-    "optimalportfolios": "7.9.0",
-    "qis": "5.31.0",
-    "factorlasso": "0.19.0",
+    "optimalportfolios": "7.10.0",
+    "qis": "5.33.0",
+    "factorlasso": "0.22.0",
     "numpy": "2.5.2",
     "pandas": "3.0.5",
     "scipy": "1.18.0",
@@ -1092,7 +1092,7 @@
     "factor_covariance_variance_split": {
       "path": "docs/images/factor_covariance_variance_split.png",
       "script": "examples/docs/factor_covariance_hcgl.py",
-      "script_sha256": "dc6ab6cf41c4466eaa03ca2cc975d7c29016845d399bbb7e392ede97089d2648",
+      "script_sha256": "0ac6cad077a6992f8161aa0d8ed0df390e4b564e90bd70686385eeb981c3e05a",
       "image_sha256": "df44432e853c3a95842ac3896e05458736e0c6c82ab8588eb600fb988d5ac2f0",
       "table_sha256": "cc33c07a7921bfab0123d0bffe7fe5ffedf8fa922a33bc1601e6891e1bbf3f8c",
       "parameters": {
@@ -2086,7 +2086,7 @@
     }
   },
   "review": {
-    "note": "2026-09-28: inspected crypto_allocation_by_method at page width and full size; labels, legends, units and table remain legible; image and table hashes unchanged after frozen-panel path correction.",
-    "published_at_utc": "2026-09-28T06:32:42+00:00"
+    "note": "Claude Code, 2026-09-30: regenerated after comment-only af notation edits in examples/docs/factor_covariance_hcgl.py; all 25 exhibit PNGs byte-identical to the previously published images, checks pass.",
+    "published_at_utc": "2026-09-30T19:23:17+00:00"
   }
 }
