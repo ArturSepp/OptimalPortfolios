@@ -58,7 +58,7 @@ The notation follows the [conventions page](conventions.md#notation). In additio
 | $\Sigma_y$ | The assembled annual asset covariance, the $\Sigma$ of the conventions page; FactorLasso calls it `y_covar` |
 | $\Sigma_F$ | Annual factor covariance, stored as `x_covar` |
 | $f_t$ | Vector of the $M$ factor log returns over the period ending at $t$ |
-| $c$, $\mathrm{AN}_c$ | A return frequency, the key of a bucket such as `'ME'` or `'QE'`, and its periods per year |
+| $c$, $\mathrm{af}_c$ | A return frequency, the key of a bucket such as `'ME'` or `'QE'`, and its periods per year |
 | $v_i$ | Annual residual variance of asset $i$ |
 | $S$, $R$ | The diagonal matrix of residual volatilities $\sqrt{v_i}$, and a residual correlation matrix |
 | $\rho$, $\kappa$ | The residual correlation weight `residual_corr_weight` and the residual weight `residual_var_weight` |
@@ -123,7 +123,7 @@ The package estimates each term in annual units:
   periods per year of the bucket:
 
 $$
-v_i = \mathrm{AN}_c \sum_{t} \omega_t \left( \tilde r_{i,t} - \beta_i^{\top} \tilde f_t \right)^2,
+v_i = \mathrm{af}_c \sum_{t} \omega_t \left( \tilde r_{i,t} - \beta_i^{\top} \tilde f_t \right)^2,
 \qquad
 \omega_t = \frac{\lambda^{T-t}}{\sum_{u} \lambda^{T-u}},
 $$
@@ -192,16 +192,16 @@ The bracket is a convex combination of two positive semidefinite matrices, so it
 semidefinite, and so is its congruence by the diagonal $S$. $\square$
 
 The residuals of different buckets live on different dates, so the package estimates $R$ on a
-common grid. It divides the stored residuals by their annual multiplier $\mathrm{AN}_c$, sums
+common grid. It divides the stored residuals by their annual multiplier $\mathrm{af}_c$, sums
 complete native periods into periods of `residual_covar_freq`, subtracts a causal EWMA mean and
 takes the EWMA correlation with span `residual_covar_span`. By default the grid is the lowest
 native frequency, quarterly in the example, and the span is that bucket's loading span, 12
 quarters. An explicit span counts periods of the common grid. An explicitly coarser grid converts
-the default decay to the new period length: with $\mathrm{AN}_c$ the periods per year of the lowest
-native frequency and $\mathrm{AN}$ those of the grid, the decay becomes
+the default decay to the new period length: with $\mathrm{af}_c$ the periods per year of the lowest
+native frequency and $\mathrm{af}$ those of the grid, the decay becomes
 
 $$
-\lambda^{\mathrm{AN}_c / \mathrm{AN}} .
+\lambda^{\mathrm{af}_c / \mathrm{af}} .
 $$
 
 An incomplete period remains NaN for the affected asset. Each pair uses its available history

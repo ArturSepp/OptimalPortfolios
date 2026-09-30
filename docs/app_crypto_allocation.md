@@ -223,10 +223,10 @@ assert alts['MaxDiv']['Crypto'].median() > alts['ERC']['Crypto'].median()
 
 `MAXIMUM_SHARPE_RATIO` estimates the expected returns inside the dispatcher. They are EWMA means
 of the monthly log returns $r_1, \dots, r_t$ with the span $s = 30$ of the covariance, seeded with
-the first return and annualised by $\mathrm{AN} = 12$:
+the first return and annualised by $\mathrm{af} = 12$:
 
 $$
-\hat\mu_t = \mathrm{AN} \left( \lambda^{t-1} r_1 + (1 - \lambda) \sum_{k=2}^{t} \lambda^{t-k} r_k \right),
+\hat\mu_t = \mathrm{af} \left( \lambda^{t-1} r_1 + (1 - \lambda) \sum_{k=2}^{t} \lambda^{t-k} r_k \right),
 \qquad \lambda = 1 - \frac{2}{s + 1} .
 $$
 

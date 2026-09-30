@@ -110,7 +110,7 @@ def factor_covar_reference(prices: pd.DataFrame, span: float,
 def residual_variance_reference(prices: pd.DataFrame, returns: pd.DataFrame,
                                 betas: pd.DataFrame, span: float,
                                 periods_per_year: float) -> pd.Series:
-    """Annual residual variance: AN times the EWMA-weighted mean squared demeaned residual.
+    """Annual residual variance: af times the EWMA-weighted mean squared demeaned residual.
 
     The first factor return is missing, so its EWMA mean starts from zero, as in FactorLasso.
     """
@@ -377,7 +377,7 @@ def main() -> None:
     # Sigma_F is the demeaned monthly EWMA of factor log returns at span 36, times 12.
     factor_covar = factor_covar_reference(factor_prices.loc[:as_of], 36, 12)
     np.testing.assert_allclose(data.x_covar, factor_covar, rtol=1e-10, atol=1e-14)
-    # D is diagonal: AN times the EWMA-weighted mean squared residual of the fitted loadings
+    # D is diagonal: af times the EWMA-weighted mean squared residual of the fitted loadings
     # on EWMA-demeaned returns, with each bucket's span, 12 monthly and 4 quarterly.
     variances = pd.concat([
         residual_variance_reference(factor_prices.loc[:as_of], returns, data.y_betas,
@@ -424,7 +424,7 @@ def main() -> None:
     pd.testing.assert_frame_equal(
         replace(estimator, lasso_model=hcgl_model()).fit_current_factor_covars(
             **history, x_covar=supplied).x_covar, supplied)
-    # The stored residuals are AN times the returns minus the factor contribution, with no
+    # The stored residuals are af times the returns minus the factor contribution, with no
     # intercept subtracted; the first row of each cadence has no earlier factor price.
     for freq, returns in history['asset_returns_dict'].items():
         prices = factor_prices.loc[:as_of].reindex(returns.index)

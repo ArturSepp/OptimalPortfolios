@@ -250,15 +250,15 @@ $$
 \hat\mu_1 = r_1, \qquad \hat\mu_t = \lambda \hat\mu_{t-1} + (1 - \lambda) r_t, \qquad \lambda = 1 - \frac{2}{s + 1} .
 $$
 
-With `annualize=True` it multiplies by the annualisation factor $\mathrm{AN}$ inferred from the
+With `annualize=True` it multiplies by the annualisation factor $\mathrm{af}$ inferred from the
 return dates, 52 for weekly returns. It reads the estimate at each rebalancing date, or at the
 last return date before it, so an estimate uses no later return.
 
-**Standard error.** For independent returns with variance $\sigma_i^2 / \mathrm{AN}$ per period
+**Standard error.** For independent returns with variance $\sigma_i^2 / \mathrm{af}$ per period
 and a long history, the weights $(1 - \lambda) \lambda^j$ of the recursion have squares that sum
 to $(1 - \lambda) / (1 + \lambda) = 1 / s$. The annualised estimate therefore has the standard
-error $\mathrm{AN} \sigma_i / \sqrt{\mathrm{AN} s} = \sigma_i \sqrt{\mathrm{AN} / s}$. With the
-dispatcher's weekly returns and span 52, $\mathrm{AN} = s$, and the standard error of an
+error $\mathrm{af} \sigma_i / \sqrt{\mathrm{af} s} = \sigma_i \sqrt{\mathrm{af} / s}$. With the
+dispatcher's weekly returns and span 52, $\mathrm{af} = s$, and the standard error of an
 estimated mean equals the asset's volatility: 15% a year for an asset whose mean is 4.5%.
 
 The literature finds this input decisive. Chopra and Ziemba (1993) measured the
