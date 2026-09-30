@@ -189,11 +189,11 @@ $$
 $$
 
 whenever no component is empty. The rolling path multiplies each $\mu_k$ and $\Sigma_k$ by the
-annualisation factor $\mathrm{AN}$, 52 for weekly returns. The scaled mixture has mean
-$\mathrm{AN} \bar x$ and covariance
+annualisation factor $\mathrm{af}$, 52 for weekly returns. The scaled mixture has mean
+$\mathrm{af} \bar x$ and covariance
 
 $$
-\mathrm{AN} (S + 10^{-6} I) + \mathrm{AN} (\mathrm{AN} - 1) B .
+\mathrm{af} (S + 10^{-6} I) + \mathrm{af} (\mathrm{af} - 1) B .
 $$
 
 **Proof.** With responsibilities $\rho_{ik}$ that sum to one over $k$, the M-step sets
@@ -202,29 +202,29 @@ $\Sigma_k = \sum_i \rho_{ik} (x_i - \mu_k)(x_i - \mu_k)^{\top} / n_k + 10^{-6} I
 means gives $\sum_k p_k \mu_k = \sum_i x_i / n = \bar x$. Expanding each scatter around $\bar x$,
 $\sum_i \rho_{ik} (x_i - \mu_k)(x_i - \mu_k)^{\top} = \sum_i \rho_{ik} (x_i - \bar x)(x_i - \bar x)^{\top} - n_k (\mu_k - \bar x)(\mu_k - \bar x)^{\top}$,
 and summing over $k$ and dividing by $n$ gives the second identity. Scaling multiplies the
-within-component term $\sum_k p_k \Sigma_k$ by $\mathrm{AN}$ and the spread of the means $B$ by
-$\mathrm{AN}^2$, which gives the annual covariance. $\square$
+within-component term $\sum_k p_k \Sigma_k$ by $\mathrm{af}$ and the spread of the means $B$ by
+$\mathrm{af}^2$, which gives the annual covariance. $\square$
 
 A one-component fit is therefore the sample mean and covariance of the window, plus the
 $10^{-6}$ ridge, and fitting more components at the data frequency changes only the higher
 moments. Annualising by scaling does more: it counts the spread of the component means
-$\mathrm{AN}^2$ times instead of $\mathrm{AN}$ times.
+$\mathrm{af}^2$ times instead of $\mathrm{af}$ times.
 
 ### What annualising by scaling assumes
 
-Multiplying a component's mean and covariance by $\mathrm{AN}$ multiplies its exponent by
-$\mathrm{AN}$, so the annual expected disutility is $\sum_k p_k x_k^{\mathrm{AN}}$ with
+Multiplying a component's mean and covariance by $\mathrm{af}$ multiplies its exponent by
+$\mathrm{af}$, so the annual expected disutility is $\sum_k p_k x_k^{\mathrm{af}}$ with
 $x_k = e^{q_k(w)}$ evaluated at the data frequency. That is the disutility of a year spent entirely
 in one component, drawn once with probability $p_k$. If instead each week drew its component
-independently, the disutility of the year would be $(\sum_k p_k x_k)^{\mathrm{AN}}$.
+independently, the disutility of the year would be $(\sum_k p_k x_k)^{\mathrm{af}}$.
 
 **Proposition 6 (persistent against independent regimes).** For every $w$,
-$\sum_k p_k x_k^{\mathrm{AN}} \geq (\sum_k p_k x_k)^{\mathrm{AN}}$, with equality when $K = 1$ or
+$\sum_k p_k x_k^{\mathrm{af}} \geq (\sum_k p_k x_k)^{\mathrm{af}}$, with equality when $K = 1$ or
 all $x_k$ are equal. The scaled mixture is therefore at least as averse to every portfolio as the
 model with independent weekly regimes.
 
-**Proof.** The function $x \mapsto x^{\mathrm{AN}}$ is convex on the positive numbers for
-$\mathrm{AN} \geq 1$, and strictly convex for $\mathrm{AN} \gt 1$; Jensen's inequality gives the
+**Proof.** The function $x \mapsto x^{\mathrm{af}}$ is convex on the positive numbers for
+$\mathrm{af} \geq 1$, and strictly convex for $\mathrm{af} \gt 1$; Jensen's inequality gives the
 result. $\square$
 
 By the central limit theorem, the sum of 52 independent weekly draws is close to Gaussian, so

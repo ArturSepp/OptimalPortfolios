@@ -44,7 +44,7 @@ annualisation factor as $a$, and they are brought in line when they are revised.
 | $b$ | Risk budgets, non-negative and summing to one |
 | $\mathrm{TE}(w)$ | Ex-ante tracking error $\sqrt{d^{\top} \Sigma d}$ |
 | $s$, $\lambda$ | EWMA span and the decay it implies |
-| $\mathrm{AN}$ | Annualisation factor, set upright as one symbol |
+| $\mathrm{af}$ | Annualisation factor, set upright as one symbol and named after the `af` argument of qis |
 | $\gamma$ | Risk aversion |
 
 The transpose is written $x^{\top}$. Covariance matrices are $N \times N$ and indexed by asset
@@ -98,7 +98,7 @@ weeks. This is the convention of
 ## Units
 
 **Covariance.** The estimators return annualised covariance. `EwmaCovarEstimator` multiplies the
-per-observation estimate by the annualisation factor $\mathrm{AN}$ inferred from the sampled
+per-observation estimate by the annualisation factor $\mathrm{af}$ inferred from the sampled
 index: 52 for weekly, 12 for monthly and 4 for quarterly returns, with a fallback of 252 and a
 warning when the frequency cannot be inferred. `estimate_current_ewma_covar` with
 `apply_an_factor=False` keeps per-observation units. `FactorCovarEstimator` annualises the
