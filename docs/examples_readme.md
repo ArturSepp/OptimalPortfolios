@@ -334,6 +334,8 @@ price observations and why drift at a decision date can differ from holdings at 
 Console-only and plot-only examples need no factsheet file. Scripts that call
 `optimalportfolios.local_path.get_output_path()` use the configured output destination;
 inspect that resolved path before execution rather than assuming it is outside the checkout.
+In a checkout the default is `<repository>/outputs`. Set the `OPTIMALPORTFOLIOS_OUTPUT_PATH`
+environment variable to send that output to another directory without editing `settings.yaml`.
 
 Four scripts also write directly to `examples/figures/` relative to their own source files:
 the [minimal backtest](../examples/backtests/minimal_backtest.py),

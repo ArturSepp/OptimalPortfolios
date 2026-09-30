@@ -17,6 +17,16 @@ where the process was started.
 Every returned path is normalised to forward slashes, so a Windows-authored settings file and a
 POSIX one agree. That is asserted directly, since a backslash surviving into a path is exactly
 the defect this module was rewritten to fix (issue #43).
+
+A checkout is recognised by its src layout: ``<repository>/src/optimalportfolios`` beside
+``<repository>/pyproject.toml``. The detection once looked for ``pyproject.toml`` one level up,
+in ``src/``, so after the move to the src layout every checkout was treated as an installed
+package and output went to the working directory instead of ``<repository>/outputs``. The
+defaults are therefore tested on built directory layouts, and the running checkout is asserted
+separately.
+
+``OPTIMALPORTFOLIOS_OUTPUT_PATH`` overrides both the settings file and the defaults for the output
+directory. An autouse fixture unsets it, so a developer's own override cannot change a result.
 """
 # packages
 import os
@@ -25,6 +35,8 @@ import pytest
 import yaml
 # optimalportfolios
 from optimalportfolios import local_path
+
+OUTPUT_OVERRIDE = 'OPTIMALPORTFOLIOS_OUTPUT_PATH'
 
 
 @pytest.fixture(autouse=True)
@@ -45,6 +57,44 @@ def settings_file(tmp_path: Path, monkeypatch) -> Path:
                                     'OUTPUT_PATH': str(output_path)}))
     monkeypatch.setattr(local_path, '_SETTINGS_PATH', path)
     return path
+
+
+@pytest.fixture(autouse=True)
+def no_output_override(monkeypatch) -> None:
+    """Unset the output environment override so the caller's own setting cannot leak in."""
+    monkeypatch.delenv(OUTPUT_OVERRIDE, raising=False)
+
+
+def _place_package(tmp_path: Path, monkeypatch, *parts: str) -> Path:
+    """Point the module at a package directory built under ``tmp_path`` and move the CWD away.
+
+    The working directory is a separate empty folder, so a default that silently falls back to
+    the CWD cannot coincide with the checkout it should have found.
+    """
+    package_dir = tmp_path.joinpath(*parts)
+    package_dir.mkdir(parents=True)
+    monkeypatch.setattr(local_path, '_PACKAGE_DIR', package_dir)
+    working_dir = tmp_path / 'working-directory'
+    working_dir.mkdir()
+    monkeypatch.chdir(working_dir)
+    return package_dir
+
+
+@pytest.fixture
+def checkout(tmp_path: Path, monkeypatch) -> Path:
+    """Build a src-layout checkout, point the module at it, and return the repository root."""
+    repository = tmp_path / 'repository'
+    _place_package(tmp_path, monkeypatch, 'repository', 'src', 'optimalportfolios')
+    (repository / 'pyproject.toml').write_text('[project]\nname = "optimalportfolios"\n')
+    return repository
+
+
+@pytest.fixture
+def installed(tmp_path: Path, monkeypatch) -> Path:
+    """Place the module in site-packages with no checkout around it; return the CWD."""
+    _place_package(tmp_path, monkeypatch, 'environment', 'Lib', 'site-packages',
+                   'optimalportfolios')
+    return Path.cwd()
 
 
 def test_the_shipped_settings_file_carries_both_keys() -> None:
@@ -81,36 +131,140 @@ def test_a_missing_key_raises_rather_than_returning_none(tmp_path: Path, monkeyp
         local_path.get_output_path()
 
 
-@pytest.mark.parametrize('settings_value', [None, '..'])
-def test_placeholder_output_falls_back_to_a_writable_checkout_directory(
-        settings_value, tmp_path: Path, monkeypatch) -> None:
-    """A placeholder output resolves to a writable checkout or installed-package default."""
+# --------------------------------------------------------------------------- #
+# checkout detection
+# --------------------------------------------------------------------------- #
+def test_the_running_checkout_is_detected(root: Path) -> None:
+    """The editable checkout this suite runs from is recognised as one.
+
+    Regression: detection looked for ``pyproject.toml`` in ``src/`` and returned None here.
+    The ``root`` fixture skips when the suite runs from an installed wheel.
+    """
+    assert local_path._checkout_root() == root
+
+
+def test_a_src_layout_checkout_is_detected(checkout: Path) -> None:
+    """``<repository>/src/optimalportfolios`` beside ``pyproject.toml`` is a checkout."""
+    assert local_path._checkout_root() == checkout
+
+
+@pytest.mark.parametrize('package_parts, pyproject_parts', [
+    (('environment', 'Lib', 'site-packages', 'optimalportfolios'), None),
+    (('project', 'site-packages', 'optimalportfolios'), ('project',)),
+], ids=['installed-wheel', 'pyproject-above-a-non-src-parent'])
+def test_a_package_outside_a_src_layout_checkout_has_no_root(
+        package_parts, pyproject_parts, tmp_path: Path, monkeypatch) -> None:
+    """Only the src layout counts; any other ``pyproject.toml`` above the package does not.
+
+    A wheel installed into another project's virtual environment has that project's
+    ``pyproject.toml`` among its ancestors, so walking every parent would put this package's
+    output in someone else's repository.
+    """
+    _place_package(tmp_path, monkeypatch, *package_parts)
+    if pyproject_parts is not None:
+        tmp_path.joinpath(*pyproject_parts, 'pyproject.toml').write_text('')
+
+    assert local_path._checkout_root() is None
+
+
+# --------------------------------------------------------------------------- #
+# defaults for the shipped placeholder and an absent settings file
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize('settings_value', [None, '..', '..\\'])
+def test_placeholder_output_falls_back_to_the_checkout_outputs_directory(
+        settings_value, checkout: Path, tmp_path: Path, monkeypatch) -> None:
+    """A placeholder output resolves to a created, writable ``<repository>/outputs``.
+
+    ``'..\\'`` is the literal value shipped in ``settings.yaml``.
+    """
     path = tmp_path / 'settings.yaml'
     path.write_text(yaml.safe_dump({'RESOURCE_PATH': settings_value,
                                     'OUTPUT_PATH': settings_value}))
     monkeypatch.setattr(local_path, '_SETTINGS_PATH', path)
 
     output_path = Path(local_path.get_output_path())
-    checkout_root = local_path._checkout_root()
-    expected_output = checkout_root / 'outputs' if checkout_root else Path.cwd()
 
-    assert output_path == expected_output
+    assert output_path == checkout / 'outputs'
+    assert output_path != Path.cwd()
     assert output_path.is_dir()
     assert os.access(output_path, os.W_OK)
     assert chr(92) not in local_path.get_output_path()
 
 
-def test_absent_settings_file_uses_portable_checkout_defaults(tmp_path: Path, monkeypatch) -> None:
-    """A missing YAML file uses portable checkout or installed-package defaults."""
+def test_absent_settings_file_uses_portable_checkout_defaults(checkout: Path, tmp_path: Path,
+                                                              monkeypatch) -> None:
+    """A missing YAML file in a checkout uses the repository root and its outputs directory."""
     monkeypatch.setattr(local_path, '_SETTINGS_PATH', tmp_path / 'absent.yaml')
-    checkout_root = local_path._checkout_root()
-    expected_resource = checkout_root or Path.cwd()
-    expected_output = checkout_root / 'outputs' if checkout_root else Path.cwd()
 
-    assert local_path.get_resource_path() == expected_resource.as_posix()
-    assert local_path.get_output_path() == expected_output.as_posix()
+    assert local_path.get_resource_path() == checkout.as_posix()
+    assert local_path.get_output_path() == (checkout / 'outputs').as_posix()
     assert chr(92) not in local_path.get_resource_path()
     assert chr(92) not in local_path.get_output_path()
+
+
+def test_an_installed_package_falls_back_to_the_working_directory(installed: Path, tmp_path: Path,
+                                                                  monkeypatch) -> None:
+    """With no checkout around the package, both defaults are the current working directory."""
+    monkeypatch.setattr(local_path, '_SETTINGS_PATH', tmp_path / 'absent.yaml')
+
+    assert local_path.get_resource_path() == installed.as_posix()
+    assert local_path.get_output_path() == installed.as_posix()
+
+
+# --------------------------------------------------------------------------- #
+# the output environment override
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize('settings', [
+    None,
+    {'RESOURCE_PATH': None, 'OUTPUT_PATH': None},
+    {'RESOURCE_PATH': None, 'OUTPUT_PATH': 'configured'},
+    {'RESOURCE_PATH': None},
+], ids=['absent-file', 'placeholder', 'configured-value', 'missing-key'])
+def test_the_output_override_wins_over_settings_and_defaults(
+        settings, checkout: Path, tmp_path: Path, monkeypatch) -> None:
+    """A set override is used and created whatever the settings file says.
+
+    The environment outranks the file, as it does for TrendFollowing's ``TF_OUTPUT_PATH``, so a
+    host-wide setting keeps output out of the checkout without editing the tracked settings.
+    The checkout default, which ``get_output_path`` would otherwise create, is left untouched.
+    """
+    path = tmp_path / 'settings.yaml'
+    if settings is not None:
+        path.write_text(yaml.safe_dump(settings))
+    monkeypatch.setattr(local_path, '_SETTINGS_PATH', path)
+    override = tmp_path / 'local-drive' / 'outputs'
+    monkeypatch.setenv(OUTPUT_OVERRIDE, str(override))
+
+    assert local_path.get_output_path() == override.resolve().as_posix()
+    assert override.is_dir()
+    assert not (checkout / 'outputs').exists()
+
+
+@pytest.mark.parametrize('value', ['', '   '])
+def test_an_empty_output_override_is_ignored(value, checkout: Path, tmp_path: Path,
+                                             monkeypatch) -> None:
+    """An empty or blank override is treated as unset rather than as the working directory."""
+    monkeypatch.setattr(local_path, '_SETTINGS_PATH', tmp_path / 'absent.yaml')
+    monkeypatch.setenv(OUTPUT_OVERRIDE, value)
+
+    assert local_path.get_output_path() == (checkout / 'outputs').as_posix()
+
+
+def test_an_unusable_output_override_raises_rather_than_falling_back(checkout: Path,
+                                                                     tmp_path: Path,
+                                                                     monkeypatch) -> None:
+    """An override that cannot be a directory fails loudly instead of using the checkout.
+
+    Falling back would write into exactly the location the override exists to avoid.
+    """
+    monkeypatch.setattr(local_path, '_SETTINGS_PATH', tmp_path / 'absent.yaml')
+    blocker = tmp_path / 'a-file'
+    blocker.write_text('')
+    monkeypatch.setenv(OUTPUT_OVERRIDE, str(blocker))
+
+    with pytest.raises(OSError):
+        local_path.get_output_path()
+    assert not (checkout / 'outputs').exists()
 
 
 # --------------------------------------------------------------------------- #

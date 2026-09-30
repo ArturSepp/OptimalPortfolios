@@ -12,6 +12,13 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   causal empirical preparation and preserve the native residual variances. Older FactorLasso
   installations raise an upgrade error for unsupported cluster choices; the library default
   remains orthogonal.
+- Fix checkout detection in `local_path` for the src layout. A checkout was treated as an
+  installed package, so with the shipped `settings.yaml` placeholder `get_output_path()` and
+  `get_resource_path()` used the current working directory. They now use `<repository>/outputs`
+  and the repository root, as documented. Installed packages still use the working directory.
+- Add the `OPTIMALPORTFOLIOS_OUTPUT_PATH` environment variable. When set, it takes precedence
+  over `settings.yaml` and the defaults for `get_output_path()`. The directory is created if it
+  is missing, and a path that cannot be created raises `OSError` instead of falling back.
 
 ## [7.10.0] - 2026-09-30
 

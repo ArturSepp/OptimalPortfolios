@@ -2,8 +2,15 @@
 
 ``settings.yaml`` may override either directory with an absolute or relative path.  A missing
 file, an empty value, or the shipped parent-directory placeholder uses checkout-aware defaults:
-the repository root for resources and ``<repository>/outputs`` for generated files.  Installed
-packages fall back to the current working directory because no checkout root is available.
+the repository root for resources and ``<repository>/outputs`` for generated files.  A checkout
+is the src layout, ``<repository>/src/optimalportfolios`` beside ``<repository>/pyproject.toml``.
+Installed packages fall back to the current working directory because no checkout root is
+available.
+
+A non-empty ``OPTIMALPORTFOLIOS_OUTPUT_PATH`` environment variable takes precedence over
+``settings.yaml`` and the defaults for the output directory, which is then created if missing.
+Set it to keep generated files out of a synchronised or shared checkout without editing the
+tracked settings file.
 """
 
 import os
@@ -16,12 +23,16 @@ import yaml
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _SETTINGS_PATH = _PACKAGE_DIR / 'settings.yaml'
+_OUTPUT_PATH_ENV = 'OPTIMALPORTFOLIOS_OUTPUT_PATH'
 
 
 def _checkout_root() -> Path | None:
-    """Return the repository root when this module is running from a checkout."""
-    candidate = _PACKAGE_DIR.parent
-    return candidate if (candidate / 'pyproject.toml').is_file() else None
+    """Return the repository root when this module is running from a src-layout checkout."""
+    source_dir = _PACKAGE_DIR.parent
+    candidate = source_dir.parent
+    if source_dir.name == 'src' and (candidate / 'pyproject.toml').is_file():
+        return candidate
+    return None
 
 
 def _as_portable_string(path: Path) -> str:
@@ -90,5 +101,13 @@ def get_resource_path() -> str:
 
 
 def get_output_path() -> str:
-    """Return the configured output directory or a writable checkout-aware default."""
+    """Return the environment override, the configured output directory, or a writable default.
+
+    An override that cannot be created raises ``OSError`` rather than falling back to a default.
+    """
+    override = os.environ.get(_OUTPUT_PATH_ENV, '').strip()
+    if override:
+        path = Path(override).expanduser()
+        path.mkdir(parents=True, exist_ok=True)
+        return _as_portable_string(path)
     return _configured_path('OUTPUT_PATH', _default_output_path)
