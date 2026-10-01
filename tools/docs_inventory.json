@@ -47,6 +47,12 @@
       "example": "examples/docs/app_crypto_allocation.py",
       "review": "R8 (2026-09-27): new case study written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the case-study form, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. A2. Paper design and results by section; current API on the frozen 2023 panel with ETF-derived columns only (owner decision D3). Paper-derived exhibit crypto_allocation_by_method.png."
     },
+    "docs/app_smart_diversification_overlays.md": {
+      "form": "case_study",
+      "status": "pending",
+      "example": "examples/docs/app_smart_diversification_overlays.py",
+      "review": "R11 (2026-10-01): new case study of Sepp and Kastenholz (2026), JOIM, forthcoming, written to the canonical-script contract on the design of the paper's public synthetic companion. Cites the paper's definitions, propositions, equations and program by number for the method and quotes none of its data, exhibits or results. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; it also passes in a locked environment with qis 5.33.1 and factorlasso 0.19.0. Checked with the case-study form, the excerpt rule and the GitHub math rules, a strict Sphinx build from a C-local export, and a DOM check of the built page (32 MathJax formulas without errors, the Mermaid diagram, the figure and three tables). Teaching exhibit smart_diversification_overlays.png. Pending adoption: GitHub Markdown API and VS Code KaTeX renderings and the owner's review."
+    },
     "docs/app_rosaa_multi_asset_allocation.md": {
       "form": "case_study",
       "status": "adopted",
@@ -251,13 +257,7 @@
       "review": "R9 (2026-09-27): adopted. Passes the adopted-page checks of tools/check_docs.py (form, links, math, ownership); the GitHub Markdown API and VS Code renderings agree; names in code checked against the package source and the installed qis and factorlasso. No change needed."
     }
   },
-  "planned": {
-    "docs/app_smart_diversification_overlays.md": {
-      "form": "case_study",
-      "title": "Smart diversification with portfolio overlays",
-      "note": "Case study of Sepp and Kastenholz (2026), JOIM, forthcoming: the synthetic companion's qis regime estimation and OP coverage-floor allocation as a canonical script. Blocked until qis 5.33.0, which adds qis.regimes.compute_regime_mixture_covar_from_sample, is released and locked in uv.lock; results of the forthcoming paper are not quoted before publication."
-    }
-  },
+  "planned": {},
   "symbols": {
     "docs/universe_data_and_unsmoothing.md": [
       "UniverseData",

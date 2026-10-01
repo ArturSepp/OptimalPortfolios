@@ -205,7 +205,10 @@ equation (10), belongs to
 [qis](https://quantinveststrats.readthedocs.io/en/latest/convexity_premium.html); this page
 consumes the coefficients. The paper's
 [synthetic companion](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/smart_diversification_joim_2026)
-runs the whole pipeline, and the [research papers](research_papers.md) page records the paper.
+runs the whole pipeline, the
+[smart diversification case study](app_smart_diversification_overlays.md) applies this floor to
+a simulated core and four overlays, and the [research papers](research_papers.md) page records
+the paper.
 
 ## Worked example
 
@@ -577,6 +580,8 @@ aggregate into a portfolio tail statistic.
 - [Rolling backtests](rolling_backtests.md): decision and execution timing.
 - [Turnover and transaction costs](turnover_and_transaction_costs.md): trades, budgets and costs.
 - [Minimum tracking error](minimum_tracking_error.md): benchmark-relative risk and QIS integration.
+- [Smart diversification with portfolio overlays](app_smart_diversification_overlays.md): the
+  coverage floor applied to a simulated 60/40 core and four overlays.
 - [Research papers](research_papers.md): the convexity-premium paper and its synthetic companion.
 - [qis: the convexity premium and smart diversification](https://quantinveststrats.readthedocs.io/en/latest/convexity_premium.html):
   the regime contributions that supply a coverage floor's coefficients.

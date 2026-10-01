@@ -97,8 +97,10 @@ and correlation. It contributes:
   [the coverage floor](overlay_tail_floor.md#the-coverage-floor)).
 
 The [public companion](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/smart_diversification_joim_2026)
-introduces the concept and runs the pipeline on a synthetic 60/40 overlay allocation. The paper
-is forthcoming, so its results are not quoted on this site. The manuscript, empirical
+introduces the concept and runs the pipeline on a synthetic 60/40 overlay allocation, and the
+[smart diversification case study](app_smart_diversification_overlays.md) builds the same
+workflow from the package's documented pieces on that design. The paper is forthcoming, so its
+results are not quoted on this site. The manuscript, empirical
 replication and licensed inputs are not included.
 
 ## Reproducing the papers

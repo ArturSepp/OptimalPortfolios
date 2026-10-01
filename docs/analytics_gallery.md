@@ -13,7 +13,7 @@ myst:
 Examples from [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
-The gallery has six previews and 25 teaching exhibits. The previews connect
+The gallery has six previews and 26 teaching exhibits. The previews connect
 portfolio construction to risk and performance analytics on one synthetic portfolio:
 OptimalPortfolios estimates risk and constructs targets,
 [qis](https://github.com/ArturSepp/QuantInvestStrats) simulates holdings and computes analytics,
@@ -43,7 +43,7 @@ The six previews simulate one synthetic portfolio end to end:
 | How do three objectives behave with common risk inputs? | [Objective comparison](#portfolio-objectives) |
 | How do estimates compare with a known simulated covariance? | [Covariance estimators](#covariance-estimators) |
 
-The 25 teaching exhibits each illustrate one article, in the order of the sidebar:
+The 26 teaching exhibits each illustrate one article, in the order of the sidebar:
 
 | Question | Exhibit |
 |---|---|
@@ -71,6 +71,7 @@ The 25 teaching exhibits each illustrate one article, in the order of the sideba
 | How do risk budgets translate into strategic weights, and do the tactical tilts spend the tracking-error budget in the direction of the alphas? | [ROSAA layers](#rosaa-layers) |
 | How much does each method allocate to the crypto asset? | [Cryptocurrency allocation](#cryptocurrency-allocation) |
 | How do factor premia and residual adjustments build the CMAs, and what allocation do they imply? | [Capital market assumptions](#capital-market-assumptions) |
+| Where do a fixed core plus one overlay and the coverage-floor allocations sit in Bear-Sharpe and Sharpe coordinates, and how does the overlay sleeve change as the floor tightens? | [Smart diversification with overlays](#smart-diversification-with-overlays) |
 | How do factor shocks and option repricing combine in a portfolio stress test? | [Stress testing with options](#stress-testing-with-options) |
 
 Select a preview to open its full-resolution image. The
@@ -562,6 +563,22 @@ the benchmark with and without the residual adjustments.](images/cma_decompositi
 **Sample:** fixed synthetic loadings, factor premia and residual adjustments of eight asset classes
 and four factors; no simulation. **Producer:** the `exhibit` function of
 [`examples/docs/app_cma_strategic_allocation.py`](../examples/docs/app_cma_strategic_allocation.py).
+**Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
+
+## Smart diversification with overlays
+
+A teaching exhibit of the [smart diversification with portfolio overlays](app_smart_diversification_overlays.md)
+case study. The coverage floor leaves the no-floor allocation unchanged up to the 22.1% that
+it already covers. From 40% it binds exactly and moves the sleeve from Market neutral into the
+Tail hedge, and beyond 40% each step lowers the Sharpe ratio of the stacked portfolio by more
+than the last.
+
+![Left: the core, the core plus each overlay and the coverage-floor allocations in Bear-Sharpe and
+Sharpe coordinates. Right: the overlay weights by coverage floor.](images/smart_diversification_overlays.png)
+
+**Sample:** 360 simulated months of a 60/40 core and four stylised overlays, seed 17, with
+in-sample regime statistics and allocations. **Producer:** the `exhibit` function of
+[`examples/docs/app_smart_diversification_overlays.py`](../examples/docs/app_smart_diversification_overlays.py).
 **Configuration:** [teaching registry](../tools/docs_analytics/teaching.json).
 
 ## Stress testing with options

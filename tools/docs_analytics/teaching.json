@@ -1907,6 +1907,71 @@
       ],
       "question": "How do factor premia and residual adjustments build the CMAs, and what allocation do they imply?",
       "sample": "Fixed synthetic loadings, factor premia and residual adjustments of eight asset classes and four factors at 31 December 2025; no simulation."
+    },
+    {
+      "id": "smart_diversification_overlays",
+      "path": "docs/images/smart_diversification_overlays.png",
+      "script": "examples/docs/app_smart_diversification_overlays.py",
+      "function": "exhibit",
+      "parameters": {
+        "CORE": "60/40 core",
+        "FUNDS": [
+          "Trend",
+          "Equity L/S",
+          "Market neutral",
+          "Tail hedge"
+        ],
+        "AF": 12,
+        "QUANTILES": [
+          0.0,
+          0.16,
+          0.84,
+          1.0
+        ],
+        "MONTHS": 360,
+        "SEED": 17,
+        "CORE_WEIGHTS": [
+          0.6,
+          0.4
+        ],
+        "CORE_MEANS": [
+          0.065,
+          0.02
+        ],
+        "CORE_VOLS": [
+          0.18,
+          0.07
+        ],
+        "CORE_CORR": -0.15,
+        "FUND_MEANS": [
+          0.045,
+          0.055,
+          0.035,
+          -0.04
+        ],
+        "FUND_VOLS": [
+          0.1,
+          0.12,
+          0.07,
+          0.12
+        ],
+        "OVERLAY_BUDGET": 1.0,
+        "COVERAGES": {
+          "No floor": null,
+          "0%": 0.0,
+          "20%": 0.2,
+          "40%": 0.4,
+          "60%": 0.6,
+          "80%": 0.8,
+          "100%": 1.0
+        }
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/app_smart_diversification_overlays.md"
+      ],
+      "question": "Where do a fixed core plus one overlay and the coverage-floor allocations sit in Bear-Sharpe and Sharpe coordinates, and how does the overlay sleeve change as the floor tightens?",
+      "sample": "360 simulated months of a 60/40 core and four stylised overlays, seed 17, dated January 1996 to December 2025; in-sample regime statistics and allocations."
     }
   ]
 }

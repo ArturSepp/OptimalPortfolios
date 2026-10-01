@@ -66,6 +66,7 @@ example that holds the Yahoo fetcher. For a first run, start with the
 | Case study: strategic and tactical allocation with HCGL covariance | [ROSAA case study](app_rosaa_multi_asset_allocation.md) | [`app_rosaa_multi_asset_allocation.py`](../examples/docs/app_rosaa_multi_asset_allocation.py) (Offline) | — |
 | Case study: cryptocurrencies in a diversified portfolio | [Cryptocurrency case study](app_crypto_allocation.md) | [`app_crypto_allocation.py`](../examples/docs/app_crypto_allocation.py) (Offline) | — |
 | Case study: from capital market assumptions to a strategic allocation | [MATF-CMA case study](app_cma_strategic_allocation.md) | [`app_cma_strategic_allocation.py`](../examples/docs/app_cma_strategic_allocation.py) (Offline) | — |
+| Case study: overlays on a fixed core under a coverage floor | [Smart diversification case study](app_smart_diversification_overlays.md) | [`app_smart_diversification_overlays.py`](../examples/docs/app_smart_diversification_overlays.py) (Offline) | — |
 | Stress test a stock-and-option book | [Stress testing with options](stress_testing_with_options.md) | [`stress_testing_with_options.py`](../examples/docs/stress_testing_with_options.py) (Offline) | [`reports/stress_testing_with_options_local.py`](../examples/reports/stress_testing_with_options_local.py) (Local) |
 
 The local tracking-error decomposition in `backtests/` is left out of this table: it is a
@@ -107,7 +108,7 @@ scenario; it does not execute every branch of a `Locals` enum.
 ### Unattended execution lanes
 
 The [classifier and runner](../.github/scripts/run_examples.py) derives lanes from Python imports.
-Its current inventory is **35 offline, 20 network, 55 unattended examples**. The **4 local-data workflows** ending in
+Its current inventory is **36 offline, 20 network, 56 unattended examples**. The **4 local-data workflows** ending in
 `*_local.py` are excluded. Each catalogue row below states the classification.
 
 ```console
@@ -288,6 +289,7 @@ under `papers/`.
 | [Capital market assumptions to strategic allocation](../examples/docs/app_cma_strategic_allocation.py) | Offline | The script of the [MATF-CMA case study](app_cma_strategic_allocation.md): CMAs and covariance from one synthetic loading matrix, and the strategic allocation by alpha over tracking error against mandate benchmarks. |
 | [Cryptocurrencies in diversified portfolios](../examples/docs/app_crypto_allocation.py) | Offline | The script of the [cryptocurrency case study](app_crypto_allocation.md): the four methods on a synthetic panel with a fat-tailed asset, and on the tracked 2023 price panel of the paper (ETF-derived columns only); needs a source checkout for that panel. |
 | [ROSAA case study](../examples/docs/app_rosaa_multi_asset_allocation.py) | Offline | The configuration of the [ROSAA case study](app_rosaa_multi_asset_allocation.md) on a synthetic panel with known loadings: a rolling HCGL factor covariance, strategic risk budgets and a tactical alpha-over-tracking-error overlay, with the mechanism asserted at every quarter end. |
+| [Smart diversification with portfolio overlays](../examples/docs/app_smart_diversification_overlays.py) | Offline | The script of the [smart diversification case study](app_smart_diversification_overlays.md): regime Sharpe contributions, convexity premia and the regime-mixture covariance in qis on a simulated 60/40 core and four overlays, and the fixed-core maximum Sharpe ratio under coverage floors on the Bear-regime loss. |
 | [CARA utility under Gaussian mixtures](../examples/docs/cara_gaussian_mixture.py) | Offline | The worked example of the [CARA mixture](cara_gaussian_mixture.md) page: the closed-form objective against Monte Carlo, the one-component reduction to mean-variance, the in-house mixture fit and its annualisation, and a crash component's effect on the allocation. |
 | [Portfolio constraints](../examples/docs/constraints.py) | Offline | The worked examples of the [portfolio constraints](constraints.md) page: a forced solve against an optimality certificate, hard and soft residuals, universe alignment and frozen-group waivers, and a tracking-error limit as a hard row and as a penalty. |
 | [Covariance estimators](../examples/docs/covariance_estimators.py) | Offline | The worked example of the [covariance estimators](covariance_estimators.md) page: direct EWMA covariance against an explicit weighted sum, three monthly observations against exact weights, the rolling grid, and rolling estimates unchanged by later prices. |

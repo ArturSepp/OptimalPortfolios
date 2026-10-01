@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-09-30T19:42:20+00:00",
+  "generated_at_utc": "2026-10-01T08:58:22+00:00",
   "platform": "Windows-11-10.0.26200-SP0",
   "versions": {
     "python": "3.12.14",
@@ -2083,10 +2083,81 @@
         "docs/analytics_gallery.md",
         "docs/app_cma_strategic_allocation.md"
       ]
+    },
+    "smart_diversification_overlays": {
+      "path": "docs/images/smart_diversification_overlays.png",
+      "script": "examples/docs/app_smart_diversification_overlays.py",
+      "script_sha256": "1dc9770177362226f46917e58d0344adb9d1d0a78ab247107fff4664a8629864",
+      "image_sha256": "3d61f76508a62fb31bd8239ad5507d9775e24ece3e11921eb92ca24b945dd58c",
+      "table_sha256": "120d1b7459aa69e7e9454e22be81b95cb9786c7c1a1fbdc823f7d60519b43e91",
+      "parameters": {
+        "CORE": "60/40 core",
+        "FUNDS": [
+          "Trend",
+          "Equity L/S",
+          "Market neutral",
+          "Tail hedge"
+        ],
+        "AF": 12,
+        "QUANTILES": [
+          0.0,
+          0.16,
+          0.84,
+          1.0
+        ],
+        "MONTHS": 360,
+        "SEED": 17,
+        "CORE_WEIGHTS": [
+          0.6,
+          0.4
+        ],
+        "CORE_MEANS": [
+          0.065,
+          0.02
+        ],
+        "CORE_VOLS": [
+          0.18,
+          0.07
+        ],
+        "CORE_CORR": -0.15,
+        "FUND_MEANS": [
+          0.045,
+          0.055,
+          0.035,
+          -0.04
+        ],
+        "FUND_VOLS": [
+          0.1,
+          0.12,
+          0.07,
+          0.12
+        ],
+        "OVERLAY_BUDGET": 1.0,
+        "COVERAGES": {
+          "No floor": null,
+          "0%": 0.0,
+          "20%": 0.2,
+          "40%": 0.4,
+          "60%": 0.6,
+          "80%": 0.8,
+          "100%": 1.0
+        }
+      },
+      "checks": {
+        "capital_mandate_held": true,
+        "slack_floors_keep_the_no_floor_allocation": true,
+        "binding_floors_cover_exactly": true,
+        "bear_contributions_add_up": true,
+        "model_sharpe_never_rises": true
+      },
+      "documents": [
+        "docs/analytics_gallery.md",
+        "docs/app_smart_diversification_overlays.md"
+      ]
     }
   },
   "review": {
-    "note": "2026-09-30: provenance refreshed after merging #106 (af notation) with the 7.10.0 documentation. All 25 image and table hashes are identical to both parents and to the bundle Claude inspected earlier today (overlay_floor_allocation, constraint_enforcement_hard_vs_soft, factor_covariance_variance_split); only script hashes changed.",
-    "published_at_utc": "2026-09-30T19:42:41+00:00"
+    "note": "2026-10-01: Claude inspected the new smart_diversification_overlays exhibit in the image viewer; axis labels, point labels, legends, percent formats and the frontier are legible, and the plotted coordinates match the case-study tables. The other 25 image and table hashes are identical to the previously reviewed bundle. The editable qis in this environment is the v5.33.1 tag source, although its installed metadata reports 5.33.0.",
+    "published_at_utc": "2026-10-01T08:58:49+00:00"
   }
 }

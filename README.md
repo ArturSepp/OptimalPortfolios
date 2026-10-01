@@ -400,6 +400,8 @@ The paper's synthetic companion is in
 its Section II coverage-floor allocation is the fixed-core maximum Sharpe ratio with a named
 linear row described in the
 [overlay page](https://optimalportfolios.readthedocs.io/en/latest/overlay_tail_floor.html), section *The coverage floor*.
+The [smart diversification case study](https://optimalportfolios.readthedocs.io/en/latest/app_smart_diversification_overlays.html)
+builds the workflow on the companion's synthetic design.
 
 ## Updates
 

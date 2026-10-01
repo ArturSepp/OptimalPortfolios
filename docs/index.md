@@ -86,7 +86,7 @@ simulates the holdings with price drift, implementation lag and transaction cost
 | Objective and constraints | [Choosing an objective](optimization_module_readme.md), [risk budgeting](risk_budgeting.md), [implied risk budgets](implied_risk_budgets.md), [hierarchical risk parity and cluster budgets](hierarchical_risk_parity_and_cluster_budgets.md), [maximum diversification](maximum_diversification.md), [mean-variance objectives](mean_variance_objectives.md), [target return and target volatility](strategic_allocation_targets.md), [CARA utility under Gaussian mixtures](cara_gaussian_mixture.md), [minimum tracking error](minimum_tracking_error.md), [alpha over tracking error](alpha_over_tracking_error.md), [overlay tail floor](overlay_tail_floor.md), [constraints](constraints.md) |
 | Solve and check the outcome | [Choosing an objective](optimization_module_readme.md), [constraints](constraints.md), [solver numerics and outcomes](solver_numerics_and_outcomes.md) |
 | Dated target weights and qis backtest | [Rolling backtests](rolling_backtests.md), [turnover and transaction costs](turnover_and_transaction_costs.md) |
-| The whole pipeline, applied | [ROSAA](app_rosaa_multi_asset_allocation.md), [cryptocurrencies in diversified portfolios](app_crypto_allocation.md), [capital market assumptions to strategic allocation](app_cma_strategic_allocation.md), [stress testing with options](stress_testing_with_options.md) |
+| The whole pipeline, applied | [ROSAA](app_rosaa_multi_asset_allocation.md), [cryptocurrencies in diversified portfolios](app_crypto_allocation.md), [capital market assumptions to strategic allocation](app_cma_strategic_allocation.md), [smart diversification with portfolio overlays](app_smart_diversification_overlays.md), [stress testing with options](stress_testing_with_options.md) |
 
 <a id="signals-and-risk-estimates"></a>
 
@@ -186,6 +186,9 @@ show.
 - [From capital market assumptions to strategic allocation (MATF-CMA)](app_cma_strategic_allocation.md): CMAs and
   covariance from one loading matrix, and a strategic allocation by alpha over tracking error
   against mandate benchmarks, on synthetic inputs.
+- [Smart diversification with portfolio overlays](app_smart_diversification_overlays.md): regime
+  Sharpe contributions and convexity premia in qis, and the fixed-core coverage-floor
+  allocation of the convexity-premium paper, on a simulated 60/40 core and four overlays.
 - [Stress testing with options and FCGL clusters](stress_testing_with_options.md): factor
   scenarios and option repricing for a stock-and-option portfolio. It needs network data and
   local prerequisites, and it does not optimise the positions.
@@ -328,6 +331,7 @@ turnover_and_transaction_costs
 app_rosaa_multi_asset_allocation
 app_crypto_allocation
 app_cma_strategic_allocation
+app_smart_diversification_overlays
 stress_testing_with_options
 ```
 
