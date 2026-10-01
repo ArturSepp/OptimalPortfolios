@@ -5,6 +5,18 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.10.2] - 2026-10-01
+
+- Add the smart diversification case study, `docs/app_smart_diversification_overlays.md`:
+  the overlay allocation of Sepp and Kastenholz (2026), *The Convexity Premium of Portfolio
+  Overlays*, forthcoming in the Journal of Investment Management, built on a simulated 60/40
+  core and four overlays. qis computes the regime Sharpe contributions, convexity premia and
+  regime-mixture covariance, and the fixed-core maximum Sharpe ratio is solved under coverage
+  floors on the Bear-regime loss. The canonical script
+  `examples/docs/app_smart_diversification_overlays.py` asserts every number on the page and
+  draws a new teaching exhibit. The README links the case study.
+- Documentation only: the package code is unchanged from 7.10.1.
+
 ## [7.10.1] - 2026-10-01
 
 - Fix checkout detection in `local_path` for the src layout. A checkout was treated as an
