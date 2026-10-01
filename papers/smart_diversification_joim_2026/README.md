@@ -84,7 +84,7 @@ Edit `ExampleParams` and `create_example_data` to explore other assumptions.
 
 ### Select a workflow
 
-The example requires optimalportfolios 7.10.0 and qis 5.33.0 or newer, and was last
+The example requires optimalportfolios 7.10.0 and qis 5.33.1 or newer, and was last
 tested with exactly those versions. It reads two column-name constants from their
 defining qis modules, `REGIME_COLUMN` and `EFFECTIVE_CAPITAL_COUNT`, which qis does not
 re-export; a later qis release may move them. Use your OP Python environment with these
@@ -92,7 +92,7 @@ packages installed. The paper example is a repository file; it is not included i
 installed package.
 
 ```console
-python -m pip install "optimalportfolios>=7.10.0" "qis>=5.33.0"
+python -m pip install "optimalportfolios>=7.10.0" "qis>=5.33.1"
 ```
 
 Open [run_overlay_example.py](run_overlay_example.py) and select one `Locals` mode
