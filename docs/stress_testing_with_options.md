@@ -547,7 +547,7 @@ cache SHA-256 is
 ## Implementation in optimalportfolios
 
 The [self-contained manual runner](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/reports/stress_testing_with_options_local.py)
-requires OP with its QIS dependency (`qis>=5.31.0`, which includes the QIS instrument stress
+requires OP with its QIS dependency (`qis>=5.33.1`, which includes the QIS instrument stress
 reports), FactorLasso 0.18 or later, yfinance and VOP. The `_local.py` suffix keeps this
 optional pricing/reporting workflow outside the core-only unattended example lanes. It has been
 run end to end with the frozen Yahoo cache. It does not require a separate QIS examples checkout

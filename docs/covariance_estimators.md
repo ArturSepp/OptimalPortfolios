@@ -122,8 +122,9 @@ mean replacing a missing input return with zero before recursion. Sampling may a
 handled a missing source price. See [incomplete histories](incomplete_histories.md).
 
 The optional `is_apply_vol_normalised_returns=True` selects a different, DCC-like normalized-return
-kernel. It is not an identity-shrinkage option. From qis 5.31.0, which this package requires, that
-kernel seeds each volatility with the column's first finite squared return, so the direct rolling
+kernel. It is not an identity-shrinkage option. From qis 5.31.0, which the required qis 5.33.1
+includes, that kernel seeds each volatility with the column's first finite squared return, so the
+direct rolling
 EWMA path is point in time with either kernel: each rolling matrix equals a current fit on the
 prices through its date, and later prices change none of them. Earlier qis releases seeded that
 volatility from the mean squared return of the entire supplied array, so later observations could

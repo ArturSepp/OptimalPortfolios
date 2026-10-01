@@ -14,6 +14,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Add the `OPTIMALPORTFOLIOS_OUTPUT_PATH` environment variable. When set, it takes precedence
   over `settings.yaml` and the defaults for `get_output_path()`. The directory is created if it
   is missing, and a path that cannot be created raises `OSError` instead of falling back.
+- Raise the minimum qis version from 5.31.0 to 5.33.1, and lock qis 5.33.1. It is the first
+  published qis with `qis.regimes.compute_regime_mixture_covar_from_sample` and
+  `qis.plot_overlay_allocation_frontier`, which the JOIM overlay example in
+  `papers/smart_diversification_joim_2026` calls, and with qis's input validation of EWM spans
+  and turnover inputs. The package itself calls no new qis function.
 
 ## [7.10.0] - 2026-09-30
 
