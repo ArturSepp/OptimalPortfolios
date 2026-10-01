@@ -1,6 +1,6 @@
 """Offline 60/40 overlay example using synthetic funds, OP optimization and qis reports.
 
-Requires optimalportfolios >= 7.10.0 and qis >= 5.33.0. Select a Locals mode in the
+Requires optimalportfolios >= 7.10.0 and qis >= 5.33.1. Select a Locals mode in the
 run_local call at the bottom; edit the example settings at the start of run_local.
 Run this file in the IDE, or from the repository root:
     python -m papers.smart_diversification_joim_2026.run_overlay_example
