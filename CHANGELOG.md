@@ -5,7 +5,7 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased — 2026-09-30
+## [7.10.1] - 2026-10-01
 
 - Fix checkout detection in `local_path` for the src layout. A checkout was treated as an
   installed package, so with the shipped `settings.yaml` placeholder `get_output_path()` and
