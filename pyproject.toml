@@ -103,7 +103,7 @@ test = [
 # deptry is a gate of the same kind: it reads the imports under src/ against the declarations
 # above, and its configuration is [tool.deptry] below.
 lint = [
-    "ruff==0.16.2",
+    "ruff==0.16.9",
     "interrogate==1.7.0",
     "deptry==0.25.1",
 ]
