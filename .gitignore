@@ -229,8 +229,8 @@ papers/achievable_sharpe_faj_2026/
 /papers/cluster_lineage_2026/
 /papers/matf_cma_jpm_2026/
 /papers/layer_attribution_2026/
-# Prior-selection manuscript, replication and licensed evidence remain entirely local.
-/papers/prior_targets_2026/
+# Production CMA export support remains entirely local.
+/papers/data_export_for_exposure_budget_floor_2026/
 # JOIM permits only the introduction and synthetic example via its exact local allowlist.
 
 # Reference source documents (books, survey PDFs) are not redistributable.

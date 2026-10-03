@@ -5,6 +5,18 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.11.0] - 2026-10-03
+
+- Add `optimalportfolios.matf.sharpe_accounting` for factor-model achievable squared
+  Sharpe, rank-safe GLS forecast/holdings decomposition, factor access diagnostics,
+  full/partial overlay capacity and fixed-book completion on a declared hedgeable set.
+  Residual covariance accepts diagonal variances or a full positive-definite matrix.
+- Fixed-book completion maximizes signed positive Sharpe and distinguishes finite
+  weights from unattained supremum bounds; it reports a separate hedge-only comparator.
+  Reordered labels, invalid covariance and unattainable exposure targets raise errors.
+- Local package milestone for the FAJ profiling roadmap; existing portfolio estimation,
+  optimization and backtesting defaults are unchanged.
+
 ## [7.10.2] - 2026-10-01
 
 - Add the smart diversification case study, `docs/app_smart_diversification_overlays.md`:

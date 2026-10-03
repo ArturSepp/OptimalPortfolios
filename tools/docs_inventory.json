@@ -257,8 +257,20 @@
       "review": "R9 (2026-09-27): adopted. Passes the adopted-page checks of tools/check_docs.py (form, links, math, ownership); the GitHub Markdown API and VS Code renderings agree; names in code checked against the package source and the installed qis and factorlasso. No change needed."
     }
   },
-  "planned": {},
+  "planned": {
+    "docs/factor_sharpe_accounting.md": {
+      "form": "methodology",
+      "title": "Factor Sharpe accounting"
+    }
+  },
   "symbols": {
+    "docs/factor_sharpe_accounting.md": [
+      "CompletionResult", "CompletionStatus", "factor_ceiling", "achievable_sharpe2",
+      "fpir", "gls_projector", "gls_split", "holdings_decomposition", "hurdle_premia",
+      "ceiling_premium_correlation_split", "factor_mimicking_portfolios",
+      "fixed_exposure_fpir", "tangency_access_split", "overlay_value",
+      "partial_overlay_value", "completion_sharpe2", "ir_bound"
+    ],
     "docs/universe_data_and_unsmoothing.md": [
       "UniverseData",
       "MetadataField",
@@ -494,6 +506,11 @@
     }
   },
   "parameters": {
+    "CompletionResult": {
+      "docs/factor_sharpe_accounting.md": [
+        "signed_sharpe", "sharpe2", "status", "exposures", "overlays", "hedge_only_sharpe"
+      ]
+    },
     "LinearConstraints": {
       "docs/constraints.md": ["loadings", "lower", "upper"]
     },

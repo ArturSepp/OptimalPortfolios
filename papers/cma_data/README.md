@@ -33,9 +33,12 @@ alpha), equity_regional_addon, rf_rate. With M factors, `betas.csv` is 18 x M,
 `factor_covar.csv` is M x M annualized, and `factor_premia.csv` is
 M x (base, stress, upside). The frozen `2026q2` FAJ cut uses the legacy factor
 panel; `2026q2_custom` remains the historical FAJ replication input.
-The local JPM replication now pins `2026_matf_cma_literal_lambda_20260928`.
+The local JPM and FAJ replications now pin `2026_matf_cma_current_20260930`.
 `2026_matf_cma_native_priors_20260928` records a subsequent prior-bound variant.
-FAJ retains `2026q2_custom_ig_hy_publication`, extracted 24 September 2026.
+`2026_matf_cma_current_20260930` records the 30 September saved 181-index CMA workbook, with the
+same 18 paper sleeves and a 30 June valuation date. Both current paper drafts
+pin this snapshot. The earlier FAJ cut `2026q2_custom_ig_hy_publication`,
+extracted 24 September 2026, remains frozen for historical comparison.
 The historical eleven-factor, automatic-prior and fixed-IG-prior cuts remain
 immutable. The current assets include `FactorPrior1`, `FactorPrior2`,
 `pe_factor_exposure` and `long_only_betas` for the estimator adapter.
@@ -63,7 +66,7 @@ and the discretionary EM equity haircut is zero. World and ACWI select `Equity`.
 The global equity anchor is a fixed developed-market policy basket, not an ACWI
 capitalization-weight identity. Credit premia apply verified outer MATF exposure
 to both spread-minus-loss blend legs, with disclosed assumed tracker notional/NAV
-of 1×. EM loss is the strategic assumption 1% PD × 50% LGD = 50 bp. The paper
+of 1×. EM loss is the strategic assumption 0.30% PD × 50% LGD = 15 bp. The paper
 shows ±20% inner-notional sensitivity; these inputs are not verified tracker
 cash-flow identities or a benchmark-rating-based loss estimate.
 
@@ -71,10 +74,11 @@ All factor histories were rebuilt from the June input vintage. The owner
 volatility-targeting covariance initialization depends on that supplied panel;
 these are conditional descriptive histories, not a point-in-time backtest.
 Earlier snapshots and originally distributed Q2 reports remain unchanged.
-The FAJ draft adopted the publication snapshot on 25 September 2026.
+The FAJ draft adopted the publication snapshot on 25 September 2026 and the
+30 September current snapshot on 1 October 2026.
 This final rebuild is not a credit-split-only experiment.
 
-Current pinned manifest SHA-256: `8dc9bab3c58df616d85b0aaccee9bc299c3a301295545eb38c113f583157d37b`. See the
+Current pinned manifest SHA-256: `770cef5ea0aaf1e238b6cf028743f147d0251aedb45427b0dcc59052c81053d5`. See the
 [JPM replication instructions](../matf_cma_jpm_2026/replication/README.md).
 
 Local licensed input: `providers.csv` contains provider CMA vectors under neutral

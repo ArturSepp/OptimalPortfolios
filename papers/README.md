@@ -1,5 +1,10 @@
 # Paper Code
 
+*Author: [Artur Sepp](https://github.com/ArturSepp)*
+
+Software: [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Citation: [CITATION.cff](../CITATION.cff).
+
 This directory contains research code associated with papers that use `optimalportfolios`.
 The folders do not all provide the same level of reproduction: the table below states what a
 public checkout can run and records package versions only where the repository preserves them.
@@ -17,11 +22,17 @@ snapshot includes the configuration tables used by local paper workspaces and de
 licensed index, factor-history and provider panels. The MATF-CMA manuscript workspace is local and
 gitignored rather than part of the public repository.
 
-`prior_targets_2026/` is an entirely local workspace migrated from FactorLasso. It holds
-the prior-selection manuscript and replication, with MATF versus Bloomberg MAC3 stress
-and exposure comparisons retained as working evidence for the developing paper. Its final
-scope is undecided. The migration does not authorise redistribution of the manuscript,
-replication code or licensed inputs; no exact public reproduction is claimed.
+`data_export_for_exposure_budget_floor_2026/` is an entirely local support workspace.
+It exports the frozen production CMA comparison for Section 5.3 of FL's
+`papers/exposure_budget_floor_2026/` draft. It contains only the exporter and its
+instructions; the manuscript and analytical replication belong to FactorLasso.
+The former `prior_targets_2026/` workspace was removed after retaining verified
+external backups. No manuscript, licensed input or export code is approved for redistribution.
+
+`robust_stress_optimisation_2026/` is an entirely local workspace created on 1 October 2026.
+It holds the discussion record and implementation proposal for factor-scenario loss limits and
+utility penalties in OP optimisation. No manuscript or replication exists yet and its scope is
+undecided; nothing in it is approved for redistribution.
 
 ## Conventions
 

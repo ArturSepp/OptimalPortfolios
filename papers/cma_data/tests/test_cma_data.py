@@ -64,7 +64,7 @@ def test_unknown_mandate_raises():
 SNAPSHOT_TAGS = ('2026q2', '2026q2_custom', '2026q2_custom_ig_hy',
                  '2026q2_custom_ig_hy_ig_prior', '2026q2_custom_ig_hy_publication',
                  '2026_matf_cma_literal_lambda_20260928',
-                 '2026_matf_cma_native_priors_20260928')
+                 '2026_matf_cma_native_priors_20260928', '2026_matf_cma_current_20260930')
 
 
 @pytest.mark.parametrize('tag', SNAPSHOT_TAGS)
