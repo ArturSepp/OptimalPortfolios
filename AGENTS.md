@@ -69,7 +69,7 @@ papers/              code accompanying the published papers (excluded from ruff)
 ```
 
 `src/optimalportfolios/covar_estimation/risk_labelling.py` is a deprecated compatibility shim for
-the canonical `factorlasso.cluster_lineage` module; keep rosaa imports working, but add lineage
+the canonical `factorlasso.diagnostics` module; keep rosaa imports working, but add lineage
 features and tests in FactorLasso.
 
 Tests live inside the source package as `src/optimalportfolios/<subpackage>/tests/*_test.py`; there is no top-level `tests/` directory. The wheel includes these test packages and their fixture under `optimalportfolios/tests/data/`, so `pytest --pyargs optimalportfolios` is the supported post-install check — and is enforced by the `wheel` job in `ci.yml` on every pull request, so it cannot rot into a claim the artifact no longer supports. That job is also the justification for the nested layout: it is what turns shipped tests into a check that the built wheel is complete. The shipped `conftest.py` defaults `MPLBACKEND` to the non-interactive `Agg` backend while preserving an explicitly selected backend. Component development runners live beside their owning code in `src/optimalportfolios/**/run_local/*_run.py`. Each exposes `Locals` and `run_local(local=...)`; pytest ignores them and package discovery excludes them from built distributions. Shared development-only data helpers live in `optimalportfolios.run_local.data`. The `examples/` tree remains repository-only and is reserved for larger analytical workflows; its three `*_local.py` files are broader examples with local-data preconditions, not component runners.
