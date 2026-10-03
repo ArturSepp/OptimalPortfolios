@@ -55,7 +55,7 @@ dependencies = [
     "scs>=3.2.4.post3,!=3.3.0",
     "quadprog>=0.1.11",
     "qis>=5.33.1",
-    "factorlasso>=0.17.0",
+    "factorlasso>=0.24.0",
 ]
 
 [project.optional-dependencies]

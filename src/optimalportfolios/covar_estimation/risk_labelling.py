@@ -2,22 +2,24 @@
 
 import warnings
 
-from factorlasso.cluster_lineage import (
+from factorlasso.diagnostics import (
     RiskClusterReport as RiskClusterReport,
     TaxonomyConfig as TaxonomyConfig,
+    analyze_cluster_lineage,
+    run_cluster_lineage_report,
+)
+from factorlasso.diagnostics._lineage import (
     _build_tracks as _build_tracks,
     _classify as _classify,
     _match_panel_mcf as _match_panel_mcf,
     _psd_clip as _psd_clip,
     _snapshot_fingerprints as _snapshot_fingerprints,
-    analyze_cluster_lineage,
-    run_cluster_lineage_report,
     solve_max_weight_matching as solve_max_weight_matching,
 )
 
 warnings.warn(
     "optimalportfolios.covar_estimation.risk_labelling is deprecated; import from "
-    "factorlasso.cluster_lineage instead",
+    "factorlasso.diagnostics instead",
     DeprecationWarning,
     stacklevel=2,
 )

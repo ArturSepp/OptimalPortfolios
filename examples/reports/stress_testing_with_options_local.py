@@ -22,7 +22,7 @@ import pandas as pd
 import qis
 import optimalportfolios as opt
 import factorlasso as fl
-from factorlasso.cluster_lineage import analyze_cluster_lineage
+from factorlasso.diagnostics import analyze_cluster_lineage
 
 # The portfolio builder and VOP adapter mirror the public QIS teaching example:
 # https://github.com/ArturSepp/QuantInvestStrats/blob/main/examples/portfolios/stress_testing_with_options.py
