@@ -2,7 +2,7 @@
 name: Replication
 
 # The package test matrix deliberately collects only src/optimalportfolios. This separate gate
-# covers the public, offline subset of papers/: the shared CMA snapshot. Paper projects that are
+# covers the public, offline subset of papers/: the crypto replication contracts. Paper projects that are
 # gitignored or require network or licensed inputs remain manual.
 permissions:
   contents: read
@@ -31,9 +31,8 @@ jobs:
     - name: Install the locked test environment
       run: uv sync --group test --locked
 
-    - name: Verify public CMA inputs and offline crypto contracts
+    - name: Verify offline crypto contracts
       run: >-
         uv run --no-sync python -m pytest
-        papers/cma_data/tests
         papers/crypto_allocation_risk_2023/replication/tests
         -q

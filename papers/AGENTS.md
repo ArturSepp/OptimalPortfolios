@@ -26,14 +26,15 @@ Replication imports the package; production modules must not import `papers.*`.
 Use repository-root module entry points and `replication/tests/*_test.py`. Do not
 rename a published module or change a numerical baseline as incidental cleanup.
 
-`papers/cma_data/` is an existing shared data module, not a paper: preserve its
-paths, snapshot bytes, hashes and consumers. Do not copy it into each paper.
+`papers/cma_data/` is an entirely local shared data module, not a paper. Keep only
+`2026_matf_cma_current_20260930`, pinned by the current MATF-CMA and FAJ replications.
+Preserve that snapshot's bytes, hashes and consumers. Do not copy it into each paper.
 `equity_factors/` is an existing local study, not a public paper release.
 
 ## Publication and preservation
 
 - New paper workspaces are entirely ignored by default. The approved public roots
-  are `cma_data/`, `crypto_allocation_risk_2023/`, `robust_optimisation_jpm_2026/`,
+  are `crypto_allocation_risk_2023/`, `robust_optimisation_jpm_2026/`,
   and the limited JOIM companion described below.
   Adding another requires an explicit publication decision, an exact root exception
   in `.gitignore`, and an update to `PUBLIC_WORKSPACES` in the policy checker.
@@ -78,7 +79,7 @@ From the repository root, after configuring the prescribed external environment:
 ```powershell
 python .github/scripts/check_paper_policy.py --worktree
 python .github/scripts/paper_policy_test.py
-python -m pytest papers/cma_data/tests papers/crypto_allocation_risk_2023/replication/tests
+python -m pytest papers/crypto_allocation_risk_2023/replication/tests
 ```
 
 Before committing, run `python .github/scripts/check_paper_policy.py` to check the

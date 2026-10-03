@@ -40,6 +40,17 @@ class PaperPolicyTests(unittest.TestCase):
         """Exact approved manuscript files and replication code are publishable."""
         self.assertEqual(check_repository(self.root), [])
 
+    def test_cma_data_remains_local(self) -> None:
+        """Normal staging ignores shared CMA inputs; force-adding them fails policy."""
+        name = "papers/cma_data/snapshots/current/assets.csv"
+        self.write(name, "local CMA inputs\n")
+        git(self.root, "add", ".")
+        indexed = set(git(self.root, "ls-files", "-z").decode().split("\0"))
+        self.assertNotIn(name, indexed)
+        git(self.root, "add", "-f", name)
+        self.assertTrue(any("protected material" in error and name in error
+                            for error in check_repository(self.root)))
+
     def test_joim_introduction_and_synthetic_example_are_public(self) -> None:
         """Ordinary staging exposes only the approved introduction, example and its test."""
         base = "papers/smart_diversification_joim_2026/"

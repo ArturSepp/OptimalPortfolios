@@ -634,7 +634,7 @@
       "status": "Working paper, SSRN 6785958",
       "citation": "Sepp, A., Hansen, E. and Kastenholz, M. (2026). Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors. Working paper, SSRN 6785958.",
       "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6785958",
-      "repository": "papers/cma_data",
+      "public_scope": "Paper reference only; shared CMA data and MATF-CMA/FAJ replication workspaces are local and not redistributed.",
       "retired_titles": []
     }
   }

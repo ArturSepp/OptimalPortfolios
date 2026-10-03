@@ -182,7 +182,7 @@ dmypy.json
 /papers/*
 !/papers/AGENTS.md
 !/papers/README.md
-!/papers/cma_data/
+/papers/cma_data/
 !/papers/crypto_allocation_risk_2023/
 !/papers/robust_optimisation_jpm_2026/
 !/papers/smart_diversification_joim_2026/
@@ -240,6 +240,5 @@ papers/references/
 /.codex_spreadsheet_tmp/
 src/optimalportfolios/run_local/data/test_prices.csv
 /papers/crypto_allocation_risk_2023/update_2026
-papers/cma_data/SHARPE_ACCOUNTING.md
 /papers/equity_factors/
 /papers/robust_optimisation_jpm_2026/paper/

@@ -10,7 +10,7 @@ import tempfile
 import zipfile
 
 
-PUBLIC_WORKSPACES = {"cma_data", "crypto_allocation_risk_2023", "robust_optimisation_jpm_2026",
+PUBLIC_WORKSPACES = {"crypto_allocation_risk_2023", "robust_optimisation_jpm_2026",
                      "smart_diversification_joim_2026"}
 
 # This workspace's public scope is the companion, never the empirical replication tree.
@@ -31,6 +31,8 @@ PROBES = (
     "papers/policy_probe/presentations/event/slides.pdf",
     "papers/policy_probe/replication/data/local/input.csv",
     "papers/policy_probe/replication/outputs/run.csv",
+    "papers/cma_data/loaders.py",
+    "papers/cma_data/snapshots/current/assets.csv",
     "agents/ROADMAP.md",
 )
 PROBES += tuple(
@@ -127,7 +129,7 @@ def check_repository(
         if len(parts) >= 4 and parts[2].casefold() in {"paper", "presentations"}:
             if name not in approved_files:
                 errors.append(f"publication file needs an exact exception: {name}")
-        if len(parts) == 3 and parts[1] != "cma_data" and name.endswith(".py"):
+        if len(parts) == 3 and name.endswith(".py"):
             if (parts[-1] != "__init__.py"
                     and parts[-1] not in LIMITED_PUBLIC_FILES.get(parts[1], set())):
                 errors.append(f"paper code belongs in replication/: {name}")

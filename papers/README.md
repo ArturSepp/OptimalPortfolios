@@ -17,10 +17,10 @@ public checkout can run and records package versions only where the repository p
 | [`robust_optimisation_jpm_2026/`](robust_optimisation_jpm_2026/) | Sepp, Ossa and Kastenholz (2026), *Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios*, *The Journal of Portfolio Management* 52(4), 86–120 | The folder demonstrates the published HCGL and risk-budgeting workflow, but downloads its ETF panel from `yfinance` and carries neither frozen inputs nor an environment pin. It is a methodological example, not an exact exhibit rebuild. | Not recorded |
 | [`smart_diversification_joim_2026/`](smart_diversification_joim_2026/) | Sepp and Kastenholz (2026), *The Convexity Premium of Portfolio Overlays*, *Journal of Investment Management*, forthcoming | A public introduction and an offline synthetic 60/40 overlay example using OP optimization and qis illustrations. The manuscript, empirical replication and licensed data remain local. | Not recorded; the README states the minimum and last-tested optimalportfolios and qis versions |
 
-`cma_data/` is the shared, manifest-verified CMA data layer; it is not a paper. Its public
-snapshot includes the configuration tables used by local paper workspaces and deliberately omits
-licensed index, factor-history and provider panels. The MATF-CMA manuscript workspace is local and
-gitignored rather than part of the public repository.
+`cma_data/` is an entirely local, ignored shared CMA data layer; it is not a paper.
+It retains only the manifest-verified `2026_matf_cma_current_20260930` snapshot used by
+the current MATF-CMA and FAJ replications. The data layer, configuration tables,
+licensed histories and both manuscript workspaces are excluded from the public repository.
 
 `data_export_for_exposure_budget_floor_2026/` is an entirely local support workspace.
 It exports the frozen production CMA comparison for Section 5.3 of FL's
