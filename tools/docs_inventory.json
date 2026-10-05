@@ -68,7 +68,7 @@
     "docs/execution.md": {
       "form": "utility",
       "status": "adopted",
-      "review": "2026-10-04: resolved-execution and opt-in scoring, guarded proposal/compression APIs with original-incumbent TE and operational caps. Source/API ownership, 219 execution tests, installed-wheel execution checks, strict C-local Sphinx build and generated HTML structure checked. Execution line coverage is 100%. Visual viewer review is pending because browser policy blocks file URLs; external-link checks remain pending. Captured CONF numerical validation is separate from production adoption."
+      "review": "2026-10-05: resolved execution, opt-in scoring, guarded proposals and independent branch compression with original-incumbent TE/operational caps, shared projection ceilings and retained checkpoints. Source/API ownership, 244 execution tests in source and installed wheel, 379 API/metadata/layout/docstring checks and strict C-local Sphinx build pass. Execution line coverage is 100% (1486 statements). Visual viewer review is pending because browser policy blocks file URLs; external-link checks remain pending. Captured CONF numerical validation is separate from production adoption."
     },
     "docs/constraints.md": {
       "form": "methodology",
