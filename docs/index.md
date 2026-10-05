@@ -147,6 +147,8 @@ simulates the holdings with price drift, implementation lag and transaction cost
 - [CARA utility under Gaussian mixtures](cara_gaussian_mixture.md): expected exponential
   utility under a fitted mixture, its reduction to mean-variance with one component, and what
   a crash component does to the allocation.
+- [Ranked execution integration](execution.md): resolved trade ranking, sizing,
+  feasibility rescue and acceptance audits.
 - [Minimum tracking error](minimum_tracking_error.md): the allocation closest in risk to a
   supplied benchmark under the constraints.
 - [Tactical allocation: alpha over tracking error and yield targets](alpha_over_tracking_error.md): the
@@ -301,6 +303,7 @@ mean_variance_objectives
 strategic_allocation_targets
 cara_gaussian_mixture
 minimum_tracking_error
+execution
 alpha_over_tracking_error
 overlay_tail_floor
 ```

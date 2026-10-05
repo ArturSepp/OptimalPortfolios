@@ -32,6 +32,8 @@ from optimalportfolios.alphas.__init__ import *
 
 from optimalportfolios.matf.__init__ import *
 
+from optimalportfolios.execution.__init__ import *
+
 # Backward-compatible re-exports from factorlasso.
 from factorlasso import (  # noqa: F401
     ClusterSmootherType,

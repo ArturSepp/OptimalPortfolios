@@ -41,7 +41,7 @@ ROUTES = {
     'MAXIMUM_SHARPE_RATIO': 'rolling_maximize_portfolio_sharpe',
     'MAX_CARA_MIXTURE': 'rolling_maximize_cara_mixture',
 }
-# The page's two lists of entry points by their default apply_total_to_good_ratio.
+# The page's entry points grouped by their complete default optimiser configuration.
 RATIO_DEFAULT_TRUE = [
     'compute_rolling_optimal_weights', 'backtest_rolling_optimal_portfolio',
     'rolling_quadratic_optimisation', 'wrapper_quadratic_optimisation',
@@ -56,6 +56,9 @@ RATIO_DEFAULT_FALSE = [
     'rolling_min_variance_target_return', 'wrapper_min_variance_target_return',
     'rolling_max_return_target_vol', 'wrapper_max_return_target_vol',
     'rolling_maximise_alpha_over_tre', 'wrapper_maximise_alpha_over_tre',
+]
+RATIO_DEFAULT_EXECUTION = [
+    'solve_selected_execution_portfolio', 'solve_feasible_execution_portfolio',
 ]
 
 
@@ -326,18 +329,22 @@ def main() -> None:
     assert defaults(opt.rolling_maximize_cara_mixture)["roll_window"] == 312
     assert adapter["rebalancing_costs"] == 0.0010
     assert adapter["weight_implementation_lag"] is None
-    # apply_total_to_good_ratio: the page's two lists, complete over every public entry point
+    # apply_total_to_good_ratio: the page's lists, complete over every public entry point
     # that takes an optimiser_config.
     public = {}
     for name in dir(opt):
         member = getattr(opt, name)
         if inspect.isfunction(member) and "optimiser_config" in defaults(member):
             public[name] = config_default_of(member).apply_total_to_good_ratio
-    assert sorted(public) == sorted(RATIO_DEFAULT_TRUE + RATIO_DEFAULT_FALSE)
+    assert sorted(public) == sorted(
+        RATIO_DEFAULT_TRUE + RATIO_DEFAULT_FALSE + RATIO_DEFAULT_EXECUTION)
     assert all(public[name] is True for name in RATIO_DEFAULT_TRUE)
     assert all(public[name] is False for name in RATIO_DEFAULT_FALSE)
     assert all(config_default_of(getattr(opt, name)) == opt.OptimiserConfig()
                for name in RATIO_DEFAULT_FALSE)
+    assert all(public[name] is False for name in RATIO_DEFAULT_EXECUTION)
+    assert all(config_default_of(getattr(opt, name)) == opt.OptimiserConfig(solver='MOSEK')
+               for name in RATIO_DEFAULT_EXECUTION)
     # Only that field differs: every True default is the dataclass with the ratio switched on.
     assert all(config_default_of(getattr(opt, name))
                == opt.OptimiserConfig(apply_total_to_good_ratio=True)

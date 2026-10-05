@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'win32'",
@@ -959,7 +959,7 @@ wheels = [
 
 [[package]]
 name = "factorlasso"
-version = "0.25.0"
+version = "1.0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cvxpy", version = "1.7.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -974,9 +974,9 @@ dependencies = [
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
     { name = "scipy", version = "1.18.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/85/17/221da59ca10ea6d4a6482045934b972bebf3ca9475bbe0313bd7aff843de/factorlasso-0.25.0.tar.gz", hash = "sha256:be050e4e64fc07b0a460bf80e9fede59a9622c48e91e58a51f066c6572b4b959", size = 389780, upload-time = "2026-10-02T14:23:37.895Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/00/77/6b7aadc65f81cac5d7cc449ae651c2742795a0251a0ad1f635a5184d6410/factorlasso-1.0.2.tar.gz", hash = "sha256:7e01a36eeaa6a19d4c4d1767ad7094b16e72caa7321f6c88876c056ecfb40871", size = 412534, upload-time = "2026-10-05T02:17:20.497Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/35/aaaa7fa09758e78be17b96cd73a676192012d701f4cef3f8a1212e8354f4/factorlasso-0.25.0-py3-none-any.whl", hash = "sha256:e1971ad8f12f6b4875118c821947867b84e2641a2eca1d0b910ec2fe25e88d07", size = 231522, upload-time = "2026-10-02T14:23:36.128Z" },
+    { url = "https://files.pythonhosted.org/packages/cf/93/1bb0a6da37350e7fcbf2c298bcabd6707ec76010188f1c683eca32f63fae/factorlasso-1.0.2-py3-none-any.whl", hash = "sha256:c7cdf4b3e2bcfccdf11f1708a9969ca8f46bc7f0af2fedd4ca7472a10801e4ce", size = 247400, upload-time = "2026-10-05T02:17:18.724Z" },
 ]
 
 [[package]]
@@ -2210,7 +2210,7 @@ wheels = [
 
 [[package]]
 name = "optimalportfolios"
-version = "7.11.0"
+version = "7.11.1"
 source = { editable = "." }
 dependencies = [
     { name = "cvxpy", version = "1.7.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -2271,7 +2271,7 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "cvxpy", specifier = ">=1.5.2" },
-    { name = "factorlasso", specifier = ">=0.24.0" },
+    { name = "factorlasso", specifier = ">=1.0.2" },
     { name = "furo", marker = "extra == 'docs'", specifier = ">=2024.1.29" },
     { name = "matplotlib", specifier = ">=3.8.0" },
     { name = "myst-parser", marker = "extra == 'docs'", specifier = ">=2.0" },

@@ -5,6 +5,78 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.11.1] - 2026-10-05
+
+- Require FactorLasso 1.0.2 or later for the new inference and residual-uncertainty APIs.
+- Add opt-in compression of independent legacy and fixed-ranking branches, with
+  final acceptance anchored to original production execution and saved checkpoints.
+- Bound shared post-baseline projection work, including feasibility rescue, and
+  permit the same optional budget on the existing select-then-compress guard.
+  Preserve existing unbudgeted defaults and production behavior.
+
+- Preserve empty optional candidate domains when applying explicit tie priorities;
+  do not allow pandas alignment to introduce protected rows into selection.
+  Add scorer and combined-search regressions for decisions with no optional trades.
+
+- Add opt-in guarded execution proposals and bounded compression with tracking
+  error, ticket-size and turnover limits anchored to the original legacy result.
+- Add explicit score-tie priorities without reordering numerical inputs. Preserve
+  existing scoring defaults and legacy production behavior. Search time limits are
+  cooperative between solves and do not provide a hard deadline guarantee.
+
+- Add opt-in FactorLasso residual-correlation risk to opportunity portfolios.
+  Optimisation and reporting use the same full risk; diagonal-D dispersion is retained.
+- Preserve null risk directions for singular empirical residual covariance using
+  the canonical covariance factorizer with a zero eigenvalue floor.
+
+- Add named fixed-model universe comparisons with exact memberships, reprojected
+  dispersion, concentration and conditional noise adjustments. Report signed
+  changes relative to the declared baseline, including factor-rank changes.
+
+- Extend matched-size universe diagnostics with optional aligned alpha-estimation
+  covariance, subset-specific K noise adjustment and effective contributors.
+  Signed adjusted values are retained; negative adjusted RMS is undefined.
+
+- Consume FactorLasso linear and quadratic calibration with explicit interval
+  methods, scope and support status. Preserve supplied asymmetric endpoints and
+  fixed-model interpretation; keep scenario stability separate from confidence.
+- Omit the conic penalty expression when the uncertainty radius is zero, restoring
+  the exact baseline solver problem. Preserve production risk and alpha estimates.
+
+- Add opt-in funded partial-trade risk scores and explicit alpha/class-weight
+  ablations, bounded audited trade removal and exchange, and a full-admission
+  continuous corridor diagnostic. Preserve legacy ranking and production defaults.
+- Count actual noncash tickets from original holdings and cap total compression
+  tracking-error deterioration relative to the initial accepted portfolio.
+- Vectorize the common funded calculation in legacy one-shot scoring; retain the
+  scalar reference and captured-call parity checks.
+
+- Propagate FactorLasso EWMA-HAC alpha uncertainty through canonical GLS dispersion,
+  contributor and removal diagnostics, and fixed-portfolio alpha intervals. Add
+  optional jointly specified ellipsoidal alpha penalties to opportunity frontiers;
+  portfolio risk continues to use the existing model. Conditional plug-in bounds
+  and Gaussian scenario stability are explicitly distinguished.
+
+- Add `optimalportfolios.matf.opportunity` for labelled statistical-alpha dispersion,
+  joint funding/factor GLS capacity, native factor access and portfolio diagnostics,
+  and long-only unit-funded opportunity frontiers with total and factor TE limits.
+  Reuse canonical Sharpe accounting, OP mandate constraints and qis risk reporting;
+  failed or infeasible frontier solves return no fallback holdings.
+- Report capacity per asset, its square-root normalization and precision-weighted
+  common-level-adjusted alpha dispersion; replication excludes zero-cap TAA assets
+  from investable sets while retaining the complete fitted risk/reference axis.
+- Add frozen-universe diagnostics for seeded equal-size comparisons, A/J/K
+  contribution concentration, and single/bundle removal effects. Recompute
+  subset GLS projections using the same CMA estimates and canonical accounting;
+  report subset variation separately from estimation uncertainty.
+- Add `optimalportfolios.execution` for copied, resolved execution inputs, legacy
+  cash-funded alpha/TRE ranking, selected-corridor minimum-TRE projection,
+  constraint-directed rescue and audited funding/rounding diagnostics.
+- Reuse existing OP constraints and solvers. Consumers retain lifecycle, desk
+  instruction, cadence, bootstrap and target-retry orchestration. Requested ticket
+  allowances retain legacy rescue semantics; this is not a strict-cardinality solver.
+- Add portable synthetic numerical tests and an integration contract. These additions do not switch ROSAA production or claim full fund parity.
+
 ## [7.11.0] - 2026-10-03
 
 - Add `optimalportfolios.matf.sharpe_accounting` for factor-model achievable squared

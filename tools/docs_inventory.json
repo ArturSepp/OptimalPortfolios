@@ -65,6 +65,11 @@
       "example": "examples/docs/cara_gaussian_mixture.py",
       "review": "R6 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M16. Closed-form objective, one-component reduction and the in-house EM fit asserted; the annualisation of fitted components (Pitfall). Teaching exhibit cara_mixture_allocation.png."
     },
+    "docs/execution.md": {
+      "form": "utility",
+      "status": "adopted",
+      "review": "2026-10-04: resolved-execution and opt-in scoring, guarded proposal/compression APIs with original-incumbent TE and operational caps. Source/API ownership, 219 execution tests, installed-wheel execution checks, strict C-local Sphinx build and generated HTML structure checked. Execution line coverage is 100%. Visual viewer review is pending because browser policy blocks file URLs; external-link checks remain pending. Captured CONF numerical validation is separate from production adoption."
+    },
     "docs/constraints.md": {
       "form": "methodology",
       "status": "adopted",
@@ -264,6 +269,7 @@
     }
   },
   "symbols": {
+    "docs/execution.md": ["ExecutionRankingConfig", "ResolvedExecutionProblem", "ExecutionOptimizationResult", "ExecutionSolverInfeasibility", "score_execution_trades", "resolve_effective_max_trades", "solve_ranked_execution", "compute_group_bound_bridges", "build_selected_execution_constraints", "solve_selected_execution_portfolio", "solve_feasible_execution_portfolio", "ExecutionScoreMethod", "ExecutionSearchConfig", "ExecutionSearchResult", "ExecutionCorridorDiagnostic", "score_execution_candidates", "improve_ranked_execution", "diagnose_execution_corridors", "ExecutionGuardConfig", "solve_guarded_execution", "ExecutionBranchConfig", "ExecutionBranchSearchResult", "solve_branched_execution"],
     "docs/factor_sharpe_accounting.md": [
       "CompletionResult", "CompletionStatus", "factor_ceiling", "achievable_sharpe2",
       "fpir", "gls_projector", "gls_split", "holdings_decomposition", "hurdle_premia",
@@ -506,6 +512,15 @@
     }
   },
   "parameters": {
+    "ExecutionRankingConfig": {"docs/execution.md": ["tre_weight_by_asset_class", "max_trades", "add_mandatory_trades_to_max_trades", "minimum_trade_score", "sequential_greedy_selection"]},
+    "ResolvedExecutionProblem": {"docs/execution.md": ["target", "covariance", "alphas", "asset_classes", "constraints", "ranking_config", "optimiser_config", "asset_class_tre_weights", "partition_groups", "expand_for_feasibility", "sign_directed_rescue", "allow_corridor_relaxation", "context"]},
+    "ExecutionOptimizationResult": {"docs/execution.md": ["weights", "trade_table", "outcome"]},
+    "ExecutionSearchConfig": {"docs/execution.md": ["max_removal_trials", "max_exchange_trials", "te_allowance_bp", "min_exchange_improvement_bp", "exchange_candidate_limit"]},
+    "ExecutionGuardConfig": {"docs/execution.md": ["methods", "canonical_ties", "te_allowance_bp", "min_te_improvement_bp", "ticket_size_bp", "max_sized_ticket_increase", "max_turnover_increase_bp", "max_removal_trials", "max_search_seconds", "max_projection_calls"]},
+    "ExecutionBranchConfig": {"docs/execution.md": ["methods", "canonical_ties", "te_allowance_bp", "min_te_improvement_bp", "ticket_size_bp", "max_sized_ticket_increase", "max_turnover_increase_bp", "max_removal_trials", "max_search_seconds", "max_projection_calls"]},
+    "ExecutionBranchSearchResult": {"docs/execution.md": ["result", "attempts", "summary", "checkpoints"]},
+    "ExecutionSearchResult": {"docs/execution.md": ["result", "attempts", "summary"]},
+    "ExecutionCorridorDiagnostic": {"docs/execution.md": ["status", "bridges", "result", "reason"]},
     "CompletionResult": {
       "docs/factor_sharpe_accounting.md": [
         "signed_sharpe", "sharpe2", "status", "exposures", "overlays", "hedge_only_sharpe"

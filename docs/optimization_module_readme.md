@@ -250,6 +250,11 @@ points that take `optimiser_config` split as follows:
 |---|---|
 | `OptimiserConfig(apply_total_to_good_ratio=True)` | `compute_rolling_optimal_weights` and `backtest_rolling_optimal_portfolio`; the rolling and single-date functions of quadratic optimisation, maximum Sharpe, maximum diversification, CARA mixture, risk budgeting and alpha with target return (`rolling_maximise_alpha_with_target_return`, `wrapper_maximise_alpha_with_target_return`) |
 | `OptimiserConfig()`, so `False` | The rolling and single-date functions of minimum tracking error, the two SAA solvers and alpha over tracking error (`rolling_maximise_alpha_over_tre`, `wrapper_maximise_alpha_over_tre`) |
+| `OptimiserConfig(solver="MOSEK")`, so `False` | The lower-level execution functions `solve_selected_execution_portfolio` and `solve_feasible_execution_portfolio` |
+
+The typed execution entry point takes a resolved problem whose default configuration uses
+CLARABEL. See [ranked execution integration](execution.md) for the lower-level legacy defaults
+and portable explicit configuration.
 
 Pass an explicit config when comparing calls. CARA rolling currently computes its universe ratio
 directly; the config flag does not disable that calculation.
