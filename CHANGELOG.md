@@ -5,6 +5,15 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.11.2] - 2026-10-07
+
+- Title documentation pages other than the homepage `<page title> - optimalportfolios`
+  instead of ending every title with the full site title, which search results cut off. The
+  homepage and sidebar keep the full title.
+- Add regression tests for the MATF opportunity, uncertainty and universe-diagnostics
+  validation and failure contracts.
+- No package code, signature or computed value changes since 7.11.1.
+
 ## [7.11.1] - 2026-10-05
 
 - Require FactorLasso 1.0.2 or later for the new inference and residual-uncertainty APIs.
