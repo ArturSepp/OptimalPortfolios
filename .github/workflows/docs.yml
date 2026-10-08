@@ -34,7 +34,7 @@ jobs:
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version: "3.12"
-          version: "0.12.13"
+          version: "0.12.23"
       - name: Sync documentation environment
         run: uv sync --locked --extra docs --group test
       - name: Check every human-authored source
