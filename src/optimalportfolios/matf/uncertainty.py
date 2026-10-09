@@ -40,6 +40,29 @@ def _metric(projector, variances):
     return (value+value.T)/2
 
 
+def _positive_capacity_summary(observed, unrestricted, assets):
+    """Map FL's full error-norm radius to diagonal-D long-only capacity.
+
+    K_star = ||(D^-1/2 alpha)_+||^2 is the square of positive attainable
+    residual-alpha Sharpe. The positive-part map and Euclidean norm are
+    1-Lipschitz, hence |sqrt(K_star_hat)-sqrt(K_star)| <= ||D^-1/2 error||.
+    FactorLasso owns calibration of that error norm; OP owns this portfolio
+    geometry. No selected-positive-set conditioning or trace bias correction
+    is valid here. Zero means no positive capacity, including all-negative alpha.
+    """
+    row = unrestricted.copy()
+    magnitude, radius = np.sqrt(observed), row['error_norm_radius']
+    row.update(metric='K_star', observed=observed, noise=np.nan, noise_adjusted=np.nan,
+               lower=float(max(0., magnitude-radius)**2),
+               upper=float((magnitude+radius)**2), per_asset=observed/assets,
+               noise_per_asset=np.nan, adjusted_per_asset=np.nan,
+               scope='pointwise_fixed_diagonal_D_positive_capacity',
+               interval_method='positive_part_'+row['interval_method'])
+    for key in ['observed', 'lower', 'upper']:
+        row[key+'_rms'] = np.sqrt(row[key]/assets)
+    return row
+
+
 def _interval_table(mean, covariance, index, confidence, supplied=None, simultaneous=False):
     """Consume calibrated endpoints or delegate default linear inference to FactorLasso."""
     if supplied is None:
@@ -75,6 +98,8 @@ def alpha_uncertainty_metrics(model, covariance, *, confidence=.95, draws=1000, 
     finite-sample coverage for fitted residuals is not asserted. Raw point
     estimates reconcile to alpha_dispersion. Signed noise corrections target the
     initialized EWMA mean conditional on fixed B/D, not a drifting endpoint.
+    K_star aliases A_plus's positive long-only residual-alpha capacity, with
+    an error-norm interval valid across changes in the selected positive set.
     """
     v = _covariance(model, covariance)
     intervals = {} if intervals is None else intervals
@@ -104,6 +129,7 @@ def alpha_uncertainty_metrics(model, covariance, *, confidence=.95, draws=1000, 
         summary.append(row)
         projected_draws = scenarios @ p.T
         values[name] = np.sum(projected_draws**2/d, axis=1)
+    summary.append(_positive_capacity_summary(points['A_plus'], summary[0], len(a)))
     p = projectors['K']
     h = p @ a
     vh = p @ v @ p.T
@@ -145,6 +171,7 @@ def alpha_uncertainty_metrics(model, covariance, *, confidence=.95, draws=1000, 
         for column in ['interval_method', 'scope', 'status', 'confidence']:
             detail[prefix+'_'+column] = table[column]
     values['A_plus'] = np.sum(np.maximum(scenarios, 0.)**2/d, axis=1)
+    values['K_star'] = values['A_plus'].copy()
     values['alpha_mean'] = scenarios.mean(axis=1)
     values['alpha_median'] = np.median(scenarios, axis=1)
     values['positive_count'] = (scenarios > 0).sum(axis=1)

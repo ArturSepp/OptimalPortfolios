@@ -23,6 +23,8 @@ import numpy as np
 import pandas as pd
 
 from optimalportfolios.optimization.config import OptimiserConfig
+from optimalportfolios.optimization._covariance_cache import _factorize_with_reuse
+from optimalportfolios.optimization._tracking_error_program import _get_program, _discard_program
 from optimalportfolios.optimization.constraints import Constraints, cvx_covar_variance
 from optimalportfolios.optimization.covar_factorization import factorize_covariance
 from optimalportfolios.optimization.solver_diagnostics import (
@@ -182,6 +184,18 @@ def wrapper_minimise_tracking_error(
     return weights, outcome
 
 
+def _build_tracking_error_problem(constraints, solver_covar, covar_factorization):
+    """Compile the existing objective and complete hard constraints without solving."""
+    covar_psd = cvx.psd_wrap(solver_covar)
+    w = cvx.Variable(solver_covar.shape[0], nonneg=constraints.is_long_only)
+    active = w - constraints.benchmark_weights.to_numpy(dtype=float)
+    objective = cvx.Minimize(cvx_covar_variance(
+        active_weights=active, covar=covar_psd, covar_factorization=covar_factorization))
+    constraints_ = constraints.set_cvx_all_constraints(
+        w=w, covar=covar_psd, covar_factorization=covar_factorization)
+    return w, cvx.Problem(objective, constraints_)
+
+
 def cvx_minimise_tracking_error(
         covar: np.ndarray,
         constraints: Constraints,
@@ -217,34 +231,30 @@ def cvx_minimise_tracking_error(
         raise ValueError('benchmark_weights length does not match covariance')
 
     covar_factorization = (
-        factorize_covariance(raw_covar) if factorize_covar else None
+        _factorize_with_reuse(factorize_covariance, raw_covar, constraints.benchmark_weights.index)
+        if factorize_covar else None
     )
     solver_covar = (
         covar_factorization.covar
         if covar_factorization is not None else raw_covar
     )
-    covar_psd = cvx.psd_wrap(solver_covar)
-    w = cvx.Variable(n, nonneg=constraints.is_long_only)
-    active = w - benchmark
-    objective = cvx.Minimize(cvx_covar_variance(
-        active_weights=active,
-        covar=covar_psd,
-        covar_factorization=covar_factorization,
-    ))
-    constraints_ = constraints.set_cvx_all_constraints(
-        w=w,
-        covar=covar_psd,
-        covar_factorization=covar_factorization,
-    )
-    problem = cvx.Problem(objective, constraints_)
+    (w, problem), program_key = _get_program(_build_tracking_error_problem,
+        constraints, solver_covar, covar_factorization, solver)
     solver_options = {'max_iter': 1000} if solver.upper() == 'CLARABEL' else {}
     try:
-        problem.solve(solver=solver, verbose=verbose, **solver_options)
+        cold = {'warm_start': False} if program_key is not None else {}
+        problem.solve(solver=solver, verbose=verbose, **solver_options, **cold)
         status = problem.status
     except cvx.error.SolverError:
         status = 'solver_error'
-    return validate_solution(
-        optimal_weights=None if w.value is None else np.asarray(w.value).ravel(),
+    except Exception:
+        _discard_program(program_key)
+        raise
+    weights = None if w.value is None else np.asarray(w.value).ravel()
+    if weights is not None and program_key is not None:
+        weights = weights.copy()
+    outcome = validate_solution(
+        optimal_weights=weights,
         problem_status=status,
         constraints=constraints,
         n=n,
@@ -253,3 +263,6 @@ def cvx_minimise_tracking_error(
         covar=solver_covar,
         covar_factorization=covar_factorization,
     )
+    if not (outcome.accepted and outcome.compliant and outcome.status == 'optimal'):
+        _discard_program(program_key)
+    return outcome

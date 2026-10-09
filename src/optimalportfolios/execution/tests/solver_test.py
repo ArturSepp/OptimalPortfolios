@@ -1379,3 +1379,24 @@ def test_exhausted_bridge_rescue_returns_structural_capacity_evidence():
     assert captured.value.bridges.at["Risk Assets", "bridge_max"] == pytest.approx(0.2)
     assert not captured.value.trade_table[SELECTED_TRADE].any()
     assert not captured.value.trade_table[FEASIBILITY_RESCUE_TRADE].any()
+
+
+def test_relaxed_rescue_admits_sales_against_original_model_direction():
+    """Full hard intervals permit a necessary sale even when both model changes are buys."""
+    from optimalportfolios.execution.solver import ExecutionSolverInfeasibility
+
+    table = _trade_table([0.4, 0.3, 0.3], [0.45, 0.35, 0.2], [False, False, False])
+    covariance = pd.DataFrame(np.eye(3) * 0.04, index=ASSETS, columns=ASSETS)
+    before = table.copy(deep=True)
+    kwargs = dict(trade_table=table, base_constraints=_base_constraints(group_max=0.5),
+                  covariance=covariance, expand_for_feasibility=True,
+                  optimiser_config=_PortableOptimiserConfig(solver="CLARABEL"))
+    with pytest.raises(ExecutionSolverInfeasibility):
+        solve_feasible_execution_portfolio(**kwargs, allow_corridor_relaxation=False)
+    result = solve_feasible_execution_portfolio(**kwargs, allow_corridor_relaxation=True)
+    assert result.accepted and result.compliant
+    assert result.trade_table[RELAXED_CORRIDOR_SOLVE].all()
+    assert result.weights.loc[["A", "B"]].sum() <= 0.5+1e-6
+    assert (result.weights.loc[["A", "B"]] < table.loc[["A", "B"], BASE_WEIGHT]-1e-8).any()
+    assert result.trade_table[FEASIBILITY_RESCUE_TRADE].any()
+    pd.testing.assert_frame_equal(before, table, check_exact=True)

@@ -23,6 +23,7 @@ from optimalportfolios.optimization.solver_diagnostics import (
     diagnose_infeasibility,
 )
 from optimalportfolios.execution._budget import _consume_projection
+from optimalportfolios.execution._projection_cache import _project
 from optimalportfolios.execution.feasibility import compute_group_bound_bridges
 from optimalportfolios.execution.schema import (
     BASE_WEIGHT,
@@ -591,7 +592,7 @@ def _solve_selected_execution_portfolio_once(
         relax_selected_corridors=relax_selected_corridors,
         partition_groups=partition_groups,
     )
-    weights, outcome = wrapper_minimise_tracking_error(
+    weights, outcome = _project(wrapper_minimise_tracking_error,
         pd_covar=covariance,
         benchmark_weights=trade_table[RAW_MODEL_WEIGHT],
         constraints=constraints,
@@ -871,6 +872,15 @@ def _get_constraint_directed_rescue_candidates(
     desired = trade_table[DESIRED_REWEIGHT].astype(float)
     can_buy = desired.gt(WEIGHT_ZERO_TOLERANCE)
     can_sell = desired.lt(-WEIGHT_ZERO_TOLERANCE)
+    if relax_selected_corridors:
+        opened = trade_table.copy(deep=True)
+        opened[SELECTED_TRADE] = opened[SELECTED_TRADE].astype(bool) | eligible
+        hard_lower, hard_upper = _build_selected_execution_bound_series(
+            base_constraints, opened, True
+        )
+        base = trade_table[BASE_WEIGHT].astype(float)
+        can_buy = hard_upper.gt(base + WEIGHT_ZERO_TOLERANCE)
+        can_sell = hard_lower.lt(base - WEIGHT_ZERO_TOLERANCE)
     directed = pd.Series(False, index=index)
     reason_sets = {instrument: set() for instrument in index}
     active = _positive_bridges(bridges)

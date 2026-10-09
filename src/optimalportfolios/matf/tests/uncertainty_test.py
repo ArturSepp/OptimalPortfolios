@@ -33,6 +33,78 @@ def test_projection_covariance_and_trace_noise():
             alpha_dispersion(m)[0][name])
 
 
+def test_long_only_capacity_bound_uses_full_error_norm_and_not_selected_support():
+    """Independently reconcile positive-part points and correlated error radii."""
+    from factorlasso import gaussian_quadratic_quantile
+    m = model()
+    v = pd.DataFrame(.0001*(.6*np.ones((4, 4))+.4*np.eye(4)),
+                     index=m.alpha.index, columns=m.alpha.index)
+    result = alpha_uncertainty_metrics(m, v, draws=3, quadratic_method='weighted_chi2')
+    row = result['summary'].loc['K_star']
+    d = m.residual_variances.to_numpy()
+    expected = np.sum(np.maximum(m.alpha, 0.)**2/d)
+    eigenvalues = np.linalg.eigvalsh(v.to_numpy()/np.sqrt(np.outer(d, d)))
+    radius = np.sqrt(gaussian_quadratic_quantile(eigenvalues))
+    assert row.observed == pytest.approx(expected)
+    assert row.error_norm_radius == pytest.approx(radius)
+    assert row.lower == pytest.approx(max(0., np.sqrt(expected)-radius)**2)
+    assert row.upper == pytest.approx((np.sqrt(expected)+radius)**2)
+    assert np.isnan(row.noise_adjusted)
+    np.testing.assert_array_equal(result['scenario_metrics'].K_star,
+                                  result['scenario_metrics'].A_plus)
+    diagonal = v*0.+np.diag(np.diag(v))
+    other = alpha_uncertainty_metrics(m, diagonal, draws=3, quadratic_method='weighted_chi2')
+    assert not np.isclose(row.error_norm_radius,
+                          other['summary'].loc['K_star', 'error_norm_radius'])
+
+
+@pytest.mark.parametrize('level', [-.02, 0., .02])
+def test_common_alpha_and_zero_uncertainty_have_exact_capacity_bounds(level):
+    """K removes a common level; K_star includes its positive part and never shorts."""
+    m = model()
+    m = OpportunityModel(m.betas, m.residual_variances, m.factor_covariance,
+                          pd.Series(level, index=m.alpha.index))
+    v = pd.DataFrame(0., index=m.alpha.index, columns=m.alpha.index)
+    result = alpha_uncertainty_metrics(m, v, draws=2, quadratic_method='weighted_chi2')
+    rows = result['summary']
+    assert rows.loc['K', 'observed'] == pytest.approx(0., abs=1e-15)
+    assert rows.loc['K_star', 'observed'] == pytest.approx(4*max(0., level)**2/.04)
+    np.testing.assert_allclose(rows.lower, rows.observed, atol=1e-15)
+    np.testing.assert_allclose(rows.upper, rows.observed, atol=1e-15)
+
+
+def test_capacity_intervals_known_covariance_gaussian_coverage():
+    """Independent Monte Carlo checks the norm geometry, including sign crossings."""
+    from scipy.linalg import null_space
+    from factorlasso import gaussian_quadratic_quantile
+    m = model()
+    d = m.residual_variances.to_numpy()
+    design = np.column_stack([np.ones(4), m.betas])
+    basis = null_space(design.T/np.sqrt(d))
+    metric = (basis @ basis.T)/np.sqrt(np.outer(d, d))
+    v = .0002*(.5*np.ones((4, 4))+.5*np.eye(4))
+    root = np.linalg.cholesky(v)
+    rng = np.random.default_rng(2026100501)
+    errors = rng.normal(size=(50000, 4)) @ root.T
+    radii = {}
+    for label, q in [('K', metric), ('K_star', np.diag(1/d))]:
+        eig = np.maximum(np.linalg.eigvalsh(root.T @ q @ root), 0.)
+        eig = eig[eig > 1e-14]
+        radii[label] = np.sqrt(gaussian_quadratic_quantile(eig))
+    for alpha in [np.zeros(4), np.array([-.04, 0., .01, .06]), np.full(4, -.04)]:
+        estimates = alpha+errors
+        for label in radii:
+            if label == 'K':
+                observed = np.sum((estimates/np.sqrt(d) @ basis)**2, axis=1)
+                target = np.sum((alpha/np.sqrt(d) @ basis)**2)
+            else:
+                observed = np.sum(np.maximum(estimates, 0.)**2/d, axis=1)
+                target = np.sum(np.maximum(alpha, 0.)**2/d)
+            lower = np.maximum(0., np.sqrt(observed)-radii[label])**2
+            upper = (np.sqrt(observed)+radii[label])**2
+            assert np.mean((lower <= target+1e-14) & (target <= upper+1e-14)) >= .945
+
+
 def test_paired_removal_and_null_bounds():
     """Paired scenario removal agrees with direct subset evaluation, including rank changes."""
     m = model()

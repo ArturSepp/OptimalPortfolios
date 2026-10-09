@@ -114,6 +114,12 @@ unmodified input constraints. Review the returned diagnostics and the
 
 `compute_group_bound_bridges` reports interval-capacity diagnostics.
 `solve_selected_execution_portfolio` sizes an already selected table, while
+When corridor relaxation is explicitly enabled, constraint-directed rescue uses
+the buy and sale capacity of each eligible instrument's intersected hard bounds.
+An originally model-directed buy can therefore supply a necessary sale in this
+flagged retry. Desk pins, cadence and mandatory intervals remain intact; ordinary
+strict-corridor rescue retains the original desired direction.
+
 `solve_feasible_execution_portfolio` also performs the configured rescue and
 retry process. The typed entry point combines scoring and that feasible-solve
 orchestration. Full-investment bridge tightening uses only an explicitly supplied
@@ -337,6 +343,202 @@ eligible incumbent. The cooperative `max_search_seconds` still checks between
 solves and cannot interrupt an in-flight solve. Keeping a legacy-seeded branch
 with a shared budget does not guarantee the result dominates a separate legacy
 compression run that spends its entire budget on that single branch.
+
+Two independent controls extend this search without changing its defaults:
+
+| Field | Meaning and default |
+|---|---|
+| `allow_support_plateaus` | False. True permits an exact deletion of one optional eligible selected coordinate when both registered and sized trade counts stay unchanged. TE must remain within the original allowance. |
+| `preserve_guarded_path` | False. True adds a continuation from the best eligible seed after proposals. It receives the first removal attempt in each round, followed by the legacy and proposal branches. All paths share the same work ceilings. |
+
+### Bounded support swaps
+
+`ExecutionBranchConfig.max_swap_trials` defaults to zero. A positive value enables
+one-for-one optional-support exchanges after deletion work, seeded from the best
+eligible incumbent. With `reserve_swap_budget=True`, it reserves that many
+positions of the existing shared
+projection ceiling from deletions. Proposal/rescue work still uses the global
+ceiling, so the reservation does not guarantee that many swap solves. It neither
+enlarges the ceiling nor recycles cached calls into uncharged work.
+
+| Field | Meaning and default |
+|---|---|
+| `max_swap_trials` | Zero disables swaps. A nonnegative integer no larger than `max_projection_calls` bounds attempted strict swap projections. |
+| `swap_candidate_limit` | Eight incoming names per outgoing name, ordered by conditional funded variance gain. |
+| `swap_depth` | One continuation level. A positive integer allows successive swaps through a bounded frontier. |
+| `swap_beam_width` | One retained path per level. A positive integer bounds the frontier of provisional strict states. |
+| `reserve_swap_budget` | True preserves the original reservation. False completes deletion work first and uses only unused shared projections for swaps. |
+
+With `reserve_swap_budget=False` and `max_search_seconds=None`, the complete
+swap-disabled path is preserved before any exchange. Subsequent updates can only
+improve its returned preference. If deletion exhausts the shared ceiling there
+are no swaps. This is a fixed-work property, not a wall-clock dominance promise;
+extra bookkeeping and a different stopping time can change deadline delivery.
+
+The score uses the existing OP funded-risk kernel after releasing an outgoing
+trade and adjusting settlement cash. Incoming displacements use the original
+strict solver intervals. This is a candidate-ordering heuristic: joint resizing,
+cash limits and all other hard constraints still require the existing projection
+and audit. Mandatory, cash, cadence-ineligible and non-Rule-4 coordinates cannot
+be edited. Rescue is disabled and exactly the proposed selected-support edit
+must survive the solve. Every attempted projection, including structural failure,
+is charged to the same budget.
+
+When the original turnover cap is enabled, swap sizing appends a signed linear
+row through the existing constraint compiler, preserving other linear policies.
+On directional intervals this row is exact L1 noncash turnover. Intervals that
+straddle original current holdings use a conservative secant upper envelope;
+fixed changes are constants and cash is excluded. A positive cap reserves
+`1e-4` bp internally for numerical accuracy. This tightens sizing and never
+weakens the unchanged independent return guard.
+
+Swap states never increase their parent's actual registered count and remain
+within the original risk allowance and original registered/sized/turnover caps.
+They may be worse than the eligible incumbent, allowing a short continuation to
+cross an intermediate support. They do not reset any reference or qualify as
+execution orders. Only the unchanged original-baseline return guard and complete
+return preference can replace the incumbent or emit an incumbent callback.
+
+Each level receives a share of the remaining trial allowance; the best bounded
+children form the next frontier. Already visited selected supports are skipped.
+Optional trace fields record `added` and `swap_depth`; summary fields report
+swap trials, candidate pairs, levels, seed, final frontier and deletion-phase
+projection limit. Default-off searches preserve prior trace columns and paths.
+Under a fixed ceiling, reserved swaps can displace useful deletion work. There
+is no dominance or global support-optimality guarantee; qualify configurations
+on the consumer's resolved inputs before production adoption.
+
+A plateau changes selected support even when executed trade counts stay flat.
+Its internal TE or turnover may worsen within the branch rules; it cannot replace
+an already preferred returned portfolio. Exactly one eligible selected coordinate
+must disappear, so retained deletions make finite support progress and cannot
+readmit deleted instruments. Count increases are not plateau moves.
+
+The additional guarded path skips ordinary deletions that fail original return
+qualification. If plateau handling is also enabled, a flat-count step may advance
+without a qualifying improvement, but it must satisfy the original registered,
+sized-ticket and turnover caps and the original TE allowance. It remains an
+internal state until it passes the unchanged final return guard. Its seed is
+recorded as `guarded_seed_checkpoint`; retained plateau rows report
+`support_plateau`. Exploratory branches remain available for seeds that can
+become eligible after compression.
+
+The extra path consumes real projections. Under a fixed shared ceiling it may
+reduce exploration elsewhere; these controls guarantee neither dominance over
+separate compression nor dominance over the previous branch policy. They do not
+memoize apparently identical portfolios or recycle unused work into a larger
+budget.
+
+### Reusing identical resolved projections
+
+`ExecutionBranchConfig.reuse_projection_solves` defaults to False. When enabled,
+one search can reuse a previously successful, compliant, `optimal` numerical
+projection with exactly the same resolved wrapper arguments. The cache key
+serializes the complete argument dictionary: ordered covariance, raw benchmark,
+current holdings, resolved constraints, optimiser configuration and context.
+It compares full serialized bytes and the projection callable. Equal byte blocks
+share storage while preserving every original key byte. Metadata differences
+may cause conservative misses; inputs that cannot be serialized use a fresh
+solve. Keys are never deserialized or persisted, and the cache ends with this
+search.
+
+Numerical calls within this scope reuse covariance preparation only when the
+filtered numerical matrix, asset order and factorization callable match exactly.
+Filtering and constraint alignment still run for each request. The original
+factorization and PSD-repair policy supply every prepared result, including its
+conditioning diagnostics. The cache shares immutable covariance and factor
+arrays; writing to them or enabling writeability raises an error. Copy an array
+explicitly when a consumer needs mutable local storage. Other outcome fields,
+constraints and weights remain detached. Changed matrices or filtered universes
+require new preparation, and failed factorizations are retried.
+
+Each hit still consumes one logical projection attempt. The original
+`projection_calls`, `search_projection_calls`, removal limit, scheduling and
+return guards remain unchanged; saved work does not buy extra search trials.
+The common baseline is always solved outside the cache. Constraint resolution,
+execution-table construction, dust cleanup and cash/funding audits still run
+for every request. Cached weights, outcomes and constraints are copied before
+use, preserving branch-specific metadata and avoiding shared mutable results.
+Rejected, inaccurate, nonfinite and exceptional solver outcomes are not cached.
+
+With reuse enabled, trial rows additionally record `numerical_projection_calls`
+and `projection_cache_hits`; the summary records
+`search_numerical_projection_calls` and `search_projection_cache_hits`.
+The summary also records `search_covariance_factorizations` and
+`search_covariance_cache_hits` for actual preparation and reused preparation,
+respectively. All four search counters exclude the common baseline.
+Numerical calls count invocations of the minimum-tracking-error wrapper,
+excluding the common baseline and diagnostic optimisations. Structural failures
+can consume logical work without invoking that wrapper, so logical attempts need
+not equal numerical calls plus hits.
+
+Reuse requires `max_search_seconds=None`: faster solves could otherwise change
+which trials fit before the cooperative limit. Exact decision parity must be
+validated with a fixed solver/runtime; identical inputs do not guarantee that
+an externally nondeterministic solver would return identical fresh solutions.
+The cache is bounded by the finite logical projection ceiling, with memory
+depending on the distinct resolved inputs and saved outcomes.
+
+### Reusing compatible projection programs
+
+`ExecutionBranchConfig.reuse_projection_programs` defaults to False and requires
+`reuse_projection_solves=True`. It can reuse a CVXPY problem whose lower/upper
+weight bounds change while its filtered risk geometry and all other policy inputs
+match exactly. The current implementation supports the base `Constraints` class,
+CLARABEL or MOSEK, and immutable covariance preparation owned by the same search.
+
+The complete existing constraint compiler supplies every row. Lower and upper
+boxes become parameters; fixed benchmark/current weights, group/risk/trading
+constraints and the builder/solver remain part of exact identity. Changed bound
+presence, covariance, asset order or fixed policy creates a new program.
+Unsupported or unserializable requests construct a fresh problem. The cache
+verifies DPP compliance and that every intended box parameter enters the graph.
+[CVXPY's DPP guide](https://www.cvxpy.org/tutorial/dpp/index.html) explains its
+cached parameter-to-problem-data compilation.
+
+Each actual numerical request still runs the native solver with warm-start
+disabled, clears preceding primal values, and performs fresh original constraint
+and funding audits. Fixed graph data have an independent deep copy; reported
+weights, constraints and diagnostic context belong to the current request.
+Rejected or erroneous solves evict their graph. Whole resolved-projection hits
+continue to avoid numerical solving under their existing exact identity.
+
+The summary adds `search_program_builds`, `search_program_cache_hits` and
+`search_program_bypasses`. Builds include fresh fallback constructions; a rejected
+parameter graph can cost an additional build before the fresh fallback. Counters
+exclude the common baseline and its rescue calls. Program storage also ends with
+this search and can add memory beyond the projection/preparation cache.
+Logical projections, branch order and original return guards retain their
+existing meaning. Validate outputs and complete paths under the consumer's fixed
+runtime before adopting this mode.
+
+### Delivering eligible incumbents during search
+
+`solve_branched_execution(problem, config, on_incumbent=callback)` accepts an
+optional keyword-only callback. Its default is `None`. The synchronous call
+`callback(checkpoint_id, result)` receives a deep copy of the strict accepted
+baseline, identified by `baseline`, and each subsequent replacement of the
+eligible returned incumbent. Those replacements satisfy the original-baseline
+return guards. Exploratory branch states and unqualified support plateaus are
+never delivered; rejected or relaxed baselines produce no callback.
+
+The consumer can retain or persist each result without mutating the search.
+Callback exceptions propagate, including persistence errors. Callback execution
+consumes elapsed time but no logical projection allowance; use a short callback
+when elapsed time matters. With a deterministic solver and fixed projection
+budget, enabling a passive callback preserves the final decision and search
+order. With a cooperative wall-clock limit, callback overhead can affect which
+trials finish. The existing restriction on combining projection reuse with
+`max_search_seconds` still applies.
+
+This hook does not interrupt numerical work or enforce a hard deadline. An
+external supervisor can stop a worker and recover its latest completely written,
+independently audited checkpoint. The supervisor owns atomic storage, input/run
+identity, final audit, time accounting and interruption status. If the baseline
+has not completed, no feasible fallback is promised. A saved portfolio may be
+available even though search ended by interruption or error; retain both facts.
+No market deadline, ten-second production requirement, order transmission or
+strict minimum-ticket sizing guarantee is introduced.
 
 ## See also
 

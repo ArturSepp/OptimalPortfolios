@@ -5,6 +5,71 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.17.0] - 2026-10-06
+
+- Add `ExecutionBranchConfig.reserve_swap_budget`, defaulting to True for
+  compatibility. False completes the swap-disabled deletion path before using
+  spare projections for support exchange, preserving its incumbent under a fixed
+  logical budget and no wall-clock stop. Original guards and total work stay fixed.
+
+## [7.16.1] - 2026-10-06
+
+- Fix opt-in relaxed-corridor rescue to admit buys and sales from the actual
+  intersected hard intervals, including moves against the original model direction.
+  Preserve desk pins, mandate bounds, cadence and strict-corridor defaults.
+
+## [7.16.0] - 2026-10-06
+
+- Add opt-in bounded one-for-one execution support swaps with conditional funded
+  risk ordering and a bounded continuation beam. Reserve swap attempts from the
+  existing shared projection ceiling; keep strict corridors, protected rows,
+  original-baseline caps and independent return qualification. Provisional states
+  never replace or reset the eligible incumbent. Defaults preserve prior paths.
+
+## [7.15.0] - 2026-10-06
+
+- Add opt-in `ExecutionBranchConfig.reuse_projection_programs`, requiring projection
+  reuse. Parameterize only execution box bounds through the existing complete
+  constraint compiler; reuse DPP graph/canonicalization for matching immutable
+  geometry and fixed policies. Keep native CLARABEL/MOSEK solves cold, refresh each
+  request's original audits and detach outputs. Unsupported requests build fresh
+  problems, failed solves evict graphs, and logical budgets remain unchanged.
+  Report program builds, hits and bypasses separately; the default stays False.
+
+## [7.14.1] - 2026-10-06
+
+- Reduce memory retained by opt-in execution projection reuse through exact
+  serialized-byte block deduplication and shared immutable covariance preparation.
+  Key preparation by the filtered matrix, asset order and factorization callable;
+  preserve PSD repair, per-request constraints, diagnostics and logical budgets.
+  Record preparation calls and hits separately in the search summary. Shared
+  covariance/factor arrays are read-only; mutable results remain detached.
+
+## [7.14.0] - 2026-10-06
+
+- Add an optional keyword-only `on_incumbent` callback to branched execution.
+  Deliver detached copies of the accepted strict baseline and eligible incumbent
+  replacements, excluding exploratory states. Preserve search decisions and
+  projection budgets; propagate callback failures. This supports external
+  checkpoint persistence without imposing a production deadline or changing
+  the existing cooperative-clock/reuse restriction.
+
+## [7.13.0] - 2026-10-05
+
+- Add opt-in reuse of identical successful resolved execution projections within
+  one branch search. Keep logical projection budgets and search scheduling
+  unchanged, report numerical calls and cache hits separately, and rebuild
+  per-request execution metadata and funding audits. Require deterministic work
+  budgets rather than cooperative wall-clock stopping; preserve disabled defaults.
+
+## [7.12.0] - 2026-10-05
+
+- Add separate opt-in support-plateau and guarded-continuation controls to
+  `ExecutionBranchConfig`. Flat counted-trade steps require an exact eligible
+  support deletion and retain the original tracking-error allowance. The
+  additional guarded path shares the existing projection/removal ceilings.
+  Existing defaults, final return guards and production dispatch are unchanged.
+
 ## [7.11.2] - 2026-10-07
 
 - Title documentation pages other than the homepage `<page title> - optimalportfolios`

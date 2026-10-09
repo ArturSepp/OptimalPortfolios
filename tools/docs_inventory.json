@@ -517,7 +517,7 @@
     "ExecutionOptimizationResult": {"docs/execution.md": ["weights", "trade_table", "outcome"]},
     "ExecutionSearchConfig": {"docs/execution.md": ["max_removal_trials", "max_exchange_trials", "te_allowance_bp", "min_exchange_improvement_bp", "exchange_candidate_limit"]},
     "ExecutionGuardConfig": {"docs/execution.md": ["methods", "canonical_ties", "te_allowance_bp", "min_te_improvement_bp", "ticket_size_bp", "max_sized_ticket_increase", "max_turnover_increase_bp", "max_removal_trials", "max_search_seconds", "max_projection_calls"]},
-    "ExecutionBranchConfig": {"docs/execution.md": ["methods", "canonical_ties", "te_allowance_bp", "min_te_improvement_bp", "ticket_size_bp", "max_sized_ticket_increase", "max_turnover_increase_bp", "max_removal_trials", "max_search_seconds", "max_projection_calls"]},
+    "ExecutionBranchConfig": {"docs/execution.md": ["methods", "canonical_ties", "te_allowance_bp", "min_te_improvement_bp", "ticket_size_bp", "max_sized_ticket_increase", "max_turnover_increase_bp", "max_removal_trials", "max_search_seconds", "max_projection_calls", "allow_support_plateaus", "preserve_guarded_path", "reuse_projection_solves", "reuse_projection_programs", "max_swap_trials", "swap_candidate_limit", "swap_depth", "swap_beam_width", "reserve_swap_budget"]},
     "ExecutionBranchSearchResult": {"docs/execution.md": ["result", "attempts", "summary", "checkpoints"]},
     "ExecutionSearchResult": {"docs/execution.md": ["result", "attempts", "summary"]},
     "ExecutionCorridorDiagnostic": {"docs/execution.md": ["status", "bridges", "result", "reason"]},
