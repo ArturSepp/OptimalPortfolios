@@ -419,8 +419,31 @@ def main() -> None:
                  'saa.min_variance_target_return', 'saa.max_return_target_vol',
                  'taa.maximise_alpha_over_tre', 'taa.maximise_alpha_with_target_yield'):
         module = importlib.import_module(f'optimalportfolios.optimization.{name}')
-        assert 'factorize_covariance(raw_covar) if factorize_covar else None' in (
-            inspect.getsource(module))
+        if name == 'general.minimum_tracking_error':
+            calls = []
+            original_factorize = module.factorize_covariance
+
+            def counted_factorize(values):
+                """Observe the delegated factorization on the actual filtered covariance."""
+                calls.append(values.copy())
+                return original_factorize(values)
+
+            benchmark = pd.Series(1.0 / len(TICKERS), index=padded.index)
+            benchmark.loc['Cash'] = 0.0
+            with replaced(module, factorize_covariance=counted_factorize):
+                _, tracked = module.wrapper_minimise_tracking_error(
+                    padded, benchmark, op.Constraints(is_long_only=True),
+                    optimiser_config=config)
+                assert tracked.accepted and len(calls) == 1
+                np.testing.assert_array_equal(calls[0], covar.to_numpy())
+                calls.clear()
+                _, unfactorized = module.wrapper_minimise_tracking_error(
+                    padded, benchmark, op.Constraints(is_long_only=True),
+                    optimiser_config=replace(config, factorize_covar=False))
+                assert unfactorized.accepted and not calls
+        else:
+            assert 'factorize_covariance(raw_covar) if factorize_covar else None' in (
+                inspect.getsource(module))
         assert 'filter_covar_and_vectors_for_nans(' in inspect.getsource(module)
     for name in ('general.max_diversification', 'risk_allocation.risk_budgeting'):
         module = importlib.import_module(f'optimalportfolios.optimization.{name}')

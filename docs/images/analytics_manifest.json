@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-10-01T08:58:22+00:00",
-  "platform": "Windows-11-10.0.26200-SP0",
+  "generated_at_utc": "2026-10-10T22:43:43+00:00",
+  "platform": "Windows-11-10.0.26300-SP0",
   "versions": {
-    "python": "3.12.14",
-    "optimalportfolios": "7.10.0",
-    "qis": "5.33.0",
-    "factorlasso": "0.22.0",
+    "python": "3.12.10",
+    "optimalportfolios": "7.17.0",
+    "qis": "5.33.1",
+    "factorlasso": "1.0.2",
     "numpy": "2.5.2",
     "pandas": "3.0.5",
     "scipy": "1.18.0",
@@ -984,7 +984,7 @@
     "covariance_conditioning": {
       "path": "docs/images/covariance_conditioning.png",
       "script": "examples/docs/solver_numerics_and_outcomes.py",
-      "script_sha256": "96aa5050edeb07a4c21b04ff527e67e1dd5cb816fe141faacd633ec9611f43af",
+      "script_sha256": "be142ae6318b31c01ac4eeda7b79154ab719e3ed36d2cad43bcb1c2bc2c9b596",
       "image_sha256": "12940cdc3be09158e8380c8abef979d05b9cad13196f951ff6433e91457ae6b9",
       "table_sha256": "3dd5cbc96d9b7bfec37cb5be23d573ccbdce72cb251c181a0fcf7bd94f545bf5",
       "parameters": {
@@ -2157,7 +2157,7 @@
     }
   },
   "review": {
-    "note": "2026-10-01: Claude inspected the new smart_diversification_overlays exhibit in the image viewer; axis labels, point labels, legends, percent formats and the frontier are legible, and the plotted coordinates match the case-study tables. The other 25 image and table hashes are identical to the previously reviewed bundle. The editable qis in this environment is the v5.33.1 tag source, although its installed metadata reports 5.33.0.",
-    "published_at_utc": "2026-10-01T08:58:49+00:00"
+    "note": "Codex 2026-10-11: all 26 regenerated teaching previews inspected at native resolution and 736-pixel article width; labels, legends, axes and annotations checked. Every image and plotted-table SHA-256 matches the previous reviewed bundle. Regenerated source hashes and actual environment provenance after the solver-contract assertion update.",
+    "published_at_utc": "2026-10-10T22:47:41+00:00"
   }
 }
