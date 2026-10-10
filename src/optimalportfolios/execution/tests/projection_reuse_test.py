@@ -1,6 +1,7 @@
 """Exact projection identity, isolation, budget and independent work regressions."""
 from copy import deepcopy
 from dataclasses import replace
+import pickle
 from types import SimpleNamespace
 
 import numpy as np
@@ -61,9 +62,27 @@ def test_complete_resolved_identity_rejects_each_changed_input(change):
         changed['context'] = 'different decision'
     cache.project(_stub, changed)
     assert cache.numerical_calls == 2 and cache.hits == 0
-    cache.project(_stub, deepcopy(inputs))
+    # The key contract is exact serialized bytes. Older pandas can change alias
+    # metadata in a deep copy without changing the numerical values.
+    cache.project(_stub, inputs)
     assert cache.numerical_calls == 2 and cache.hits == 1
 
+
+
+def test_equivalent_copy_obeys_exact_serialized_identity():
+    """Equal values permit a conservative miss when copying changes pickle metadata."""
+    inputs, cache = _inputs(), _ProjectionCache()
+    copied = deepcopy(inputs)
+    same_key = pickle.dumps(inputs, protocol=5) == pickle.dumps(copied, protocol=5)
+    expected = cache.project(_stub, inputs)
+    actual = cache.project(_stub, copied)
+    pd.testing.assert_series_equal(actual[0], expected[0], check_exact=True)
+    np.testing.assert_array_equal(actual[1].weights, expected[1].weights)
+    assert cache.numerical_calls == (1 if same_key else 2)
+    assert cache.hits == int(same_key)
+    cache.project(_stub, copied)
+    assert cache.numerical_calls == (1 if same_key else 2)
+    assert cache.hits == int(same_key) + 1
 
 def test_hits_are_detached_from_fresh_outputs_and_other_hits():
     """Mutable weight, outcome and constraint objects cannot poison cached results."""

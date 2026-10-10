@@ -97,7 +97,7 @@ the independent return audit remains unchanged and authoritative.
     loadings = (1e4*slope).to_frame(name)
     bound = pd.Series({name: cap-1e4*float(intercept.sum())})
     if block is not None:
-        loadings = pd.concat([block.loadings.reindex(table.index), loadings], axis=1)
+        loadings = pd.concat([block.loadings.reindex(table.index), loadings], axis=1, sort=False)
         lower_bounds = block.lower
         upper_bounds = pd.concat([block.upper, bound]) if block.upper is not None else bound
     else:
