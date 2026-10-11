@@ -512,8 +512,9 @@ If you use optimalportfolios in your research, please cite it as:
 @article{sepphansenkastenholz2026,
   title={Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors},
   author={Sepp, Artur and Hansen, Emilie H. and Kastenholz, Mika},
-  journal={Working Paper},
-  year={2026}
+  journal={The Journal of Portfolio Management},
+  note={Forthcoming},
+  year={2027}
 }
 ```
 
@@ -522,7 +523,6 @@ If you use optimalportfolios in your research, please cite it as:
   title={The Convexity Premium of Portfolio Overlays},
   author={Sepp, Artur and Kastenholz, Mika},
   journal={Journal of Investment Management},
-  note={Forthcoming},
   year={2026}
 }
 ```
