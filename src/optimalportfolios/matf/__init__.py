@@ -6,6 +6,7 @@ from optimalportfolios.matf.cma_diagnostics import (
     CmaDiagnosticResult,
     CmaDiagnosticSpec,
     compute_cma_diagnostics,
+    without_admitted_alpha,
 )
 
 from optimalportfolios.matf.sharpe_accounting import (

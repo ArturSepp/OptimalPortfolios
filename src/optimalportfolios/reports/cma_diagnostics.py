@@ -376,8 +376,107 @@ def _scenario_page(result: CmaDiagnosticResult, title: str) -> Figure:
     return fig
 
 
+def _residual_tails(assets: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Select up to five positive and negative signed gaps, preserving input ties."""
+    ordered = assets.sort_values('residual', ascending=False, kind='stable')
+    top = ordered.loc[ordered.residual > 0].head(5)
+    bottom = assets.loc[assets.residual < 0].sort_values('residual', kind='stable').head(5)
+    return top, bottom
+
+
+def _alpha_comparison_page(result: CmaDiagnosticResult, zero: CmaDiagnosticResult,
+                           title: str) -> Figure:
+    """Compare already computed forecast accounting and implied factor premia."""
+    fig = _page(result, title, 'Alpha views / Comparison')
+    _section(fig, .815, 'Same universe and risk model; two admission views',
+             'Zero view removes only specified admitted alpha. Other CMA adjustments remain.')
+    rows = [[label, _number(zero.summary.get(key), style),
+             _number(result.summary.get(key), style)] for key, label, style in (
+        ('total_sharpe2', 'Total squared Sharpe', 'score'),
+        ('implied_systematic_sharpe2', 'Implied systematic squared Sharpe', 'score'),
+        ('residual_sharpe2', 'Residual squared Sharpe', 'score'),
+        ('admission_score', 'Raw admission score', 'score'),
+        ('fpir', 'Calibrated factor access / FPIR', 'percent'))]
+    _table(fig, rows, ['Diagnostic', 'Zero admitted alpha', 'As specified'], .632, .136,
+           [.50, .25, .25], 8.1)
+    note, color = _rank_note(result.summary)
+    _write(fig, _LEFT, .613, note, 8, color)
+    _section(fig, .570, 'Calibrated and GLS-implied factor premia',
+             'Annual excess premia in basis points. Alpha effect = specified minus zero view.')
+    rows = [[_text(key, 31, 2), _value(row, 'calibrated_premium', 'bp'),
+             _value(zero.factors.loc[key], 'implied_premium', 'bp'),
+             _value(row, 'implied_premium', 'bp'),
+             _number(row.implied_premium-zero.factors.loc[key, 'implied_premium'], 'bp')]
+            for key, row in result.factors.iloc[:_FACTOR_ROWS].iterrows()]
+    _table(fig, rows, ['Factor', 'Calibrated', 'GLS\nzero alpha', 'GLS\nas specified',
+                       'Alpha effect\nbp'], .215, .304, [.36, .16, .16, .16, .16], 7.9)
+    omitted = max(0, len(result.factors)-_FACTOR_ROWS)
+    s = result.summary
+    _write(fig, _LEFT, .198,
+           f'{omitted} additional factors in factors.csv. Whitened condition number '
+           + _number(s.get('condition_number'), 'scientific') + '\n'
+           'Admission budget ' + _number(s.get('admission_budget'))
+           + ' | Specified usage ' + _number(s.get('admission_budget_ratio'), 'percent')
+           + ' | Projected admission ' + _number(s.get('admission_residual_score')),
+           8, _MUTED)
+    for y, label, view in [(.144, 'Zero alpha', zero), (.120, 'As specified', result)]:
+        failures = int(view.validation.status.eq('fail').sum())
+        _write(fig, _LEFT, y,
+               f'{label}: {failures} failed numerical checks / {len(view.validation)} recorded.',
+               8, _RED if failures else _TEAL)
+    _write(fig, _LEFT, .077,
+           'GLS-implied premia are diagnostic coordinates, not a change to calibrated CMAs.\n'
+           'All scores are unconstrained model-implied excess opportunities.\n'
+           'Complete assets, channels, scenarios and policy checks are saved for both views.',
+           7.5, _MUTED)
+    return fig
+
+
+def _alpha_contributors_page(result: CmaDiagnosticResult, title: str, label: str) -> Figure:
+    """Show disjoint signed residual tails and their squared-Sharpe contributions."""
+    fig = _page(result, title, 'Alpha views / ' + label)
+    _write(fig, _LEFT, .817, label, 13, weight='bold')
+    s = result.summary
+    _cards(fig, [('Total squared Sharpe', _number(s.get('total_sharpe2'))),
+                 ('Residual S2', _number(s.get('residual_sharpe2'))),
+                 ('Raw admission score', _number(s.get('admission_score')))], y=.716)
+    _write(fig, _LEFT, .703,
+           'GLS residual = excess CMA minus fitted CMA. Ranking uses the signed gap in bp.',
+           8, _MUTED)
+    top, bottom = _residual_tails(result.assets)
+    for y, name, selected, description in [
+            (.675, 'Top 5', top, 'Largest positive GLS residuals; forecast above factor fit.'),
+            (.409, 'Bottom 5', bottom, 'Most negative GLS residuals; forecast below factor fit.')]:
+        _section(fig, y, name, description)
+        rows = [[_name(result.assets, key, 29), _value(row, 'admitted_alpha', 'bp'),
+                 _value(row, 'excess_cma', 'return'), _value(row, 'fitted_excess_cma', 'return'),
+                 _value(row, 'residual', 'bp'), _value(row, 'residual_vol', 'risk'),
+                 _value(row, 'residual_score'), _value(row, 'residual_share', 'percent')]
+                for key, row in selected.iterrows()]
+        _table(fig, rows, ['Asset', 'Alpha\nbp', 'Excess\nCMA', 'GLS\nfitted', 'Residual\nbp',
+                           'Residual\nvol', 'S2\ncontrib.', 'S2\nshare'], y-.253, .201,
+               [.32, .095, .10, .10, .10, .105, .09, .09], 7.5)
+    shown = len(top)+len(bottom)
+    _write(fig, _LEFT, .139,
+           f'Showing {shown} of {len(result.assets)} assets; '
+           'fewer rows when a sign has fewer than five.\n'
+           'S2 contribution = squared residual / residual variance; '
+           'both signs contribute positively.',
+           7.4, _MUTED)
+    checks = result.policy_checks
+    breaches = int(checks.status.eq('breach').sum()) if not checks.empty else 0
+    policy = s.get('policy_name') or 'No admission policy supplied'
+    _write(fig, _LEFT, .101,
+           _text(f'{policy} | {breaches} breached checks. Caps govern admitted alpha only.', 119, 1)
+           + '\n' + f'{len(result.scenarios.columns)} supplied scenarios retained in this view; '
+           'scenario shocks are held fixed.\n'
+           'Small residual risks can magnify forecast adjustments. Full details are in the bundle.',
+           7.3, _MUTED)
+    return fig
+
+
 def _build_pages(result: CmaDiagnosticResult, pages: int,
-                 title: str | None = None) -> list[Figure]:
+                 title: str | None = None, *, zero_alpha_result=None) -> list[Figure]:
     """Build bounded report pages while leaving every supplied table and scalar unchanged."""
     if pages not in (2, 3):
         raise ValueError('CMA diagnostic reports support two or three pages.')
@@ -385,10 +484,21 @@ def _build_pages(result: CmaDiagnosticResult, pages: int,
     figures: list[Figure] = []
     previous_figures = set(plt.get_fignums())
     try:
-        figures.append(_forecast_page(result, title))
-        figures.append(_admission_page(result, title))
-        if pages == 3 and not result.scenarios.empty:
-            figures.append(_scenario_page(result, title))
+        if zero_alpha_result is not None:
+            if not result.assets.index.equals(zero_alpha_result.assets.index):
+                raise ValueError('Alpha views must use the same asset universe and order')
+            if not result.factors.index.equals(zero_alpha_result.factors.index):
+                raise ValueError('Alpha views must use the same factor universe and order')
+            if pages == 3:
+                figures.append(_alpha_comparison_page(result, zero_alpha_result, title))
+            figures.append(_alpha_contributors_page(
+                zero_alpha_result, title, 'Zero admitted alpha'))
+            figures.append(_alpha_contributors_page(result, title, 'Admitted alpha as specified'))
+        else:
+            figures.append(_forecast_page(result, title))
+            figures.append(_admission_page(result, title))
+            if pages == 3 and not result.scenarios.empty:
+                figures.append(_scenario_page(result, title))
         for i, fig in enumerate(figures, start=1):
             _write(fig, 0.945, 0.035, f'{i} / {len(figures)}', 7.5, _MUTED, ha='right')
         return figures
@@ -399,7 +509,8 @@ def _build_pages(result: CmaDiagnosticResult, pages: int,
 
 
 def render_cma_diagnostics(result: CmaDiagnosticResult, output_path: str | Path,
-                           *, pages: int = 3, title: str | None = None) -> Path:
+                           *, pages: int = 3, title: str | None = None,
+                           zero_alpha_result: CmaDiagnosticResult | None = None) -> Path:
     """Render a completed CMA audit to a readable, atomically replaced two/three-page PDF.
 
     Args:
@@ -408,6 +519,8 @@ def render_cma_diagnostics(result: CmaDiagnosticResult, output_path: str | Path,
         output_path: Destination ending in ``.pdf``. The parent directory is created if needed.
         pages: Two pages, or up to three when supplied scenario data are available.
         title: Optional display title; otherwise use result provenance and then the default.
+        zero_alpha_result: Optional precomputed counterfactual. Produces a contributor page
+            for each alpha view and, with three pages, a factor-premium comparison page.
 
     Returns:
         Absolute path of the completed PDF. Failure leaves any previous output intact.
@@ -423,7 +536,7 @@ def render_cma_diagnostics(result: CmaDiagnosticResult, output_path: str | Path,
     try:
         with plt.rc_context({'font.family': 'DejaVu Sans', 'pdf.fonttype': 42,
                              'ps.fonttype': 42, 'text.usetex': False}):
-            figures = _build_pages(result, pages, title)
+            figures = _build_pages(result, pages, title, zero_alpha_result=zero_alpha_result)
             with NamedTemporaryFile(prefix='.cma-report-', suffix='.pdf',
                                     dir=target.parent, delete=False) as handle:
                 temporary = Path(handle.name)

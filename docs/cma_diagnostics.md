@@ -88,6 +88,24 @@ selected contributors with the remaining coverage disclosed. Save the complete
 result tables and input provenance alongside the PDF in the application's storage
 layer. Report rendering performs no fitting or portfolio optimisation.
 
+For admission sensitivity, `without_admitted_alpha(inputs, spec=spec)` returns an
+owned counterfactual input. It subtracts only the supplied admitted alpha from
+base and scenario excess CMAs, zeros its construction channel, and keeps all
+other channels, risk inputs and scenario shocks fixed. Missing admission raises
+an error. Compute this input with the same diagnostic specification and policy,
+then pass its result as `zero_alpha_result` to `render_cma_diagnostics` alongside
+the original result. The original production forecasts remain unchanged.
+
+With three pages, this view compares forecast accounting and all displayed
+factor premia, then gives each view a contributor page. With two pages, it gives
+the two contributor pages. Top and bottom mean the five largest positive and
+five most negative **signed GLS residuals**, respectively; fewer rows are shown
+when a sign has fewer than five assets. Ties preserve input order. Residual
+squared-Sharpe contributions and shares are also displayed; these are
+nonnegative for both signs. This ranking is not an attribution to an individual
+factor premium. Full channels, policy checks and scenario tables belong in the
+saved bundle; the paired PDF replaces the separate scenario page.
+
 The renderer uses [QIS](https://github.com/ArturSepp/QuantInvestStrats) reporting
 primitives; see its [software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).
 Rosaa supplies its completed-result and saved-cut adapters, source hashes and

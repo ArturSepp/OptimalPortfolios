@@ -7,7 +7,7 @@ qis.RiskModel and from the funding-neutral opportunity metric in this package.
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import numpy as np
 import pandas as pd
@@ -166,6 +166,28 @@ def _admission(inputs, ids, spec):
             raise ValueError('admitted_alpha differs from its construction channel')
         admission = channel
     return admission
+
+
+def without_admitted_alpha(inputs: CmaDiagnosticInputs, *, spec=None) -> CmaDiagnosticInputs:
+    """Create a diagnostic counterfactual removing only the supplied admitted alpha.
+
+    Keep risk, calibrated premia, every other construction channel and scenario
+    shocks fixed. Unknown admission is an error, not an assumption of zero.
+    The returned input owns its data; the production forecast is never modified.
+    """
+    admission = _admission(inputs, inputs.betas.index, spec or CmaDiagnosticSpec())
+    if admission is None:
+        raise ValueError('admitted_alpha is not supplied; cannot construct a zero-alpha view')
+    channels = inputs.channels.copy() if inputs.channels is not None else None
+    if channels is not None and 'admitted_alpha' in channels:
+        channels['admitted_alpha'] = 0.
+    scenarios = (inputs.scenarios.sub(admission, axis=0)
+                 if inputs.scenarios is not None else None)
+    return replace(inputs, excess_cma=inputs.excess_cma-admission, channels=channels,
+                   admitted_alpha=admission * 0., scenarios=scenarios,
+                   provenance={**inputs.provenance, 'alpha_view': 'zero_admitted_alpha',
+                               'alpha_view_convention': 'Subtract specified admission from base '
+                               'and scenario CMAs; all other inputs and shocks held fixed.'})
 
 
 def _policy_table(assets, summary, policy):

@@ -5,6 +5,14 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.19.0] - 2026-10-13
+
+- Add a zero-admitted-alpha diagnostic counterfactual holding the risk model,
+  calibrated premia, other return channels and scenario shocks fixed.
+- Add an optional two-view PDF with a factor-premium comparison and five largest
+  positive / five most negative GLS residuals in each view, including their
+  squared-Sharpe contributions. Existing single-view rendering remains available.
+
 ## [7.18.0] - 2026-10-13
 
 - Unify GLS projection, splitting and factor-mimicking calculations under one

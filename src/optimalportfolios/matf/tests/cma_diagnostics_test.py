@@ -51,6 +51,47 @@ def test_asset_space_and_independent_whitened_qr(inputs):
     np.testing.assert_allclose(result.assets.excess_cma, inputs.excess_cma)
 
 
+def test_zero_admission_counterfactual_preserves_every_other_channel(inputs):
+    """Removing specified admission agrees with a separately constructed QR forecast."""
+    from optimalportfolios.matf.cma_diagnostics import without_admitted_alpha
+
+    original = replace(inputs)
+    zero = without_admitted_alpha(inputs)
+    expected_mean = inputs.betas @ inputs.factor_premia + inputs.channels.regional
+    np.testing.assert_allclose(zero.excess_cma, expected_mean, atol=1e-16)
+    pd.testing.assert_series_equal(zero.channels.regional, inputs.channels.regional)
+    assert zero.admitted_alpha.eq(0).all()
+    assert zero.channels.admitted_alpha.eq(0).all()
+    np.testing.assert_allclose(zero.scenarios.sub(zero.excess_cma, axis=0),
+                               inputs.scenarios.sub(inputs.excess_cma, axis=0), atol=1e-16)
+    result = compute_cma_diagnostics(zero, policy=AdmissionPolicy())
+    white_b = inputs.betas.to_numpy() / np.sqrt(inputs.residual_variances.to_numpy())[:, None]
+    q, r = np.linalg.qr(white_b)
+    expected_premia = np.linalg.solve(r, q.T @ (expected_mean / np.sqrt(inputs.residual_variances)))
+    np.testing.assert_allclose(result.factors.implied_premium, expected_premia, atol=1e-15)
+    assert result.summary['admission_score'] == 0
+    assert result.validation.status.eq('pass').all()
+    for name in ('betas', 'channels', 'scenarios', 'asset_metadata', 'factor_covariance'):
+        pd.testing.assert_frame_equal(getattr(inputs, name), getattr(original, name))
+    pd.testing.assert_series_equal(inputs.excess_cma, original.excess_cma)
+    assert inputs.provenance == original.provenance
+
+
+def test_zero_admission_requires_evidence_and_rejects_conflicting_channels(inputs):
+    """Missing admission is unavailable, while explicit zero is a valid comparison."""
+    from optimalportfolios.matf.cma_diagnostics import without_admitted_alpha
+
+    with pytest.raises(ValueError, match='not supplied'):
+        without_admitted_alpha(replace(inputs, channels=None))
+    with pytest.raises(ValueError, match='differs'):
+        without_admitted_alpha(replace(inputs, admitted_alpha=inputs.excess_cma))
+    explicit = replace(inputs, channels=None, scenarios=None,
+                       admitted_alpha=pd.Series(0., index=inputs.betas.index))
+    zero = without_admitted_alpha(explicit)
+    pd.testing.assert_series_equal(zero.excess_cma, explicit.excess_cma)
+    assert zero.scenarios is None and zero.channels is None
+
+
 def test_owned_inputs_and_metadata_collision(inputs):
     """Input construction owns its pandas values and rejects display-field collisions."""
     original = inputs.excess_cma.copy()

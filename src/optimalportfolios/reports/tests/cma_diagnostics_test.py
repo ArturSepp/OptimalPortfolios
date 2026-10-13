@@ -229,3 +229,56 @@ def test_invalid_output_contract_fails_before_writing(tmp_path: Path, name: str,
     with pytest.raises(ValueError):
         render_cma_diagnostics(_result(), tmp_path / name, pages=pages)
     assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize('pages', [2, 3])
+def test_alpha_views_show_both_rankings_and_keep_old_results(tmp_path, pages):
+    """Each view displays signed residual tails with their nonnegative S-squared impact."""
+    result = _result(18, scenarios=2)
+    zero = deepcopy(result)
+    zero.assets['admitted_alpha'] = 0.
+    zero.assets['residual'] = -result.assets.residual
+    original = deepcopy(result)
+    figures = _build_pages(result, pages, zero_alpha_result=zero)
+    assert len(figures) == pages
+    text = _all_text(figures)
+    assert 'Zero admitted alpha' in text
+    assert 'Admitted alpha as specified' in text
+    assert text.count('Top 5') == 2 and text.count('Bottom 5') == 2
+    assert 'Residual S2' in text and 'GLS residual' in text
+    assert 'Asset 0' in text and 'Asset 17' in text
+    pd.testing.assert_frame_equal(result.assets, original.assets)
+    path = render_cma_diagnostics(result, tmp_path/'paired.pdf', pages=pages,
+                                 zero_alpha_result=zero)
+    assert len(re.findall(rb'/Type\s*/Page\b', path.read_bytes())) == pages
+
+
+def test_residual_tails_are_disjoint_stable_and_sign_aware():
+    """Sparse tails do not pad with opposite signs or duplicate a small universe."""
+    from optimalportfolios.reports.cma_diagnostics import _residual_tails
+
+    result = _result(4)
+    result.assets['residual'] = [0., .03, -.01, .03]
+    top, bottom = _residual_tails(result.assets)
+    assert top.index.tolist() == ['asset-1', 'asset-3']
+    assert bottom.index.tolist() == ['asset-2']
+
+
+def test_alpha_views_long_names_and_universe_mismatch():
+    """Comparison tables bound long labels and reject incompatible universe axes."""
+    result = _result(181, long_names=True)
+    zero = deepcopy(result)
+    figures = _build_pages(result, 3, zero_alpha_result=zero)
+    for fig in figures:
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+        for ax in fig.axes:
+            for table in ax.tables:
+                for cell in table.get_celld().values():
+                    text = cell.get_text().get_window_extent(renderer)
+                    bounds = cell.get_window_extent(renderer)
+                    assert text.width <= bounds.width + 1.0, cell.get_text().get_text()
+                    assert text.height <= bounds.height + 1.0, cell.get_text().get_text()
+    zero.assets = zero.assets.iloc[::-1]
+    with pytest.raises(ValueError, match='same asset'):
+        _build_pages(result, 3, zero_alpha_result=zero)
