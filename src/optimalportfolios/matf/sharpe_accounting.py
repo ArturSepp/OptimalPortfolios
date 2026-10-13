@@ -121,29 +121,68 @@ def fpir(lam, Sig_F, B, Omega):
     return achievable_sharpe2(lam, Sig_F, B, Omega) / ceiling
 
 
-def gls_projector(B, Omega):
-    """Return the rank-safe forecast residual projector in the inverse-Omega metric."""
-    beta, _, chol, white = _loadings(B, Omega)
-    return np.eye(len(beta)) - beta @ np.linalg.pinv(white) @ np.linalg.solve(
+@dataclass(frozen=True)
+class _GlsGeometry:
+    """Validated whitened geometry with one SVD cutoff for all GLS operations."""
+
+    beta: np.ndarray
+    residual: np.ndarray
+    chol: np.ndarray
+    white: np.ndarray
+    singular_values: np.ndarray
+    rank: int
+    relative_cutoff: float
+    cutoff: float
+    white_pinv: np.ndarray
+    residual_projector: np.ndarray
+
+
+def _gls_geometry(B, Omega, *, rcond=None):
+    """Build GLS geometry, retaining singular values strictly above one cutoff.
+
+    The default relative cutoff is machine epsilon times max(N, K), matching
+    NumPy's default least-squares rank convention. An explicit finite rcond in
+    [0, 1) overrides it for diagnostics. Truncating a nonzero direction changes
+    the effective span; callers must check accounting under the original model.
+    No covariance or singular value is floored. The returned residual operator
+    uses the retained orthonormal basis, avoiding cancellation in B times B+.
+    """
+    beta, residual, chol, white = _loadings(B, Omega)
+    relative = np.finfo(float).eps * max(white.shape) if rcond is None else rcond
+    if (not isinstance(relative, (int, float, np.integer, np.floating))
+            or not np.isfinite(relative) or not 0. <= relative < 1.):
+        raise ValueError('rcond must be a finite scalar in [0, 1)')
+    u, singular, vt = np.linalg.svd(white, full_matrices=False)
+    cutoff = float(relative * singular[0])
+    keep = singular > cutoff
+    basis = u[:, keep]
+    inverse = (vt[keep].T / singular[keep]) @ basis.T
+    projector = chol @ (np.eye(len(beta)) - basis @ basis.T) @ np.linalg.solve(
         chol, np.eye(len(beta)))
+    return _GlsGeometry(beta, residual, chol, white, singular, int(keep.sum()),
+                        float(relative), cutoff, inverse, projector)
+
+
+def gls_projector(B, Omega):
+    """Return the residual operator with the shared eps*max(N,K) SVD rank policy."""
+    return _gls_geometry(B, Omega).residual_projector
 
 
 def gls_split(m, B, Omega):
     """Return minimum-norm GLS factor premia and orthogonal forecast residual."""
-    beta, _, chol, white = _loadings(B, Omega)
+    geometry = _gls_geometry(B, Omega)
     mean = _vector(m, B, "m")
-    premia = np.linalg.lstsq(white, np.linalg.solve(chol, mean), rcond=None)[0]
-    return premia, mean - beta @ premia
+    premia = geometry.white_pinv @ np.linalg.solve(geometry.chol, mean)
+    return premia, geometry.residual_projector @ mean
 
 
 def holdings_decomposition(w, B, Omega):
     """Return factor-replicating holdings, factor-neutral holdings and book exposures."""
-    beta, _, chol, white = _loadings(B, Omega)
+    geometry = _gls_geometry(B, Omega)
     weights = _vector(w, B, "w")
-    exposure = beta.T @ weights
-    mimicking = np.linalg.solve(chol.T, np.linalg.pinv(white).T)
-    factor_weights = mimicking @ exposure
-    return factor_weights, weights - factor_weights, exposure
+    exposure = geometry.beta.T @ weights
+    neutral_weights = geometry.residual_projector.T @ weights
+    return weights - neutral_weights, neutral_weights, exposure
 
 
 def hurdle_premia(lam, Sig_F):
@@ -164,15 +203,16 @@ def ceiling_premium_correlation_split(lam, Sig_F):
 
 def factor_mimicking_portfolios(B, Omega):
     """Return unit-exposure GLS portfolios; reject factors that cannot all be spanned."""
-    _, _, chol, white = _loadings(B, Omega)
-    if np.linalg.matrix_rank(white) != white.shape[1]:
+    geometry = _gls_geometry(B, Omega)
+    if geometry.rank != geometry.white.shape[1]:
         raise ValueError("unit factor exposures are unattainable: B lacks full column rank")
-    return np.linalg.solve(chol.T, np.linalg.pinv(white).T)
+    return np.linalg.solve(geometry.chol.T, geometry.white_pinv.T)
 
 
 def fixed_exposure_fpir(e, Sig_F, B, Omega):
     """Return systematic-risk share for an attainable nonzero factor exposure target."""
-    beta, residual, chol, white = _loadings(B, Omega)
+    geometry = _gls_geometry(B, Omega)
+    beta, residual = geometry.beta, geometry.residual
     labels = B.columns if isinstance(B, pd.DataFrame) else None
     _align(e, labels)
     _align(Sig_F, labels)
@@ -181,7 +221,7 @@ def fixed_exposure_fpir(e, Sig_F, B, Omega):
     factor = _covariance(Sig_F, beta.shape[1], "Sig_F")
     if len(exposure) != beta.shape[1]:
         raise ValueError("e factor dimension does not match B")
-    weights = np.linalg.solve(chol.T, np.linalg.pinv(white).T) @ exposure
+    weights = np.linalg.solve(geometry.chol.T, geometry.white_pinv.T) @ exposure
     if not np.allclose(beta.T @ weights, exposure, rtol=1e-10, atol=1e-12):
         raise ValueError("target exposure is unattainable")
     systematic = float(exposure @ factor @ exposure)
@@ -192,10 +232,11 @@ def fixed_exposure_fpir(e, Sig_F, B, Omega):
 
 def tangency_access_split(lam, Sig_F, B, Omega):
     """Return per-factor tangency contributions split into factor and access risk."""
-    premia, factor, beta, residual, chol, white = _model(lam, Sig_F, B, Omega)
+    premia, factor, beta, residual, _, _ = _model(lam, Sig_F, B, Omega)
+    geometry = _gls_geometry(B, Omega)
     covariance = beta @ factor @ beta.T + residual
     exposure = beta.T @ np.linalg.solve(covariance, beta @ premia)
-    mimicking = np.linalg.solve(chol.T, np.linalg.pinv(white).T)
+    mimicking = np.linalg.solve(geometry.chol.T, geometry.white_pinv.T)
     access = mimicking.T @ residual @ mimicking
     return exposure * (factor @ exposure), exposure * (access @ exposure)
 

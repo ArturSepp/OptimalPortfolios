@@ -1,5 +1,13 @@
 """Factor-coordinate Sharpe accounting; MATF is an illustration, not a required factor set."""
 
+from optimalportfolios.matf.cma_diagnostics import (
+    AdmissionPolicy,
+    CmaDiagnosticInputs,
+    CmaDiagnosticResult,
+    CmaDiagnosticSpec,
+    compute_cma_diagnostics,
+)
+
 from optimalportfolios.matf.sharpe_accounting import (
     CompletionResult,
     CompletionStatus,

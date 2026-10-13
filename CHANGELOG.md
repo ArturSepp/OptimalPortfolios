@@ -5,6 +5,18 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.18.0] - 2026-10-13
+
+- Unify GLS projection, splitting and factor-mimicking calculations under one
+  whitened SVD rank policy. Fix disagreement at the numerical rank cutoff while
+  preserving the frozen full-rank CMA reference results.
+- Add construction-aware CMA diagnostic inputs and results, full-forecast and
+  admission Sharpe accounting, configured admission checks, identification and
+  covariance reconciliation. Forecasts and estimation policies are unchanged.
+- Add a separate compact CMA PDF renderer consuming the stored numerical result.
+  Reports identify rank deficiency, missing diagnostics and illustrative policy
+  limits, and retain complete tables outside the PDF.
+
 ## [7.17.0] - 2026-10-06
 
 - Add `ExecutionBranchConfig.reserve_swap_budget`, defaulting to True for

@@ -287,6 +287,7 @@ portfolio_risk_analytics
 
 alphas_module_readme
 signal_diagnostics_and_profiling
+cma_diagnostics
 ```
 
 ```{toctree}
