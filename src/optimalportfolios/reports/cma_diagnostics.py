@@ -432,8 +432,66 @@ def _alpha_comparison_page(result: CmaDiagnosticResult, zero: CmaDiagnosticResul
     return fig
 
 
+def _factor_contributor_rows(result: CmaDiagnosticResult) -> list[list[str]]:
+    """Format all factors with two positive and two negative asset revision contributions."""
+    rows = []
+    for factor, row in result.factors.iterrows():
+        values = result.factor_contributions[factor].dropna()
+        top = values.loc[values > 0].sort_values(ascending=False, kind='stable').head(2)
+        bottom = values.loc[values < 0].sort_values(kind='stable').head(2)
+        cells = []
+        for selected in (top, bottom):
+            cells.extend([_text(_name(result.assets, key, 22), 22, 1) + '\n'
+                          + _number(value, 'bp') for key, value in selected.items()])
+            cells.extend(['-']*(2-len(selected)))
+        rows.append([_text(factor, 18, 2), _value(row, 'revision', 'bp'), *cells])
+    return rows
+
+
+def _compact_alpha_contributors_page(result: CmaDiagnosticResult, title: str,
+                                     label: str) -> Figure:
+    """Keep asset residual tails and every MATF factor attribution on one bounded page."""
+    fig = _page(result, title, 'Alpha views / ' + label)
+    _write(fig, _LEFT, .817, label, 13, weight='bold')
+    s = result.summary
+    _cards(fig, [('Total squared Sharpe', _number(s.get('total_sharpe2'))),
+                 ('Residual S2', _number(s.get('residual_sharpe2'))),
+                 ('Raw admission score', _number(s.get('admission_score')))], y=.716)
+    _section(fig, .693, 'Top 5 / Bottom 5: signed GLS residuals',
+             '+ ranks the largest positive gaps; - ranks the most negative. '
+             'Residual = excess CMA minus GLS fit.')
+    rows = []
+    for sign, selected in zip(('+', '-'), _residual_tails(result.assets)):
+        for rank, (key, row) in enumerate(selected.iterrows(), start=1):
+            rows.append([f'{sign}{rank}', _text(_name(result.assets, key, 26), 26, 1),
+                         _value(row, 'admitted_alpha', 'bp'), _value(row, 'excess_cma', 'return'),
+                         _value(row, 'fitted_excess_cma', 'return'), _value(row, 'residual', 'bp'),
+                         _value(row, 'residual_vol', 'risk'), _value(row, 'residual_score'),
+                         _value(row, 'residual_share', 'percent')])
+    _table(fig, rows, ['Tail\nrank', 'Asset', 'Alpha\nbp', 'Excess\nCMA', 'GLS\nfitted',
+                       'Residual\nbp', 'Residual\nvol', 'S2\ncontrib.', 'S2\nshare'],
+           .444, .198, [.07, .25, .095, .10, .10, .10, .105, .09, .09], 7.1)
+    _section(fig, .431, 'MATF factor revision contributors',
+             'Asset / signed annual bp. Revision = GLS minus calibrated premium. '
+             'Top and bottom contributions need not sum to the revision.')
+    _table(fig, _factor_contributor_rows(result),
+           ['Factor', 'Revision\nbp', 'Top 1\nasset / bp', 'Top 2\nasset / bp',
+            'Bottom 1\nasset / bp', 'Bottom 2\nasset / bp'],
+           .075, .300, [.135, .075, .1975, .1975, .1975, .1975], 7.1)
+    nonunique = s.get('rank', 0) < s.get('n_factors', len(result.factors))
+    note = ('Nonunique factor coordinates; asset sums plus the saved coordinate offset equal '
+            'the revision.' if nonunique else
+            'All asset contributions sum to each revision; complete rows are in '
+            'factor_contributions.csv.')
+    _write(fig, _LEFT, .059, _text(note, 124, 1), 7.1,
+           _AMBER if nonunique else _MUTED)
+    return fig
+
+
 def _alpha_contributors_page(result: CmaDiagnosticResult, title: str, label: str) -> Figure:
     """Show disjoint signed residual tails and their squared-Sharpe contributions."""
+    if not getattr(result, 'factor_contributions', pd.DataFrame()).empty:
+        return _compact_alpha_contributors_page(result, title, label)
     fig = _page(result, title, 'Alpha views / ' + label)
     _write(fig, _LEFT, .817, label, 13, weight='bold')
     s = result.summary

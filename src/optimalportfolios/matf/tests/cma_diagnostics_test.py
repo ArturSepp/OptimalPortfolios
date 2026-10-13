@@ -92,6 +92,41 @@ def test_zero_admission_requires_evidence_and_rejects_conflicting_channels(input
     assert zero.scenarios is None and zero.channels is None
 
 
+def test_factor_revision_contributions_match_independent_qr(inputs):
+    """Asset adjustments, weighted by independent GLS portfolios, explain every revision."""
+    result = compute_cma_diagnostics(inputs)
+    b = inputs.betas.to_numpy()
+    root_d = np.sqrt(inputs.residual_variances.to_numpy())
+    q, r = np.linalg.qr(b / root_d[:, None])
+    weights = np.linalg.solve(r, q.T) / root_d[None, :]
+    adjustment = inputs.excess_cma - inputs.betas @ inputs.factor_premia
+    expected = (weights * adjustment.to_numpy()[None, :]).T
+    np.testing.assert_allclose(result.factor_contributions, expected, atol=1e-15)
+    np.testing.assert_allclose(result.factor_contributions.sum(), result.factors.revision,
+                               atol=1e-15)
+    assert result.factor_contributions.index.equals(inputs.betas.index)
+    assert result.factor_contributions.columns.equals(inputs.betas.columns)
+    check = result.validation.set_index('check').loc['factor_revision_attribution', 'status']
+    assert check == 'pass'
+
+
+def test_factor_revision_rank_deficiency_keeps_coordinate_offset_explicit(inputs):
+    """A minimum-norm coordinate offset must not be assigned to an arbitrary asset."""
+    b = inputs.betas.copy()
+    b.iloc[:, 1] = b.iloc[:, 0]
+    changed = replace(inputs, betas=b,
+                       excess_cma=b @ inputs.factor_premia + inputs.channels.sum(axis=1))
+    result = compute_cma_diagnostics(changed)
+    assert result.summary['rank'] == 1
+    offset = result.factors.revision_attribution_offset
+    assert np.abs(offset).max() > .001
+    np.testing.assert_allclose(result.factor_contributions.sum()+offset,
+                               result.factors.revision, atol=1e-15)
+    unavailable = compute_cma_diagnostics(replace(inputs, factor_premia=None, channels=None))
+    assert unavailable.factor_contributions.empty
+    assert unavailable.factors.revision_attribution_offset.isna().all()
+
+
 def test_owned_inputs_and_metadata_collision(inputs):
     """Input construction owns its pandas values and rejects display-field collisions."""
     original = inputs.excess_cma.copy()

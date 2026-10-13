@@ -91,6 +91,7 @@ class CmaDiagnosticResult:
     scenarios: pd.DataFrame
     validation: pd.DataFrame
     provenance: dict
+    factor_contributions: pd.DataFrame = field(default_factory=pd.DataFrame)
 
 
 def _labelled(value, kind, labels, name, *, finite=True):
@@ -348,6 +349,22 @@ def compute_cma_diagnostics(inputs: CmaDiagnosticInputs, *, spec=None, policy=No
                                                       if identified else np.full(k, np.nan)),
                                 status='identified' if identified else 'minimum_norm'),
                            index=factor_ids)
+    # These are GLS premium-revision contributions, not portfolio risk contributions.
+    # qis.RiskModel attributes portfolio risk and does not decompose fitted CMA premia.
+    factor_contributions = pd.DataFrame()
+    factors['revision_attribution_offset'] = np.nan
+    if premia is not None:
+        weights = np.linalg.solve(geometry.chol.T, geometry.white_pinv.T).T
+        adjustment = m-b@calibrated
+        factor_contributions = pd.DataFrame((weights*adjustment[None, :]).T,
+                                            index=ids, columns=factor_ids)
+        # With deficient rank, A B is a coordinate projection, not the identity.
+        # Keep this non-asset offset explicit instead of allocating it to assets.
+        offset = weights@(b@calibrated)-calibrated
+        factors['revision_attribution_offset'] = offset
+        _check(validation, 'factor_revision_attribution',
+               _max_abs(factor_contributions.sum().to_numpy()+offset-(implied-calibrated)),
+               max(_max_abs(implied), _max_abs(calibrated)), spec)
     channel_rows = []
     if inputs.channels is not None:
         reconstructed = b@calibrated+inputs.channels.sum(axis=1).to_numpy()
@@ -376,4 +393,5 @@ def compute_cma_diagnostics(inputs: CmaDiagnosticInputs, *, spec=None, policy=No
                       return_units='annual_arithmetic_excess_decimal',
                       asset_order=ids.tolist(), factor_order=factor_ids.tolist())
     return CmaDiagnosticResult(summary, assets, factors, channels,
-                              _policy_table(assets, summary, policy), scenarios, checks, provenance)
+                              _policy_table(assets, summary, policy), scenarios, checks, provenance,
+                              factor_contributions=factor_contributions)

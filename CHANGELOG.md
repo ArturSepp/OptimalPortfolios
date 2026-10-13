@@ -5,6 +5,14 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.20.0] - 2026-10-13
+
+- Attribute each GLS factor-premium revision to asset-level CMA adjustments.
+  Keep minimum-norm coordinate offsets explicit for rank-deficient designs and
+  validate that full asset contributions plus offsets reconcile to each revision.
+- Add compact top-two/bottom-two contributor tables for every MATF factor in
+  both alpha views while retaining the existing residual tails in three pages.
+
 ## [7.19.0] - 2026-10-13
 
 - Add a zero-admitted-alpha diagnostic counterfactual holding the risk model,

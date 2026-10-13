@@ -37,7 +37,8 @@ discretionary, funding, pricing-override or currency adjustments. A table of
 count. These descriptive fields cannot shadow calculated result columns.
 
 `CmaDiagnosticResult` holds `summary`, `assets`, `factors`, `channels`,
-`policy_checks`, `scenarios`, `validation` and `provenance`. It keeps numerical
+`policy_checks`, `scenarios`, `validation`, `provenance` and `factor_contributions`.
+It keeps numerical
 precision; rendering handles display rounding. Missing optional inputs produce
 explicit unavailable metrics. An inconsistent construction bridge raises an error.
 
@@ -102,9 +103,24 @@ the two contributor pages. Top and bottom mean the five largest positive and
 five most negative **signed GLS residuals**, respectively; fewer rows are shown
 when a sign has fewer than five assets. Ties preserve input order. Residual
 squared-Sharpe contributions and shares are also displayed; these are
-nonnegative for both signs. This ranking is not an attribution to an individual
-factor premium. Full channels, policy checks and scenario tables belong in the
+nonnegative for both signs. This residual ranking is distinct from the compact
+factor-contribution table below it. Each factor row shows its revision and the
+two largest positive and two most negative asset contributions, in annual basis
+points. Full channels, policy checks and scenario tables belong in the
 saved bundle; the paired PDF replaces the separate scenario page.
+
+The numerical `factor_contributions` table has assets in rows and factors in
+columns. With GLS coefficient map `A`, each entry is
+`A[k, i] * (excess_cma[i] - (betas @ factor_premia)[i])`. These are contributions
+to the **revision from calibrated to GLS-implied premia**, not beta exposures,
+portfolio risk contributions or full asset returns. All asset entries sum to
+each revision at full factor rank; the four displayed tails generally do not.
+With deficient rank, the additional factor-column `revision_attribution_offset`
+is `(A @ betas - I) @ factor_premia`. This non-asset coordinate offset remains
+explicit, and asset sums plus offset reconcile to the revision. Missing
+calibrated premia leave the contribution table empty. The numerical validation
+includes this reconciliation. Legacy frozen results without the table retain
+their existing layout.
 
 The renderer uses [QIS](https://github.com/ArturSepp/QuantInvestStrats) reporting
 primitives; see its [software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).

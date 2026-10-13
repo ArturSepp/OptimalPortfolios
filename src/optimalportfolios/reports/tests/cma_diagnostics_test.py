@@ -282,3 +282,34 @@ def test_alpha_views_long_names_and_universe_mismatch():
     zero.assets = zero.assets.iloc[::-1]
     with pytest.raises(ValueError, match='same asset'):
         _build_pages(result, 3, zero_alpha_result=zero)
+
+
+def test_compact_factor_contributors_cover_every_factor_and_signed_tails():
+    """Both views show all twelve factor rows, with stable positive/negative contributor ranks."""
+    from optimalportfolios.reports.cma_diagnostics import _factor_contributor_rows
+
+    result = _result(18, long_names=True)
+    result.factor_contributions = pd.DataFrame(
+        np.tile(np.linspace(-.02, .03, 18)[:, None], (1, 12)),
+        index=result.assets.index, columns=result.factors.index)
+    rows = _factor_contributor_rows(result)
+    assert len(rows) == 12
+    assert 'Asset 17' in rows[0][2] and '+300' in rows[0][2]
+    assert 'Asset 16' in rows[0][3]
+    assert 'Asset 0' in rows[0][4] and '-200' in rows[0][4]
+    assert 'Asset 1' in rows[0][5]
+    figures = _build_pages(result, 3, zero_alpha_result=deepcopy(result))
+    assert len(figures) == 3
+    text = _all_text(figures)
+    assert text.count('MATF factor revision contributors') == 2
+    assert text.count('Top 5') == 2 and text.count('Bottom 5') == 2
+    for fig in figures:
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+        for ax in fig.axes:
+            for table in ax.tables:
+                for cell in table.get_celld().values():
+                    bounds = cell.get_window_extent(renderer)
+                    extent = cell.get_text().get_window_extent(renderer)
+                    assert extent.width <= bounds.width+1, cell.get_text().get_text()
+                    assert extent.height <= bounds.height+1, cell.get_text().get_text()
