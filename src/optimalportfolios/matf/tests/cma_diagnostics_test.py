@@ -51,6 +51,69 @@ def test_asset_space_and_independent_whitened_qr(inputs):
     np.testing.assert_allclose(result.assets.excess_cma, inputs.excess_cma)
 
 
+def test_factor_sensitivity_matches_forecast_shocks_and_independent_deletions(inputs):
+    """Forecast derivatives and delete-one estimates agree with independent QR solves."""
+    result = compute_cma_diagnostics(inputs)
+    details = result.factor_sensitivity.set_index(['asset', 'factor'])
+    deleted = result.factor_leave_one_out.set_index(['excluded_asset', 'factor'])
+    for asset in inputs.betas.index:
+        shifted = inputs.excess_cma.copy()
+        shifted.loc[asset] += .0025
+        shock = compute_cma_diagnostics(replace(inputs, excess_cma=shifted, channels=None))
+        np.testing.assert_allclose(details.loc[asset].premium_change_25bp,
+            shock.factors.implied_premium-result.factors.implied_premium, atol=1e-15)
+        keep = inputs.betas.index != asset
+        retained_vol = np.sqrt(inputs.residual_variances.loc[keep].to_numpy())
+        white = inputs.betas.loc[keep].to_numpy()/retained_vol[:, None]
+        q, r = np.linalg.qr(white)
+        expected = np.linalg.solve(r, q.T@(inputs.excess_cma.loc[keep]/retained_vol))
+        np.testing.assert_allclose(deleted.loc[asset].implied_premium, expected, atol=1e-15)
+        np.testing.assert_allclose(
+            details.loc[asset].gls_multiplier * details.loc[asset].forecast_gap,
+            result.factor_contributions.loc[asset], atol=1e-15)
+    white = inputs.betas.div(np.sqrt(inputs.residual_variances), axis=0)
+    for factor in inputs.betas:
+        rows = details.xs(factor, level='factor')
+        assert rows.conditional_information_share.sum() == pytest.approx(1.)
+        q, _ = np.linalg.qr(white.drop(columns=factor).to_numpy())
+        remaining = white[factor].to_numpy()-q@(q.T@white[factor].to_numpy())
+        information = remaining@remaining
+        np.testing.assert_allclose(rows.conditional_information_share, remaining**2/information)
+        overlap = 1.-information/np.sum(white[factor].to_numpy()**2)
+        assert result.factors.loc[factor, 'weighted_loading_overlap'] == pytest.approx(overlap)
+        loo = deleted.xs(factor, level='factor')
+        assert result.factors.loc[factor, 'loo_low'] == pytest.approx(loo.implied_premium.min())
+        assert result.factors.loc[factor, 'loo_high'] == pytest.approx(loo.implied_premium.max())
+        assert result.factors.loc[factor, 'loo_identified_count'] == len(inputs.betas)
+
+
+@pytest.mark.parametrize('case', ['rank_loss', 'nonunique', 'single_asset', 'no_premia', 'cutoff'])
+def test_factor_stability_unavailable_cases_are_explicit(case):
+    """Do not compare nonunique deletion coordinates or invent a calibrated forecast gap."""
+    b = pd.DataFrame([[1., 0.], [0., 1.]], index=['a', 'b'], columns=['f', 'g'])
+    if case == 'nonunique':
+        b['g'] = b.f
+    if case == 'single_asset':
+        b = b.iloc[:1, :1]
+    if case == 'no_premia':
+        b = pd.concat([b, pd.DataFrame([[.5, .5]], index=['c'], columns=b.columns)])
+    if case == 'cutoff':
+        b.loc['b', 'g'] = 1e-8
+    data = CmaDiagnosticInputs(b, pd.Series(.01, index=b.index), pd.Series(.04, index=b.index))
+    result = compute_cma_diagnostics(
+        data, spec=CmaDiagnosticSpec(rcond=1e-5) if case == 'cutoff' else None)
+    assert result.factor_sensitivity.forecast_gap.isna().all()
+    if case != 'no_premia':
+        assert result.factor_leave_one_out.implied_premium.isna().all()
+        assert result.factors.loo_low.isna().all()
+        assert result.factors.loo_unavailable_count.eq(len(b)).all()
+    if case in ('nonunique', 'cutoff'):
+        assert result.factor_sensitivity.premium_change_25bp.isna().all()
+        assert result.factors.weighted_loading_overlap.isna().all()
+    if case == 'single_asset':
+        assert result.factor_leave_one_out.status.eq('insufficient_assets').all()
+
+
 def test_zero_admission_counterfactual_preserves_every_other_channel(inputs):
     """Removing specified admission agrees with a separately constructed QR forecast."""
     from optimalportfolios.matf.cma_diagnostics import without_admitted_alpha

@@ -28,3 +28,13 @@ from optimalportfolios.matf.sharpe_accounting import (
     partial_overlay_value,
     tangency_access_split,
 )
+
+from optimalportfolios.matf.cma_uncertainty import (
+    CmaConditionalGlsResult,
+    compute_conditional_gls_intervals,
+)
+
+from optimalportfolios.matf.cma_identification import (
+    CmaIdentificationResult,
+    compute_cma_identification,
+)

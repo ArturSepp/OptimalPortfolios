@@ -198,6 +198,23 @@ def test_small_residual_risk_and_nonadmission_adjustments_are_visible() -> None:
     assert 'share cap 50.0%' in text
 
 
+@pytest.mark.parametrize('paired', [False, True])
+def test_stability_explanation_clears_page_footer(paired):
+    """Additional stability definitions must not collide with the page identity."""
+    result = _result()
+    result.factors['max_abs_25bp_shift'] = .0272
+    result.factors['loo_low'] = -.0048
+    result.factors['loo_high'] = .0645
+    result.factors['loo_unavailable_count'] = 1
+    kwargs = {'zero_alpha_result': deepcopy(result)} if paired else {}
+    fig = _build_pages(result, 3 if paired else 2, **kwargs)[0]
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    note = next(t for t in fig.texts if ('25bp shocks' if paired else '25bp =') in t.get_text())
+    footer = next(t for t in fig.texts if t.get_position()[1] == .035)
+    assert note.get_window_extent(renderer).y0 > footer.get_window_extent(renderer).y1 + 3
+
+
 def test_failed_write_preserves_existing_pdf_and_closes_figures(tmp_path: Path,
                                                               monkeypatch) -> None:
     """A renderer failure cannot overwrite a previously completed production report."""
@@ -284,7 +301,8 @@ def test_alpha_views_long_names_and_universe_mismatch():
         _build_pages(result, 3, zero_alpha_result=zero)
 
 
-def test_compact_factor_contributors_cover_every_factor_and_signed_tails():
+@pytest.mark.parametrize('stability', [False, True])
+def test_compact_factor_contributors_cover_every_factor_and_signed_tails(stability):
     """Both views show all twelve factor rows, with stable positive/negative contributor ranks."""
     from optimalportfolios.reports.cma_diagnostics import _factor_contributor_rows
 
@@ -292,6 +310,11 @@ def test_compact_factor_contributors_cover_every_factor_and_signed_tails():
     result.factor_contributions = pd.DataFrame(
         np.tile(np.linspace(-.02, .03, 18)[:, None], (1, 12)),
         index=result.assets.index, columns=result.factors.index)
+    if stability:
+        result.factors['max_abs_25bp_shift'] = .0272
+        result.factors['loo_low'] = -.0048
+        result.factors['loo_high'] = .0645
+        result.factors['loo_unavailable_count'] = 1
     rows = _factor_contributor_rows(result)
     assert len(rows) == 12
     assert 'Asset 17' in rows[0][2] and '+300' in rows[0][2]
@@ -303,6 +326,12 @@ def test_compact_factor_contributors_cover_every_factor_and_signed_tails():
     text = _all_text(figures)
     assert text.count('MATF factor revision contributors') == 2
     assert text.count('Top 5') == 2 and text.count('Bottom 5') == 2
+    if stability:
+        assert 'Max |25bp|' in text and 'LOO premia' in text
+        assert '-0.48%' in text and '6.45%' in text
+        assert '1 nonidentified deletions' in text
+    else:
+        assert 'Max |25bp|' not in text and 'factor_sensitivity.csv' not in text
     for fig in figures:
         fig.canvas.draw()
         renderer = fig.canvas.get_renderer()

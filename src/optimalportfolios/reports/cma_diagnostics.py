@@ -72,6 +72,12 @@ def _value(row: pd.Series, key: str, style: str = 'score') -> str:
     return _number(row.get(key), style)
 
 
+def _stability_cells(row: pd.Series) -> list[str]:
+    """Display deterministic forecast sensitivity and identified deletion endpoints."""
+    return [_value(row, 'max_abs_25bp_shift', 'bp'),
+            _value(row, 'loo_low', 'return') + '\n' + _value(row, 'loo_high', 'return')]
+
+
 def _name(frame: pd.DataFrame, key: Any, width: int = 34) -> str:
     """Prefer the supplied display name while keeping the row identity as a fallback."""
     value = frame.at[key, 'name'] if 'name' in frame else key
@@ -210,8 +216,14 @@ def _forecast_page(result: CmaDiagnosticResult, title: str) -> Figure:
     _section(fig, 0.682, 'Factor premia',
              f'Annual excess premia in basis points. Showing {len(rows)} '
              f'of {len(factors)} factors; factor order is preserved.')
-    _table(fig, rows, ['Factor', 'Calibrated\nbp', 'GLS implied\nbp', 'Revision\nbp',
-                       'Identification'], 0.390, 0.242, [0.38, 0.15, 0.15, 0.14, 0.18])
+    columns = ['Factor', 'Calibrated\nbp', 'GLS implied\nbp', 'Revision\nbp', 'Identification']
+    widths = [0.38, 0.15, 0.15, 0.14, 0.18]
+    stability = 'max_abs_25bp_shift' in factors
+    if stability:
+        rows = [row + _stability_cells(factors.iloc[i]) for i, row in enumerate(rows)]
+        columns += ['Max |25bp|\nshift bp', 'LOO premia\nlow / high']
+        widths = [.27, .11, .11, .10, .12, .12, .17]
+    _table(fig, rows, columns, 0.390, 0.242, widths, 7.4 if stability else 8.)
     assets = result.assets
     ordered = assets.sort_values('residual_score', ascending=False, kind='stable')
     selected = ordered.iloc[:_ASSET_ROWS]
@@ -230,10 +242,12 @@ def _forecast_page(result: CmaDiagnosticResult, title: str) -> Figure:
     _table(fig, rows, ['Asset', 'Excess\nCMA', 'GLS\nfitted', 'Residual\nbp',
                        'Residual\nvol', 'Score', 'Share'], 0.078, 0.232,
            [0.32, 0.115, 0.115, 0.115, 0.115, 0.105, 0.115], 7.9)
-    _write(fig, _LEFT, 0.062,
-           'All Sharpe measures are unconstrained, model-implied excess opportunities.\n'
-           'Small residual risks can magnify forecast adjustments.', 7.3,
-           _MUTED)
+    note = ('All Sharpe measures are unconstrained, model-implied excess opportunities.\n'
+            'Small residual risks can magnify forecast adjustments.')
+    if stability:
+        note += ('\n25bp = one forecast shock; LOO = omit one asset, fixed risk/alpha. '
+                 'Rank-loss deletions are excluded.')
+    _write(fig, _LEFT, 0.075 if stability else 0.062, note, 7.3, _MUTED)
     return fig
 
 
@@ -408,8 +422,14 @@ def _alpha_comparison_page(result: CmaDiagnosticResult, zero: CmaDiagnosticResul
              _value(row, 'implied_premium', 'bp'),
              _number(row.implied_premium-zero.factors.loc[key, 'implied_premium'], 'bp')]
             for key, row in result.factors.iloc[:_FACTOR_ROWS].iterrows()]
-    _table(fig, rows, ['Factor', 'Calibrated', 'GLS\nzero alpha', 'GLS\nas specified',
-                       'Alpha effect\nbp'], .215, .304, [.36, .16, .16, .16, .16], 7.9)
+    columns = ['Factor', 'Calibrated', 'GLS\nzero alpha', 'GLS\nas specified', 'Alpha effect\nbp']
+    widths = [.36, .16, .16, .16, .16]
+    stability = 'max_abs_25bp_shift' in result.factors
+    if stability:
+        rows = [row + _stability_cells(result.factors.iloc[i]) for i, row in enumerate(rows)]
+        columns += ['Max |25bp|\nshift bp', 'LOO specified\nlow / high']
+        widths = [.24, .12, .12, .12, .12, .12, .16]
+    _table(fig, rows, columns, .215, .304, widths, 7.4 if stability else 7.9)
     omitted = max(0, len(result.factors)-_FACTOR_ROWS)
     s = result.summary
     _write(fig, _LEFT, .198,
@@ -424,27 +444,33 @@ def _alpha_comparison_page(result: CmaDiagnosticResult, zero: CmaDiagnosticResul
         _write(fig, _LEFT, y,
                f'{label}: {failures} failed numerical checks / {len(view.validation)} recorded.',
                8, _RED if failures else _TEAL)
-    _write(fig, _LEFT, .077,
-           'GLS-implied premia are diagnostic coordinates, not a change to calibrated CMAs.\n'
-           'All scores are unconstrained model-implied excess opportunities.\n'
-           'Complete assets, channels, scenarios and policy checks are saved for both views.',
-           7.5, _MUTED)
+    note = ('GLS-implied premia are diagnostic coordinates, not a change to calibrated CMAs.\n'
+            'All scores are unconstrained model-implied excess opportunities.\n')
+    note += ('25bp shocks and leave-one-out (LOO) ranges hold risk/alpha fixed; '
+             'rank-loss cases are excluded.\n'
+             'Complete gap x multiplier and deletion tables are saved for both views.'
+             if stability else
+             'Complete assets, channels, scenarios and policy checks are saved for both views.')
+    _write(fig, _LEFT, .087 if stability else .077, note, 7.5, _MUTED)
     return fig
 
 
 def _factor_contributor_rows(result: CmaDiagnosticResult) -> list[list[str]]:
     """Format all factors with two positive and two negative asset revision contributions."""
     rows = []
+    stability = 'max_abs_25bp_shift' in result.factors
     for factor, row in result.factors.iterrows():
         values = result.factor_contributions[factor].dropna()
         top = values.loc[values > 0].sort_values(ascending=False, kind='stable').head(2)
         bottom = values.loc[values < 0].sort_values(kind='stable').head(2)
         cells = []
         for selected in (top, bottom):
-            cells.extend([_text(_name(result.assets, key, 22), 22, 1) + '\n'
+            width = 15 if stability else 22
+            cells.extend([_text(_name(result.assets, key, width), width, 1) + '\n'
                           + _number(value, 'bp') for key, value in selected.items()])
             cells.extend(['-']*(2-len(selected)))
-        rows.append([_text(factor, 18, 2), _value(row, 'revision', 'bp'), *cells])
+        rows.append([_text(factor, 18, 2), _value(row, 'revision', 'bp'), *cells,
+                     *(_stability_cells(row) if stability else [])])
     return rows
 
 
@@ -474,16 +500,27 @@ def _compact_alpha_contributors_page(result: CmaDiagnosticResult, title: str,
     _section(fig, .431, 'MATF factor revision contributors',
              'Asset / signed annual bp. Revision = GLS minus calibrated premium. '
              'Top and bottom contributions need not sum to the revision.')
-    _table(fig, _factor_contributor_rows(result),
-           ['Factor', 'Revision\nbp', 'Top 1\nasset / bp', 'Top 2\nasset / bp',
-            'Bottom 1\nasset / bp', 'Bottom 2\nasset / bp'],
-           .075, .300, [.135, .075, .1975, .1975, .1975, .1975], 7.1)
+    columns = ['Factor', 'Revision\nbp', 'Top 1\nasset / bp', 'Top 2\nasset / bp',
+               'Bottom 1\nasset / bp', 'Bottom 2\nasset / bp']
+    widths = [.135, .075, .1975, .1975, .1975, .1975]
+    stability = 'max_abs_25bp_shift' in result.factors
+    if stability:
+        columns += ['Max |25bp|\nshift bp', 'LOO premia\nlow / high']
+        widths = [.14, .07, .145, .145, .145, .145, .085, .125]
+    _table(fig, _factor_contributor_rows(result), columns,
+           .083 if stability else .075, .292 if stability else .300, widths,
+           6.6 if stability else 7.1)
     nonunique = s.get('rank', 0) < s.get('n_factors', len(result.factors))
     note = ('Nonunique factor coordinates; asset sums plus the saved coordinate offset equal '
             'the revision.' if nonunique else
             'All asset contributions sum to each revision; complete rows are in '
             'factor_contributions.csv.')
-    _write(fig, _LEFT, .059, _text(note, 124, 1), 7.1,
+    if stability:
+        lost = int(result.factors.loo_unavailable_count.max())
+        note += (f'\nLOO excludes {lost} nonidentified deletions. '
+                 'Gap x GLS multiplier and 25bp shocks: factor_sensitivity.csv.')
+    note = '\n'.join(_text(line, 124, 1) for line in note.splitlines())
+    _write(fig, _LEFT, .069 if stability else .059, note, 7.1,
            _AMBER if nonunique else _MUTED)
     return fig
 

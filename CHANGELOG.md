@@ -5,6 +5,51 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.21.0.dev4] - 2026-10-15
+
+- Report the new Carry FX blend with its construction, conditional intervals and
+  sensitivity tables, while retaining correctly labelled historical futures-basket
+  reports. Do not show G10/EM pair tests for single-carry models.
+- Render unavailable carry factors, volatilities and intervals as N/A, and label
+  custom pair contrasts with their actual factors. Verify numerical inference
+  against independent weighted-QR references using the existing dependencies.
+- Make the existing SLSQP status-8 regression coverage deterministic across
+  platforms, including constraint rejection and other failure statuses.
+
+## [7.21.0.dev3] - 2026-10-14
+
+- Add opt-in individual precision and residualized pair identification diagnostics,
+  native and volatility-normalized common/spread contrasts with conditional CIs,
+  shared-premium F tests and declared-margin equivalence tests. Keep risk factors
+  separate and preserve all frozen forecasts and numerical diagnostic tables.
+- Include completed identification results in the three-page provider report,
+  retaining factor contributions, forecast shocks and leave-one-out ranges.
+- Support refitted single-FX-Carry reports, including conditional premium intervals,
+  factor-mimicking weights and separately labelled adviser sensitivity envelopes.
+
+## [7.21.0.dev2] - 2026-10-14
+
+- Add opt-in conditional GLS Student-t intervals and joint premium covariance,
+  with explicit fixed-model Gaussian error assumptions, residual degrees of
+  freedom and unavailable rank/scale cases. Keep frozen diagnostic results intact.
+- Display pointwise conditional intervals for every provider scenario alongside
+  existing forecast sensitivities and leave-one-out ranges.
+
+## [7.21.0.dev1] - 2026-10-14
+
+- Add a shared three-page provider inference report with explicit forecast vintage,
+  horizon, cash and alpha conventions, scenario comparisons, signed factor
+  contributors and identification diagnostics. Preserve unavailable factor
+  coordinates in reduced universes and leave all numerical inputs unchanged.
+- Add frozen-model factor identification and influence diagnostics: asset forecast
+  gaps times GLS multipliers, exact 25 bp single-forecast sensitivities, weighted
+  loading overlap and conditional information shares.
+- Recompute GLS after each asset omission and report factor-premium ranges and
+  influence. Exclude nonidentified deletion coordinates explicitly. Preserve
+  existing forecasts, fitted loadings, accounting and factor contributions.
+- Show compact sensitivity and deletion ranges in CMA reports; retain complete
+  numerical detail in the new optional result tables.
+
 ## [7.20.0] - 2026-10-13
 
 - Attribute each GLS factor-premium revision to asset-level CMA adjustments.

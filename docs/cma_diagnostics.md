@@ -37,7 +37,8 @@ discretionary, funding, pricing-override or currency adjustments. A table of
 count. These descriptive fields cannot shadow calculated result columns.
 
 `CmaDiagnosticResult` holds `summary`, `assets`, `factors`, `channels`,
-`policy_checks`, `scenarios`, `validation`, `provenance` and `factor_contributions`.
+`policy_checks`, `scenarios`, `validation`, `provenance`, `factor_contributions`,
+`factor_sensitivity` and `factor_leave_one_out`.
 It keeps numerical
 precision; rendering handles display rounding. Missing optional inputs produce
 explicit unavailable metrics. An inconsistent construction bridge raises an error.
@@ -89,6 +90,26 @@ selected contributors with the remaining coverage disclosed. Save the complete
 result tables and input provenance alongside the PDF in the application's storage
 layer. Report rendering performs no fitting or portfolio optimisation.
 
+For provider studies, `optimalportfolios.reports.cma_inference` exposes
+`CmaInferenceView`, `CmaInferenceReport` and `render_cma_inference`. The adapter
+supplies up to six completed views, a headline view, source vintage, model date,
+horizon, cash and alpha multiplier. The shared three-page PDF compares premia
+and scenario diagnostics, shows the headline's top two positive and bottom two
+negative contributors for every factor, and reports forecast sensitivity and
+leave-one-out ranges. It uses the same QIS rendering primitives as the audit.
+The renderer does not construct scenarios, estimate exposures or subtract alpha.
+Provider adapters must subtract the already policy-admitted alpha exactly once
+before computing the supplied results. Forecast and model dates stay distinct.
+
+Views must share their calibrated factor basis. Missing or nonidentified
+factor coordinates appear as `N/A`, including Private Equity when a provider's
+benchmark-only universe has no exposure. This is not a zero premium. Failed
+accounting, duplicate view identities and oversized compact reports are rejected.
+Complete scenario tables, mapping qualifications and provider forecast-band
+assumptions remain in the caller's data bundle; the headline pages do not replace
+those records. PDF publication is atomic and leaves existing output intact if
+rendering fails.
+
 For admission sensitivity, `without_admitted_alpha(inputs, spec=spec)` returns an
 owned counterfactual input. It subtracts only the supplied admitted alpha from
 base and scenario excess CMAs, zeros its construction channel, and keeps all
@@ -122,11 +143,134 @@ calibrated premia leave the contribution table empty. The numerical validation
 includes this reconciliation. Legacy frozen results without the table retain
 their existing layout.
 
+## Factor identification and forecast influence
+
+The long-form `factor_sensitivity` table separates each asset contribution into
+its forecast gap and GLS multiplier. The gap is `excess_cma - betas @ factor_premia`;
+the product with `gls_multiplier` reproduces the asset's premium-revision
+contribution. The audit projects the supplied forecast exactly once: callers
+comparing alpha-adjusted consensus views subtract their chosen alpha before
+constructing the input. Supplying `admitted_alpha` alone does not subtract it.
+
+`premium_change_25bp` is the change in the factor premium when one asset's annual
+excess forecast increases by 0.0025, holding cash, alpha and the fitted risk model
+fixed. For example, a multiplier of -4 means a 25 bp higher asset forecast lowers
+the factor premium by 100 bp. This derivative is distinct from the asset's beta
+and from its contribution at the current forecast. Large offsetting multipliers
+can produce a plausible premium that remains sensitive to small forecast changes.
+
+`weighted_loading_overlap` in `factors` measures the share of a factor's whitened
+loading column explained by the remaining columns, without an intercept. This is
+cross-sectional loading overlap, not time-series return correlation.
+`conditional_information_share` allocates the remaining loading signal across
+assets and sums to one for an identified factor. `gross_gls_multiplier` and
+`max_abs_25bp_shift` report the size of the inverse mapping and its most sensitive
+single-asset forecast. These are deterministic geometry measures, not standard
+errors or statistical confidence statements.
+
+`factor_leave_one_out` removes each asset and recomputes GLS under the same rank
+policy, holding the remaining forecasts, betas and residual variances fixed. It
+does not reestimate historical loadings. The saved table identifies the excluded
+asset, retained rank, premium and change from the full universe. The factor table
+summarizes identified deletion estimates in `loo_low`, `loo_high` and
+`loo_max_abs_change`, with the worst excluded asset and explicit available and
+unavailable counts. A nonunique base fit, rank-deficient deletion or empty retained
+universe has unavailable comparative premia; minimum-norm coordinates never enter
+these ranges. Deletion ranges are sensitivity checks, not confidence intervals.
+
+The compact PDF displays maximum absolute 25 bp shifts and identified deletion
+ranges next to factor premia and contributor rows. Full gap/multiplier and deletion
+tables belong in the saved bundle. Legacy frozen results without these tables keep
+their previous layout and are never recomputed during rendering.
+
 The renderer uses [QIS](https://github.com/ArturSepp/QuantInvestStrats) reporting
 primitives; see its [software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).
 Rosaa supplies its completed-result and saved-cut adapters, source hashes and
 transactional report bundles. The generic OP layer has no dependency on Rosaa or
 the local paper replication workspace.
+
+## Conditional GLS confidence intervals
+
+`compute_conditional_gls_intervals(inputs, confidence_level=0.95, spec=spec)` is
+an opt-in numerical calculation exported from `optimalportfolios.matf`. Its
+`CmaConditionalGlsResult` contains `factors`, joint `covariance` and `summary`.
+It neither modifies nor extends the frozen `CmaDiagnosticResult` tables. The
+caller applies cash and admitted alpha to the forecast before calling it, using
+the same inputs and SVD cutoff as the audit.
+
+The working model is `y = B @ lambda + e`, with zero-mean Gaussian forecast errors
+having covariance `tau_squared * D`. Loadings, diagonal residual-return covariance,
+cash and admitted alpha are fixed. Cross-asset forecast errors are independent;
+using return-risk D to specify their relative variances is an explicit assumption,
+not an empirical estimate of provider forecast accuracy.
+
+For full column rank K and N greater than K, the scale estimate is weighted
+residual SSE divided by N-K. Premium covariance is that scale times the inverse
+of `B.T @ inv(D) @ B`, evaluated through whitened SVD. Each interval uses the
+Student-t critical value with N-K residual degrees of freedom. Forecast horizon
+and adviser count do not set those degrees of freedom. Confidence is pointwise,
+not simultaneous across factors or scenarios. The result includes the confidence
+level, critical value, estimated scale and assumptions so a saved table remains
+interpretable without its PDF.
+
+Rank-deficient factors, zero residual degrees of freedom and numerically zero
+residual scale have unavailable interval endpoints and explicit status codes.
+A minimum-norm coefficient must not acquire a finite interval. These intervals
+exclude uncertainty in fitted exposures, residual risk, cash, admitted alpha and
+factor definitions, and do not represent realized-return prediction bands.
+
+Pass the completed result as `CmaInferenceView.conditional_intervals` for every
+view, or omit it for every view to retain the previous layout. The common report
+shows estimates and intervals for all scenarios, their residual degrees of
+freedom and the working assumptions. Existing 25 bp sensitivities, leave-one-out
+ranges and adviser forecast-box envelopes retain their separate interpretations.
+
+## Individual and pair identification
+
+The `compute_cma_identification` entry point is called as
+`compute_cma_identification(inputs, factor_pair=('Carry G10', 'Carry EM'),
+precision_target=None, equivalence_margin=None, confidence_level=0.95, spec=spec)`
+returns a separate `CmaIdentificationResult` containing `factors`, `contrasts`,
+`directions`, `pair` and `summary`. Supply the same already alpha-adjusted input
+as for the audit and conditional intervals. Existing results are unchanged.
+
+Individual conditional information is the squared norm of a whitened factor
+column after removing the other columns, without an intercept. Its reciprocal
+is residual mimicking variance. Variance inflation compares raw and distinct
+loading information; it does not detect weak absolute exposure by itself.
+The optional `precision_target` is a native annual decimal CI half-width:
+0.01 means a one-percentage-point precision target. `weak_for_target` means
+the interval exceeds this declared requirement, not failure of a rank test.
+
+Pair geometry removes all remaining factors before taking the two-column SVD.
+Columns are multiplied by their fitted factor volatilities, so coordinates
+are premia divided by volatility. The minimum/maximum information, their ratio,
+partial loading cosine, mutual variance inflation and weak/strong directions
+separate lack of exposure from pair redundancy. Eigenvector signs are fixed
+by a positive largest component; repeated eigenvalues have nonunique directions.
+
+Common is `(first + second)/2`; spread is `first - second`. Native contrasts
+are annual excess decimals. Normalized contrasts apply the same operations to
+premia divided by their respective factor volatilities. They use the full joint
+GLS covariance, including off-diagonal entries. These are unrestricted-model
+contrasts, not estimates from a pooled factor model. Risk factors remain separate.
+
+The equality F test imposes zero normalized spread. Non-rejection is not
+equivalence. An explicit `equivalence_margin`, in normalized-premium units,
+enables two one-sided tests at level `1-confidence_level`. At 95% confidence,
+equivalence requires the 90% spread CI to lie inside the declared bounds.
+Otherwise status is `not_established`; no threshold means `not_assessed`.
+All inference inherits fixed B, D, cash and alpha assumptions and additionally
+holds factor volatilities fixed. It does not address estimated-loading uncertainty
+or establish that two realized risk factors can be merged.
+
+Pass `CmaInferenceView.identification` for every view alongside its matching
+`conditional_intervals`. The three-page report displays individual precision,
+native and normalized carry contrasts, pair diagnostics and equivalence status.
+Full information, direction intervals, TOST bounds and settings belong in CSV/JSON
+exports; existing leave-one-out and forecast sensitivity ranges stay distinct.
+Missing pair factors, missing factor covariance, rank/df failures and zero error
+scale are explicitly unavailable. Native contrasts do not require factor covariance.
 
 ## References
 
@@ -134,3 +278,5 @@ the local paper replication workspace.
   Strategic Asset Allocation Using Multi-Asset Tradable Factors*. Working paper,
   [SSRN 6785958](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6785958).
 - [Conventions](conventions.md) and [portfolio risk analytics](portfolio_risk_analytics.md).
+- [Statsmodels linear-restriction F tests](https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.RegressionResults.f_test.html)
+  and [the two-one-sided-test equivalence principle](https://www.statsmodels.org/stable/generated/statsmodels.stats.weightstats.ttost_ind.html).

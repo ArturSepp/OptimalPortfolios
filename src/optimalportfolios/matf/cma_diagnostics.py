@@ -92,6 +92,8 @@ class CmaDiagnosticResult:
     validation: pd.DataFrame
     provenance: dict
     factor_contributions: pd.DataFrame = field(default_factory=pd.DataFrame)
+    factor_sensitivity: pd.DataFrame = field(default_factory=pd.DataFrame)
+    factor_leave_one_out: pd.DataFrame = field(default_factory=pd.DataFrame)
 
 
 def _labelled(value, kind, labels, name, *, finite=True):
@@ -252,6 +254,76 @@ def _risk_accounting(inputs, geometry, fitted, mean, summary, validation, spec, 
         summary['availability']['factor_access'] = 'factor_covariance_not_positive_definite'
 
 
+def _factor_stability(inputs, geometry, implied, calibrated, spec):
+    """Attribute premium sensitivity and refit deletions under the same SVD rank policy.
+
+    The 25 bp shock changes one annual excess forecast with risk and admission
+    fixed. Nonunique base/deletion coordinates are unavailable for comparisons.
+    These are deterministic diagnostics, not sampling errors or confidence bands.
+    """
+    ids, names = inputs.betas.index, inputs.betas.columns
+    b, d = geometry.beta, inputs.residual_variances.to_numpy()
+    m = inputs.excess_cma.to_numpy(dtype=float)
+    n, k = b.shape
+    unique = geometry.rank == k
+    weights = np.linalg.solve(geometry.chol.T, geometry.white_pinv.T).T
+    gap = m-b@calibrated
+    scales2 = np.sum(geometry.white_pinv**2, axis=1)
+    leverage = 1.-np.diag(geometry.residual_projector)
+    sensitivity = []
+    for j, factor in enumerate(names):
+        for i, asset in enumerate(ids):
+            sensitivity.append(dict(asset=asset, factor=factor, loading=b[i, j],
+                gls_multiplier=weights[j, i], forecast_gap=gap[i],
+                premium_revision_contribution=weights[j, i]*gap[i], forecast_shock=.0025,
+                premium_change_25bp=.0025*weights[j, i] if unique else np.nan,
+                conditional_information_share=(weights[j, i]**2*d[i]/scales2[j]
+                                               if unique else np.nan),
+                gls_leverage=leverage[i], status='identified' if unique else 'nonunique_base'))
+    deletions = []
+    for i, asset in enumerate(ids):
+        keep = np.arange(n) != i
+        rank, condition = 0, np.nan
+        estimate = np.full(k, np.nan)
+        status = 'insufficient_assets'
+        if n > 1:
+            sub = sa._gls_geometry(inputs.betas.loc[keep], inputs.residual_variances.loc[keep],
+                                   rcond=spec.rcond)
+            rank = sub.rank
+            status = ('nonunique_base' if not unique else
+                      'rank_deficient' if rank < k else 'identified')
+            if status == 'identified':
+                estimate = sub.white_pinv @ np.linalg.solve(sub.chol, m[keep])
+                condition = float(sub.singular_values[0]/sub.singular_values[-1])
+        for j, factor in enumerate(names):
+            deletions.append(dict(excluded_asset=asset, factor=factor, rank=rank,
+                n_assets=n-1, status=status, condition_number=condition,
+                base_premium=implied[j] if unique else np.nan, implied_premium=estimate[j],
+                premium_change=estimate[j]-implied[j], gls_leverage=leverage[i]))
+    sensitivity, deletions = pd.DataFrame(sensitivity), pd.DataFrame(deletions)
+    statistics = []
+    for j, factor in enumerate(names):
+        subset = deletions.loc[deletions.factor == factor]
+        valid = subset.loc[subset.status == 'identified']
+        worst = valid.loc[valid.premium_change.abs().idxmax()] if len(valid) else None
+        pivot = int(np.argmax(np.abs(weights[j])))
+        statistics.append(dict(factor=factor,
+            weighted_loading_overlap=(float(np.clip(
+                1.-1./(np.sum(geometry.white[:, j]**2)*scales2[j]), 0., 1.))
+                if unique else np.nan),
+            gross_gls_multiplier=float(np.sum(np.abs(weights[j]))) if unique else np.nan,
+            most_sensitive_asset=ids[pivot] if unique else None,
+            max_abs_25bp_shift=float(.0025*np.abs(weights[j, pivot])) if unique else np.nan,
+            loo_low=float(valid.implied_premium.min()) if len(valid) else np.nan,
+            loo_high=float(valid.implied_premium.max()) if len(valid) else np.nan,
+            loo_worst_asset=worst.excluded_asset if worst is not None else None,
+            loo_max_abs_change=float(abs(worst.premium_change)) if worst is not None else np.nan,
+            loo_identified_count=len(valid), loo_unavailable_count=n-len(valid)))
+    statistics = pd.DataFrame(statistics).set_index('factor')
+    statistics.index = names
+    return sensitivity, deletions, statistics
+
+
 def compute_cma_diagnostics(inputs: CmaDiagnosticInputs, *, spec=None, policy=None):
     """Audit one frozen universe without fitting, repairing or changing its forecasts.
 
@@ -386,6 +458,9 @@ def compute_cma_diagnostics(inputs: CmaDiagnosticInputs, *, spec=None, policy=No
         if summary['admission_score'] is not None:
             summary['admission_budget_ratio'] = _ratio(summary['admission_score'], budget)
     scenarios = inputs.scenarios.copy() if inputs.scenarios is not None else pd.DataFrame(index=ids)
+    sensitivity, leave_one_out, stability = _factor_stability(
+        inputs, geometry, implied, calibrated, spec)
+    factors = factors.join(stability)
     checks = pd.DataFrame(validation)
     summary['accounting_status'] = 'pass' if checks.status.eq('pass').all() else 'fail'
     provenance = deepcopy(inputs.provenance)
@@ -394,4 +469,5 @@ def compute_cma_diagnostics(inputs: CmaDiagnosticInputs, *, spec=None, policy=No
                       asset_order=ids.tolist(), factor_order=factor_ids.tolist())
     return CmaDiagnosticResult(summary, assets, factors, channels,
                               _policy_table(assets, summary, policy), scenarios, checks, provenance,
-                              factor_contributions=factor_contributions)
+                              factor_contributions=factor_contributions,
+                              factor_sensitivity=sensitivity, factor_leave_one_out=leave_one_out)

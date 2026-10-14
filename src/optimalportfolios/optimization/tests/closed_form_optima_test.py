@@ -237,6 +237,33 @@ def test_capped_max_diversification_keeps_a_status_8_stop_next_to_the_optimum(
             >= calculate_diversification_ratio(reference, base) - 1e-6)
 
 
+# Do not rely on native SLSQP choosing status 8 on every supported platform.
+@pytest.mark.parametrize('status,candidate,accepted', [
+    (8, [0.5, 0.5], True),
+    (8, [0.9, 0.1], False),
+    (9, [0.5, 0.5], False),
+])
+def test_max_diversification_validates_status_8_before_accepting(
+        status: int, candidate: list, accepted: bool, monkeypatch) -> None:
+    """Only a feasible status-8 candidate may replace the previous feasible portfolio."""
+    from scipy.optimize import OptimizeResult
+    from optimalportfolios.optimization.general import max_diversification as implementation
+
+    previous = pd.Series([0.6, 0.4], index=['A', 'B'])
+    constraints = Constraints(
+        is_long_only=True, weights_0=previous,
+        max_weights=pd.Series(0.6, index=previous.index))
+    result = OptimizeResult(
+        success=False, status=status, x=np.array(candidate), message='Controlled solver stop')
+    monkeypatch.setattr(implementation, 'minimize', lambda *args, **kwargs: result)
+
+    weights = implementation.opt_maximise_diversification(
+        covar=0.04*np.eye(2), constraints=constraints)
+
+    np.testing.assert_allclose(weights, candidate if accepted else previous.to_numpy())
+    assert result.success is False
+
+
 # ───────────────────────────────────────────────────────────────────────────────
 # SAA solvers
 # ───────────────────────────────────────────────────────────────────────────────
