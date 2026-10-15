@@ -7,6 +7,10 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## [7.21.0] - 2026-10-16
+
+- Validate release calendar dates in the publication timezone, including around
+  UTC midnight, while continuing to reject future publication dates.
 - Preserve available asset residual history before a factor's inception by matching
   the regression's missing-predictor treatment; retain missing responses and wholly
   unavailable factor rows. Add orthogonal and empirical covariance regression checks.

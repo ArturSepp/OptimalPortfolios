@@ -71,7 +71,9 @@ def validate_metadata(root: Path, tag: str) -> dict:
     if cff_scalar(cff, "version") != version:
         raise ValueError("CITATION.cff version differs from tag")
     intended = dt.date.fromisoformat(cff_scalar(cff, "date-released"))
-    if intended > dt.datetime.now(dt.timezone.utc).date():
+    # CFF records a calendar date. The publishing workflow sets TZ explicitly;
+    # use that publication date rather than rejecting local dates after UTC midnight.
+    if intended > dt.datetime.now().date():
         raise ValueError("CITATION.cff intended release date is in the future")
     changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
     pattern = rf"^##\s+(?:\[{re.escape(version)}\]|{re.escape(version)})(?:\s+.*)?$"

@@ -12,7 +12,10 @@ data, so there is nothing to compare against.
 """
 # packages
 import re
+import datetime as dt
 from pathlib import Path
+import runpy
+from types import SimpleNamespace
 from typing import Optional
 
 import pytest
@@ -85,3 +88,34 @@ def test_citation_cff_date_released_is_iso():
     data = yaml.safe_load((ROOT / 'CITATION.cff').read_text(encoding='utf-8'))
     assert re.fullmatch(r'\d{4}-\d{2}-\d{2}', str(data['date-released'])), \
         f"date-released must be YYYY-MM-DD, got {data['date-released']!r}"
+
+
+@pytest.mark.parametrize('release_date, accepted', [
+    ('2026-10-15', True), ('2026-10-16', True), ('2026-10-17', False),
+])
+def test_release_date_uses_publication_calendar(tmp_path, monkeypatch, release_date, accepted):
+    """A local release date is valid across UTC midnight; tomorrow remains invalid."""
+    guard = runpy.run_path(str(ROOT / '.github/scripts/release_guard.py'))
+    local_now = dt.datetime(2026, 10, 16, 0, 30,
+                            tzinfo=dt.timezone(dt.timedelta(hours=2)))
+
+    class FixedClock:
+        """Supply one instant in the publisher's timezone or explicitly requested UTC."""
+
+        @staticmethod
+        def now(tz=None):
+            """Return the local wall clock by default, preserving explicit timezone requests."""
+            return local_now.replace(tzinfo=None) if tz is None else local_now.astimezone(tz)
+
+    monkeypatch.setitem(guard['validate_metadata'].__globals__, 'dt', SimpleNamespace(
+        date=dt.date, datetime=FixedClock, timezone=dt.timezone))
+    (tmp_path / 'pyproject.toml').write_text(
+        '[project]\nname = "optimalportfolios"\nversion = "7.21.0"\n', encoding='utf-8')
+    (tmp_path / 'CITATION.cff').write_text(
+        f'version: 7.21.0\ndate-released: "{release_date}"\n', encoding='utf-8')
+    (tmp_path / 'CHANGELOG.md').write_text('## [7.21.0]\n', encoding='utf-8')
+    if accepted:
+        assert guard['validate_metadata'](tmp_path, 'v7.21.0')['version'] == '7.21.0'
+    else:
+        with pytest.raises(ValueError, match='future'):
+            guard['validate_metadata'](tmp_path, 'v7.21.0')

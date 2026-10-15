@@ -27,6 +27,7 @@ concurrency:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   MPLBACKEND: Agg
+  TZ: Europe/Zurich
   RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
