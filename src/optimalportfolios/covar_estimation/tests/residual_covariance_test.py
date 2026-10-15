@@ -249,3 +249,45 @@ def test_cluster_policy_requires_dependency_support(monkeypatch):
     assert estimator(residual_type='orthogonal').residual_type == 'orthogonal'
     with pytest.raises(ImportError, match='factorlasso'):
         estimator(residual_type='residual_cluster')
+
+
+@requires_prepared
+@pytest.mark.parametrize('residual_type', ['orthogonal', 'empirical'])
+@pytest.mark.parametrize('factor_start', [0, 36, 84])
+def test_residuals_preserve_available_history_before_factor_inception(
+        panels, residual_type, factor_start):
+    """An unavailable factor must not erase observed responses or other factor contributions."""
+    prices, returns = panels
+    prices = prices.copy()
+    prices.iloc[:factor_start, prices.columns.get_loc('g')] = np.nan
+    cutoff = prices.index[71]
+    prices = prices.loc[:cutoff]
+    monthly = returns['ME'].loc[:cutoff].copy()
+    monthly.loc[monthly.index[:3], 'a'] = np.nan
+    fitted = estimator(residual_type=residual_type).fit_current_factor_covars(
+        prices, {'ME': monthly}, estimation_date=cutoff,
+    )
+
+    # Independently sum only observed contributions for each date and response.
+    # A wholly missing factor row is still unavailable; missing responses stay missing.
+    factor_returns = np.log(prices / prices.shift(1))
+    expected = monthly.copy()
+    for date, observations in factor_returns.iterrows():
+        observed = observations.dropna()
+        for asset in expected.columns:
+            expected.loc[date, asset] = (
+                monthly.loc[date, asset]
+                - sum(value * fitted.y_betas.loc[asset, factor]
+                      for factor, value in observed.items())
+                if not observed.empty else np.nan
+            )
+    pd.testing.assert_frame_equal(fitted.residuals / 12., expected, rtol=1e-12, atol=1e-14)
+    assert fitted.residuals.loc[monthly.a.isna(), 'a'].isna().all()
+    assert fitted.y_variances.residual_var.gt(0).all()
+    if factor_start == 0:
+        legacy = 12. * (monthly - factor_returns @ fitted.y_betas.T)
+        pd.testing.assert_frame_equal(fitted.residuals, legacy, rtol=1e-12, atol=1e-14)
+    if residual_type == 'empirical':
+        assert np.isfinite(fitted.residual_correlation.correlation.to_numpy()).all()
+        covariance = fitted.get_y_covar(residual_type='empirical')
+        assert np.linalg.eigvalsh(covariance).min() >= -1e-12

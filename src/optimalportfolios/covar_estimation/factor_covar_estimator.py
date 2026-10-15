@@ -353,6 +353,13 @@ def _fit_lasso_frequency(
         if original_prior_hac_lags is not None:
             fit_model.expert_prior_hac_lags = original_prior_hac_lags
 
+    # Match the regression's missing-predictor treatment when constructing the
+    # factor contribution. A late-starting factor must not propagate NaN through
+    # every response, including those with zero exposure to that factor. Keep
+    # wholly unavailable factor rows and missing asset observations unavailable.
+    factor_contribution = factor_returns.fillna(0.0) @ fit_model.estimated_betas.T
+    factor_contribution.loc[factor_returns.isna().all(axis=1), :] = np.nan
+
     estimation_result = fit_model.estimation_result_
     linkage = precomputed_linkages[freq] if use_precomputed else fit_model.linkage
     cutoff = precomputed_cutoffs[freq] if use_precomputed else fit_model.cutoff
@@ -365,7 +372,7 @@ def _fit_lasso_frequency(
         clusters=fit_model.clusters,
         linkage=linkage,
         cutoff=cutoff,
-        residuals=asset_returns - factor_returns @ fit_model.estimated_betas.T,
+        residuals=asset_returns - factor_contribution,
         derived_signs=fit_model.derived_signs_,
     )
 

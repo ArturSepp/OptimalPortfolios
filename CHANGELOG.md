@@ -7,6 +7,9 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+- Preserve available asset residual history before a factor's inception by matching
+  the regression's missing-predictor treatment; retain missing responses and wholly
+  unavailable factor rows. Add orthogonal and empirical covariance regression checks.
 - Document the OP-owned GLS workflow across the architecture, CMA, examples and allocation guides; add the `matf/gls_diagnostic/README.md` contributor guide with explicit total/excess forecast and alpha-admission contracts.
 - Add `matf.gls_diagnostic` for provider-implied factor premia, whitened-SVD GLS geometry, factor-mimicking portfolios, conditional Student-t intervals and forecast-box sensitivities. Preserve existing OP calling interfaces and report schemas. FactorLasso remains responsible for historical factor estimation; the GLS layer needs no new FactorLasso API or release.
 
