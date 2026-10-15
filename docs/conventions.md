@@ -244,6 +244,11 @@ single-date and numerical entry points.
   expectation has a closed form under a Gaussian mixture.
 - **CMA.** Capital market assumption: a forward-looking expected return, volatility or
   correlation used as a strategic input; see the [MATF-CMA case study](app_cma_strategic_allocation.md).
+  [GLS inference](gls_factor_premia.md) maps supplied asset-return forecasts to implied factor
+  premia conditional on fitted loadings. Its high-level API takes total arithmetic forecasts
+  and subtracts cash and credited alpha once; the [CMA audit](cma_diagnostics.md) takes an
+  already prepared excess-return target. Conditional confidence intervals and forecast
+  sensitivity ranges have different meanings and are reported separately.
 - **Convexity premium.** An overlay's Bear-regime Sharpe contribution beyond the value its Sharpe
   ratio and benchmark correlation imply under joint normality; defined by Sepp and Kastenholz
   (2026) and computed by qis, see its

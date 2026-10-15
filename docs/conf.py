@@ -138,7 +138,8 @@ html_theme_options = {
 GENERATED_DIR = DOCS_DIR / "_generated"
 STUB_DIR = DOCS_DIR / "generated"
 PACKAGE_MODULES = (
-    "alphas", "config", "covar_estimation", "local_path", "optimization", "reports", "universe",
+    "alphas", "config", "covar_estimation", "local_path", "matf", "matf.gls_diagnostic",
+    "optimization", "reports", "universe",
     "utils",
 )
 API_HEADER = """..

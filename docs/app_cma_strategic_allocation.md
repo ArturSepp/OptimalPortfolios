@@ -111,10 +111,12 @@ In the package, `FactorCovarEstimator` estimates the loadings with FactorLasso a
 covariance in this form; see [factor covariance with HCGL](factor_covariance_hcgl.md#the-factor-model-and-its-covariance).
 FactorLasso's article
 [from loadings to portfolio risk and capital market assumptions](https://factorlasso.readthedocs.io/en/latest/app_portfolio_risk_models.html)
-starts from fitted loadings, builds the risk model and the CMAs from them, and audits the CMAs
-against the loadings. This page starts where that article stops, from given loadings and CMAs,
-and builds the allocation. The package itself estimates no factor premia and has no CMA
-function: the canonical script,
+starts from fitted loadings and explains their portfolio use. This page takes given
+loadings, premia and adjustments and builds the allocation. OP also supports the reverse
+question: [infer factor premia from supplied provider CMAs](gls_factor_premia.md), conditional
+on loadings and alpha estimated with FactorLasso, and then produce
+[CMA diagnostics and reports](cma_diagnostics.md). That inference is a separate workflow;
+the synthetic allocation example here keeps its fixed premia. Its canonical script,
 [`examples/docs/app_cma_strategic_allocation.py`](../examples/docs/app_cma_strategic_allocation.py),
 builds both sides from its constants with pandas:
 
@@ -303,6 +305,8 @@ factor-history data.
 
 ## See also
 
+- [GLS inference of factor risk premia from provider CMAs](gls_factor_premia.md)
+- [CMA accounting, identification and diagnostic reports](cma_diagnostics.md)
 - [Tactical allocation: alpha over tracking error and yield targets](alpha_over_tracking_error.md)
 - [Minimum tracking error](minimum_tracking_error.md)
 - [Factor covariance with HCGL](factor_covariance_hcgl.md)

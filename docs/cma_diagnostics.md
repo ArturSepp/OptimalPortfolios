@@ -50,6 +50,39 @@ the largest singular value. `CmaDiagnosticSpec.rcond` can select another relativ
 cutoff, recorded in the result. Truncating nonzero directions is a model
 approximation; failed covariance accounting remains visible.
 
+The numerical GLS implementation belongs to OP's
+[`matf.gls_diagnostic`](gls_factor_premia.md): `infer_factor_premia` accepts
+provider total-return forecasts, cash, admitted alpha, estimated loadings and
+residual risk. It returns implied premia, conditional intervals, mimicking
+portfolios and optional forecast-box sensitivities. OP delegates its existing
+projection functions to that implementation and retains CMA accounting, policy
+diagnostics, identification contrasts and PDF rendering. FactorLasso supplies the
+historical estimation stage; GLS requires no additional FactorLasso API or release.
+
+For provider inference, estimate historical loadings and alpha from tracking-index
+prices first, then apply the GLS map to the provider's forecasts. Do not substitute
+historical means or model-generated asset forecasts for the provider's target.
+Cash is subtracted once, and the alpha multiplier is recorded for every view.
+
+### Choose the input interface
+
+| Entry point | Forecast input | Cash and alpha handling | Residual metric |
+|---|---|---|---|
+| `infer_factor_premia` | Provider arithmetic **total** forecasts | Subtracts explicit `cash_rate` and `alpha_weight * alpha`; alpha already includes asset admission weights. | Positive variances or full positive-definite covariance. |
+| `compute_cma_diagnostics` | Prepared **excess** forecast target | Does not subtract cash or `admitted_alpha`; channels explain the supplied target. | Diagonal residual variances. |
+| `compute_conditional_gls_intervals` and `compute_cma_identification` | The same prepared target used for the audit | No further adjustment; the interval adapter calls the GLS core with zero cash. | The audit's diagonal residual variances and rank specification. |
+
+For provider comparisons, hold estimated loadings and residual risk fixed and
+prepare one target for each horizon and alpha multiplier. A full-alpha view means
+the entire **CMA-spec admitted** vector, which can differ from raw historical alpha.
+Keep a production audit of the published forecast distinct from a provider view
+whose admitted alpha has already been removed. Reconcile the construction channels
+to the target actually supplied.
+
+The [GLS module README](https://github.com/ArturSepp/OptimalPortfolios/blob/main/src/optimalportfolios/matf/gls_diagnostic/README.md)
+lists public entry points, result fields and contributor commands. The
+[methodology guide](gls_factor_premia.md) gives the equations and conditional model.
+
 ## Interpretation
 
 The total unconstrained squared excess Sharpe splits into the systematic score at

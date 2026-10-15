@@ -5,6 +5,11 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+- Document the OP-owned GLS workflow across the architecture, CMA, examples and allocation guides; add the `matf/gls_diagnostic/README.md` contributor guide with explicit total/excess forecast and alpha-admission contracts.
+- Add `matf.gls_diagnostic` for provider-implied factor premia, whitened-SVD GLS geometry, factor-mimicking portfolios, conditional Student-t intervals and forecast-box sensitivities. Preserve existing OP calling interfaces and report schemas. FactorLasso remains responsible for historical factor estimation; the GLS layer needs no new FactorLasso API or release.
+
 ## [7.21.0.dev4] - 2026-10-15
 
 - Report the new Carry FX blend with its construction, conditional intervals and

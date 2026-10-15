@@ -74,8 +74,8 @@ def _pair_geometry(geometry, positions, vol):
     return rho, eigenvalues, directions, mutual_vif
 
 
-# Existing uncertainty API supplies the finite-df covariance; neither factorlasso's
-# regression intervals nor qis.RiskModel implements conditional cross-sectional pair inference.
+# gls_diagnostic supplies finite-df GLS covariance through the CMA adapter. This
+# report layer adds the declared pair contrasts and economic precision settings.
 def compute_cma_identification(
     inputs: CmaDiagnosticInputs,
     *,

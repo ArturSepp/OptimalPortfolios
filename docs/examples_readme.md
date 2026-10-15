@@ -46,6 +46,7 @@ example that holds the Yahoo fetcher. For a first run, start with the
 | Estimate a sparse factor covariance | [Factor covariance with HCGL](factor_covariance_hcgl.md) | [`factor_covariance_hcgl.py`](../examples/docs/factor_covariance_hcgl.py) (Offline) | [`covar_estimation/simulate_factor_returns.py`](../examples/covar_estimation/simulate_factor_returns.py) (Offline), [`covar_estimation/lasso_covar_estimation.py`](../examples/covar_estimation/lasso_covar_estimation.py) (Network), [`comparisons/covar_estimators.py`](../examples/comparisons/covar_estimators.py) (Network) |
 | Build and use a factor risk model from CSV files | [Rolling factor risk model from CSV](rolling_factor_covar_from_csv.md) | [`rolling_factor_covar_from_csv.py`](../examples/docs/rolling_factor_covar_from_csv.py) (Network) | [`covar_estimation/rolling_factor_covar_from_csv.py`](../examples/covar_estimation/rolling_factor_covar_from_csv.py) (Network) |
 | Compute risk contributions and benchmark betas | [Ex-ante risk contributions and betas](portfolio_risk_analytics.md) | [`portfolio_risk_analytics.py`](../examples/docs/portfolio_risk_analytics.py) (Offline) | — |
+| Infer factor premia from provider forecasts after historical estimation | [GLS factor-premia inference](gls_factor_premia.md) and [CMA reporting](cma_diagnostics.md) | [`gls_factor_premia.py`](../examples/docs/gls_factor_premia.py) (Offline; synthetic prices, FactorLasso fit, OP GLS and weighted-QR checks) | Exact consensus/JPM workflows require local licensed inputs and are not distributed as public examples. |
 | Build alpha signals | [Alpha signals](alphas_module_readme.md) | [`alphas_module_readme.py`](../examples/docs/alphas_module_readme.py) (Offline) | [`alphas/profile_alpha_signals.py`](../examples/alphas/profile_alpha_signals.py) (Network) |
 | Diagnose signals and profile alpha-rank portfolios | [Signal diagnostics](signal_diagnostics_and_profiling.md) | [`signal_diagnostics_and_profiling.py`](../examples/docs/signal_diagnostics_and_profiling.py) (Offline) | [`alphas/profile_alpha_signals.py`](../examples/alphas/profile_alpha_signals.py) (Network) |
 | Choose an objective and configure the solver | [Choosing an objective](optimization_module_readme.md) | [`optimization_module_readme.py`](../examples/docs/optimization_module_readme.py) (Offline) | [`backtests/multiasset_saa.py`](../examples/backtests/multiasset_saa.py) (Offline), [`comparisons/optimisers.py`](../examples/comparisons/optimisers.py) (Network) |
@@ -108,7 +109,7 @@ scenario; it does not execute every branch of a `Locals` enum.
 ### Unattended execution lanes
 
 The [classifier and runner](../.github/scripts/run_examples.py) derives lanes from Python imports.
-Its current inventory is **36 offline, 20 network, 56 unattended examples**. The **4 local-data workflows** ending in
+Its current inventory is **37 offline, 20 network, 57 unattended examples**. The **4 local-data workflows** ending in
 `*_local.py` are excluded. Each catalogue row below states the classification.
 
 ```console
@@ -284,6 +285,7 @@ under `papers/`.
 
 | Source | Lane | Purpose and prerequisites |
 |---|---|---|
+| [GLS factor-premia inference](../examples/docs/gls_factor_premia.py) | Offline | The [GLS guide](gls_factor_premia.md): synthetic index/factor prices, FactorLasso loadings and historical alpha, OP premium/interval estimates checked independently by weighted QR, and zero/half/full alpha views. |
 | [Alpha over tracking error](../examples/docs/alpha_over_tracking_error.py) | Offline | The worked example of the [alpha over tracking error](alpha_over_tracking_error.md) page: the closed-form active weights against the solver, the tracking error from `qis.RiskModel`, the utility weight that reproduces the forced solve, group limits and the yield-target variant. |
 | [Alpha signals](../examples/docs/alphas_module_readme.py) | Offline | The worked examples of the [alpha signals](alphas_module_readme.md) page: every signal family against its formula, cross-sectional and within-cluster scoring, cluster extraction, mixed cadences, point-in-time signals, the `AlphasData` container and rolling EWMA means. |
 | [Capital market assumptions to strategic allocation](../examples/docs/app_cma_strategic_allocation.py) | Offline | The script of the [MATF-CMA case study](app_cma_strategic_allocation.md): CMAs and covariance from one synthetic loading matrix, and the strategic allocation by alpha over tracking error against mandate benchmarks. |

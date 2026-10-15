@@ -1,5 +1,12 @@
 """Factor-coordinate Sharpe accounting; MATF is an illustration, not a required factor set."""
 
+from optimalportfolios.matf.gls_diagnostic import (
+    GlsGeometry,
+    GlsPremiaResult,
+    compute_gls_geometry,
+    infer_factor_premia,
+)
+
 from optimalportfolios.matf.cma_diagnostics import (
     AdmissionPolicy,
     CmaDiagnosticInputs,

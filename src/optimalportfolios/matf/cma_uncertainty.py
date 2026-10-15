@@ -4,9 +4,8 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
-from scipy.stats import t
+from optimalportfolios.matf.gls_diagnostic import infer_factor_premia
 
-from optimalportfolios.matf import sharpe_accounting as sa
 from optimalportfolios.matf.cma_diagnostics import (
     CmaDiagnosticInputs, CmaDiagnosticSpec, _labelled,
 )
@@ -21,8 +20,7 @@ class CmaConditionalGlsResult:
     summary: dict
 
 
-# factorlasso.linear_confidence_intervals supports normal and bootstrap-t calibration,
-# not finite-df Student-t GLS. Reuse OP's SVD geometry and scipy's t quantile here.
+# gls_diagnostic owns risk-premia estimation and Student-t inference; this is a CMA adapter.
 def compute_conditional_gls_intervals(inputs: CmaDiagnosticInputs, *, confidence_level=.95,
                                       spec: CmaDiagnosticSpec | None = None
                                       ) -> CmaConditionalGlsResult:
@@ -46,42 +44,18 @@ def compute_conditional_gls_intervals(inputs: CmaDiagnosticInputs, *, confidence
         raise ValueError('confidence_level must be a finite scalar strictly between zero and one')
     if not isinstance(inputs.betas, pd.DataFrame):
         raise ValueError('betas must be a labelled DataFrame')
-    ids, factors = inputs.betas.index, inputs.betas.columns
+    ids = inputs.betas.index
     _labelled(inputs.betas, pd.DataFrame, ids, 'betas')
     _labelled(inputs.residual_variances, pd.Series, ids, 'residual_variances')
     _labelled(inputs.excess_cma, pd.Series, ids, 'excess_cma')
-    geometry = sa._gls_geometry(inputs.betas, inputs.residual_variances, rcond=spec.rcond)
-    target = inputs.excess_cma.to_numpy(dtype=float)
-    white_target = np.linalg.solve(geometry.chol, target)
-    estimate = geometry.white_pinv @ white_target
-    residual = geometry.residual_projector @ target
-    white_residual = np.linalg.solve(geometry.chol, residual)
-    sse = float(white_residual @ white_residual)
-    n, k, rank = len(ids), len(factors), geometry.rank
-    df = n-rank
-    status = ('unavailable_rank_deficient' if rank < k else
-              'unavailable_residual_df' if df <= 0 else
-              'unavailable_zero_residual_scale'
-              if sse <= max(float(white_target @ white_target), 1e-300)*1e-24 else
-              'conditional_working_model')
-    covariance = np.full((k, k), np.nan)
-    se, lower, upper = (np.full(k, np.nan) for _ in range(3))
-    scale, critical = None, None
-    if status == 'conditional_working_model':
-        scale = sse/df
-        critical = float(t.isf((1.-confidence_level)/2., df))
-        covariance = scale*(geometry.white_pinv @ geometry.white_pinv.T)
-        se = np.sqrt(np.diag(covariance))
-        lower, upper = estimate-critical*se, estimate+critical*se
-        if not all(np.isfinite(x).all() for x in (covariance, se, lower, upper)):
-            raise ValueError('Conditional GLS intervals overflow; check units and identification')
-    table = pd.DataFrame(dict(estimate=estimate if rank == k else np.full(k, np.nan),
-                              standard_error=se, lower=lower, upper=upper, status=status),
-                         index=factors)
-    summary = dict(method='conditional_gls_student_t', confidence_level=float(confidence_level),
-                   scope='pointwise', status=status, n_assets=n, n_factors=k, rank=rank,
-                   residual_df=df, weighted_residual_sse=sse, scale_squared=scale,
-                   critical_value=critical, relative_cutoff=geometry.relative_cutoff,
+    inferred = infer_factor_premia(
+        inputs.betas, inputs.residual_variances, inputs.excess_cma, cash_rate=0.,
+        confidence_level=confidence_level, rcond=spec.rcond)
+    table = inferred.factors[['estimate', 'standard_error', 'lower', 'upper', 'status']].copy()
+    keys = ('method', 'confidence_level', 'scope', 'status', 'n_assets', 'n_factors', 'rank',
+            'residual_df', 'weighted_residual_sse', 'scale_squared', 'critical_value',
+            'relative_cutoff')
+    summary = dict({key: inferred.summary[key] for key in keys},
                    return_units='annual_arithmetic_excess_decimal',
                    assumptions='y = B lambda + e; e ~ N(0, tau^2 D). B and diagonal D are '
                    'fixed; cross-asset forecast errors are independent with variance '
@@ -93,5 +67,4 @@ def compute_conditional_gls_intervals(inputs: CmaDiagnosticInputs, *, confidence
                    interpretation='Conditional pointwise confidence intervals, not simultaneous '
                    'coverage, adviser dispersion, realized-return prediction or '
                    'leave-one-out ranges.')
-    return CmaConditionalGlsResult(table, pd.DataFrame(covariance, index=factors,
-                                                      columns=factors), summary)
+    return CmaConditionalGlsResult(table, inferred.covariance.copy(), summary)

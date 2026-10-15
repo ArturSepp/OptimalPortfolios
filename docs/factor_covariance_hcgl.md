@@ -483,6 +483,8 @@ Configuration fields not covered above:
 
 ## See also
 
+- [GLS inference of factor risk premia](gls_factor_premia.md): use the historical
+  loadings and residual risk in OP's separate projection of provider forecasts.
 - [Covariance estimators](covariance_estimators.md): the EWMA estimator and the shared contract.
 - [Mixed-frequency data](mixed_frequency_data.md) and [incomplete histories](incomplete_histories.md).
 - [Rolling factor covariance from CSV](rolling_factor_covar_from_csv.md): the same estimator on a

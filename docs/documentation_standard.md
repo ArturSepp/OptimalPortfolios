@@ -121,8 +121,11 @@ Every article cites OptimalPortfolios. If calculations use
 [qis citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff) or
 [factorlasso citation](https://github.com/ArturSepp/FactorLasso/blob/main/CITATION.cff) as appropriate.
 
-OptimalPortfolios owns construction and rolling orchestration. Generic sparse factor estimation
-and HCGL belong to factorlasso; holdings simulation, reporting and analytics belong to qis.
+OptimalPortfolios owns construction, rolling orchestration and the
+[risk-premia GLS inference](gls_factor_premia.md) conditional on a fitted factor model.
+Generic sparse factor estimation and HCGL belong to factorlasso. QIS supplies holdings
+simulation, reporting and analytics primitives; OP owns the CMA diagnostic tables and
+their [report composition](cma_diagnostics.md).
 Use the existing risk-model integration for tracking-error examples. Do not introduce another
 backtester or statistics layer to make a chart.
 

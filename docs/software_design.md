@@ -28,6 +28,8 @@ documents the detailed solver interfaces and limitations.
 | Responsibility | Owning layer | Integration in OptimalPortfolios |
 |---|---|---|
 | Sparse factor fitting, clustering and factor-covariance containers | [FactorLasso](https://github.com/ArturSepp/FactorLasso) | [Factor estimator](../src/optimalportfolios/covar_estimation/factor_covar_estimator.py): prepare financial inputs, estimation dates, return frequencies and annualization. |
+| Provider-implied factor premia and conditional inference | OptimalPortfolios | [`matf.gls_diagnostic`](gls_factor_premia.md): fixed historical loadings and residual risk, explicit cash and admitted alpha, GLS geometry, intervals and forecast-box sensitivities. |
+| CMA accounting, identification and diagnostic PDFs | OptimalPortfolios, using QIS rendering primitives | [CMA diagnostics and reports](cma_diagnostics.md): complete numerical results before rendering; application adapters own provider mappings, scenarios and persistence. |
 | Return transformations and EWMA covariance primitives | QIS | [EWMA estimator](../src/optimalportfolios/covar_estimation/ewma_covar_estimator.py): select the sample and schedule, then expose dated covariance matrices. |
 | Objectives, constraints, asset eligibility and construction state | OptimalPortfolios | [Rolling dispatcher](../src/optimalportfolios/optimization/wrapper_rolling_portfolios.py) and [constraints facade](../src/optimalportfolios/optimization/constraints/__init__.py). |
 | Unit-based simulation, cash costs, performance analytics and factsheets | QIS | Pass dated targets, prices, costs and implementation lag to `qis.backtest_model_portfolio`. |
@@ -35,7 +37,7 @@ documents the detailed solver interfaces and limitations.
 
 These boundaries keep shared calculations in their owning package. FactorLasso owns generic
 factor estimation, QIS owns the reusable analytics and holdings simulator, and OptimalPortfolios
-owns portfolio construction and its financial input preparation. Some historical utility
+owns portfolio construction, risk-premia inference and their financial input preparation. Some historical utility
 functions remain in this repository; their presence does not establish a separate canonical
 analytics layer.
 
@@ -92,6 +94,7 @@ flowchart LR
         end
         alphas["alphas"]
         covar["covar_estimation"]
+        matf["matf<br/>including gls_diagnostic"]
         universe["universe"]
         utils["utils"]
     end
@@ -102,6 +105,8 @@ flowchart LR
     quadprog(["quadprog"])
     reports --> optimization
     reports --> alphas & covar
+    reports --> matf
+    matf --> scipy & cvxpy & factorlasso & covar & optimization
     optimization --> alphas & covar & utils
     optimization --> factorlasso & cvxpy & scipy & quadprog
     covar --> factorlasso
@@ -111,11 +116,13 @@ flowchart LR
     pkg --> qis
 ```
 
-In words: `reports` imports `optimization`, `alphas` and `covar_estimation`; inside
+In words: `reports` imports `optimization`, `alphas`, `covar_estimation` and `matf`; inside
 `optimization` the rolling dispatcher imports the solver families, which, like
 `portfolio_result`, import `constraints`; `optimization` also imports `alphas`,
-`covar_estimation` and `utils`, which, like `universe`, import no other subpackage; every
-subpackage imports QIS, while FactorLasso, CVXPY, SciPy and quadprog are imported only where an
+`covar_estimation` and `utils`, which, like `universe`, import no other subpackage.
+The wider `matf` package uses construction and estimation containers, while its GLS
+numerical core uses NumPy, pandas and SciPy only. QIS supplies shared pipeline primitives;
+FactorLasso, CVXPY, SciPy and quadprog are imported where an
 arrow points to them, the dotted arrow marking FactorLasso imports made inside a function or for
 type checking.
 
@@ -133,6 +140,33 @@ imports. The only module that imports pybloqs is
 which no other package module imports, so `import optimalportfolios` does not need it.
 
 ## Architectural boundaries
+
+### Historical estimation and risk-premia inference
+
+Historical index and factor prices determine estimated loadings, residual means and
+residual risk through FactorLasso and the application's estimation configuration.
+Provider forecasts enter only the subsequent `optimalportfolios.matf.gls_diagnostic`
+calculation. OP owns this risk-premia application of GLS, including its conditional
+confidence intervals; FactorLasso remains the historical estimation package.
+
+The application supplies provider/index mappings, price and currency preparation,
+cash, the model cutoff and policy-admitted alpha. `infer_factor_premia` accepts total
+forecasts and subtracts cash and weighted admitted alpha. Existing CMA audit adapters
+accept an already adjusted excess-return target. Their contracts must not be mixed:
+recording an alpha channel in `CmaDiagnosticInputs` does not subtract it.
+
+Numerical tables remain independent of presentation. Adjacent MATF modules supply
+CMA accounting, individual/pair identification, forecast influence and deletion
+checks. `reports.cma_inference` composes completed views into a compact PDF; it does
+not fit loadings or adjust forecasts. Rosaa and the local consensus/JPM examples
+own scenario choices, licensed input snapshots, source hashes and output bundles.
+Production modules never import the paper workspace.
+
+Existing projection imports from `matf.sharpe_accounting` delegate to the OP core,
+so the ownership change preserves callers and numerical conventions. The public
+[methodology](gls_factor_premia.md), [CMA adapter guide](cma_diagnostics.md) and
+[source README](https://github.com/ArturSepp/OptimalPortfolios/blob/main/src/optimalportfolios/matf/gls_diagnostic/README.md) document these
+contracts. No additional FactorLasso GLS API is required.
 
 ### Point-in-time estimation
 
