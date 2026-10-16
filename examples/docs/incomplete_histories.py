@@ -13,6 +13,7 @@ constants below and records their values.
 """
 from dataclasses import replace
 from fractions import Fraction
+from importlib.metadata import version
 
 import numpy as np
 import pandas as pd
@@ -22,13 +23,18 @@ LIQUID_PRICES = [100.0, 110.0, 120.0, 130.0]
 GAPPED_PRICES = [100.0, None, 110.0, 120.0]
 TARGET_WEIGHTS = [0.60, 0.40]
 
+# QIS 5.37 introduced last-known valuation marks and retained unquoted holdings.
+# Check each released contract independently; do not infer expected values from a backtest.
+RETAINS_MISSING_HOLDINGS = tuple(map(int, version('qis').split('.')[:2])) >= (5, 37)
+
 
 def currency_ledger() -> dict:
     """Units, NAV and cash of the three holdings paths, from exact fractions and one trade."""
     first_liquid, first_gapped = Fraction(3, 5), Fraction(2, 5)
-    priced_nav = first_liquid * 110
+    retained_gapped = first_gapped if RETAINS_MISSING_HOLDINGS else 0
+    priced_nav = first_liquid * 110 + retained_gapped * 100
     new_liquid = priced_nav * Fraction(3, 5) / 110
-    cash = (first_liquid - new_liquid) * 110
+    cash = priced_nav - new_liquid * 110 - retained_gapped * 100
     return {
         'held_gap': {
             'units': [[first_liquid, first_gapped]] * 4,
@@ -37,8 +43,9 @@ def currency_ledger() -> dict:
             'cash': [0] * 4,
         },
         'traded_gap': {
-            'units': [[first_liquid, first_gapped]] + [[new_liquid, 0]] * 3,
-            'nav': [100, priced_nav, new_liquid * 120 + cash, new_liquid * 130 + cash],
+            'units': [[first_liquid, first_gapped]] + [[new_liquid, retained_gapped]] * 3,
+            'nav': [100, priced_nav, new_liquid * 120 + retained_gapped * 110 + cash,
+                    new_liquid * 130 + retained_gapped * 120 + cash],
             'cash': [0, cash, cash, cash],
         },
         'late_entry': {
@@ -197,19 +204,27 @@ def main() -> None:
         np.testing.assert_allclose(portfolio.nav, np.array(expected["nav"], float), atol=1e-12)
         np.testing.assert_allclose(portfolio.units, np.array(expected["units"], float),
                                    atol=1e-12)
-        marked = (portfolio.units * portfolio.prices).sum(axis=1)
+        marks = portfolio.prices.ffill() if RETAINS_MISSING_HOLDINGS else portfolio.prices
+        marked = (portfolio.units * marks).sum(axis=1)
         np.testing.assert_allclose(portfolio.nav - marked, np.array(expected["cash"], float),
                                    atol=1e-12)
         np.testing.assert_allclose(portfolio.realized_costs, 0, atol=0)
     # The page's table, and the units and cash its paragraph quotes.
     table = np.array([ledger[name]["nav"] for name in paths], float).T
-    np.testing.assert_allclose(table, [[100.00, 100.00, 100.00], [66.00, 66.00, 106.00],
-                                       [116.00, 69.60, 112.00], [126.00, 73.20, 118.00]],
-                               atol=0.005)
-    assert float(ledger["traded_gap"]["units"][1][0]) == 0.36
-    assert float(ledger["traded_gap"]["cash"][1]) == 26.4
-    # Both interior gaps and both missing execution quotes are reported.
-    assert sum("inside the reported history" in m for m in warning_messages) == 2
+    if RETAINS_MISSING_HOLDINGS:
+        displayed = [[100.00, 100.00, 100.00], [106.00, 106.00, 106.00],
+                     [116.00, 115.78, 112.00], [126.00, 125.56, 118.00]]
+        assert ledger["traded_gap"]["units"][1] == [Fraction(159, 275), Fraction(2, 5)]
+        assert ledger["traded_gap"]["cash"][1] == Fraction(12, 5)
+        assert sum("units are retained without trading" in m for m in warning_messages) == 2
+    else:
+        displayed = [[100.00, 100.00, 100.00], [66.00, 66.00, 106.00],
+                     [116.00, 69.60, 112.00], [126.00, 73.20, 118.00]]
+        assert float(ledger["traded_gap"]["units"][1][0]) == 0.36
+        assert float(ledger["traded_gap"]["cash"][1]) == 26.4
+        assert sum("inside the reported history" in m for m in warning_messages) == 2
+    np.testing.assert_allclose(table, displayed, rtol=0, atol=0.005)
+    # Missing execution quotes remain explicit even when an existing position is retained.
     assert sum("have no price on their traded date" in m for m in warning_messages) == 2
     for name, portfolio in holdings_paths().items():
         pd.testing.assert_series_equal(portfolio.nav, paths[name].nav, check_freq=False)
@@ -280,10 +295,8 @@ def exhibit(path) -> dict:
               'late_entry': 'Missing opening price'}
     nav = pd.DataFrame({labels[name]: portfolio.nav for name, portfolio in paths.items()})
     traded = paths['traded_gap']
-    composition = pd.DataFrame({
-        'Liquid': traded.units['Liquid'] * traded.prices['Liquid'],
-        'Gapped': (traded.units['Gapped'] * traded.prices['Gapped']).fillna(0.0),
-    })
+    marks = traded.prices.ffill() if RETAINS_MISSING_HOLDINGS else traded.prices
+    composition = (traded.units * marks).fillna(0.0)
     composition['Cash'] = traded.nav - composition.sum(axis=1)
     table = pd.concat([nav, composition.add_prefix('rebalance on gap: ')], axis=1)
 
@@ -299,11 +312,15 @@ def exhibit(path) -> dict:
         dashed = label == labels['traded_gap']
         left.plot(x, series, color=colour, linewidth=2, marker='o', markersize=5,
                   linestyle='--' if dashed else '-', zorder=3 if dashed else 2)
-        left.text(x[-1] + 0.08, series.iloc[-1], label, color=ink, fontsize=9, va='center')
+        offset = (3 if label == labels['held_gap'] else -1 if dashed else 0)
+        offset = offset if RETAINS_MISSING_HOLDINGS else 0
+        left.text(x[-1] + 0.08, series.iloc[-1] + offset, label, color=ink, fontsize=9,
+                  va='center')
     left.axvspan(0.75, 1.25, color=grid, alpha=0.6, linewidth=0)
-    left.text(1.0, 58, 'gapped price\nmissing', color=ink, fontsize=9, ha='center', va='bottom')
+    left.text(1.0, 94 if RETAINS_MISSING_HOLDINGS else 58, 'gapped price\nmissing',
+              color=ink, fontsize=9, ha='center', va='bottom')
     left.set_title('NAV of the three paths', loc='left', color=ink)
-    left.set_ylim(50, 135)
+    left.set_ylim(90 if RETAINS_MISSING_HOLDINGS else 50, 135)
     left.set_xlim(-0.2, 4.3)
     bottom = np.zeros(len(composition))
     # Shades of the rebalance path's orange: these are its holdings, not the other paths.
@@ -328,8 +345,10 @@ def exhibit(path) -> dict:
         'nav_matches_ledger': bool(all(
             np.allclose(paths[name].nav, np.array(ledger[name]['nav'], float), atol=1e-12)
             for name in paths)),
-        'gapped_units_cleared_on_rebalance': bool(traded.units['Gapped'].iloc[1:].eq(0).all()),
-        'cash_left_after_clearing': bool(np.isclose(composition['Cash'].iloc[1], 26.4)),
+        'gapped_units_follow_released_contract': bool(traded.units['Gapped'].iloc[1:].eq(
+            TARGET_WEIGHTS[1] if RETAINS_MISSING_HOLDINGS else 0).all()),
+        'cash_matches_exact_ledger': bool(np.allclose(
+            composition['Cash'], np.array(ledger['traded_gap']['cash'], float), atol=1e-12)),
     }
     return {'table': table, 'checks': checks}
 

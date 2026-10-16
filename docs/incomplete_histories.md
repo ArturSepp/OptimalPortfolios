@@ -72,10 +72,11 @@ Leading missing prices record a period before the first observation; trailing mi
 record a period after the last. Neither establishes the economic reason for the boundary.
 Define an eligibility and valuation policy rather than inferring one from `NaN`.
 
-An interior gap falls between valid observations. Between rebalancings, qis retains units
-through such a gap but excludes the unpriced leg from that date's NAV. The resulting drop and
-recovery need not be investment returns. A gap on a rebalance date has a different outcome,
-described under [price gaps at implementation](#price-gaps-at-implementation).
+An interior gap falls between valid observations. From qis 5.37, a missing quote retains
+held units at their last observed valuation mark, including on a rebalance date; it never
+enables a trade. Earlier supported releases omit the unpriced value from that date's NAV
+and can clear units on a rebalance. The resulting drop and recovery need not be investment
+returns. The [price-gap contract](#price-gaps-at-implementation) distinguishes these versions.
 
 `EwmaCovarEstimator` passes `NanBackfill.ZERO_FILL` to qis. For the ordinary covariance tensor,
 a non-finite covariance update resets that entry of the recursive state to zero. This is
@@ -141,22 +142,24 @@ for the full fallback contract.
 
 ### Price gaps at implementation
 
-The following describes the qis implementation of the locked environment, which the canonical
-script of this page checks. A missing opening price yields zero units for that leg; its intended allocation remains cash and is not redistributed.
+The executable example checks both supported qis contracts. A missing opening price yields
+zero units for that leg; its intended allocation remains cash and is not redistributed.
 When prices later appear, entry waits for another scheduled rebalance.
 
-For an already-held leg, the outcome depends on whether a rebalance occurs:
+For an already-held leg:
 
-| Missing-price date | Units and valuation |
-|---|---|
-| Between rebalancings | Existing units remain; their unpriced value is omitted from NAV. |
-| On a rebalance | The kernel recomputes target units, replaces the missing-price result with zero, and excludes that leg from the cash-transfer calculation. Previously held units can therefore be cleared without liquidation proceeds. |
+| Missing-price date | qis 5.37 and later | Earlier supported qis releases |
+|---|---|---|
+| Between rebalancings | Retain units, valued at the last observed mark. | Retain units, but omit their unpriced value from NAV. |
+| On a rebalance | Retain unquoted units without trading; quoted targets use full marked NAV. | Clear the unquoted units without liquidation proceeds. |
 
-The second case is an implementation limitation, not a model of a suspended instrument or a
-delisting recovery. Inspect and resolve the price/trading policy before interpreting such a
-path. An interior-gap warning does not distinguish the two cases. See the
+Last-known marks support valuation, never execution. Available targets are not redistributed
+and no cash constraint is imposed, so an untradeable holding can prevent the intended target
+weights being reached. Missingness alone is neither a loss nor a liquidation: terminal events
+need explicit settlement prices and exit targets. The older clearing behavior is an
+implementation limitation. See the
 [qis backtester source](https://github.com/ArturSepp/QuantInvestStrats/blob/main/src/qis/portfolio/backtester.py)
-and the executable example below.
+and the independent currency ledger in the executable example.
 
 A frozen decision-date target is also not an execution-level unit lock. The qis backtester
 does not receive the optimizer's per-asset `rebalancing_indicators`. Implementation lag, changed
@@ -275,32 +278,40 @@ with warnings.catch_warnings(record=True) as captured_warnings:
 warning_messages = [str(item.message) for item in captured_warnings]
 ```
 
+With qis 5.37 or later, the three NAV paths are:
+
 | Date | Hold through gap: NAV | Rebalance on gap: NAV | Missing opening price: NAV |
 |---|---:|---:|---:|
 | 2024-01-02 | 100.00 | 100.00 | 100.00 |
-| 2024-01-03 | 66.00 | 66.00 | 106.00 |
-| 2024-01-04 | 116.00 | 69.60 | 112.00 |
-| 2024-01-05 | 126.00 | 73.20 | 118.00 |
+| 2024-01-03 | 106.00 | 106.00 | 106.00 |
+| 2024-01-04 | 116.00 | 115.78 | 112.00 |
+| 2024-01-05 | 126.00 | 125.56 | 118.00 |
 
-The held-gap path owns 0.6 liquid units and 0.4 gapped units throughout. In the rebalance-on-gap
-path, 3 January changes those holdings to 0.36 and zero, with cash 26.40. The original gapped
-units do not return when their price returns. The late-entry path owns 0.6 liquid units,
-zero gapped units and cash 40 throughout. Its missing allocation is never redistributed.
+The held-gap path owns 0.6 liquid units and 0.4 gapped units throughout. On 3 January,
+the rebalance-on-gap path sizes its quoted liquid target on marked NAV 106, so it holds
+$106 \times 0.60 / 110 = 159/275$ liquid units. The 0.4 unquoted gapped units remain,
+valued at 40, leaving cash $106 - 63.60 - 40 = 2.40$. The late-entry path owns 0.6 liquid
+units, zero gapped units and cash 40 throughout; its missing allocation is never redistributed.
 
-![Left: NAV of the three paths over four business days; the hold-through-gap and
-rebalance-on-gap paths both fall to 66 on 3 January, when the gapped price is missing, after
-which the held path recovers to 126 and the rebalanced path stays near 70; the missing-opening-price
-path rises from 100 to 118. Right: in the rebalance-on-gap path, the gapped holding is replaced
-by cash of 26.40 from 3 January and never returns.](images/incomplete_histories_price_gaps.png)
+Earlier supported qis releases produce held-gap NAV `[100, 66, 116, 126]` and
+rebalance-on-gap NAV `[100, 66, 69.60, 73.20]`. The latter changes the holdings to
+0.36 liquid units and zero gapped units on 3 January, with cash 26.40. Those gapped units
+never return. The late-entry path is unchanged. The canonical script selects the expected
+released contract by the installed qis version and checks it against exact fractions.
 
-*Figure: the three holdings paths of the example, and the holdings of the rebalance-on-gap path.
-Drawn by the `exhibit` function of the canonical script; the
+![Left: NAV of the three paths with retained unquoted holdings; all reach 106 on 3 January,
+then the hold-through-gap and rebalance-on-gap paths end at 126 and 125.56, while the
+missing-opening-price path ends at 118. Right: the rebalance-on-gap path retains the gapped
+holding and leaves cash 2.40 from 3 January.](images/incomplete_histories_price_gaps.png)
+
+*Figure: the three holdings paths under the retained-holdings contract, and the holdings of
+the rebalance-on-gap path. Drawn by the `exhibit` function of the canonical script; the
 [analytics gallery](analytics_gallery.md) lists its provenance.*
 
-> **Pitfall.** A missing price on a rebalance date clears a held position without liquidation
-> proceeds: the gapped units become zero and do not return when the price does. An optimizer
-> freeze does not prevent this, because qis never receives it. Resolve the missing price, or
-> pass no target on that date, as in the hold-through-gap path.
+> **Pitfall.** A stale valuation mark is not an executable quote. The gapped units remain
+> frozen even if their target changes. Quoted assets can still trade, so the realized
+> weights and cash can differ from the target. Older qis releases can clear unquoted
+> units without proceeds; resolve the price policy before interpreting those paths.
 
 ### Filtering is separate from history eligibility
 

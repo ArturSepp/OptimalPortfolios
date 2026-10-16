@@ -255,6 +255,19 @@ def test_undefined_ratios_and_vector_dimensions(model):
         sa.gls_split([1, 2], beta, residual)
 
 
+@pytest.mark.parametrize("vector_name", ["w", "a", "m"])
+def test_asset_vectors_must_match_the_loading_rows(model, vector_name):
+    """Reject asset-count mismatches before covariance arithmetic in each public path."""
+    lam, factor, beta, residual = model
+    function, arguments = {
+        "w": (sa.holdings_decomposition, ([1., 2.], beta, residual)),
+        "a": (sa.overlay_value, (lam, factor, beta, residual, [1., 2.])),
+        "m": (sa.completion_sharpe2, ([0.2, 0.3, 0.5], [1., 2.], *model)),
+    }[vector_name]
+    with pytest.raises(ValueError, match=f"{vector_name} asset dimension does not match B"):
+        function(*arguments)
+
+
 def test_underflow_does_not_disguise_zero_risk_arbitrage():
     """An extreme valid covariance that underflows book risk is diagnosed explicitly."""
     with pytest.raises(ValueError, match='zero conditional variance'):

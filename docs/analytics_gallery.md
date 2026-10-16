@@ -214,11 +214,12 @@ quarterly signal is carried unchanged between quarter ends.
 
 ## Incomplete histories
 
-A teaching exhibit of the [incomplete histories](incomplete_histories.md) page. A price missing
-between rebalancings lowers NAV only until the price returns; the same gap on a rebalance date
-clears the held units without proceeds; a missing opening price leaves that allocation in cash.
+A teaching exhibit of the [incomplete histories](incomplete_histories.md) page. Under the
+retained-holdings contract, a missing quote keeps held units at the last observed valuation
+mark, including on a rebalance date. Quoted assets can still trade; a missing opening price
+leaves that allocation in cash. The article also documents the earlier clearing behavior.
 
-![Left: NAV of the hold-through-gap, rebalance-on-gap and missing-opening-price paths over four business days. Right: the rebalance-on-gap path's holdings, with the gapped position replaced by cash.](images/incomplete_histories_price_gaps.png)
+![Left: NAV of the hold-through-gap, rebalance-on-gap and missing-opening-price paths over four business days. Right: the rebalance-on-gap path retains its gapped holding and leaves cash 2.40.](images/incomplete_histories_price_gaps.png)
 
 **Sample:** two synthetic assets over four business days in January 2024, with one missing
 price; no simulation. **Producer:** the `exhibit` function of

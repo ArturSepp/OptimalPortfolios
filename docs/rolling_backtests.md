@@ -349,9 +349,11 @@ offline examples lane of CI.
   within that history. An asset with no usable anchor is treated as having zero return;
   other positions still affect portfolio NAV growth. Missing prefixes, absent previous targets,
   near-zero targets or nonpositive NAV growth can leave the entire prior target unchanged.
-- **Unavailable execution prices.** qis cannot trade a target at a missing price. Interior
-  holes in a held asset's price history can also remove its value from that observation's NAV.
-  The drift helper's defensive policy does not validate a panel for performance measurement.
+- **Unavailable execution prices.** qis cannot trade a target at a missing price. From qis
+  5.37, held units retain their last observed valuation mark without trading. Earlier supported
+  releases omit an unpriced holding from NAV and can clear its units on a rebalance.
+  The canonical script checks both released contracts; the drift helper does not validate a
+  panel for performance measurement.
   See [incomplete histories](incomplete_histories.md).
 - **Execution-grid boundaries.** Targets whose implementation would be beyond the price panel
   are dropped with a warning; no executable target raises an error. Two decision dates mapping
