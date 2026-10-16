@@ -19,6 +19,11 @@ holdings and costs through [QIS](https://github.com/ArturSepp/QuantInvestStrats)
 It uses the core package and prints a compact result. The fixed sample makes the workflow
 repeatable without a data download or credentials.
 
+Minimum supported released version for this example: **`optimalportfolios>=7.21.0`**.
+This conservative support floor was checked against the released API. See
+[versions and compatibility](index.md#versions-and-compatibility) for channel selection,
+capability boundaries and dependency licences.
+
 ## Run the example
 
 Use the interpreter selected in the [installation guide](installation.md). For this repository's

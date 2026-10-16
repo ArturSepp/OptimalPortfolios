@@ -276,7 +276,7 @@
     }
   },
   "symbols": {
-    "docs/gls_factor_premia.md": ["GlsGeometry", "GlsPremiaResult", "compute_gls_geometry", "infer_factor_premia", "gls_projector", "gls_split", "factor_mimicking_portfolios"],
+    "docs/gls_factor_premia.md": ["GlsGeometry", "GlsPremiaResult", "compute_gls_geometry", "infer_factor_premia", "gls_projector", "gls_split", "factor_mimicking_portfolios", "ResidualOpportunity", "compute_residual_opportunity"],
     "docs/cma_diagnostics.md": [
       "AdmissionPolicy", "CmaDiagnosticInputs", "CmaDiagnosticResult",
       "CmaDiagnosticSpec", "compute_cma_diagnostics", "without_admitted_alpha",

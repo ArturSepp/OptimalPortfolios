@@ -3,7 +3,9 @@
 from optimalportfolios.matf.gls_diagnostic import (
     GlsGeometry,
     GlsPremiaResult,
+    ResidualOpportunity,
     compute_gls_geometry,
+    compute_residual_opportunity,
     infer_factor_premia,
 )
 

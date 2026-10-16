@@ -13,3 +13,7 @@ from optimalportfolios.matf.gls_diagnostic._inference import (
     gls_split,
     infer_factor_premia,
 )
+from optimalportfolios.matf.gls_diagnostic._opportunity import (
+    ResidualOpportunity,
+    compute_residual_opportunity,
+)

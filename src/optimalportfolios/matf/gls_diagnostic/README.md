@@ -47,11 +47,31 @@ Import from `optimalportfolios.matf.gls_diagnostic`; `_inference.py` is private.
 | `gls_projector(B, Omega)` | The residual operator, not the fitted-return projector; uses the default rank cutoff. |
 | `gls_split(m, B, Omega)` | Minimum-norm factor coordinates and asset residuals for an already cash/alpha-adjusted forecast vector. |
 | `factor_mimicking_portfolios(B, Omega)` | Asset-by-factor unit-exposure weights; requires full column rank. |
+| `compute_residual_opportunity(B, residual_variances, alpha, *, controls=None, alpha_covariance=None, residual_correlation=None, repair_correlation=False, rcond=None)` | `ResidualOpportunity`: squared residual-alpha capacity, conditional noise floor and effective residual breadth. |
 
 `GlsGeometry`, `GlsPremiaResult`, `compute_gls_geometry` and `infer_factor_premia`
 are also exported by `optimalportfolios.matf` and the package root. Existing
 `sharpe_accounting` projection and mimicking-portfolio entry points delegate here,
 preserving their import paths.
+
+`ResidualOpportunity` and `compute_residual_opportunity` are also available from
+`optimalportfolios.matf`. They reuse the same whitened SVD and numerical rank
+policy. With diagonal residual-return variances `D` and whitened residual
+projector `M`, capacity is `||M D^-1/2 alpha||^2`; the conditional estimation-noise
+floor is `trace(M D^-1/2 V D^-1/2)`. `V` is the supplied covariance of estimated
+alpha, usually produced by FactorLasso's uncertainty layer. It is not residual
+return covariance. Additional columns such as funding or asset-class indicators
+must be supplied explicitly through `controls`.
+
+Effective breadth is the participation ratio of `M R M`, where `R` is residual
+return correlation. Identity correlation gives `N - rank`; an exhausted subspace
+or numerically zero projected covariance gives zero. An indefinite correlation
+requires explicit `repair_correlation=True`, which clips negative eigenvalues
+once and rescales once to unit diagonal, reporting both the raw ratio and repair
+magnitude. There is no factor fit, shrinkage, or hidden covariance estimator.
+Capacity minus its noise floor remains signed. These conditional universe
+descriptors are not long-only portfolio Sharpe ratios or confidence intervals;
+portfolio constraints belong to `matf.opportunity`.
 
 ## Input contract
 

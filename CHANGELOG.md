@@ -15,6 +15,14 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Skip the Python 3.11+ release-helper calendar check on Python 3.10, while retaining the
   runtime metadata checks on every supported interpreter.
 
+## [7.22.0.dev1] - 2026-10-16
+
+- Add reusable GLS residual-opportunity diagnostics: factor/control-orthogonal
+  alpha capacity, a conditional alpha-estimation noise floor, and residual
+  breadth with an explicit, audited one-pass correlation repair. Reuse the
+  existing whitened-SVD rank policy; add independent null-space and spectral
+  references, strict label validation and degenerate-subspace checks.
+
 ## [7.21.0] - 2026-10-16
 
 - Validate release calendar dates in the publication timezone, including around

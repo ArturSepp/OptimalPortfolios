@@ -4,12 +4,9 @@ Adapted from ``QuantInvestStrats/docs/_ext/qis_indexing.py`` by way of
 ``FactorLasso/docs/_ext/factorlasso_indexing.py``. Copyright (c) Artur Sepp; the qis original is
 distributed under the MIT License, as is this file as part of optimalportfolios.
 
-Read the Docs serves the default version's sitemap at the domain root. Listing the actual pages
-gives crawlers one preferred discovery path instead of only the version roots. The moving
-``latest`` and ``stable`` aliases describe the same default documentation, so both use ``latest``
-as their canonical URL, the version the site links to and the one that receives documentation
-fixes between releases. Numbered releases keep their own canonical base URL, because their API
-documentation can differ. qis consolidates onto ``stable`` instead; the choice is per package.
+Each documentation channel keeps its own canonical URL: a development page or symbol may not
+exist in the released build. The visible channel notice links roots rather than guessing that
+an individual page is available in both versions.
 """
 
 from pathlib import Path
@@ -18,13 +15,11 @@ from urllib.parse import quote, urljoin, urlsplit, urlunsplit
 from xml.etree import ElementTree
 
 SITEMAP_NAMESPACE = "http://www.sitemaps.org/schemas/sitemap/0.9"
-READTHEDOCS_ALIAS_PATHS = {"/en/latest", "/en/stable"}
-CANONICAL_ALIAS_PATH = "/en/latest"
 EXCLUDED_PAGES = {"search", "genindex", "py-modindex"}
 
 
 def canonical_baseurl(baseurl: str) -> str:
-    """Consolidate Read the Docs' moving aliases onto the ``latest`` URL.
+    """Return the build's own base URL with a trailing slash.
 
     Args:
         baseurl: Configured ``html_baseurl``, with or without a trailing slash.
@@ -35,8 +30,6 @@ def canonical_baseurl(baseurl: str) -> str:
     """
     parts = urlsplit(baseurl)
     path = parts.path.rstrip("/")
-    if parts.netloc.endswith(".readthedocs.io") and path in READTHEDOCS_ALIAS_PATHS:
-        path = CANONICAL_ALIAS_PATH
     return urlunsplit((parts.scheme, parts.netloc, path + "/", parts.query, parts.fragment))
 
 
@@ -100,6 +93,121 @@ def write_sitemap(app: Any, exception: Optional[Exception]) -> None:
     )
 
 
+PACKAGE = 'optimalportfolios'
+
+
+def public_api_names() -> list[str]:
+    """Return verified exports from the same contract used by the API producer."""
+    from importlib import import_module
+    import json
+
+    package = import_module(PACKAGE)
+    if PACKAGE == 'optimalportfolios':
+        inventory = json.loads(
+            (Path(__file__).resolve().parents[2] / 'tools' / 'docs_inventory.json')
+            .read_text(encoding='utf-8')
+        )
+        names = {name for group in inventory['symbols'].values() for name in group}
+        names.update(inventory['external_symbols'])
+    else:
+        names = set(package.__all__)
+    for name in names:
+        if name.startswith('_') or not hasattr(package, name):
+            raise ValueError(f'Invalid public API inventory entry: {PACKAGE}.{name}')
+    return sorted(names)
+
+
+def release_channel(baseurl: str) -> str:
+    """Describe the configured build channel without inferring a PyPI version.
+
+    Args:
+        baseurl: The build's own configured URL.
+    """
+    channel = urlsplit(baseurl).path.rstrip('/').rsplit('/', 1)[-1]
+    if channel == 'latest':
+        return 'Development documentation; main may be ahead of PyPI'
+    if channel == 'stable':
+        return 'Released documentation; compare its build version with your installation'
+    return 'Version-specific documentation; compare its build version with your installation'
+
+
+def set_release_navigation(app, pagename, templatename, context, doctree) -> None:
+    """Show the build channel and link to channel roots and generated navigation.
+
+    Args:
+        app: Running Sphinx application.
+        pagename: Current document name.
+        templatename: Current template; unchanged.
+        context: HTML template variables, including the rendered body.
+        doctree: Parsed document; unused.
+    """
+    from html import escape
+
+    base = app.config.html_baseurl
+    if app.builder.name != 'html' or not base or 'body' not in context:
+        return
+    root = urljoin(base.rstrip('/') + '/', '../')
+    links = ''
+    if urlsplit(base).netloc.endswith('.readthedocs.io'):
+        links = (f'<a href="{escape(urljoin(root, "stable/"), quote=True)}">Stable</a> · '
+                 f'<a href="{escape(urljoin(root, "latest/"), quote=True)}">Latest</a> · ')
+    index = escape(urljoin(base.rstrip('/') + '/', 'llms.txt'), quote=True)
+    version = escape(str(getattr(app.config, 'release', 'unspecified')))
+    notice = ('<aside class="admonition note oss-release-navigation" '
+              'aria-label="Documentation version">'
+              f'<p>{escape(release_channel(base))}. Build version: {version}.</p>'
+              f'<p>{links}<a href="{index}">Markdown / LLM index</a></p></aside>')
+    context['body'] = notice + context['body']
+
+
+def write_llms(app, exception) -> None:
+    """Generate deterministic Markdown from discovered pages and verified API exports.
+
+    Args:
+        app: Successful HTML application with the merged Sphinx environment.
+        exception: Build failure, if any; failed builds publish no index.
+    """
+    base = app.config.html_baseurl
+    if (exception is not None or getattr(app, 'statuscode', 0)
+            or app.builder.name != 'html' or not base):
+        return
+    base = base.rstrip('/') + '/'
+    def page_url(name):
+        """Return a canonical page URL using the builder's actual target path."""
+        uri = app.builder.get_target_uri(name)
+        return urljoin(base, quote('' if uri == 'index.html' else uri, safe='/%'))
+
+    pages = sorted(name for name in app.env.found_docs
+                   if name not in {'search', 'genindex', 'py-modindex'}
+                   and not name.startswith(('_', 'generated/', 'api/generated/')))
+    titles = getattr(app.env, 'titles', {})
+    lines = [f'# {PACKAGE} documentation', '', '> ' + release_channel(base) + '.', '',
+             'Build version: ' + str(getattr(app.config, 'release', 'unspecified')) + '.', '',
+             '## Canonical documentation', '']
+    for name in pages:
+        title = titles[name].astext() if name in titles else name
+        title = title.replace('[', '').replace(']', '').replace('\n', ' ')
+        lines.append(f'- [{title}]({page_url(name)})')
+    lines += ['', f'- [Public API exports]({urljoin(base, "llms-api.txt")})', '']
+    names = public_api_names()
+    objects = {entry[0]: entry for entry in app.env.get_domain('py').get_objects()}
+    api = [f'# {PACKAGE} public API exports', '', '> ' + release_channel(base) + '.', '',
+           'Generated from the API producer contract; links use actual Sphinx targets.', '']
+    for name in names:
+        full = f'{PACKAGE}.{name}'
+        entry = objects.get(full)
+        if entry is not None:
+            _, _, _, docname, anchor, _ = entry
+            url = page_url(docname) + ('#' + quote(anchor, safe='.-_') if anchor else '')
+            api.append(f'- [{full}]({url})')
+        else:
+            # Some exported constants have no object directive. Do not invent an anchor.
+            api.append(f'- `{full}` (exported; no individual Sphinx target)')
+    out = Path(app.outdir)
+    (out / 'llms.txt').write_text('\n'.join(lines), encoding='utf-8')
+    (out / 'llms-api.txt').write_text('\n'.join(api) + '\n', encoding='utf-8')
+
+
 def setup(app: Any) -> dict:
     """Register the page-metadata and end-of-build sitemap callbacks.
 
@@ -111,4 +219,6 @@ def setup(app: Any) -> dict:
     """
     app.connect("html-page-context", set_canonical_url)
     app.connect("build-finished", write_sitemap)
+    app.connect('html-page-context', set_release_navigation)
+    app.connect('build-finished', write_llms)
     return {"version": "1", "parallel_read_safe": True, "parallel_write_safe": True}
