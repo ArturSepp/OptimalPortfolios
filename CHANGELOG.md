@@ -7,6 +7,9 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+- Cover mismatched asset-vector lengths in the Sharpe-accounting public entry points after
+  GLS delegation moved the older error-path check; retain the 100% coverage gate.
+
 - Keep executable missing-price documentation compatible with both the QIS dependency floor
   and its retained-holdings behavior from 5.37; refresh the holdings exhibit and provenance.
 - Skip the Python 3.11+ release-helper calendar check on Python 3.10, while retaining the
