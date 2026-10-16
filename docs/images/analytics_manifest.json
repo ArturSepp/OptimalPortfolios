@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-10-10T22:43:43+00:00",
+  "generated_at_utc": "2026-10-16T10:28:11+00:00",
   "platform": "Windows-11-10.0.26300-SP0",
   "versions": {
     "python": "3.12.10",
-    "optimalportfolios": "7.17.0",
-    "qis": "5.33.1",
+    "optimalportfolios": "7.21.0",
+    "qis": "5.37.0",
     "factorlasso": "1.0.2",
     "numpy": "2.5.2",
     "pandas": "3.0.5",
@@ -260,9 +260,9 @@
     "incomplete_histories_price_gaps": {
       "path": "docs/images/incomplete_histories_price_gaps.png",
       "script": "examples/docs/incomplete_histories.py",
-      "script_sha256": "2c838705018b2d053d9fd58c663df4b3b286fe0a5453f32b908baaad5e14dca1",
-      "image_sha256": "f86115ec21e5eff74c9d95a06acd82b76ce2e912d53e2bbb46d23a28b149dccb",
-      "table_sha256": "72a1f003c8f31d549dff5a49d2d4acfa6e416ab0d37ee0edca8404c960f2ac97",
+      "script_sha256": "a54f7f1b3f9a84eeaf940929e60c9e5e270b5159ac0e72408663c6fb2e3bc4d8",
+      "image_sha256": "5793af934b3551fb7b82ad9bdc49f6f991867a7f0d5768577947e92768f07697",
+      "table_sha256": "1fa77fb6128cf71de6476e2416b58b17bb2401724fd3077cff7c4ebcfab084df",
       "parameters": {
         "GAP_DAYS": [
           "2024-01-02",
@@ -289,8 +289,8 @@
       },
       "checks": {
         "nav_matches_ledger": true,
-        "gapped_units_cleared_on_rebalance": true,
-        "cash_left_after_clearing": true
+        "gapped_units_follow_released_contract": true,
+        "cash_matches_exact_ledger": true
       },
       "documents": [
         "docs/analytics_gallery.md",
@@ -756,7 +756,7 @@
     "target_vs_drifted_weights": {
       "path": "docs/images/target_vs_drifted_weights.png",
       "script": "examples/docs/rolling_backtests.py",
-      "script_sha256": "5107a5c1f92a27e9d1bbb0f36a54065d660500ee063c8d50d66f9f504d659b53",
+      "script_sha256": "7cb198375b90271748b27d60946464a99c77559239c84795defbea832ff8ce0f",
       "image_sha256": "28e6883146d19574393aaadfbd744df160d27a2c9128066e5f662916a7887ea2",
       "table_sha256": "39b6ec9749765254a008e47148a3d5e1d03dc13ad51df074c4ecd03f735e2742",
       "parameters": {
@@ -2157,7 +2157,7 @@
     }
   },
   "review": {
-    "note": "Codex 2026-10-11: all 26 regenerated teaching previews inspected at native resolution and 736-pixel article width; labels, legends, axes and annotations checked. Every image and plotted-table SHA-256 matches the previous reviewed bundle. Regenerated source hashes and actual environment provenance after the solver-contract assertion update.",
-    "published_at_utc": "2026-10-10T22:47:41+00:00"
+    "note": "Codex inspected the changed incomplete_histories_price_gaps exhibit at its full 1500x660 resolution and at 736-pixel article width: line labels, dates, NAV, retained holdings, cash, legend and clipping are readable and match the exact currency ledger. The other 25 image hashes are identical to the previously reviewed publication, whose visual review is retained. All 26 exhibits were regenerated with QIS 5.37.0 and every registered numerical check passed.",
+    "published_at_utc": "2026-10-16T10:29:47+00:00"
   }
 }

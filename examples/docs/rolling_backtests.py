@@ -20,6 +20,8 @@ import warnings
 import numpy as np
 import pandas as pd
 
+from examples.docs.incomplete_histories import RETAINS_MISSING_HOLDINGS
+
 # The exhibit's synthetic panel: business-day prices with these annual log drifts, volatilities
 # and correlations, and the page's minimum-variance path traded quarterly with lag one.
 EXHIBIT_ASSETS = ['Equity', 'Bonds', 'Diversifier']
@@ -363,8 +365,8 @@ def main() -> None:
                   prices=toy_prices, weights=tail.iloc[[-1]], weight_implementation_lag=1)
     assert_raises(ValueError, "resolve to", qis.backtest_model_portfolio,
                   prices=toy_prices.iloc[[0, 3]], weights=tail.iloc[[1, 2]])
-    # A missing execution price leaves that target weight in cash; an interior hole in a held
-    # asset's history removes its value from that observation's NAV.
+    # A missing opening execution price leaves that target weight in cash. Since QIS 5.37,
+    # an interior gap retains held units at the last observed valuation mark.
     unpriced_entry = toy_prices.astype(float)
     unpriced_entry.loc[toy_dates[1], "B"] = np.nan
     with expected_warning("have no price on their traded date"):
@@ -373,10 +375,15 @@ def main() -> None:
     assert stuck.units.loc[toy_dates[1], "B"] == 0.0 and stuck.nav.loc[toy_dates[1]] == 100.0
     holed = toy_prices.astype(float)
     holed.loc[toy_dates[2], "B"] = np.nan
-    with expected_warning("inside the reported history"):
+    gap_warning = "units are retained without trading" if RETAINS_MISSING_HOLDINGS else (
+        "inside the reported history")
+    with expected_warning(gap_warning):
         gapped = qis.backtest_model_portfolio(prices=holed, weights=toy_targets.iloc[[0]],
                                               weight_implementation_lag=1)
-    assert abs(gapped.nav.loc[toy_dates[2]] - 55.0) < 1e-12
+    expected_gap_nav = 105.0 if RETAINS_MISSING_HOLDINGS else 55.0
+    assert abs(gapped.nav.loc[toy_dates[2]] - expected_gap_nav) < 1e-12
+    np.testing.assert_allclose(gapped.units.loc[toy_dates[2]],
+                               gapped.units.loc[toy_dates[1]], rtol=0, atol=0)
 
     import numpy as np
     import pandas as pd

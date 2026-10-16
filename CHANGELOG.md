@@ -7,6 +7,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+- Keep executable missing-price documentation compatible with both the QIS dependency floor
+  and its retained-holdings behavior from 5.37; refresh the holdings exhibit and provenance.
+- Skip the Python 3.11+ release-helper calendar check on Python 3.10, while retaining the
+  runtime metadata checks on every supported interpreter.
+
 ## [7.21.0] - 2026-10-16
 
 - Validate release calendar dates in the publication timezone, including around
