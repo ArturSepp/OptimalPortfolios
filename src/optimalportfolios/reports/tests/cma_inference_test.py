@@ -12,6 +12,10 @@ import pytest
 from optimalportfolios.matf.cma_diagnostics import CmaDiagnosticInputs, compute_cma_diagnostics
 from optimalportfolios.matf.cma_uncertainty import compute_conditional_gls_intervals
 from optimalportfolios.matf.cma_identification import compute_cma_identification
+from optimalportfolios.matf.gls_diagnostic import (
+    GlsLoadingStabilityResult, GlsUncertaintyScenario, compute_gls_resolution,
+    infer_factor_premia,
+)
 from optimalportfolios.reports import cma_inference as report_module
 from optimalportfolios.reports.cma_inference import (
     CmaInferenceReport, CmaInferenceView, _build_inference_pages, _premium, render_cma_inference,
@@ -276,3 +280,180 @@ def test_failed_export_preserves_previous_report_and_closes_figures(tmp_path, mo
     assert target.read_bytes() == b'previous report'
     assert not list(tmp_path.glob('.cma-inference-*'))
     assert not plt.get_fignums()
+
+
+def _extended_report(*, dense=False):
+    """Build a production-sized presentation fixture with declared optional uncertainty."""
+    random = np.random.default_rng(20261017)
+    factors = ['Equity', 'Rates', 'Credit IG', 'Credit HY', 'Credit EM', 'Carry FX',
+               'Inflation', 'Commodities', 'Private Equity', 'Rates Vol', 'Fx']
+    assets = pd.Index([f'Asset {i+1:02d}' for i in range(20)])
+    betas = pd.DataFrame(random.normal(size=(20, 11)), index=assets, columns=factors)
+    residual = pd.Series(.004, index=assets)
+    target = pd.Series(random.normal(.03, .01, 20), index=assets)
+    inputs = CmaDiagnosticInputs(
+        betas, residual, target,
+        factor_covariance=pd.DataFrame(np.eye(11)*.01, index=factors, columns=factors),
+        factor_premia=pd.Series(.01, index=factors))
+    result = compute_cma_diagnostics(inputs)
+    ci = compute_conditional_gls_intervals(inputs)
+    identification = compute_cma_identification(inputs, precision_target=.01)
+    inferred = infer_factor_premia(betas, residual, target, cash_rate=0.)
+    resolution = compute_gls_resolution(
+        betas, residual, factor_volatility=pd.Series(.1, index=factors),
+        conditional_result=inferred)
+    if dense:
+        # Exercise the display convention independently of the core dense-covariance tests.
+        resolution.summary.update(
+            visibility_basis='ordered_cholesky_coordinates',
+            asset_visibility_interpretation='Whitened coordinates mix assets.')
+    # Supplied scenario rows intentionally differ from the conditional CIs.
+    scenario = GlsUncertaintyScenario(
+        pd.DataFrame({'estimate': ci.factors.estimate, 'standard_error': .0001,
+                      'ci_lower': ci.factors.estimate-.0002,
+                      'ci_upper': ci.factors.estimate+.0002}, index=factors),
+        pd.DataFrame(np.eye(11)*1e-8, index=factors, columns=factors),
+        dict(method='supplied_forecast_covariance', label='Declared small error',
+             units='annual_decimal', confidence_level=.95,
+             target='projected_provider_mean', distribution='normal',
+             calibration_status='scenario_not_calibrated', reference_provenance='Synthetic',
+             reference_degrees_of_freedom=None, assumptions='Fixed B and supplied covariance.',
+             interval_status='gaussian_scenario', rank=11, n_factors=11))
+    stability = GlsLoadingStabilityResult(
+        pd.DataFrame({'baseline': ci.factors.estimate+.002,
+                      'median': ci.factors.estimate+.001, 'lower': ci.factors.estimate-.01,
+                      'upper': ci.factors.estimate+.012, 'median_shift': -.001,
+                      'lower_shift': -.012, 'upper_shift': .010}, index=factors),
+        pd.DataFrame(), pd.DataFrame(),
+        dict(method='paired_loading_stability', confidence_level=.95,
+             alpha_policy='fixed_admission', n_draws=100, n_available=96,
+             availability_rate=.96, rank_failure_count=2, solver_failure_count=1,
+             nonfinite_count=1, calibrated_ci=False,
+             assumptions='Paired draws; selected finite full-rank subset.',
+             baseline_provenance='Synthetic common-history fit; not the native-history point fit.'))
+    view = CmaInferenceView('full', '10y\nw = 1', result, '10y', .03, 1., ci,
+                           None if dense else identification, resolution, (scenario,), stability)
+    return CmaInferenceReport('Synthetic provider extended GLS analysis', '2026-09-30', 'USD',
+                              '2026', 'full', (view,), 'Synthetic inputs only',
+                              'Frozen model and forecasts', 'Diagnostic scenarios are optional.')
+
+
+def _figure_text(figures):
+    """Read both narrative and table labels for report-contract assertions."""
+    narrative = '\n'.join(text.get_text() for fig in figures for text in fig.texts)
+    cells = '\n'.join(cell.get_text().get_text() for fig in figures for ax in fig.axes
+                      for table in ax.tables for cell in table.get_celld().values())
+    return narrative, cells
+
+
+@pytest.mark.parametrize('solver_archived', [True, False])
+def test_extensions_keep_default_ci_and_report_failure_denominators(tmp_path, solver_archived):
+    """Alternative narrow intervals never replace default CIs or hide failed loading draws."""
+    report = _extended_report()
+    report = replace(report, qualifications='Provider B has three MATF-filled cells.',
+                     extension_notes=('Other notes remain visible.',))
+    report.views[0].loading_stability.summary['solver_status_provided'] = solver_archived
+    original = deepcopy(report)
+    figures = _build_inference_pages(report)
+    try:
+        text, cells = _figure_text(figures)
+        assert len(figures) == 3
+        ci = report.views[0].conditional_intervals.factors.loc['Equity']
+        assert f'[{100*ci.lower:.2f}, {100*ci.upper:.2f}]' in cells
+        assert '96/100' in text and 'rank losses=2' in text
+        if solver_archived:
+            assert 'solver failures=1' in text
+        else:
+            assert 'solver status not archived' in text and 'solver failures=' not in text
+        assert 'not calibrated CIs' in ' '.join(text.split())
+        assert 'Residual\nvisibility' in cells
+        assert 'LOO range\n%' in cells and 'Annual\nprecision' in cells
+        assert 'No paired provider contrast supplied' in text
+        assert 'Provider B has three MATF-filled cells.' in text
+    finally:
+        for fig in figures:
+            plt.close(fig)
+    output = render_cma_inference(report, tmp_path/'extensions.pdf')
+    assert len(re.findall(rb'/Type\s*/Page\b', output.read_bytes())) == 3
+    pd.testing.assert_frame_equal(report.views[0].conditional_intervals.factors,
+                                  original.views[0].conditional_intervals.factors, check_exact=True)
+    pd.testing.assert_frame_equal(report.views[0].result.factors,
+                                  original.views[0].result.factors, check_exact=True)
+
+
+def test_dense_resolution_does_not_claim_asset_specific_visibility():
+    """Correlated residual whitening must not turn coordinate diagnostics into asset rankings."""
+    figures = _build_inference_pages(_extended_report(dense=True))
+    try:
+        text, cells = _figure_text(figures)
+        assert 'No individual asset visibility ranking is displayed' in text
+        assert 'Residual\nvisibility' not in cells
+    finally:
+        for fig in figures:
+            plt.close(fig)
+
+
+@pytest.mark.parametrize('defect', ['estimate', 'units', 'method', 'resolution', 'calibrated',
+                                    'band_level', 'partial', 'untyped'])
+def test_extension_contract_errors_fail_before_output(tmp_path, defect):
+    """Mismatched or misleading uncertainty inputs cannot be published as valid report panels."""
+    report = _extended_report()
+    view = deepcopy(report.views[0])
+    if defect == 'estimate':
+        view.uncertainty_scenarios[0].factors['estimate'] += .001
+    elif defect == 'units':
+        view.uncertainty_scenarios[0].summary['units'] = 'monthly_decimal'
+    elif defect == 'method':
+        view.uncertainty_scenarios[0].summary['method'] = 'conditional_gls_student_t'
+    elif defect == 'resolution':
+        view.resolution.summary['rank'] -= 1
+    elif defect == 'calibrated':
+        view.loading_stability.summary['calibrated_ci'] = True
+    elif defect == 'band_level':
+        view.loading_stability.summary['confidence_level'] = .9
+    elif defect == 'untyped':
+        view = replace(view, uncertainty_scenarios=(dict(view.uncertainty_scenarios[0].summary),))
+    else:
+        view = replace(view, resolution=None)
+    with pytest.raises(ValueError):
+        render_cma_inference(replace(report, views=(view,)), tmp_path/'invalid.pdf')
+    assert not (tmp_path/'invalid.pdf').exists()
+
+
+def test_paired_contrasts_and_unavailable_stability_are_explicit():
+    """Paired comparisons use distinct targets and absent loading draws remain visibly absent."""
+    report = _extended_report()
+    scenario = deepcopy(report.views[0].uncertainty_scenarios[0])
+    scenario.summary.update(method='paired_provider_contrast', comparison_label='Provider A - B',
+                            target='difference_of_projected_provider_means')
+    view = replace(report.views[0], loading_stability=None, uncertainty_scenarios=())
+    figures = _build_inference_pages(replace(report, views=(view,), provider_contrasts=(scenario,)))
+    try:
+        text, cells = _figure_text(figures)
+        assert 'Provider A - B' in cells and 'Not supplied' in cells
+        assert 'Paired loading/alpha draws not supplied' in text
+        assert 'No alternative forecast-error covariance' in text
+    finally:
+        for fig in figures:
+            plt.close(fig)
+
+
+def test_loading_contrasts_preserve_their_distinct_bootstrap_baseline():
+    """Differences of paired refits are stability bands, with no false covariance-CI label."""
+    report = _extended_report()
+    contrast = deepcopy(report.views[0].loading_stability)
+    contrast.summary.update(method='paired_loading_stability_contrast',
+                            comparison_label='A minus B')
+    figures = _build_inference_pages(replace(report, loading_stability_contrasts=(contrast,)))
+    try:
+        text, cells = _figure_text(figures)
+        assert 'A minus B (loading)' in cells
+        assert 'rank losses=2' in text and 'bootstrap baselines' in text
+        assert 'native point estimate' in text
+    finally:
+        for fig in figures:
+            plt.close(fig)
+    contrast.summary['method'] = 'paired_loading_stability'
+    with pytest.raises(ValueError, match='Loading stability'):
+        report_module.validate_cma_inference_report(
+            replace(report, loading_stability_contrasts=(contrast,)))

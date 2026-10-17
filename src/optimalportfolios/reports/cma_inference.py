@@ -14,11 +14,15 @@ from typing import Mapping
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import numpy as np
+import pandas as pd
 import qis
 
 from optimalportfolios.matf.cma_diagnostics import CmaDiagnosticResult
 from optimalportfolios.matf.cma_uncertainty import CmaConditionalGlsResult
 from optimalportfolios.matf.cma_identification import CmaIdentificationResult
+from optimalportfolios.matf.gls_diagnostic import (
+    GlsLoadingStabilityResult, GlsResolutionResult, GlsUncertaintyScenario,
+)
 from optimalportfolios.reports.cma_diagnostics import (
     _INK, _LEFT, _MUTED, _TEAL, _number, _section, _table, _text, _value, _write,
 )
@@ -36,6 +40,9 @@ class CmaInferenceView:
     alpha_weight: float
     conditional_intervals: CmaConditionalGlsResult | None = None
     identification: CmaIdentificationResult | None = None
+    resolution: GlsResolutionResult | None = None
+    uncertainty_scenarios: tuple[GlsUncertaintyScenario, ...] = ()
+    loading_stability: GlsLoadingStabilityResult | None = None
 
 
 @dataclass(frozen=True)
@@ -52,6 +59,9 @@ class CmaInferenceReport:
     methodology: str
     qualifications: str
     asset_labels: Mapping[str, str] = field(default_factory=dict)
+    provider_contrasts: tuple[GlsUncertaintyScenario, ...] = ()
+    extension_notes: tuple[str, ...] = ()
+    loading_stability_contrasts: tuple[GlsLoadingStabilityResult, ...] = ()
 
 
 def _validate(report: CmaInferenceReport) -> tuple[CmaInferenceView, list[str]]:
@@ -69,6 +79,13 @@ def _validate(report: CmaInferenceReport) -> tuple[CmaInferenceView, list[str]]:
     with_identification = [v.identification is not None for v in report.views]
     if any(with_identification) and (not all(with_identification) or not all(with_intervals)):
         raise ValueError('Supply identification and conditional intervals for every view or none.')
+    with_resolution = [v.resolution is not None for v in report.views]
+    if any(with_resolution) and (not all(with_resolution) or not all(with_intervals)):
+        raise ValueError('Supply resolution and conditional intervals for every view or none.')
+    if (any(v.uncertainty_scenarios or v.loading_stability is not None for v in report.views)
+            or report.provider_contrasts or report.loading_stability_contrasts
+            ) and not all(with_resolution):
+        raise ValueError('Uncertainty extensions require explicit resolution results.')
     for view in report.views:
         if not np.isfinite([view.cash_rate, view.alpha_weight]).all():
             raise ValueError('Cash and alpha weight must be finite.')
@@ -106,6 +123,7 @@ def _validate(report: CmaInferenceReport) -> tuple[CmaInferenceView, list[str]]:
                                        ci.factors[['estimate', 'lower', 'upper']], equal_nan=True,
                                        atol=1e-12, rtol=1e-10)):
                 raise ValueError('Identification must match its view and declared settings.')
+        _validate_extensions(view)
         for factor, row in view.result.factors.iterrows():
             if factor not in factors:
                 factors.append(factor)
@@ -115,7 +133,88 @@ def _validate(report: CmaInferenceReport) -> tuple[CmaInferenceView, list[str]]:
                     raise ValueError('Views must share the calibrated factor basis.')
     if len(factors) > 12:
         raise ValueError('A compact inference report supports up to twelve factors.')
+    for contrast in report.provider_contrasts:
+        _validate_scenario(contrast, headline, contrast=True)
+    for contrast in report.loading_stability_contrasts:
+        _validate_loading_result(contrast, headline, contrast=True)
     return headline, factors
+
+
+def _validate_scenario(scenario, view, *, contrast=False):
+    """Keep alternative covariance assumptions separate from the default CI contract."""
+    if not isinstance(scenario, GlsUncertaintyScenario):
+        raise ValueError('Uncertainty scenarios require a typed GLS result.')
+    info = scenario.summary
+    names = view.result.factors.index
+    required = {'method', 'target', 'units', 'assumptions', 'calibration_status',
+                'reference_provenance', 'interval_status', 'confidence_level',
+                'distribution', 'rank', 'n_factors'}
+    if (not required.issubset(info) or not scenario.factors.index.equals(names)
+            or not scenario.covariance.index.equals(names)
+            or not scenario.covariance.columns.equals(names)
+            or info['units'] != 'annual_decimal'
+            or info['rank'] != view.result.summary['rank']
+            or info['n_factors'] != view.result.summary['n_factors']
+            or not info['target'] or not info['assumptions']
+            or info['method'] == 'conditional_gls_student_t'):
+        raise ValueError('Uncertainty scenarios must declare matching factors, units '
+                         'and assumptions.')
+    if contrast:
+        if info['method'] != 'paired_provider_contrast' or not info.get('comparison_label'):
+            raise ValueError('Provider contrasts must declare a paired comparison.')
+    else:
+        if info['method'] == 'paired_provider_contrast' or not np.allclose(
+                scenario.factors.estimate, view.conditional_intervals.factors.estimate,
+                equal_nan=True, atol=1e-12, rtol=1e-10):
+            raise ValueError('Uncertainty scenarios must preserve their view point estimates.')
+
+
+def _validate_extensions(view):
+    """Reject results from another estimator, scenario, or stability convention before rendering."""
+    result = view.resolution
+    if result is not None:
+        if (not isinstance(result, GlsResolutionResult)
+                or not result.factors.index.equals(view.result.factors.index)
+                or not result.assets.index.equals(view.result.assets.index)
+                or result.summary.get('method') != 'gls_resolution'
+                or any(result.summary.get(key) != view.result.summary[key]
+                       for key in ('rank', 'n_assets', 'n_factors'))):
+            raise ValueError('Resolution must match its diagnostic view.')
+        ci = view.conditional_intervals.factors
+        if (not np.allclose(result.factors.ci_half_width, (ci.upper-ci.lower)/2,
+                            equal_nan=True, atol=1e-12, rtol=1e-10)
+                or not np.allclose(result.factors.gross_mimicking_weight,
+                                   view.result.factors.gross_gls_multiplier,
+                                   equal_nan=True, atol=1e-12, rtol=1e-10)):
+            raise ValueError('Resolution must use the unchanged conditional intervals '
+                             'and geometry.')
+        if 'normalized_ci_half_width' in result.factors and view.identification is not None:
+            normalized = view.identification.factors.get('normalized_ci_half_width')
+            if normalized is not None and not np.allclose(
+                    normalized, result.factors.normalized_ci_half_width,
+                    equal_nan=True, atol=1e-12, rtol=1e-10):
+                raise ValueError('Resolution must use the unchanged conditional intervals.')
+        if not ci.index.equals(result.factors.index):
+            raise ValueError('Resolution must use the unchanged conditional intervals.')
+    for scenario in view.uncertainty_scenarios:
+        _validate_scenario(scenario, view)
+    if view.loading_stability is not None:
+        _validate_loading_result(view.loading_stability, view)
+
+
+def _validate_loading_result(stability, view, *, contrast=False):
+    """Bind ordinary and paired-difference stability to their explicitly stated baseline."""
+    method = 'paired_loading_stability_contrast' if contrast else 'paired_loading_stability'
+    if (not isinstance(stability, GlsLoadingStabilityResult)
+            or not stability.bands.index.equals(view.result.factors.index)
+            or stability.summary.get('method') != method
+            or stability.summary.get('calibrated_ci') is not False
+            or stability.summary.get('confidence_level') !=
+            view.conditional_intervals.summary['confidence_level']
+            or not stability.summary.get('baseline_provenance')
+            or not stability.summary.get('assumptions')
+            or (contrast and not stability.summary.get('comparison_label'))):
+        raise ValueError('Loading stability must declare a matching baseline and band convention.')
 
 
 def _premium(view: CmaInferenceView, factor: str) -> str:
@@ -544,18 +643,319 @@ def _stability_page(report: CmaInferenceReport, headline: CmaInferenceView) -> F
     return fig
 
 
+def _band(row, lower='lower', upper='upper'):
+    """Format a supplied annual interval or sensitivity range without computing one."""
+    if not np.isfinite([row.get(lower, np.nan), row.get(upper, np.nan)]).all():
+        return 'N/A'
+    return f'[{100*row[lower]:.2f}, {100*row[upper]:.2f}]'
+
+
+def _precision_flag(value):
+    """Distinguish unavailable precision from a failed economic precision target."""
+    if value is None or pd.isna(value):
+        return 'N/A'
+    return 'OK' if value else 'Weak'
+
+
+def _resolution_page(report, headline, factors):
+    """Show the unchanged conditional estimates beside scale-free estimator geometry."""
+    fig = _page(report, headline, 'Premia and precision', 1)
+    level = 100*headline.conditional_intervals.summary['confidence_level']
+    _section(fig, .817, 'GLS premia: current conditional intervals remain the default',
+             f'Annual excess return %, [pointwise {level:g}% Student-t CI]. '
+             'Each view retains its own residual scale; no scenario replaces these CIs.')
+    rows = []
+    for factor in factors:
+        calibrated = next(v.result.factors.at[factor, 'calibrated_premium']
+                          for v in report.views if factor in v.result.factors.index)
+        rows.append([factor, _number(calibrated, 'return')]
+                    + [_premium_interval(view, factor) for view in report.views])
+    _table(fig, rows, ['Factor', 'Our MATF'] + [v.label for v in report.views],
+           .422, .338, [.18, .10] + [.72/len(report.views)]*len(report.views), 6.9)
+    descriptions = [f"{v.label.replace(chr(10), ' ')}: N={v.result.summary['n_assets']}, "
+                    f"rank={v.result.summary['rank']}/{v.result.summary['n_factors']}, "
+                    f"df={v.conditional_intervals.summary['residual_df']}" for v in report.views]
+    _write(fig, _LEFT, .409, _text(' | '.join(descriptions), 126, 3), 6.8, _MUTED)
+    settings = headline.resolution.summary
+    annual = settings['annual_precision_target']
+    normalized = settings['normalized_precision_target']
+    _section(fig, .354, 'Headline geometry and precision',
+             f'Annual target +/-{100*annual:g} pp; normalized target '
+             f'+/-{normalized:g} premium/vol. '
+             'Diagnostic settings, not constraints.')
+    rows = []
+    for factor, info in headline.resolution.factors.iterrows():
+        ci = headline.conditional_intervals.factors.loc[factor]
+        rows.append([factor, _value(info, 'normalized_resolution_per_unit_scale'),
+                     _value(info, 'normalized_ci_half_width'),
+                     _number((ci.upper-ci.lower)/2, 'return'),
+                     _precision_flag(info.annual_precision_met),
+                     _precision_flag(info.normalized_precision_met),
+                     _value(info, 'gross_mimicking_weight')])
+    _table(fig, rows, ['Factor', 'Resolution\nper unit scale', 'CI half-width\npremium/vol',
+                       'CI half\nwidth pp', 'Annual\nprecision', 'Normalized\nprecision',
+                       'Gross\nweight'],
+           .104, .197, [.19, .16, .16, .14, .11, .13, .11], 6.6)
+    _write(fig, _LEFT, .09,
+           'Resolution measures geometric standard error per unit forecast-error scale, in '
+           'premium/vol units. Lower is better.\n'
+           'Gross weight is the absolute factor-mimicking exposure. Rank failure means '
+           'individual premia are not identified. Full assumptions on page 3.', 6.8, _MUTED)
+    _write(fig, _LEFT, .056, _text(report.source, 127, 2), 6.6, _MUTED)
+    return fig
+
+
+def _visibility_rows(report, headline):
+    """Select low-visibility and high-influence sleeves from completed numerical tables."""
+    assets = headline.resolution.assets
+    sensitivity = headline.result.factor_sensitivity
+    by_asset = {}
+    if not sensitivity.empty:
+        ordered = sensitivity.assign(_absolute=sensitivity.premium_change_25bp.abs())
+        ordered = ordered.sort_values('_absolute', ascending=False, kind='stable')
+        by_asset = {asset: group.iloc[0] for asset, group in ordered.groupby('asset', sort=False)}
+    low = assets.residual_visibility.sort_values(kind='stable').head(3).index.tolist()
+    high = list(by_asset)[:3]
+    selected = list(dict.fromkeys(low+high))
+    rows = []
+    for asset in selected:
+        row = assets.loc[asset]
+        influence = by_asset.get(asset)
+        rows.append([_label(report, asset, 34),
+                     'Low visibility' if asset in low else 'High influence',
+                     _value(row, 'fitted_leverage'), _value(row, 'residual_visibility'),
+                     str(influence.factor) if influence is not None else 'N/A',
+                     _value(influence, 'premium_change_25bp', 'bp')
+                     if influence is not None else 'N/A'])
+    return rows
+
+
+def _geometry_contributors_page(report, headline):
+    """Retain all factor revision tails while exposing what residual checks can observe."""
+    fig = _page(report, headline, 'Contributions and residual visibility', 2)
+    _section(fig, .817, 'Top two / bottom two benchmark-revision contributors',
+             'Every MATF factor. Contributions explain GLS minus calibrated premia; '
+             'they do not estimate premium bias.')
+    _table(fig, _contribution_rows(report, headline),
+           ['Factor', 'Implied\npremium', 'Revision\nbp', 'Top two: asset / bp',
+            'Bottom two: asset / bp'], .363, .400, [.15, .10, .09, .33, .33], 7.2)
+    _write(fig, _LEFT, .350,
+           'Gap = provider total return - cash - w x admitted alpha '
+           '- calibrated systematic return. '
+           'Contribution = gap x GLS weight.\n'
+           'All contributions plus any saved coordinate offset reconcile to the revision. '
+           'Weights are factor-mimicking holdings, not betas.', 7.1, _MUTED)
+    _write(fig, _LEFT, .316, _text('Source qualification: '+report.qualifications, 132, 2),
+           6.5, _MUTED)
+    diagonal = headline.resolution.summary['visibility_basis'] == 'asset_variance_whitened'
+    if diagonal:
+        _section(fig, .292, 'Lowest residual visibility and largest forecast influence',
+                 'Three lowest visibility sleeves and three largest absolute single-sleeve '
+                 '+25 bp effects; duplicates appear once.')
+        _table(fig, _visibility_rows(report, headline),
+               ['Asset / sleeve', 'Selection', 'Fitted\nleverage', 'Residual\nvisibility',
+                'Most affected\nfactor', '+25bp effect\nbp'],
+               .110, .130, [.28, .17, .12, .13, .17, .13], 6.7)
+        interpretation = ('Visibility = 1 - fitted leverage. Low visibility means a sleeve shock '
+                          'is mostly absorbed into premia and is hard to detect\n'
+                          'in residual lack-of-fit. Visibility sums to N - rank. A pure '
+                          'factor-span shock changes premia without changing the residual score.')
+    else:
+        _section(fig, .292, 'Residual visibility uses ordered whitened coordinates')
+        interpretation = _text(headline.resolution.summary['asset_visibility_interpretation'],
+                               120, 5)
+        _write(fig, _LEFT, .252, interpretation, 8.0, _INK)
+        interpretation = ('Dense residual covariance mixes assets during whitening. '
+                          'No individual asset visibility ranking is displayed.\n'
+                          'The full ordered-coordinate geometry and original-coordinate '
+                          'leverage remain in the sidecar tables.')
+    _write(fig, _LEFT, .090, interpretation, 6.9, _MUTED)
+    _write(fig, _LEFT, .055,
+           'Residual alpha and premium influence answer different questions. '
+           'Complete contribution, visibility and sensitivity tables are supplied '
+           'alongside the PDF.',
+           6.7, _MUTED)
+    return fig
+
+
+def _scenario_label(scenario):
+    """Prefer a declared scenario label while preserving its actual inference method."""
+    return str(scenario.summary.get('label') or scenario.summary.get('scenario_label')
+               or scenario.summary['method']).replace('_', ' ')
+
+
+def _scenario_description(scenario):
+    """Print the distribution and reference assumptions that distinguish scenario ranges."""
+    info = scenario.summary
+    law = {'none': 'covariance only, no distributional interval',
+           'normal': 'Gaussian covariance scenario',
+           'reference_student_t': 'Student-t reference scenario'}.get(
+               info['distribution'], info['distribution'].replace('_', ' '))
+    if info['distribution'] == 'reference_student_t':
+        law += (f" (reference df={info['reference_degrees_of_freedom']:g}; "
+                'independent scale assumed)')
+    status = ('adviser dispersion, not a CI' if info['method'] == 'adviser_disagreement' or
+              info['calibration_status'] == 'adviser_disagreement_scenario_not_confidence_interval'
+              else 'assumed scenario, not empirically calibrated')
+    reference = info.get('reference_provenance')
+    source = ' Reference: '+_text(reference, 55, 1)+'.' if reference else ''
+    return (f"{_scenario_label(scenario)}: {law}; {status}; "
+            f"target: {info['target'].replace('_', ' ')}."+source)
+
+
+def _forecast_box_note(headline):
+    """Retain the existing carry forecast-box endpoints beside the new uncertainty panels."""
+    carry = _carry_factor(headline)
+    boxes = headline.result.provenance.get('adviser_box_bounds', ())
+    selected = {box['box']: box for box in boxes
+                if box['factor'] == carry and box['cash_treatment'] == 'fixed_cash'}
+    parts = []
+    for key, label in (('advisor_p25_p75_box', 'IQR'), ('advisor_min_max_box', 'full')):
+        if key in selected:
+            box = selected[key]
+            parts.append(f'{label} [{100*box["lower"]:.2f}, {100*box["upper"]:.2f}]%')
+    return ((carry+' unchanged adviser sensitivity boxes: '+', '.join(parts)+
+             '. Fixed cash/alpha; approximate geometric-to-arithmetic conversion. '
+             'All views and factors are in sidecars.') if parts else '')
+
+
+def _extension_stability_page(report, headline):
+    """Distinguish conditional inference, refit stability and declared covariance scenarios."""
+    fig = _page(report, headline, 'Stability and uncertainty scenarios', 3)
+    stability = headline.loading_stability
+    scenarios = headline.uncertainty_scenarios[:2]
+    _section(fig, .817, 'Loading stability and unchanged forecast sensitivity',
+             'Annual %. LOO and adviser boxes are deterministic sensitivity ranges; '
+             'paired-refit percentiles are stability bands, not calibrated CIs.')
+    rows = []
+    for factor, row in headline.result.factors.iterrows():
+        band = stability.bands.loc[factor] if stability is not None else None
+        rows.append([factor, _band(row, 'loo_low', 'loo_high'),
+                     _band(band) if band is not None else 'Not supplied',
+                     _value(band, 'median_shift', 'bp') if band is not None else 'N/A']
+                    + [_band(s.factors.loc[factor], 'ci_lower', 'ci_upper') for s in scenarios])
+    count = len(scenarios)
+    level = 100*headline.conditional_intervals.summary['confidence_level']
+    _table(fig, rows, ['Factor', 'LOO range\n%', f'Paired loading\n{level:g}% band %',
+                       'Median shift\nfrom baseline bp']
+           + [_text(_scenario_label(s), 15, 2)
+              +f"\n{100*s.summary['confidence_level']:g}% range %" for s in scenarios],
+           .493, .270, [.17, .16, .22, .17] + [.28/count]*count if count else
+           [.23, .22, .29, .26], 6.7 if count else 7.1)
+    if stability is None:
+        note = ('Paired loading/alpha draws not supplied for this view; no loading-uncertainty '
+                'band is inferred from the conditional CI.')
+    else:
+        info = stability.summary
+        solver_note = (f"solver failures={info['solver_failure_count']}"
+                       if info.get('solver_status_provided', True)
+                       else 'solver status not archived')
+        note = (f"Finite full-rank draws: {info['n_available']}/{info['n_draws']} "
+                f"({100*info['availability_rate']:.1f}%); "
+                f"rank losses={info['rank_failure_count']}, "
+                f'{solver_note}, '
+                f"nonfinite={info['nonfinite_count']}. "
+                f"Alpha policy: {info['alpha_policy'].replace('_', ' ')}.")
+    _write(fig, _LEFT, .480, _text(note, 132, 2), 6.7, _MUTED)
+    _section(fig, .438, 'Optional uncertainty assumptions and paired comparisons')
+    details = []
+    for scenario in scenarios:
+        details.append(_scenario_description(scenario))
+    if not scenarios:
+        details.append('No alternative forecast-error covariance or '
+                       'external reference scale supplied.')
+    if len(headline.uncertainty_scenarios) > len(scenarios):
+        details.append(f'Showing {len(scenarios)} of {len(headline.uncertainty_scenarios)} '
+                       'declared scenarios; all scenarios are retained in the sidecars.')
+    _write(fig, _LEFT, .413, _text(' '.join(details), 133, 4), 6.7, _INK)
+    contrast_rows, contrast_notes = [], []
+    n_covariance = 1 if report.loading_stability_contrasts else 2
+    for contrast in report.provider_contrasts[:n_covariance]:
+        largest = contrast.factors.estimate.abs().sort_values(ascending=False).head(2).index
+        for factor in largest:
+            row = contrast.factors.loc[factor]
+            label = _text(contrast.summary['comparison_label']+' (covariance)', 39, 1)
+            contrast_rows.append([label, factor,
+                                  _value(row, 'estimate', 'bp'),
+                                  _band(row, 'ci_lower', 'ci_upper')])
+    n_loading = 1 if report.provider_contrasts else 2
+    for contrast in report.loading_stability_contrasts[:n_loading]:
+        largest = contrast.bands.baseline.abs().sort_values(ascending=False).head(2).index
+        info = contrast.summary
+        for factor in largest:
+            row = contrast.bands.loc[factor]
+            contrast_rows.append([_text(info['comparison_label']+' (loading)', 39, 1), factor,
+                                  _value(row, 'baseline', 'bp'), _band(row)])
+        contrast_notes.append(f"{_text(info['comparison_label'], 25, 1)}: "
+                              f"{info['n_available']}/{info['n_draws']} "
+                              f"paired draws, rank losses={info['rank_failure_count']}; "
+                              f"{info['alpha_policy'].replace('_', ' ')}.")
+    if contrast_rows:
+        _table(fig, contrast_rows,
+               ['Paired comparison / method', 'Largest two absolute gaps',
+                'Gap bp', 'Scenario / band %'],
+               .266, .075, [.34, .29, .13, .24], 6.7)
+        contrast_note = ('Covariance gaps use projected means; loading gaps use matching '
+                         'bootstrap baselines. Two largest absolute gaps per selected comparison; '
+                         'all comparisons are in sidecars. '
+                         +' '.join(contrast_notes))
+    else:
+        contrast_note = ('No paired provider contrast supplied. Independence or a consensus '
+                         'reference is not inferred for this universe.')
+    _write(fig, _LEFT, .255, _text(contrast_note, 137, 3), 6.7, _MUTED)
+    _section(fig, .214, 'Assumptions and interpretation')
+    level = 100*headline.conditional_intervals.summary['confidence_level']
+    assumptions = (
+        f'Default pointwise {level:g}% Student-t CIs: fixed B, diagonal D, cash and alpha; '
+        'centered Gaussian forecast errors with covariance tau^2 D. '
+        'tau^2 = residual S2 / (N - rank). D measures return risk; this forecast-error shape '
+        'is an added working assumption. No simultaneous coverage or '
+        'loading/model-selection uncertainty. '
+        'The estimand is the provider projected mean, including any factor-span subjective view.\n'
+        'Paired loading bands condition on the stated baseline and finite full-rank draws. '
+        'Adviser disagreement describes cross-adviser dispersion, not consensus-mean estimation '
+        'error or forecast accuracy. Forecast boxes and LOO are sensitivities, not CIs.')
+    _write(fig, _LEFT, .188, _text(assumptions, 137, 7), 6.6, _INK)
+    notes = list(report.extension_notes)
+    box_note = _forecast_box_note(headline)
+    if box_note:
+        notes.insert(0, box_note)
+    if stability is not None:
+        notes.insert(0, 'Bootstrap baseline (separate from native point estimate): '
+                     +str(stability.summary['baseline_provenance']))
+    elif report.loading_stability_contrasts:
+        notes.insert(0, 'Paired contrast baseline: '
+                     +str(report.loading_stability_contrasts[0].summary['baseline_provenance']))
+    _write(fig, _LEFT, .090, _text(' '.join(notes) or report.qualifications, 134, 3), 6.5, _MUTED)
+    return fig
+
+
 def _build_inference_pages(report: CmaInferenceReport) -> list[Figure]:
     """Compose three bounded pages and clean partial figures after a rendering error."""
     headline, factors = _validate(report)
     previous = set(plt.get_fignums())
     try:
-        figures = [_comparison_page(report, headline, factors),
-                   _contributors_page(report, headline), _stability_page(report, headline)]
+        if headline.resolution is not None:
+            figures = [_resolution_page(report, headline, factors),
+                       _geometry_contributors_page(report, headline),
+                       _extension_stability_page(report, headline)]
+        else:
+            figures = [_comparison_page(report, headline, factors),
+                       _contributors_page(report, headline), _stability_page(report, headline)]
         return figures
     except Exception:
         for number in set(plt.get_fignums()) - previous:
             plt.close(number)
         raise
+
+
+def validate_cma_inference_report(report: CmaInferenceReport) -> None:
+    """Validate completed report bindings without constructing figures or writing files.
+
+    Provider adapters can use this before exporting sidecars when PDF rendering is
+    deferred. It applies exactly the same validation as :func:`render_cma_inference`.
+    """
+    _validate(report)
 
 
 def render_cma_inference(report: CmaInferenceReport, output_path: str | Path) -> Path:
@@ -564,6 +964,9 @@ def render_cma_inference(report: CmaInferenceReport, output_path: str | Path) ->
     Up to six precomputed views and twelve factors share one calibrated basis.
     Missing/nonidentified factor coordinates are displayed as N/A. The chosen headline
     supplies attribution and stability pages; complete scenario tables remain caller-owned.
+    Explicit resolution results select the extended three-page layout. Alternative
+    covariance scenarios and paired loading bands remain separate from default CIs;
+    no uncertainty scale, scenario selection policy or refit is estimated here.
     """
     target = Path(output_path).expanduser().resolve()
     if target.suffix.lower() != '.pdf':

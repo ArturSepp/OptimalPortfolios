@@ -6,6 +6,7 @@ from typing import Optional
 
 import pandas as pd
 import qis as qis
+from qis.perfstats.returns import to_factor_returns
 
 
 def compute_returns_from_prices(prices: pd.DataFrame,
@@ -14,13 +15,17 @@ def compute_returns_from_prices(prices: pd.DataFrame,
                                 drop_first: bool = True,
                                 is_first_zero: bool = False,
                                 is_log_returns: bool = True,
-                                span: Optional[int] = 52
+                                span: Optional[int] = 52,
+                                factor_return_types: Optional[dict] = None
                                 ) -> pd.DataFrame:
     """
     compute returns for covar matrix estimation
     """
-    returns = qis.to_returns(prices=prices,
-                             is_log_returns=is_log_returns,
+    convert = qis.to_returns if factor_return_types is None else to_factor_returns
+    options = ({"is_log_returns": is_log_returns} if factor_return_types is None else
+               {"return_types": factor_return_types})
+    returns = convert(prices=prices,
+                             **options,
                              is_first_zero=is_first_zero,
                              drop_first=drop_first,
                              freq=returns_freq)

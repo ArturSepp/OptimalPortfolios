@@ -276,7 +276,7 @@
     }
   },
   "symbols": {
-    "docs/gls_factor_premia.md": ["GlsGeometry", "GlsPremiaResult", "compute_gls_geometry", "infer_factor_premia", "gls_projector", "gls_split", "factor_mimicking_portfolios", "ResidualOpportunity", "compute_residual_opportunity"],
+    "docs/gls_factor_premia.md": ["GlsGeometry", "GlsPremiaResult", "compute_gls_geometry", "infer_factor_premia", "gls_projector", "gls_split", "factor_mimicking_portfolios", "ResidualOpportunity", "compute_residual_opportunity", "GlsResolutionResult", "GlsUncertaintyScenario", "GlsLoadingStabilityResult", "compute_gls_resolution", "compute_gls_uncertainty", "compute_gls_reference_uncertainty", "compute_gls_adviser_disagreement", "compute_gls_provider_contrast", "compute_gls_loading_stability", "compute_gls_loading_stability_contrast", "summarize_gls_loading_stability"],
     "docs/cma_diagnostics.md": [
       "AdmissionPolicy", "CmaDiagnosticInputs", "CmaDiagnosticResult",
       "CmaDiagnosticSpec", "compute_cma_diagnostics", "without_admitted_alpha",
@@ -600,6 +600,7 @@
         "rebalancing_freq",
         "lasso_model",
         "factor_returns_freq",
+        "factor_return_types",
         "factor_covar_span",
         "is_apply_vol_normalised_returns",
         "demean",

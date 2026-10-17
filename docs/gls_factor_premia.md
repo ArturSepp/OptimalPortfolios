@@ -95,6 +95,96 @@ uses the upper asset endpoint for the lower factor bound. One shared cash interv
 through $-\sum_i Q_{ij}$ once. These are sensitivity bounds, not confidence intervals or
 factor quantiles; endpoint combinations need not represent any individual provider.
 
+### Geometric resolution and residual visibility
+
+Write the residual covariance as $D=LL^\top$ and the whitened design as
+$X=L^{-1}B$. The orthogonal whitened residual projector is
+$M_\perp=I-XX^+$. Its diagonal is residual visibility; one minus that diagonal
+is fitted leverage. Visibility lies between zero and one and sums to
+$N-\operatorname{rank}(X)$. With diagonal $D$, whitened coordinates correspond
+to individual assets. For dense $D$, the implementation uses ordered Cholesky
+coordinates, which mix assets; their visibility is not an individual original
+asset quantity.
+
+For a full-rank design and fixed annual factor volatility $\sigma_j$, define
+normalized resolution per unit error scale as
+
+$$
+q_j=\frac{\sqrt{(G^{-1})_{jj}}}{\sigma_j}.
+$$
+
+This compares design precision across consistent factor scalings. It excludes
+the provider residual scale. The normalized conditional interval half-width is
+$t_{\nu,1-\delta/2}s q_j$, which additionally depends on the forecast and alpha
+admission. Changes in alpha can therefore change conditional precision without
+changing geometric resolution. Annual half-width 0.01 and normalized half-width
+0.25 are default diagnostic targets, not estimation constraints or rank tests.
+
+Low residual visibility means that a sleeve's view is largely absorbed by the
+factor fit. A small residual on that sleeve provides little evidence of agreement
+with the factor model. It does not imply that the view has little influence on
+premia. Gross absolute mimicking weights measure that influence separately.
+
+### Explicit covariance scenarios and provider contrasts
+
+For a declared covariance $C_y$ of the alpha-adjusted forecast, propagate
+
+$$
+V_\lambda=A C_y A^\top.
+$$
+
+A covariance alone supports standard errors. Normal intervals additionally assume
+centered Gaussian forecast errors with that known covariance. An independently
+estimated proportional reference scale requires its own sampling model and
+reference degrees of freedom before Student-t intervals are justified. These
+alternatives are separately labelled scenarios; they never replace the default
+own-residual-scale intervals automatically.
+
+The estimand is the projected provider mean. If the mean forecast includes a
+deliberate shift $u$, the projected mean shifts by $A u$. Coverage of this mean
+does not establish coverage of an unshifted structural premium. A shift in the
+factor span can change premia without changing the residual score, so residual
+disagreement does not identify premium bias.
+
+For providers $p$ and $q$, with possibly different maps $A_p$ and $A_q$, the
+covariance of their premium difference is
+
+$$
+V_{p-q}=A_p C_{pp}A_p^\top+A_q C_{qq}A_q^\top-A_p C_{pq}A_q^\top-A_q C_{qp}A_p^\top.
+$$
+
+Supply the cross covariance explicitly, including zeros when asserting
+independence. The complete joint covariance must be positive semidefinite.
+When dependence is unmeasured, use labelled feasible correlation scenarios and
+avoid a single significance claim. Provider-filled or shared forecast cells
+must remain identified in the consuming application's provenance.
+
+Adviser quartiles can supply a disagreement scenario: divide marginal IQRs by
+the normal IQR, approximately 1.3489795, then apply an explicit correlation model.
+The result describes propagated adviser dispersion, not estimation error of the
+consensus average or forecast accuracy. Approximate conversions from geometric
+to arithmetic forecasts, cash treatment and cross-asset correlation assumptions
+must be stated. Neither adviser count nor forecast horizon is an implicit divisor.
+
+### Paired loading and alpha stability
+
+Loading stability replays saved, paired draws of loadings, residual covariance
+and, where specified, admitted alpha. The same draw serves every provider, so
+paired provider differences preserve cross-provider dependence. The fixed-alpha
+and jointly resampled-alpha policies are separate diagnostics.
+
+Percentile bands use only finite, successful, full-rank draws while retaining
+every attempted draw in the availability denominator. Rank losses, solver and
+geometry failures, minimum singular values and optional seed-specific endpoints
+accompany the bands. The baseline must use the same common history and estimator
+conventions as the draws. A native production estimate using different histories
+is a separate comparison and is not recentered to the bootstrap median.
+
+These are loading stability bands, not calibrated confidence intervals for a
+constrained or selected estimator. They are not added to conditional covariance
+without an explicit joint uncertainty model. Compare widths at the same nominal
+level and retain deterministic forecast boxes alongside both objects.
+
 ## Worked example
 
 The [offline script](../examples/docs/gls_factor_premia.py) constructs synthetic monthly
@@ -137,6 +227,21 @@ For a checkout-based installation and example command, follow that README.
 - `gls_projector` returns the asset-space residual operator. `gls_split` accepts an already
   cash/alpha-adjusted target and returns minimum-norm coordinates and residuals.
 - `factor_mimicking_portfolios` returns asset-by-factor weights and rejects deficient rank.
+- `compute_gls_resolution` returns `GlsResolutionResult`, with asset visibility,
+  factor resolution, current conditional half-widths and diagnostic settings.
+- `compute_gls_uncertainty` returns `GlsUncertaintyScenario` for an explicitly
+  supplied positive semidefinite forecast covariance. Its default distribution
+  is `none`, so covariance alone does not create interval endpoints.
+- `compute_gls_reference_uncertainty` supplies a known-scale normal or explicitly
+  independent estimated-reference Student-t scenario with recorded provenance.
+- `compute_gls_adviser_disagreement` supplies a labelled IQR-based Gaussian
+  disagreement scenario; `compute_gls_provider_contrast` propagates complete
+  paired forecast covariance through the providers' separate maps.
+- `compute_gls_loading_stability` solves all providers together for each paired
+  estimator draw. `summarize_gls_loading_stability` accepts existing premium
+  draws. Both return `GlsLoadingStabilityResult` objects with bands, draws,
+  draw status and assumptions. `compute_gls_loading_stability_contrast` takes
+  paired result differences using the intersection of available draws.
 
 These are exported from `optimalportfolios.matf.gls_diagnostic`; the four new result
 and inference names are also exported from `optimalportfolios.matf` and the package
@@ -187,6 +292,10 @@ The conditional intervals hold loadings, residual risk, alpha, cash and factor d
 fixed. They exclude first-stage estimation uncertainty and do not measure provider accuracy.
 Changing alpha credit can narrow an interval without validating that admission policy.
 Use first-stage resampling and independent sensitivity analyses for different questions.
+The optional covariance scenarios and percentile stability bands do not establish
+empirical coverage by their presence in a report. A consensus residual scale is
+not automatically the error scale of an individual provider, and a residual-score
+ratio is descriptive unless its joint sampling model has been established.
 This adaptation of GLS adds neither an intercept nor an economically identified premium
 where the supplied factor span cannot identify one.
 

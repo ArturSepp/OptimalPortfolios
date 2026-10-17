@@ -48,6 +48,14 @@ Import from `optimalportfolios.matf.gls_diagnostic`; `_inference.py` is private.
 | `gls_split(m, B, Omega)` | Minimum-norm factor coordinates and asset residuals for an already cash/alpha-adjusted forecast vector. |
 | `factor_mimicking_portfolios(B, Omega)` | Asset-by-factor unit-exposure weights; requires full column rank. |
 | `compute_residual_opportunity(B, residual_variances, alpha, *, controls=None, alpha_covariance=None, residual_correlation=None, repair_correlation=False, rcond=None)` | `ResidualOpportunity`: squared residual-alpha capacity, conditional noise floor and effective residual breadth. |
+| `compute_gls_resolution(B, Omega, *, factor_volatility=None, conditional_result=None, ...)` | `GlsResolutionResult`: residual visibility, normalized geometric resolution, current conditional precision and diagnostic settings. |
+| `compute_gls_uncertainty(B, Omega, premia, forecast_covariance, ...)` | `GlsUncertaintyScenario`: explicit covariance propagation; default `distribution='none'` provides standard errors without interval endpoints. |
+| `compute_gls_reference_uncertainty(B, Omega, premia, *, scale_squared, reference_provenance, ...)` | Known-scale normal or independently estimated-reference Student-t scenario; never changes the default own-scale CI. |
+| `compute_gls_adviser_disagreement(B, Omega, premia, lower_quartile, upper_quartile, *, source_provenance, ...)` | IQR-derived adviser disagreement scenario, with explicit cross-asset correlation and no adviser-count divisor. |
+| `compute_gls_provider_contrast(B_left, Omega_left, premia_left, B_right, Omega_right, premia_right, *, covariance_left, covariance_right, cross_covariance, ...)` | Complete paired covariance propagated through separate provider maps. |
+| `compute_gls_loading_stability(B, Omega, total_returns, *, B_draws, Omega_draws, cash_rate, baseline_provenance, ...)` | Provider-keyed `GlsLoadingStabilityResult` objects from paired estimator draws; one SVD per draw. |
+| `summarize_gls_loading_stability(premia_draws, baseline, *, ranks, alpha_policy, baseline_provenance, ...)` | Stability bands from existing premium draws, preserving rank and solver failures. |
+| `compute_gls_loading_stability_contrast(left, right, ...)` | Paired draw differences using shared draw identities and joint availability. |
 
 `GlsGeometry`, `GlsPremiaResult`, `compute_gls_geometry` and `infer_factor_premia`
 are also exported by `optimalportfolios.matf` and the package root. Existing
@@ -126,6 +134,47 @@ or numerically zero residual scale also have unavailable CIs. Inspect `summary`
 and `factors.status` before using endpoints. Forecast boxes, 25 bp perturbations
 and leave-one-out ranges answer sensitivity questions and remain separate from CIs.
 
+## Extension contracts
+
+The original `infer_factor_premia` implementation and default conditional interval
+result remain unchanged. New diagnostics are separate results; no renderer or
+adapter automatically chooses a narrower uncertainty model.
+
+`GlsResolutionResult` contains `assets`, `factors` and `summary`. Visibility is the
+whitened residual-projector diagonal; with diagonal residual covariance its sum
+is residual dimension and its entries identify individual assets. Dense covariance
+uses ordered Cholesky coordinates, which must not be described as individual
+asset visibility. Normalized resolution divides residual mimicking standard
+deviation by fixed factor volatility and is independent of alpha treatment.
+Normalized conditional half-width additionally depends on the forecast residual
+scale. Annual 0.01 and normalized 0.25 are diagnostic targets, not constraints.
+
+`GlsUncertaintyScenario` contains `factors`, `covariance` and `summary`. Input
+forecast covariance may be singular but must be positive semidefinite with exact
+labels, ordering and annual decimal units. Normal intervals require the declared
+Gaussian model; estimated-reference Student-t requires its degrees of freedom
+and `independent_reference=True`. Provenance arguments are nonempty strings.
+Adviser IQR scenarios describe disagreement, not consensus-mean error or accuracy.
+Provider contrasts require explicit cross covariance and a positive semidefinite
+joint covariance; zeros assert independence. Unknown dependence belongs in
+labelled sensitivity scenarios, not an implicit significance test.
+
+`GlsLoadingStabilityResult` contains `bands`, `draws`, `draw_status` and `summary`.
+The high-level replay accepts loading draws shaped `(draw, asset, factor)`,
+residual variance draws `(draw, asset)` or covariance draws `(draw, asset, asset)`,
+and optional already policy-admitted alpha draws `(draw, asset)`. All axes retain
+the matching baseline's order. `fixed_admission` holds baseline alpha fixed;
+`paired_admission` uses the alpha draw paired with loadings and residual risk.
+The diagnostic multiplier is applied once to either admitted vector.
+
+Supply the baseline fit on the same common history as the draws. Save its sampling
+convention and source hashes in provenance. Finite, successful, full-rank draws
+determine the percentile bands; every draw remains in quality and availability
+counts. Optional seed labels retain seed-specific endpoints. Native production
+estimates are not recentered, and percentile bands are not calibrated CIs for
+constrained or selected first-stage estimates. No addition to default conditional
+variance is performed without a separate joint model.
+
 ## CMA and provider report integration
 
 The [CMA diagnostics guide](../../../../docs/cma_diagnostics.md) owns the adapter
@@ -141,6 +190,14 @@ of `GlsPremiaResult`. Applications populate them from the completed CMA audit,
 conditional intervals and identification tables; `render_cma_inference` does no
 fitting or target preparation. Contributions in the CMA tables explain revisions
 from calibrated to implied premia, not factor loadings or portfolio risk shares.
+
+To select the extended three-page layout, attach `resolution` and unchanged
+`conditional_intervals` to every view. Optional `uncertainty_scenarios`,
+`loading_stability`, report-level `provider_contrasts`, `loading_stability_contrasts`
+and `extension_notes`
+remain explicitly typed and labelled. `validate_cma_inference_report` validates
+the same contracts without rendering. The application saves full-precision
+sidecars, including the cash/alpha target ledger and draw-failure counts.
 
 Consensus and JPM are consuming examples, not special cases in this package.
 Their adapters retain provider/index mappings, horizon and alpha scenarios,
@@ -168,8 +225,10 @@ The example fits synthetic index/factor histories with FactorLasso and independe
 checks OP estimates, covariance and intervals using weighted QR. Source-adjacent
 Markdown is a contributor guide; do not assume it ships inside installed wheels.
 
-Keep numerical changes in `_inference.py`, public imports in `__init__.py`, and
-automated checks in `tests/inference_test.py`. Update the methodology and CMA
+Keep default inference in `_inference.py`, geometry diagnostics in `_resolution.py`,
+explicit covariance scenarios in `_scenarios.py`, and paired replay in `_stability.py`.
+Public imports belong in `__init__.py` and automated checks in adjacent `tests/`.
+Update the methodology and CMA
 contracts together when changing an interface or assumption. Preserve accepted
 replication snapshots; an implementation change requires a separate parity check,
 not replacement of a baseline.

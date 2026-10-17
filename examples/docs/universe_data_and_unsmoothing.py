@@ -47,7 +47,8 @@ UNIVERSE_FIELDS = ['prices', 'metadata', 'metadata_fields', 'group_loadings_leve
 COPY_DEFAULTS = {'freq': 'QE', 'unsmooth_span': 40, 'warmup_period': 8,
                  'max_value_for_beta': 0.75, 'is_log_returns': True}
 RETURNS_DEFAULTS = {'returns_freq': 'ME', 'demean': True, 'drop_first': True,
-                    'is_first_zero': False, 'is_log_returns': True, 'span': 52}
+                    'is_first_zero': False, 'is_log_returns': True, 'span': 52,
+                    'factor_return_types': None}
 QIS_DEFAULTS = {'ar_order': 2, 'min_value_for_beta': -0.25}
 RETURNS_IN_ESTIMATOR = ('optimalportfolios.covar_estimation.ewma_covar_estimator.'
                         'compute_returns_from_prices')

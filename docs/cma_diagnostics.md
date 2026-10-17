@@ -305,6 +305,69 @@ exports; existing leave-one-out and forecast sensitivity ranges stay distinct.
 Missing pair factors, missing factor covariance, rank/df failures and zero error
 scale are explicitly unavailable. Native contrasts do not require factor covariance.
 
+## Extended inference reports
+
+The extended layout keeps `conditional_gls_student_t` as the default interval
+method. `CmaInferenceView.resolution` accepts a completed `GlsResolutionResult`
+from `compute_gls_resolution`. Supply resolution and conditional intervals for
+every view to select this layout. Existing report calls without resolution retain
+their earlier layout and numerical contracts.
+
+The three pages cover premia and precision, benchmark revision attribution and
+residual visibility, then loading stability and explicit comparisons. The report
+retains top and bottom two signed benchmark revision contributors for every
+factor, forecast shocks and leave-one-out ranges. These contributions sum to the
+revision from calibrated to inferred premia; they do not measure premium bias.
+Annual precision 0.01 and normalized precision 0.25 are diagnostic targets. Print
+the continuous half-width beside each flag, especially near a threshold.
+
+`CmaInferenceView.uncertainty_scenarios` accepts a tuple of separately computed
+`GlsUncertaintyScenario` results. Each carries its method, projected target,
+confidence level, covariance, calibration status, reference provenance and
+assumptions. Known forecast covariance, independently estimated reference scale
+and adviser disagreement remain distinct. A covariance-only result has no
+statistical interval endpoints. The renderer neither estimates a reference nor
+replaces the default intervals when an alternative is narrower.
+
+`CmaInferenceView.loading_stability` accepts `GlsLoadingStabilityResult`. The
+report shows the matching common-history baseline, percentile endpoints,
+full-rank availability and failure counts. It keeps the native estimate distinct
+from the bootstrap baseline and median. Constrained-estimator percentile bands
+are stability diagnostics, not calibrated confidence intervals. Use paired alpha
+draws for policy-consistent admission; label a fixed-admission comparison explicitly.
+
+`CmaInferenceReport.provider_contrasts` accepts explicitly paired covariance
+scenarios; `loading_stability_contrasts` accepts paired bootstrap differences
+with their matching baseline and joint draw availability. `extension_notes` records
+missing optional inputs, mapping qualifications and treatment of shared or filled
+forecasts. Missing paired draws must remain unavailable; do not reuse a different
+universe's bootstrap or invent a consensus reference for another currency.
+
+`validate_cma_inference_report(report)` checks completed results without drawing
+figures or writing files. It uses the same validation as `render_cma_inference`:
+CI, factor, geometry, alpha-view and explicit-scenario identities must agree.
+Applications can therefore validate numerical-only bundles before publication.
+
+### Persistence and replay
+
+Save each target input with total forecast, cash, already policy-weighted alpha,
+the diagnostic admission multiplier and the resulting GLS target. Assert that
+the target equals total forecast minus cash minus credited alpha. Regenerate
+descriptive alpha metadata from that reconciliation after a historical refit;
+stale provenance must never change or silently contradict the numerical target.
+
+Keep full-precision asset visibility and factor resolution tables, default
+conditional covariance and assumptions, explicit scenario covariances, loading
+draw status, seed and baseline provenance, and source hashes beside the PDF.
+Adviser forecast boxes retain their signed worst-case interpretation. Supplied
+provider lines and cells filled from another source require separate flags.
+
+Report-only replay consumes saved estimates and forecasts. It does not change
+historical fitting, factor definitions, inclusion flags or the valuation cutoff.
+Archived results remain immutable; new diagnostics are separate outputs rather
+than replacement regression baselines. The mathematical definitions and scenario
+assumptions are in [GLS inference](gls_factor_premia.md).
+
 ## References
 
 - Sepp, A., Hansen, E. and Kastenholz, M. (2026). *Capital Market Assumptions and

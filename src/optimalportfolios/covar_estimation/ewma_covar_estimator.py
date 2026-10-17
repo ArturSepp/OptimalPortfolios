@@ -54,6 +54,7 @@ def estimate_current_ewma_covar(prices: pd.DataFrame,
                                 is_apply_vol_normalised_returns: bool = False,
                                 demean: bool = True,
                                 apply_an_factor: bool = True,
+                                factor_return_types: Optional[dict] = None,
                                 **kwargs
                                 ) -> pd.DataFrame:
     """Estimate the final QIS EWMA covariance from the supplied price history.
@@ -81,6 +82,7 @@ def estimate_current_ewma_covar(prices: pd.DataFrame,
             False retains raw log returns after the initial difference.
         apply_an_factor: Multiply by the annualization factor inferred from the
             sampled return index. False leaves per-observation covariance units.
+        factor_return_types: Optional exact per-column QIS return types; None retains log returns.
         **kwargs: Accepted for compatibility but not read or forwarded by this helper.
 
     Returns:
@@ -89,7 +91,7 @@ def estimate_current_ewma_covar(prices: pd.DataFrame,
         apply_an_factor is True.
     """
     returns = compute_returns_from_prices(prices=prices, returns_freq=returns_freq, demean=demean,
-                                          span=span)
+                                          span=span, factor_return_types=factor_return_types)
     x = returns.to_numpy()
     if is_apply_vol_normalised_returns:
         covar_tensor_txy, _, _ = qis.compute_ewm_covar_tensor_vol_norm_returns(

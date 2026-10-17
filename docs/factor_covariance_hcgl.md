@@ -424,6 +424,7 @@ at the quarter ends.
 
 | Entry point | Inputs and output |
 |---|---|
+| `FactorCovarEstimator.factor_return_types` | Optional complete factor-to-`qis.ReturnTypes` mapping. Omission keeps log returns; `DIFFERENCE` preserves point units consistently in regression, factor-reference clustering and covariance. Asset-return conventions are unchanged. |
 | `FactorCovarEstimator.fit_current_covar` | Factor prices and return buckets to one annual matrix $\Sigma_y(\kappa)$, with the configured residual type and `residual_var_weight`. |
 | `FactorCovarEstimator.fit_rolling_covars` | The same inputs and a `time_period` to a dictionary of annual matrices keyed by calendar rebalancing dates. |
 | `fit_current_factor_covars` / `fit_rolling_factor_covars` | The factor-specific methods: a FactorLasso `CurrentFactorCovarData`, or a `RollingFactorCovarData` of them by date, with every component. |

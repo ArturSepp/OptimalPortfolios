@@ -222,8 +222,11 @@ The function does not read `pe_asset_id`; the caller builds the flag, typically 
 ### Returns for estimation
 
 `compute_returns_from_prices` takes `prices` and has the defaults `returns_freq='ME'`,
-`demean=True`, `drop_first=True`, `is_first_zero=False`, `is_log_returns=True` and `span=52`. It
-samples log returns at `returns_freq` through `qis.to_returns`, without the first, empty row. With
+`demean=True`, `drop_first=True`, `is_first_zero=False`, `is_log_returns=True`, `span=52` and
+`factor_return_types=None`. With `None`, `is_log_returns` controls the convention through
+`qis.to_returns`, preserving log returns at its default `True`. An explicit mapping from factor
+names to `qis.ReturnTypes` selects conventions by factor. It samples at `returns_freq`, without
+the first, empty row. With
 `demean=True` it subtracts the EWMA mean of span `span`, which includes the current return.
 `estimate_current_ewma_covar` and `EwmaCovarEstimator` build their returns with it, so this is
 where an unsmoothed copy enters estimation.

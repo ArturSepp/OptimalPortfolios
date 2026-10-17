@@ -27,6 +27,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import qis as qis
+from qis.perfstats.returns import to_factor_returns
 import factorlasso as fl
 from typing import Union, Optional, Dict, Any, List
 from dataclasses import dataclass, asdict, fields, replace
@@ -175,7 +176,7 @@ def _restrict_linkage(linkage: np.ndarray, labels: pd.Index,
 
 
 def _factor_cluster_path(risk_factor_prices: pd.DataFrame, returns: pd.DataFrame,
-                         schedule: List[pd.Timestamp], model: LassoModel):
+                         schedule: List[pd.Timestamp], model: LassoModel, factor_return_types=None):
     """Build factor-assisted cluster paths and retain asset-only reporting trees.
 
     Factor prices are forward-filled to the return index and converted to log
@@ -201,8 +202,8 @@ def _factor_cluster_path(risk_factor_prices: pd.DataFrame, returns: pd.DataFrame
     if not returns.columns.is_unique or not risk_factor_prices.columns.is_unique:
         raise ValueError('factor clustering requires unique asset and factor columns')
     prices = risk_factor_prices.reindex(index=returns.index, method='ffill').ffill()
-    factors = qis.to_returns(
-        prices, is_log_returns=True, is_first_zero=False, drop_first=False, freq=None,
+    factors = to_factor_returns(
+        prices, return_types=factor_return_types, is_first_zero=False, drop_first=False, freq=None,
     )
     factors.columns = pd.Index([f'__factor_anchor__:{i}' for i in range(len(factors.columns))])
     if not returns.columns.intersection(factors.columns).empty:
@@ -267,6 +268,7 @@ def _fit_lasso_frequency(
         precomputed_linkages: Optional[Dict[str, np.ndarray]] = None,
         precomputed_cutoffs: Optional[Dict[str, float]] = None,
         reg_lambda: Optional[float] = None,
+        factor_return_types: Optional[dict] = None,
 ) -> _FrequencyFitResult:
     """Fit one return cadence and collect unannualized model components.
 
@@ -299,9 +301,9 @@ def _fit_lasso_frequency(
         KeyError: If required cadence spans, linkages or cutoffs are absent.
     """
     factor_prices = risk_factor_prices.reindex(index=asset_returns.index, method='ffill').ffill()
-    factor_returns = qis.to_returns(
+    factor_returns = to_factor_returns(
         prices=factor_prices,
-        is_log_returns=True,
+        return_types=factor_return_types,
         is_first_zero=False,
         drop_first=False,
         freq=None,
@@ -431,6 +433,9 @@ class FactorCovarEstimator(CovarEstimator):
             every fitted cadence needs an entry (else KeyError) and values must be finite
             and nonnegative (else ValueError). Values are not rescaled as histories grow.
             None, the default, keeps the scalar penalty for every cadence.
+        factor_return_types: Optional complete mapping from factor name to QIS ReturnTypes.
+            Omitted defaults to LOG. DIFFERENCE retains raw point units in regression,
+            factor-reference clustering and covariance. Asset returns are unaffected.
 
     Example:
         Illustrative calls: supply factors, returns_dict and time_period first.
@@ -466,6 +471,7 @@ class FactorCovarEstimator(CovarEstimator):
     residual_corr_weight: float = 1.0
     # Fixed penalties by native response cadence; None preserves the scalar model setting.
     reg_lambda_freq_dict: Optional[Dict[str, float]] = None
+    factor_return_types: Optional[dict] = None
 
     def __post_init__(self) -> None:
         """Validate factor-reference configuration at construction.
@@ -731,7 +737,8 @@ class FactorCovarEstimator(CovarEstimator):
                     # smoother output by final_date and would raise if it were ever absent.
                     schedule = sorted([*schedule, final_date])  # pragma: no cover
                 rolling_clusters = (
-                    _factor_cluster_path(risk_factor_prices, returns, schedule, fit_model)
+                    _factor_cluster_path(risk_factor_prices, returns, schedule, fit_model,
+                                         self.factor_return_types)
                     if self._use_factor_references(freq) else compute_rolling_smoothed_clusters(
                         y=returns, estimation_dates=schedule, lasso_model=fit_model,
                     )
@@ -748,6 +755,7 @@ class FactorCovarEstimator(CovarEstimator):
         if self.reg_lambda_freq_dict is not None:
             residual_options['reg_lambda_freq_dict'] = self.reg_lambda_freq_dict
         factor_covar_data = estimate_lasso_factor_covar_data(
+            factor_return_types=self.factor_return_types,
             risk_factor_prices=risk_factor_prices,
             asset_returns_dict=asset_returns_dict,
             assets=assets,
@@ -822,6 +830,7 @@ class FactorCovarEstimator(CovarEstimator):
                     _factor_cluster_path(
                         risk_factor_prices, returns, rebalancing_schedule,
                         _model_for_frequency(self.lasso_model, freq),
+                        self.factor_return_types,
                     ) if self._use_factor_references(freq) else compute_rolling_smoothed_clusters(
                         y=returns, estimation_dates=rebalancing_schedule,
                         lasso_model=_model_for_frequency(self.lasso_model, freq),
@@ -899,6 +908,7 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
                                      precomputed_linkages: Optional[Dict[str, np.ndarray]] = None,
                                      precomputed_cutoffs: Optional[Dict[str, float]] = None,
                                      *,
+                                     factor_return_types: Optional[dict] = None,
                                      residual_type: str = 'orthogonal',
                                      residual_covar_freq: Optional[str] = None,
                                      residual_covar_span: Optional[float] = None,
@@ -1018,7 +1028,8 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
                                               demean=True,
                                               span=factor_covar_span,
                                               is_apply_vol_normalised_returns=is_apply_vol_normalised_returns,
-                                              apply_an_factor=False)
+                                              apply_an_factor=False,
+                                              factor_return_types=factor_return_types)
         factor_scale_an = qis.get_annualisation_conversion_factor(
             from_freq=factor_returns_freq, to_freq='YE'
         )
@@ -1028,6 +1039,7 @@ def estimate_lasso_factor_covar_data(risk_factor_prices: pd.DataFrame,
     frequency_results = {
         freq: _fit_lasso_frequency(
             freq=freq,
+            factor_return_types=factor_return_types,
             asset_returns=asset_returns,
             risk_factor_prices=risk_factor_prices,
             lasso_model=lasso_model,

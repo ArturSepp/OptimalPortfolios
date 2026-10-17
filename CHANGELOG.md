@@ -7,6 +7,26 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## [7.22.0] - 2026-10-17
+
+### GLS resolution and uncertainty extensions
+
+- Add residual visibility and scale-normalized factor resolution diagnostics;
+  retain conditional own-residual-scale Student-t intervals as the default.
+- Add explicitly supplied forecast-covariance, reference-scale and adviser
+  disagreement scenarios, with full cross-covariance for provider contrasts.
+  Scenario ranges never replace the default intervals or claim forecast accuracy.
+- Add paired loading/alpha stability bands with matching-baseline provenance,
+  seed summaries and visible rank/solver failure counts. Preserve the original
+  projector and historical replication estimates.
+- Extend the optional three-page inference report with these separate diagnostics,
+  preserving contributor tables, leave-one-out ranges and forecast-box sensitivity.
+
+### Factor return units and compatibility
+
+- FactorCovarEstimator propagates per-factor ReturnTypes through regression, clustering references and covariance; omitted mappings retain LOG.
+- Require QIS 5.38.1 for the released factor-return conversion and index-ordering contract.
+
 - Cover mismatched asset-vector lengths in the Sharpe-accounting public entry points after
   GLS delegation moved the older error-path check; retain the 100% coverage gate.
 
