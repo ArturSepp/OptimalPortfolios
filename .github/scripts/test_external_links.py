@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch
 
 import check_external_links as checker
+import check_new_references as references
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -59,6 +60,28 @@ class ExternalLinkTests(unittest.TestCase):
         record = {"uri": self.address + "/outage", "status": "ignored",
                   "info": "service unavailable"}
         self.assertEqual(checker.confirm_results([record])[0]["status"], "deferred")
+
+    def test_github_canonical_heading_alias_is_host_and_fragment_specific(self):
+        """GitHub prefixes rendered IDs while advertising the canonical fragment."""
+        def response(*args, **kwargs):
+            """Return a fresh HTML stream for every confirmation attempt."""
+            result = io.BytesIO(b'<a id="user-content-method" href="#method">Method</a>')
+            result.headers = {"Content-Type": "text/html"}
+            return result
+
+        cases = [
+            ("https://github.com/owner/repo/blob/main/guide.md#method", "ok"),
+            ("https://github.com/owner/repo/blob/main/guide.md#missing", "broken"),
+            ("https://example.org/guide#method", "broken"),
+            ("https://github.com.example.org/guide#method", "broken"),
+        ]
+        with patch.object(references, "urlopen", side_effect=response), patch.object(
+            references.time, "sleep"
+        ):
+            for url, expected in cases:
+                with self.subTest(url=url):
+                    result = checker.confirm_results([{"uri": url, "status": "broken"}])
+                    self.assertEqual(result[0]["status"], expected)
 
     def run_builder(self, records, returncode=1):
         with tempfile.TemporaryDirectory() as temporary:
