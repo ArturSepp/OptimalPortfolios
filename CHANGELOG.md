@@ -7,6 +7,14 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## [7.22.1] - 2026-10-17
+
+- Regenerate the registered teaching exhibits and their reviewed provenance after the
+  factor-return default documentation update. Preserve the GLS numerical implementation,
+  replication inputs and dependency pins from 7.22.0.
+- Supersede the unpublished 7.22.0 artifact attempt, whose tagged-source checks caught
+  the stale unsmoothing exhibit fingerprint before publication.
+
 ## [7.22.0] - 2026-10-17
 
 ### GLS resolution and uncertainty extensions
