@@ -1,13 +1,14 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-10-17T09:42:39+00:00",
+  "generated_at_utc": "2026-10-18T12:47:08+00:00",
   "platform": "Windows-11-10.0.26300-SP0",
   "versions": {
     "python": "3.12.10",
-    "optimalportfolios": "7.22.0",
+    "optimalportfolios": "8.0.0.dev1",
     "qis": "5.38.1",
-    "factorlasso": "1.0.2",
+    "tradablefactors": "0.1.0.dev2",
+    "factorlasso": "1.0.4",
     "numpy": "2.5.2",
     "pandas": "3.0.5",
     "scipy": "1.18.0",
@@ -103,7 +104,7 @@
     "rosaa_saa_taa_layers": {
       "path": "docs/images/rosaa_saa_taa_layers.png",
       "script": "examples/docs/app_rosaa_multi_asset_allocation.py",
-      "script_sha256": "2f6329cc5dce30d81de13bb96cc8b36c2b52496ff3ed611f5bbca57110303d34",
+      "script_sha256": "658ade672c6f76062b60ebc4392ef7b408924cf4abb7af4758371d0faf6f4dfb",
       "image_sha256": "1411d388f3a2b55cafea7a229be22214cd1a106cf8787bf9e7d20e144e81f2a3",
       "table_sha256": "5e3a57cea653b40641c90d9a1ac1a831b635cf4708739232575525764bae8764",
       "parameters": {
@@ -227,7 +228,7 @@
     "mixed_frequency_grids": {
       "path": "docs/images/mixed_frequency_grids.png",
       "script": "examples/docs/mixed_frequency_data.py",
-      "script_sha256": "2020d584c6b2ea16331d38598a8395af1f1dd9069a0294a5ef40d0ddfcae347a",
+      "script_sha256": "b96dc4b94d580ba9c0e3af291b938811121ea7b336b83e95cd707da3beb66059",
       "image_sha256": "1c45d191df58d071ad21cf5a7be1a1ec257ad16c35495e38ceab1ca5884131c5",
       "table_sha256": "547836425ad581fd76815528a815bb744a5a8caf696078d8deabd384cce96715",
       "parameters": {
@@ -351,7 +352,7 @@
     "overlay_floor_allocation": {
       "path": "docs/images/overlay_floor_allocation.png",
       "script": "examples/docs/overlay_tail_floor.py",
-      "script_sha256": "446d890fe0a56cfcffcc3d1e228a99cab6803658205f5552772f80ed1f473854",
+      "script_sha256": "79c478aeebc7a30c9004d02425ccdf1d57136e33fcb7144389f9afc317fef532",
       "image_sha256": "d550d884fe5c01523055118caa0e147334e7b3aeba49d9652537948dfc4cb4b3",
       "table_sha256": "55749ddf74838a4143007a93e5ecd01820a7a2e6e4ec5050ff576a90cfe34970",
       "parameters": {
@@ -414,7 +415,7 @@
     "tracking_error_constraint_cost": {
       "path": "docs/images/tracking_error_constraint_cost.png",
       "script": "examples/docs/minimum_tracking_error.py",
-      "script_sha256": "9a38208705a513542b3defadccc608ba844b4f5813e358ca46384c6560e6f6eb",
+      "script_sha256": "331378b522e563407e4317eeb1cae2d923a572e76213b3fe8165b8b353cf6203",
       "image_sha256": "61fa65751f9be141a55af2920ed771d0957e3c9fe6d383fd905a402ae4fa761f",
       "table_sha256": "d8375105b669f92d7296d6c3a4265720a32af0e5d246660b50d374c113de54f6",
       "parameters": {
@@ -513,7 +514,7 @@
     "alpha_scoring_cross_section_vs_cluster": {
       "path": "docs/images/alpha_scoring_cross_section_vs_cluster.png",
       "script": "examples/docs/alphas_module_readme.py",
-      "script_sha256": "69b97caefb625ab93d934e6eb1fe5605ee05491f2a82ca544971bb93bddfa095",
+      "script_sha256": "3680f685a200b2bc8a34e1ce0ef67134251792fdfb6c7e9d6ddcfb434b597eb7",
       "image_sha256": "9dced35a18fe531090674b5b266346e1c216a89347ee844b116bff0221dbca7d",
       "table_sha256": "e32465f33d2dc9b7086b8abb526b7dfe3f8911ce125102d878da3cb82388f022",
       "parameters": {
@@ -646,7 +647,7 @@
     "option_stress_scenarios": {
       "path": "docs/images/option_stress_scenarios.png",
       "script": "examples/docs/stress_testing_with_options.py",
-      "script_sha256": "a4763ef6d2be9eadc14094b41e191d1ff24b37d81e29eb3bef6b440d3fa72551",
+      "script_sha256": "00fa7255bc0983b325c402e390573328bf2faff3a1c5fc52bfac00a9fc0a9ca4",
       "image_sha256": "12fa6de3ed0666b8f9de976a0d5917bd03af6c9940df9752497731aea39d908a",
       "table_sha256": "44e3bd8b90373c8163ed01e8b90d160ae0e7ef4f3d63dda7876067336cb196f9",
       "parameters": {
@@ -895,7 +896,7 @@
     "risk_contributions_vs_weights": {
       "path": "docs/images/risk_contributions_vs_weights.png",
       "script": "examples/docs/portfolio_risk_analytics.py",
-      "script_sha256": "aae019ffdeeebce6fcee254740e0d72b959a715bf68562ac5e15628aa9f96443",
+      "script_sha256": "6860ba6bf1a970d2952ab6aca54b17eb8af4be3f1766689a67040d6abc1a78dc",
       "image_sha256": "233eccb48e1271703a2d5b2b94edd098453dd13e76af3b8160d0a6b7241c4336",
       "table_sha256": "cb853812a4ba7d99a92b1e16fcac0ddad729d6d430acb572806c2a1bb0f6c827",
       "parameters": {
@@ -1092,7 +1093,7 @@
     "factor_covariance_variance_split": {
       "path": "docs/images/factor_covariance_variance_split.png",
       "script": "examples/docs/factor_covariance_hcgl.py",
-      "script_sha256": "bd5a9d56b2babb39f602df3ebef29fc4a9a66f57487b204bbe71d79862530efd",
+      "script_sha256": "348893f7d45319a861f6c5044a496e656874ae19aaff0747ef63e9b664de1962",
       "image_sha256": "df44432e853c3a95842ac3896e05458736e0c6c82ab8588eb600fb988d5ac2f0",
       "table_sha256": "cc33c07a7921bfab0123d0bffe7fe5ffedf8fa922a33bc1601e6891e1bbf3f8c",
       "parameters": {
@@ -1439,7 +1440,7 @@
     "efficient_frontier_objectives": {
       "path": "docs/images/efficient_frontier_objectives.png",
       "script": "examples/docs/mean_variance_objectives.py",
-      "script_sha256": "a3fe4eefff347d18b4ff1f937a1ad43ffcf3601f7e6c8350ac88b287218d3045",
+      "script_sha256": "85965968e25671247dc6ea04e26de62f3ddcbf7641e0cda24893a1f368da80e8",
       "image_sha256": "dfbdb1cbe50abbce590d02e2401302d119ba2fad0c0c6cbadd21fce90605c9e4",
       "table_sha256": "c185d4b5226022c99aba96e1d519de66a3e2b75c7da59854d61523c205a02bc3",
       "parameters": {
@@ -1719,7 +1720,7 @@
     "alpha_over_te_active_weights": {
       "path": "docs/images/alpha_over_te_active_weights.png",
       "script": "examples/docs/alpha_over_tracking_error.py",
-      "script_sha256": "d91105946703b9cd676fda580fde9d84c3d5114fe2520be102c2be2b5e7da4ed",
+      "script_sha256": "4ebee0ce762ae994cd9cfb2f6eb8df0a16236a3901aa390c8a4127c1983541f9",
       "image_sha256": "0ac89e0ef60c581798bc2afe31fbe734562749534990a7fc1d99f284f655bcb8",
       "table_sha256": "870aaf314a98b60991459ccd775eae120177c57301feb17a1d1e30ace79613c6",
       "parameters": {
@@ -1907,7 +1908,7 @@
     "cma_decomposition_saa": {
       "path": "docs/images/cma_decomposition_saa.png",
       "script": "examples/docs/app_cma_strategic_allocation.py",
-      "script_sha256": "d71771668ec7fa847b50a72edef4fcbcdda2b26f7b5c721ffffe8c7731c8949c",
+      "script_sha256": "afd5394bb6a65081a158867efdb5303e4b3fa9d5a1ce339c6b50e60461f3b44a",
       "image_sha256": "091f0cb35884859123d11ad2d2248bb51f2be616f0a2cc9d91a0bff7c64df5fa",
       "table_sha256": "e3add24e7e07783f1aeba92b9abcb62ed7c0dd32d403c8f94d2a85b7c77ec898",
       "parameters": {
@@ -2157,7 +2158,7 @@
     }
   },
   "review": {
-    "note": "Codex inspected unsmoothing_autocorrelation at its full 1500x660 resolution and at 736-pixel article width: cumulative returns, autocorrelation and volatility labels are readable, unclipped and unchanged. All 26 PNG hashes are byte-identical to the previously reviewed publication, whose visual review is retained. All 26 registered checks pass after regeneration with OP 7.22.0 and QIS 5.38.1. Four CSVs differ only in numerical cells by at most 9.72e-8, below plotted precision; retained reviewed originals were hash-verified and preserved.",
-    "published_at_utc": "2026-10-17T09:45:27+00:00"
+    "note": "Codex reviewed all 26 regenerated teaching exhibits at native resolution and 736-pixel article width on 2026-10-18: labels, units, annotations, legends, colours and clipping checked; supporting CSVs inspected and all 143 numerical checks passed. All 26 PNG and CSV hashes exactly match the previous accepted outputs. This refresh records the migrated canonical scripts and actual OP/TF/FL generation cohort; the six README previews remain unchanged.",
+    "published_at_utc": "2026-10-18T12:48:34+00:00"
   }
 }

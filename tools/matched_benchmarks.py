@@ -489,25 +489,23 @@ def content_record(path):
 
 
 def benchmark_source():
-    """Extend existing source identity to the two tool modules and owned reference files."""
-    from tools.matched_benchmark_references import source_root
+    """Fingerprint the actual imported references, from source exports or installations."""
+    import inspect
+    from tools.matched_benchmark_references import package_version
     import factorlasso
     import qis
+    from qis.portfolio.tests import backtester_missing_prices_test as ledger
     record = source_fingerprint(ROOT)
     paths = [ROOT / 'tools/matched_benchmarks.py',
              ROOT / 'tools/matched_benchmark_references.py',
-             source_root(factorlasso) / 'examples/docs/quickstart.py',
-             source_root(qis)
-             / 'src/qis/portfolio/tests/backtester_missing_prices_test.py']
+             Path(inspect.getfile(factorlasso.CurrentFactorCovarData)).resolve(),
+             Path(ledger.__file__).resolve()]
     record['benchmark_and_owned_references'] = {str(p): content_record(p) for p in paths}
     record['source_versions'] = {}
     import optimalportfolios
     for name, package in [('qis', qis), ('factorlasso', factorlasso),
                           ('optimalportfolios', optimalportfolios)]:
-        import re
-        metadata = (source_root(package) / 'pyproject.toml').read_text(encoding='utf-8')
-        record['source_versions'][name] = re.search(
-            r'(?m)^version\s*=\s*["\']([^"\']+)', metadata)[1]
+        record['source_versions'][name] = package_version(package)
     return record
 
 

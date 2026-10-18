@@ -3,19 +3,41 @@
   "source_registry": "ArturSepp/scripts/public_registry.json",
   "import": "optimalportfolios",
   "core": [
-    "qis",
-    "factorlasso"
+    "qis"
   ],
   "optional": [],
   "forbidden": [
     "bbg_fetch",
+    "factorlasso",
     "goal_based_allocation",
     "option_chain_analytics",
     "privateassets",
     "stochvolmodels",
+    "tradablefactors",
     "trendfollowing",
     "vanilla_option_pricers"
   ],
   "optional_adapters": [],
-  "development_imports": []
+  "development_imports": [
+    {
+      "path": "src/optimalportfolios/tests/factor_integration_test.py",
+      "modules": [
+        "tradablefactors",
+        "factorlasso"
+      ]
+    },
+    {
+      "path": "src/optimalportfolios/tests/documentation_analytics_covariance_comparison_test.py",
+      "modules": [
+        "factorlasso"
+      ]
+    },
+    {
+      "path": "src/optimalportfolios/alphas/signals/run_local/signals_run.py",
+      "modules": [
+        "tradablefactors",
+        "factorlasso"
+      ]
+    }
+  ]
 }

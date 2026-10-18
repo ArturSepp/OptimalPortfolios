@@ -6,7 +6,8 @@ different way: the page's filter formulas as explicit geometric sums, an EWMA re
 as loops, endpoint price ratios, residuals rebuilt from dated loadings, and clipped population
 or sample z-scores written out by hand. Later prices, benchmark, carry and cluster labels are
 perturbed to show that no earlier signal or score moves. Sockets are blocked while the blocks
-run. The script runs offline after ``pip install optimalportfolios`` and needs no data file or
+run. The composed script runs offline after ``pip install optimalportfolios tradablefactors``
+and needs no data file or
 random seed:
 
     python -m examples.docs.alphas_module_readme
@@ -565,10 +566,10 @@ def main() -> None:
     pd.testing.assert_frame_equal(extreme_alpha, raw_alpha)
     pd.testing.assert_frame_equal(extreme_score, mgr_score)
 
-    from optimalportfolios.alphas.signals import extract_rolling_clusters
+    from tradablefactors.signals import extract_rolling_clusters
 
     rolling_clusters = extract_rolling_clusters(
-        rolling_covar_data=taa_covar_data,
+        model=taa_covar_data,
         assets=prices.columns.tolist(),
     )
     # Dict[pd.Timestamp, pd.Series]  →  {date: pd.Series(ticker → cluster_id)}
@@ -586,6 +587,16 @@ def main() -> None:
         raw_signal=raw_momentum,        # T × N DataFrame
         rolling_clusters=rolling_clusters,
     )
+
+    # Statistical pooling is completed upstream; OP receives the resulting score panel.
+    prepared_scores = tf.prepare_cluster_scores(raw_momentum, rolling_clusters)
+    pd.testing.assert_frame_equal(prepared_scores, cluster_score, check_exact=True)
+    unit_stability = pd.DataFrame(1.0, index=raw_momentum.index, columns=raw_momentum.columns)
+    pooled_scores = tf.prepare_cluster_scores(
+        raw_momentum, rolling_clusters, pooling_type="asset_variance",
+        stability_weights=unit_stability,
+    )
+    pd.testing.assert_frame_equal(pooled_scores, cluster_score, check_exact=True)
 
     # Zero before the first assignment, even where the raw signal is missing; afterwards
     # within-cluster sample statistics above three members and assigned-universe statistics

@@ -24,6 +24,9 @@ permissions:
 # more often from a change to the package it calls than from an edit to itself.
 on:
   workflow_call:
+    secrets:
+      TRADABLEFACTORS_READ_TOKEN:
+        required: false
   schedule:
     - cron: "47 4 * * *"
   workflow_dispatch:
@@ -108,6 +111,17 @@ jobs:
       # `data` is the extra these examples actually need; syncing `--all-extras` would install
       # the reporting and docs stacks to run scripts that use neither.
       run: uv sync --locked --extra data
+
+    - name: Check out the explicitly selected factor pipeline
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        repository: ArturSepp/tradablefactors
+        ref: ${{ vars.TRADABLEFACTORS_REF || 'migration/tradablefactors-stage-4' }}
+        path: .integration/tradablefactors
+        token: ${{ secrets.TRADABLEFACTORS_READ_TOKEN || github.token }}
+
+    - name: Install TF explicitly for network examples that compose the factor pipeline
+      run: uv pip install --python .venv/bin/python .integration/tradablefactors
 
     - name: Run the network examples
       # `--jobs 4` rather than the default: these are all hitting one host, and Yahoo rate-limits.

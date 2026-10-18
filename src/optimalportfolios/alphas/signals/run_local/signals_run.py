@@ -3,13 +3,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from enum import Enum
 import qis as qis
-from factorlasso import LassoModel, LassoModelType
 
 from optimalportfolios.alphas.signals.momentum import compute_momentum_alpha
 from optimalportfolios.alphas.signals.low_beta import compute_low_beta_alpha
 from optimalportfolios.alphas.signals.managers_alpha import compute_managers_alpha
 from optimalportfolios.alphas.signals.residual_momentum import compute_residual_momentum_alpha
-from tradablefactors import FactorCovarEstimator
 
 
 class Locals(Enum):
@@ -119,6 +117,9 @@ def run_local(local: Locals):
         print(f"\nScores (last 5):\n{score.tail().to_string(float_format='{:.3f}'.format)}")
 
     elif local == Locals.MANAGERS_ALPHA:
+        from factorlasso import LassoModel, LassoModelType
+        from tradablefactors import FactorCovarEstimator
+
         risk_factor_prices = prices.iloc[:, :2]
         asset_prices = prices.iloc[:, 2:]
 

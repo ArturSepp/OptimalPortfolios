@@ -5,7 +5,7 @@ environment instead. The configuration reads ``pyproject.toml`` with ``tomllib``
 needs Python 3.11 or later, as the documentation build does.
 """
 
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 import re
 import runpy
 import subprocess
@@ -26,7 +26,12 @@ def test_footer_names_the_versions_of_the_build(root):
     assert text.startswith(f"Built from optimalportfolios {conf['release']} with ")
     assert text.endswith('.')
     for distribution, label in conf['BUILD_PACKAGES'].items():
-        assert f'{label} {version(distribution)}' in text
+        try:
+            installed_version = version(distribution)
+        except PackageNotFoundError:
+            assert f'{label} ' not in text
+        else:
+            assert f'{label} {installed_version}' in text
     template = (root / 'docs' / '_templates' / 'page.html').read_text(encoding='utf-8')
     assert '{% extends "!page.html" %}' in template and '{{ super() }}' in template
     assert 'build_versions' in template

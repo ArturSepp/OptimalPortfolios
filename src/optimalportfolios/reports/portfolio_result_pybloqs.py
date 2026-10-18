@@ -24,7 +24,15 @@ def generate_portfolio_report(
         name: Portfolio name for weight summary / turnover. Defaults to first portfolio.
         report_name: Report title override.
         fontsize: Base font size for table content.
+
+    Raises:
+        ValueError: If exact factor-decomposition context is unavailable. Covariance-only
+            and explicitly labelled reference views remain available through ``result.report()``.
     """
+    if (result.risk_model is None or result.risk_model.factor_covar is None
+            or result.decomposition_mode != 'exact'):
+        raise ValueError('The factor factsheet requires exact factor-decomposition context; '
+                         'use result.report() for covariance-only or reference risk views')
     # name = name or result.portfolio_names[0]
 
     date_str = f"{result.optimisation_date:%d%b%Y}" if result.optimisation_date else ''
@@ -80,7 +88,8 @@ def generate_portfolio_report(
             [p.Paragraph("Optimised portfolio weights", **KWARGS_TITLE),
              p.Block(weights,
                      formatters=[
-                         tf.FmtPercent(n_decimals=2, columns=numeric_cols, apply_to_header_and_index=False),
+                         tf.FmtPercent(n_decimals=2, columns=numeric_cols,
+                                       apply_to_header_and_index=False),
                          tf.FmtReplaceNaN(value=''),
                          tf.FmtHeatmap(columns=['CMA']),
                          tf.FmtHeatmap(columns=weight_heatmap_cols),
@@ -105,7 +114,8 @@ def generate_portfolio_report(
             [p.Paragraph("Turnover analysis", **KWARGS_TITLE),
              p.Block(turnover_df,
                      formatters=[
-                         tf.FmtPercent(n_decimals=2, columns=pct_cols, apply_to_header_and_index=False),
+                         tf.FmtPercent(n_decimals=2, columns=pct_cols,
+                                       apply_to_header_and_index=False),
                          tf.FmtDecimals(n=0, columns=['n_trades'], apply_to_header_and_index=False),
                          tf.FmtReplaceNaN(value=''),
                          tf.FmtAddCellBorder(each=1.0,
@@ -142,7 +152,9 @@ def generate_portfolio_report(
                 **KWARGS_TEXT
             ))
 
-        metric_titles = {'weight': 'Weight', 'rc': 'Risk contribution', 'rc_pct': 'Risk contribution %'}
+        metric_titles = {
+            'weight': 'Weight', 'rc': 'Risk contribution', 'rc_pct': 'Risk contribution %',
+        }
         for metric in ['weight', 'rc', 'rc_pct']:
             if metric not in metric_dfs:
                 continue
@@ -250,7 +262,7 @@ def generate_portfolio_report(
 
     # 6. Asset risk snapshot table
     asset_risk_table = result.get_asset_betas_table()
-    factor_cols = result.covar_data.x_covar.columns
+    factor_cols = result.risk_model.factor_loadings[result.risk_model_date].columns
     decimal_cols = factor_cols
     pct_cols = ['CMA', 'r2', 'stat_alpha', 'insample_alpha', 'total_vol', 'sys_vol', 'resid_vol']
 

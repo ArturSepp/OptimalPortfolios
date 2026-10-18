@@ -212,7 +212,7 @@ def compute_ra_carry_cluster_alpha(
             volatility normalisation only.
         carry: Instrument yield (carry) panel. Index=dates, columns=tickers.
         rolling_clusters: Dict mapping dates to pd.Series (ticker → cluster_id).
-            Extracted from RollingFactorCovarData via extract_rolling_clusters().
+            Supplied by the caller; model estimation belongs upstream.
         returns_freq: Return frequency for the vol estimate. String or pd.Series
             for mixed-freq.
         vol_span: EWMA span for volatility normalisation.

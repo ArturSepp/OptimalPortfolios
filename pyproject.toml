@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optimalportfolios"
-version = "8.0.0.dev0"
+version = "8.0.0.dev1"
 description = "Production multi-asset portfolio construction and rolling backtesting in Python"
 readme = "README.md"
 license = "MIT"
@@ -55,7 +55,6 @@ dependencies = [
     "scs>=3.2.4.post3,!=3.3.0",
     "quadprog>=0.1.11",
     "qis>=5.38.1",
-    "factorlasso>=1.0.2",
 ]
 
 [project.optional-dependencies]
@@ -179,7 +178,9 @@ extend-select = ["TID251", "TID253", "ICN"]
 # import, an undefined name, a dropped assignment — not a formatting preference.
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
-# A1: optimalportfolios depends on qis and factorlasso, and on nothing else in the stack.
+# A1: optimisers consume supplied risk inputs; factor estimation is upstream.
+"factorlasso".msg = "Prepare statistical estimates upstream and pass arrays to OP."
+"tradablefactors".msg = "Prepare factor models upstream and pass RiskModel or arrays to OP."
 # Subject packages never import each other.
 "trendfollowing".msg = "A1: subject packages never import each other."
 "privateassets".msg = "A1: subject packages never import each other."
@@ -210,7 +211,12 @@ pandas = "pd"
 # this preserves: adding a public import must not require maintaining a second list beside it.
 "__init__.py" = ["F401", "F403"]
 # examples are documentation and run top to bottom
-"examples/**" = ["TID253"]
+"examples/**" = ["TID253", "TID251"]
+# Explicit composed examples/tests are consumers of both separately installed packages.
+"src/optimalportfolios/tests/factor_integration_test.py" = ["TID251"]
+"src/optimalportfolios/tests/documentation_analytics_covariance_comparison_test.py" = ["TID251"]
+"src/optimalportfolios/**/run_local/**" = ["TID251"]
+"tools/**" = ["TID251"]
 # module dedicated to the pybloqs backend; not reachable from src/optimalportfolios/__init__.py
 "src/optimalportfolios/reports/portfolio_result_pybloqs.py" = ["TID253"]
 # module dedicated to the plotly backend in the private rosaa tree. The layer is a leaf that
@@ -256,8 +262,11 @@ DEP004 = ["pytest"]
 #   interpreter deptry does not count tomllib as standard library.
 # DEP001 fires where the module is absent, as in the `lint` group; DEP003 where another
 # dependency installs it, as in the full project environment.
-DEP001 = ["PIL", "tomllib"]
-DEP003 = ["PIL", "tomli"]
+DEP001 = ["PIL", "tomllib", "tradablefactors", "factorlasso"]
+# TF/FL are independently installed only for marked composed tests and development runners.
+# Pair the existing DEP001 allowances with DEP003 for environments where they are present.
+# TID251 and dependency_boundary_test.py still prohibit every TF/FL library import.
+DEP003 = ["PIL", "tomli", "tradablefactors", "factorlasso"]
 
 [tool.coverage.run]
 source = ["optimalportfolios"]

@@ -511,7 +511,7 @@ utility portfolios, with minimum variance as their benchmark:
 ```python
 result = op.PortfolioOptimisationResult(
     weights=grid, benchmark_weights=min_var.rename('minimum variance'),
-    covar_data=identity_factor_model(covar), group_attributions={}, expected_return=means)
+    covariance=covar, group_attributions={}, expected_return=means)
 figure = op.plot_efficient_frontier(result, profiles={'utility': list(grid.columns)})
 points, _ = result.compute_efficient_frontier_data(profiles={'utility': list(grid.columns)})
 ```

@@ -238,7 +238,7 @@ def compute_momentum_cluster_alpha(
         benchmark_price: Benchmark price series for excess return computation.
             If None, uses raw returns (no benchmark subtraction).
         rolling_clusters: Dict mapping dates to pd.Series (ticker → cluster_id).
-            Extracted from RollingFactorCovarData via extract_rolling_clusters().
+            Supplied by the caller; model estimation belongs upstream.
         returns_freq: Return frequency. String or pd.Series for mixed-freq.
         long_span: EWMA span for the long momentum signal.
             Either a scalar applied at every reporting cadence, or a per-cadence mapping

@@ -27,8 +27,7 @@ sum to one), not about reproducing a number the optimiser produced.
 import numpy as np
 import pandas as pd
 import pytest
-# factorlasso
-from factorlasso import CurrentFactorCovarData, VarianceColumns
+from qis import RiskModel
 # optimalportfolios
 from optimalportfolios import PortfolioOptimisationResult
 
@@ -39,23 +38,22 @@ GROUPS = ['Equities', 'Equities', 'Bonds', 'Bonds', 'Alternatives', 'Alternative
 REGIONS = ['US', 'EU', 'US', 'EU', 'US', 'EU']
 
 
-def make_covar_data(seed: int = SEED) -> CurrentFactorCovarData:
-    """A seeded two-factor snapshot over ASSETS with a complete variance table."""
+def make_risk_model(seed: int = SEED) -> RiskModel:
+    """A seeded, manually supplied two-factor risk model over ASSETS."""
     rng = np.random.default_rng(seed)
     betas = rng.normal(scale=0.40, size=(len(ASSETS), len(FACTORS)))
     root = rng.normal(scale=0.15, size=(len(FACTORS), len(FACTORS)))
-    # every VarianceColumns entry is populated: get_snapshot() reads more of them than
-    # the risk maths does, and a partial table raises a KeyError inside factorlasso
-    y_variances = pd.DataFrame(
-        {column.value: rng.uniform(0.01, 0.20, len(ASSETS)) for column in VarianceColumns
-         if column is not VarianceColumns.CLUSTER}, index=ASSETS)
-    y_variances[VarianceColumns.RESIDUAL_VARS.value] = rng.uniform(0.004, 0.020, len(ASSETS))
-    y_variances[VarianceColumns.CLUSTER.value] = GROUPS
-    return CurrentFactorCovarData(
-        x_covar=pd.DataFrame(root @ root.T, index=FACTORS, columns=FACTORS),
-        y_betas=pd.DataFrame(betas, index=ASSETS, columns=FACTORS),
-        y_variances=y_variances,
-        estimation_date=pd.Timestamp('2026-07-31'))
+    # Preserve the characterised fixture's RNG sequence after removing its eight
+    # fitted diagnostic columns; risk inputs themselves remain supplied arrays.
+    rng.uniform(0.01, 0.20, size=(8, len(ASSETS)))
+    residual_vars = rng.uniform(0.004, 0.020, len(ASSETS))
+    date = pd.Timestamp('2026-07-31')
+    return RiskModel(
+        covar={date: pd.DataFrame(betas @ (root @ root.T) @ betas.T + np.diag(residual_vars),
+                                  index=ASSETS, columns=ASSETS)},
+        factor_covar={date: pd.DataFrame(root @ root.T, index=FACTORS, columns=FACTORS)},
+        factor_loadings={date: pd.DataFrame(betas, index=ASSETS, columns=FACTORS)},
+        residual_vars={date: pd.Series(residual_vars, index=ASSETS)})
 
 
 def make_result(shared_benchmark: bool = False,
@@ -95,7 +93,7 @@ def make_result(shared_benchmark: bool = False,
                               index=['Equities', 'Bonds', 'Alternatives'])
                  if with_bounds else None)
     return PortfolioOptimisationResult(
-        weights=weights, benchmark_weights=benchmark, covar_data=make_covar_data(),
+        weights=weights, benchmark_weights=benchmark, risk_model=make_risk_model(),
         group_attributions=group_attributions, current_weights=current,
         metadata=pd.DataFrame({'Asset Class': GROUPS, 'Region': REGIONS}, index=ASSETS),
         expected_return=(pd.Series(rng.normal(0.06, 0.02, len(ASSETS)), index=ASSETS)
@@ -122,7 +120,7 @@ def test_a_series_of_weights_is_normalised_to_a_single_portfolio() -> None:
     weights = pd.Series(np.full(len(ASSETS), 1.0 / len(ASSETS)), index=ASSETS, name='solo')
     result = PortfolioOptimisationResult(
         weights=weights, benchmark_weights=weights.rename('bench'),
-        covar_data=make_covar_data(), group_attributions={})
+        risk_model=make_risk_model(), group_attributions={})
     assert result.portfolio_names == ['solo']
     assert result.n_portfolios == 1
     assert result.has_current_weights is False
@@ -137,7 +135,7 @@ def test_benchmark_columns_must_match_the_portfolio_columns() -> None:
     benchmark = weights.rename(columns={'b': 'typo'})
     with pytest.raises(ValueError, match='Portfolio names mismatch'):
         PortfolioOptimisationResult(weights=weights, benchmark_weights=benchmark,
-                                    covar_data=make_covar_data(), group_attributions={})
+                                    risk_model=make_risk_model(), group_attributions={})
 
 
 def test_current_weight_columns_must_match_the_portfolio_columns() -> None:
@@ -146,7 +144,7 @@ def test_current_weight_columns_must_match_the_portfolio_columns() -> None:
                            index=ASSETS)
     with pytest.raises(ValueError, match='Portfolio names mismatch'):
         PortfolioOptimisationResult(weights=weights, benchmark_weights=weights,
-                                    covar_data=make_covar_data(), group_attributions={},
+                                    risk_model=make_risk_model(), group_attributions={},
                                     current_weights=weights.rename(columns={'b': 'typo'}))
 
 
@@ -156,7 +154,7 @@ def test_group_attributions_must_cover_every_ticker() -> None:
     partial = pd.Series(GROUPS[:-1], index=ASSETS[:-1])
     with pytest.raises(ValueError, match='weights and group index mismatch'):
         PortfolioOptimisationResult(weights=weights, benchmark_weights=weights,
-                                    covar_data=make_covar_data(),
+                                    risk_model=make_risk_model(),
                                     group_attributions={'asset_class': partial})
 
 
@@ -211,7 +209,7 @@ def test_portfolio_vol_is_the_square_root_of_the_quadratic_form() -> None:
     variance = result.compute_portfolio_variance(weights)
     assert result.compute_portfolio_vol(weights) == pytest.approx(np.sqrt(variance))
     # computed the other way, straight off the covariance
-    covar = result.covar_data.y_covar.loc[ASSETS, ASSETS].to_numpy()
+    covar = result.covariance.loc[ASSETS, ASSETS].to_numpy()
     assert variance == pytest.approx(float(weights.to_numpy() @ covar @ weights.to_numpy()))
     # with no argument the first portfolio is used
     assert result.compute_portfolio_variance() == pytest.approx(variance)
@@ -308,7 +306,7 @@ def test_per_portfolio_current_weights_are_reordered_onto_the_weight_columns() -
     swapped = result.current_weights[['defensive', 'balanced']]
     realigned = PortfolioOptimisationResult(
         weights=result.weights, benchmark_weights=result.benchmark_weights,
-        covar_data=result.covar_data, group_attributions={}, current_weights=swapped)
+        risk_model=result.risk_model, group_attributions={}, current_weights=swapped)
     pd.testing.assert_series_equal(realigned.get_current('balanced'),
                                    result.get_current('balanced'))
 

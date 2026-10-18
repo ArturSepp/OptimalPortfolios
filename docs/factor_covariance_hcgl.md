@@ -249,6 +249,8 @@ availability date, and an as-of query before the first fit is refused.
 
 ## Worked example
 
+### Construct factor prices and asset returns
+
 The [offline script](../examples/docs/factor_covariance_hcgl.py) uses the original
 fixed-seed synthetic panel: four factors, five monthly assets and three quarterly
 assets. Install TradableFactors in the composed OP example environment and run:
@@ -261,7 +263,7 @@ The script independently checks explicit EWMA weighted sums, covariance assembly
 selected residual risk and chronological estimation. It does not reproduce the
 article's empirical results.
 
-### A completed model at an explicit cutoff
+### Fit HCGL at an explicit cutoff
 
 The example supplies a configured FactorLasso estimator and keeps fitted state in
 the returned `FactorModelSnapshot`:
@@ -273,6 +275,8 @@ estimator = FactorCovarEstimator(
 snapshot = estimator.fit_current(**history)
 data, covariance = snapshot.data, snapshot.asset_covariance
 ```
+
+#### A completed model at an explicit cutoff
 
 `history` contains factor prices, the monthly/quarterly return dictionary and
 `cutoff`. The fit returns the loadings, factor covariance, residual diagnostics,
@@ -318,13 +322,15 @@ The supplied covariance is annual and is not scaled a second time. Its observati
 and availability dates must be no later than the cutoff, and its factor coordinates
 must match the model. The caller remains responsible for accurate availability metadata.
 
-### Rolling fits retain the same completed-object contract
+### Rolling fits are point-in-time
 
 ```python
 period = qis.TimePeriod(AS_OF, '2024-12-31')
 rolling = estimator.fit_rolling(factor_prices, buckets, time_period=period)
 assert list(rolling.snapshots) == list(pd.to_datetime(ROLLING_KEYS))
 ```
+
+#### Rolling fits retain the same completed-object contract
 
 `rolling.snapshots` contains completed dated models; `rolling.covariances` is the
 selected covariance dictionary ready for OP. The example compares each entry with

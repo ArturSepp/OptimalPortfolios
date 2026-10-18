@@ -1,6 +1,7 @@
 """Keep the example catalogue aligned with runnable sources and execution prerequisites."""
 
 import ast
+import argparse
 from collections import Counter
 import json
 from pathlib import Path
@@ -23,7 +24,7 @@ def catalogue(source: str):
     """Return each source row with its execution lane and description."""
     rows = re.findall(
         r"^\| \[[^\]]+\]\(\.\./(examples/[^)]+\.py)\) \| "
-        r"(Offline|Network|Local) \| (.+) \|$",
+        r"(Offline|Composed|Network|Local) \| (.+) \|$",
         source, re.MULTILINE,
     )
     assert rows, "The guide must map example sources to execution prerequisites."
@@ -62,7 +63,7 @@ def test_catalogue_matches_classifier_and_local_exclusions(root, guide):
     assert result.returncode == 0, result.stdout + result.stderr
     expected = {}
     for line in result.stdout.splitlines():
-        match = re.fullmatch(r"(offline|network)\s+(examples[\\/].+\.py)", line)
+        match = re.fullmatch(r"(offline|composed|network)\s+(examples[\\/].+\.py)", line)
         if match:
             expected[match[2].replace("\\", "/")] = match[1]
     assert expected, result.stdout
@@ -71,9 +72,36 @@ def test_catalogue_matches_classifier_and_local_exclusions(root, guide):
     documented = {path: row[0] for path, row in catalogue(source).items()}
     assert documented == {**expected, **local}
     counts = Counter(expected.values())
-    summary = f"{counts['offline']} offline, {counts['network']} network, {len(expected)}"
+    summary = (f"{counts['offline']} offline, {counts['composed']} composed, "
+               f"{counts['network']} network, {len(expected)}")
     assert summary + " unattended examples" in source
     assert f"{len(local)} local-data workflows" in source
+
+
+def test_factor_requirements_are_independent_of_network_lane(root):
+    """Network priority cannot hide TF imports or mark required base EWMA checks optional."""
+    classifier = runpy.run_path(str(root / '.github/scripts/run_examples.py'))
+    harness = runpy.run_path(str(
+        root / 'src/optimalportfolios/tests/documentation_examples_test.py'))
+    cases = {case.values[0].stem: case for case in harness['_script_cases']()}
+    expected = {
+        'rolling_factor_covar_from_csv': ('network', True),
+        'alphas_module_readme': ('composed', True),
+        'covariance_estimators': ('offline', False),
+    }
+    for name, (lane, requires_factors) in expected.items():
+        case = cases[name]
+        path = case.values[0]
+        assert classifier['classify']([path])[path] == lane
+        marked = any(mark.name == 'factor_integration' for mark in case.marks)
+        assert marked is requires_factors, name
+    # The CSV wrapper's network label comes through its example import, while
+    # its explicit factor requirements must still control the pytest marker.
+    wrapper = cases['rolling_factor_covar_from_csv'].values[0]
+    direct, _ = classifier['_imports_of'](wrapper)
+    assert 'yfinance' not in direct
+    assert {'yfinance', 'tradablefactors', 'factorlasso'} <= (
+        classifier['external_dependencies'](wrapper))
 
 
 @pytest.mark.parametrize("path,scenario", [
@@ -94,13 +122,25 @@ def test_documented_default_scenario_matches_main_guard(root, guide, path, scena
 
 
 def test_csv_catalogue_distinguishes_default_and_load_mode(root, guide):
-    """Verify the actual parser default without fetching or requiring an input bundle."""
+    """Execute the actual CLI body without importing its separate factor-fitting dependencies."""
     path = "examples/covar_estimation/rolling_factor_covar_from_csv.py"
-    module = runpy.run_path(str(root / path))
+    tree = ast.parse((root / path).read_text(encoding='utf-8'), filename=path)
+    main_node, = [node for node in tree.body
+                  if isinstance(node, ast.FunctionDef) and node.name == 'main']
+    # Keep the production parser and branches; erase annotations so selecting this
+    # one function needs neither the module's imports nor its TF/FL implementation.
+    main_node.returns = None
+    for argument in main_node.args.args:
+        argument.annotation = None
     calls = []
-    main = module["main"]
-    main.__globals__["fetch_and_save_yahoo_csvs"] = lambda **kw: calls.append(("fetch", kw))
-    main.__globals__["fit_rolling_risk_model_from_csv"] = lambda **kw: calls.append(("load", kw))
+    namespace = {
+        '__doc__': ast.get_docstring(tree), 'argparse': argparse, 'Path': Path,
+        'DEFAULT_DATA_DIR': Path('default-csv-bundle'),
+        'fetch_and_save_yahoo_csvs': lambda **kw: calls.append(('fetch', kw)),
+        'fit_rolling_risk_model_from_csv': lambda **kw: calls.append(('load', kw)),
+    }
+    exec(compile(ast.Module(body=[main_node], type_ignores=[]), path, 'exec'), namespace)
+    main = namespace['main']
     main([])
     assert [kind for kind, _ in calls] == ["fetch", "load"]
     calls.clear()

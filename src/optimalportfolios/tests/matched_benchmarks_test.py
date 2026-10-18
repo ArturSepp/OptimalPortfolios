@@ -102,7 +102,8 @@ def test_optional_native_accounting_semantics(benchmark):
     assert all(case['max_nav_difference'] > 0 for case in cases if not case['expected_match'])
 
 
-@pytest.mark.parametrize('method', ['factorlasso', 'skfolio'])
+@pytest.mark.parametrize('method', [
+    pytest.param('factorlasso', marks=pytest.mark.factor_integration), 'skfolio'])
 def test_factor_fits_match_independent_covariance(benchmark, method):
     """Real estimators agree with the independently reconstructed native normalisation."""
     if method == 'skfolio' and importlib.util.find_spec('skfolio') is None:
@@ -111,6 +112,23 @@ def test_factor_fits_match_independent_covariance(benchmark, method):
         result = benchmark.fit_factor(10, method)
     assert result['beta_max_error'] < 2e-6
     assert result['covariance_max_error'] < 2e-10
+
+
+@pytest.mark.factor_integration
+def test_benchmark_records_imported_reference_implementations(benchmark):
+    """The manifest identifies installed owners rather than unexecuted checkout examples."""
+    import inspect
+    from pathlib import Path
+
+    fl = importlib.import_module('factorlasso')
+    ledger = importlib.import_module('qis.portfolio.tests.backtester_missing_prices_test')
+    record = benchmark.benchmark_source()
+    paths = [Path(inspect.getfile(fl.CurrentFactorCovarData)).resolve(),
+             Path(ledger.__file__).resolve()]
+    for path in paths:
+        assert record['benchmark_and_owned_references'][str(path)] == benchmark.content_record(path)
+    assert set(record['source_versions']) == {'optimalportfolios', 'qis', 'factorlasso'}
+    assert all(record['source_versions'].values())
 
 
 @pytest.mark.parametrize('repeats,sizes', [(1, (10,)), (5, (1000,)), (5, (10, 10))])
@@ -135,6 +153,7 @@ def test_bundle_output_tampering_is_rejected(benchmark, tmp_path):
         benchmark.verify_bundle(tmp_path)
 
 
+@pytest.mark.factor_integration
 def test_future_outcomes_change_scores_but_not_the_fit(benchmark):
     """Perturbing only future observations must leave the trained covariance unchanged."""
     x, y, heldout = benchmark.factor_inputs(10)

@@ -2,7 +2,7 @@
 
 import numpy as np
 import pandas as pd
-from factorlasso import CurrentFactorCovarData, VarianceColumns
+from qis import RiskModel
 
 from optimalportfolios import PortfolioOptimisationResult
 
@@ -20,12 +20,13 @@ def _build_result() -> PortfolioOptimisationResult:
     factor_root = rng.normal(scale=0.16, size=(2, 2))
     factor_covar = factor_root @ factor_root.T
     residual_vars = rng.uniform(0.003, 0.018, size=5)
-    covar_data = CurrentFactorCovarData(
-        x_covar=pd.DataFrame(factor_covar, index=factors, columns=factors),
-        y_betas=pd.DataFrame(betas, index=assets, columns=factors),
-        y_variances=pd.DataFrame(
-            {VarianceColumns.RESIDUAL_VARS.value: residual_vars}, index=assets),
-        estimation_date=pd.Timestamp('2026-07-31'),
+    date = pd.Timestamp('2026-07-31')
+    risk_model = RiskModel(
+        covar={date: pd.DataFrame(betas @ factor_covar @ betas.T + np.diag(residual_vars),
+                                  index=assets, columns=assets)},
+        factor_covar={date: pd.DataFrame(factor_covar, index=factors, columns=factors)},
+        factor_loadings={date: pd.DataFrame(betas, index=assets, columns=factors)},
+        residual_vars={date: pd.Series(residual_vars, index=assets)},
     )
     weights = pd.DataFrame({
         'balanced': rng.dirichlet(np.ones(5)),
@@ -39,7 +40,7 @@ def _build_result() -> PortfolioOptimisationResult:
     return PortfolioOptimisationResult(
         weights=weights,
         benchmark_weights=benchmark,
-        covar_data=covar_data,
+        risk_model=risk_model,
         group_attributions={},
         current_weights=current,
         expected_return=expected_return,
@@ -114,7 +115,7 @@ def test_portfolio_result_risk_outputs_are_characterised() -> None:
         result._compute_factor_exposures_for_weights(result.get_weights('balanced')),
         expected_exposures, check_exact=False, rtol=RTOL, atol=ATOL)
 
-    covar = result.covar_data.y_covar.to_numpy()
+    covar = result.covariance.to_numpy()
     for name in result.portfolio_names:
         active = result.get_active_weights(name).to_numpy()
         reference_te = np.sqrt(np.einsum('i,ij,j->', active, covar, active))

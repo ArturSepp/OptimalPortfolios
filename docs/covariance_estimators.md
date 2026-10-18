@@ -230,12 +230,12 @@ demeaning off to expose the recursion; it does not change the class default.
 ### Construct factor prices and asset returns
 
 The factor example now builds four factors and eight assets on a monthly and a quarterly grid; see
-[Factor covariance with HCGL](factor_covariance_hcgl.md#construct-factor-prices-and-asset-returns).
+[Factor covariance with HCGL](factor_covariance_hcgl.md#worked-example).
 
 ### Fit HCGL at an explicit cutoff
 
 The HCGL fit at an explicit cutoff, with each component checked against an independent reference,
-is on the [factor covariance page](factor_covariance_hcgl.md#fit-hcgl-at-an-explicit-cutoff).
+is on the [factor covariance page](factor_covariance_hcgl.md#a-completed-model-at-an-explicit-cutoff).
 
 ### Obtain rolling matrices
 
@@ -248,7 +248,7 @@ rolling_covars = estimator.fit_rolling_covars(prices=prices, time_period=ewma_pe
 
 In this fixture, the EWMA keys are **6 April, 6 July and 5 October 2022**, on the weekly
 observation grid. Rolling factor matrices are keyed by calendar quarter ends instead; see
-[rolling fits](factor_covariance_hcgl.md#rolling-fits-are-point-in-time).
+[rolling fits](factor_covariance_hcgl.md#rolling-fits-retain-the-same-completed-object-contract).
 
 > **Pitfall.** Rolling EWMA keys are return-grid dates, not calendar quarter ends. With weekly
 > Wednesday returns and quarter-end rebalancing, the example's keys are 6 April, 6 July and

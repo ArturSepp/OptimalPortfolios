@@ -9,13 +9,12 @@ import pytest
 
 from optimalportfolios.matf import opportunity as op
 from optimalportfolios.matf.tests.opportunity_test import model
-from optimalportfolios.matf.tests.uncertainty_test import model as uncertainty_model
 from optimalportfolios.optimization.constraints import (
     ConstraintEnforcementType, Constraints, LinearConstraints,
 )
 
 
-@pytest.mark.parametrize('field', ['betas', 'residual_variances', 'factor_covariance', 'alpha'])
+@pytest.mark.parametrize('field', ['covariance', 'factor_loadings', 'factor_covariance', 'alpha'])
 def test_model_requires_labelled_inputs(field):
     """Unlabelled moments cannot silently acquire another asset or factor order."""
     m = model()
@@ -29,40 +28,8 @@ def test_model_rejects_missing_date():
         replace(model(), date=pd.NaT)
 
 
-@pytest.mark.parametrize('premium', [.05, 0.])
-def test_factor_access_matches_direct_covariance_solution(premium):
-    """A constant-beta model has a closed-form spectrum and systematic Sharpe."""
-    m = model()
-    summary, factors, spectrum = op.factor_access_metrics(
-        m, pd.Series([premium], index=m.betas.columns))
-    g = 3 * .09 / .04
-    assert spectrum.g.iloc[0] == pytest.approx(g)
-    assert spectrum.access_fraction.iloc[0] == pytest.approx(g / (1 + g))
-    assert summary['factor_ceiling2'] == pytest.approx(premium**2 / .09)
-    assert summary['systematic_sharpe2'] == pytest.approx(3 * premium**2 / (.04 + 3 * .09))
-    assert summary['access_loss'] == pytest.approx(
-        premium**2 / .09 - 3 * premium**2 / (.04 + 3 * .09))
-    assert factors.tangency_direction.iloc[0] == pytest.approx(premium / .09)
-    assert factors.premium_sensitivity.iloc[0] == pytest.approx(2 * premium / .09)
-    assert factors.conditional_variance.iloc[0] == pytest.approx(.09)
-    assert factors.drop_one_gain.iloc[0] == pytest.approx(premium**2 / .09)
-    assert factors.hurdle.iloc[0] == pytest.approx(0.)
-    if premium:
-        assert summary['FPIR'] == pytest.approx(g / (1 + g))
-    else:
-        assert np.isnan(summary['FPIR'])
-    no_premia, empty_factors, same_spectrum = op.factor_access_metrics(m)
-    assert no_premia == {} and empty_factors.empty
-    pd.testing.assert_frame_equal(spectrum, same_spectrum)
 
 
-@pytest.mark.parametrize('variance', [0., -.01, np.nan, np.inf])
-def test_candidate_gain_rejects_nonpositive_or_nonfinite_residual_risk(variance):
-    """A candidate with undefined precision cannot enter the addition calculation."""
-    m = model()
-    premia = pd.Series(.05, index=m.betas.columns)
-    with pytest.raises(ValueError, match='positive residual variance'):
-        op.candidate_access_gain(m, premia, pd.Series(.6, index=premia.index), variance)
 
 
 def test_omitted_reference_reports_absolute_saved_book_risk():
@@ -116,14 +83,25 @@ def test_uncertainty_frontier_requires_a_joint_aligned_alpha_policy(case):
 
 def test_orthogonal_uncertainty_penalty_uses_the_joint_projection():
     """Independent Euclidean projection gives the standard error of neutral active alpha."""
-    m = uncertainty_model()
+    m = model()
+    ids = pd.Index(['a', 'b', 'c', 'd'])
+    b = pd.DataFrame([.5, 1., 1., 1.5], index=ids, columns=['f'])
+    f = pd.DataFrame([[.09]], index=b.columns, columns=b.columns)
+    residual = pd.DataFrame(np.eye(4)*.04, index=ids, columns=ids)
+    a = pd.Series([-.02, .01, .03, .015], index=ids)
+    design = np.column_stack([np.ones(4), b])
+    projector = np.eye(4) - design @ np.linalg.pinv(design)
+    m = op.OpportunityModel(b @ f @ b.T + residual, a, b, f, residual,
+                            pd.Series(projector @ a, index=ids))
     reference = pd.Series(.25, index=m.alpha.index)
     covariance = pd.DataFrame(np.diag([.001, .002, .003, .004]),
                               index=m.alpha.index, columns=m.alpha.index)
     result = op.solve_opportunity(m, reference, objective='orthogonal_upper',
-                                 alpha_covariance=covariance, uncertainty_radius=.05)
+                                 alpha_covariance=pd.DataFrame(
+                                     projector @ covariance.to_numpy() @ projector.T,
+                                     index=ids, columns=ids), uncertainty_radius=.05)
     assert result.accepted
-    design = np.column_stack([np.ones(4), m.betas])
+    design = np.column_stack([np.ones(4), m.factor_loadings])
     projector = np.eye(4) - design @ np.linalg.pinv(design)
     delta = (result.weights - reference).to_numpy()
     se = np.sqrt(delta @ projector @ covariance.to_numpy() @ projector.T @ delta)
@@ -232,3 +210,35 @@ def test_post_solve_rejection_never_returns_holdings(monkeypatch):
     assert result.status == 'constraint_violation'
     assert not result.accepted and result.weights is None
     assert result.metrics['net_exposure'] == pytest.approx(1.)
+
+
+@pytest.mark.parametrize('case', ['complex', 'nan', 'duplicate', 'empty'])
+def test_alpha_axis_rejects_non_real_unavailable_or_ambiguous_inputs(case):
+    """Unavailable or ambiguous inputs must fail before constructing risk views."""
+    m = model()
+    alpha = m.alpha.copy()
+    if case == 'complex':
+        alpha = alpha.astype(complex) + 1j
+    elif case == 'nan':
+        alpha.iloc[0] = np.nan
+    elif case == 'duplicate':
+        alpha.index = ['a', 'a', 'c']
+    else:
+        alpha = alpha.iloc[:0]
+    with pytest.raises(ValueError):
+        replace(m, alpha=alpha)
+
+
+def test_reporting_requires_a_labelled_book_and_symmetric_covariance():
+    """Labels and symmetry are boundary contracts, not implicit solver repairs."""
+    m = model()
+    with pytest.raises(ValueError, match='weights must be a labelled Series'):
+        op.portfolio_opportunity_metrics(m, np.array([.2, .3, .5]))
+    asymmetric = m.covariance.copy()
+    asymmetric.iloc[0, 1] += .01
+    with pytest.raises(ValueError, match='symmetric values'):
+        replace(m, covariance=asymmetric)
+    with pytest.raises(ValueError, match='symmetric values'):
+        replace(m, covariance=m.covariance.iloc[:, ::-1])
+    with pytest.raises(ValueError, match='positive definite'):
+        replace(m, factor_covariance=m.factor_covariance*0.)

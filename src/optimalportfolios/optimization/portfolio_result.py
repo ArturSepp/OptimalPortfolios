@@ -23,8 +23,8 @@ import numpy as np
 import pandas as pd
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Union, List, Tuple
-from factorlasso import CurrentFactorCovarData, VarianceColumns
-from tradablefactors.risk import build_risk_model
+from copy import deepcopy
+from qis import RiskModel
 from optimalportfolios.utils.portfolio_funcs import round_weights_to_pct
 from optimalportfolios.optimization.constraints import Constraints
 
@@ -40,26 +40,31 @@ def _to_dataframe(
 
 @dataclass
 class PortfolioOptimisationResult:
-    """Portfolio optimisation output with factor model context for risk attribution.
+    """Portfolio weights with optional supplied risk and prepared report context.
 
     Tracking-error and factor-exposure computations delegate to ``qis.RiskModel`` in
     ``qis.portfolio.risk.risk_model``.
 
     ``weights`` and ``benchmark_weights`` may be a Series for one portfolio or DataFrames whose
     columns are portfolios. ``current_weights`` follows the same convention when turnover is
-    requested. Risk is decomposed into systematic and idiosyncratic terms; active risk applies
-    the same covariance model to benchmark-relative weights, and one-way turnover is half the
-    L1 distance between new and current weights.
+    requested. Supply either ``risk_model`` or ``covariance`` for risk analytics. The selected
+    full covariance is authoritative and its units are unchanged. A complete QIS factor block
+    enables decomposition; ``decomposition_mode='diagonal_reference'`` explicitly labels a
+    diagonal approximation that differs from full covariance. Optional diagnostic tables are
+    prepared upstream. One-way turnover is half the L1 distance between new and current weights.
     """
 
     # Core portfolio weights: Series (single) or DataFrame (N portfolios as columns)
     weights: Union[pd.Series, pd.DataFrame]
     # Benchmark: Series (shared) or DataFrame (per-portfolio, columns match weights)
     benchmark_weights: Union[pd.Series, pd.DataFrame]
-    # Factor model universe (has-a)
-    covar_data: CurrentFactorCovarData
-    # For group attributions
-    group_attributions: Dict[str, pd.Series]
+    group_attributions: Dict[str, pd.Series] = field(default_factory=dict)
+    risk_model: Optional[RiskModel] = None
+    covariance: Optional[pd.DataFrame] = None
+    risk_model_date: Optional[pd.Timestamp] = None
+    decomposition_mode: str = 'exact'
+    asset_diagnostics: Optional[pd.DataFrame] = None
+    asset_volatilities: Optional[pd.DataFrame] = None
 
     # Optional: current weights for turnover analysis
     current_weights: Optional[Union[pd.Series, pd.DataFrame]] = None
@@ -119,15 +124,99 @@ class PortfolioOptimisationResult:
         else:
             self._current_df = None
 
-        self._risk_model_date = (
-            pd.Timestamp(self.covar_data.estimation_date)
-            if self.covar_data.estimation_date is not None
-            else pd.Timestamp('1900-01-01')
-        )
-        self._risk_model = build_risk_model(
-            {self._risk_model_date: self.covar_data}, residual_type='orthogonal'
-        )
+        self._align_weight_inputs()
+        self._prepare_risk_context()
         self._validate_group_attributions()
+
+    def _align_weight_inputs(self) -> None:
+        """Own finite weight frames and reject missing or duplicate asset labels."""
+        if (self._weights_df.empty or not self.tickers.is_unique
+                or not self._weights_df.columns.is_unique):
+            raise ValueError('weights must have nonempty, unique asset and portfolio labels')
+        for name in ('_weights_df', '_benchmark_df', '_current_df'):
+            frame = getattr(self, name)
+            if frame is None:
+                continue
+            if not frame.index.is_unique or set(frame.index) != set(self.tickers):
+                raise ValueError(f'{name} asset labels must match weights')
+            frame = frame.reindex(self.tickers).copy()
+            if not np.isfinite(frame.to_numpy(dtype=float)).all():
+                raise ValueError(f'{name} must contain finite weights')
+            setattr(self, name, frame)
+
+    def _prepare_risk_context(self) -> None:
+        """Select one dated risk snapshot without looking ahead or changing covariance."""
+        if self.decomposition_mode not in ('exact', 'diagonal_reference'):
+            raise ValueError('decomposition_mode must be exact or diagonal_reference')
+        if self.risk_model is not None and self.covariance is not None:
+            raise ValueError('supply risk_model or covariance, not both')
+        if self.covariance is not None:
+            date = self.risk_model_date or self.optimisation_date
+            if date is None or pd.isna(date):
+                raise ValueError('covariance requires a valid risk_model_date or optimisation_date')
+            self.risk_model = RiskModel(covar={pd.Timestamp(date): self.covariance.copy()})
+        self._risk_model = deepcopy(self.risk_model)
+        if self._risk_model is None:
+            if self.risk_model_date is not None:
+                raise ValueError('risk_model_date requires risk context')
+            self._risk_model_date = None
+        else:
+            if not isinstance(self._risk_model, RiskModel):
+                raise TypeError('risk_model must be a qis.RiskModel')
+            if self.risk_model_date is None:
+                dates = self._risk_model.dates
+                if self.optimisation_date is not None:
+                    dates = dates[dates <= pd.Timestamp(self.optimisation_date)]
+                if len(dates) == 0:
+                    raise ValueError('no risk model is available at optimisation_date')
+                date = dates[-1]
+            else:
+                date = pd.Timestamp(self.risk_model_date)
+                if date not in self._risk_model.covar:
+                    raise ValueError('risk_model_date must match an exact covariance date')
+            if self.optimisation_date is not None and date > pd.Timestamp(self.optimisation_date):
+                raise ValueError('risk_model_date is after optimisation_date')
+            self._risk_model_date = self.risk_model_date = date
+            missing = self.tickers.difference(self._risk_model.covar[date].index)
+            if len(missing):
+                raise ValueError(f'risk covariance is missing assets: {list(missing)}')
+            self.covariance = self._risk_model.covar[date].loc[self.tickers, self.tickers].copy()
+            self.risk_model = self._risk_model
+            if self._has_decomposition and self.decomposition_mode == 'exact':
+                betas = self._risk_model.factor_loadings[date].loc[self.tickers]
+                factor_covariance = self._risk_model.factor_covar[date]
+                diagonal = self._risk_model.residual_vars[date].loc[self.tickers]
+                reference = betas @ factor_covariance @ betas.T + np.diag(diagonal)
+                if not np.allclose(reference, self.covariance, rtol=1e-10, atol=1e-12):
+                    raise ValueError('factor decomposition differs from full covariance; '
+                                     'declare decomposition_mode="diagonal_reference"')
+        for name in ('asset_diagnostics', 'asset_volatilities'):
+            frame = getattr(self, name)
+            if frame is not None:
+                if not frame.index.is_unique or len(self.tickers.difference(frame.index)):
+                    raise ValueError(f'{name} must cover every asset with unique labels')
+                setattr(self, name, frame.loc[self.tickers].copy())
+
+    @property
+    def _has_decomposition(self) -> bool:
+        """Whether supplied QIS context includes the complete diagonal factor block."""
+        return self._risk_model is not None and self._risk_model.factor_covar is not None
+
+    def _require_risk(self) -> RiskModel:
+        """Return supplied risk context, rejecting risk calls on a weights-only result."""
+        if self._risk_model is None:
+            raise ValueError('risk analytics require risk_model or covariance')
+        return self._risk_model
+
+    def _align_result_weights(self, weights: pd.Series) -> pd.Series:
+        """Require arbitrary report vectors to describe exactly this result's asset universe."""
+        if (not isinstance(weights, pd.Series) or not weights.index.is_unique
+                or set(weights.index) != set(self.tickers)):
+            raise ValueError('report weight labels must match the result asset universe')
+        weights = weights.reindex(self.tickers)
+        if not np.isfinite(weights.to_numpy(dtype=float)).all():
+            raise ValueError('report weights must be finite')
+        return weights
 
     def _validate_group_attributions(self) -> None:
         """Check that group attributions cover all tickers."""
@@ -216,8 +305,14 @@ class PortfolioOptimisationResult:
         return asset_table
 
     def get_asset_betas_table(self, return_name: Optional[str] = 'CMA') -> pd.DataFrame:
-        """Covariance snapshot per asset, with the expected return as its first column."""
-        asset_risk_table = self.covar_data.get_snapshot()
+        """Prepared asset diagnostics, or supplied loadings, prefixed by expected return."""
+        asset_risk_table = self.asset_diagnostics
+        if asset_risk_table is None:
+            if self._risk_model is not None and self._risk_model.factor_loadings is not None:
+                asset_risk_table = self._risk_model.factor_loadings[self._risk_model_date].loc[
+                    self.tickers].copy()
+            else:
+                asset_risk_table = pd.DataFrame(index=self.tickers)
         if self.expected_return is not None and return_name is not None:
             asset_risk_table = pd.concat([self.expected_return.rename(return_name),
                                           asset_risk_table],
@@ -236,9 +331,11 @@ class PortfolioOptimisationResult:
     def compute_portfolio_variance(self, weights: pd.Series = None) -> float:
         """Portfolio variance: sigma^2_p = w' Sigma_y w."""
         w = self._weights_df.iloc[:, 0] if weights is None else weights
-        w = w.loc[self.tickers].values
-        cov = self.covar_data.y_covar.loc[self.tickers, self.tickers].values
-        return float(w @ cov @ w)
+        w = self._align_result_weights(w)
+        vol = self._require_risk().compute_tre_at_date(
+            benchmark_weights=pd.Series(0.0, index=self.tickers),
+            portfolio_weights=w, date=self._risk_model_date, strict=True)
+        return float(vol ** 2)
 
     def compute_portfolio_vol(self, weights: pd.Series = None) -> float:
         """Portfolio volatility: sigma_p = sqrt(w' Sigma_y w)."""
@@ -247,7 +344,7 @@ class PortfolioOptimisationResult:
     def compute_tracking_error(self, name: str = None) -> float:
         """Tracking error: TE = sqrt(delta' Sigma_y delta) for a portfolio."""
         name = name or self.portfolio_names[0]
-        return self._risk_model.compute_tre_at_date(
+        return self._require_risk().compute_tre_at_date(
             benchmark_weights=self.get_benchmark(name),
             portfolio_weights=self.get_weights(name),
             date=self._risk_model_date,
@@ -286,50 +383,60 @@ class PortfolioOptimisationResult:
 
     def _compute_risk_decomposition(self, weights: pd.Series) -> Dict[str, float]:
         """
-        Decompose variance for given weights into factor and residual components.
+        Report full covariance risk and any explicitly supplied factor decomposition.
 
-        sigma^2_p = w' beta Sigma_x beta' w + w' D w
-
-        where beta is (N x M), w is (N,).
-        Factor exposure: f = w @ beta  -> (M,)
-        Factor variance: f' Sigma_x f  -> scalar
+        QIS's optional decomposition uses B F B' plus diagonal residual variance.
+        If that reference differs from full covariance, its component labels carry
+        ``_reference``; it never replaces the reported total volatility.
         """
-        w = weights.loc[self.tickers].values  # (N,)
-        betas = self.covar_data.y_betas.loc[self.tickers, :].values  # (N x M)
-
-        factor_exp = w @ betas  # (N,) @ (N,M) = (M,)
-        factor_var = float(factor_exp @ self.covar_data.x_covar.values @ factor_exp)
-
-        residual_vars = self.covar_data.y_variances.loc[
-            self.tickers, VarianceColumns.RESIDUAL_VARS.value
-        ].values
-        residual_var = float((w ** 2) @ residual_vars)
-
-        total_var = factor_var + residual_var
-        total_vol = np.sqrt(total_var)
-
+        w = weights.loc[self.tickers].values
+        total_vol = self.compute_portfolio_vol(weights)
         out = {}
         if self.expected_return is not None:
             exp_ret = float(np.nansum(self.expected_return.loc[self.tickers].values * w))
             out['exp_return'] = exp_ret
         out['total_vol'] = total_vol
-        out['factor_vol'] = np.sqrt(factor_var)
-        out['residual_vol'] = np.sqrt(residual_var)
-        out['factor_pct'] = factor_var / total_var if total_var > 0 else 0.0
-        out['residual_pct'] = residual_var / total_var if total_var > 0 else 0.0
+        if self._has_decomposition:
+            decomposition = self._risk_model.compute_tre_decomposition_at_date(
+                benchmark_weights=pd.Series(0.0, index=self.tickers),
+                portfolio_weights=weights, date=self._risk_model_date, strict=True)
+            reference_variance = decomposition['tracking_error'] ** 2
+            suffix = '_reference' if self.decomposition_mode == 'diagonal_reference' else ''
+            out[f'factor{suffix}_vol'] = decomposition['factor_te']
+            out[f'residual{suffix}_vol'] = decomposition['residual_te']
+            out[f'factor{suffix}_pct'] = (
+                decomposition['factor_te'] ** 2 / reference_variance
+                if reference_variance > 0 else 0.0)
+            out[f'residual{suffix}_pct'] = (
+                decomposition['residual_te'] ** 2 / reference_variance
+                if reference_variance > 0 else 0.0)
         if self.expected_return is not None and total_vol > 0:
             out['sharpe_ratio'] = out['exp_return'] / total_vol
         return out
 
     def _compute_tracking_error_metrics(self, active_weights: pd.Series) -> Dict[str, float]:
         """Compute tracking error decomposition: TE, factor_te, residual_te."""
+        active_weights = self._align_result_weights(active_weights)
         zero_benchmark = pd.Series(0.0, index=self.tickers)
-        return self._risk_model.compute_tre_decomposition_at_date(
+        risk = self._require_risk()
+        total = risk.compute_tre_at_date(
             benchmark_weights=zero_benchmark,
             portfolio_weights=active_weights,
             date=self._risk_model_date,
             strict=True,
-        ).to_dict()
+        )
+        if not self._has_decomposition:
+            return {'tracking_error': total}
+        decomposition = risk.compute_tre_decomposition_at_date(
+            benchmark_weights=zero_benchmark, portfolio_weights=active_weights,
+            date=self._risk_model_date, strict=True).to_dict()
+        if self.decomposition_mode == 'diagonal_reference':
+            return {'tracking_error': total,
+                    'diagonal_reference_tracking_error': decomposition['tracking_error'],
+                    'factor_reference_te': decomposition['factor_te'],
+                    'residual_reference_te': decomposition['residual_te']}
+        decomposition['tracking_error'] = total
+        return decomposition
 
     def compute_returns_risk_snapshot(self) -> pd.DataFrame:
         """
@@ -378,21 +485,22 @@ class PortfolioOptimisationResult:
 
     def _compute_active_risk_attribution(self, active_weights: pd.Series) -> Dict[str, float]:
         """Decompose tracking error for a given active weight vector (full detail)."""
-        zero_benchmark = pd.Series(0.0, index=self.tickers)
-        decomposition = self._risk_model.compute_tre_decomposition_at_date(
-            benchmark_weights=zero_benchmark,
-            portfolio_weights=active_weights,
-            date=self._risk_model_date,
-            strict=True,
-        ).to_dict()
-        total_te_var = decomposition['tracking_error'] ** 2
+        decomposition = self._compute_tracking_error_metrics(active_weights)
+        if not self._has_decomposition:
+            return decomposition
+        reference = self.decomposition_mode == 'diagonal_reference'
+        suffix = '_reference' if reference else ''
+        total_te_var = decomposition[
+            'diagonal_reference_tracking_error' if reference else 'tracking_error'] ** 2
         return {
             **decomposition,
-            'factor_pct': (
-                decomposition['factor_te'] ** 2 / total_te_var if total_te_var > 0 else 0.0
+            f'factor{suffix}_pct': (
+                decomposition[f'factor{suffix}_te'] ** 2 / total_te_var
+                if total_te_var > 0 else 0.0
             ),
-            'residual_pct': (
-                decomposition['residual_te'] ** 2 / total_te_var if total_te_var > 0 else 0.0
+            f'residual{suffix}_pct': (
+                decomposition[f'residual{suffix}_te'] ** 2 / total_te_var
+                if total_te_var > 0 else 0.0
             ),
         }
 
@@ -412,7 +520,8 @@ class PortfolioOptimisationResult:
 
     def _compute_factor_exposures_for_weights(self, weights: pd.Series) -> pd.Series:
         """Compute factor exposures for an arbitrary weight vector."""
-        return self._risk_model.compute_exposures_at_date(
+        weights = self._align_result_weights(weights)
+        return self._require_risk().compute_exposures_at_date(
             portfolio_weights=weights,
             date=self._risk_model_date,
             strict=True,
@@ -428,9 +537,12 @@ class PortfolioOptimisationResult:
         Returns:
             Risk contribution per factor (sums to 1.0 within factor variance).
         """
-        w = weights.loc[self.tickers].values  # (N,)
-        betas = self.covar_data.y_betas.loc[self.tickers, :].values  # (N x M)
-        x_covar = self.covar_data.x_covar.values  # (M x M)
+        w = self._align_result_weights(weights).values  # (N,)
+        if not self._has_decomposition:
+            return pd.Series(dtype=float)
+        loadings = self._risk_model.factor_loadings[self._risk_model_date]
+        betas = loadings.loc[self.tickers, :].values  # (N x M)
+        x_covar = self._risk_model.factor_covar[self._risk_model_date].values  # (M x M)
 
         factor_exp = w @ betas  # (N,) @ (N,M) = (M,)
         factor_var = float(factor_exp @ x_covar @ factor_exp)
@@ -439,7 +551,7 @@ class PortfolioOptimisationResult:
 
         return pd.Series(
             factor_contrib / factor_var if factor_var > 0 else factor_contrib,
-            index=self.covar_data.x_covar.index,
+            index=loadings.columns,
         )
 
     # === Attribution by grouping (asset class, currency) ===
@@ -455,8 +567,9 @@ class PortfolioOptimisationResult:
         Returns:
             DataFrame with weight, risk_contrib, risk_pct per group.
         """
-        cov = self.covar_data.y_covar.loc[self.tickers, self.tickers]
-        w = weights.loc[self.tickers]
+        self._require_risk()
+        cov = self.covariance
+        w = self._align_result_weights(weights)
 
         port_var = float(w.values @ cov.values @ w.values)
         port_vol = np.sqrt(port_var)
@@ -697,6 +810,8 @@ class PortfolioOptimisationResult:
             If aggregate=True:
                 Dict with 2 keys: factor_exposures, factor_risk_pct.
         """
+        if self._risk_model is None or self._risk_model.factor_loadings is None:
+            return {}
         # Portfolio exposures
         portfolio_exp = {}
         portfolio_risk = {}
@@ -874,10 +989,12 @@ class PortfolioOptimisationResult:
         if add_asset_details:
             weights_df = pd.concat([self.metadata, weights_df], axis=1, sort=False)
 
-        risk_summary = self.compute_risk_summary()
+        risk_summary = self.compute_risk_summary() if self._risk_model is not None else {}
         factor_exp_dict = self.compute_factor_exposures_summary()
-
-        vol_port = self.covar_data.get_model_vols()
+        vol_port = self.asset_volatilities
+        if vol_port is None and self.covariance is not None:
+            vol_port = pd.DataFrame({'total_vol': np.sqrt(np.diag(self.covariance))},
+                                    index=self.tickers)
 
         # Asset-level snapshot
         w = self.get_weights(name)
@@ -909,7 +1026,7 @@ class PortfolioOptimisationResult:
             turnover_analysis = self.compute_turnover_analysis(name=name)
             result['turnover'] = turnover_analysis.to_frame('value')
 
-        group_attribs = self.compute_group_attribution()
+        group_attribs = self.compute_group_attribution() if self._risk_model is not None else {}
         result.update(group_attribs)
 
         return result
@@ -941,13 +1058,14 @@ class PortfolioOptimisationResult:
 
         metrics = {
             'n_assets': self.n_assets,
-            'total_vol': self.compute_portfolio_vol(w),
-            'tracking_error': self.compute_portfolio_vol(active),
-            'benchmark_vol': self.compute_portfolio_vol(bench),
             'max_active_weight': active.abs().max(),
             'sum_active_long': active[active > 0].sum(),
             'sum_active_short': active[active < 0].sum(),
         }
+        if self._risk_model is not None:
+            metrics.update(total_vol=self.compute_portfolio_vol(w),
+                           tracking_error=self.compute_tracking_error(name),
+                           benchmark_vol=self.compute_portfolio_vol(bench))
 
         if self.has_current_weights:
             metrics['turnover'] = self.compute_turnover(name=name)
@@ -1011,17 +1129,19 @@ class PortfolioOptimisationResult:
         """One-line summary: vol, tracking error and, when known, turnover."""
         name = self.portfolio_names[0]
         w = self.get_weights(name)
-        vol = self.compute_portfolio_vol(w)
-        te = self.compute_tracking_error(name)
+        risk_str = ''
+        if self._risk_model is not None:
+            vol = self.compute_portfolio_vol(w)
+            te = self.compute_tracking_error(name)
+            risk_str = f'vol={vol:.2%}, TE={te:.2%}, '
         turnover_str = ""
         if self.has_current_weights:
             turnover = self.compute_turnover(name=name)
-            turnover_str = f", turnover={turnover:.2%}"
+            turnover_str = f"turnover={turnover:.2%}, "
         return (
             f"PortfolioOptimisationResult("
             f"n_portfolios={self.n_portfolios}, "
             f"n_assets={self.n_assets}, "
-            f"vol={vol:.2%}, "
-            f"TE={te:.2%}{turnover_str}, "
+            f"{risk_str}{turnover_str}"
             f"date={self.optimisation_date})"
         )

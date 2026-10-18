@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+pytestmark = pytest.mark.factor_integration
+
 
 @pytest.fixture(scope='module')
 def workflow(root):

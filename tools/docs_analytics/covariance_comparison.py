@@ -1,7 +1,8 @@
 """Compare six covariance estimators on a fixed, known-factor synthetic teaching panel.
 
-OptimalPortfolios assembles covariances and minimum-variance targets, factorlasso fits
-regressions, and qis converts returns, backtests holdings and produces statistics/plots.
+TradableFactors assembles fitted covariances using FactorLasso regressions;
+OptimalPortfolios solves minimum-variance targets, and QIS converts returns,
+backtests holdings and produces statistics/plots.
 The existing simulator is unchanged. Known truth is used only for descriptive error checks.
 """
 
@@ -88,7 +89,9 @@ def configuration() -> dict:
     ]
     config['solver']['backends'] = {
         'CLARABEL': {'options': 'CVXPY/CLARABEL defaults; no overrides or fallback chain'}}
-    config['dependencies'].update({'cvxpy': 'cvxpy', 'clarabel': 'clarabel'})
+    config['dependencies'].update({
+        'cvxpy': 'cvxpy', 'clarabel': 'clarabel',
+        'factorlasso': 'factorlasso', 'tradablefactors': 'tradablefactors'})
     return config
 
 
@@ -175,7 +178,6 @@ def _estimate_case(label, case, tables, dates, config):
     import pandas as pd
     import qis
     import optimalportfolios as op
-    import factorlasso as fl
 
     params = config['parameters']
     prices, factors = tables['prices'], tables['factor_prices']
@@ -186,6 +188,8 @@ def _estimate_case(label, case, tables, dates, config):
             is_apply_vol_normalised_returns=case['vol_normalized'])
         covars = {date: estimator.fit_current_covar(prices.loc[:date]) for date in dates}
     else:
+        import factorlasso as fl
+        import tradablefactors as tf
         model = fl.LassoModel(
             model_type=getattr(fl.LassoModelType, case['model']),
             group_data=tables['group_assignments']['group'], reg_lambda=case['reg_lambda'],
@@ -193,9 +197,9 @@ def _estimate_case(label, case, tables, dates, config):
             group_penalty=params['group_penalty'], l1_weight=params['l1_weight'],
             solver='CLARABEL', solver_fallbacks=None, auto_sign_constraints=False,
             auto_sign_adaptive_weights=False)
-        estimator = op.FactorCovarEstimator(
+        estimator = tf.FactorCovarEstimator(
             lasso_model=model, factor_returns_freq=params['returns_freq'],
-            factor_covar_span=params['span'], demean=True,
+            factor_covar_span=params['span'],
             is_apply_vol_normalised_returns=case['vol_normalized'])
         asset_returns = qis.compute_asset_returns_dict(
             prices=prices, is_log_returns=True, returns_freqs=params['returns_freq'])
@@ -205,16 +209,18 @@ def _estimate_case(label, case, tables, dates, config):
                 raise ValueError('Insufficient factor-estimation warmup')
             context = f'estimator={label}; fit={date:%Y-%m-%d}'
             with _capture_factor_solve(context) as observed:
-                data = estimator.fit_current_factor_covars(
+                snapshot = estimator.fit_current(
                     risk_factor_prices=factors.loc[:date], asset_returns_dict=inputs,
-                    assets=prices.columns, estimation_date=date)
+                    assets=prices.columns, cutoff=date)
             if len(observed) != 1:
                 raise ValueError('Missing, duplicate or fallback factor solve')
-            if not np.isfinite(model.estimation_result_.estimated_beta).all():
+            # TF owns a cloned fit; the configured FL estimator is not mutated.
+            data = snapshot.data
+            if not np.isfinite(data.y_betas.to_numpy()).all():
                 raise ValueError('Factor estimation returned non-finite coefficients')
             records.extend({**record, 'stage': 'factor_fit', 'estimator': label,
                             'decision_date': date.strftime('%Y-%m-%d')} for record in observed)
-            covars[date] = data.get_y_covar()
+            covars[date] = snapshot.asset_covariance
             components[date] = {
                 'estimated_betas': data.y_betas.copy(),
                 'estimated_factor_covariances': data.x_covar.copy(),
@@ -430,7 +436,7 @@ def _figure(tables):
         ylabel='Relative Frobenius error', colors=COLORS, stacked=False, is_sns=False,
         x_rotation=0, yvar_format='{:.0%}', add_bar_values=True, legend_loc=None, **common)
     figure.text(0.11, 0.035,
-                'OptimalPortfolios construction | factorlasso fits | '
+                'TradableFactors covariance | OptimalPortfolios optimisation | '
                 'qis backtesting and analytics\n'
                 'VN = volatility normalization; factor variants normalize factor covariance only.\n'
                 '35% asset cap; 10 bp costs include entry. One simulated path is not a ranking.',

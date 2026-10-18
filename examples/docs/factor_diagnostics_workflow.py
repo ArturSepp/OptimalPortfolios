@@ -15,8 +15,9 @@ import qis
 
 from optimalportfolios.optimization.executed_state import backtest_with_qis_state
 from tradablefactors.premia.sharpe_accounting import gls_projector, gls_split
-from optimalportfolios.matf.opportunity import OpportunityModel, portfolio_opportunity_metrics
-from optimalportfolios.matf.uncertainty import fixed_portfolio_alpha_interval
+from tradablefactors.analytics import (
+    FactorOpportunityModel, portfolio_opportunity_metrics, fixed_portfolio_alpha_interval,
+)
 
 ANNUALIZATION = 12.
 ALPHA_SPAN = 36
@@ -76,7 +77,7 @@ def run_workflow(factor_returns=None, asset_returns=None):
     snapshot = fl.CurrentFactorCovarData(x_covar=f, y_betas=b,
         y_variances=pd.DataFrame({'residual_var': d}), residuals=residuals,
         estimation_date=asof)
-    opportunity = OpportunityModel(b, d, f, uncertainty.estimates, date=asof)
+    opportunity = FactorOpportunityModel(b, d, f, uncertainty.estimates, date=asof)
     weights = pd.Series([.30, .15, .10, .10, .20, .15], index=y.columns)
     benchmark = pd.Series(1 / len(weights), index=y.columns)
     active = weights - benchmark

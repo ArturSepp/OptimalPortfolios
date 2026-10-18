@@ -289,32 +289,7 @@ def test_nonfinite_scores_fail_closed(monkeypatch):
         execute()
 
 
-def test_factorlasso_cv_stays_inside_each_factory():
-    """Reuse FactorLasso's expanding estimator CV on only the purged training returns."""
-    from factorlasso import LassoModel, LassoModelCV
-
-    cutoffs = []
-
-    def fit(training, configuration):
-        """Fit the existing estimator CV, without portfolio-level leakage or new CV logic."""
-        returns = qis.to_returns(training, is_log_returns=False).dropna()
-        cv = LassoModelCV(lambdas=(.0001, .001), n_splits=1,
-                          base_model=LassoModel(warmup_period=1))
-        cv.fit(x=returns[['A']], y=returns[['B']])
-        assert cv.best_lambda_ in (.0001, .001)
-        cutoffs.append(training.index[-1])
-
-        def decide(history, state):
-            """Retain cash; this contract tests nested estimator ownership."""
-            return None
-        return decide
-
-    result = execute(fit=fit, candidates={'cv': {'covariance': 'factorlasso', 'alpha': 0}})
-    assert cutoffs == fixture()[0].index[[7, 17, 29]].tolist()
-    assert result.outer_score == 0
-
-
-def test_canonical_covariance_alpha_example():
+def test_canonical_covariance_alpha_example(root):
     """Execute the offline example with real covariance estimation and constrained solves."""
     from examples.integrations.skfolio_targets_local import run_chronological_selection_example
 

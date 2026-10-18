@@ -6,7 +6,7 @@ writes from the package and the ownership recorded in ``tools/docs_inventory.jso
 
 1. one section per owning page, in the order of the sidebar, each with an autosummary table
    whose stub pages keep their published ``generated/optimalportfolios.<name>.html`` URLs;
-2. the names re-exported from FactorLasso and qis, linked to the pages that explain them;
+2. the names re-exported from qis, linked to the pages that explain them;
 3. one table per mapped configuration dataclass, giving each field's default and owning page.
 
 Autosummary finds stub entries by scanning source files and does not follow ``include``, so the
@@ -95,6 +95,7 @@ html_css_files = ["optimalportfolios.css"]
 # Packages whose versions the footer names, with their usual spelling.
 BUILD_PACKAGES = {
     "qis": "qis",
+    "tradablefactors": "tradablefactors",
     "factorlasso": "factorlasso",
     "cvxpy": "CVXPY",
     "numpy": "NumPy",
@@ -138,7 +139,7 @@ html_theme_options = {
 GENERATED_DIR = DOCS_DIR / "_generated"
 STUB_DIR = DOCS_DIR / "generated"
 PACKAGE_MODULES = (
-    "alphas", "config", "covar_estimation", "local_path", "matf", "matf.gls_diagnostic",
+    "alphas", "config", "covar_estimation", "local_path", "matf",
     "optimization", "reports", "universe",
     "utils",
 )
@@ -243,9 +244,9 @@ def _write_api_reference(target: Path = GENERATED_DIR) -> Path:
         lines.append(f"Explained in {_page_reference(page, planned)}.\n\n")
         lines.append(_autosummary(names))
 
-    lines.append(_heading("Re-exported from FactorLasso and qis", "~"))
+    lines.append(_heading("Re-exported from qis", "~"))
     lines.append(
-        "These names are importable from ``optimalportfolios`` for compatibility. Their "
+        "These QIS analytics types are importable from ``optimalportfolios``. Their "
         "methodology and reference documentation belongs to the package that defines them.\n\n"
         ".. list-table::\n   :header-rows: 1\n   :widths: 34 16 50\n\n"
         "   * - Name\n     - Package\n     - Owning documentation\n"

@@ -9,7 +9,7 @@ authors:
 repository-code: "https://github.com/ArturSepp/OptimalPortfolios"
 url: "https://pypi.org/project/optimalportfolios/"
 license: MIT
-version: "8.0.0.dev0"
+version: "8.0.0.dev1"
 date-released: "2026-10-18"
 keywords:
   - portfolio-optimization

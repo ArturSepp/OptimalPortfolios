@@ -14,6 +14,19 @@
 
 # AGENTS.md
 
+## Stage-5 supplied-input boundary (2026-10-18)
+
+The authorised clean migration supersedes older factor-dependency statements below.
+OP depends on QIS; it must not import TF or FL in library code, including lazy
+imports. Factor aliases and the risk-labelling shim are removed. Results consume
+optional QIS RiskModel/covariance and prepared tables. Opportunity solvers consume
+prepared arrays; statistical inference and cluster extraction/pooling belong to TF/FL.
+The existing external OP environment remains a frozen historical cohort: do not
+upgrade it. Build source exports and clean base/composed environments outside OneDrive.
+Composed tests use the `factor_integration` marker and import upstream packages inside
+test bodies, so the full base wheel suite collects without either package. Run the
+separate composed wheel suite without skips. No OP factor extra or compatibility API.
+
 Guidance for AI coding agents working in the **OptimalPortfolios** repository.
 
 ## Project overview

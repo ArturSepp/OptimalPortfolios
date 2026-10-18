@@ -9,6 +9,9 @@ import pandas as pd
 import pytest
 
 
+pytestmark = pytest.mark.factor_integration
+
+
 @pytest.fixture(scope='module')
 def producer(root):
     """Import repository-only tooling after installed-wheel checks have skipped."""

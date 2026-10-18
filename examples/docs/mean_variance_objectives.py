@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import qis
-from factorlasso import CurrentFactorCovarData
 
 import optimalportfolios as op
 
@@ -122,13 +121,6 @@ def frontier_by_cvxpy(covar: np.ndarray, means: np.ndarray, m: float) -> float:
     return float(x.value @ covar @ x.value)
 
 
-def identity_factor_model(covar: pd.DataFrame) -> CurrentFactorCovarData:
-    """Wrap a covariance as a factor model with unit loadings and no residual risk."""
-    tickers = covar.index
-    return CurrentFactorCovarData(
-        x_covar=covar,
-        y_betas=pd.DataFrame(np.eye(len(tickers)), index=tickers, columns=tickers),
-        y_variances=pd.DataFrame({'residual_var': np.zeros(len(tickers))}, index=tickers))
 
 
 def main() -> None:
@@ -370,7 +362,7 @@ def main() -> None:
 
     result = op.PortfolioOptimisationResult(
         weights=grid, benchmark_weights=min_var.rename('minimum variance'),
-        covar_data=identity_factor_model(covar), group_attributions={}, expected_return=means)
+        covariance=covar, group_attributions={}, expected_return=means)
     figure = op.plot_efficient_frontier(result, profiles={'utility': list(grid.columns)})
     points, _ = result.compute_efficient_frontier_data(profiles={'utility': list(grid.columns)})
 

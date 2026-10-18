@@ -17,7 +17,6 @@ expected score is arithmetic rather than a recorded output.
 year on monthly data and three years on quarterly, and every branch of it is an error path.
 """
 # packages
-from types import SimpleNamespace
 import numpy as np
 import pandas as pd
 import pytest
@@ -28,7 +27,6 @@ from optimalportfolios.alphas.backtest_alphas import AlphaSignal, compute_signal
 from optimalportfolios.alphas.signals.utils import (
     _global_zscore,
     _split_cluster_label,
-    extract_rolling_clusters,
     resolve_span,
     score_within_clusters,
 )
@@ -120,70 +118,6 @@ def test_global_zscore_returns_zeros_when_there_is_nothing_to_standardise() -> N
     row = pd.Series([1.0, 1.0, 1.0], index=TICKERS[:3])
     assert (_global_zscore(row, list(row.index)) == 0.0).all()
     assert (_global_zscore(row, TICKERS[:1]) == 0.0).all()
-
-
-# --------------------------------------------------------------------------- #
-# extract_rolling_clusters
-# --------------------------------------------------------------------------- #
-def make_rolling_covar_data(clusters_by_date: dict) -> SimpleNamespace:
-    """The shape ``extract_rolling_clusters`` reads: ``.data[date].clusters``.
-
-    ``RollingFactorCovarData`` comes out of a factorlasso estimation over real prices, which
-    this suite deliberately does not run. Only the two attributes the function touches are
-    stood up here, so the branches are exercised on stated assignments rather than on whatever
-    an estimator happened to produce.
-    """
-    return SimpleNamespace(
-        data={date: SimpleNamespace(clusters=clusters)
-              for date, clusters in clusters_by_date.items()})
-
-
-def test_extract_rolling_clusters_keys_the_assignments_by_estimation_date() -> None:
-    """the flat per-date Series is passed through, keyed by the date it was estimated on"""
-    assignment = pd.Series(['QE:1'] * 4 + ['QE:2'] * 4, index=TICKERS)
-    rolling = extract_rolling_clusters(
-        make_rolling_covar_data({SIGNAL_DATES[0]: assignment,
-                                 SIGNAL_DATES[1]: assignment}))
-    assert list(rolling.keys()) == [SIGNAL_DATES[0], SIGNAL_DATES[1]]
-    pd.testing.assert_series_equal(rolling[SIGNAL_DATES[0]], assignment)
-
-
-def test_extract_rolling_clusters_skips_dates_with_no_assignment() -> None:
-    """a date the estimator produced nothing for is absent, not present and empty
-
-    An empty Series left in the dict would be scored as a partition of zero assets, which
-    ``score_within_clusters`` reads as a degenerate cluster rather than as missing data.
-    """
-    assignment = pd.Series(['QE:1'] * 8, index=TICKERS)
-    rolling = extract_rolling_clusters(
-        make_rolling_covar_data({SIGNAL_DATES[0]: None,
-                                 SIGNAL_DATES[1]: pd.Series(dtype=object),
-                                 SIGNAL_DATES[2]: assignment}))
-    assert list(rolling.keys()) == [SIGNAL_DATES[2]]
-
-
-def test_extract_rolling_clusters_keeps_the_last_label_of_a_duplicated_ticker() -> None:
-    """a ticker carrying both an ME and a QE label would otherwise form two clusters"""
-    assignment = pd.Series(['ME:1', 'QE:3'], index=[TICKERS[0], TICKERS[0]])
-    rolling = extract_rolling_clusters(
-        make_rolling_covar_data({SIGNAL_DATES[0]: assignment}))
-    assert rolling[SIGNAL_DATES[0]].to_dict() == {TICKERS[0]: 'QE:3'}
-
-
-def test_extract_rolling_clusters_filters_to_the_requested_universe() -> None:
-    """the covariance universe is wider than the signal universe, so it is narrowed here"""
-    assignment = pd.Series(['QE:1'] * 4 + ['QE:2'] * 4, index=TICKERS)
-    rolling = extract_rolling_clusters(
-        make_rolling_covar_data({SIGNAL_DATES[0]: assignment}), assets=TICKERS[:3])
-    assert list(rolling[SIGNAL_DATES[0]].index) == TICKERS[:3]
-
-
-def test_extract_rolling_clusters_drops_a_date_that_covers_none_of_the_universe() -> None:
-    """filtering can empty a date, and an emptied date is dropped like an absent one"""
-    assignment = pd.Series(['QE:1'] * 4, index=TICKERS[4:])
-    rolling = extract_rolling_clusters(
-        make_rolling_covar_data({SIGNAL_DATES[0]: assignment}), assets=TICKERS[:3])
-    assert rolling == {}
 
 
 # --------------------------------------------------------------------------- #
@@ -337,66 +271,6 @@ def test_nan_cluster_assignments_are_dropped() -> None:
                                                                      assignment})
     assert scored.shape == raw.shape
     assert scored.loc[SIGNAL_DATES[0], TICKERS[-1]] == 0.0
-
-
-def test_stability_pooling_off_is_byte_identical_on_a_production_shaped_panel() -> None:
-    """V0 must preserve every output byte of the existing scorer."""
-    from factorlasso import StabilityPoolingType, score_with_stability_pooled_clusters
-
-    raw = make_raw_signal()
-    clusters = {
-        SIGNAL_DATES[0]: pd.Series(['ME:1'] * 5 + ['QE:2'] * 3, index=TICKERS),
-        SIGNAL_DATES[2]: pd.Series(['ME:1'] * 4 + ['QE:2'] * 4, index=TICKERS),
-    }
-    weights = pd.DataFrame(0.25, index=SIGNAL_DATES, columns=TICKERS)
-    baseline = score_within_clusters(raw, clusters, min_cluster_size=3)
-    explicit_v0 = score_within_clusters(
-        raw,
-        clusters,
-        min_cluster_size=3,
-        stability_pooling_type=StabilityPoolingType.NONE,
-        stability_weights=weights,
-    )
-    factorlasso_v0 = score_with_stability_pooled_clusters(
-        raw,
-        clusters,
-        weights,
-        min_cluster_size=3,
-        pooling_type=StabilityPoolingType.NONE,
-    )
-
-    pd.testing.assert_frame_equal(explicit_v0, baseline, check_exact=True)
-    pd.testing.assert_frame_equal(factorlasso_v0, baseline, check_exact=True)
-    assert explicit_v0.to_numpy().tobytes() == baseline.to_numpy().tobytes()
-    assert factorlasso_v0.to_numpy().tobytes() == baseline.to_numpy().tobytes()
-
-
-@pytest.mark.parametrize(
-    'pooling_name',
-    [
-        'CLUSTER_VARIANCE',
-        'ASSET_VARIANCE',
-    ],
-)
-def test_unit_stability_is_exactly_the_existing_cluster_score(pooling_name) -> None:
-    """Every pooled variant at w=1 must reduce bit-for-bit to V0."""
-    from factorlasso import StabilityPoolingType
-
-    pooling_type = StabilityPoolingType[pooling_name]
-    raw = make_raw_signal(dates=SIGNAL_DATES[:1])
-    clusters = {SIGNAL_DATES[0]: pd.Series(['big'] * 5 + ['small'] * 3, index=TICKERS)}
-    weights = pd.DataFrame(1.0, index=SIGNAL_DATES[:1], columns=TICKERS)
-    baseline = score_within_clusters(raw, clusters, min_cluster_size=3)
-    actual = score_within_clusters(
-        raw,
-        clusters,
-        min_cluster_size=3,
-        stability_pooling_type=pooling_type,
-        stability_weights=weights,
-    )
-
-    pd.testing.assert_frame_equal(actual, baseline, check_exact=True)
-    assert actual.to_numpy().tobytes() == baseline.to_numpy().tobytes()
 
 
 # --------------------------------------------------------------------------- #

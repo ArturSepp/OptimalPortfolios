@@ -3,7 +3,7 @@ myst:
   html_meta:
     description: >-
       Find OptimalPortfolios examples by task: each article with its canonical script and
-      standalone examples, their offline, network or local-data lanes, commands and outputs.
+      standalone examples, their base, composed, network or local-data lanes, commands and outputs.
 ---
 
 <a id="examples"></a>
@@ -20,6 +20,8 @@ reporting. The task table below leads from what you want to do to the article th
 the article's canonical script and the standalone examples; the catalogue after it maps each
 Python example to its data requirements and purpose.
 [QIS](https://github.com/ArturSepp/QuantInvestStrats) supplies backtesting, analytics and plots;
+[TradableFactors](https://github.com/ArturSepp/tradablefactors) supplies complete fitted factor
+models and factor-premia analytics;
 [FactorLasso](https://github.com/ArturSepp/FactorLasso) supplies sparse factor estimation and
 clustering used by the relevant examples.
 
@@ -30,30 +32,31 @@ Each row names a task and the article that explains it. The article's canonical 
 (see [executable examples](documentation_standard.md#executable-examples)). The standalone
 examples under `examples/` are separate scripts on the same method, often on downloaded or local
 data. The lane in parentheses is the one the catalogue below assigns
-([unattended execution lanes](#unattended-execution-lanes)): Offline and Network come from the
-classifier, where Network means that `yfinance` is reachable from the script's imports, and Local
-marks a `*_local.py` workflow whose data or optional tools you prepare first. Every canonical script is offline
-except the CSV risk model's, which opens no connection itself but imports the repository
-example that holds the Yahoo fetcher. For a first run, start with the
+([unattended execution lanes](#unattended-execution-lanes)): Offline needs base OP; Composed
+also needs separately installed TF/FL; Network means that `yfinance` is reachable from the
+script's imports. Local marks a `*_local.py` workflow whose data or optional tools you prepare
+first. Offline and Composed canonical scripts use supplied or synthetic inputs. The CSV risk
+model's script opens no connection itself but imports the example that holds the Yahoo fetcher.
+For a first run, start with the
 [offline quickstart](quickstart.md).
 
 | Task | Article | Canonical script | Standalone examples |
 |---|---|---|---|
 | Build a universe with group loadings; unsmooth appraisal-based prices | [Universe data and unsmoothing](universe_data_and_unsmoothing.md) | [`universe_data_and_unsmoothing.py`](../examples/docs/universe_data_and_unsmoothing.py) (Offline) | [`data/universe.py`](../examples/data/universe.py) (Network), [`data/sp500_universe_local.py`](../examples/data/sp500_universe_local.py) (Local) |
-| Combine assets observed at different frequencies | [Mixed-frequency data](mixed_frequency_data.md) | [`mixed_frequency_data.py`](../examples/docs/mixed_frequency_data.py) (Offline) | [`covar_estimation/demo_covar_different_estimation_freqs.py`](../examples/covar_estimation/demo_covar_different_estimation_freqs.py) (Offline) |
+| Combine assets observed at different frequencies | [Mixed-frequency data](mixed_frequency_data.md) | [`mixed_frequency_data.py`](../examples/docs/mixed_frequency_data.py) (Composed) | [`covar_estimation/demo_covar_different_estimation_freqs.py`](../examples/covar_estimation/demo_covar_different_estimation_freqs.py) (Composed) |
 | Handle late starts, missing prices, index membership and frozen positions | [Incomplete histories](incomplete_histories.md) | [`incomplete_histories.py`](../examples/docs/incomplete_histories.py) (Offline) | [`comparisons/sp500_minvar_spans_local.py`](../examples/comparisons/sp500_minvar_spans_local.py) (Local) |
 | Estimate an EWMA covariance and choose its span | [Covariance estimators](covariance_estimators.md) | [`covariance_estimators.py`](../examples/docs/covariance_estimators.py) (Offline) | [`comparisons/parameter_sensitivity.py`](../examples/comparisons/parameter_sensitivity.py) (Network), [`comparisons/sp500_minvar_spans_local.py`](../examples/comparisons/sp500_minvar_spans_local.py) (Local) |
-| Estimate a sparse factor covariance | [Factor covariance with HCGL](factor_covariance_hcgl.md) | [`factor_covariance_hcgl.py`](../examples/docs/factor_covariance_hcgl.py) (Offline) | [`covar_estimation/simulate_factor_returns.py`](../examples/covar_estimation/simulate_factor_returns.py) (Offline), [`covar_estimation/lasso_covar_estimation.py`](../examples/covar_estimation/lasso_covar_estimation.py) (Network), [`comparisons/covar_estimators.py`](../examples/comparisons/covar_estimators.py) (Network) |
+| Estimate a sparse factor covariance | [Factor covariance with HCGL](factor_covariance_hcgl.md) | [`factor_covariance_hcgl.py`](../examples/docs/factor_covariance_hcgl.py) (Composed) | [`covar_estimation/simulate_factor_returns.py`](../examples/covar_estimation/simulate_factor_returns.py) (Offline), [`covar_estimation/lasso_covar_estimation.py`](../examples/covar_estimation/lasso_covar_estimation.py) (Network), [`comparisons/covar_estimators.py`](../examples/comparisons/covar_estimators.py) (Network) |
 | Build and use a factor risk model from CSV files | [Rolling factor risk model from CSV](rolling_factor_covar_from_csv.md) | [`rolling_factor_covar_from_csv.py`](../examples/docs/rolling_factor_covar_from_csv.py) (Network) | [`covar_estimation/rolling_factor_covar_from_csv.py`](../examples/covar_estimation/rolling_factor_covar_from_csv.py) (Network) |
-| Compute risk contributions and benchmark betas | [Ex-ante risk contributions and betas](portfolio_risk_analytics.md) | [`portfolio_risk_analytics.py`](../examples/docs/portfolio_risk_analytics.py) (Offline) | — |
-| Infer factor premia from provider forecasts after historical estimation | [GLS factor-premia inference](gls_factor_premia.md) and [CMA reporting](cma_diagnostics.md) | [`gls_factor_premia.py`](../examples/docs/gls_factor_premia.py) (Offline; synthetic prices, FactorLasso fit, OP GLS and weighted-QR checks) | Exact consensus/JPM workflows require local licensed inputs and are not distributed as public examples. |
-| Connect factor diagnostics, alpha uncertainty and forward attribution | [Factor diagnostics workflow](factor_diagnostics_workflow.md) | [`factor_diagnostics_workflow.py`](../examples/docs/factor_diagnostics_workflow.py) (Offline) | Conditional fixed-model inference; no forecast or post-selection coverage guarantee. |
-| Build alpha signals | [Alpha signals](alphas_module_readme.md) | [`alphas_module_readme.py`](../examples/docs/alphas_module_readme.py) (Offline) | [`alphas/profile_alpha_signals.py`](../examples/alphas/profile_alpha_signals.py) (Network) |
+| Compute risk contributions and benchmark betas | [Ex-ante risk contributions and betas](portfolio_risk_analytics.md) | [`portfolio_risk_analytics.py`](../examples/docs/portfolio_risk_analytics.py) (Composed) | — |
+| Infer factor premia from provider forecasts after historical estimation | [GLS factor-premia inference](gls_factor_premia.md) and [CMA reporting](cma_diagnostics.md) | [`gls_factor_premia.py`](../examples/docs/gls_factor_premia.py) (Composed; synthetic prices, FactorLasso fit, TF GLS and weighted-QR checks) | Exact consensus/JPM workflows require local licensed inputs and are not distributed as public examples. |
+| Connect factor diagnostics, alpha uncertainty and forward attribution | [Factor diagnostics workflow](factor_diagnostics_workflow.md) | [`factor_diagnostics_workflow.py`](../examples/docs/factor_diagnostics_workflow.py) (Composed) | Conditional fixed-model inference; no forecast or post-selection coverage guarantee. |
+| Build alpha signals | [Alpha signals](alphas_module_readme.md) | [`alphas_module_readme.py`](../examples/docs/alphas_module_readme.py) (Composed) | [`alphas/profile_alpha_signals.py`](../examples/alphas/profile_alpha_signals.py) (Network) |
 | Diagnose signals and profile alpha-rank portfolios | [Signal diagnostics](signal_diagnostics_and_profiling.md) | [`signal_diagnostics_and_profiling.py`](../examples/docs/signal_diagnostics_and_profiling.py) (Offline) | [`alphas/profile_alpha_signals.py`](../examples/alphas/profile_alpha_signals.py) (Network) |
 | Choose an objective and configure the solver | [Choosing an objective](optimization_module_readme.md) | [`optimization_module_readme.py`](../examples/docs/optimization_module_readme.py) (Offline) | [`backtests/multiasset_saa.py`](../examples/backtests/multiasset_saa.py) (Offline), [`comparisons/optimisers.py`](../examples/comparisons/optimisers.py) (Network) |
 | Allocate to target risk budgets | [Risk budgeting](risk_budgeting.md) | [`risk_budgeting.py`](../examples/docs/risk_budgeting.py) (Offline) | [`solvers/risk_budgeting.py`](../examples/solvers/risk_budgeting.py) (Network), [`comparisons/risk_budgeting_ccd_vs_scipy.py`](../examples/comparisons/risk_budgeting_ccd_vs_scipy.py) (Offline) |
 | Infer the risk budgets of a target allocation | [Implied risk budgets](implied_risk_budgets.md) | [`implied_risk_budgets.py`](../examples/docs/implied_risk_budgets.py) (Offline) | [`backtests/balanced_risk_budgets.py`](../examples/backtests/balanced_risk_budgets.py) (Network), [`solvers/inverse_risk_budget_bonds.py`](../examples/solvers/inverse_risk_budget_bonds.py) (Offline) |
-| Allocate by hierarchical risk parity or cluster budgets | [Hierarchical risk parity and cluster budgets](hierarchical_risk_parity_and_cluster_budgets.md) | [`hierarchical_risk_parity_and_cluster_budgets.py`](../examples/docs/hierarchical_risk_parity_and_cluster_budgets.py) (Offline) | [`comparisons/hrp_linkage_semantics.py`](../examples/comparisons/hrp_linkage_semantics.py) (Offline) |
+| Allocate by hierarchical risk parity or cluster budgets | [Hierarchical risk parity and cluster budgets](hierarchical_risk_parity_and_cluster_budgets.md) | [`hierarchical_risk_parity_and_cluster_budgets.py`](../examples/docs/hierarchical_risk_parity_and_cluster_budgets.py) (Composed) | [`comparisons/hrp_linkage_semantics.py`](../examples/comparisons/hrp_linkage_semantics.py) (Composed) |
 | Maximise diversification | [Maximum diversification](maximum_diversification.md) | [`maximum_diversification.py`](../examples/docs/maximum_diversification.py) (Offline) | [`solvers/max_diversification.py`](../examples/solvers/max_diversification.py) (Network), [`comparisons/parameter_sensitivity.py`](../examples/comparisons/parameter_sensitivity.py) (Network) |
 | Minimise variance, or maximise quadratic utility or the Sharpe ratio | [Mean-variance objectives](mean_variance_objectives.md) | [`mean_variance_objectives.py`](../examples/docs/mean_variance_objectives.py) (Offline) | [`solvers/min_variance.py`](../examples/solvers/min_variance.py) (Network), [`solvers/max_sharpe.py`](../examples/solvers/max_sharpe.py) (Network) |
 | Meet a target return or a target volatility | [Target return and target volatility](strategic_allocation_targets.md) | [`strategic_allocation_targets.py`](../examples/docs/strategic_allocation_targets.py) (Offline) | — |
@@ -65,11 +68,11 @@ example that holds the Yahoo fetcher. For a first run, start with the
 | Read solver outcomes, fallbacks and constraint residuals | [Solver numerics and outcomes](solver_numerics_and_outcomes.md) | [`solver_numerics_and_outcomes.py`](../examples/docs/solver_numerics_and_outcomes.py) (Offline) | — |
 | Run a rolling backtest with drift, lag and costs | [Rolling backtests](rolling_backtests.md) | [`rolling_backtests.py`](../examples/docs/rolling_backtests.py) (Offline) | [`getting_started/production_quickstart.py`](../examples/getting_started/production_quickstart.py) (Offline), [`backtests/minimal_backtest.py`](../examples/backtests/minimal_backtest.py) (Network) |
 | Limit turnover and account for transaction costs | [Turnover and transaction costs](turnover_and_transaction_costs.md) | [`turnover_and_transaction_costs.py`](../examples/docs/turnover_and_transaction_costs.py) (Offline) | [`comparisons/drift_policy.py`](../examples/comparisons/drift_policy.py) (Network) |
-| Case study: strategic and tactical allocation with HCGL covariance | [ROSAA case study](app_rosaa_multi_asset_allocation.md) | [`app_rosaa_multi_asset_allocation.py`](../examples/docs/app_rosaa_multi_asset_allocation.py) (Offline) | — |
+| Case study: strategic and tactical allocation with HCGL covariance | [ROSAA case study](app_rosaa_multi_asset_allocation.md) | [`app_rosaa_multi_asset_allocation.py`](../examples/docs/app_rosaa_multi_asset_allocation.py) (Composed) | — |
 | Case study: cryptocurrencies in a diversified portfolio | [Cryptocurrency case study](app_crypto_allocation.md) | [`app_crypto_allocation.py`](../examples/docs/app_crypto_allocation.py) (Offline) | — |
 | Case study: from capital market assumptions to a strategic allocation | [MATF-CMA case study](app_cma_strategic_allocation.md) | [`app_cma_strategic_allocation.py`](../examples/docs/app_cma_strategic_allocation.py) (Offline) | — |
 | Case study: overlays on a fixed core under a coverage floor | [Smart diversification case study](app_smart_diversification_overlays.md) | [`app_smart_diversification_overlays.py`](../examples/docs/app_smart_diversification_overlays.py) (Offline) | — |
-| Stress test a stock-and-option book | [Stress testing with options](stress_testing_with_options.md) | [`stress_testing_with_options.py`](../examples/docs/stress_testing_with_options.py) (Offline) | [`reports/stress_testing_with_options_local.py`](../examples/reports/stress_testing_with_options_local.py) (Local) |
+| Stress test a stock-and-option book | [Stress testing with options](stress_testing_with_options.md) | [`stress_testing_with_options.py`](../examples/docs/stress_testing_with_options.py) (Composed) | [`reports/stress_testing_with_options_local.py`](../examples/reports/stress_testing_with_options_local.py) (Local) |
 
 The local tracking-error decomposition in `backtests/` is left out of this table: it is a
 historical illustration whose formulas differ from the current risk analytics.
@@ -89,12 +92,18 @@ setup and use a C-local source export for execution.
 ```console
 python -m examples.getting_started.production_quickstart
 python -m examples.backtests.multiasset_saa
-python -m examples.comparisons.hrp_linkage_semantics
 ```
 
 The [quickstart notebook](../examples/getting_started/production_quickstart.ipynb) mirrors the
 canonical Python script. Its hosted setup installs the released package and needs a network
 connection; the analysis then uses the packaged fixture.
+
+For a composed factor-model or cluster comparison, install TF alongside OP:
+
+```console
+python -m pip install optimalportfolios tradablefactors
+python -m examples.comparisons.hrp_linkage_semantics
+```
 
 For a Yahoo-backed solver example, install the published `data` extra first:
 
@@ -110,20 +119,22 @@ scenario; it does not execute every branch of a `Locals` enum.
 ### Unattended execution lanes
 
 The [classifier and runner](../.github/scripts/run_examples.py) derives lanes from Python imports.
-Its current inventory is **38 offline, 20 network, 58 unattended examples**. The **5 local-data workflows** ending in
+Its current inventory is **27 offline, 11 composed, 20 network, 58 unattended examples**. The **5 local-data workflows** ending in
 `*_local.py` are excluded; this manual category also includes the optional skfolio bridge
 using the packaged fixture. Each catalogue row below states the classification.
 
 ```console
 python .github/scripts/run_examples.py --list
 python .github/scripts/run_examples.py --lane offline --jobs 2
+python .github/scripts/run_examples.py --lane composed --jobs 2
 ```
 
-`--list` classifies all examples and runs none. A network label means `yfinance` is reachable
+`--list` classifies all examples and runs none. A composed label means TF or FL is reachable
+through the example import closure. A network label takes precedence when `yfinance` is reachable
 directly or through intra-`examples` imports, including imports inside optional branches.
 This is a dependency classification, not a network sandbox or proof that every possible mode is
 offline. For example, the HRP comparison's optional `--check-pypfopt` mode needs an additional
-comparison package; its default run uses core dependencies.
+comparison package; its default run uses OP and the statistical clustering dependency.
 
 The runner starts each selected module in a separate interpreter, sets `MPLBACKEND=Agg` unless
 a backend is already set, and defaults to a 900-second timeout per module. It returns failure
@@ -243,7 +254,7 @@ performance or a general ranking of optimizers.
 | [Covariance estimators](../examples/comparisons/covar_estimators.py) | Network | Compare EWMA and factor-model configurations with a common objective; writes a report and preview. |
 | [EWMA span sensitivity](../examples/comparisons/parameter_sensitivity.py) | Network | Maximum diversification with weekly EWMA spans 5, 13, 26, 52, 104; writes a report and preview. |
 | [Risk-budgeting formulations](../examples/comparisons/risk_budgeting_ccd_vs_scipy.py) | Offline | A fixed three-asset covariance compares the internal risk-budgeting solver with a squared-risk-contribution SLSQP formulation. The result is specific to these inputs and formulations. |
-| [HRP linkage semantics](../examples/comparisons/hrp_linkage_semantics.py) | Offline | Fixed four-asset inputs isolate direct correlation distances versus distances between distance profiles, using the same allocation routine. The optional external-package comparison is outside the default run. |
+| [HRP linkage semantics](../examples/comparisons/hrp_linkage_semantics.py) | Composed | Fixed four-asset inputs isolate direct correlation distances versus distances between distance profiles, using the same allocation routine. The optional external-package comparison is outside the default run. |
 | [Local S&P 500 span comparison](../examples/comparisons/sp500_minvar_spans_local.py) | Local | Weekly EWMA spans 26, 52, 104, 208. Requires the Yahoo CSV bundle from the S&P 500 builder and downloads SPY for benchmarking. Writes a factsheet. |
 | [Drift-policy comparison](../examples/comparisons/drift_policy.py) | Network | Compare previous target weights with drift-adjusted decision-date weights under a minimum-variance turnover budget. Its diagnostic is measured at decision dates; consult the [turnover guide](turnover_and_transaction_costs.md) for actual lagged trades. |
 
@@ -260,7 +271,7 @@ improvement is implied by the drift-policy example.
 | [Simulated factor returns](../examples/covar_estimation/simulate_factor_returns.py) | Offline | Generate synthetic factors and assets with a known covariance structure. |
 | [LASSO covariance](../examples/covar_estimation/lasso_covar_estimation.py) | Network | Fits LASSO factor models to Yahoo asset and benchmark prices downloaded at module import; compares frequencies and estimated exposures. |
 | [Portable CSV factor-risk model](../examples/covar_estimation/rolling_factor_covar_from_csv.py) | Network | The default `all` mode fetches six CSV inputs and then fits a rolling factor-risk model. The `load` mode uses an existing bundle without downloading; it still needs that bundle. See the [CSV workflow](rolling_factor_covar_from_csv.md). |
-| [Mixed estimation frequencies](../examples/covar_estimation/demo_covar_different_estimation_freqs.py) | Offline | Synthetic factor data compare business-daily, Wednesday-weekly and month-end asset/factor frequencies, with covariance heatmaps. See [mixed-frequency data](mixed_frequency_data.md). |
+| [Mixed estimation frequencies](../examples/covar_estimation/demo_covar_different_estimation_freqs.py) | Composed | Synthetic factor data compare business-daily, Wednesday-weekly and month-end asset/factor frequencies, with covariance heatmaps. See [mixed-frequency data](mixed_frequency_data.md). |
 
 A script's network classification remains unchanged when a particular mode can reuse local inputs.
 Follow the CSV workflow's separate fetch/load commands and explicit C-local `--data-dir`.
@@ -287,42 +298,43 @@ historical trading result.
 
 Each script is the canonical example of one documentation page: the page shows excerpts of
 it, and the script asserts every number the page quotes. The test suite runs every script,
-and some also draw the page's teaching exhibit. Most run offline after
-`pip install optimalportfolios`. Three need a source checkout: the CSV risk-model and overlay
+and some also draw the page's teaching exhibit. Base examples run after
+`pip install optimalportfolios`; composed examples require `tradablefactors` alongside OP.
+Three need a source checkout: the CSV risk-model and overlay
 scripts import a repository example, and the cryptocurrency script reads the tracked 2023 panel
 under `papers/`.
 
 | Source | Lane | Purpose and prerequisites |
 |---|---|---|
-| [GLS factor-premia inference](../examples/docs/gls_factor_premia.py) | Offline | The [GLS guide](gls_factor_premia.md): synthetic index/factor prices, FactorLasso loadings and historical alpha, OP premium/interval estimates checked independently by weighted QR, and zero/half/full alpha views. |
-| [Factor diagnostics and attribution uncertainty](../examples/docs/factor_diagnostics_workflow.py) | Offline | Existing FactorLasso estimates/HAC/bootstrap, MATF spanned/orthogonal alpha and QIS risk/accounting; independent references and a prespecified conditional Gaussian coverage experiment. |
+| [GLS factor-premia inference](../examples/docs/gls_factor_premia.py) | Composed | The [GLS guide](gls_factor_premia.md): synthetic index/factor prices, FactorLasso loadings and historical alpha, TF premium/interval estimates checked independently by weighted QR, and zero/half/full alpha views. |
+| [Factor diagnostics and attribution uncertainty](../examples/docs/factor_diagnostics_workflow.py) | Composed | Existing FactorLasso estimates/HAC/bootstrap, MATF spanned/orthogonal alpha and QIS risk/accounting; independent references and a prespecified conditional Gaussian coverage experiment. |
 | [Alpha over tracking error](../examples/docs/alpha_over_tracking_error.py) | Offline | The worked example of the [alpha over tracking error](alpha_over_tracking_error.md) page: the closed-form active weights against the solver, the tracking error from `qis.RiskModel`, the utility weight that reproduces the forced solve, group limits and the yield-target variant. |
-| [Alpha signals](../examples/docs/alphas_module_readme.py) | Offline | The worked examples of the [alpha signals](alphas_module_readme.md) page: every signal family against its formula, cross-sectional and within-cluster scoring, cluster extraction, mixed cadences, point-in-time signals, the `AlphasData` container and rolling EWMA means. |
+| [Alpha signals](../examples/docs/alphas_module_readme.py) | Composed | The worked examples of the [alpha signals](alphas_module_readme.md) page: every signal family against its formula, cross-sectional and within-cluster scoring, cluster extraction, mixed cadences, point-in-time signals, the `AlphasData` container and rolling EWMA means. |
 | [Capital market assumptions to strategic allocation](../examples/docs/app_cma_strategic_allocation.py) | Offline | The script of the [MATF-CMA case study](app_cma_strategic_allocation.md): CMAs and covariance from one synthetic loading matrix, and the strategic allocation by alpha over tracking error against mandate benchmarks. |
 | [Cryptocurrencies in diversified portfolios](../examples/docs/app_crypto_allocation.py) | Offline | The script of the [cryptocurrency case study](app_crypto_allocation.md): the four methods on a synthetic panel with a fat-tailed asset, and on the tracked 2023 price panel of the paper (ETF-derived columns only); needs a source checkout for that panel. |
-| [ROSAA case study](../examples/docs/app_rosaa_multi_asset_allocation.py) | Offline | The configuration of the [ROSAA case study](app_rosaa_multi_asset_allocation.md) on a synthetic panel with known loadings: a rolling HCGL factor covariance, strategic risk budgets and a tactical alpha-over-tracking-error overlay, with the mechanism asserted at every quarter end. |
+| [ROSAA case study](../examples/docs/app_rosaa_multi_asset_allocation.py) | Composed | The configuration of the [ROSAA case study](app_rosaa_multi_asset_allocation.md) on a synthetic panel with known loadings: a rolling HCGL factor covariance, strategic risk budgets and a tactical alpha-over-tracking-error overlay, with the mechanism asserted at every quarter end. |
 | [Smart diversification with portfolio overlays](../examples/docs/app_smart_diversification_overlays.py) | Offline | The script of the [smart diversification case study](app_smart_diversification_overlays.md): regime Sharpe contributions, convexity premia and the regime-mixture covariance in qis on a simulated 60/40 core and four overlays, and the fixed-core maximum Sharpe ratio under coverage floors on the Bear-regime loss. |
 | [CARA utility under Gaussian mixtures](../examples/docs/cara_gaussian_mixture.py) | Offline | The worked example of the [CARA mixture](cara_gaussian_mixture.md) page: the closed-form objective against Monte Carlo, the one-component reduction to mean-variance, the in-house mixture fit and its annualisation, and a crash component's effect on the allocation. |
 | [Portfolio constraints](../examples/docs/constraints.py) | Offline | The worked examples of the [portfolio constraints](constraints.md) page: a forced solve against an optimality certificate, hard and soft residuals, universe alignment and frozen-group waivers, and a tracking-error limit as a hard row and as a penalty. |
 | [Covariance estimators](../examples/docs/covariance_estimators.py) | Offline | The worked example of the [covariance estimators](covariance_estimators.md) page: direct EWMA covariance against an explicit weighted sum, three monthly observations against exact weights, the rolling grid, and rolling estimates unchanged by later prices. |
-| [Factor covariance with HCGL](../examples/docs/factor_covariance_hcgl.py) | Offline | The worked example of the [factor covariance](factor_covariance_hcgl.md) page: an HCGL fit on two cadences assembled from its components, orthogonal and empirical residuals, cadence penalties, factors as clustering references, and point-in-time rolling fits. |
-| [Hierarchical risk parity and cluster budgets](../examples/docs/hierarchical_risk_parity_and_cluster_budgets.py) | Offline | The worked example of the [hierarchical risk parity](hierarchical_risk_parity_and_cluster_budgets.md) page: two linkage conventions on a four-asset fixture, recursive bisection against an independent implementation, group budgets through the rolling risk-budgeting solver, and HRP, equal risk contribution and cluster budgets on one block universe. |
+| [Factor covariance with HCGL](../examples/docs/factor_covariance_hcgl.py) | Composed | The worked example of the [factor covariance](factor_covariance_hcgl.md) page: an HCGL fit on two cadences assembled from its components, orthogonal and empirical residuals, cadence penalties, factors as clustering references, and point-in-time rolling fits. |
+| [Hierarchical risk parity and cluster budgets](../examples/docs/hierarchical_risk_parity_and_cluster_budgets.py) | Composed | The worked example of the [hierarchical risk parity](hierarchical_risk_parity_and_cluster_budgets.md) page: two linkage conventions on a four-asset fixture, recursive bisection against an independent implementation, group budgets through the rolling risk-budgeting solver, and HRP, equal risk contribution and cluster budgets on one block universe. |
 | [Implied risk budgets](../examples/docs/implied_risk_budgets.py) | Offline | The worked example of the [implied risk budgets](implied_risk_budgets.md) page: closed-form budgets of one covariance, the round trip through the risk-budgeting solver, the hold rule for hedging assets, and one budget vector fitted to a rolling path. |
 | [Incomplete histories](../examples/docs/incomplete_histories.py) | Offline | The worked example of the [incomplete histories](incomplete_histories.md) page: frozen bounds from a stored baseline, drift with a missing price, three holdings paths against an exact ledger of units and cash, covariance filtering and an EWMA state reset. |
 | [Maximum diversification](../examples/docs/maximum_diversification.py) | Offline | The worked example of the [maximum diversification](maximum_diversification.md) page: inverse-volatility weights for two assets, the correlation-matrix identity checked against CVXPY, the equal-correlation property, a binding cap, and a rolling allocation on simulated prices. |
 | [Mean-variance objectives](../examples/docs/mean_variance_objectives.py) | Offline | The worked example of the [mean-variance objectives](mean_variance_objectives.md) page: minimum variance, tangency and utility portfolios against their closed forms, the Charnes–Cooper and SLSQP routes of maximum Sharpe, and utility portfolios on the frontier. |
 | [Minimum tracking error](../examples/docs/minimum_tracking_error.py) | Offline | The worked example of the [minimum tracking error](minimum_tracking_error.md) page: a capped allocation against an optimality certificate, the rolling table, input filtering and covariance stabilization, and the tracking-error cost of each added constraint. |
-| [Mixed-frequency data](../examples/docs/mixed_frequency_data.py) | Offline | The worked example of the [mixed-frequency data](mixed_frequency_data.md) page: monthly and quarterly return buckets, momentum windows against endpoint ratios, per-cadence scoring, and a mixed-frequency factor covariance against native per-bucket fits. |
+| [Mixed-frequency data](../examples/docs/mixed_frequency_data.py) | Composed | The worked example of the [mixed-frequency data](mixed_frequency_data.md) page: monthly and quarterly return buckets, momentum windows against endpoint ratios, per-cadence scoring, and a mixed-frequency factor covariance against native per-bucket fits. |
 | [Choosing an objective](../examples/docs/optimization_module_readme.py) | Offline | The worked examples of the [objective router](optimization_module_readme.md): every objective on one five-asset example against its closed form, the dispatch routes, `OptimiserConfig` defaults across the public entry points, and the compilers. |
 | [Overlay tail floor](../examples/docs/overlay_tail_floor.py) | Offline | The worked example of the [overlay tail floor](overlay_tail_floor.md) page: the fixed core and sleeve, the floor against an equality solution and an optimality certificate, the floor coefficients and their rescaling, and the sleeve as the floor tightens. Imports the repository solver demo, so it needs a source checkout. |
-| [Ex-ante risk contributions and betas](../examples/docs/portfolio_risk_analytics.py) | Offline | The worked example of the [risk analytics](portfolio_risk_analytics.md) page: Euler contributions, benchmark betas against a regression, and the hand-off to `qis.RiskModel`. |
+| [Ex-ante risk contributions and betas](../examples/docs/portfolio_risk_analytics.py) | Composed | The worked example of the [risk analytics](portfolio_risk_analytics.md) page: Euler contributions, benchmark betas against a regression, and the hand-off to `qis.RiskModel`. |
 | [Risk budgeting](../examples/docs/risk_budgeting.py) | Offline | The worked example of the [risk budgeting](risk_budgeting.md) page: budgets met against an independent conic solve, the closed-form diagonal case, and a binding cap against its optimality conditions. |
 | [Rolling backtests](../examples/docs/rolling_backtests.py) | Offline | The worked examples of the [rolling backtests](rolling_backtests.md) page: a toy unit ledger, drift against executed holdings, a monthly rolling backtest with costs and lag, and target against drifted weights through quarterly trades. |
 | [Rolling factor risk model from CSV](../examples/docs/rolling_factor_covar_from_csv.py) | Network | The worked example of the [rolling factor risk model from CSV](rolling_factor_covar_from_csv.md) page: a six-file bundle round trip, FX-converted returns against endpoint wealth, every snapshot covariance summed term by term, the `load` command in a fresh process, loader defects and repairs, and the Yahoo fetch on synthetic closes. It opens no connection; the classifier lists it as network because the repository example it imports holds the Yahoo fetcher. Needs a source checkout. |
 | [Signal diagnostics](../examples/docs/signal_diagnostics_and_profiling.py) | Offline | The worked example of the [signal diagnostics](signal_diagnostics_and_profiling.md) page: the rank IC of a synthetic score against its population value, quintile portfolios and their spread, the rank profiler and the per-component diagnostics, and a score's value inside an optimiser. |
 | [Solver numerics and outcomes](../examples/docs/solver_numerics_and_outcomes.py) | Offline | The worked example of the [solver numerics](solver_numerics_and_outcomes.md) page: the floored factorisation, NaN filtering, outcome acceptance, fallbacks, residuals and the elastic feasibility diagnosis. |
 | [Target return and target volatility](../examples/docs/strategic_allocation_targets.py) | Offline | The worked example of the [strategic allocation](strategic_allocation_targets.md) page on the packaged monthly fixture: the frontier duality round trip at a return and a volatility target, infeasible and slack targets, and where the utility form meets the hard one. |
-| [Stress testing with options](../examples/docs/stress_testing_with_options.py) | Offline | An offline version of the [stress testing](stress_testing_with_options.md) workflow: a fixed factor model, Black-Scholes repricing of short options, conditional scenario completion, and the P&L split into delta and gamma parts. |
+| [Stress testing with options](../examples/docs/stress_testing_with_options.py) | Composed | An offline version of the [stress testing](stress_testing_with_options.md) workflow: a fixed factor model, Black-Scholes repricing of short options, conditional scenario completion, and the P&L split into delta and gamma parts. |
 | [Turnover and transaction costs](../examples/docs/turnover_and_transaction_costs.py) | Offline | The worked examples of the [turnover and transaction costs](turnover_and_transaction_costs.md) page: turnover budgets against a stored baseline, executed trades against an exact currency ledger, reported turnover and costs, and the turnover penalty frontier. |
 | [Universe data and unsmoothing](../examples/docs/universe_data_and_unsmoothing.py) | Offline | The worked example of the [universe data](universe_data_and_unsmoothing.md) page: a validated `UniverseData`, its loadings in group constraints and budgets, and an appraisal-smoothed private-equity series unsmoothed against the simulated truth. |
 

@@ -1,1 +1,1 @@
-"""Retained constrained opportunity integration pending the supplied-input migration."""
+"""Constrained optimisation of supplied opportunity inputs."""

@@ -25,7 +25,19 @@ def test_every_script_is_collected(root):
         path.name for path in (root / 'examples' / 'docs').glob('*.py')}
 
 
-@pytest.mark.parametrize('script', SCRIPTS, ids=lambda path: path.stem)
+def _script_cases():
+    """Mark composed examples through the same import-closure classifier used by CI."""
+    if not SCRIPTS:
+        return []
+    classifier = runpy.run_path(str(REPO_ROOT / '.github/scripts/run_examples.py'))
+    return [pytest.param(path, id=path.stem,
+                         marks=pytest.mark.factor_integration
+                         if classifier['external_dependencies'](path)
+                         & {'tradablefactors', 'factorlasso'} else ())
+            for path in SCRIPTS]
+
+
+@pytest.mark.parametrize('script', _script_cases())
 def test_canonical_script_asserts_its_page(root, script):
     """Run the script as ``__main__``; any failed assertion fails the test."""
     with patch.object(sys, 'path', [str(root), *sys.path]):

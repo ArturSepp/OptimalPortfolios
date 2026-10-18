@@ -5,16 +5,11 @@ The package has no ``__all__``: its public surface is whatever the wildcard impo
 ``src/optimalportfolios/__init__.py`` happen to leave in the namespace. That is a contract nobody
 wrote down, so these tests write down the parts of it that can be checked cheaply.
 
-Four properties, each of which has a failure mode that is silent today:
+Three properties, each of which has a failure mode that is silent today:
 
     every public name resolves
         A wildcard import that stops re-exporting a symbol removes it from the public surface
         with no error anywhere. A downstream ``AttributeError`` is the first sign.
-
-    the factorlasso re-exports are the same objects as their sources
-        ``optimalportfolios.LassoModel is factorlasso.LassoModel`` must hold, or a caller
-        constructing one and passing it to the other gets an isinstance failure. CI has checked
-        one of the nine inline since 6.1; this checks all nine, in the suite, where it belongs.
 
     a name shared with qis is the same object, or is on the allowlist below
         Two packages in one stack exporting the same name for different things is how the same
@@ -39,7 +34,6 @@ import pytest
 # optimalportfolios
 import optimalportfolios as op
 import qis
-import factorlasso
 
 
 def _public_names() -> List[str]:
@@ -48,20 +42,6 @@ def _public_names() -> List[str]:
 
 
 PUBLIC_NAMES: List[str] = _public_names()
-
-# The nine symbols optimalportfolios re-exports from factorlasso for backward compatibility.
-# Listed here rather than derived, so that dropping one from __init__.py fails this file.
-FACTORLASSO_REEXPORTS: List[str] = [
-    'CurrentFactorCovarData',
-    'DependenceMeasure',
-    'DistanceTransform',
-    'LassoModel',
-    'LassoModelType',
-    'RollingFactorCovarData',
-    'VarianceColumns',
-    'compute_dependence_matrix',
-    'compute_gerber_matrix',
-]
 
 # Names exported by both optimalportfolios and qis that are NOT the same object. Each entry is a
 # deliberate collision with a reason; anything not listed here must be identical in both packages.
@@ -94,18 +74,11 @@ def test_public_name_resolves(name: str) -> None:
     assert getattr(op, name) is not None, f"optimalportfolios.{name} is None"
 
 
-@pytest.mark.parametrize('name', FACTORLASSO_REEXPORTS)
-def test_factorlasso_reexport_is_the_same_object(name: str) -> None:
-    """
-    a re-export is an alias, not a copy.
-
-    If these ever diverge, an isinstance check against one fails for an object built by the other,
-    and the failure surfaces far from its cause.
-    """
-    assert hasattr(op, name), f"optimalportfolios no longer re-exports {name} from factorlasso"
-    assert hasattr(factorlasso, name), f"factorlasso no longer exports {name}"
-    assert getattr(op, name) is getattr(factorlasso, name), (
-        f"optimalportfolios.{name} is not factorlasso.{name}; the re-export has been shadowed")
+def test_extracted_factor_exports_are_absent() -> None:
+    """The clean boundary cannot silently regain old factor aliases."""
+    for name in ('LassoModel', 'CurrentFactorCovarData', 'RollingFactorCovarData',
+                 'FactorCovarEstimator', 'VarianceColumns', 'extract_rolling_clusters'):
+        assert not hasattr(op, name), name
 
 
 def test_names_shared_with_qis_are_identical_or_allowlisted() -> None:

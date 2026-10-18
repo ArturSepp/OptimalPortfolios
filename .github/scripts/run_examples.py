@@ -132,6 +132,20 @@ def _resolve(module: str) -> Path | None:
     return package_init if package_init.is_file() else None
 
 
+def external_dependencies(path: Path, seen: Set[Path] | None = None) -> Set[str]:
+    """Resolve external imports independently of network or composed execution labels."""
+    seen = set() if seen is None else seen
+    if path in seen:
+        return set()
+    seen.add(path)
+    external, internal = _imports_of(path)
+    for module in internal:
+        target = _resolve(module)
+        if target is not None:
+            external |= external_dependencies(target, seen)
+    return external
+
+
 def classify(examples: List[Path]) -> Dict[Path, str]:
     """
     label each example `network` or `offline` by walking its intra-examples import closure.
@@ -140,30 +154,12 @@ def classify(examples: List[Path]) -> Dict[Path, str]:
     `examples/data/universe.py`, and treating them as offline is how a lane that promises to need
     no network starts calling Yahoo.
     """
-    cache: Dict[Path, bool] = {}
-
-    def reaches_network(path: Path, seen: Set[Path]) -> bool:
-        if path in cache:
-            return cache[path]
-        if path in seen:
-            return False  # an import cycle contributes nothing on its own
-        seen.add(path)
-
-        external, internal = _imports_of(path)
-        if external & NETWORK_MODULES:
-            cache[path] = True
-            return True
-
-        for module in internal:
-            target = _resolve(module)
-            if target is not None and reaches_network(target, seen):
-                cache[path] = True
-                return True
-
-        cache[path] = False
-        return False
-
-    return {p: ("network" if reaches_network(p, set()) else "offline") for p in examples}
+    labels = {}
+    for path in examples:
+        imports = external_dependencies(path)
+        labels[path] = ('network' if imports & NETWORK_MODULES else
+                        'composed' if imports & {'tradablefactors', 'factorlasso'} else 'offline')
+    return labels
 
 
 def run_one(path: Path, timeout: int) -> Tuple[Path, bool, float, str]:
@@ -200,7 +196,8 @@ def _last_error_line(output: str) -> str:
 def main() -> int:
     """run the selected lane and report one line per example."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--lane", choices=["offline", "network", "all"], default="offline")
+    parser.add_argument("--lane", choices=["offline", "composed", "network", "all"],
+                        default="offline")
     parser.add_argument("--jobs", type=int, default=min(8, (os.cpu_count() or 2) * 2))
     parser.add_argument("--timeout", type=int, default=900)
     parser.add_argument("--list", action="store_true", help="classify and print, run nothing")
@@ -218,16 +215,19 @@ def main() -> int:
         for path in examples:
             print(f"{labels[path]:8} {path.relative_to(REPO_ROOT)}")
         print(f"\n{sum(v == 'offline' for v in labels.values())} offline, "
+              f"{sum(v == 'composed' for v in labels.values())} composed, "
               f"{sum(v == 'network' for v in labels.values())} network, {len(examples)} total")
         return 0
 
     if not selected:
         # An empty lane is a classification bug, not a pass. The offline lane going quietly empty
         # would report success while running nothing at all.
-        print(f"::error::lane '{args.lane}' selected no examples out of {len(examples)}", flush=True)
+        print(f"::error::lane '{args.lane}' selected no examples out of {len(examples)}",
+              flush=True)
         return 1
 
-    print(f"running {len(selected)} '{args.lane}' example(s) with {args.jobs} workers\n", flush=True)
+    print(f"running {len(selected)} '{args.lane}' example(s) with {args.jobs} workers\n",
+          flush=True)
     started = time.time()
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
         results = list(pool.map(lambda p: run_one(p, args.timeout), selected))

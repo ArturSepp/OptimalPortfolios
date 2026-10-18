@@ -84,8 +84,10 @@ OptimalPortfolios owns portfolio construction and rolling orchestration.
 `QIS <https://github.com/ArturSepp/QuantInvestStrats>`_ supplies reusable analytics,
 holdings simulation and reporting.
 `FactorLasso <https://github.com/ArturSepp/FactorLasso>`_ supplies generic sparse
-factor estimation and related containers; selected objects are re-exported here
-for compatibility. The :doc:`software design guide <software_design>` maps these
+factor estimation and related containers upstream through
+`TradableFactors <https://github.com/ArturSepp/tradablefactors>`_. OP accepts
+supplied alpha/covariance arrays or QIS RiskModel context; neither factor package
+is an OP dependency. The :doc:`software design guide <software_design>` maps these
 responsibilities to their implementations.
 
 When citing work that uses those packages, include the
@@ -101,7 +103,7 @@ Public reference
 The reference below is generated when the site is built, from the package itself and
 the page ownership recorded in the documentation inventory, so it cannot drift from the
 exports. Each object appears under the page that explains it, in the order of the
-sidebar. The names re-exported from FactorLasso and qis link to the documentation of the
+sidebar. The names re-exported from qis link to the documentation of the
 package that defines them, and the configuration fields of the mapped dataclasses are
 listed with their defaults and owning pages.
 

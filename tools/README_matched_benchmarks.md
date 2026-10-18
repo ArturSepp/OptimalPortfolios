@@ -19,8 +19,8 @@ factor estimation uses [FactorLasso](https://github.com/ArturSepp/factorlasso)
 
 The [benchmark harness](matched_benchmarks.py) compares tightly specified problems.
 It reuses the [analytics infrastructure](docs_analytics/README.md), OP's seeded factor
-simulator, QIS's existing independent cash ledger and FactorLasso's canonical covariance
-assembly example. It is repository-only maintainer tooling. No competitor is a runtime
+simulator, QIS's existing independent cash ledger and FactorLasso's public covariance
+container. It is repository-only maintainer tooling. No competitor is a runtime
 package dependency, and no production algorithm is replaced.
 
 ## Workloads and conventions
@@ -34,8 +34,9 @@ package dependency, and no production algorithm is replaced.
 Inputs are synthetic simple returns in per-observation units. The existing generator uses
 business-day observations with a 1/260 simulation step. It is reused unchanged, and caller
 NumPy RNG state is preserved. No covariance is annualised in this harness. FactorLasso's
-canonical example assembly is divided by its explicitly declared annualisation factor to
-return to these per-observation units. Forecast scores use only the reserved future rows.
+public `CurrentFactorCovarData` assembles the fitted loadings, population factor covariance
+and fitted residual variances directly in per-observation units. Forecast scores use only
+the reserved future rows.
 
 Both optimization adapters use variance, with quadratic utility expressed as expected return
 minus gamma/2 times variance. The skfolio risk-aversion setting is therefore gamma/2.
@@ -66,15 +67,17 @@ variance formulas are each checked by a second calculation.
 ## Setup and execution
 
 Use the repository's external interpreter and generated-state setup from AGENTS.md.
-Keep all environments, caches, source exports and results outside OneDrive. Source exports of
-all three owning packages are required: the QIS ledger and FactorLasso example are source
-references, not new runtime dependencies or copied numerical implementations.
+Keep all environments, caches, source exports and results outside OneDrive. The OP checkout
+provides this tooling. QIS and FactorLasso may be installed distributions or source exports:
+the ledger is imported from QIS's shipped tests and covariance assembly uses FactorLasso's
+public container. Both remain owned references, without copied numerical implementations.
 
-Prepare the recorded C-local OP, QIS and FactorLasso source exports. Set `$opSource`,
-`$qisSource` and `$factorSource` to those directories. Use the existing governance source-export
-workflow; do not stage unrelated edits to obtain a check. Source versions and installed
-distribution metadata are recorded separately because an editable environment can report a
-version different from the exported source actually imported.
+The command below uses recorded C-local OP, QIS and FactorLasso source exports. Set `$opSource`,
+`$qisSource` and `$factorSource` to those directories, or omit the QIS and FactorLasso source
+paths from `PYTHONPATH` when using installed distributions. Use the existing governance
+source-export workflow; do not stage unrelated edits to obtain a check. Effective package
+versions and installed distribution metadata are recorded separately because an editable
+environment can report a version different from the exported source actually imported.
 
 The optional comparator snapshot is skfolio 1.9.3. Its additional isolated tool-layer pins are
 scikit-learn 1.9.1, joblib 1.6.0, threadpoolctl 3.7.0, plotly 7.1.0, narwhals 2.27.1 and
@@ -103,7 +106,7 @@ records its exact versions and actual imported source paths. The optional layer'
 reports retain wheel hashes. Package installation may use the network; generation imports,
 fits, scoring and reference checks run under the existing analytics offline guard. The guard
 prevents accidental Python network use; it is not an OS sandbox for hostile native code.
-FactorLasso retains its GPL licence; no third-party source is copied or relicensed here.
+Each imported dependency retains its own licence; no third-party source is copied here.
 
 ## Outputs and measurements
 

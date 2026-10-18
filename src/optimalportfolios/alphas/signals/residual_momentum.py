@@ -33,19 +33,12 @@ from typing import Dict, Mapping, Optional, Tuple, Union
 
 from optimalportfolios.alphas.signals.utils import (
     resolve_span,
-    # re-exported for back-compat (used to live in residual_momentum_cluster)
-    extract_rolling_clusters,
     score_within_clusters,
 )
 
-# keep ``extract_rolling_clusters`` importable from this module: it used to be
-# re-exported from residual_momentum_cluster (now folded in here), and the
-# canonical home is utils. Guards external callers that did
-# ``from ...residual_momentum import extract_rolling_clusters``.
 __all__ = [
     'compute_residual_momentum_alpha',
     'compute_residual_momentum_cluster_alpha',
-    'extract_rolling_clusters',
 ]
 
 

@@ -1,21 +1,24 @@
 """Independent B0 benchmark references, outside the production allocation path.
 
-QIS owns the reused cash-ledger oracle; FactorLasso owns the reused covariance
-assembly example. The small matrix references here are benchmark assertions,
+QIS owns the reused cash-ledger oracle; FactorLasso owns the covariance
+container used for assembly. The small matrix references here are benchmark assertions,
 not alternative portfolio statistics, estimators or execution implementations.
 """
+from importlib.metadata import version
 from pathlib import Path
-import runpy
+import re
 
 import numpy as np
+import pandas as pd
 
 
-def source_root(module):
-    """Find the source checkout required by repository-only reference tooling."""
-    root = Path(module.__file__).resolve().parents[2]
-    if not (root / 'pyproject.toml').is_file():
-        raise ValueError('B0 requires the recorded QIS and FactorLasso source exports')
-    return root
+def package_version(module):
+    """Record a source export's version or the installed distribution's version."""
+    metadata = Path(module.__file__).resolve().parents[2] / 'pyproject.toml'
+    if metadata.is_file():
+        return re.search(r'(?m)^version\s*=\s*["\']([^"\']+)',
+                         metadata.read_text(encoding='utf-8'))[1]
+    return version(module.__name__)
 
 
 def optimizer_oracle(covariance, means, gamma):
@@ -52,31 +55,36 @@ def verify_optimizer(weights, covariance, means, gamma, cap, atol=2e-5):
 
 def ledger_reference(prices, targets, lag, cost):
     """Delegate independent wealth/trade arithmetic to the existing QIS test oracle."""
-    import qis
+    from qis.portfolio.tests import backtester_missing_prices_test as ledger
 
-    path = source_root(qis) / 'src/qis/portfolio/tests/backtester_missing_prices_test.py'
-    oracle = runpy.run_path(str(path))['_ledger_reference']
     positions = prices.index.get_indexer(targets.index) + lag
     if (positions >= len(prices)).any():
         raise ValueError('A target lies beyond the benchmark observation window')
     flags = np.zeros(len(prices), dtype=bool)
     flags[positions] = True
     zeros = np.zeros(len(prices))
-    nav, units, expenses, cash, marks = oracle(
+    nav, units, expenses, cash, marks = ledger._ledger_reference(
         prices.to_numpy(), targets.to_numpy(), flags, zeros, zeros,
         np.zeros(prices.shape), np.full(prices.shape, cost), None)
     return {'nav': nav, 'units': units, 'costs': expenses, 'cash': cash, 'marks': marks,
-            'source': str(path)}
+            'source': str(Path(ledger.__file__).resolve())}
 
 
 def factorlasso_covariance(model, factors):
-    """Reuse the canonical FactorLasso example assembly, undoing its stated annual scale."""
-    import factorlasso
+    """Assemble per-observation covariance through FactorLasso's public snapshot."""
+    import factorlasso as fl
 
-    path = source_root(factorlasso) / 'examples/docs/quickstart.py'
-    example = runpy.run_path(str(path))
-    assembled = example['assemble_covariance'](model, factors)
-    return assembled.get_y_covar().to_numpy() / example['PERIODS_PER_YEAR']
+    residual_variances = pd.DataFrame(
+        {fl.VarianceColumns.RESIDUAL_VARS.value: model.estimation_result_.ss_res},
+        index=model.coef_.index,
+    )
+    assembled = fl.CurrentFactorCovarData(
+        x_covar=factors.cov(ddof=0),
+        y_betas=model.coef_,
+        y_variances=residual_variances,
+        estimation_date=factors.index[-1],
+    )
+    return assembled.get_y_covar().to_numpy()
 
 
 def factor_oracle(factors, responses, residual_ddof):

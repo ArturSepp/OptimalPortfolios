@@ -60,7 +60,8 @@ and illiquid positions.
   alternatives quarterly. See the [ROSAA case study](https://optimalportfolios.readthedocs.io/en/latest/app_rosaa_multi_asset_allocation.html).
 - **HCGL factor covariance.** Sparse, structured covariance for heterogeneous universes, fitted
   by [`factorlasso`](https://github.com/ArturSepp/factorlasso) and assembled point in time by
-  `FactorCovarEstimator` across return frequencies. See
+  `tradablefactors.FactorCovarEstimator` across return frequencies before OP receives
+  the selected covariance. See
   [factor covariance with HCGL](https://optimalportfolios.readthedocs.io/en/latest/factor_covariance_hcgl.html).
 - **Cluster-aware risk allocation.** Clusters, sectors or asset classes become asset-level risk
   budgets, static or dated, and canonical HRP runs from a supplied linkage. See
@@ -187,7 +188,7 @@ estimator rather than portfolio construction.
 
 | Subpackage | What it holds | Articles |
 | --- | --- | --- |
-| `covar_estimation` | EWMA and HCGL factor covariance estimators, the `qis.RiskModel` adapter, covariance reports | [covariance estimators](https://optimalportfolios.readthedocs.io/en/latest/covariance_estimators.html), [factor covariance](https://optimalportfolios.readthedocs.io/en/latest/factor_covariance_hcgl.html), [risk contributions and betas](https://optimalportfolios.readthedocs.io/en/latest/portfolio_risk_analytics.html) |
+| `covar_estimation` | EWMA covariance estimation; factor models are prepared upstream in TF | [covariance estimators](https://optimalportfolios.readthedocs.io/en/latest/covariance_estimators.html), [supplied risk inputs](docs/supplied_risk_inputs.md) |
 | `alphas` | Momentum, low-beta, carry, residual and managers' alpha signals, `AlphasData`, profiling and diagnostics | [alpha signals](https://optimalportfolios.readthedocs.io/en/latest/alphas_module_readme.html), [signal diagnostics](https://optimalportfolios.readthedocs.io/en/latest/signal_diagnostics_and_profiling.html) |
 | `optimization` | The rolling dispatcher, the general, risk-allocation, SAA and TAA solvers, `Constraints`, `OptimiserConfig` and solver diagnostics | [choosing an objective](https://optimalportfolios.readthedocs.io/en/latest/optimization_module_readme.html), [constraints](https://optimalportfolios.readthedocs.io/en/latest/constraints.html), [solver outcomes](https://optimalportfolios.readthedocs.io/en/latest/solver_numerics_and_outcomes.html) |
 | `universe` | `UniverseData` and its transforms, such as unsmoothing | [universe data](https://optimalportfolios.readthedocs.io/en/latest/universe_data_and_unsmoothing.html) |
@@ -203,8 +204,8 @@ The [software-design guide](https://optimalportfolios.readthedocs.io/en/latest/s
 | --- | --- |
 | Alpha construction | Momentum, low beta, risk-adjusted carry, managers alpha, residual momentum, residual reversal and rolling EWMA means; fixed-group and time-varying cluster scoring are supported. |
 | Alpha evaluation | Rank-portfolio profiling, cross-backtests, `AlphasData`, IC/IR panels, component diagnostics and comparison tables. |
-| Covariance and dependence | Current/rolling EWMA and HCGL sparse factor covariance; Pearson, Spearman and Gerber dependence choices, configurable correlation-distance transforms through `factorlasso`, and current/rolling covariance diagnostic reports. |
-| Risk-cluster analytics | Persistent cluster lineage, births/deaths/splits/merges and report tables/figures through `factorlasso.cluster_lineage` (`analyze_cluster_lineage()` and `run_cluster_lineage_report()`); the `analyze_risk_clusters()` and `run_risk_label_report()` aliases in `optimalportfolios.covar_estimation.risk_labelling` are deprecated. |
+| Covariance inputs | Current/rolling EWMA or supplied covariance matrices, including completed TF estimates. |
+| Cluster inputs | Supplied static or dated cluster mappings and prepared scores. Lineage and statistical clustering remain in FactorLasso; OP aliases are removed. |
 | General optimisation | Minimum variance, quadratic utility, maximum Sharpe, maximum diversification, CARA Gaussian-mixture utility and minimum tracking error. |
 | Risk allocation | Constrained risk budgeting, point-in-time group risk budgets, date-varying rolling budgets, group Euler-risk attribution and external-linkage hierarchical risk parity. |
 | SAA and TAA optimisation | Minimum variance at target return, maximum return at target volatility, alpha over tracking error and alpha at target portfolio return. |
@@ -216,14 +217,15 @@ The [software-design guide](https://optimalportfolios.readthedocs.io/en/latest/s
 This table groups the analytics by workflow. The exact package-root import inventory and callable
 signatures are maintained in the [API reference](https://optimalportfolios.readthedocs.io/en/latest/api.html).
 
-**Architecture: factorlasso vs optimalportfolios**
+**Architecture: completed outputs across the stack**
 
 [`factorlasso`](https://github.com/ArturSepp/factorlasso) is the domain-agnostic sparse
 factor-model estimator, with sign constraints, prior-centred regularisation and HCGL clustering;
-it knows nothing about asset returns, frequencies or rebalancing. `optimalportfolios` adds the
-finance layer: `estimate_lasso_factor_covar_data()` computes factor returns from prices, fits
-the factor model to the asset returns of each frequency and annualises the decomposition, and
-`FactorCovarEstimator` runs it on a rolling schedule. See [factor covariance with HCGL](https://optimalportfolios.readthedocs.io/en/latest/factor_covariance_hcgl.html).
+it produces statistical estimates. `tradablefactors` constructs definitions and NAVs,
+fits the asset universe through FL and completes the dated loading/covariance model.
+OP receives supplied alphas and covariances and produces constrained weights. QIS
+provides general risk/stress analytics, backtesting and reporting. Each completed
+object can be inspected before its separate downstream use.
 
 ## Cluster-aware risk allocation
 
@@ -252,6 +254,15 @@ See the [alpha signals guide](https://optimalportfolios.readthedocs.io/en/latest
 7. [Examples](#examples)
 8. [Updates](#updates)
 9. [Disclaimer](#disclaimer)
+
+## Supplied risk inputs
+
+OP produces constrained target weights and solver outcomes from supplied alphas and
+covariances. `PortfolioOptimisationResult` can inspect those weights on their own,
+with a supplied covariance matrix, or with a QIS `RiskModel` and prepared diagnostic
+tables. Neither `tradablefactors` nor `factorlasso` is an OP dependency.
+Factor model construction and GLS inference belong to TradableFactors; statistical
+estimation belongs to FactorLasso. See the [breaking migration contract](docs/supplied_risk_inputs.md).
 
 ## Installation
 
@@ -460,8 +471,8 @@ This package is part of an open-source Python stack for quantitative finance. Th
 | [`privateassets`](https://github.com/ArturSepp/privateassets) | Money-weighted multi-factor alpha from private-asset cash flows |
 | [`goal-based-allocation`](https://github.com/ArturSepp/GoalBasedAllocation) | Dynamic MV allocation under regime-switching jump-diffusions |
 
-Within the stack, `optimalportfolios` directly depends on `qis` for analytics and reporting and on
-`factorlasso` for sparse factor covariance estimation. The profile catalogue explains the other
+Within the stack, `optimalportfolios` directly depends on `qis` for analytics and reporting.
+TF/FL are separately installed upstream tools. The profile catalogue explains the other
 packages and their distinct boundaries.
 
 ## Feedback & contributing
@@ -485,7 +496,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
   year={2026},
-  version={8.0.0.dev0},
+  version={8.0.0.dev1},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

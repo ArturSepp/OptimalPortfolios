@@ -13,11 +13,11 @@ myst:
 Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
-OptimalPortfolios provides portfolio construction and rolling optimization. Its core dependencies
-include [QIS](https://github.com/ArturSepp/QuantInvestStrats) for analytics and backtesting and
-[FactorLasso](https://github.com/ArturSepp/FactorLasso) for factor estimation.
-The core package supports an offline first workflow; optional integrations add data downloads
-and report backends.
+OptimalPortfolios optimizes portfolios from supplied expected returns and covariances and
+supports rolling allocation workflows. Its core dependencies include
+[QIS](https://github.com/ArturSepp/QuantInvestStrats) for analytics and backtesting.
+The core package supports an offline workflow; optional integrations add data downloads
+and report backends. Factor estimation belongs to separately installed upstream packages.
 
 This guide follows the checkout's [packaging metadata](../pyproject.toml). A PyPI installation
 uses the metadata of the released version it selects; that version can differ from the current
@@ -77,8 +77,19 @@ explains why groups are not included as package metadata in distributions.
 
 There is no `jupyter`, `clustering`, `test` or `dev` package extra. Install local notebook tooling
 separately. The repository's Colab quickstart uses its hosted notebook runtime. Risk-lineage
-matching uses the existing NumPy/SciPy path; cluster-lineage analytics belong to FactorLasso,
-which is already a core dependency.
+matching uses the existing NumPy/SciPy path.
+
+Composed factor workflows use [tradablefactors](https://github.com/ArturSepp/tradablefactors) to construct
+factor models and covariances, then supply those estimates to OptimalPortfolios. Install it
+separately; it includes [FactorLasso](https://github.com/ArturSepp/FactorLasso) for estimation
+and cluster-lineage analytics:
+
+```console
+python -m pip install tradablefactors
+```
+
+For a workflow that uses FactorLasso's estimator directly, install `factorlasso` separately.
+Neither package is required by the base OP installation or the offline quickstart below.
 
 ## Verify the interpreter and imports
 
@@ -90,11 +101,10 @@ import sys
 from importlib.metadata import metadata, version
 import optimalportfolios as opt
 import qis
-import factorlasso
 
 versions = {
     name: version(name)
-    for name in ("optimalportfolios", "qis", "factorlasso")
+    for name in ("optimalportfolios", "qis")
 }
 available_extras = sorted(metadata("optimalportfolios").get_all("Provides-Extra") or [])
 print("Python:", sys.executable)
@@ -103,7 +113,6 @@ print("OptimalPortfolios source:", opt.__file__)
 print("Available extras:", available_extras)
 assert callable(opt.compute_rolling_optimal_weights)
 assert callable(qis.backtest_model_portfolio)
-assert callable(factorlasso.LassoModel)
 ```
 
 The source path helps identify an editable checkout or an unexpected installation. Version metadata
@@ -135,8 +144,10 @@ The script requires only the core package, writes no files, and prints input dat
 dimensions, final weights, final NAV and elapsed time. Its fixed sample is a teaching workflow,
 not an updated market-data report.
 
-Only the examples that fetch Yahoo data need `data`. Other examples are offline or have explicit
-local-data prerequisites. From a checkout, inspect the classifier without running any examples:
+Only the examples that fetch Yahoo data need `data`. The `composed` examples additionally need
+the separately installed factor packages; `offline` examples use the base package. Local
+diagnostics have explicit data prerequisites. From a checkout, inspect the classifier without
+running any examples:
 
 ```console
 python .github/scripts/run_examples.py --list

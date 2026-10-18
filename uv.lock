@@ -958,28 +958,6 @@ wheels = [
 ]
 
 [[package]]
-name = "factorlasso"
-version = "1.0.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "cvxpy", version = "1.7.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "cvxpy", version = "1.9.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
-    { name = "numpy", version = "2.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "openpyxl" },
-    { name = "pandas", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "pandas", version = "3.0.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
-    { name = "scipy", version = "1.18.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/00/77/6b7aadc65f81cac5d7cc449ae651c2742795a0251a0ad1f635a5184d6410/factorlasso-1.0.2.tar.gz", hash = "sha256:7e01a36eeaa6a19d4c4d1767ad7094b16e72caa7321f6c88876c056ecfb40871", size = 412534, upload-time = "2026-10-05T02:17:20.497Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/cf/93/1bb0a6da37350e7fcbf2c298bcabd6707ec76010188f1c683eca32f63fae/factorlasso-1.0.2-py3-none-any.whl", hash = "sha256:c7cdf4b3e2bcfccdf11f1708a9969ca8f46bc7f0af2fedd4ca7472a10801e4ce", size = 247400, upload-time = "2026-10-05T02:17:18.724Z" },
-]
-
-[[package]]
 name = "filelock"
 version = "3.32.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2210,12 +2188,11 @@ wheels = [
 
 [[package]]
 name = "optimalportfolios"
-version = "8.0.0.dev0"
+version = "8.0.0.dev1"
 source = { editable = "." }
 dependencies = [
     { name = "cvxpy", version = "1.7.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "cvxpy", version = "1.9.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "factorlasso" },
     { name = "matplotlib", version = "3.10.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "matplotlib", version = "3.11.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -2271,7 +2248,6 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "cvxpy", specifier = ">=1.5.2" },
-    { name = "factorlasso", specifier = ">=1.0.2" },
     { name = "furo", marker = "extra == 'docs'", specifier = ">=2024.1.29" },
     { name = "matplotlib", specifier = ">=3.8.0" },
     { name = "myst-parser", marker = "extra == 'docs'", specifier = ">=2.0" },

@@ -247,10 +247,14 @@ fitted model. It does not cluster a factor correlation matrix after estimating b
 Dependence measure, clustering horizon, linkage, distance, external partitions and rolling
 smoothing settings can change the resulting labels.
 
-`extract_rolling_clusters` reads the stored asset labels from each covariance snapshot;
+`tradablefactors.extract_rolling_clusters` reads stored asset labels from each fitted snapshot;
 it does not estimate clusters. Labels can include cadence prefixes such as `ME:1`.
 `align_rolling_clusters` provides overlap-based label alignment for interpretation through
 time. Relabeling a partition does not change its memberships or basic within-cluster scores.
+OP accepts the completed mapping and estimates no clusters. Optional statistical stability
+pooling is prepared upstream with `tradablefactors.prepare_cluster_scores`; its completed
+dates-by-assets panel can be supplied as alpha scores to OP. The cluster-aware signal
+families and `compute_managers_alpha` continue to consume supplied mappings or betas.
 
 #### Scoring Logic
 
@@ -451,10 +455,10 @@ mgr_score = score
 The cluster-extraction example uses the same fitted collection and the explicit asset list.
 
 ```python
-from optimalportfolios.alphas.signals import extract_rolling_clusters
+from tradablefactors.signals import extract_rolling_clusters
 
 rolling_clusters = extract_rolling_clusters(
-    rolling_covar_data=taa_covar_data,
+    model=taa_covar_data,
     assets=prices.columns.tolist(),
 )
 # Dict[pd.Timestamp, pd.Series]  →  {date: pd.Series(ticker → cluster_id)}

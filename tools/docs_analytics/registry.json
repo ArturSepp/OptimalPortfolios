@@ -92,7 +92,6 @@
           "optimalportfolios": "optimalportfolios",
           "qis": "qis",
           "scipy": "scipy",
-          "factorlasso": "factorlasso",
           "numba": "numba",
           "seaborn": "seaborn"
         }
@@ -203,7 +202,6 @@
           "optimalportfolios": "optimalportfolios",
           "qis": "qis",
           "scipy": "scipy",
-          "factorlasso": "factorlasso",
           "numba": "numba",
           "seaborn": "seaborn"
         }
@@ -325,7 +323,6 @@
           "optimalportfolios": "optimalportfolios",
           "qis": "qis",
           "scipy": "scipy",
-          "factorlasso": "factorlasso",
           "numba": "numba",
           "seaborn": "seaborn",
           "cvxpy": "cvxpy",
@@ -522,7 +519,8 @@
           "numba": "numba",
           "seaborn": "seaborn",
           "cvxpy": "cvxpy",
-          "clarabel": "clarabel"
+          "clarabel": "clarabel",
+          "tradablefactors": "tradablefactors"
         }
       },
       "legacy_sources": [

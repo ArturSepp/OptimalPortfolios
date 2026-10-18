@@ -295,7 +295,7 @@ def compute_residual_reversal_cluster_alpha(
         prices: Asset price panel. Index=dates, columns=tickers.
         benchmark_price: Benchmark price series. If None, uses equal-weight.
         rolling_clusters: Dict mapping dates to pd.Series (ticker → cluster_id).
-            Extracted from RollingFactorCovarData via extract_rolling_clusters().
+            Supplied by the caller; model estimation belongs upstream.
         returns_freq: Return frequency. String or pd.Series for mixed-freq.
         beta_span: EWMA span for benchmark beta estimation.
             Either a scalar applied at every reporting cadence, or a per-cadence mapping

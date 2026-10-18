@@ -1,11 +1,9 @@
 """
 Shared utilities for cluster-based alpha signal scoring.
 
-Provides the two pieces of cluster plumbing that every cluster-aware
+Provides the supplied-cluster plumbing that every cluster-aware
 signal needs:
 
-    * :func:`extract_rolling_clusters` — extract time-varying cluster
-      assignments from a ``RollingFactorCovarData``.
     * :func:`score_within_clusters` — apply cross-sectional scoring
       within those time-varying clusters.
     * :func:`align_rolling_clusters` — relabel those assignments so one
@@ -21,10 +19,7 @@ import numpy as np
 import pandas as pd
 import qis as qis
 from scipy.optimize import linear_sum_assignment
-from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Tuple, Union
-
-if TYPE_CHECKING:
-    from factorlasso import StabilityPoolingType
+from typing import Dict, Mapping, Optional, Tuple, Union
 
 
 def resolve_span(span: Optional[Union[int, Mapping[str, int]]],
@@ -77,48 +72,10 @@ def resolve_span(span: Optional[Union[int, Mapping[str, int]]],
     return int(span)
 
 
-def extract_rolling_clusters(
-        rolling_covar_data,
-        assets: Optional[List[str]] = None,
-) -> Dict[pd.Timestamp, pd.Series]:
-    """Extract time-varying cluster assignments from RollingFactorCovarData.
-
-    ``CurrentFactorCovarData.clusters`` is persisted as a single flat
-    ``pd.Series`` keyed by asset ticker (with freq-prefixed cluster IDs
-    such as ``'QE:4'`` as values), already merged across frequencies by
-    ``FactorCovarEstimator``. This function just filters it to the
-    requested asset universe and returns a dict keyed by estimation date.
-
-    Args:
-        rolling_covar_data: RollingFactorCovarData from FactorCovarEstimator.
-        assets: Asset tickers to include. If None, includes all.
-
-    Returns:
-        Dict mapping estimation dates to pd.Series (ticker → cluster_id).
-        Dates where clusters are None or empty are skipped.
-    """
-    rolling_clusters: Dict[pd.Timestamp, pd.Series] = {}
-    for date, current_data in rolling_covar_data.data.items():
-        clusters = current_data.clusters
-        if clusters is None or len(clusters) == 0:
-            continue
-        # drop duplicate index entries (defensive: a ticker should only
-        # carry one freq-tagged cluster label, but guard against merges
-        # that might have kept both an ME and a QE label)
-        clusters = clusters[~clusters.index.duplicated(keep='last')]
-        if assets is not None:
-            clusters = clusters.reindex(assets).dropna()
-        if len(clusters) > 0:
-            rolling_clusters[date] = clusters
-    return rolling_clusters
-
-
 def score_within_clusters(
         raw_signal: pd.DataFrame,
         rolling_clusters: Dict[pd.Timestamp, pd.Series],
         min_cluster_size: int = 3,
-        stability_pooling_type: Optional['StabilityPoolingType'] = None,
-        stability_weights: Optional[pd.DataFrame] = None,
 ) -> pd.DataFrame:
     """Apply cross-sectional scoring within time-varying clusters.
 
@@ -141,27 +98,10 @@ def score_within_clusters(
         min_cluster_size: Minimum cluster size for within-cluster scoring.
             Clusters with size <= min_cluster_size are scored using
             global statistics. Default 3.
-        stability_pooling_type: Optional FactorLasso stability-pooling mode.
-            ``None`` or ``NONE`` preserves the existing implementation exactly.
-        stability_weights: Causal dates-by-assets co-cluster weights. Required
-            only when stability pooling is enabled.
 
     Returns:
         Cross-sectional scores (T × N) scored within time-varying clusters.
     """
-    if stability_pooling_type is not None:
-        from factorlasso import StabilityPoolingType, score_with_stability_pooled_clusters
-
-        stability_pooling_type = StabilityPoolingType(stability_pooling_type)
-        if stability_pooling_type != StabilityPoolingType.NONE:
-            return score_with_stability_pooled_clusters(
-                raw_signal=raw_signal,
-                rolling_clusters=rolling_clusters,
-                stability_weights=stability_weights,
-                min_cluster_size=min_cluster_size,
-                pooling_type=stability_pooling_type,
-            )
-
     if not rolling_clusters:
         # no clusters available: fall back to global scoring
         return qis.df_to_cross_sectional_score(df=raw_signal)
@@ -343,8 +283,7 @@ def align_rolling_clusters(
     separately.
 
     Args:
-        rolling_clusters: Estimation date to (ticker -> raw label), from
-            :func:`extract_rolling_clusters`.
+        rolling_clusters: Supplied estimation date to (ticker -> raw label).
 
     Returns:
         ``(aligned, n_reassigned)``. ``aligned`` mirrors the input with stable

@@ -66,16 +66,16 @@ separately; a failed diagnostic remains visible and is not silently repaired.
 | Factor-spanned alpha | MATF `gls_split` and `gls_projector`: projection onto the fitted loading span under diagonal residual-risk weighting. | Realised factor contribution or an independent source of portfolio return. |
 | Factor-orthogonal alpha | The complementary residual-mean vector; its weighted inner products with the factor loadings vanish. | Pure idiosyncratic risk or persistent investment skill. |
 | Conditional book interval | MATF `fixed_portfolio_alpha_interval` and FactorLasso `linear_confidence_intervals`: uncertainty of a fixed active book's estimated mean. The joint covariance is retained across targets. | Prediction intervals for next month's portfolio return. |
-| Ex-ante tracking error | `OpportunityModel` and `portfolio_opportunity_metrics`, delegating to canonical `qis.RiskModel`. Factor and diagonal residual return variances sum to total model variance. | A guarantee that the model's diagonal residual assumption is correct, or that realised TE will equal it. |
+| Ex-ante tracking error | `FactorOpportunityModel` and `portfolio_opportunity_metrics`, delegating to canonical `qis.RiskModel`. Factor and diagonal residual return variances sum to total model variance. | A guarantee that the model's diagonal residual assumption is correct, or that realised TE will equal it. |
 | Realised TE | QIS `compute_te_ir_errors` and `compute_ewma_realised_tracking_error` on implemented NAV return differences. | Alpha estimation error or another estimate of the factor-spanned mean. |
 | Accounting residual | Active NAV return less realised factor/residual contributions and the canonical QIS trade-cost effect. | Alpha or evidence of skill. A nonzero gap calls for accounting/convention investigation. |
 
-`OpportunityModel`, `portfolio_opportunity_metrics` and `fixed_portfolio_alpha_interval` are
+`FactorOpportunityModel`, `portfolio_opportunity_metrics` and `fixed_portfolio_alpha_interval` are
 existing documented module imports from `optimalportfolios.matf.opportunity` and
 `optimalportfolios.matf.uncertainty`; this guide adds no root re-exports.
 The [risk-model adapter](https://github.com/ArturSepp/tradablefactors/blob/main/src/tradablefactors/risk.py),
 [MATF opportunity diagnostics](../src/optimalportfolios/matf/opportunity.py) and
-[MATF uncertainty propagation](../src/optimalportfolios/matf/uncertainty.py) retain numerical ownership.
+[MATF uncertainty propagation](https://github.com/ArturSepp/tradablefactors/blob/main/src/tradablefactors/analytics/uncertainty.py) retain numerical ownership.
 
 ## Intervals, dependence and calibration
 

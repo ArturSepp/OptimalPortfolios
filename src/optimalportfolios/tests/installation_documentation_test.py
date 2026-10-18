@@ -115,7 +115,7 @@ class NoOptionalImports(importlib.abc.MetaPathFinder):
         """Reject optional integration imports before delegating core imports."""
         if fullname.split(".")[0] in {
             "yfinance", "pandas_datareader", "pybloqs", "plotly", "pyarrow",
-            "psycopg2", "sqlalchemy",
+            "psycopg2", "sqlalchemy", "tradablefactors", "factorlasso",
         }:
             raise ModuleNotFoundError(fullname)
         return None

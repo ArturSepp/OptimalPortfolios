@@ -25,7 +25,7 @@ from tools.docs_analytics.validate import (
 
 
 DISTRIBUTIONS = (
-    'optimalportfolios', 'qis', 'factorlasso', 'numpy', 'pandas', 'scipy',
+    'optimalportfolios', 'qis', 'tradablefactors', 'factorlasso', 'numpy', 'pandas', 'scipy',
     'matplotlib', 'cvxpy', 'clarabel', 'quadprog',
 )
 

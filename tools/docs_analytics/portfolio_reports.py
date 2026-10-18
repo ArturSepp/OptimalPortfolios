@@ -71,7 +71,7 @@ def configuration() -> dict:
         'solver': {'required': True, 'backends': {'SLSQP': {'ftol': 1e-8, 'maxiter': 500}}},
         'dependencies': {
             'optimalportfolios': 'optimalportfolios', 'qis': 'qis', 'scipy': 'scipy',
-            'factorlasso': 'factorlasso', 'numba': 'numba', 'seaborn': 'seaborn',
+            'numba': 'numba', 'seaborn': 'seaborn',
         },
     }
 

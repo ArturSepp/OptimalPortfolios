@@ -8,6 +8,7 @@ to provide for users of ``pytest --pyargs optimalportfolios``.
 """
 
 import logging
+import importlib.util
 import os
 from pathlib import Path
 from typing import Iterator, MutableMapping, Optional
@@ -40,11 +41,27 @@ def configure_matplotlib_backend(
 configure_matplotlib_backend()
 
 
-def pytest_configure() -> None:
+def pytest_configure(config) -> None:
     """Keep pytest's conftest import out of the package's public namespace."""
     import optimalportfolios
 
     vars(optimalportfolios).pop("conftest", None)
+    config.addinivalue_line(
+        "markers", "factor_integration: requires explicit tradablefactors and factorlasso installs"
+    )
+
+
+def pytest_collection_modifyitems(config, items) -> None:
+    """Keep composed checks collectable in base installs and strict in the integration lane."""
+    available = all(importlib.util.find_spec(name) is not None
+                    for name in ("tradablefactors", "factorlasso"))
+    if os.environ.get("OP_REQUIRE_FACTOR_INTEGRATION") == "1" and not available:
+        raise pytest.UsageError("The integration lane requires tradablefactors and factorlasso")
+    if not available:
+        skip = pytest.mark.skip(reason="Composed integration: install tradablefactors separately")
+        for item in items:
+            if item.get_closest_marker("factor_integration") is not None:
+                item.add_marker(skip)
 
 
 def _find_root() -> Path | None:

@@ -7,6 +7,20 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Breaking supplied-input boundary: 8.0.0.dev1 (2026-10-18)
+
+- Remove FactorLasso from runtime dependencies and delete its root aliases and
+  the risk-labelling shim. OP imports and runs from supplied inputs without TF/FL.
+- Replace `PortfolioOptimisationResult.covar_data` with optional covariance or QIS
+  RiskModel context and prepared diagnostic tables. Full selected covariance owns
+  total risk; approximate diagonal-reference components are explicitly labelled.
+- Move cluster extraction/pooling and statistical opportunity, uncertainty and
+  universe diagnostics upstream to TF. Keep OP signal formulas, EWMA and constrained
+  solving; opportunity solvers accept prepared covariance and uncertainty arrays.
+- Separate persistent base/composed source and installed-wheel checks. Breaking
+  API removals carry no forwarding layer. This development checkpoint does not
+  cut over Rosaa or paper production environments.
+
 ### Breaking migration checkpoint: 8.0.0.dev0
 
 - Factor covariance estimation, GLS/CMA diagnostics, factor risk export and their
