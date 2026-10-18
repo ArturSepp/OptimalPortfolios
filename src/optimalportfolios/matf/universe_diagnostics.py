@@ -122,7 +122,7 @@ def _validate_alpha_covariance(model, covariance):
 
 def _subset_summary(model, ids, covariance):
     """Recompute subset geometry, concentration and optional conditional noise."""
-    from optimalportfolios.matf.sharpe_accounting import gls_projector
+    from tradablefactors.premia.sharpe_accounting import gls_projector
     metrics, detail = subset_dispersion(model, ids)
     contributions = detail.K_contribution.to_numpy()
     metrics['K_effective_contributors'] = (metrics['K']**2/(contributions @ contributions)

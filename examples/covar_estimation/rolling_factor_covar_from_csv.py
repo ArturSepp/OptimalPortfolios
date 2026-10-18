@@ -4,17 +4,17 @@ This example has two deliberately separate stages:
 
 1. ``fetch`` downloads free Yahoo data and writes six CSV files.
 2. ``load`` reads those files, constructs ``qis.FactorsData`` and
-   ``qis.FxRatesData``, and estimates ``RollingFactorCovarData``.
+   ``qis.FxRatesData``, and estimates a completed ``RollingFactorModel``.
 
 The load stage never imports or calls yfinance. A user who receives the CSV
-directory therefore needs only qis, factorlasso and optimalportfolios::
+directory therefore needs qis, factorlasso and tradablefactors::
 
     python -m examples.covar_estimation.rolling_factor_covar_from_csv fetch `
         --data-dir C:\\data\\risk_model_inputs
     python -m examples.covar_estimation.rolling_factor_covar_from_csv load `
         --data-dir C:\\data\\risk_model_inputs
 
-Running without a mode performs both stages using the ignored ``tmp/`` tree::
+Running without a mode performs both stages using an external runtime directory::
 
     python -m examples.covar_estimation.rolling_factor_covar_from_csv
 
@@ -27,7 +27,7 @@ basis contract. The CHF short rate in the Yahoo bundle is also illustrative:
 Yahoo provides the USD 13-week Treasury-bill yield but not a reliable CHF
 three-month history. Production inputs must replace that curve. Review the
 applicable data-provider terms before redistributing downloaded Yahoo data;
-generated CSVs stay in ``tmp/`` by default and are not repository artifacts.
+generated CSVs stay outside the checkout by default and are not repository artifacts.
 
 CSV bundle
 ----------
@@ -48,14 +48,17 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+import os
 from pathlib import Path
+import tempfile
 from typing import Optional, Sequence
 
 import numpy as np
 import pandas as pd
 import qis
 
-import optimalportfolios as opt
+import factorlasso as fl
+import tradablefactors as tf
 
 
 FACTOR_FILE = "futures_risk_factors"
@@ -68,8 +71,9 @@ FETCH_START = "2007-12-31"
 FETCH_END = "2026-01-01"  # yfinance treats end as exclusive
 REFERENCE_CCY = "CHF"
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DATA_DIR = REPO_ROOT / "tmp" / "yahoo_factor_risk_model"
+RUNTIME_ROOT = Path(os.environ.get(
+    'AGENT_LOCAL_ROOT', str(Path(tempfile.gettempdir()) / 'tradablefactors-examples')))
+DEFAULT_DATA_DIR = RUNTIME_ROOT / 'runs' / 'yahoo_factor_risk_model'
 
 FACTOR_TICKERS = {
     "SPY": "Equity",
@@ -502,17 +506,17 @@ def load_inputs_from_csv(data_dir: Path) -> CsvRiskModelInputs:
     )
 
 
-def _make_estimator(settings: RiskModelSettings) -> opt.FactorCovarEstimator:
-    """Construct the configured public OP estimator from CSV settings."""
+def _make_estimator(settings: RiskModelSettings) -> tf.FactorCovarEstimator:
+    """Construct the public TF estimator from explicit CSV settings."""
     try:
-        model_type = opt.LassoModelType[settings.lasso_model_type]
+        model_type = fl.LassoModelType[settings.lasso_model_type]
     except KeyError as exc:
-        allowed = [model.name for model in opt.LassoModelType]
+        allowed = [model.name for model in fl.LassoModelType]
         raise ValueError(
             f"unknown lasso_model_type={settings.lasso_model_type!r}; choose from {allowed}"
         ) from exc
 
-    lasso_model = opt.LassoModel(
+    lasso_model = fl.LassoModel(
         model_type=model_type,
         reg_lambda=settings.reg_lambda,
         span=settings.beta_span,
@@ -520,22 +524,21 @@ def _make_estimator(settings: RiskModelSettings) -> opt.FactorCovarEstimator:
         demean=settings.demean,
         solver=settings.solver,
     )
-    return opt.FactorCovarEstimator(
+    return tf.FactorCovarEstimator(
         rebalancing_freq=settings.rebalancing_freq,
         lasso_model=lasso_model,
         factor_returns_freq=settings.factor_returns_freq,
         factor_covar_span=settings.factor_covar_span,
-        demean=settings.demean,
     )
 
 
-def _verify_rolling_decomposition(rolling: opt.RollingFactorCovarData) -> float:
+def _verify_rolling_decomposition(rolling: fl.RollingFactorCovarData) -> float:
     """Verify every dated covariance against beta-factor-residual arithmetic."""
     if len(rolling) == 0:
         raise ValueError("rolling covariance fit returned no snapshots")
 
     max_error = 0.0
-    residual_column = opt.VarianceColumns.RESIDUAL_VARS.value
+    residual_column = fl.VarianceColumns.RESIDUAL_VARS.value
     for date in rolling.dates:
         snapshot = rolling.data[date]
         if snapshot.estimation_date is None or pd.Timestamp(snapshot.estimation_date) != date:
@@ -570,8 +573,8 @@ def _verify_rolling_decomposition(rolling: opt.RollingFactorCovarData) -> float:
 
 def fit_rolling_risk_model_from_csv(
     data_dir: Path,
-) -> tuple[opt.RollingFactorCovarData, qis.RiskModel]:
-    """Load the CSV bundle and return the rolling factor data and qis model."""
+) -> tuple[tf.RollingFactorModel, qis.RiskModel]:
+    """Load CSV inputs and return a completed TF rolling model and QIS export."""
     inputs = load_inputs_from_csv(data_dir=data_dir)
     metadata = inputs.asset_metadata
     settings = inputs.settings
@@ -586,7 +589,7 @@ def fit_rolling_risk_model_from_csv(
         is_excess_returns=settings.is_excess_returns,
     )
 
-    rolling = _make_estimator(settings).fit_rolling_factor_covars(
+    rolling = _make_estimator(settings).fit_rolling(
         risk_factor_prices=inputs.factors_data.get_prices(),
         asset_returns_dict=asset_returns_dict,
         assets=inputs.asset_prices.columns,
@@ -595,22 +598,22 @@ def fit_rolling_risk_model_from_csv(
             end=settings.estimation_end,
         ),
     )
-    max_error = _verify_rolling_decomposition(rolling)
-    risk_model = opt.build_risk_model(rolling)
+    max_error = _verify_rolling_decomposition(rolling.data)
+    risk_model = rolling.to_risk_model()
 
-    latest_date = rolling.dates[-1]
-    latest = rolling.get_latest()
+    latest_date = max(rolling.snapshots)
+    latest = rolling.snapshots[latest_date].data
     equal_weights = pd.Series(
         1.0 / len(latest.y_betas.index),
         index=latest.y_betas.index,
     )
     exposures = risk_model.compute_exposures_at_date(equal_weights, latest_date)
     residual_vols = np.sqrt(
-        latest.y_variances[opt.VarianceColumns.RESIDUAL_VARS.value]
+        latest.y_variances[fl.VarianceColumns.RESIDUAL_VARS.value]
     ).rename("residual_vol")
 
     print(f"Loaded CSV bundle from {Path(data_dir).resolve()}")
-    print(f"Rolling snapshots: {len(rolling)}")
+    print(f"Rolling snapshots: {len(rolling.snapshots)}")
     print(f"Latest snapshot: {latest_date.date()}")
     print(f"Maximum covariance reconstruction error: {max_error:.3e}")
     print("\nLatest factor loadings (assets x factors):")

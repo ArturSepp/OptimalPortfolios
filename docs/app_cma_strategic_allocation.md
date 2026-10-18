@@ -123,6 +123,7 @@ builds both sides from its constants with pandas:
 ```python
 import numpy as np
 import pandas as pd
+import qis
 import optimalportfolios as op
 
 beta = pd.DataFrame(LOADINGS, index=ASSETS, columns=FACTORS)
@@ -171,7 +172,7 @@ for mandate, weights in BENCHMARKS.items():
         raise RuntimeError(f'{mandate}: {outcome.status}; {outcome.reason}')
 
 date = pd.Timestamp('2025-12-31')  # Synthetic decision date, not a data cutoff.
-risk_model = op.build_risk_model({date: covar})
+risk_model = qis.RiskModel(covar={date: covar})
 tracking_errors = {
     mandate: risk_model.compute_tre_at_date(
         benchmark_weights=pd.Series(BENCHMARKS[mandate], index=ASSETS),
@@ -180,7 +181,7 @@ tracking_errors = {
 ```
 
 [Solver numerics and outcomes](solver_numerics_and_outcomes.md) states what an accepted and
-compliant outcome means. `build_risk_model` hands the covariance to `qis.RiskModel`, whose
+compliant outcome means. The covariance is supplied directly to `qis.RiskModel`, whose
 `compute_tre_at_date` measures the ex-ante tracking error; see
 [the qis risk model](portfolio_risk_analytics.md#ex-ante-tracking-error-and-the-qis-risk-model).
 The script checks it against the explicit quadratic form $\sqrt{d^{\top} \Sigma d}$.

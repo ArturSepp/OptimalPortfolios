@@ -7,6 +7,45 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Breaking migration checkpoint: 8.0.0.dev0
+
+- Factor covariance estimation, GLS/CMA diagnostics, factor risk export and their
+  method-specific reports now belong to `tradablefactors`. The old OP modules and
+  exports are removed. Use `FactorCovarEstimator.fit_current` / `fit_rolling` and
+  the completed TF results; current fits require an explicit information cutoff.
+- Plain covariance execution paths construct `qis.RiskModel` directly. Optimisation
+  algorithms, constraints and numerical defaults are unchanged.
+- This branch is a composed development checkpoint requiring TF alongside OP.
+  Remaining internal factor consumers and root FactorLasso exports are removed in
+  stage 5 before release; Rosaa and paper production environments cut over later.
+  See the TF migration guide for replacement APIs. Historical experiment receipts
+  remain attached to their frozen source and dependency cohort.
+
+### Added
+
+- L2: opt-in executed-state decisions via `backtest_with_qis_state`, `ExecutedState`
+  and `ExecutedRollingResult` in `optimalportfolios.optimization`. Policies receive
+  observed-price prefixes and actual QIS units, weights, cash and NAV. QIS retains
+  execution and accounting ownership, including implementation lag, transaction costs
+  and unavailable-quote freezes. Existing drifted-target rolling wrappers and defaults
+  are unchanged. The bounded cash-security workflow replays prefixes; it does not add
+  a broker interface or a resumable execution engine. See [executed-state decisions](
+  docs/rolling_backtests.md#optional-executed-state-decisions).
+- L3: chronological fit/select/evaluate via `select_portfolio_model`, `ChronologicalFold`
+  and `PortfolioSelectionResult` in `optimalportfolios.optimization`, reusing L2.
+  Fresh training-only policy factories use explicit observation-based purge and embargo
+  bounds. Independent cash-start inner folds select on mean net simple total return;
+  one refitted policy then runs on a separately scored, untouched outer period.
+  User callbacks remain responsible for causal preprocessing and data access; arbitrary
+  event-label cross-validation and repeated outer-period tuning are outside this API.
+  See [chronological model selection](
+  docs/rolling_backtests.md#chronological-portfolio-model-selection).
+- Compatibility: these six additive names are exported by `optimalportfolios.optimization`
+  and are available through the existing package-root re-export. Their execution-state
+  contract was introduced against QIS 5.37; the current OP
+  package requires `qis>=5.38.1`. Install the current declared dependencies rather than
+  treating the feature's historical floor as the full package support floor.
+
 ## [7.22.1] - 2026-10-17
 
 - Regenerate the registered teaching exhibits and their reviewed provenance after the

@@ -318,6 +318,7 @@ covariance_estimators
 factor_covariance_hcgl
 rolling_factor_covar_from_csv
 portfolio_risk_analytics
+factor_diagnostics_workflow
 ```
 
 ```{toctree}
@@ -366,6 +367,7 @@ solver_numerics_and_outcomes
 
 rolling_backtests
 turnover_and_transaction_costs
+skfolio_interoperability
 ```
 
 ```{toctree}

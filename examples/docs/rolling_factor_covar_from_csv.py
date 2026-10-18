@@ -27,6 +27,8 @@ import sys
 import tempfile
 from unittest.mock import patch
 
+import factorlasso as fl
+import tradablefactors as tf
 import numpy as np
 import pandas as pd
 
@@ -385,11 +387,10 @@ def main() -> None:
     kept = inputs.fx_rates_data.compute_fx_adjusted_returns(**flat, zero_return_to_nan=False)
     assert kept['ME'].iloc[25, 2] == 0.0
 
-    import optimalportfolios as opt
     import qis
 
-    model_type = opt.LassoModelType[settings.lasso_model_type]
-    lasso_model = opt.LassoModel(
+    model_type = fl.LassoModelType[settings.lasso_model_type]
+    lasso_model = fl.LassoModel(
         model_type=model_type,
         reg_lambda=settings.reg_lambda,
         span=settings.beta_span,
@@ -397,15 +398,14 @@ def main() -> None:
         demean=settings.demean,
         solver=settings.solver,
     )
-    estimator = opt.FactorCovarEstimator(
+    estimator = tf.FactorCovarEstimator(
         rebalancing_freq=settings.rebalancing_freq,
         lasso_model=lasso_model,
         factor_returns_freq=settings.factor_returns_freq,
         factor_covar_span=settings.factor_covar_span,
-        demean=settings.demean,
     )
 
-    rolling = estimator.fit_rolling_factor_covars(
+    rolling = estimator.fit_rolling(
         risk_factor_prices=inputs.factors_data.get_prices(),
         asset_returns_dict=asset_returns_dict,
         assets=inputs.asset_prices.columns,
@@ -413,8 +413,8 @@ def main() -> None:
             start=settings.estimation_start,
             end=settings.estimation_end,
         ),
-    )
-    risk_model = opt.build_risk_model(rolling)
+    ).data
+    risk_model = tf.build_risk_model(rolling, residual_type='orthogonal')
 
     latest_date = rolling.dates[-1]
     latest = rolling.get_latest()
@@ -429,7 +429,7 @@ def main() -> None:
     # history and HCGL clusters and linkage; the panels collect them by date.
     assert latest_date == pd.Timestamp('2022-12-31') and latest is rolling[latest_date]
     assert betas.shape == (3, 2) and factor_covar.shape == (2, 2)
-    residual_column = opt.VarianceColumns.RESIDUAL_VARS.value
+    residual_column = fl.VarianceColumns.RESIDUAL_VARS.value
     for date, snapshot in rolling.data.items():
         assert all(getattr(snapshot, name) is not None
                    for name in ('residuals', 'clusters', 'linkages'))
@@ -439,7 +439,6 @@ def main() -> None:
                                    snapshot.y_variances[residual_column])
 
     import numpy as np
-    import optimalportfolios as opt
 
     snapshot = rolling.get_latest()
     betas = snapshot.y_betas
@@ -448,7 +447,7 @@ def main() -> None:
         columns=betas.columns,
     )
     residual_vars = snapshot.y_variances[
-        opt.VarianceColumns.RESIDUAL_VARS.value
+        fl.VarianceColumns.RESIDUAL_VARS.value
     ].reindex(betas.index)
     expected = (
         betas.to_numpy()
@@ -505,17 +504,16 @@ def main() -> None:
                                rtol=1e-11, atol=1e-14)
     assert snapshot.y_variances['insample_alpha'].abs().max() > 1e-5
     assert snapshot.y_variances['r2'].between(0, 1).all()
-    # The factor covariance ignores the estimator's demean field; the LASSO model uses its own.
-    undemeaned = replace(estimator, demean=False,
-                         lasso_model=opt.LassoModel(**lasso_model.get_params()))
-    current = undemeaned.fit_current_factor_covars(
+    # Factor covariance uses fixed QIS demeaning; regression has separate FL configuration.
+    independent = replace(estimator, lasso_model=fl.LassoModel(**lasso_model.get_params()))
+    current = independent.fit_current(
         risk_factor_prices=factor_prices.loc[:latest_date],
         asset_returns_dict={'ME': returns.loc[:latest_date]},
-        assets=asset_prices.columns, estimation_date=latest_date)
+        assets=asset_prices.columns, cutoff=latest_date).data
     pd.testing.assert_frame_equal(current.x_covar, snapshot.x_covar)
     # The load command's check accepts a reconstruction error within rtol 1e-12 and atol 1e-14
     # and rejects one twice that size, any non-finite entry and an eigenvalue below -1e-10.
-    one = opt.RollingFactorCovarData(data={latest_date: snapshot})
+    one = fl.RollingFactorCovarData(data={latest_date: snapshot})
     covar = snapshot.get_y_covar()
     bound = RECONSTRUCTION_ATOL + RECONSTRUCTION_RTOL * abs(covar.iat[0, 0])
     verify = csv_example._verify_rolling_decomposition
@@ -533,7 +531,7 @@ def main() -> None:
         # Three assets on two factors leave one zero eigenvalue for the shift to move.
         negative = replace(snapshot, y_variances=snapshot.y_variances.assign(
             **{residual_column: shift}))
-        shifted = opt.RollingFactorCovarData(data={latest_date: negative})
+        shifted = fl.RollingFactorCovarData(data={latest_date: negative})
         if accepted:
             verify(shifted)
         else:
@@ -614,9 +612,10 @@ def main() -> None:
         fit_rolling_risk_model_from_csv,
     )
 
-    rolling, risk_model = fit_rolling_risk_model_from_csv(
+    fitted_model, risk_model = fit_rolling_risk_model_from_csv(
         data_dir
     )
+    rolling = fitted_model.data
 
     # The convenience function refits the same snapshots and writes nothing; the adapter's
     # exposures are weighted sums of the dated betas, for unequal weights too.
@@ -639,11 +638,12 @@ def main() -> None:
                  'Equal-weight portfolio factor exposures'):
         assert line in loaded.stdout, line
     assert file_hashes(data_dir) == bundle_hashes
-    # Without a mode the command fetches and then loads, in <checkout>/tmp/yahoo_factor_risk_model.
+    # Without a mode the command fetches then loads in the configured external runtime root.
     with (patch.object(csv_example, 'fetch_and_save_yahoo_csvs') as fetch,
           patch.object(csv_example, 'fit_rolling_risk_model_from_csv') as load):
         csv_example.main([])
-    default = REPO_ROOT / 'tmp' / 'yahoo_factor_risk_model'
+    default = csv_example.DEFAULT_DATA_DIR
+    assert not default.resolve().is_relative_to(REPO_ROOT.resolve())
     fetch.assert_called_once_with(data_dir=default)
     load.assert_called_once_with(data_dir=default)
 
@@ -656,7 +656,8 @@ def main() -> None:
         column = 'CHF' if 'fx_spots' in name else frame.columns[0]
         frame.loc[later, column] *= np.linspace(1.1, 2.0, later.sum())
         frame.to_csv(perturbed / name)
-    changed, _ = fit_rolling_risk_model_from_csv(perturbed)
+    changed_model, _ = fit_rolling_risk_model_from_csv(perturbed)
+    changed = changed_model.data
     for date, snapshot in rolling.data.items():
         if date <= pd.Timestamp(FUTURE_CUTOFF):
             pd.testing.assert_frame_equal(snapshot.y_betas, changed[date].y_betas,

@@ -11,8 +11,9 @@ myst:
 
 *Author: [Artur Sepp](https://github.com/ArturSepp)*
 
-[OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios) audits an already
-computed expected-return vector against its supplied factor model. It returns
+TradableFactors audits an already computed expected-return vector against its
+supplied factor model. [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios)
+uses the resulting expected returns and covariances in optimisation. The audit returns
 complete numerical tables separately from a two- or three-page PDF. The audit
 does not estimate CMAs, change an admission weight or replace published forecasts.
 
@@ -21,7 +22,7 @@ Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios
 ## Inputs and computation
 
 Import `CmaDiagnosticInputs`, `CmaDiagnosticSpec`, `AdmissionPolicy` and
-`compute_cma_diagnostics` from `optimalportfolios.matf`. The input requires labelled
+`compute_cma_diagnostics` from `tradablefactors.cma`. The input requires labelled
 `betas`, strictly positive `residual_variances` and `excess_cma`, all in exactly the
 same asset order. The factor columns define the order of optional
 `factor_covariance` and calibrated `factor_premia`. Expected returns are annual
@@ -50,13 +51,13 @@ the largest singular value. `CmaDiagnosticSpec.rcond` can select another relativ
 cutoff, recorded in the result. Truncating nonzero directions is a model
 approximation; failed covariance accounting remains visible.
 
-The numerical GLS implementation belongs to OP's
-[`matf.gls_diagnostic`](gls_factor_premia.md): `infer_factor_premia` accepts
+The numerical GLS implementation belongs to
+[`tradablefactors.premia`](gls_factor_premia.md): `infer_factor_premia` accepts
 provider total-return forecasts, cash, admitted alpha, estimated loadings and
 residual risk. It returns implied premia, conditional intervals, mimicking
-portfolios and optional forecast-box sensitivities. OP delegates its existing
-projection functions to that implementation and retains CMA accounting, policy
-diagnostics, identification contrasts and PDF rendering. FactorLasso supplies the
+portfolios and optional forecast-box sensitivities. TradableFactors also owns
+CMA accounting, policy diagnostics, identification contrasts and PDF rendering.
+The extracted OP imports have been removed. FactorLasso supplies the
 historical estimation stage; GLS requires no additional FactorLasso API or release.
 
 For provider inference, estimate historical loadings and alpha from tracking-index
@@ -79,8 +80,8 @@ Keep a production audit of the published forecast distinct from a provider view
 whose admitted alpha has already been removed. Reconcile the construction channels
 to the target actually supplied.
 
-The [GLS module README](https://github.com/ArturSepp/OptimalPortfolios/blob/main/src/optimalportfolios/matf/gls_diagnostic/README.md)
-lists public entry points, result fields and contributor commands. The
+The TradableFactors `premia/README.md` lists public entry points, result fields
+and contributor commands. The
 [methodology guide](gls_factor_premia.md) gives the equations and conditional model.
 
 ## Interpretation
@@ -116,14 +117,14 @@ opportunity metric and from correlated production portfolio risk.
 
 ## Rendering and persistence
 
-`optimalportfolios.reports.cma_diagnostics.render_cma_diagnostics` consumes a result
+`tradablefactors.reports.cma_diagnostics.render_cma_diagnostics` consumes a result
 and an explicit PDF output path. It shows forecast consistency, admission and model
 quality, and a third scenario page when scenarios exist. Large universes show
 selected contributors with the remaining coverage disclosed. Save the complete
 result tables and input provenance alongside the PDF in the application's storage
 layer. Report rendering performs no fitting or portfolio optimisation.
 
-For provider studies, `optimalportfolios.reports.cma_inference` exposes
+For provider studies, `tradablefactors.reports.cma_inference` exposes
 `CmaInferenceView`, `CmaInferenceReport` and `render_cma_inference`. The adapter
 supplies up to six completed views, a headline view, source vintage, model date,
 horizon, cash and alpha multiplier. The shared three-page PDF compares premia
@@ -219,13 +220,13 @@ their previous layout and are never recomputed during rendering.
 The renderer uses [QIS](https://github.com/ArturSepp/QuantInvestStrats) reporting
 primitives; see its [software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).
 Rosaa supplies its completed-result and saved-cut adapters, source hashes and
-transactional report bundles. The generic OP layer has no dependency on Rosaa or
+transactional report bundles. The generic TradableFactors layer has no dependency on Rosaa or
 the local paper replication workspace.
 
 ## Conditional GLS confidence intervals
 
 `compute_conditional_gls_intervals(inputs, confidence_level=0.95, spec=spec)` is
-an opt-in numerical calculation exported from `optimalportfolios.matf`. Its
+an opt-in numerical calculation exported from `tradablefactors.cma`. Its
 `CmaConditionalGlsResult` contains `factors`, joint `covariance` and `summary`.
 It neither modifies nor extends the frozen `CmaDiagnosticResult` tables. The
 caller applies cash and admitted alpha to the forecast before calling it, using

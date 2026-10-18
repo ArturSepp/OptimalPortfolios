@@ -2,13 +2,13 @@
 
 The page's four Python blocks are excerpts of ``main`` and run here in the same order. They build
 a synthetic three-stock book with short calls and puts on a fixed factor model and stress it
-through ``optimalportfolios.build_risk_model`` and the QIS instrument stress interface. Every
+through ``tradablefactors.build_risk_model`` and the QIS instrument stress interface. Every
 equation of the page that the book exercises, and every number the page states about it, is
 asserted after the blocks against a reference computed a different way: option values by
 numerical integration of the lognormal law, deltas by finite differences, put-call parity,
 conditional completion by an explicit Schur-complement solve, and the conditional bands and
 Euler contributions as explicit sums. The script runs offline after ``pip install
-optimalportfolios`` and needs no data file or random seed:
+optimalportfolios tradablefactors`` and needs no data file or random seed:
 
     python -m examples.docs.stress_testing_with_options
 
@@ -196,7 +196,7 @@ def main() -> None:
     import pandas as pd
     import qis
     from factorlasso import CurrentFactorCovarData
-    import optimalportfolios as opt
+    import tradablefactors as tf
 
     factors = ["Equity", "Rates", "Commodities"]
     vols = np.array([0.16, 0.07, 0.25])
@@ -215,7 +215,7 @@ def main() -> None:
                                  index=stocks),
     )
     date = pd.Timestamp("2025-12-31")  # Synthetic snapshot label.
-    risk_model = opt.build_risk_model({date: snapshot})
+    risk_model = tf.build_risk_model({date: snapshot}, residual_type='orthogonal')
 
     # The block's inputs are the module constants: factor volatilities of 16%, 7% and 25%, and
     # residual volatilities of 20%, 15% and 25%.

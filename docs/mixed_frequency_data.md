@@ -14,9 +14,10 @@ Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolio
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 **Mixed-frequency data** are observations whose reliable measurement intervals differ across
-assets or model inputs. OptimalPortfolios keeps separate return panels for each cadence,
-computes signals or factor exposures within those panels, and combines the resulting model
-outputs. This does not turn quarterly observations into monthly statistical observations.
+assets or model inputs. The stack keeps separate return panels for each cadence. OP computes
+signals; TF constructs factor exposures and annual covariance using FactorLasso, then supplies
+those completed risk inputs to OP. This does not turn quarterly observations into monthly
+statistical observations.
 
 ## Overview
 
@@ -143,7 +144,7 @@ valid value across a missing update; it does not provide an explicit staleness f
 
 ### Risk estimation and rebalancing
 
-`FactorCovarEstimator` consumes the frequency-keyed asset-return dictionary. To estimate
+`tradablefactors.FactorCovarEstimator` consumes the frequency-keyed asset-return dictionary. To estimate
 each asset's factor exposure, it aligns factor prices to that bucket's endpoints and computes
 factor log returns over the same intervals. Separately, `factor_returns_freq` controls the
 factor covariance observations, and `factor_covar_span` counts those observations.
@@ -322,12 +323,17 @@ The regression uses LASSO with penalty 1e-5, demeaning and CLARABEL. Volatility 
 clustering and fallback solvers are disabled by the selected defaults.
 
 ```python
+import factorlasso as fl
+import tradablefactors as tf
+```
+
+```python
 factor_prices = prices[["Global Equity", "Government Bonds"]].rename(columns={
     "Global Equity": "Market", "Government Bonds": "Rates",
 })
-factor_estimator = opt.FactorCovarEstimator(
-    lasso_model=opt.LassoModel(
-        model_type=opt.LassoModelType.LASSO,
+factor_estimator = tf.FactorCovarEstimator(
+    lasso_model=fl.LassoModel(
+        model_type=fl.LassoModelType.LASSO,
         reg_lambda=1e-5,
         span_freq_dict={"ME": 24, "QE": 8},
         warmup_period=8,
@@ -339,28 +345,29 @@ factor_estimator = opt.FactorCovarEstimator(
     rebalancing_freq="QE",
 )
 cutoff = pd.Timestamp("2023-12-31")
-factor_data = factor_estimator.fit_current_factor_covars(
+factor_data = factor_estimator.fit_current(
     risk_factor_prices=factor_prices.loc[:cutoff],
     asset_returns_dict={
         freq: returns.loc[:cutoff] for freq, returns in returns_by_frequency.items()
     },
     assets=prices.columns,
-    estimation_date=cutoff,
-)
+    cutoff=cutoff,
+).data
 annual_covar = factor_data.y_covar
-rolling_data = factor_estimator.fit_rolling_factor_covars(
+rolling_data = factor_estimator.fit_rolling(
     risk_factor_prices=factor_prices,
     asset_returns_dict=returns_by_frequency,
     assets=prices.columns,
     time_period=qis.TimePeriod("2023-06-30", "2023-12-31"),
-)
+).data
 rolling_covars = rolling_data.get_y_covars()
 ```
 
 The current covariance has three assets in the original order. The rolling result has
-three quarterly keys: 30 June, 30 September and 31 December 2023. It truncates input
-histories at each date. The current call slices **both** factor prices and every asset
-return bucket: `estimation_date` alone does not impose a general historical cutoff.
+three quarterly keys: 30 June, 30 September and 31 December 2023. TF truncates input
+histories at each cutoff for both current and rolling fits. The example also slices
+factor prices and every asset-return bucket explicitly. The `.data` views expose the
+underlying FL decompositions; TF's completed objects retain the selected covariance policy.
 Calendar dates also do not certify that a delayed NAV was already published.
 
 ## Implementation in optimalportfolios
@@ -371,12 +378,13 @@ Calendar dates also do not certify that a delayed NAV was already published.
 | `opt.UniverseData.get_asset_returns_dict` | Same sampling via the universe container; arithmetic by default |
 | `opt.compute_momentum_alpha` | Prices to cadence/group scores and raw risk-adjusted EWMA signals |
 | `opt.compute_classic_momentum_alpha` | Prices to cadence/group scores and raw fixed-window log returns |
-| `opt.FactorCovarEstimator` | Factor prices and asset-return buckets to annual covariance decompositions |
+| `tf.FactorCovarEstimator` | Factor prices and asset-return buckets to completed TF models with annual covariance and FL decompositions |
 
 Ordinary sources: [universe adapter](../src/optimalportfolios/universe/universe_data.py),
 [EWMA momentum](../src/optimalportfolios/alphas/signals/momentum.py),
 [classic momentum](../src/optimalportfolios/alphas/signals/classic_momentum.py), and
-[factor covariance](../src/optimalportfolios/covar_estimation/factor_covar_estimator.py).
+TF's `tradablefactors.estimation.FactorCovarEstimator`, described in the
+[factor covariance article](factor_covariance_hcgl.md).
 Generated signatures are in the [API reference](api.rst). QIS owns the
 [return sampler](https://github.com/ArturSepp/QuantInvestStrats/blob/main/src/qis/perfstats/returns.py).
 
@@ -409,8 +417,8 @@ historical input cutoffs. The test suite runs it, and so does the offline exampl
   The factor residual diagonal omits cross-asset residual covariance.
 - **Timing and configuration limits:** the
   [factor covariance article](factor_covariance_hcgl.md#implementation-in-optimalportfolios) records that
-  the top-level factor `demean` field is not read; set regression demeaning on the
-  `LassoModel`. A current factor fit needs explicitly sliced inputs, as in the example above.
+  regression demeaning belongs on the `LassoModel`. TF's current fit requires an explicit
+  `cutoff` and truncates every input history; supplied dates must reflect actual availability.
 
 ## See also
 

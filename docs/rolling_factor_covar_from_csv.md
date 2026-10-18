@@ -35,7 +35,7 @@ flowchart LR
     M["asset_metadata.csv"] --> AR
     FX --> AR
     C["risk_model_<br/>settings.csv"] --> AR
-    C --> E["FactorCovarEstimator<br/>rolling fit:<br/>RollingFactorCovarData<br/>and qis.RiskModel"]
+    C --> E["tradablefactors.FactorCovarEstimator<br/>rolling fit:<br/>RollingFactorModel<br/>and qis.RiskModel"]
     FD --> E
     AR --> E
 ```
@@ -44,8 +44,10 @@ In words: the factor NAV file becomes `qis.FactorsData`; the spot and rate files
 `qis.FxRatesData`, which converts the native asset prices into reference-currency returns
 according to the currency, hedge ratio and return frequency of each asset in the metadata file;
 the settings file fixes that conversion and the estimator's calibration; and the rolling fit of
-`FactorCovarEstimator` returns the dated snapshots in `RollingFactorCovarData`, which
-`opt.build_risk_model` wraps as a `qis.RiskModel`.
+`tradablefactors.FactorCovarEstimator` returns a completed `RollingFactorModel`. Its
+`.snapshots` hold dated factor models, `.covariances` supplies selected asset covariance
+matrices for OP, and `.to_risk_model()` supplies the QIS reporting object. The `.data`
+attribute retains FactorLasso's `RollingFactorCovarData` for fit diagnostics.
 
 Factor NAVs and FX rates alone are insufficient: the asset universe, native currencies,
 hedge ratios, return cadences, reference currency and estimation settings also matter.
@@ -343,12 +345,18 @@ The same call accepts mixed metadata cadences; see
 
 ### Fit the rolling decomposition
 
+Use the canonical script's package imports:
+
 ```python
-import optimalportfolios as opt
+import factorlasso as fl
+import tradablefactors as tf
+```
+
+```python
 import qis
 
-model_type = opt.LassoModelType[settings.lasso_model_type]
-lasso_model = opt.LassoModel(
+model_type = fl.LassoModelType[settings.lasso_model_type]
+lasso_model = fl.LassoModel(
     model_type=model_type,
     reg_lambda=settings.reg_lambda,
     span=settings.beta_span,
@@ -356,15 +364,14 @@ lasso_model = opt.LassoModel(
     demean=settings.demean,
     solver=settings.solver,
 )
-estimator = opt.FactorCovarEstimator(
+estimator = tf.FactorCovarEstimator(
     rebalancing_freq=settings.rebalancing_freq,
     lasso_model=lasso_model,
     factor_returns_freq=settings.factor_returns_freq,
     factor_covar_span=settings.factor_covar_span,
-    demean=settings.demean,
 )
 
-rolling = estimator.fit_rolling_factor_covars(
+rolling = estimator.fit_rolling(
     risk_factor_prices=inputs.factors_data.get_prices(),
     asset_returns_dict=asset_returns_dict,
     assets=inputs.asset_prices.columns,
@@ -372,12 +379,14 @@ rolling = estimator.fit_rolling_factor_covars(
         start=settings.estimation_start,
         end=settings.estimation_end,
     ),
-)
-risk_model = opt.build_risk_model(rolling)
+).data
+risk_model = tf.build_risk_model(rolling, residual_type='orthogonal')
 ```
 
-Each dated `CurrentFactorCovarData` contains factor covariance, betas, variance and
-regression diagnostics, residual history, and HCGL cluster/linkage metadata.
+This excerpt unwraps `.data` from the completed model to inspect FactorLasso diagnostics.
+Each dated `CurrentFactorCovarData` contains factor covariance, betas, variance and regression
+diagnostics, residual history, and HCGL cluster/linkage metadata. The raw-data export above
+explicitly selects the same orthogonal residual policy as the estimator's default.
 
 ```python
 latest_date = rolling.dates[-1]
@@ -394,7 +403,6 @@ The NumPy verification below checks the matrix assembly independently:
 
 ```python
 import numpy as np
-import optimalportfolios as opt
 
 snapshot = rolling.get_latest()
 betas = snapshot.y_betas
@@ -403,7 +411,7 @@ factor_covar = snapshot.x_covar.reindex(
     columns=betas.columns,
 )
 residual_vars = snapshot.y_variances[
-    opt.VarianceColumns.RESIDUAL_VARS.value
+    fl.VarianceColumns.RESIDUAL_VARS.value
 ].reindex(betas.index)
 expected = (
     betas.to_numpy()
@@ -460,9 +468,10 @@ only the final `load` command. On another host, use its configured interpreter a
 explicit local output directory. A copied standalone script accepts
 `python rolling_factor_covar_from_csv.py load --data-dir /absolute/local/bundle`.
 
-The CSV example's default directory is `<checkout>/tmp/yahoo_factor_risk_model`,
-and its default mode is `all` (fetch followed by load). **Always supply `--data-dir`**;
-the default is unsuitable for this repository's OneDrive output policy.
+The CSV example's default directory is `AGENT_LOCAL_ROOT/runs/yahoo_factor_risk_model`;
+without that environment variable it uses the system temporary directory under
+`tradablefactors-examples/runs/yahoo_factor_risk_model`. Its default mode is `all`
+(fetch followed by load). Supply `--data-dir` to select a durable external bundle location.
 `fetch` replaces the six named files and is not transactional. Choose a fresh directory,
 then preserve the complete successful bundle before sharing it.
 
@@ -490,8 +499,9 @@ factor NAVs, and writes all inputs using `qis.save_df_to_csv` and
 
 ### Persistence boundary
 
-`RollingFactorCovarData` has no native CSV loader. The convenience function estimates
-from source CSVs and returns the rolling collection and its QIS adapter:
+The convenience function estimates from source CSVs and returns a completed TF
+`RollingFactorModel` and its QIS `RiskModel`. It also exposes the raw FactorLasso data for
+diagnostics:
 
 ```python
 from pathlib import Path
@@ -500,16 +510,17 @@ from examples.covar_estimation.rolling_factor_covar_from_csv import (
     fit_rolling_risk_model_from_csv,
 )
 
-rolling, risk_model = fit_rolling_risk_model_from_csv(
+fitted_model, risk_model = fit_rolling_risk_model_from_csv(
     data_dir
 )
+rolling = fitted_model.data
 ```
 
 It writes no fitted-model artifact. It prints the snapshot count/date, reconstruction
 error, betas, factor covariance, annualised residual volatilities and equal-weight
-factor exposures. `opt.build_risk_model` carries the same dated factor and asset risk
-components into QIS; `rolling.get_y_covars()` supplies the default covariance input
-for OP rolling optimizers.
+factor exposures. `fitted_model.to_risk_model()` carries the selected dated covariance into
+QIS; `fitted_model.covariances` supplies the covariance input for OP rolling optimizers.
+The following fields belong to the raw FactorLasso snapshots in `fitted_model.data`.
 
 | Snapshot field | Meaning and units |
 |---|---|
@@ -518,8 +529,8 @@ for OP rolling optimizers.
 | `y_variances` | Annualised total and residual variances; annual-scaled alpha; dimensionless R-squared. |
 | `residuals` | The annualisation factor times (asset log return minus fitted factor contribution), without subtracting alpha. It is not the raw residual series whose sample variance can be substituted for `D`. |
 
-The public adapter is in [risk_model_adapter.py](../src/optimalportfolios/covar_estimation/risk_model_adapter.py);
-estimation is in [factor_covar_estimator.py](../src/optimalportfolios/covar_estimation/factor_covar_estimator.py).
+The public adapter is in [tradablefactors/risk.py](https://github.com/ArturSepp/tradablefactors/blob/main/src/tradablefactors/risk.py);
+estimation is in [tradablefactors/estimation.py](https://github.com/ArturSepp/tradablefactors/blob/main/src/tradablefactors/estimation.py).
 [QIS](https://github.com/ArturSepp/QuantInvestStrats) owns FX conversion and risk reporting.
 [FactorLasso](https://github.com/ArturSepp/FactorLasso) owns LASSO fitting and the covariance containers.
 
@@ -565,8 +576,8 @@ Validation is not a complete audit of the delivered bytes:
 - Asset-frequency validity is checked on loading; unknown LASSO model names are rejected
   when constructing the estimator. Do not treat a successful load as validation of all
   solver, penalty, span or factor/rebalance-frequency choices.
-- The factor-covariance path currently demeans factor returns independently of the top-level
-  `demean` field; the LASSO model does use that setting. See
+- The factor-covariance path demeans factor returns. The CSV `demean` setting configures
+  the LASSO regression separately; TF has no additional `demean` setting. See
   [factor covariance with HCGL](factor_covariance_hcgl.md#implementation-in-optimalportfolios).
 
 Archive source-file hashes, package/solver versions, calibration and data-vintage information

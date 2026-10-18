@@ -21,6 +21,8 @@ import socket
 from unittest.mock import patch
 import warnings
 
+import factorlasso as fl
+import tradablefactors as tf
 import numpy as np
 import pandas as pd
 
@@ -224,7 +226,6 @@ def main() -> None:
     import numpy as np
     import pandas as pd
     import qis
-    import optimalportfolios as opt
     import optimalportfolios.alphas as alphas
     import optimalportfolios.alphas.signals as signals
 
@@ -491,21 +492,21 @@ def main() -> None:
         cadence = inspect.signature(getattr(signals, name)).parameters["returns_freq"].default
         assert cadence == ("W-WED" if "carry" in name else "ME")
 
-    factor_estimator = opt.FactorCovarEstimator(
+    factor_estimator = tf.FactorCovarEstimator(
         rebalancing_freq="YE", factor_returns_freq="ME", factor_covar_span=36,
-        lasso_model=opt.LassoModel(
-            model_type=opt.LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
+        lasso_model=fl.LassoModel(
+            model_type=fl.LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
             reg_lambda=1.0e-5, span=36, warmup_period=36, demean=True, solver="CLARABEL",
         ),
     )
-    rolling_data = factor_estimator.fit_rolling_factor_covars(
+    rolling_data = factor_estimator.fit_rolling(
         risk_factor_prices=factor_prices,
         asset_returns_dict={
             "ME": qis.to_returns(prices, freq="ME", is_log_returns=True, drop_first=True)
         },
         assets=prices.columns,
         time_period=qis.TimePeriod("2022-12-31", "2024-12-31"),
-    )
+    ).data
     taa_covar_data = rolling_data
     asset_prices = prices.loc["2022-11-30":]
 

@@ -288,7 +288,8 @@ not exercised by the basic examples below.
 
 ## Worked example
 
-The fifteen Python blocks below run in order with the core dependencies. They are excerpts of
+The Python blocks below run in order with the composed OP, TF and FactorLasso dependencies.
+They are excerpts of
 the canonical script
 [`examples/docs/alphas_module_readme.py`](../examples/docs/alphas_module_readme.py), which runs
 them and asserts every number and property on this page against a reference computed a
@@ -305,10 +306,14 @@ dates, 2016-12-31 through 2024-12-31. The paths are deterministic and require no
 network or random seed. All prices share one illustrative currency and total-return basis.
 
 ```python
+import factorlasso as fl
+import tradablefactors as tf
+```
+
+```python
 import numpy as np
 import pandas as pd
 import qis
-import optimalportfolios as opt
 import optimalportfolios.alphas as alphas
 import optimalportfolios.alphas.signals as signals
 
@@ -404,25 +409,26 @@ legacy_carry_score = alphas.compute_ra_carry_alphas(
 
 ### A factor model for managers' residuals
 
-This small HCGL fit supplies dated loadings and clusters. The first manager price endpoint
+TF constructs the completed rolling factor model using FactorLasso. Its `.data` view supplies
+the dated loadings and clusters consumed by these OP signal helpers. The first manager price endpoint
 is retained before the first beta date so manager returns can begin in January 2023.
 
 ```python
-factor_estimator = opt.FactorCovarEstimator(
+factor_estimator = tf.FactorCovarEstimator(
     rebalancing_freq="YE", factor_returns_freq="ME", factor_covar_span=36,
-    lasso_model=opt.LassoModel(
-        model_type=opt.LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
+    lasso_model=fl.LassoModel(
+        model_type=fl.LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
         reg_lambda=1.0e-5, span=36, warmup_period=36, demean=True, solver="CLARABEL",
     ),
 )
-rolling_data = factor_estimator.fit_rolling_factor_covars(
+rolling_data = factor_estimator.fit_rolling(
     risk_factor_prices=factor_prices,
     asset_returns_dict={
         "ME": qis.to_returns(prices, freq="ME", is_log_returns=True, drop_first=True)
     },
     assets=prices.columns,
     time_period=qis.TimePeriod("2022-12-31", "2024-12-31"),
-)
+).data
 taa_covar_data = rolling_data
 asset_prices = prices.loc["2022-11-30":]
 ```

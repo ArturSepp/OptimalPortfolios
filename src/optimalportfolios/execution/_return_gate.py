@@ -12,7 +12,7 @@ import cvxpy as cvx
 import numpy as np
 import pandas as pd
 
-from optimalportfolios.covar_estimation.risk_model_adapter import build_risk_model
+from qis import RiskModel
 from optimalportfolios.execution import schema as s, solver as execution_solver
 from optimalportfolios.execution.branches import ExecutionBranchConfig, ExecutionBranchSearchResult
 from optimalportfolios.execution.guarded import _metrics, _preference, _qualification
@@ -59,7 +59,7 @@ def _gate_branched_return(
     if not (baseline.accepted and baseline.compliant):
         return _AuditedExecutionReturn(None, pd.DataFrame(), dict(
             accepted=False, stop_reason='baseline_not_accepted', selected_checkpoint=None))
-    risk = build_risk_model({pd.Timestamp('2000-01-01'): problem.covariance})
+    risk = RiskModel(covar={pd.Timestamp('2000-01-01'): problem.covariance})
     reference = _metrics(problem, baseline, risk, controls.ticket_size_bp)
     checkpoints = [('baseline', baseline)]+[
         (name, value) for name, value in search.checkpoints.items() if name != 'baseline']
@@ -200,7 +200,7 @@ def _recover_precision_return(problem, baseline, controls, accept_weights):
         group_lower_upper_constraints=groups, min_exposure=original.min_exposure-pad,
         max_exposure=original.max_exposure+pad)
     factor = factorize_covariance(problem.covariance.to_numpy())
-    risk = build_risk_model({pd.Timestamp('2000-01-01'): problem.covariance})
+    risk = RiskModel(covar={pd.Timestamp('2000-01-01'): problem.covariance})
     reference = _metrics(problem, baseline, risk, controls.ticket_size_bp)
     summary['baseline'] = reference
     delta = cvx.Variable(len(initial))

@@ -268,7 +268,7 @@ def main() -> None:
     assert round(100 * (reference[1] - reference[0])) == 37
 
     date = pd.Timestamp('2024-12-31')  # a snapshot label for the risk model
-    risk_model = op.build_risk_model({date: covar})
+    risk_model = qis.RiskModel(covar={date: covar})
     tracking_error = risk_model.compute_tre_at_date(
         benchmark_weights=benchmark, portfolio_weights=weights, date=date)
     active_return = float(alphas @ active)
@@ -564,7 +564,7 @@ def main() -> None:
         pd_covar=covar, alphas=alphas.where(alphas.index != 'Gold', 0.0),
         benchmark_weights=benchmark, constraints=constraints)
     np.testing.assert_allclose(rolling.iloc[2], no_gold_view, rtol=0.0, atol=WEIGHT_TOL)
-    history = op.build_risk_model(covar_dict).compute_tre_history(
+    history = qis.RiskModel(covar=covar_dict).compute_tre_history(
         benchmark_weights=benchmark, portfolio_weights=rolling)
     assert np.allclose(history, TE_BUDGET, rtol=0.0, atol=TE_TOL)
     # The previous target becomes weights_0: a zero turnover cap holds it at the next date.

@@ -199,6 +199,7 @@ def main() -> None:
     """Run the page's blocks in order and assert every number and property it states."""
     import numpy as np
     import pandas as pd
+    import qis
     import optimalportfolios as opt
 
     assets = ["A", "B", "C"]
@@ -232,7 +233,7 @@ def main() -> None:
         )
 
     date = pd.Timestamp("2024-01-31")  # Synthetic snapshot label, not a data cutoff.
-    risk_model = opt.build_risk_model({date: covar})
+    risk_model = qis.RiskModel(covar={date: covar})
     tracking_error = risk_model.compute_tre_at_date(
         benchmark_weights=benchmark,
         portfolio_weights=weights,
@@ -304,7 +305,7 @@ def main() -> None:
                   portfolio_weights=weights, date=pd.Timestamp("2024-01-30"))
     # Scaling the covariance scales tracking error by the square root and keeps the allocation.
     scaled_covar = covar / 12.0
-    scaled_te = opt.build_risk_model({date: scaled_covar}).compute_tre_at_date(
+    scaled_te = qis.RiskModel(covar={date: scaled_covar}).compute_tre_at_date(
         benchmark_weights=benchmark, portfolio_weights=weights, date=date)
     assert abs(scaled_te * np.sqrt(12.0) / tracking_error - 1.0) < 1e-12
     scaled_weights, scaled_outcome = opt.wrapper_minimise_tracking_error(

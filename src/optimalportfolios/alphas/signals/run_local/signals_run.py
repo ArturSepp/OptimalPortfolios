@@ -9,7 +9,7 @@ from optimalportfolios.alphas.signals.momentum import compute_momentum_alpha
 from optimalportfolios.alphas.signals.low_beta import compute_low_beta_alpha
 from optimalportfolios.alphas.signals.managers_alpha import compute_managers_alpha
 from optimalportfolios.alphas.signals.residual_momentum import compute_residual_momentum_alpha
-from optimalportfolios.covar_estimation.factor_covar_estimator import FactorCovarEstimator
+from tradablefactors import FactorCovarEstimator
 
 
 class Locals(Enum):
@@ -83,9 +83,11 @@ def run_local(local: Locals):
 
         print("── Grouped vs Global scoring ──")
         print(f"Groups: {group_data.to_dict()}")
-        print(f"\nGrouped (last 3):\n{score_grouped.tail(3).to_string(float_format='{:.3f}'.format)}")
+        print(f"\nGrouped (last 3):\n"
+              f"{score_grouped.tail(3).to_string(float_format='{:.3f}'.format)}")
         print(f"\nGlobal (last 3):\n{score_global.tail(3).to_string(float_format='{:.3f}'.format)}")
-        print(f"\nDifference:\n{(score_grouped - score_global).tail(3).to_string(float_format='{:.3f}'.format)}")
+        print(f"\nDifference:\n"
+              f"{(score_grouped - score_global).tail(3).to_string(float_format='{:.3f}'.format)}")
 
     elif local == Locals.LOW_BETA_SINGLE_FREQ:
         score, raw_beta = compute_low_beta_alpha(
@@ -129,7 +131,7 @@ def run_local(local: Locals):
 
         asset_returns_dict = {'ME': qis.to_returns(asset_prices, freq='ME', is_log_returns=True)}
         time_period = qis.TimePeriod('31Dec2009', asset_prices.index[-1])
-        rolling_data = estimator.fit_rolling_factor_covars(
+        rolling_data = estimator.fit_rolling(
             risk_factor_prices=risk_factor_prices,
             asset_returns_dict=asset_returns_dict,
             time_period=time_period)
@@ -137,7 +139,7 @@ def run_local(local: Locals):
         score, raw_alpha = compute_managers_alpha(
             prices=asset_prices,
             risk_factor_prices=risk_factor_prices,
-            estimated_betas=rolling_data.get_y_betas(),
+            estimated_betas=rolling_data.data.get_y_betas(),
             returns_freq='ME', alpha_span=12)
 
         print("── Managers Alpha (monthly, span=12) ──")
@@ -159,7 +161,8 @@ def run_local(local: Locals):
 
         print("── Residual Momentum (monthly, beta_span=12, momentum_span=12) ──")
         print(f"\nScores (last 5):\n{score.tail().to_string(float_format='{:.3f}'.format)}")
-        print(f"\nRaw residual momentum (last 5):\n{raw.tail().to_string(float_format='{:.4f}'.format)}")
+        print(f"\nRaw residual momentum (last 5):\n"
+              f"{raw.tail().to_string(float_format='{:.4f}'.format)}")
 
         fig, axs = plt.subplots(2, 1, figsize=(12, 8), tight_layout=True)
         qis.plot_time_series(df=score, title='Residual Momentum Scores',
@@ -198,9 +201,11 @@ def run_local(local: Locals):
 
         print("── Residual Momentum: Grouped vs Global ──")
         print(f"Groups: {group_data.to_dict()}")
-        print(f"\nGrouped (last 3):\n{score_grouped.tail(3).to_string(float_format='{:.3f}'.format)}")
+        print(f"\nGrouped (last 3):\n"
+              f"{score_grouped.tail(3).to_string(float_format='{:.3f}'.format)}")
         print(f"\nGlobal (last 3):\n{score_global.tail(3).to_string(float_format='{:.3f}'.format)}")
-        print(f"\nDifference:\n{(score_grouped - score_global).tail(3).to_string(float_format='{:.3f}'.format)}")
+        print(f"\nDifference:\n"
+              f"{(score_grouped - score_global).tail(3).to_string(float_format='{:.3f}'.format)}")
 
     elif local == Locals.RESIDUAL_MOMENTUM_VS_MOMENTUM:
         # compare total-return momentum vs residual momentum scores
@@ -213,15 +218,18 @@ def run_local(local: Locals):
             returns_freq='ME', beta_span=12, momentum_span=12)
 
         print("── Total Momentum vs Residual Momentum ──")
-        print(f"\nMomentum scores (last 3):\n{mom_score.tail(3).to_string(float_format='{:.3f}'.format)}")
-        print(f"\nResidual mom scores (last 3):\n{res_score.tail(3).to_string(float_format='{:.3f}'.format)}")
+        print(f"\nMomentum scores (last 3):\n"
+              f"{mom_score.tail(3).to_string(float_format='{:.3f}'.format)}")
+        print(f"\nResidual mom scores (last 3):\n"
+              f"{res_score.tail(3).to_string(float_format='{:.3f}'.format)}")
 
         # rank correlation between the two signals
         common_idx = mom_score.index.intersection(res_score.index)
         if len(common_idx) > 0:
             last_date = common_idx[-1]
             rank_corr = mom_score.loc[last_date].corr(res_score.loc[last_date], method='spearman')
-            print(f"\nSpearman rank correlation at {last_date.strftime('%Y-%m-%d')}: {rank_corr:.3f}")
+            print(f"\nSpearman rank correlation at {last_date.strftime('%Y-%m-%d')}: "
+                  f"{rank_corr:.3f}")
 
         fig, axs = plt.subplots(2, 2, figsize=(16, 10), tight_layout=True)
         qis.plot_time_series(df=mom_score, title='Total Momentum Scores',

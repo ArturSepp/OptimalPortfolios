@@ -35,7 +35,7 @@ import qis
 # optimalportfolios
 from optimalportfolios import LassoModel, LassoModelType, DependenceMeasure, DistanceTransform
 from optimalportfolios.covar_estimation.ewma_covar_estimator import EwmaCovarEstimator
-from optimalportfolios.covar_estimation.factor_covar_estimator import FactorCovarEstimator
+from tradablefactors import FactorCovarEstimator
 from optimalportfolios.tests.data.multiasset import load_multiasset_data
 
 RETURNS_FREQ = 'ME'
@@ -88,9 +88,10 @@ def _current_factor_covars(n_clusters: int = None):
                                  reg_lambda=1e-5, span=36, n_clusters=n_clusters)
     estimator = FactorCovarEstimator(lasso_model=lasso_model, factor_returns_freq=RETURNS_FREQ,
                                      factor_covar_span=SPAN)
-    return estimator.fit_current_factor_covars(risk_factor_prices=factors,
-                                               asset_returns_dict=asset_returns,
-                                               assets=assets.columns)
+    return estimator.fit_current(risk_factor_prices=factors,
+                                 asset_returns_dict=asset_returns,
+                                 assets=assets.columns,
+                                 cutoff=factors.index[-1]).data
 
 
 # ───────────────────────────────────────────────────────────────────────────────

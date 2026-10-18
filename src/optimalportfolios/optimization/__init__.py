@@ -101,3 +101,17 @@ from optimalportfolios.optimization.wrapper_rolling_portfolios import (
 
 # result container
 from optimalportfolios.optimization.portfolio_result import PortfolioOptimisationResult
+
+# Optional decisions using canonical QIS executed state.
+from optimalportfolios.optimization.executed_state import (
+    ExecutedState,
+    ExecutedRollingResult,
+    backtest_with_qis_state,
+)
+
+# Bounded portfolio-level chronological model selection.
+from optimalportfolios.optimization.chronological_selection import (
+    ChronologicalFold,
+    PortfolioSelectionResult,
+    select_portfolio_model,
+)

@@ -71,24 +71,26 @@ The article's empirical application covers:
 
 ## Configuration
 
-Each layer of the article maps to one call of the package. The configuration below is that of the
+Each layer maps to its owning package: TF constructs factor risk and OP computes allocations.
+The configuration below is that of the
 canonical script,
 [`examples/docs/app_rosaa_multi_asset_allocation.py`](../examples/docs/app_rosaa_multi_asset_allocation.py),
 on a synthetic panel of three factors and eight asset classes, monthly from December 2004 to
 June 2025.
 
-The covariance is refitted at every quarter end with the hierarchical-clustering group LASSO of
+The script imports `FactorCovarEstimator` from `tradablefactors`. The covariance is refitted
+at every quarter end with the hierarchical-clustering group LASSO of
 [FactorLasso](https://github.com/ArturSepp/FactorLasso), with the article's span of 36 months and
 penalty of $10^{-5}$:
 
 ```python
-estimator = op.FactorCovarEstimator(
+estimator = FactorCovarEstimator(
     lasso_model=LassoModel(model_type=LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
                            reg_lambda=1e-5, span=36, warmup_period=24),
     factor_returns_freq='ME', factor_covar_span=36, rebalancing_freq='QE')
-covar_dict = estimator.fit_rolling_covars(
+covar_dict = estimator.fit_rolling(
     risk_factor_prices=factor_prices, asset_returns_dict={'ME': asset_returns},
-    time_period=qis.TimePeriod('2014-12-31', '2025-06-30'))
+    time_period=qis.TimePeriod('2014-12-31', '2025-06-30')).covariances
 ```
 
 The strategic allocation solves the risk-budgeting problem at each date:
@@ -129,8 +131,8 @@ weights meet the risk budgets, not the capital shares, and the tactical tilts sp
 tracking-error budget in the direction of the alphas. The
 [analytics gallery](analytics_gallery.md) lists the exhibit's provenance.*
 
-> **Pitfall.** `FactorCovarEstimator.fit_rolling_covars` accepts `residual_var_weight`, which
-> scales the residual variance of the assembled covariance. It is an option of the package, not
+> **Pitfall.** TF's `FactorCovarEstimator` configuration accepts `residual_var_weight`, which
+> scales the selected residual block of the assembled covariance. It is a model option, not
 > part of the article's method: the article measures tracking error with the full covariance,
 > residual variance included. A weight below one understates the tracking error of a given tilt,
 > so the tactical layer takes larger tilts than its budget intends.

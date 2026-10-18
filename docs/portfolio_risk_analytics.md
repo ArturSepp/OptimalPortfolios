@@ -249,8 +249,9 @@ These quantities belong to `qis.RiskModel`. The stack rule is stated in the repo
 [contributor guidance](https://github.com/ArturSepp/OptimalPortfolios/blob/main/AGENTS.md):
 "Never hand-roll `d' Σ d`, a beta ratio, or a TE decomposition." Ex-ante tracking error, factor
 exposures, benchmark beta and marginal tracking error come from `qis.RiskModel`, built from
-covariance-estimation output by `optimalportfolios.build_risk_model`, and a plain
-`{date: covar}` dictionary gives a covariance-only model. Realised tracking error is
+covariance-estimation output by `tradablefactors.build_risk_model`, with an explicit residual
+policy for raw FactorLasso data. `qis.RiskModel(covar={date: covar})` gives a covariance-only
+model. Realised tracking error is
 `qis.compute_ewma_realised_tracking_error`, and whole-sample tracking error and information
 ratio are `qis.compute_te_ir_errors`. The canonical script of this page computes the explicit
 products only as independent references for its assertions.
@@ -291,8 +292,9 @@ PORTFOLIO = [0.30, 0.15, 0.30, 0.15, 0.10]
 BENCHMARK = {'Govt': 0.40, 'US eq': 0.60}
 ```
 
-The snapshot is a FactorLasso container, the same type that factor-covariance estimation
-returns. Its covariance $\beta \Sigma_F \beta^{\top} + D$ gives asset volatilities from 6.1%
+The snapshot is a FactorLasso container, available as `.data` on a completed
+`tradablefactors.FactorModelSnapshot`. Its covariance $\beta \Sigma_F \beta^{\top} + D$
+gives asset volatilities from 6.1%
 for government bonds to 24.0% for emerging-market equity:
 
 ```python
@@ -483,11 +485,13 @@ is reported as zero.
 
 ### Tracking error and exposures in qis
 
-`build_risk_model` turns the snapshot into a `qis.RiskModel` with the factor block:
+`tradablefactors.build_risk_model` turns the raw FactorLasso snapshot into a `qis.RiskModel`
+with the explicitly selected orthogonal residual policy. The canonical script imports
+`tradablefactors as tf`:
 
 ```python
 date = dates[0]
-risk_model = op.build_risk_model({date: snapshot})
+risk_model = tf.build_risk_model({date: snapshot}, residual_type='orthogonal')
 tracking_error = risk_model.compute_tre_at_date(
     benchmark_weights=benchmark, portfolio_weights=weights, date=date)
 exposures = risk_model.compute_exposures_at_date(portfolio_weights=weights, date=date)
@@ -536,11 +540,14 @@ The analytics are functions of the package root:
   carrying each row forward, treats missing weights as zero, and returns the series
   `ex_ante_beta`. It raises `ValueError` for non-finite loadings and for a weight column without
   loadings.
-- `build_risk_model(covar_data)` returns a `qis.RiskModel`. From `RollingFactorCovarData` or a
-  dictionary of `CurrentFactorCovarData` it passes the asset covariance with the full residual
-  variance, the factor loadings, the factor covariance and the residual variances; from a
-  dictionary of covariance DataFrames it builds a covariance-only model. Any other input raises
-  `ValueError`.
+
+Risk-model construction belongs to `tradablefactors`. A completed `FactorModelSnapshot` or
+`RollingFactorModel` exports its selected covariance through `.to_risk_model()`. For raw
+`RollingFactorCovarData` or a dictionary of `CurrentFactorCovarData`,
+`tradablefactors.build_risk_model(..., residual_type='orthogonal')` explicitly selects the
+diagonal residual model used here and passes its factor loadings, factor covariance and
+residual variances to QIS. Correlated residual policies preserve the full asset covariance;
+they omit QIS's diagonal decomposition unless a diagonal reference is explicitly requested.
 
 The two loading helpers are also exported by `optimalportfolios.optimization.constraints`, where
 `BenchmarkBetaConstraint.with_loadings` takes their result; see

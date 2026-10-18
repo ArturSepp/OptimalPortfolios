@@ -4,7 +4,7 @@ The page shows excerpts of this file; every number and property it states is ass
 against a reference computed a different way: explicit matrix products, central finite
 differences, least-squares regressions on simulated returns with a fixed seed, the joint
 covariance of a factor model, and the optimality conditions of the risk-based portfolios. The
-script runs offline after ``pip install optimalportfolios`` and needs no data file:
+script runs offline after ``pip install optimalportfolios tradablefactors`` and needs no data file:
 
     python -m examples.docs.portfolio_risk_analytics
 
@@ -17,6 +17,7 @@ import qis
 from factorlasso import CurrentFactorCovarData, RollingFactorCovarData
 
 import optimalportfolios as op
+import tradablefactors as tf
 
 TICKERS = ['Govt', 'Credit', 'US eq', 'EM eq', 'Gold']
 FACTORS = ['Rates', 'Equity', 'Commodities']
@@ -371,7 +372,7 @@ def main() -> None:
         loadings_ts)
 
     date = dates[0]
-    risk_model = op.build_risk_model({date: snapshot})
+    risk_model = tf.build_risk_model({date: snapshot}, residual_type='orthogonal')
     tracking_error = risk_model.compute_tre_at_date(
         benchmark_weights=benchmark, portfolio_weights=weights, date=date)
     exposures = risk_model.compute_exposures_at_date(portfolio_weights=weights, date=date)
@@ -410,7 +411,7 @@ def main() -> None:
         benchmark_weights=benchmark, date=date), beta_loadings, rtol=1e-12)
     # A plain {date: covar} dictionary gives a covariance-only model: the same tracking error,
     # and no factor exposures.
-    covariance_only = op.build_risk_model({date: covar})
+    covariance_only = qis.RiskModel(covar={date: covar})
     assert isinstance(covariance_only, qis.RiskModel) and covariance_only.factor_loadings is None
     assert np.isclose(covariance_only.compute_tre_at_date(
         benchmark_weights=benchmark, portfolio_weights=weights, date=date), tracking_error,
@@ -418,28 +419,28 @@ def main() -> None:
     assert_raises(ValueError, covariance_only.compute_exposures_at_date,
                   portfolio_weights=weights, date=date)
     # The dated history on the covariance grid matches the ex-ante beta series.
-    history = op.build_risk_model(covar_dict).compute_benchmark_beta_history(
+    history = qis.RiskModel(covar=covar_dict).compute_benchmark_beta_history(
         benchmark_weights=benchmark, portfolio_weights=monthly)
     np.testing.assert_allclose(history, [portfolio_beta, loadings_ts.loc[dates[1]] @ w],
                                rtol=1e-12)
     # The history gives zero weights, and so zero beta, before the first weight date.
-    late = op.build_risk_model(covar_dict).compute_benchmark_beta_history(
+    late = qis.RiskModel(covar=covar_dict).compute_benchmark_beta_history(
         benchmark_weights=benchmark, portfolio_weights=monthly.loc['2024-04-30':])
     assert late.iloc[0] == 0.0 and np.isclose(late.iloc[1], history.iloc[1], rtol=1e-14)
     # The risk model uses exact covariance dates only and applies no annualisation;
     # build_risk_model rejects other inputs.
     assert_raises(KeyError, risk_model.compute_tre_at_date, benchmark_weights=benchmark,
                   portfolio_weights=weights, date=pd.Timestamp('2024-03-31'))
-    weekly_model = op.build_risk_model({date: covar / 52.0})
+    weekly_model = qis.RiskModel(covar={date: covar / 52.0})
     assert np.isclose(weekly_model.compute_tre_at_date(
         benchmark_weights=benchmark, portfolio_weights=weights, date=date),
         tracking_error / np.sqrt(52.0), rtol=1e-13)
-    assert_raises(ValueError, op.build_risk_model, covar_data=[covar])
+    assert_raises(ValueError, tf.build_risk_model, model=[covar])
     # A RollingFactorCovarData container gives the same model as its dated snapshots.
     rolling = RollingFactorCovarData(data={dates[0]: snapshot,
                                            dates[1]: factor_snapshot(STRESSED_FACTOR_CORR)})
-    rolling_model = op.build_risk_model(rolling)
-    snapshots_model = op.build_risk_model(dict(rolling.data))
+    rolling_model = tf.build_risk_model(rolling, residual_type='orthogonal')
+    snapshots_model = tf.build_risk_model(dict(rolling.data), residual_type='orthogonal')
     pd.testing.assert_series_equal(
         rolling_model.compute_tre_history(benchmark_weights=benchmark, portfolio_weights=weights),
         snapshots_model.compute_tre_history(benchmark_weights=benchmark,

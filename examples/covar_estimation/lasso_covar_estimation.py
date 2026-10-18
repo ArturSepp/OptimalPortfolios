@@ -3,7 +3,8 @@ Test script for LASSO / Group LASSO factor model estimator.
 
 Adapted to the new API:
     - LassoModel.fit() populates estimated_betas (DataFrame) and estimation_result_
-    - FactorCovarEstimator.fit_current_factor_covars() replaces
+    - FactorCovarEstimator.fit_current() returns a completed TF factor model
+      with its selected asset_covariance and an explicit information cutoff
     - qis.compute_asset_returns_dict() handles per-asset return frequencies
 """
 
@@ -15,8 +16,8 @@ from enum import Enum
 import yfinance as yf
 import qis as qis
 
-from optimalportfolios import LassoModel, LassoModelType
-from optimalportfolios import FactorCovarEstimator
+from factorlasso import LassoModel, LassoModelType
+from tradablefactors import FactorCovarEstimator
 
 
 # ─────────────────────────────────────────────
@@ -151,20 +152,20 @@ def run_local(local: Locals):
         asset_returns_dict_all_monthly = qis.compute_asset_returns_dict(
             prices=asset_prices, is_log_returns=True, returns_freqs='ME',
         )
-        covar_all_monthly = estimator_monthly.fit_current_factor_covars(
+        covar_all_monthly = estimator_monthly.fit_current(
             risk_factor_prices=benchmark_prices,
             asset_returns_dict=asset_returns_dict_all_monthly,
-            assets=assets,
+            assets=assets, cutoff=benchmark_prices.index[-1],
         )
 
         # (b) mixed frequencies: equities monthly, bonds monthly, mixed quarterly
         asset_returns_dict_mixed = qis.compute_asset_returns_dict(
             prices=asset_prices, is_log_returns=True, returns_freqs=returns_freqs,
         )
-        covar_mixed_freq = estimator_monthly.fit_current_factor_covars(
+        covar_mixed_freq = estimator_monthly.fit_current(
             risk_factor_prices=benchmark_prices,
             asset_returns_dict=asset_returns_dict_mixed,
-            assets=assets,
+            assets=assets, cutoff=benchmark_prices.index[-1],
         )
 
         # (c) weekly factor returns with weekly and mixed asset returns
@@ -177,10 +178,10 @@ def run_local(local: Locals):
         asset_returns_dict_all_weekly = qis.compute_asset_returns_dict(
             prices=asset_prices, is_log_returns=True, returns_freqs='W-WED',
         )
-        covar_all_weekly = estimator_weekly.fit_current_factor_covars(
+        covar_all_weekly = estimator_weekly.fit_current(
             risk_factor_prices=benchmark_prices,
             asset_returns_dict=asset_returns_dict_all_weekly,
-            assets=assets,
+            assets=assets, cutoff=benchmark_prices.index[-1],
         )
 
         returns_freqs_weekly_mixed = group_data.map(
@@ -189,28 +190,30 @@ def run_local(local: Locals):
         asset_returns_dict_weekly_mixed = qis.compute_asset_returns_dict(
             prices=asset_prices, is_log_returns=True, returns_freqs=returns_freqs_weekly_mixed,
         )
-        covar_weekly_mixed = estimator_weekly.fit_current_factor_covars(
+        covar_weekly_mixed = estimator_weekly.fit_current(
             risk_factor_prices=benchmark_prices,
             asset_returns_dict=asset_returns_dict_weekly_mixed,
-            assets=assets,
+            assets=assets, cutoff=benchmark_prices.index[-1],
         )
 
         # ── Print covariance matrices ──
         print("\n-- All Monthly --")
-        print(covar_all_monthly.y_covar)
+        print(covar_all_monthly.asset_covariance)
         print("\n-- Mixed Frequency (ME / ME / QE) --")
-        print(covar_mixed_freq.y_covar)
+        print(covar_mixed_freq.asset_covariance)
         print("\n-- All Weekly --")
-        print(covar_all_weekly.y_covar)
+        print(covar_all_weekly.asset_covariance)
         print("\n-- Weekly factors, mixed asset freq --")
-        print(covar_weekly_mixed.y_covar)
+        print(covar_weekly_mixed.asset_covariance)
 
         # ── Heatmap comparison ──
         fig, axs = plt.subplots(2, 2, figsize=(14, 12), constrained_layout=True)
-        qis.plot_heatmap(df=covar_all_monthly.y_covar, title='All Monthly', ax=axs[0, 0])
-        qis.plot_heatmap(df=covar_mixed_freq.y_covar, title='Mixed Freq (ME/ME/QE)', ax=axs[0, 1])
-        qis.plot_heatmap(df=covar_all_weekly.y_covar, title='All Weekly', ax=axs[1, 0])
-        qis.plot_heatmap(df=covar_weekly_mixed.y_covar, title='Weekly + Mixed Asset', ax=axs[1, 1])
+        qis.plot_heatmap(df=covar_all_monthly.asset_covariance, title='All Monthly', ax=axs[0, 0])
+        qis.plot_heatmap(df=covar_mixed_freq.asset_covariance,
+                         title='Mixed Freq (ME/ME/QE)', ax=axs[0, 1])
+        qis.plot_heatmap(df=covar_all_weekly.asset_covariance, title='All Weekly', ax=axs[1, 0])
+        qis.plot_heatmap(df=covar_weekly_mixed.asset_covariance,
+                         title='Weekly + Mixed Asset', ax=axs[1, 1])
 
     plt.show()
 

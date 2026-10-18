@@ -24,12 +24,14 @@ import pandas as pd
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Union, List, Tuple
 from factorlasso import CurrentFactorCovarData, VarianceColumns
-from optimalportfolios.covar_estimation.risk_model_adapter import build_risk_model
+from tradablefactors.risk import build_risk_model
 from optimalportfolios.utils.portfolio_funcs import round_weights_to_pct
 from optimalportfolios.optimization.constraints import Constraints
 
 
-def _to_dataframe(w: Union[pd.Series, pd.DataFrame], default_name: str = 'portfolio') -> pd.DataFrame:
+def _to_dataframe(
+        w: Union[pd.Series, pd.DataFrame], default_name: str = 'portfolio'
+) -> pd.DataFrame:
     """Normalize Series or DataFrame to DataFrame with named columns."""
     if isinstance(w, pd.Series):
         return w.to_frame(w.name or default_name)
@@ -109,7 +111,8 @@ class PortfolioOptimisationResult:
             else:
                 if set(self._weights_df.columns) != set(self.current_weights.columns):
                     raise ValueError(
-                        f"Portfolio names mismatch between weights {list(self._weights_df.columns)} "
+                        f"Portfolio names mismatch between weights "
+                        f"{list(self._weights_df.columns)} "
                         f"and current_weights {list(self.current_weights.columns)}"
                     )
                 self._current_df = self.current_weights[self._weights_df.columns].copy()
@@ -121,7 +124,9 @@ class PortfolioOptimisationResult:
             if self.covar_data.estimation_date is not None
             else pd.Timestamp('1900-01-01')
         )
-        self._risk_model = build_risk_model({self._risk_model_date: self.covar_data})
+        self._risk_model = build_risk_model(
+            {self._risk_model_date: self.covar_data}, residual_type='orthogonal'
+        )
         self._validate_group_attributions()
 
     def _validate_group_attributions(self) -> None:
@@ -295,7 +300,9 @@ class PortfolioOptimisationResult:
         factor_exp = w @ betas  # (N,) @ (N,M) = (M,)
         factor_var = float(factor_exp @ self.covar_data.x_covar.values @ factor_exp)
 
-        residual_vars = self.covar_data.y_variances.loc[self.tickers, VarianceColumns.RESIDUAL_VARS.value].values
+        residual_vars = self.covar_data.y_variances.loc[
+            self.tickers, VarianceColumns.RESIDUAL_VARS.value
+        ].values
         residual_var = float((w ** 2) @ residual_vars)
 
         total_var = factor_var + residual_var
@@ -359,8 +366,11 @@ class PortfolioOptimisationResult:
                 current_w = self.get_current(name)
                 current_key = tuple(current_w.values.round(10))
                 if current_key not in seen:
-                    label = 'current' if len(seen) == 0 and isinstance(self.current_weights, pd.Series) \
+                    label = (
+                        'current'
+                        if len(seen) == 0 and isinstance(self.current_weights, pd.Series)
                         else f'{name}_current'
+                    )
                     result[label] = self._compute_risk_decomposition(current_w)
                     seen.add(current_key)
 
@@ -571,7 +581,9 @@ class PortfolioOptimisationResult:
                     group_result['bounds'] = pd.DataFrame(bounds_rows).T[col_order]
 
             # Separate DataFrame per metric
-            for metric, src_col in [('weight', 'weight'), ('rc', 'risk_contrib'), ('rc_pct', 'risk_pct')]:
+            for metric, src_col in [
+                ('weight', 'weight'), ('rc', 'risk_contrib'), ('rc_pct', 'risk_pct')
+            ]:
                 metric_rows = {}
                 for label in labels:
                     metric_rows[label] = attribs[label][src_col]
@@ -580,7 +592,9 @@ class PortfolioOptimisationResult:
             result[group_name] = group_result
         return result
 
-    def compute_group_allocation(self, group: str, name: str = None, weights_to_pct: bool = False) -> pd.Series:
+    def compute_group_allocation(
+            self, group: str, name: str = None, weights_to_pct: bool = False
+    ) -> pd.Series:
         """Weights of one portfolio aggregated over the levels of ``group``."""
         name = name or self.portfolio_names[0]
         group_data = self.group_attributions[group]
@@ -589,7 +603,9 @@ class PortfolioOptimisationResult:
             allocation = round_weights_to_pct(allocation)
         return allocation
 
-    def compute_weight_summary(self, name: str = None, weights_to_pct: bool = False) -> pd.DataFrame:
+    def compute_weight_summary(
+            self, name: str = None, weights_to_pct: bool = False
+    ) -> pd.DataFrame:
         """Weight summary for a specific portfolio (or first if not specified)."""
         name = name or self.portfolio_names[0]
         w = self.get_weights(name)
@@ -694,7 +710,9 @@ class PortfolioOptimisationResult:
         benchmark_risk = {}
         if self._shared_benchmark:
             bench_w = self._benchmark_df.iloc[:, 0]
-            benchmark_exp[self._benchmark_name] = self._compute_factor_exposures_for_weights(bench_w)
+            benchmark_exp[self._benchmark_name] = self._compute_factor_exposures_for_weights(
+                bench_w
+            )
             benchmark_risk[self._benchmark_name] = self._compute_factor_risk_contribution(bench_w)
         else:
             portfolio_keys = set()
@@ -710,8 +728,12 @@ class PortfolioOptimisationResult:
                 if bench_key in portfolio_keys:
                     continue
                 if bench_key not in seen_bench_keys:
-                    benchmark_exp[f'{name}_benchmark'] = self._compute_factor_exposures_for_weights(bench_w)
-                    benchmark_risk[f'{name}_benchmark'] = self._compute_factor_risk_contribution(bench_w)
+                    benchmark_exp[f'{name}_benchmark'] = self._compute_factor_exposures_for_weights(
+                        bench_w
+                    )
+                    benchmark_risk[f'{name}_benchmark'] = self._compute_factor_risk_contribution(
+                        bench_w
+                    )
                     seen_bench_keys.add(bench_key)
 
         # Active exposures — skip self-benchmarked (active weights = 0)
@@ -797,7 +819,9 @@ class PortfolioOptimisationResult:
                 if bench_key in portfolio_keys:
                     continue
                 if bench_key not in seen_bench_keys:
-                    benchmark_result[f'{name}_benchmark'] = self._compute_risk_decomposition(bench_w)
+                    benchmark_result[f'{name}_benchmark'] = self._compute_risk_decomposition(
+                        bench_w
+                    )
                     seen_bench_keys.add(bench_key)
 
         # Current weights risk
@@ -808,9 +832,11 @@ class PortfolioOptimisationResult:
                 current_w = self.get_current(name)
                 current_key = tuple(current_w.values.round(10))
                 if current_key not in seen:
-                    label = self.current_weights.name if isinstance(self.current_weights,
-                                                                    pd.Series) and self.current_weights.name \
+                    label = (
+                        self.current_weights.name
+                        if isinstance(self.current_weights, pd.Series) and self.current_weights.name
                         else f'{name}_current'
+                    )
                     current_result[label] = self._compute_risk_decomposition(current_w)
                     seen.add(current_key)
 

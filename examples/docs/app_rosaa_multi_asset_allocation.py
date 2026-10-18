@@ -16,6 +16,7 @@ import qis
 from factorlasso import LassoModel, LassoModelType
 
 import optimalportfolios as op
+from tradablefactors import FactorCovarEstimator
 
 SEED = 11
 FACTORS = ['Equity', 'Rates', 'Credit']
@@ -76,13 +77,13 @@ def run() -> dict:
     asset_returns = np.log(asset_prices).diff().iloc[1:]
 
     # Layer 1: a hierarchical-clustering group LASSO factor model, refitted every quarter end.
-    estimator = op.FactorCovarEstimator(
+    estimator = FactorCovarEstimator(
         lasso_model=LassoModel(model_type=LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
                                reg_lambda=1e-5, span=36, warmup_period=24),
         factor_returns_freq='ME', factor_covar_span=36, rebalancing_freq='QE')
-    covar_dict = estimator.fit_rolling_covars(
+    covar_dict = estimator.fit_rolling(
         risk_factor_prices=factor_prices, asset_returns_dict={'ME': asset_returns},
-        time_period=qis.TimePeriod('2014-12-31', '2025-06-30'))
+        time_period=qis.TimePeriod('2014-12-31', '2025-06-30')).covariances
 
     # Layer 2: the strategic allocation by risk budgets.
     budgets = pd.Series(RISK_BUDGETS, index=ASSETS)

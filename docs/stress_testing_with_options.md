@@ -2,7 +2,7 @@
 myst:
   html_meta:
     description: >-
-      Stress a stock and short-option portfolio with OptimalPortfolios risk models and QIS
+      Stress a stock and short-option portfolio with tradablefactors risk models and QIS
       repricing: an offline three-stock book reproduces the scenario and repricing equations,
       and a manual runner applies FCGL clusters and VOP prices to five stocks and ten options.
 ---
@@ -15,7 +15,7 @@ Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolio
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 This example applies a clustered sparse factor model to an existing option portfolio.
-OptimalPortfolios estimates the model, FactorLasso supplies the FCGL fit and its cluster
+tradablefactors constructs the model, FactorLasso supplies the FCGL fit and its cluster
 topology, VOP prices each option, and QIS computes and reports portfolio stress and risk.
 No portfolio optimisation or backtest changes the supplied positions.
 
@@ -123,7 +123,7 @@ under another sample length or a differently normalised regression implementatio
 scenario valuation. The model is fitted only once, at the last completed weekly observation
 at or before valuation. No future returns or option scenario outcomes determine the partition.
 
-### 2. Assemble the assigned risk model through OP
+### 2. Assemble the assigned risk model through tradablefactors
 
 To isolate the change in response estimation, factor covariance uses the same zero-mean
 EWMA convention as the QIS example:
@@ -134,8 +134,10 @@ C_t=\eta C_{t-1}+(1-\eta)x_tx_t^\top,\qquad C_0=0,
 $$
 
 The example obtains this matrix from `qis.compute_ewm_covar` and passes it explicitly as
-the **annual** `x_covar` argument to `fit_current_factor_covars`. OP's internally computed
-factor covariance applies demeaning; supplying the matrix is therefore deliberate.
+the **annual** matrix in a `DatedFactorCovariance` supplied to
+`FactorCovarEstimator.fit_current(..., factor_covariance=..., cutoff=...)`.
+TF's internally computed factor covariance applies demeaning; supplying the matrix is
+therefore deliberate.
 
 FactorLasso residual diagnostics normalise the observation weights over each valid history:
 
@@ -144,8 +146,10 @@ $$
 \qquad d_i=52\sum_t\bar w_{ti}(y_{ti}-\widehat B_i x_t)^2.
 $$
 
-The OP snapshot retains $\widehat B$, $\Sigma_F$, $d$, fit diagnostics and cluster metadata.
-`optimalportfolios.build_risk_model({date: snapshot})` creates the QIS `RiskModel`, with
+The completed TF snapshot retains the selected covariance and exposes $\widehat B$,
+$\Sigma_F$, $d$, fit diagnostics and cluster metadata through its FactorLasso `.data`.
+Its `.to_risk_model()` creates the QIS `RiskModel`, while the runner retains the raw data
+for its diagnostics. The selected orthogonal residual policy gives
 
 $$
 \Sigma_Y=\widehat B\Sigma_F\widehat B^\top+\operatorname{diag}(d).
@@ -153,7 +157,7 @@ $$
 
 FactorLasso's reported $R^2$ compares the weighted squared residual to weighted dispersion
 around the response's weighted mean; this diagnostic denominator is centred even though the
-configured regression is not. OP clips negative reported $R^2$ to zero. It differs from the
+configured regression is not. TF clips negative reported $R^2$ to zero. It differs from the
 non-centred $R^2$ shown by the QIS EWMA example and is not an out-of-sample measure.
 
 ### 3. Reprice the unchanged option book
@@ -265,15 +269,16 @@ python -m examples.docs.stress_testing_with_options
 
 Fixed teaching inputs replace the FCGL fit and the EWMA factor covariance: three factors with
 annual volatilities of 16%, 7% and 25%, three stocks with log-return loadings on them, and
-annual residual volatilities of 20%, 15% and 25%. `optimalportfolios.build_risk_model` turns
-the snapshot into the QIS `RiskModel` with the covariance of section 2.
+annual residual volatilities of 20%, 15% and 25%. `tradablefactors.build_risk_model` turns
+the raw FactorLasso snapshot into the QIS `RiskModel` with the explicitly selected
+orthogonal residual covariance of section 2.
 
 ```python
 import numpy as np
 import pandas as pd
 import qis
 from factorlasso import CurrentFactorCovarData
-import optimalportfolios as opt
+import tradablefactors as tf
 
 factors = ["Equity", "Rates", "Commodities"]
 vols = np.array([0.16, 0.07, 0.25])
@@ -292,7 +297,7 @@ snapshot = CurrentFactorCovarData(
                              index=stocks),
 )
 date = pd.Timestamp("2025-12-31")  # Synthetic snapshot label.
-risk_model = opt.build_risk_model({date: snapshot})
+risk_model = tf.build_risk_model({date: snapshot}, residual_type='orthogonal')
 ```
 
 ### European options without an external pricer
@@ -547,8 +552,8 @@ cache SHA-256 is
 ## Implementation in optimalportfolios
 
 The [self-contained manual runner](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/reports/stress_testing_with_options_local.py)
-requires OP with its QIS dependency (`qis>=5.33.1`, which includes the QIS instrument stress
-reports), FactorLasso 0.18 or later, yfinance and VOP. The `_local.py` suffix keeps this
+requires tradablefactors with its FactorLasso and QIS dependencies, yfinance and VOP.
+The `_local.py` suffix keeps this
 optional pricing/reporting workflow outside the core-only unattended example lanes. It has been
 run end to end with the frozen Yahoo cache. It does not require a separate QIS examples checkout
 or Bloomberg access.
@@ -556,7 +561,7 @@ or Bloomberg access.
 In your chosen environment, install the example-only prerequisites and run from an OP checkout:
 
 ```console
-python -m pip install -e ".[data]" "factorlasso>=0.18.0" "vanilla-option-pricers==2.2.0"
+python -m pip install -e ".[data]" tradablefactors "vanilla-option-pricers==2.2.0"
 python -m examples.reports.stress_testing_with_options_local --cache-dir /absolute/cache/options_stress --output-dir /absolute/output/fcgl_options_stress
 ```
 
@@ -564,7 +569,7 @@ Use a fresh output directory. Omit `--output-dir` to calculate and verify withou
 Changing `--as-of` rebuilds contract terms consistently. Keep the cache for exact replay;
 `--refresh` intentionally downloads a new price panel.
 
-The central OP integration is included from the actual runner; the ordinary
+The TF integration in this OP repository example is included from the actual runner; the ordinary
 [source link](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/reports/stress_testing_with_options_local.py)
 also works in Markdown viewers.
 
@@ -613,7 +618,7 @@ two-group partition. The test suite runs it, and so does the offline examples la
 
 ## See also
 
-- [Factor covariance with HCGL](factor_covariance_hcgl.md): OP factor estimation and annual covariance.
+- [Factor covariance with HCGL](factor_covariance_hcgl.md): TF factor estimation and annual covariance.
 - [Rolling factor covariance from prices](rolling_factor_covar_from_csv.md): return preparation and rolling interfaces.
 - [QIS options stress guide](https://github.com/ArturSepp/QuantInvestStrats/blob/main/docs/stress_testing_with_options.md): the matched EWMA example and VOP pricing formulas.
 - [QIS instrument stress interface](https://github.com/ArturSepp/QuantInvestStrats/blob/main/docs/portfolio_stress.md): custom payoff and reporting contracts.

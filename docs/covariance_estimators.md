@@ -321,5 +321,5 @@ regression demeaning through `LassoModel.demean`. See
 - [factorlasso software citation](https://github.com/ArturSepp/FactorLasso/blob/main/CITATION.cff).
 - OptimalPortfolios: [EWMA estimator](../src/optimalportfolios/covar_estimation/ewma_covar_estimator.py),
   [return preparation](../src/optimalportfolios/covar_estimation/utils.py) and
-  [factor estimator](../src/optimalportfolios/covar_estimation/factor_covar_estimator.py).
+  [factor estimator](https://github.com/ArturSepp/tradablefactors/blob/main/src/tradablefactors/estimation.py).
 - qis: [EWMA kernels](https://github.com/ArturSepp/QuantInvestStrats/blob/main/src/qis/models/linear/ewm.py).

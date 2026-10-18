@@ -315,13 +315,13 @@ in percent, or shifted by 1%, give the same weights, that another benchmark give
 weights, and that a monthly covariance with the budget divided by $\sqrt{12}$ gives the same solve.
 Without a tracking-error limit the solve is a linear program and holds only EM equity.
 
-`qis.RiskModel`, built by `build_risk_model` as on the
+`qis.RiskModel`, supplied with the dated covariance as on the
 [risk analytics page](portfolio_risk_analytics.md#tracking-error-and-exposures-in-qis), measures the
 ex-ante tracking error of the solve:
 
 ```python
 date = pd.Timestamp('2024-12-31')  # a snapshot label for the risk model
-risk_model = op.build_risk_model({date: covar})
+risk_model = qis.RiskModel(covar={date: covar})
 tracking_error = risk_model.compute_tre_at_date(
     benchmark_weights=benchmark, portfolio_weights=weights, date=date)
 active_return = float(alphas @ active)

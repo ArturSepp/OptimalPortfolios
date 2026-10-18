@@ -5,7 +5,7 @@ import pytest
 from optimalportfolios.matf.opportunity import (
     OpportunityModel, alpha_dispersion, candidate_access_gain, solve_opportunity,
 )
-from optimalportfolios.matf import achievable_sharpe2
+from tradablefactors.premia import achievable_sharpe2
 
 
 def model():

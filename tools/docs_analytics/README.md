@@ -479,3 +479,10 @@ committed images against the manifest and the manifest against the current scrip
 [image-coverage check](registry.py) counts the teaching exhibits, so every displayed figure is
 registered with the pages that show it.
 
+## Matched-convention benchmark bundle
+
+For fixed-moment cross-library optimization, independent two-asset accounting, time-series
+factor covariance forecasts and separate resource measurements, use the
+[matched benchmark operator guide](../README_matched_benchmarks.md). It reuses this tooling's
+offline guard, source/environment fingerprints, CSV checks and C-local output boundary.
+It writes JSON/CSV evidence only and does not change or publish these registered figure families.

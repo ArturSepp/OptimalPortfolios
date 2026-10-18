@@ -67,10 +67,10 @@ and illiquid positions.
   [hierarchical risk parity and cluster risk budgets](https://optimalportfolios.readthedocs.io/en/latest/hierarchical_risk_parity_and_cluster_budgets.html).
 - **CMA risk-premia diagnostics.** Infer factor premia from provider forecasts conditional on
   historical loadings, with GLS rank checks, factor-mimicking portfolios, conditional intervals
-  and separate sensitivity ranges. FactorLasso estimates the historical model; OP owns the
-  inference and CMA report interfaces. See the [GLS guide](docs/gls_factor_premia.md),
+  and separate sensitivity ranges. FactorLasso estimates the historical model; TradableFactors
+  owns the inference and CMA report interfaces. OP consumes their supplied portfolio inputs. See the [GLS guide](docs/gls_factor_premia.md),
   [CMA reports](docs/cma_diagnostics.md) and
-  [module README](src/optimalportfolios/matf/gls_diagnostic/README.md).
+  [module README](https://github.com/ArturSepp/tradablefactors/blob/main/src/tradablefactors/premia/README.md).
 - **Drift-aware rolling backtests.** Turnover limits and cost penalties act on the drifted
   holdings rather than the previous target (`OptimiserConfig.use_drifted_weights_0`, default
   `True`). See [rolling backtests](https://optimalportfolios.readthedocs.io/en/latest/rolling_backtests.html).
@@ -485,7 +485,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
   year={2026},
-  version={7.22.1},
+  version={8.0.0.dev0},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

@@ -14,7 +14,7 @@ import pandas as pd
 import pytest
 import qis
 
-from optimalportfolios import EwmaCovarEstimator, FactorCovarEstimator, PortfolioObjective
+from optimalportfolios import EwmaCovarEstimator, PortfolioObjective
 
 
 @pytest.fixture(scope="module")
@@ -277,14 +277,9 @@ def test_displayed_stdout_matches_the_canonical_script(article, pipeline):
     assert expected == actual
 
 
-def test_objective_inventory_and_factor_input_contract(article, pipeline):
-    """Keep enum choices complete and expose the factor estimator's different fit interface."""
+def test_objective_inventory_and_ewma_input_contract(article, pipeline):
+    """Keep the OP quickstart tied to its retained EWMA and objective inputs."""
     documented = set(re.findall(r"\x60([A-Z_]+)\x60", article))
     assert {member.name for member in PortfolioObjective} <= documented | {"MIN_VARIANCE"}
     kwargs = pipeline["fit_args"]
     inspect.signature(EwmaCovarEstimator.fit_rolling_covars).bind(None, **kwargs)
-    with pytest.raises(TypeError, match="risk_factor_prices|unexpected keyword"):
-        inspect.signature(FactorCovarEstimator.fit_rolling_covars).bind(None, **kwargs)
-    parameters = inspect.signature(FactorCovarEstimator.fit_rolling_covars).parameters
-    for name in ("risk_factor_prices", "asset_returns_dict", "time_period"):
-        assert name in parameters and f"{chr(96)}{name}{chr(96)}" in article

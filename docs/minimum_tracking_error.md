@@ -137,7 +137,7 @@ assumption for the caller.
 These are synthetic teaching inputs. A starts at a benchmark weight of 50% but has a 35% cap.
 The block runs offline on a core installation. It validates benchmark coverage, requires an
 accepted and compliant solve, and delegates tracking-error measurement to `qis.RiskModel`
-through `optimalportfolios.build_risk_model`.
+using its `covar` argument directly.
 
 Both Python blocks of this page are excerpts of the canonical script
 [`examples/docs/minimum_tracking_error.py`](../examples/docs/minimum_tracking_error.py), which
@@ -151,6 +151,7 @@ python -m examples.docs.minimum_tracking_error
 ```python
 import numpy as np
 import pandas as pd
+import qis
 import optimalportfolios as opt
 
 assets = ["A", "B", "C"]
@@ -184,7 +185,7 @@ if not (outcome.accepted and outcome.compliant):
     )
 
 date = pd.Timestamp("2024-01-31")  # Synthetic snapshot label, not a data cutoff.
-risk_model = opt.build_risk_model({date: covar})
+risk_model = qis.RiskModel(covar={date: covar})
 tracking_error = risk_model.compute_tre_at_date(
     benchmark_weights=benchmark,
     portfolio_weights=weights,
@@ -273,7 +274,7 @@ canonical script; the [analytics gallery](analytics_gallery.md) lists its proven
 | `wrapper_minimise_tracking_error` | Labeled covariance, benchmark, constraints and optional current weights; returns `(weights, outcome)`. |
 | `cvx_minimise_tracking_error` | Array covariance and already aligned `Constraints` carrying benchmark weights; returns `OptimizationOutcome`. Prefer the wrapper for labeled data. |
 | `rolling_minimise_tracking_error` | Price panel, covariance dictionary and static or dated benchmark; returns target weights on covariance dates. |
-| `build_risk_model` | Dated asset covariance matrices or supported factorlasso covariance containers; returns `qis.RiskModel`. |
+| `qis.RiskModel` | Dated asset covariance matrices supplied through `covar`; provides portfolio risk analytics. |
 
 The wrapper returns weights in the original covariance order, with excluded assets
 filled at zero. The outcome describes the retained universe and aligned constraints.
@@ -282,7 +283,7 @@ the returned weights pass the reported hard-constraint residuals.
 Inspect both, along with `status`, `reason`, `fallback_source`, and `residuals_frame()`.
 
 Source: [minimum-tracking-error solver](https://github.com/ArturSepp/OptimalPortfolios/blob/main/src/optimalportfolios/optimization/general/minimum_tracking_error.py)
-and [risk-model adapter](https://github.com/ArturSepp/OptimalPortfolios/blob/main/src/optimalportfolios/covar_estimation/risk_model_adapter.py).
+and [risk-model adapter](https://github.com/ArturSepp/QuantInvestStrats/blob/main/src/qis/portfolio/risk/risk_model.py).
 The [API reference](api.rst) provides generated signatures.
 
 <a id="single-date-versus-rolling-use"></a>

@@ -1,4 +1,16 @@
+---
+myst:
+  html_meta:
+    description: >-
+      Contribution scope, reproducible starter tasks, development checks and review for OptimalPortfolios.
+---
+
 # Contributing to OptimalPortfolios
+
+*Author: [Artur Sepp](https://github.com/ArturSepp)*
+
+Project: [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 Thanks for your interest in `optimalportfolios`. `optimalportfolios` is the reference implementation of the ROSAA framework published in *The Journal of Portfolio Management*, so published results constrain what can change.
 
@@ -23,6 +35,74 @@ writing code:
 - Changes to `papers/`, which accompanies the published papers
 - Examples that require a paid data subscription to run
 
+## Starter tasks
+
+These are proposed, unassigned tasks, not reports of confirmed numerical defects. Check for
+existing or completed work and agree a bounded scope before starting. The
+[shared contributor guide](https://github.com/ArturSepp/ArturSepp/blob/main/docs/contributing_to_stack.md)
+explains setup, review, attribution and validation of automation-assisted work. Reuse this
+repository's [feature request form](.github/ISSUE_TEMPLATE/feature_request.yml), or its
+[bug report form](.github/ISSUE_TEMPLATE/bug_report.yml) for an observed defect.
+No starter label implies that numerical redesign is included.
+
+Commands below use PowerShell's `& $py`, where `$py` is the selected development interpreter.
+Run them from the repository source root (a C-local source export on the maintainer host).
+Follow [development setup](#development-setup) first; for this Windows/OneDrive checkout,
+use the external environment and generated-state helper described in `AGENTS.md` before
+running Python or uv. The shared guide gives the exact interpreter table. Each command is
+a focused check, not a substitute for the package's documentation and PR gates.
+
+### OP-1: Add a short example-classification rehearsal
+
+**Owner and code home:** OptimalPortfolios; [CONTRIBUTING.md](CONTRIBUTING.md).
+**Read first:** [.github/scripts/run_examples.py](.github/scripts/run_examples.py), [docs/examples_readme.md](docs/examples_readme.md).
+
+**Current gap:** The contributor guide separates tests and runners but does not walk through classifying a prospective example before running it.
+
+**Reproduce:** Run the classifier with --list. It prints the complete inventory without executing examples; --lane does not filter this listing.
+
+**Acceptance and scope:** Add three steps using an existing listed example: locate its imports, explain its actual offline/network classification, and identify the appropriate existing runner. Explain transitive yfinance imports and the *_local.py exclusion. Link the examples catalogue; do not hardcode moving lane counts or run network examples as a required PR check.
+
+**Useful verification:**
+
+```powershell
+& $py .github/scripts/run_examples.py --list
+```
+
+### OP-2: Document recovery from a quickstart notebook mismatch
+
+**Owner and code home:** OptimalPortfolios; [CONTRIBUTING.md](CONTRIBUTING.md).
+**Read first:** [.github/scripts/check_quickstart_notebook.py](.github/scripts/check_quickstart_notebook.py), [examples/getting_started/production_quickstart.py](examples/getting_started/production_quickstart.py), [examples/getting_started/production_quickstart.ipynb](examples/getting_started/production_quickstart.ipynb).
+
+**Current gap:** The parity checker explains drift in its output, but the contributor guide has no small recovery recipe.
+
+**Reproduce:** Run the parity checker unchanged. In a disposable C-local source export, alter one character only in the tagged mirror cell, observe the checker fail, then restore the original cell and rerun.
+
+**Acceptance and scope:** Document canonical-script-first editing, verbatim tagged-cell synchronisation, removal of execution outputs and the existing parity command. Preserve install/version cells, numerical parameters and notebook tags. Record the deliberate failure and restored success; do not replace the checker or maintain a second analytical workflow.
+
+**Useful verification:**
+
+```powershell
+& $py .github/scripts/check_quickstart_notebook.py
+```
+
+### OP-3: Show contributors where each quickstart layer belongs
+
+**Owner and code home:** OptimalPortfolios; [CONTRIBUTING.md](CONTRIBUTING.md).
+**Read first:** [examples/getting_started/production_quickstart.py](examples/getting_started/production_quickstart.py), [src/optimalportfolios/tests/quickstart_documentation_test.py](src/optimalportfolios/tests/quickstart_documentation_test.py).
+
+**Current gap:** The guide states package boundaries but has no call-by-call ownership map for its runnable first workflow.
+
+**Reproduce:** Open the canonical quickstart imports and main function, then run its existing documentation contract tests.
+
+**Acceptance and scope:** Add a compact map: packaged fixture and EwmaCovarEstimator/Constraints/compute_rolling_optimal_weights belong to OP; TimePeriod/backtest_model_portfolio and realised holdings analytics belong to qis. Link actual source locations and the existing quickstart tests. Keep estimation versus implementation timing explicit. Do not copy a backtester, covariance engine or performance statistic into a new module.
+
+**Useful verification:**
+
+```powershell
+& $py -m pytest src/optimalportfolios/tests/quickstart_documentation_test.py -q
+```
+
 ## Reporting a bug
 
 Open an issue using the bug report template. A report needs the `optimalportfolios` version, your
@@ -41,6 +121,13 @@ maintenance expectations, release policy, and private route for sensitive securi
 reports are documented in [GOVERNANCE.md](GOVERNANCE.md).
 
 ## Development setup
+
+For the maintainer's Windows/OneDrive checkout, first run the setup helper named in
+`AGENTS.md` and select the registered C:\Python interpreter. Set
+`UV_PROJECT_ENVIRONMENT` to that external environment before any uv project operation;
+never use the unqualified uv examples below against a OneDrive-local environment.
+Keep generated output and pure verification source exports on C: as described in the
+[shared contributor guide](https://github.com/ArturSepp/ArturSepp/blob/main/docs/contributing_to_stack.md#setup-and-a-first-check).
 
 ```bash
 git clone https://github.com/ArturSepp/OptimalPortfolios.git

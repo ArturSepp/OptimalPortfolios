@@ -1,20 +1,10 @@
-"""Public API of the covariance layer: the EWMA and factor (HCGL) estimators and
-their reporting helpers.
-"""
+"""OP's retained EWMA covariance convenience functions.
 
-from optimalportfolios.covar_estimation.factor_covar_estimator import (FactorCovarEstimator,
-                                                                       estimate_lasso_factor_covar_data)
+Factor estimation, diagnostics and covariance reporting live in TradableFactors.
+"""
 
 from optimalportfolios.covar_estimation.ewma_covar_estimator import (EwmaCovarEstimator,
                                                                      estimate_current_ewma_covar,
                                                                      estimate_rolling_ewma_covar)
 
-from optimalportfolios.covar_estimation.covar_reporting import (plot_current_covar_data,
-                                                                plot_hcgl_covar_data,
-                                                                run_rolling_covar_report)
-
 from optimalportfolios.covar_estimation.utils import compute_returns_from_prices
-
-from optimalportfolios.covar_estimation.risk_model_adapter import (
-    build_risk_model as build_risk_model,
-)

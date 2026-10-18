@@ -32,7 +32,7 @@ examples under `examples/` are separate scripts on the same method, often on dow
 data. The lane in parentheses is the one the catalogue below assigns
 ([unattended execution lanes](#unattended-execution-lanes)): Offline and Network come from the
 classifier, where Network means that `yfinance` is reachable from the script's imports, and Local
-marks a `*_local.py` workflow whose data you prepare first. Every canonical script is offline
+marks a `*_local.py` workflow whose data or optional tools you prepare first. Every canonical script is offline
 except the CSV risk model's, which opens no connection itself but imports the repository
 example that holds the Yahoo fetcher. For a first run, start with the
 [offline quickstart](quickstart.md).
@@ -47,6 +47,7 @@ example that holds the Yahoo fetcher. For a first run, start with the
 | Build and use a factor risk model from CSV files | [Rolling factor risk model from CSV](rolling_factor_covar_from_csv.md) | [`rolling_factor_covar_from_csv.py`](../examples/docs/rolling_factor_covar_from_csv.py) (Network) | [`covar_estimation/rolling_factor_covar_from_csv.py`](../examples/covar_estimation/rolling_factor_covar_from_csv.py) (Network) |
 | Compute risk contributions and benchmark betas | [Ex-ante risk contributions and betas](portfolio_risk_analytics.md) | [`portfolio_risk_analytics.py`](../examples/docs/portfolio_risk_analytics.py) (Offline) | — |
 | Infer factor premia from provider forecasts after historical estimation | [GLS factor-premia inference](gls_factor_premia.md) and [CMA reporting](cma_diagnostics.md) | [`gls_factor_premia.py`](../examples/docs/gls_factor_premia.py) (Offline; synthetic prices, FactorLasso fit, OP GLS and weighted-QR checks) | Exact consensus/JPM workflows require local licensed inputs and are not distributed as public examples. |
+| Connect factor diagnostics, alpha uncertainty and forward attribution | [Factor diagnostics workflow](factor_diagnostics_workflow.md) | [`factor_diagnostics_workflow.py`](../examples/docs/factor_diagnostics_workflow.py) (Offline) | Conditional fixed-model inference; no forecast or post-selection coverage guarantee. |
 | Build alpha signals | [Alpha signals](alphas_module_readme.md) | [`alphas_module_readme.py`](../examples/docs/alphas_module_readme.py) (Offline) | [`alphas/profile_alpha_signals.py`](../examples/alphas/profile_alpha_signals.py) (Network) |
 | Diagnose signals and profile alpha-rank portfolios | [Signal diagnostics](signal_diagnostics_and_profiling.md) | [`signal_diagnostics_and_profiling.py`](../examples/docs/signal_diagnostics_and_profiling.py) (Offline) | [`alphas/profile_alpha_signals.py`](../examples/alphas/profile_alpha_signals.py) (Network) |
 | Choose an objective and configure the solver | [Choosing an objective](optimization_module_readme.md) | [`optimization_module_readme.py`](../examples/docs/optimization_module_readme.py) (Offline) | [`backtests/multiasset_saa.py`](../examples/backtests/multiasset_saa.py) (Offline), [`comparisons/optimisers.py`](../examples/comparisons/optimisers.py) (Network) |
@@ -109,8 +110,9 @@ scenario; it does not execute every branch of a `Locals` enum.
 ### Unattended execution lanes
 
 The [classifier and runner](../.github/scripts/run_examples.py) derives lanes from Python imports.
-Its current inventory is **37 offline, 20 network, 57 unattended examples**. The **4 local-data workflows** ending in
-`*_local.py` are excluded. Each catalogue row below states the classification.
+Its current inventory is **38 offline, 20 network, 58 unattended examples**. The **5 local-data workflows** ending in
+`*_local.py` are excluded; this manual category also includes the optional skfolio bridge
+using the packaged fixture. Each catalogue row below states the classification.
 
 ```console
 python .github/scripts/run_examples.py --list
@@ -167,13 +169,20 @@ python -m optimalportfolios.utils.run_local.gaussian_mixture_run
 These source-checkout tools expose `Locals` and `run_local(local=...)`, share development data
 under `optimalportfolios.run_local.data`, and are excluded from built distributions. Inspect
 their prerequisites before selecting a scenario. They are separate from the unattended example
-lanes. The four root-level `*_local.py` workflows below also require manual preparation.
+lanes. The five repository-level `*_local.py` workflows below also require manual preparation
+of local data or optional tooling.
 
 ## `getting_started/` — offline entry point
 
 | Source | Lane | Purpose |
 |---|---|---|
 | [Production quickstart](../examples/getting_started/production_quickstart.py) | Offline | Six assets from the packaged monthly fixture; EWMA covariance, constrained minimum variance and a QIS backtest. Prints weights, NAV and runtime. See the [calculation and execution conventions](quickstart.md). |
+
+## `integrations/` — optional portfolio bridges
+
+| Source | Lane | Purpose and prerequisites |
+|---|---|---|
+| [skfolio targets evaluated by QIS](../examples/integrations/skfolio_targets_local.py) | Local | Optional skfolio fitting on the packaged monthly fixture; explicit labels, cutoffs, execution dates, exclusions and QIS trade costs. Install the pinned optional packages in the [interoperability guide](skfolio_interoperability.md). Prints gross/net NAV and costs offline; dedicated optional tests execute this manual workflow. |
 
 ## `data/` — fixtures
 
@@ -286,6 +295,7 @@ under `papers/`.
 | Source | Lane | Purpose and prerequisites |
 |---|---|---|
 | [GLS factor-premia inference](../examples/docs/gls_factor_premia.py) | Offline | The [GLS guide](gls_factor_premia.md): synthetic index/factor prices, FactorLasso loadings and historical alpha, OP premium/interval estimates checked independently by weighted QR, and zero/half/full alpha views. |
+| [Factor diagnostics and attribution uncertainty](../examples/docs/factor_diagnostics_workflow.py) | Offline | Existing FactorLasso estimates/HAC/bootstrap, MATF spanned/orthogonal alpha and QIS risk/accounting; independent references and a prespecified conditional Gaussian coverage experiment. |
 | [Alpha over tracking error](../examples/docs/alpha_over_tracking_error.py) | Offline | The worked example of the [alpha over tracking error](alpha_over_tracking_error.md) page: the closed-form active weights against the solver, the tracking error from `qis.RiskModel`, the utility weight that reproduces the forced solve, group limits and the yield-target variant. |
 | [Alpha signals](../examples/docs/alphas_module_readme.py) | Offline | The worked examples of the [alpha signals](alphas_module_readme.md) page: every signal family against its formula, cross-sectional and within-cluster scoring, cluster extraction, mixed cadences, point-in-time signals, the `AlphasData` container and rolling EWMA means. |
 | [Capital market assumptions to strategic allocation](../examples/docs/app_cma_strategic_allocation.py) | Offline | The script of the [MATF-CMA case study](app_cma_strategic_allocation.md): CMAs and covariance from one synthetic loading matrix, and the strategic allocation by alpha over tracking error against mandate benchmarks. |

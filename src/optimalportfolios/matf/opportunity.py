@@ -14,8 +14,8 @@ import numpy as np
 import pandas as pd
 from factorlasso import CurrentFactorCovarData, ResidualCorrelationData, ResidualType
 
-from optimalportfolios.covar_estimation.risk_model_adapter import build_risk_model
-from optimalportfolios.matf import sharpe_accounting as sa
+from tradablefactors.risk import build_risk_model
+from tradablefactors.premia import sharpe_accounting as sa
 from optimalportfolios.optimization.constraints import Constraints
 from optimalportfolios.optimization.covar_factorization import factorize_covariance
 from optimalportfolios.optimization.solver_diagnostics import validate_solution
@@ -61,7 +61,7 @@ class OpportunityModel:
         current = CurrentFactorCovarData(x_covar=f, y_betas=b,
             y_variances=pd.DataFrame({'residual_var': d}),
             residual_correlation=self.residual_correlation)
-        diagonal = build_risk_model({date: current})
+        diagonal = build_risk_model({date: current}, residual_type='orthogonal')
         object.__setattr__(self, 'factor_risk_model', diagonal)
         kind = (ResidualType.EMPIRICAL if self.residual_correlation is not None
                 else ResidualType.ORTHOGONAL)

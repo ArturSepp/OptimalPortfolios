@@ -135,6 +135,75 @@ Setting it to `False` reuses the previous target. On the first solve there is no
 rolling target; any current holdings supplied through constraints need their own valid anchor.
 Do not interpret the toggle as changing qis' unit-holding backtest.
 
+### Optional executed-state decisions
+
+`backtest_with_qis_state` is an opt-in alternative for a bounded cash-security workflow.
+It requires **QIS 5.37 or later**, which supplies the frozen-holdings accounting contract.
+Older installed engines get an actionable error when this entry point is called; existing
+OP workflows retain their declared `qis>=5.33.1` core floor.
+It leaves the existing rolling wrappers and `OptimiserConfig.use_drifted_weights_0`
+route unchanged. The [implementation](../src/optimalportfolios/optimization/executed_state.py)
+reuses `qis.backtest_model_portfolio` and `PortfolioData` state outputs. OP has no second
+cash or holdings ledger. The existing [interoperability example](../examples/integrations/skfolio_targets_local.py)
+now includes `run_executed_state_example`, which uses the single-date quadratic wrapper with
+actual weights as its turnover baseline and checks the result against its independent ledger.
+Run this source-only entry point from the repository root:
+
+```console
+python -c "from examples.integrations.skfolio_targets_local import run_executed_state_example; run_executed_state_example()"
+```
+
+It reuses the existing rolling script's independent ledger without changing its reviewed figure producer. This new entry point is available from the source candidate; the released-package pins in the
+[skfolio bridge](skfolio_interoperability.md) predate it.
+
+The callback receives a detached observed-price prefix and `ExecutedState`. Its `date` is the
+observed decision close; `units`, `weights`, `cash` and `nav` are actual holdings and currency
+state before the new decision. `quoted` records current quote availability and `eligible`
+records caller-supplied point-in-time eligibility. Cash is recovered as QIS NAV less marked
+positions, using the same past-only last-quote marks. It includes trading-cost debits; actual
+weights are never renormalised, so a fully invested target can leave negative cash and risky
+weights summing above one. The workflow imposes no borrowing limit or cost-funding rescaling.
+
+The returned `ExecutedRollingResult` contains the canonical QIS reporting `portfolio`,
+accepted `targets` indexed by decisions, all pre-decision `states`, and audit `events`
+with resolved execution dates, status and reason. The portfolio provides `get_turnover`,
+`get_costs`, `plot_nav` and the usual QIS reports. Its input schedule has resolved execution
+dates and a zero-position opening sentinel, rather than a second implementation lag.
+Executed turnover uses actual unit changes and current price notional divided by post-cost
+NAV, is two-sided, and has no annualisation. Its first row is missing; a missing quote retains
+QIS's missing turnover value. Entry costs remain booked even though first-row turnover is missing.
+
+| Event | Ordering and policy |
+|---|---|
+| Observe | Mark earlier accepted executions through this decision close using only its price prefix. No later price values reach the callback. The caller owns causal estimation and must not close over future data. |
+| Decide | Call `decide(history, state)`. Return a labelled long-only Series with sum at most one, `None` to hold, or the existing wrapper's `(weights, outcome)` tuple. Pass actual `state.weights` as `weights_0` when applying turnover constraints; respect `state.cash` explicitly if a borrowing constraint is needed. |
+| Reject | An `OptimizationOutcome` that is rejected or noncompliant skips the entire order. Its fallback weights are not submitted. Exceptions propagate. This prevents a failed solve from causing an unintended rebalance. |
+| Execute | Resolve `implementation_lag` once, in price observations, then let QIS size units on pre-cost execution NAV, freeze unquoted legs and debit `transaction_costs` from cash. Old units earn the return into execution; new units earn later returns. |
+| Report | Replay all accepted execution targets through QIS and use its resulting `portfolio`; report targets, decisions and actual holdings separately. |
+
+`prices` requires one fixed labelled asset superset, positive total-return marks in a common
+currency and an ordered observation grid; NaNs mean unquoted. `decision_dates` must be exact
+observed closes. Every execution needs a subsequent observation and must strictly precede the
+next decision. `implementation_lag=0` assumes observation, decision and trade at the same model
+close; it is appropriate only when the supplied information can support that convention.
+`initial_nav` starts entirely in cash, normally 100. The path supports proportional
+`transaction_costs` only; financing accrual, management fees, shorting, external starting
+holdings and outstanding order queues are outside this interface.
+
+`eligibility` is binary and forward-filled from earlier policy rows only. A quoted ineligible
+asset needs a zero target. An unquoted asset needs its actual current weight, including zero
+before first listing; a frozen holding cannot be promised liquidated. When its quote returns,
+policy must again decide whether it may trade. With lag, quote availability can change between
+decision and execution; QIS's execution-time freeze remains authoritative. Decision eligibility
+is not a future execution restriction, and a decision-time turnover bound cannot certify the
+realised turnover after intervening returns or unavailable quotes. Constrain the eligible
+single-date solve before returning a target; invalid targets fail without silent repair.
+
+This first implementation replays accepted targets on observed prefixes, which is deliberately
+bounded and costs more than a resumable engine. It does not add a broker interface or claim
+constant-time state updates. B0's accounting fixtures and L1's labelled-target checks remain
+applicable, including the explicit differences from native skfolio cost and freeze semantics.
+
 ## Worked example
 
 Both Python blocks of this page are excerpts of the canonical script
@@ -326,6 +395,66 @@ Rolling construction returns weights without a per-date `OptimizationOutcome` ta
 For a review requiring structured solve diagnostics, inspect the lower-level wrapper outcomes
 or use an audited producer such as the [analytics pipeline](documentation_standard.md#analytical-conventions-and-figures).
 Weight sums alone cannot establish solver acceptance or absence of fallback.
+
+### Chronological portfolio model selection
+
+`select_portfolio_model` adds a bounded fit/select/evaluate workflow on top of L2's
+`backtest_with_qis_state`. A grid contains at most 32 named dictionaries, such as covariance
+span and alpha strength. The factory `fit(training_prices, configuration)` constructs a
+fresh decision policy for every candidate and fold. Fit preprocessing, priors, estimates
+and any [FactorLasso estimator CV](https://github.com/ArturSepp/FactorLasso) inside this call;
+external fitted transforms or data captured by a callback can still leak information.
+This interface does not claim arbitrary scikit-learn estimator compatibility.
+
+`ChronologicalFold` names `train_end`, `decision_dates` and `evaluation_end` as exact observed
+closes. Training expands from the first observation and ends at the earlier of the requested
+cutoff and the first decision minus `label_horizon + embargo + 1` observations.
+`label_horizon` bounds forward label overlap in observations; its last possible label end
+must be strictly before evaluation after the extra embargo gap. Labels must be constructed
+wholly within the supplied training panel, making this extra exclusion conservative.
+Irregular event-specific label ends require a different interface. No later training blocks
+are used, so `embargo` is a pre-evaluation gap, not an embargo after a held-out block.
+
+One to ten inner evaluations must be ordered and nonoverlapping, and end by the actual outer
+training cutoff. Every candidate/fold is an **independent research experiment**, starting from
+cash with fresh policy state. Their NAVs are never stitched into an implemented history.
+The selected configuration is refitted once on the allowed outer training prefix; one
+**untouched outer portfolio** then runs sequentially through L2 with actual holdings, cash,
+transaction costs and lag. Later outer observations and the outer score do not enter selection.
+The outer run has no automatic refitting or repeated tuning on its own results.
+
+`PortfolioSelectionResult.scores` reports each detached configuration, mean net simple total
+return, rank and selection flag; insertion order breaks exact ties. `fold_scores` exposes
+individual research scores. The objective is the equally weighted arithmetic mean of
+unannualised net total returns, including initial entry fees, computed through
+`qis.compute_total_return` from initial cash to final NAV. Unequal fold durations still have
+equal weight. This objective is neither Sharpe nor a claim of risk-adjusted outperformance.
+All candidates use identical calendars, costs and execution lag. Fit, solve and invalid-score
+errors propagate; no failed candidate or fold is silently dropped.
+
+`provenance` records requested and actual training cutoffs, maximum label-end dates, removed
+rows, embargo, evaluation bounds and whether a fold is independent or sequential.
+`selected` names the winning configuration. `outer_score` stays separate from the selection table; `outer` is the canonical
+`ExecutedRollingResult` for QIS reporting. A factory returns the same policy contract as L2,
+including its failure/skip behavior. It must pass `state.weights` to any turnover constraint
+and respect L2's execution, missing-quote and cash-security limitations.
+
+The existing [source-only integration example](../examples/integrations/skfolio_targets_local.py)
+contains `run_chronological_selection_example`: four combinations of existing EWMA covariance
+spans and mean-prior strengths, independent research folds, and a forward quadratic-utility
+portfolio. Its weekly fractional log-return moments are not annualised; prices drive the
+common-currency unit ledger. It reuses the original independent ledger for the outer NAV,
+units and costs, without modifying the reviewed teaching-figure producer. Run from the
+repository root using the prescribed external interpreter:
+
+```console
+python -c "from examples.integrations.skfolio_targets_local import run_chronological_selection_example; r=run_chronological_selection_example(); print(r.scores); print(r.provenance); print(r.outer_score)"
+```
+
+These are fixed synthetic examples, not evidence of investment performance. The source
+regressions check future shocks, training-only transforms, tuning isolation, purging,
+deterministic selection, state reset/propagation, FactorLasso CV ownership and independent
+cash accounting, including zero-lag entry costs.
 
 ### Reproduction and verification context
 

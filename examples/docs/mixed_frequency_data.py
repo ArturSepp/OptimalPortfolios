@@ -13,6 +13,8 @@ constants below and records their values.
 """
 from dataclasses import replace
 
+import factorlasso as fl
+import tradablefactors as tf
 import numpy as np
 import pandas as pd
 
@@ -176,9 +178,9 @@ def main() -> None:
     factor_prices = prices[["Global Equity", "Government Bonds"]].rename(columns={
         "Global Equity": "Market", "Government Bonds": "Rates",
     })
-    factor_estimator = opt.FactorCovarEstimator(
-        lasso_model=opt.LassoModel(
-            model_type=opt.LassoModelType.LASSO,
+    factor_estimator = tf.FactorCovarEstimator(
+        lasso_model=fl.LassoModel(
+            model_type=fl.LassoModelType.LASSO,
             reg_lambda=1e-5,
             span_freq_dict={"ME": 24, "QE": 8},
             warmup_period=8,
@@ -190,21 +192,21 @@ def main() -> None:
         rebalancing_freq="QE",
     )
     cutoff = pd.Timestamp("2023-12-31")
-    factor_data = factor_estimator.fit_current_factor_covars(
+    factor_data = factor_estimator.fit_current(
         risk_factor_prices=factor_prices.loc[:cutoff],
         asset_returns_dict={
             freq: returns.loc[:cutoff] for freq, returns in returns_by_frequency.items()
         },
         assets=prices.columns,
-        estimation_date=cutoff,
-    )
+        cutoff=cutoff,
+    ).data
     annual_covar = factor_data.y_covar
-    rolling_data = factor_estimator.fit_rolling_factor_covars(
+    rolling_data = factor_estimator.fit_rolling(
         risk_factor_prices=factor_prices,
         asset_returns_dict=returns_by_frequency,
         assets=prices.columns,
         time_period=qis.TimePeriod("2023-06-30", "2023-12-31"),
-    )
+    ).data
     rolling_covars = rolling_data.get_y_covars()
 
     from factorlasso import VarianceColumns
@@ -213,7 +215,7 @@ def main() -> None:
     for frequency, annualisation, span in (("ME", 12, 24), ("QE", 4, 8)):
         bucket = returns_by_frequency[frequency].loc[:cutoff]
         factor_returns = np.log(factor_prices.loc[bucket.index]).diff()
-        model = opt.LassoModel(model_type=opt.LassoModelType.LASSO, reg_lambda=1e-5, span=span,
+        model = fl.LassoModel(model_type=fl.LassoModelType.LASSO, reg_lambda=1e-5, span=span,
                                warmup_period=8, demean=True, solver="CLARABEL")
         model.fit(x=factor_returns, y=bucket)
         np.testing.assert_allclose(factor_data.y_betas.loc[bucket.columns],
@@ -236,15 +238,15 @@ def main() -> None:
     assert list(rolling_covars) == quarter_ends
     np.testing.assert_allclose(annual_covar, rolling_covars[cutoff], atol=1e-12)
 
-    def fresh_estimator(**overrides) -> opt.FactorCovarEstimator:
+    def fresh_estimator(**overrides) -> tf.FactorCovarEstimator:
         """The page's estimator with a new LASSO model, so no fitted state is shared."""
-        model = opt.LassoModel(**factor_estimator.lasso_model.get_params())
+        model = fl.LassoModel(**factor_estimator.lasso_model.get_params())
         return replace(factor_estimator, lasso_model=model, **overrides)
 
-    monthly_covars = fresh_estimator(rebalancing_freq="ME").fit_rolling_factor_covars(
+    monthly_covars = fresh_estimator(rebalancing_freq="ME").fit_rolling(
         risk_factor_prices=factor_prices, asset_returns_dict=returns_by_frequency,
         assets=prices.columns, time_period=qis.TimePeriod("2023-06-30", "2023-12-31"),
-    ).get_y_covars()
+    ).data.get_y_covars()
     assert len(monthly_covars) == 7
     for date in quarter_ends:
         np.testing.assert_allclose(monthly_covars[date], rolling_covars[date], atol=1e-12)
@@ -267,11 +269,11 @@ def main() -> None:
         changed = bucket.copy()
         changed.loc[changed.index > cutoff] += 0.3
         later_buckets[frequency] = changed
-    changed_covars = fresh_estimator().fit_rolling_factor_covars(
+    changed_covars = fresh_estimator().fit_rolling(
         risk_factor_prices=perturbed_after(factor_prices, cutoff, 1.2, 2.5),
         asset_returns_dict=later_buckets, assets=prices.columns,
         time_period=qis.TimePeriod("2023-06-30", "2023-12-31"),
-    ).get_y_covars()
+    ).data.get_y_covars()
     for date, covar in rolling_covars.items():
         pd.testing.assert_frame_equal(changed_covars[date], covar)
 

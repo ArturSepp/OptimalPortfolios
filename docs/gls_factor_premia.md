@@ -10,7 +10,8 @@ myst:
 
 *Author: [Artur Sepp](https://github.com/ArturSepp)*
 
-Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+TradableFactors supplies the inference used by
+[OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios) consumers.
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 Generalized least squares (GLS) projects asset expected returns onto a fitted factor
@@ -24,7 +25,7 @@ Estimate a factor model from index and factor return histories, retain its loadi
 historical residual means and residual covariance, then infer premia from the provider's
 forecasts. The inference stage does not recalibrate those forecasts or infer cash.
 Production price preparation, currency conversion, factor definitions and provider mappings
-belong to the consuming application. OP also supplies the CMA diagnostics and PDF renderer.
+belong to the consuming application. TradableFactors supplies CMA diagnostics and PDF rendering.
 Historical regression estimation
 uses [FactorLasso](https://github.com/ArturSepp/FactorLasso), with its
 [software citation](https://github.com/ArturSepp/FactorLasso/blob/main/CITATION.cff).
@@ -216,10 +217,11 @@ Run `python examples/docs/gls_factor_premia.py` from a checkout.
 
 ## Implementation in optimalportfolios
 
-The supported import is `optimalportfolios.matf.gls_diagnostic`. Its
-[source README](https://github.com/ArturSepp/OptimalPortfolios/blob/main/src/optimalportfolios/matf/gls_diagnostic/README.md) describes
-module responsibilities and contributor checks; `_inference.py` is private.
-For a checkout-based installation and example command, follow that README.
+The supported inference import is now `tradablefactors.premia`; the old OP
+analytics imports have been removed. Install TradableFactors alongside OP for
+this composed example. Its `premia/README.md` describes module responsibilities
+and contributor checks; `_inference.py` is private. OP consumes the resulting
+expected returns and covariance for constrained optimisation.
 
 - `infer_factor_premia` returns `GlsPremiaResult`: exact asset reconciliation, premium
   estimates, conditional covariance and intervals, mimicking weights, VIFs and optional boxes.
@@ -243,10 +245,9 @@ For a checkout-based installation and example command, follow that README.
   draw status and assumptions. `compute_gls_loading_stability_contrast` takes
   paired result differences using the intersection of available draws.
 
-These are exported from `optimalportfolios.matf.gls_diagnostic`; the four new result
-and inference names are also exported from `optimalportfolios.matf` and the package
-root. Existing OP projection and mimicking-portfolio entry points delegate to the same
-implementation. The GLS calculation uses NumPy, pandas and SciPy and does not call
+These are exported from `tradablefactors.premia` and the TradableFactors package
+root. There are no OP forwarding exports. The GLS calculation uses NumPy, pandas
+and SciPy and does not call
 FactorLasso. All return units are supplied by the caller;
 annual inputs produce annual premium outputs. Forecasts and input frames are not modified.
 

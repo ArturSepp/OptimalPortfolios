@@ -209,11 +209,11 @@ def test_funded_pair_ordering_and_input_ownership():
 
 def test_pair_gains_against_independent_qis_quadratic_probes():
     """Three QIS scalar probes identify each one-dimensional optimum independently of the kernel."""
-    from optimalportfolios.covar_estimation.risk_model_adapter import build_risk_model
+    from qis import RiskModel
     from optimalportfolios.execution.solver import _build_selected_execution_bound_series
     p=_problem(max_trades=1)
     result=b._solve(p,b.score_execution_candidates(p),rescue=True)
-    risk=build_risk_model({pd.Timestamp('2000-01-01'):p.covariance})
+    risk=RiskModel(covar={pd.Timestamp('2000-01-01'):p.covariance})
     def variance(weights):
         """Use the stack's risk calculation, not covariance algebra, as the reference."""
         return float(risk.compute_tre_at_date(p.target[s.RAW_MODEL_WEIGHT],weights,

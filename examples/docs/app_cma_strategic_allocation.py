@@ -151,6 +151,7 @@ def main() -> None:
     """Run the page's blocks in order and assert every number and property it states."""
     import numpy as np
     import pandas as pd
+    import qis
     import optimalportfolios as op
 
     beta = pd.DataFrame(LOADINGS, index=ASSETS, columns=FACTORS)
@@ -226,7 +227,7 @@ def main() -> None:
             raise RuntimeError(f'{mandate}: {outcome.status}; {outcome.reason}')
 
     date = pd.Timestamp('2025-12-31')  # Synthetic decision date, not a data cutoff.
-    risk_model = op.build_risk_model({date: covar})
+    risk_model = qis.RiskModel(covar={date: covar})
     tracking_errors = {
         mandate: risk_model.compute_tre_at_date(
             benchmark_weights=pd.Series(BENCHMARKS[mandate], index=ASSETS),

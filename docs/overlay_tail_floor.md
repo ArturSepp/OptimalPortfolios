@@ -229,6 +229,7 @@ python -m examples.docs.overlay_tail_floor
 from dataclasses import replace
 import numpy as np
 import pandas as pd
+import qis
 import optimalportfolios as opt
 from examples.solvers.overlay_tail_floor import (
     create_synthetic_inputs, solve_overlay_tail_floor,
@@ -308,14 +309,14 @@ The positive floor concentrates more exposure in Defensive A. This is a conseque
 synthetic coefficients and covariance, not a finding about investable strategies. The
 homogeneous cross-check reproduces both floored allocations.
 
-For risk, build the canonical `qis.RiskModel` through `optimalportfolios.build_risk_model`.
+For risk, build the canonical `qis.RiskModel` using its `covar` argument directly.
 Its `compute_tre_at_date` tracking error against a zero exposure vector equals portfolio
 volatility. The reported model excess Sharpe is the supplied expected excess return divided by
 this risk; it is not an ex-post QIS performance statistic.
 
 ```python
 risk_date = pd.Timestamp("2024-12-31")  # Synthetic risk-model key, not a data cutoff.
-risk_model = opt.build_risk_model({risk_date: covar})
+risk_model = qis.RiskModel(covar={risk_date: covar})
 zero_benchmark = pd.Series(0.0, index=tickers)
 metrics = {}
 for label in floors:
@@ -468,7 +469,7 @@ bound rescaling; the example disables it explicitly with `apply_total_to_good_ra
 Source owners: [constraint compilation](../src/optimalportfolios/optimization/constraints/backends.py),
 [residual evaluation](../src/optimalportfolios/optimization/constraints/analytics.py),
 [solver outcomes](../src/optimalportfolios/optimization/solver_diagnostics.py), and
-[risk-model adapter](../src/optimalportfolios/covar_estimation/risk_model_adapter.py).
+[risk-model adapter](https://github.com/ArturSepp/tradablefactors/blob/main/src/tradablefactors/risk.py).
 
 The [canonical script](../examples/docs/overlay_tail_floor.py) runs the eight blocks with
 sockets blocked. It checks the allocations against a linear-algebra solution, a first-order

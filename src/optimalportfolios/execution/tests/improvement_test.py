@@ -291,7 +291,7 @@ def test_search_rejects_relaxed_incumbent_and_missing_risk(monkeypatch):
     with pytest.raises(NotImplementedError, match='strict-corridor'):
         improve_ranked_execution(p)
     baseline.trade_table[module.RELAXED_CORRIDOR_SOLVE] = False
-    monkeypatch.setattr(module, 'build_risk_model', lambda *a: SimpleNamespace(
+    monkeypatch.setattr(module, 'RiskModel', lambda *a, **k: SimpleNamespace(
         compute_tre_at_date=lambda *args: np.nan))
     with pytest.raises(ValueError, match='tracking error is unavailable'):
         improve_ranked_execution(p)

@@ -23,6 +23,9 @@ from optimalportfolios.optimization.solver_diagnostics import (
     diagnose_infeasibility,
 )
 from optimalportfolios.execution._budget import _consume_projection
+from optimalportfolios.execution._constraint_scope import (
+    _linear_feasibility_tolerance, _retain_original_group_bounds,
+)
 from optimalportfolios.execution._projection_cache import _project
 from optimalportfolios.execution.feasibility import compute_group_bound_bridges
 from optimalportfolios.execution.schema import (
@@ -376,7 +379,9 @@ def _positive_bridges(bridges: pd.DataFrame) -> pd.DataFrame:
     """Return constrained rows with a positive executable-range breach."""
     if bridges.empty:
         return bridges
-    return bridges.loc[bridges[["bridge_min", "bridge_max"]].max(axis=1).gt(WEIGHT_ZERO_TOLERANCE)]
+    return bridges.loc[
+        bridges[["bridge_min", "bridge_max"]].max(axis=1).gt(_linear_feasibility_tolerance())
+    ]
 
 
 def _snap_group_bounds_within_rounding_tolerance(
@@ -402,7 +407,7 @@ def _snap_group_bounds_within_rounding_tolerance(
         copy containing only the endpoint-normalized group bounds.
     """
     group_bounds = base_constraints.group_lower_upper_constraints
-    if group_bounds is None or bridges.empty:
+    if _retain_original_group_bounds() or group_bounds is None or bridges.empty:
         return base_constraints
     minimum = (
         None

@@ -1,4 +1,4 @@
-"""The QIS five-stock, ten-short-option book under OP's four-factor FCGL model.
+"""The QIS five-stock, ten-short-option book under a TradableFactors four-factor FCGL model.
 
 Run python -m examples.reports.stress_testing_with_options_local --output-dir <fresh directory>.
 The first run downloads Yahoo data; subsequent runs replay a hashed local cache.
@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 
 import qis
-import optimalportfolios as opt
+import tradablefactors as tf
 import factorlasso as fl
 from factorlasso.diagnostics import analyze_cluster_lineage
 
@@ -91,7 +91,7 @@ def load_prices(cache_dir, as_of=AS_OF, refresh=False):
 
 
 def fit_risk_model(prices):
-    """Fit FCGL through OP and retain the exact partition, linkage and cut distance."""
+    """Fit FCGL through TradableFactors and retain the exact partition, linkage and cut distance."""
     adjusted = prices["Adj Close"]
     weekly = qis.to_returns(adjusted, freq=FREQUENCY, is_log_returns=True,
                             is_first_zero=False, drop_first=False).loc[:adjusted.index[-1]]
@@ -112,23 +112,30 @@ def fit_risk_model(prices):
         group_penalty="normalized", l1_weight=0.0, demean=False,
         nonneg=False, auto_sign_constraints=False, solver="CLARABEL",
     )
-    estimator = opt.FactorCovarEstimator(
+    estimator = tf.FactorCovarEstimator(
         lasso_model=lasso, factor_returns_freq=FREQUENCY, factor_covar_span=SPAN,
         rebalancing_freq=FREQUENCY, is_apply_vol_normalised_returns=False,
     )
     # Explicit annual covariance preserves the QIS example's zero-mean EWMA convention.
-    # OP's internally estimated factor covariance otherwise applies demeaning.
-    snapshot = estimator.fit_current_factor_covars(
+    # TF's internally estimated factor covariance otherwise applies demeaning.
+    fitted_model = estimator.fit_current(
         risk_factor_prices=adjusted[list(FACTORS)].loc[:date],
         asset_returns_dict={FREQUENCY: y.loc[:date]}, assets=list(STOCKS),
-        estimation_date=date, x_covar=factor_covar,
+        cutoff=date, factor_covariance=tf.DatedFactorCovariance(factor_covar, date, date),
     )
-    model = opt.build_risk_model({date: snapshot})
+    model = fitted_model.to_risk_model()
+    snapshot = fitted_model.data
+    regression_factors = qis.to_returns(
+        adjusted[list(FACTORS)].reindex(y.index, method="ffill").ffill(),
+        freq=None, is_log_returns=True, is_first_zero=False, drop_first=False)
+    valid_mask = y.notna().to_numpy() & ~regression_factors.isna().all(axis=1).to_numpy()[:, None]
+    fit_inputs = {"x": regression_factors, "y": y, "valid_mask": valid_mask,
+                  "model_type": lasso.model_type}
     diagnostics = snapshot.y_variances[["r2"]].copy()
-    diagnostics["weekly_observations"] = lasso.valid_mask_.sum(axis=0).astype(int)
+    diagnostics["weekly_observations"] = valid_mask.sum(axis=0).astype(int)
     history = qis.to_returns(adjusted[list(FACTORS)], freq="ME", is_log_returns=True,
                              drop_first=True).loc[:adjusted.index[-1]].dropna()
-    return model, date, history, diagnostics, snapshot, lasso
+    return model, date, history, diagnostics, snapshot, fit_inputs
 
 
 def cluster_report_inputs(snapshot):
@@ -313,16 +320,16 @@ def scenario_inputs():
     return requests, grids
 
 
-def verify_example(portfolio, result, inventory, snapshot, lasso):
+def verify_example(portfolio, result, inventory, snapshot, fit_inputs):
     """Check FCGL optimality, covariance units, trees, Greeks and additive attribution."""
     from scipy.cluster.hierarchy import fcluster
 
     beta = result.factor_loadings.to_numpy()
-    x = lasso.x_.fillna(0.0).to_numpy()
-    y = lasso.y_.fillna(0.0).to_numpy()
+    x = fit_inputs["x"].fillna(0.0).to_numpy()
+    y = fit_inputs["y"].fillna(0.0).to_numpy()
     decay = 1.0 - 2.0 / (SPAN + 1)
     w = decay**np.arange(len(x) - 1, -1, -1)
-    weights = w[:, None] * lasso.valid_mask_
+    weights = w[:, None] * fit_inputs["valid_mask"]
     residuals = x @ beta.T - y
     norm_weights = weights / weights.sum(axis=0)
     np.testing.assert_allclose(result.residual_variances,
@@ -342,14 +349,15 @@ def verify_example(portfolio, result, inventory, snapshot, lasso):
                 assert np.linalg.norm(grad + threshold * block / norm) < 2e-7
             else:
                 assert np.linalg.norm(grad) <= threshold + 2e-7
-    assert lasso.model_type == fl.LassoModelType.FACTOR_CLUSTER_GROUP_LASSO
+    assert fit_inputs["model_type"] == fl.LassoModelType.FACTOR_CLUSTER_GROUP_LASSO
     np.testing.assert_allclose(result.factor_loadings, snapshot.y_betas)
     np.testing.assert_allclose(result.factor_covariance, snapshot.x_covar)
     pd.testing.assert_frame_equal(
         portfolio.risk_model.covar[portfolio.risk_date], snapshot.get_y_covar())
-    np.testing.assert_allclose(snapshot.linkages.to_numpy(), lasso.linkage)
-    recovered = fcluster(lasso.linkage, lasso.cutoff, criterion="distance")
-    members = lasso.clusters.reindex(lasso.y_.columns).to_numpy()
+    linkage = fl.get_linkages_by_freq(snapshot.linkages)[FREQUENCY]
+    recovered = fcluster(linkage, snapshot.cutoffs[FREQUENCY], criterion="distance")
+    members = fl.get_clusters_by_freq(snapshot.clusters)[FREQUENCY].reindex(
+        fit_inputs["y"].columns).to_numpy()
     np.testing.assert_array_equal(recovered[:, None] == recovered[None, :],
                                    members[:, None] == members[None, :])
     assert snapshot.clusters.index.equals(pd.Index(STOCKS))
@@ -434,7 +442,7 @@ def run_example(cache_dir, output_dir=None, as_of=AS_OF, refresh=False):
     if not hasattr(qis, "InstrumentPortfolio"):
         raise RuntimeError("This manual example needs qis>=5.30.2 with instrument stress reports")
     prices, source = load_prices(cache_dir, as_of, refresh)
-    model, date, history, diagnostics, snapshot, lasso = fit_risk_model(prices)
+    model, date, history, diagnostics, snapshot, fit_inputs = fit_risk_model(prices)
     cluster_inputs = cluster_report_inputs(snapshot)
     portfolio, inventory = build_portfolio(prices, model, date)
     requests, grids = scenario_inputs()
@@ -442,7 +450,7 @@ def run_example(cache_dir, output_dir=None, as_of=AS_OF, refresh=False):
         portfolio, requests, history, grids,
         qis.StressTestConfig(horizon_years=1/12, confidence=.95),
     )
-    verification = verify_example(portfolio, result, inventory, snapshot, lasso)
+    verification = verify_example(portfolio, result, inventory, snapshot, fit_inputs)
     fig, curves, contributions = convexity_exhibit(portfolio, result, inventory)
     if output is not None:
         output.mkdir(parents=True)
@@ -493,7 +501,7 @@ def run_example(cache_dir, output_dir=None, as_of=AS_OF, refresh=False):
                 str(path.relative_to(Path(package.__file__).parent)):
                     hashlib.sha256(path.read_bytes()).hexdigest()
                 for path in sorted(Path(package.__file__).parent.rglob("*.py"))}
-                for package in (opt, fl, qis)},
+                for package in (tf, fl, qis)},
             "vop_version": version("vanilla-option-pricers"),
             "example_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             "verification": verification}

@@ -11,7 +11,7 @@ from factorlasso import (
     quadratic_confidence_summary,
 )
 
-from optimalportfolios.matf import sharpe_accounting as sa
+from tradablefactors.premia import sharpe_accounting as sa
 from optimalportfolios.matf.opportunity import alpha_dispersion
 
 

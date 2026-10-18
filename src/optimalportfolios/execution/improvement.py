@@ -13,7 +13,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from optimalportfolios.covar_estimation.risk_model_adapter import build_risk_model
+from qis import RiskModel
 from optimalportfolios.execution import schema as s
 from optimalportfolios.execution.ranking import score_execution_trades, resolve_effective_max_trades
 from optimalportfolios.execution.solver import (
@@ -286,7 +286,7 @@ def improve_ranked_execution(
     if incumbent.trade_table[RELAXED_CORRIDOR_SOLVE].any():
         raise NotImplementedError('support improvement requires a strict-corridor incumbent')
     date = pd.Timestamp('2000-01-01')  # A label for one supplied covariance, not a sampled date.
-    risk = build_risk_model({date: snapshot.covariance})
+    risk = RiskModel(covar={date: snapshot.covariance})
     noncash = ~snapshot.target[s.SETTLEMENT_CASH]
 
     def metrics(result):

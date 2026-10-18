@@ -10,7 +10,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from optimalportfolios.covar_estimation.risk_model_adapter import build_risk_model
+from qis import RiskModel
 from optimalportfolios.execution import schema as s
 from optimalportfolios.execution._budget import (
     _ProjectionBudget, _ProjectionBudgetExhausted, _projection_scope,
@@ -169,7 +169,7 @@ def solve_guarded_execution(
         return ExecutionSearchResult(baseline, pd.DataFrame(columns=columns),
                                      {'stop_reason': 'baseline_relaxed_corridors'})
     date = pd.Timestamp('2000-01-01')
-    risk = build_risk_model({date: snapshot.covariance})
+    risk = RiskModel(covar={date: snapshot.covariance})
     reference = _metrics(snapshot, baseline, risk, controls.ticket_size_bp)
     incumbent, current, source = baseline, reference, 'legacy'
     proposal_problem = replace(snapshot, ranking_config=replace(snapshot.ranking_config,

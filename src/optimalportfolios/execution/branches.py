@@ -7,7 +7,7 @@ from time import perf_counter
 import numpy as np
 import pandas as pd
 
-from optimalportfolios.covar_estimation.risk_model_adapter import build_risk_model
+from qis import RiskModel
 from optimalportfolios.execution import schema as s
 from optimalportfolios.execution._budget import (
     _ProjectionBudget, _ProjectionBudgetExhausted, _projection_scope,
@@ -205,7 +205,7 @@ def solve_branched_execution(
             {'stop_reason': 'baseline_relaxed_corridors'}, checkpoints)
     if on_incumbent is not None:
         on_incumbent('baseline', deepcopy(baseline))
-    risk = build_risk_model({pd.Timestamp('2000-01-01'): snapshot.covariance})
+    risk = RiskModel(covar={pd.Timestamp('2000-01-01'): snapshot.covariance})
     reference = _metrics(snapshot, baseline, risk, controls.ticket_size_bp)
     incumbent, best, selected, selected_checkpoint = baseline, reference, 'legacy', 'baseline'
     branches = [_Branch('legacy', baseline, reference, 'baseline', _removable(snapshot, baseline))]

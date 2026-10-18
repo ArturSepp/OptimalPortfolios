@@ -137,6 +137,7 @@ def main() -> None:
     from dataclasses import replace
     import numpy as np
     import pandas as pd
+    import qis
     import optimalportfolios as opt
     from examples.solvers.overlay_tail_floor import (
         create_synthetic_inputs, solve_overlay_tail_floor,
@@ -313,7 +314,7 @@ def main() -> None:
     assert routed.solver == "SLSQP"
 
     risk_date = pd.Timestamp("2024-12-31")  # Synthetic risk-model key, not a data cutoff.
-    risk_model = opt.build_risk_model({risk_date: covar})
+    risk_model = qis.RiskModel(covar={risk_date: covar})
     zero_benchmark = pd.Series(0.0, index=tickers)
     metrics = {}
     for label in floors:
@@ -363,7 +364,7 @@ def main() -> None:
             constraints=specifications["Floor 0.005"])
         assert scaled.accepted and scaled.compliant
         np.testing.assert_allclose(scaled.weights, allocation["Floor 0.005"], atol=3e-6)
-        scaled_model = opt.build_risk_model({risk_date: scale * covar})
+        scaled_model = qis.RiskModel(covar={risk_date: scale * covar})
         scaled_risk = scaled_model.compute_tre_at_date(
             benchmark_weights=zero_benchmark,
             portfolio_weights=pd.Series(scaled.weights, index=tickers), date=risk_date)

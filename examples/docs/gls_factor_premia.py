@@ -10,7 +10,7 @@ import pandas as pd
 from scipy.stats import t
 
 from factorlasso import LassoModel, LassoModelType
-from optimalportfolios.matf.gls_diagnostic import infer_factor_premia
+from tradablefactors.premia import infer_factor_premia
 
 
 def main():
