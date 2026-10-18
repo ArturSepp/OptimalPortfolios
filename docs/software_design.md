@@ -71,8 +71,10 @@ Their dated covariance matrices are inputs to portfolio construction, alongside 
 returns or alphas and constraints. OP combines those inputs with the previous target drifted
 by prices and produces dated target weights. QIS turns the targets into units traded after
 the implementation lag and charged cash costs, returning `PortfolioData` for reports.
-OP still has EWMA and expected-return convenience paths at this migration checkpoint;
-their supplied-input separation is a later stage of the stack migration.
+OP retains EWMA and signal utilities as explicit preparation paths. Its optimisers
+consume supplied arrays; TF and FL are absent from OP library imports and runtime
+dependencies. The [completed-output guide](completed_output.md) shows the finite
+allocation, separate solver status, inspection and persistence boundary.
 
 The rolling construction state is the previous target, drifted with the supplied prices when
 `OptimiserConfig.use_drifted_weights_0` is `True` (see [holdings as state](#holdings-as-state)).
@@ -101,41 +103,35 @@ flowchart LR
         end
         alphas["alphas"]
         covar["covar_estimation"]
-        matf["matf<br/>retained opportunity integration"]
+        matf["matf<br/>supplied-array opportunity solvers"]
         universe["universe"]
         utils["utils"]
     end
     qis(["qis"])
-    factorlasso(["factorlasso"])
-    tf(["tradablefactors"])
     cvxpy(["cvxpy"])
     scipy(["scipy"])
     quadprog(["quadprog"])
     reports --> optimization
     reports --> alphas & covar
-    matf --> tf & cvxpy & factorlasso & optimization
+    matf --> cvxpy & optimization
     optimization --> alphas & covar & utils
-    optimization --> tf & factorlasso & cvxpy & scipy & quadprog
-    covar --> factorlasso
-    alphas -.-> factorlasso
+    optimization --> cvxpy & scipy & quadprog
     alphas --> scipy
     utils --> scipy
     pkg --> qis
 ```
 
 Inside `optimization`, the rolling dispatcher imports the solver families, which, like
-`portfolio_result`, import `constraints`. The retained `matf` opportunity integration
-uses TF mathematics and risk-model export, FactorLasso containers and OP solvers.
-Its constrained solver remains in OP. Pure GLS, CMA and Sharpe accounting now live in TF.
-QIS supplies shared pipeline primitives; the dotted arrow marks FactorLasso imports
-made inside a function or for type checking.
+`portfolio_result`, import `constraints`. The `matf` opportunity solvers consume
+prepared covariance, alpha and optional factor/uncertainty arrays. Pure GLS, CMA
+and Sharpe accounting live in TF. QIS supplies shared analytics and risk primitives.
 
 An arrow A → B means that at least one module of A imports B; an arrow that leaves a box stands
 for the modules inside it. The graph excludes `tests` and `run_local` directories.
-The dispatcher still imports `alphas` for its EWMA expected returns
-(`estimate_rolling_ewma_means`); `portfolio_result` imports TF's `build_risk_model`
-and FactorLasso's factor-covariance container. These are recorded intermediate
-dependencies, so OP base-install independence is not claimed at this checkpoint.
+The dispatcher still imports `alphas` for its explicit EWMA expected-return utility
+(`estimate_rolling_ewma_means`); `portfolio_result` imports QIS `RiskModel` and
+accepts optional supplied risk context. The base installed OP package is tested
+without TF or FL; their adapters operate upstream of this import graph.
 The diagram omits the package root, whose
 `config.py` defines `PortfolioObjective`; the shared `optimization` modules `config.py`,
 `covar_factorization.py` and `solver_diagnostics.py`; and the matplotlib and seaborn plotting
@@ -169,9 +165,9 @@ Production modules never import the paper workspace.
 The extracted OP imports are removed; active callers import TradableFactors
 directly. The [methodology](gls_factor_premia.md),
 [CMA adapter guide](cma_diagnostics.md) and TradableFactors `premia/README.md`
-document these contracts. Retained opportunity integration currently consumes
-TF mathematics during the unpublished migration checkpoint; its supplied-input
-separation is completed in stage 5. No additional FactorLasso GLS API is required.
+document these contracts. Opportunity solvers in OP consume supplied arrays;
+statistical decomposition and uncertainty preparation finish upstream. No additional
+FactorLasso GLS API is required.
 
 ### Point-in-time estimation
 
@@ -289,13 +285,13 @@ at the chosen entry point. This architecture description makes no comparative ru
 | Rolling covariance | Dictionary keyed by decision date; each value is an asset-by-asset DataFrame. | Keep label alignment, chronological keys and annual covariance units explicit. |
 | Rolling target weights | DataFrame: decision dates in rows, assets in columns. | Weights are dimensionless; read the selected solver's diagnostics and fallback contract. |
 | QIS execution result | `qis.PortfolioData` from the backtest wrapper. | Inspect the actual trading calendar, costs and lag. |
-| Construction/risk snapshot | `PortfolioOptimisationResult`: assets in rows and portfolios in columns for a multi-portfolio weight input. | This orientation differs from a rolling weight panel; provide its factor-model and benchmark context. |
+| Construction/risk snapshot | `PortfolioOptimisationResult`: assets in rows and portfolios in columns for a multi-portfolio weight input. | Benchmark context is required; supplied covariance or QIS RiskModel context is optional for inspection and required for risk calls. |
 
 `PortfolioOptimisationResult` combines construction output and risk context; it does not perform
 portfolio optimization. Its risk calculations delegate to `qis.RiskModel`.
-The public `build_risk_model(covar_data)` adapter accepts rolling factor data, dated factor
-snapshots or a dated dictionary of asset covariance matrices. A covariance-only input creates
-a covariance-only risk model; it does not reconstruct missing factor loadings.
+The upstream `tradablefactors.build_risk_model` adapter exports completed factor context.
+OP accepts the resulting QIS object or a supplied covariance directly. A covariance-only
+input does not reconstruct missing factor loadings.
 
 For a complete executable example, follow the [canonical quickstart](quickstart.md) or
 [example catalogue](examples_readme.md). The [CSV workflow](rolling_factor_covar_from_csv.md)
@@ -303,7 +299,8 @@ shows how factor inputs and risk-model context cross the package boundary.
 
 ## Core installation and integrations
 
-The numerical pipeline depends on QIS and FactorLasso as core stack packages.
+The OP numerical pipeline depends on QIS as its only core stack package. TF and FL
+are separately installed upstream providers and are absent from OP library imports.
 The [packaging metadata](../pyproject.toml) declares the remaining numerical dependencies
 and three published extras:
 

@@ -1,7 +1,6 @@
 """Keep the example catalogue aligned with runnable sources and execution prerequisites."""
 
 import ast
-import argparse
 from collections import Counter
 import json
 from pathlib import Path
@@ -85,7 +84,7 @@ def test_factor_requirements_are_independent_of_network_lane(root):
         root / 'src/optimalportfolios/tests/documentation_examples_test.py'))
     cases = {case.values[0].stem: case for case in harness['_script_cases']()}
     expected = {
-        'rolling_factor_covar_from_csv': ('network', True),
+        'completed_output': ('offline', False),
         'alphas_module_readme': ('composed', True),
         'covariance_estimators': ('offline', False),
     }
@@ -95,13 +94,10 @@ def test_factor_requirements_are_independent_of_network_lane(root):
         assert classifier['classify']([path])[path] == lane
         marked = any(mark.name == 'factor_integration' for mark in case.marks)
         assert marked is requires_factors, name
-    # The CSV wrapper's network label comes through its example import, while
-    # its explicit factor requirements must still control the pytest marker.
-    wrapper = cases['rolling_factor_covar_from_csv'].values[0]
-    direct, _ = classifier['_imports_of'](wrapper)
-    assert 'yfinance' not in direct
-    assert {'yfinance', 'tradablefactors', 'factorlasso'} <= (
-        classifier['external_dependencies'](wrapper))
+    # The base completed-output example must not pull factor packages transitively.
+    completed = cases['completed_output'].values[0]
+    assert not {'tradablefactors', 'factorlasso', 'yfinance'} & (
+        classifier['external_dependencies'](completed))
 
 
 @pytest.mark.parametrize("path,scenario", [
@@ -121,34 +117,11 @@ def test_documented_default_scenario_matches_main_guard(root, guide, path, scena
     assert scenario in catalogue(guide[1])[path][1]
 
 
-def test_csv_catalogue_distinguishes_default_and_load_mode(root, guide):
-    """Execute the actual CLI body without importing its separate factor-fitting dependencies."""
-    path = "examples/covar_estimation/rolling_factor_covar_from_csv.py"
-    tree = ast.parse((root / path).read_text(encoding='utf-8'), filename=path)
-    main_node, = [node for node in tree.body
-                  if isinstance(node, ast.FunctionDef) and node.name == 'main']
-    # Keep the production parser and branches; erase annotations so selecting this
-    # one function needs neither the module's imports nor its TF/FL implementation.
-    main_node.returns = None
-    for argument in main_node.args.args:
-        argument.annotation = None
-    calls = []
-    namespace = {
-        '__doc__': ast.get_docstring(tree), 'argparse': argparse, 'Path': Path,
-        'DEFAULT_DATA_DIR': Path('default-csv-bundle'),
-        'fetch_and_save_yahoo_csvs': lambda **kw: calls.append(('fetch', kw)),
-        'fit_rolling_risk_model_from_csv': lambda **kw: calls.append(('load', kw)),
-    }
-    exec(compile(ast.Module(body=[main_node], type_ignores=[]), path, 'exec'), namespace)
-    main = namespace['main']
-    main([])
-    assert [kind for kind, _ in calls] == ["fetch", "load"]
-    calls.clear()
-    main(["load", "--data-dir", "existing-csv-bundle"])
-    assert calls == [("load", {"data_dir": Path("existing-csv-bundle")})]
-    row = catalogue(guide[1])[path][1]
-    assert "default \x60all\x60 mode" in row
-    assert "\x60load\x60 mode uses an existing bundle without downloading" in row
+def test_csv_construction_has_one_upstream_owner(root, guide):
+    """OP keeps a handoff, not a second loader with an implicit fetching default."""
+    assert not (root / 'examples/covar_estimation/rolling_factor_covar_from_csv.py').exists()
+    assert not (root / 'examples/docs/rolling_factor_covar_from_csv.py').exists()
+    assert 'tradablefactors/blob/main/docs/rolling_factor_covar_from_csv.md' in guide[1]
 
 
 def test_preview_writers_are_identified_in_output_guidance(root, guide):

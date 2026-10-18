@@ -19,15 +19,14 @@
       "review": "L1: source/link, core and optional integration tests, released-wheel execution and strict Sphinx verification are recorded in agents/. GitHub and VS Code viewer review pending; local build inspected."
     },
     "docs/gls_factor_premia.md": {
-      "form": "methodology",
-      "status": "pending",
-      "example": "examples/docs/gls_factor_premia.py",
-      "review": "2026-10-15: OP inference ownership, independent weighted-QR example and full-page HTML reviewed. 2026-10-16: added total-versus-excess target contracts, README links and provider integration. Source/link checks, canonical example, public API/documentation tests and strict Sphinx build pass. GitHub and VS Code viewer review pending."
+      "review": "Stage 6: method ownership moved to TradableFactors; OP retains a concise handoff and incoming anchors. Source, example and strict-build results are recorded in agents/EXECUTION_STAGE_6_ASTRA.md; external viewers are not re-certified.",
+      "form": "utility",
+      "status": "adopted"
     },
     "docs/cma_diagnostics.md": {
+      "review": "Stage 6: method ownership moved to TradableFactors; OP retains a concise handoff and incoming anchors. Source, example and strict-build results are recorded in agents/EXECUTION_STAGE_6_ASTRA.md; external viewers are not re-certified.",
       "form": "utility",
-      "status": "adopted",
-      "review": "2026-10-13: new implementation guide for the GLS CMA audit and separate PDF renderer. Functional synthetic tests and source documentation checks; GitHub and VS Code viewer review pending."
+      "status": "adopted"
     },
     "README.md": {
       "form": "utility",
@@ -119,10 +118,9 @@
       "review": "R3 (2026-09-27): adopted after the source checker, including the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings (same math spans, no errors); the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page (MathJax, images, diagrams, tables, local links and anchors). Lockfile note replaced by a link to the installation guide; R9 (2026-09-27): \"Examples and recipes\", with a task table mapping 28 tasks to their article, canonical script and standalone examples by lane; stale rows corrected."
     },
     "docs/factor_covariance_hcgl.md": {
-      "form": "methodology",
-      "status": "adopted",
-      "example": "examples/docs/factor_covariance_hcgl.py",
-      "review": "R4 (2026-09-27): new page written to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment, where the script also runs on the locked factorlasso and qis; and a DOM review of the built page. M05. Takes the factor sections of covariance_estimators. Teaching exhibit factor_covariance_variance_split.png."
+      "review": "Stage 6: method ownership moved to TradableFactors; OP retains a concise handoff and incoming anchors. Source, example and strict-build results are recorded in agents/EXECUTION_STAGE_6_ASTRA.md; external viewers are not re-certified.",
+      "form": "utility",
+      "status": "adopted"
     },
     "docs/hierarchical_risk_parity_and_cluster_budgets.md": {
       "form": "methodology",
@@ -222,10 +220,9 @@
       "example": "examples/docs/rolling_backtests.py"
     },
     "docs/rolling_factor_covar_from_csv.md": {
-      "form": "methodology",
-      "status": "adopted",
-      "review": "R3b (2026-09-27): migrated to the canonical-script contract and adopted. Every Python block is an excerpt of the page script, which asserts the page against independent references and is run by documentation_examples_test.py; the block-executing harness is retired. Checked with the convention card, the excerpt rule and the GitHub math rules; the GitHub Markdown API and VS Code KaTeX renderings; the strict Sphinx build in the Read the Docs environment; and a DOM review of the built page. Mermaid diagram of the six-file workflow; the script runs from a checkout, in the network lane.",
-      "example": "examples/docs/rolling_factor_covar_from_csv.py"
+      "review": "Stage 6: method ownership moved to TradableFactors; OP retains a concise handoff and incoming anchors. Source, example and strict-build results are recorded in agents/EXECUTION_STAGE_6_ASTRA.md; external viewers are not re-certified.",
+      "form": "utility",
+      "status": "adopted"
     },
     "docs/signal_diagnostics_and_profiling.md": {
       "form": "methodology",
@@ -287,6 +284,12 @@
       "form": "utility",
       "status": "adopted",
       "review": "Stage 5: supplied-input boundary; source and installed-wheel contracts checked in the implementation report."
+    },
+    "docs/completed_output.md": {
+      "example": "examples/docs/completed_output.py",
+      "form": "utility",
+      "status": "adopted",
+      "review": "Stage 6: completed supplied-input allocation and separate outcome, independently checked KKT solution and Cholesky risk, explicit optional table export. Verification is recorded in agents/EXECUTION_STAGE_6_ASTRA.md; GitHub and VS Code viewer review pending."
     }
   },
   "planned": {},
@@ -373,8 +376,7 @@
     "docs/optimization_module_readme.md": [
       "PortfolioObjective",
       "OptimiserConfig",
-      "compute_rolling_optimal_weights",
-      "PortfolioOptimisationResult"
+      "compute_rolling_optimal_weights"
     ],
     "docs/risk_budgeting.md": [
       "rolling_risk_budgeting",
@@ -468,6 +470,9 @@
     ],
     "docs/turnover_and_transaction_costs.md": [
       "compute_tre_turnover_stats"
+    ],
+    "docs/completed_output.md": [
+      "PortfolioOptimisationResult"
     ]
   },
   "external_symbols": {

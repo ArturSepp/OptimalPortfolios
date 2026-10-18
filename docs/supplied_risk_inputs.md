@@ -17,6 +17,9 @@ Holdings simulation and general risk/stress reporting are separate QIS operation
 The retained EWMA estimator and signal formulas remain available as explicit utilities.
 Optimisers do not fit loadings or infer alphas.
 
+The [completed-output guide](completed_output.md) provides the canonical base-install
+example, the actual result and separate solver-outcome fields, and explicit table export.
+
 ## Result context
 
 `PortfolioOptimisationResult(weights=..., benchmark_weights=...)` is usable for

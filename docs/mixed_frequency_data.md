@@ -416,7 +416,7 @@ historical input cutoffs. The test suite runs it, and so does the offline exampl
   correct serial dependence, appraisal smoothing, stale marks or asynchronous exposure changes.
   The factor residual diagonal omits cross-asset residual covariance.
 - **Timing and configuration limits:** the
-  [factor covariance article](factor_covariance_hcgl.md#implementation-in-optimalportfolios) records that
+  [factor covariance article](https://github.com/ArturSepp/tradablefactors/blob/main/docs/factor_covariance_hcgl.md#implementation-in-tradablefactors) records that
   regression demeaning belongs on the `LassoModel`. TF's current fit requires an explicit
   `cutoff` and truncates every input history; supplied dates must reflect actual availability.
 
@@ -435,4 +435,3 @@ historical input cutoffs. The test suite runs it, and so does the offline exampl
 - [factorlasso software citation](https://github.com/ArturSepp/FactorLasso/blob/main/CITATION.cff).
 - [Pandas: exponentially weighted calculations and decay parameters](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.ewm.html).
 - [Pandas: time-series sampling and endpoint labels](https://pandas.pydata.org/docs/user_guide/timeseries.html#resampling).
-

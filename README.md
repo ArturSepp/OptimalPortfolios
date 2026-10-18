@@ -18,9 +18,14 @@ cite its [software record](https://github.com/ArturSepp/QuantInvestStrats/blob/m
 Explore the [analytics gallery](https://optimalportfolios.readthedocs.io/en/latest/analytics_gallery.html) for reproducible synthetic examples
 with sample dates, conventions, producer links and reviewed provenance.
 
-**Production multi-asset portfolio construction and rolling backtesting in Python — from
-point-in-time covariance and alpha estimation through constrained optimisation, rebalancing,
-transaction costs, and reporting.**
+**Constrained multi-asset portfolio optimisation from supplied alphas, covariances and
+constraints to dated target weights and solver outcomes.**
+
+The [completed-output guide](docs/completed_output.md) identifies the result, its units,
+dates, status and explicit export boundary. Factor-model construction belongs to
+[TradableFactors](https://github.com/ArturSepp/tradablefactors); sparse estimation to
+[FactorLasso](https://github.com/ArturSepp/FactorLasso); general risk, stress testing and
+reporting to QIS. OP retains explicit EWMA and signal utilities and rolling orchestration.
 
 **Install:** `pip install optimalportfolios` · **Import:** `optimalportfolios` · **Status:** Stable
 
@@ -46,11 +51,10 @@ and scikit-learn-compatible model selection. `optimalportfolios` is organised ar
 a different primary abstraction: a dated state transition from estimates and current
 holdings to constrained targets and realised backtests.
 
-**optimalportfolios solves the production problem end-to-end:**
-estimate covariance → compute alpha signals → optimise with constraints →
-rebalance on schedule → backtest with transaction costs — all in a single
-roll-forward pipeline that handles incomplete data, mixed-frequency assets,
-and illiquid positions.
+**The completed OP object is an allocation and its audit:** supplied alphas and
+covariance → optimise under constraints → inspect target weights, solver status and
+feasibility. A separate QIS operation simulates execution and produces reports.
+Rolling orchestration supports incomplete data, mixed-frequency assets and illiquid positions.
 
 ### Key differentiators
 
@@ -58,20 +62,16 @@ and illiquid positions.
   allocation, alpha signals, tracking-error-constrained tactical allocation and a rolling
   backtest share one dated roll-forward state, with equities rebalancing monthly and
   alternatives quarterly. See the [ROSAA case study](https://optimalportfolios.readthedocs.io/en/latest/app_rosaa_multi_asset_allocation.html).
-- **HCGL factor covariance.** Sparse, structured covariance for heterogeneous universes, fitted
-  by [`factorlasso`](https://github.com/ArturSepp/factorlasso) and assembled point in time by
-  `tradablefactors.FactorCovarEstimator` across return frequencies before OP receives
-  the selected covariance. See
-  [factor covariance with HCGL](https://optimalportfolios.readthedocs.io/en/latest/factor_covariance_hcgl.html).
+- **Supplied risk inputs.** A dated covariance can come from any upstream model.
+  [TradableFactors' HCGL construction](https://github.com/ArturSepp/tradablefactors/blob/main/docs/factor_covariance_hcgl.md)
+  supplies a complete factor model using FactorLasso; OP consumes the selected covariance.
 - **Cluster-aware risk allocation.** Clusters, sectors or asset classes become asset-level risk
   budgets, static or dated, and canonical HRP runs from a supplied linkage. See
   [hierarchical risk parity and cluster risk budgets](https://optimalportfolios.readthedocs.io/en/latest/hierarchical_risk_parity_and_cluster_budgets.html).
-- **CMA risk-premia diagnostics.** Infer factor premia from provider forecasts conditional on
-  historical loadings, with GLS rank checks, factor-mimicking portfolios, conditional intervals
-  and separate sensitivity ranges. FactorLasso estimates the historical model; TradableFactors
-  owns the inference and CMA report interfaces. OP consumes their supplied portfolio inputs. See the [GLS guide](docs/gls_factor_premia.md),
-  [CMA reports](docs/cma_diagnostics.md) and
-  [module README](https://github.com/ArturSepp/tradablefactors/blob/main/src/tradablefactors/premia/README.md).
+- **Prepared expected returns.** Forecasts and alphas enter the selected objective directly.
+  [TF GLS inference](https://github.com/ArturSepp/tradablefactors/blob/main/docs/gls_factor_premia.md)
+  and [CMA diagnostics](https://github.com/ArturSepp/tradablefactors/blob/main/docs/cma_diagnostics.md)
+  are separate upstream workflows, complete before optimisation.
 - **Drift-aware rolling backtests.** Turnover limits and cost penalties act on the drifted
   holdings rather than the previous target (`OptimiserConfig.use_drifted_weights_0`, default
   `True`). See [rolling backtests](https://optimalportfolios.readthedocs.io/en/latest/rolling_backtests.html).
@@ -460,9 +460,10 @@ This package is part of an open-source Python stack for quantitative finance. Th
 
 | Package | Purpose |
 |---|---|
-| [`qis`](https://github.com/ArturSepp/QuantInvestStrats) | Performance analytics, factsheets, and visualisation |
-| [`optimalportfolios`](https://github.com/ArturSepp/OptimalPortfolios) *(this package)* | Portfolio construction and backtesting |
-| [`factorlasso`](https://github.com/ArturSepp/factorlasso) | Sparse factor models and factor covariance estimation |
+| [`qis`](https://github.com/ArturSepp/QuantInvestStrats) | Risk and stress analytics, holdings simulation and reporting |
+| [`optimalportfolios`](https://github.com/ArturSepp/OptimalPortfolios) *(this package)* | Optimisation from supplied inputs to target weights and solver outcomes |
+| [`tradablefactors`](https://github.com/ArturSepp/tradablefactors) | Factor definitions, NAV construction and completed loadings/covariance models |
+| [`factorlasso`](https://github.com/ArturSepp/factorlasso) | Sparse multi-output estimation and fitted statistical diagnostics |
 | [`bbg-fetch`](https://github.com/ArturSepp/BloombergFetch) | Bloomberg data fetching |
 | [`option-chain-analytics`](https://github.com/ArturSepp/OptionChainAnalytics) | Point-in-time option-chain normalisation, reconstruction, querying, and visualisation |
 | [`vanilla-option-pricers`](https://github.com/ArturSepp/VanillaOptionPricers) | Vectorised vanilla option pricers and implied volatility fitters |

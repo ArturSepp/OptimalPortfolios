@@ -8,7 +8,7 @@ Software citation: `CITATION.cff
 <https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff>`_.
 
 .. meta::
-   :description: Public OptimalPortfolios API: signatures and docstrings, guide entry points, solver layers, and QIS/FactorLasso ownership.
+   :description: Public OptimalPortfolios API: supplied alphas and covariances, completed allocations, solver outcomes and QIS handoffs.
 
 The public API consists of the non-underscore names importable from the
 ``optimalportfolios`` package root. Open a symbol in the reference below to read
@@ -24,11 +24,13 @@ Find a guide
 
    * - Your task
      - Guide
+   * - Inspect a completed allocation, solver status and explicit export
+     - :doc:`Completed optimisation output <completed_output>`
    * - Run an offline construction and backtest
      - :doc:`Quickstart <quickstart>`
    * - Build and score alpha signals
      - :doc:`Alpha signals <alphas_module_readme>`
-   * - Prepare EWMA or factor covariance estimates
+   * - Prepare an EWMA covariance or consume an upstream factor estimate
      - :doc:`Covariance estimators <covariance_estimators>`
    * - Choose an objective and understand solver outputs
      - :doc:`Optimization guide <optimization_module_readme>`

@@ -16,6 +16,11 @@ Estimation and inference use [FactorLasso](https://github.com/ArturSepp/FactorLa
 ([citation](https://github.com/ArturSepp/FactorLasso/blob/main/CITATION.cff)); execution, risk and
 reporting use [qis](https://github.com/ArturSepp/QuantInvestStrats)
 ([citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff)).
+Factor-model geometry and uncertainty propagation use
+[TradableFactors](https://github.com/ArturSepp/tradablefactors)
+([citation](https://github.com/ArturSepp/tradablefactors/blob/main/CITATION.cff)).
+This is a composed workflow: OP supplies the executed-state decision integration;
+the factor methods finish in their owning packages before that handoff.
 
 This source-only guide connects existing factor estimates, MATF alpha geometry and QIS risk
 and attribution. It keeps uncertainty about an estimated residual mean separate from future
@@ -71,10 +76,10 @@ separately; a failed diagnostic remains visible and is not silently repaired.
 | Accounting residual | Active NAV return less realised factor/residual contributions and the canonical QIS trade-cost effect. | Alpha or evidence of skill. A nonzero gap calls for accounting/convention investigation. |
 
 `FactorOpportunityModel`, `portfolio_opportunity_metrics` and `fixed_portfolio_alpha_interval` are
-existing documented module imports from `optimalportfolios.matf.opportunity` and
-`optimalportfolios.matf.uncertainty`; this guide adds no root re-exports.
+imports from `tradablefactors.analytics`. OP's `OpportunityModel` is a distinct
+solver-input object; the extracted statistical imports are removed from OP.
 The [risk-model adapter](https://github.com/ArturSepp/tradablefactors/blob/main/src/tradablefactors/risk.py),
-[MATF opportunity diagnostics](../src/optimalportfolios/matf/opportunity.py) and
+[MATF opportunity diagnostics](https://github.com/ArturSepp/tradablefactors/blob/main/src/tradablefactors/analytics/opportunity.py) and
 [MATF uncertainty propagation](https://github.com/ArturSepp/tradablefactors/blob/main/src/tradablefactors/analytics/uncertainty.py) retain numerical ownership.
 
 ## Intervals, dependence and calibration

@@ -42,12 +42,13 @@ repository-only scripts from the matching release or the source revision cited b
 | Capability | Minimum supported release for these examples |
 |---|---|
 | Offline constrained allocation and rolling backtests | `optimalportfolios>=7.21.0` |
-| MATF GLS premia inference, spanned/orthogonal alpha split and CMA diagnostics | `optimalportfolios>=7.21.0` |
-| MATF residual-opportunity assessment (`ResidualOpportunity`, `compute_residual_opportunity`) | **Development-only; no released-version guarantee** |
+| Completed supplied-input result and separate solver outcome | **OP 8 development branch; no released-version guarantee** |
+| Factor construction, GLS premia inference and CMA diagnostics | **Owned by TradableFactors in the development stack** |
 
-The development row describes pending source work. Its presence does not make existing
-[GLS inference](gls_factor_premia.md) or [CMA diagnostics](cma_diagnostics.md) unreleased.
-For released capabilities, use the documented module imports and matching release source.
+Historical OP releases retain their own source and documentation. OP 8 removes the
+factor-estimation and inference exports; follow [GLS inference](gls_factor_premia.md)
+and [CMA diagnostics](cma_diagnostics.md) to their canonical TF owner.
+Use matching released documentation for an earlier installed version.
 The [compatibility policy](https://github.com/ArturSepp/OptimalPortfolios/blob/main/GOVERNANCE.md#releases-and-compatibility)
 requires explicit changelog/version treatment for public API and default changes; it does not
 promise a fixed deprecation period. The footer records the build's resolved dependencies.
@@ -65,6 +66,10 @@ See the [OP 8 supplied-input migration](supplied_risk_inputs.md) for this develo
 branch. Historical release claims below apply to their matching releases.
 
 ## Start here
+
+The [completed optimisation output](completed_output.md) is the OP 8 entry point:
+supplied alphas, covariance and constraints produce weights plus an inspectable solver
+outcome. The example runs with the base OP installation and writes nothing by default.
 
 1. [Install optimalportfolios](installation.md) and choose its optional features. The core
    installation command is `python -m pip install optimalportfolios`.
@@ -97,24 +102,25 @@ $\Sigma_{F,t}$ and residual covariance $D_t$. The construction runs through the 
 
 ```mermaid
 flowchart TB
-    subgraph estimate ["Estimate at each rebalancing date"]
+    subgraph estimate ["Upstream preparation, including TF and FL"]
         direction LR
         A["Prices and<br/>metadata"] --> B["Estimation grid<br/>cadences, ragged histories"]
-        B --> C["Risk model<br/>EWMA or factor covariance"]
+        B --> C["Completed dated<br/>covariance"]
         B --> D["Expected returns<br/>signals and CMAs"]
     end
-    subgraph construct ["Construct and simulate"]
+    subgraph construct ["OP: complete the allocation"]
         direction LR
-        E["Objective and<br/>constraints"] --> F["Solve and check<br/>the outcome"] --> G["Dated target<br/>weights"] --> H["qis backtest<br/>drift, lag and costs"]
+        E["Objective and<br/>constraints"] --> F["Solve and check<br/>the outcome"] --> G["Dated target weights<br/>and solver audit"]
     end
     estimate --> construct
+    G --> H["Separate QIS backtest<br/>risk, stress and reports"]
 ```
 
-In words: prices are sampled on an estimation grid that respects each asset's cadence and
-history; a risk model and, for the objectives that need them, expected returns are estimated
-from information available at the rebalancing date; the objective is solved under the
-constraints and its outcome checked; and the dated target weights are passed to qis, which
-simulates the holdings with price drift, implementation lag and transaction costs.
+Upstream preparation supplies risk and expected returns available at the decision date.
+OP solves the objective and checks the outcome, completing its allocation. A separate QIS
+operation can simulate holdings with price drift, implementation lag and transaction costs,
+or report risk and stress. The [completed-output guide](completed_output.md) identifies the
+actual fields, units, dates, mutability and explicit persistence boundary.
 
 | Step of the diagram | Pages |
 |---|---|
@@ -143,21 +149,19 @@ simulates the holdings with price drift, implementation lag and transaction cost
 - [Covariance estimators](covariance_estimators.md): EWMA covariance and the estimator contract
   shared with the factor model: return conventions, spans against half-lives, annualisation and
   point-in-time inputs.
-- [Factor covariance with HCGL](factor_covariance_hcgl.md): the factor covariance with sparse
-  HCGL loadings, orthogonal and empirical residuals, cadence penalties and the point-in-time
-  contract.
-- [Rolling factor risk model from CSV](rolling_factor_covar_from_csv.md): rebuild a rolling
-  factor risk model from six CSV inputs and connect it to the qis risk model.
+- [Factor covariance with HCGL](factor_covariance_hcgl.md): TF owns sparse loadings,
+  selected residual covariance, cadence penalties and the point-in-time model contract.
+- [Rolling factor risk model from CSV](rolling_factor_covar_from_csv.md): TF's installed
+  six-file bundle loader and explicit fit; completed covariance is handed to OP or QIS.
 - [Ex-ante risk contributions, betas and the qis risk model](portfolio_risk_analytics.md):
   Euler risk contributions, benchmark betas and the hand-off to `qis.RiskModel`.
 
 ## Expected returns and signals
 
-- [GLS inference of factor risk premia](gls_factor_premia.md): historical loadings and alpha
-  estimated with FactorLasso, then provider-implied premia, mimicking portfolios, conditional
-  intervals and forecast-box bounds computed by OP.
-- [CMA diagnostics and reports](cma_diagnostics.md): accounting, alpha views, identification,
-  contribution and sensitivity tables, and compact PDFs from completed numerical results.
+- [GLS inference of factor risk premia](gls_factor_premia.md): an ownership handoff to TF's
+  provider-implied premia, mimicking portfolios, conditional intervals and forecast-box bounds.
+- [CMA diagnostics and reports](cma_diagnostics.md): TF-owned accounting, alpha views,
+  identification, sensitivity tables and method-specific PDFs from completed results.
 - [Alpha signals](alphas_module_readme.md): momentum, low beta, residual momentum and reversal,
   carry and managers' alpha, with cross-sectional and within-cluster scoring.
 - [Signal diagnostics and alpha-rank portfolios](signal_diagnostics_and_profiling.md): the rank information
@@ -296,6 +300,7 @@ Cite a paper for its method, and the software records for the packages an implem
 :caption: Start here
 
 installation
+completed_output
 supplied_risk_inputs
 quickstart
 conventions

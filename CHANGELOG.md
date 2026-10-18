@@ -7,6 +7,18 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Completed-output documentation and TF workflow ownership
+
+- Document the finite supplied-input allocation, separate solver outcome, date and
+  units contract, mutability and explicit inspection-table export in a base-install
+  offline example with independent numerical checks.
+- Move factor covariance, GLS and CMA methodology to TradableFactors. OP keeps
+  concise ownership handoffs and existing incoming section anchors; its EWMA and
+  solver documentation remain here.
+- Remove the OP-only six-file CSV loader/fetch workflow and its canonical example.
+  Use the installed TF bundle API and its explicit load, fit and persistence steps.
+  Existing historical receipts and reviewed analytical images are unchanged.
+
 ### Breaking supplied-input boundary: 8.0.0.dev1 (2026-10-18)
 
 - Remove FactorLasso from runtime dependencies and delete its root aliases and

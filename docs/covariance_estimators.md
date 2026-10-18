@@ -70,7 +70,7 @@ after qis sampling at `returns_freq`.
 
 The factor estimator takes factor prices and already constructed asset log returns by frequency
 bucket instead; its inputs and their clocks are described in
-[Factor covariance with HCGL](factor_covariance_hcgl.md#inputs-notation-and-assumptions) and
+[Factor covariance with HCGL](https://github.com/ArturSepp/tradablefactors/blob/main/docs/factor_covariance_hcgl.md#inputs-notation-and-assumptions) and
 [mixed-frequency data](mixed_frequency_data.md).
 
 ## Methodology
@@ -135,13 +135,13 @@ move earlier matrices even when `time_period.end` was earlier.
 The factor estimator assembles $\Sigma_y = \beta \Sigma_F \beta^{\top} + D$ from FactorLasso
 loadings, a qis factor covariance and residual variances, each in annual units. Its methodology
 has moved to
-[Factor covariance with HCGL](factor_covariance_hcgl.md#the-factor-model-and-its-covariance).
+[Factor covariance with HCGL](https://github.com/ArturSepp/tradablefactors/blob/main/docs/factor_covariance_hcgl.md#the-factor-model-and-its-covariance).
 
 ### Common-frequency empirical residual covariance
 
 The empirical residual covariance of the factor estimator, which estimates residual correlation on
 a common return grid, is described in
-[Factor covariance with HCGL](factor_covariance_hcgl.md#residual-covariance-orthogonal-and-empirical).
+[Factor covariance with HCGL](https://github.com/ArturSepp/tradablefactors/blob/main/docs/factor_covariance_hcgl.md#residual-covariance-orthogonal-and-empirical).
 
 ### Current fits and rolling dates
 
@@ -151,7 +151,7 @@ selects scheduled observations, so its keys are return-grid dates.
 
 The factor wrapper instead fits at calendar dates, slicing every input through each date, and its
 ordinary current fit treats `estimation_date` as a label, not a cutoff; see
-[the point-in-time contract](factor_covariance_hcgl.md#the-point-in-time-contract). Consequently,
+[the point-in-time contract](https://github.com/ArturSepp/tradablefactors/blob/main/docs/factor_covariance_hcgl.md#the-point-in-time-contract). Consequently,
 the two wrappers need not produce identical keys for the same frequency string. Neither output
 date independently guarantees that the upstream observations were actually available then.
 
@@ -168,7 +168,7 @@ python -m examples.docs.covariance_estimators
 ```
 
 The small EWMA example gives an exact arithmetic reference. The factor example is on the
-[factor covariance page](factor_covariance_hcgl.md#worked-example).
+[factor covariance page](https://github.com/ArturSepp/tradablefactors/blob/main/docs/factor_covariance_hcgl.md#worked-example).
 
 ### Create weekly total-return prices
 
@@ -230,12 +230,12 @@ demeaning off to expose the recursion; it does not change the class default.
 ### Construct factor prices and asset returns
 
 The factor example now builds four factors and eight assets on a monthly and a quarterly grid; see
-[Factor covariance with HCGL](factor_covariance_hcgl.md#worked-example).
+[Factor covariance with HCGL](https://github.com/ArturSepp/tradablefactors/blob/main/docs/factor_covariance_hcgl.md#worked-example).
 
 ### Fit HCGL at an explicit cutoff
 
 The HCGL fit at an explicit cutoff, with each component checked against an independent reference,
-is on the [factor covariance page](factor_covariance_hcgl.md#a-completed-model-at-an-explicit-cutoff).
+is on the [factor covariance page](https://github.com/ArturSepp/tradablefactors/blob/main/docs/factor_covariance_hcgl.md#a-completed-model-at-an-explicit-cutoff).
 
 ### Obtain rolling matrices
 
@@ -248,7 +248,7 @@ rolling_covars = estimator.fit_rolling_covars(prices=prices, time_period=ewma_pe
 
 In this fixture, the EWMA keys are **6 April, 6 July and 5 October 2022**, on the weekly
 observation grid. Rolling factor matrices are keyed by calendar quarter ends instead; see
-[rolling fits](factor_covariance_hcgl.md#rolling-fits-retain-the-same-completed-object-contract).
+[rolling fits](https://github.com/ArturSepp/tradablefactors/blob/main/docs/factor_covariance_hcgl.md#rolling-fits-retain-the-same-completed-object-contract).
 
 > **Pitfall.** Rolling EWMA keys are return-grid dates, not calendar quarter ends. With weekly
 > Wednesday returns and quarter-end rebalancing, the example's keys are 6 April, 6 July and
@@ -264,7 +264,7 @@ observation grid. Rolling factor matrices are keyed by calendar quarter ends ins
 
 `FactorCovarEstimator` has the same two methods with its own inputs, and factor-specific methods
 that keep every component; see
-[its implementation](factor_covariance_hcgl.md#implementation-in-optimalportfolios). The input
+[its implementation](https://github.com/ArturSepp/tradablefactors/blob/main/docs/factor_covariance_hcgl.md#implementation-in-tradablefactors). The input
 signatures differ even though the output contract is shared. The direct class has no
 separate shrinkage-to-identity parameter. The legacy exported `estimate_rolling_ewma_covar`
 function is a QIS re-export; do not assume its defaults and date semantics are identical to this
@@ -296,7 +296,7 @@ look-ahead is absent.
 The factor estimator has its own limitations, among them zero-filled assets that look riskless,
 the residual weight, and a top-level `demean` field that it stores but does not read; set
 regression demeaning through `LassoModel.demean`. See
-[Factor covariance with HCGL](factor_covariance_hcgl.md#interpretation-and-limitations).
+[Factor covariance with HCGL](https://github.com/ArturSepp/tradablefactors/blob/main/docs/factor_covariance_hcgl.md#interpretation-and-limitations).
 
 ## See also
 

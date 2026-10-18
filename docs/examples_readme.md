@@ -35,19 +35,19 @@ data. The lane in parentheses is the one the catalogue below assigns
 ([unattended execution lanes](#unattended-execution-lanes)): Offline needs base OP; Composed
 also needs separately installed TF/FL; Network means that `yfinance` is reachable from the
 script's imports. Local marks a `*_local.py` workflow whose data or optional tools you prepare
-first. Offline and Composed canonical scripts use supplied or synthetic inputs. The CSV risk
-model's script opens no connection itself but imports the example that holds the Yahoo fetcher.
+first. Offline and Composed canonical scripts use supplied or synthetic inputs. The supplied-bundle loader is owned by TF and is linked separately.
 For a first run, start with the
 [offline quickstart](quickstart.md).
 
 | Task | Article | Canonical script | Standalone examples |
 |---|---|---|---|
+| Complete and inspect an allocation from supplied alphas and covariance | [Completed optimisation output](completed_output.md) | [`completed_output.py`](../examples/docs/completed_output.py) (Offline) | Explicit optional CSV/JSON table export; no factor packages required. |
 | Build a universe with group loadings; unsmooth appraisal-based prices | [Universe data and unsmoothing](universe_data_and_unsmoothing.md) | [`universe_data_and_unsmoothing.py`](../examples/docs/universe_data_and_unsmoothing.py) (Offline) | [`data/universe.py`](../examples/data/universe.py) (Network), [`data/sp500_universe_local.py`](../examples/data/sp500_universe_local.py) (Local) |
 | Combine assets observed at different frequencies | [Mixed-frequency data](mixed_frequency_data.md) | [`mixed_frequency_data.py`](../examples/docs/mixed_frequency_data.py) (Composed) | [`covar_estimation/demo_covar_different_estimation_freqs.py`](../examples/covar_estimation/demo_covar_different_estimation_freqs.py) (Composed) |
 | Handle late starts, missing prices, index membership and frozen positions | [Incomplete histories](incomplete_histories.md) | [`incomplete_histories.py`](../examples/docs/incomplete_histories.py) (Offline) | [`comparisons/sp500_minvar_spans_local.py`](../examples/comparisons/sp500_minvar_spans_local.py) (Local) |
 | Estimate an EWMA covariance and choose its span | [Covariance estimators](covariance_estimators.md) | [`covariance_estimators.py`](../examples/docs/covariance_estimators.py) (Offline) | [`comparisons/parameter_sensitivity.py`](../examples/comparisons/parameter_sensitivity.py) (Network), [`comparisons/sp500_minvar_spans_local.py`](../examples/comparisons/sp500_minvar_spans_local.py) (Local) |
 | Estimate a sparse factor covariance | [Factor covariance with HCGL](factor_covariance_hcgl.md) | [`factor_covariance_hcgl.py`](../examples/docs/factor_covariance_hcgl.py) (Composed) | [`covar_estimation/simulate_factor_returns.py`](../examples/covar_estimation/simulate_factor_returns.py) (Offline), [`covar_estimation/lasso_covar_estimation.py`](../examples/covar_estimation/lasso_covar_estimation.py) (Network), [`comparisons/covar_estimators.py`](../examples/comparisons/covar_estimators.py) (Network) |
-| Build and use a factor risk model from CSV files | [Rolling factor risk model from CSV](rolling_factor_covar_from_csv.md) | [`rolling_factor_covar_from_csv.py`](../examples/docs/rolling_factor_covar_from_csv.py) (Network) | [`covar_estimation/rolling_factor_covar_from_csv.py`](../examples/covar_estimation/rolling_factor_covar_from_csv.py) (Network) |
+| Load, inspect and fit a supplied factor bundle | [TF bundle workflow](https://github.com/ArturSepp/tradablefactors/blob/main/docs/rolling_factor_covar_from_csv.md) | TF installed API and reference example | Removed OP CSV scripts; no implicit acquisition. |
 | Compute risk contributions and benchmark betas | [Ex-ante risk contributions and betas](portfolio_risk_analytics.md) | [`portfolio_risk_analytics.py`](../examples/docs/portfolio_risk_analytics.py) (Composed) | — |
 | Infer factor premia from provider forecasts after historical estimation | [GLS factor-premia inference](gls_factor_premia.md) and [CMA reporting](cma_diagnostics.md) | [`gls_factor_premia.py`](../examples/docs/gls_factor_premia.py) (Composed; synthetic prices, FactorLasso fit, TF GLS and weighted-QR checks) | Exact consensus/JPM workflows require local licensed inputs and are not distributed as public examples. |
 | Connect factor diagnostics, alpha uncertainty and forward attribution | [Factor diagnostics workflow](factor_diagnostics_workflow.md) | [`factor_diagnostics_workflow.py`](../examples/docs/factor_diagnostics_workflow.py) (Composed) | Conditional fixed-model inference; no forecast or post-selection coverage guarantee. |
@@ -119,7 +119,7 @@ scenario; it does not execute every branch of a `Locals` enum.
 ### Unattended execution lanes
 
 The [classifier and runner](../.github/scripts/run_examples.py) derives lanes from Python imports.
-Its current inventory is **27 offline, 11 composed, 20 network, 58 unattended examples**. The **5 local-data workflows** ending in
+Its current inventory is **28 offline, 11 composed, 18 network, 57 unattended examples**. The **5 local-data workflows** ending in
 `*_local.py` are excluded; this manual category also includes the optional skfolio bridge
 using the packaged fixture. Each catalogue row below states the classification.
 
@@ -270,7 +270,6 @@ improvement is implied by the drift-policy example.
 |---|---|---|
 | [Simulated factor returns](../examples/covar_estimation/simulate_factor_returns.py) | Offline | Generate synthetic factors and assets with a known covariance structure. |
 | [LASSO covariance](../examples/covar_estimation/lasso_covar_estimation.py) | Network | Fits LASSO factor models to Yahoo asset and benchmark prices downloaded at module import; compares frequencies and estimated exposures. |
-| [Portable CSV factor-risk model](../examples/covar_estimation/rolling_factor_covar_from_csv.py) | Network | The default `all` mode fetches six CSV inputs and then fits a rolling factor-risk model. The `load` mode uses an existing bundle without downloading; it still needs that bundle. See the [CSV workflow](rolling_factor_covar_from_csv.md). |
 | [Mixed estimation frequencies](../examples/covar_estimation/demo_covar_different_estimation_freqs.py) | Composed | Synthetic factor data compare business-daily, Wednesday-weekly and month-end asset/factor frequencies, with covariance heatmaps. See [mixed-frequency data](mixed_frequency_data.md). |
 
 A script's network classification remains unchanged when a particular mode can reuse local inputs.
@@ -300,8 +299,8 @@ Each script is the canonical example of one documentation page: the page shows e
 it, and the script asserts every number the page quotes. The test suite runs every script,
 and some also draw the page's teaching exhibit. Base examples run after
 `pip install optimalportfolios`; composed examples require `tradablefactors` alongside OP.
-Three need a source checkout: the CSV risk-model and overlay
-scripts import a repository example, and the cryptocurrency script reads the tracked 2023 panel
+Two need other checkout files: the overlay
+script imports a repository example, and the cryptocurrency script reads the tracked 2023 panel
 under `papers/`.
 
 | Source | Lane | Purpose and prerequisites |
@@ -325,12 +324,12 @@ under `papers/`.
 | [Mean-variance objectives](../examples/docs/mean_variance_objectives.py) | Offline | The worked example of the [mean-variance objectives](mean_variance_objectives.md) page: minimum variance, tangency and utility portfolios against their closed forms, the Charnes–Cooper and SLSQP routes of maximum Sharpe, and utility portfolios on the frontier. |
 | [Minimum tracking error](../examples/docs/minimum_tracking_error.py) | Offline | The worked example of the [minimum tracking error](minimum_tracking_error.md) page: a capped allocation against an optimality certificate, the rolling table, input filtering and covariance stabilization, and the tracking-error cost of each added constraint. |
 | [Mixed-frequency data](../examples/docs/mixed_frequency_data.py) | Composed | The worked example of the [mixed-frequency data](mixed_frequency_data.md) page: monthly and quarterly return buckets, momentum windows against endpoint ratios, per-cadence scoring, and a mixed-frequency factor covariance against native per-bucket fits. |
+| [Completed optimisation output](../examples/docs/completed_output.py) | Offline | Supplied annual alphas and covariance, accepted solver outcome, independent KKT and Cholesky checks; explicit optional table export. |
 | [Choosing an objective](../examples/docs/optimization_module_readme.py) | Offline | The worked examples of the [objective router](optimization_module_readme.md): every objective on one five-asset example against its closed form, the dispatch routes, `OptimiserConfig` defaults across the public entry points, and the compilers. |
 | [Overlay tail floor](../examples/docs/overlay_tail_floor.py) | Offline | The worked example of the [overlay tail floor](overlay_tail_floor.md) page: the fixed core and sleeve, the floor against an equality solution and an optimality certificate, the floor coefficients and their rescaling, and the sleeve as the floor tightens. Imports the repository solver demo, so it needs a source checkout. |
 | [Ex-ante risk contributions and betas](../examples/docs/portfolio_risk_analytics.py) | Composed | The worked example of the [risk analytics](portfolio_risk_analytics.md) page: Euler contributions, benchmark betas against a regression, and the hand-off to `qis.RiskModel`. |
 | [Risk budgeting](../examples/docs/risk_budgeting.py) | Offline | The worked example of the [risk budgeting](risk_budgeting.md) page: budgets met against an independent conic solve, the closed-form diagonal case, and a binding cap against its optimality conditions. |
 | [Rolling backtests](../examples/docs/rolling_backtests.py) | Offline | The worked examples of the [rolling backtests](rolling_backtests.md) page: a toy unit ledger, drift against executed holdings, a monthly rolling backtest with costs and lag, and target against drifted weights through quarterly trades. |
-| [Rolling factor risk model from CSV](../examples/docs/rolling_factor_covar_from_csv.py) | Network | The worked example of the [rolling factor risk model from CSV](rolling_factor_covar_from_csv.md) page: a six-file bundle round trip, FX-converted returns against endpoint wealth, every snapshot covariance summed term by term, the `load` command in a fresh process, loader defects and repairs, and the Yahoo fetch on synthetic closes. It opens no connection; the classifier lists it as network because the repository example it imports holds the Yahoo fetcher. Needs a source checkout. |
 | [Signal diagnostics](../examples/docs/signal_diagnostics_and_profiling.py) | Offline | The worked example of the [signal diagnostics](signal_diagnostics_and_profiling.md) page: the rank IC of a synthetic score against its population value, quintile portfolios and their spread, the rank profiler and the per-component diagnostics, and a score's value inside an optimiser. |
 | [Solver numerics and outcomes](../examples/docs/solver_numerics_and_outcomes.py) | Offline | The worked example of the [solver numerics](solver_numerics_and_outcomes.md) page: the floored factorisation, NaN filtering, outcome acceptance, fallbacks, residuals and the elastic feasibility diagnosis. |
 | [Target return and target volatility](../examples/docs/strategic_allocation_targets.py) | Offline | The worked example of the [strategic allocation](strategic_allocation_targets.md) page on the packaged monthly fixture: the frontier duality round trip at a return and a volatility target, infeasible and slack targets, and where the utility form meets the hard one. |
