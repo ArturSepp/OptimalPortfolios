@@ -72,6 +72,7 @@ def test_group_risk_budget_panel_is_computed_point_in_time() -> None:
     pd.testing.assert_frame_equal(budgets, expected)
 
 
+@pytest.mark.riskbudget
 def test_rolling_risk_budgeting_accepts_date_varying_budgets() -> None:
     """The rolling solver selects the applicable budget row at every date."""
     dates = pd.DatetimeIndex(["2024-01-31", "2024-02-29"])

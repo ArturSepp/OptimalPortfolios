@@ -2203,7 +2203,6 @@ dependencies = [
     { name = "pandas", version = "3.0.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pyyaml" },
     { name = "qis" },
-    { name = "quadprog" },
     { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
     { name = "scipy", version = "1.18.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -2226,6 +2225,9 @@ docs = [
 ]
 reports = [
     { name = "pybloqs" },
+]
+riskbudget = [
+    { name = "quadprog" },
 ]
 
 [package.dev-dependencies]
@@ -2257,7 +2259,7 @@ requires-dist = [
     { name = "pybloqs", marker = "extra == 'reports'", specifier = ">=1.2.13" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "qis", specifier = ">=5.38.1" },
-    { name = "quadprog", specifier = ">=0.1.11" },
+    { name = "quadprog", marker = "extra == 'riskbudget'", specifier = ">=0.1.11" },
     { name = "scipy", specifier = ">=1.12.0" },
     { name = "scs", specifier = ">=3.2.4.post3,!=3.3.0" },
     { name = "seaborn", specifier = ">=0.13.0" },
@@ -2265,7 +2267,7 @@ requires-dist = [
     { name = "sphinxcontrib-mermaid", marker = "extra == 'docs'", specifier = ">=1.0" },
     { name = "yfinance", marker = "extra == 'data'", specifier = ">=0.2.40" },
 ]
-provides-extras = ["data", "reports", "docs"]
+provides-extras = ["riskbudget", "data", "reports", "docs"]
 
 [package.metadata.requires-dev]
 all = [{ name = "optimalportfolios", extras = ["data", "reports"] }]

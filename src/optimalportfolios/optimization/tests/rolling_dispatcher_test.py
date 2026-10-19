@@ -104,7 +104,11 @@ def _dispatchers() -> Dict[str, Callable]:
     }
 
 
-DISPATCHER_NAMES = sorted(_dispatchers())
+DISPATCHER_NAMES = [
+    pytest.param(name, marks=pytest.mark.riskbudget)
+    if name == 'rolling_risk_budgeting' else name
+    for name in sorted(_dispatchers())
+]
 
 
 def _run(name: str, prices: pd.DataFrame, covar_dict: Dict[pd.Timestamp, pd.DataFrame],

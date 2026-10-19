@@ -39,10 +39,8 @@ jobs:
   offline:
     # The examples that need no network, on all three runners. This job gates.
     #
-    # It syncs the *core* environment -- no extras at all -- which makes the run a stronger claim
-    # than "the examples work here": it shows they work for someone who ran a plain
-    # `pip install optimalportfolios`. An example that quietly starts needing an optional extra
-    # fails this job rather than passing on a fatter environment than a user has.
+    # Risk-budget examples explicitly install their backend. The base test/wheel lanes
+    # separately verify ordinary imports and the offline minimum-variance quickstart.
     #
     # 3.12 only. Unlike the test matrix, what is being checked is that a script still lines up
     # with the API it calls, and that does not vary by interpreter; the three runners are here
@@ -62,8 +60,8 @@ jobs:
       with:
         python-version: "3.12"
 
-    - name: Sync the core environment
-      run: uv sync --locked
+    - name: Sync the offline examples and risk-budgeting backend
+      run: uv sync --locked --extra riskbudget
 
     - name: Check the Colab notebook mirror
       # The notebook carries one cell tagged `d6-source`; this standard-library check compares it
@@ -110,7 +108,7 @@ jobs:
     - name: Sync with the data extra
       # `data` is the extra these examples actually need; syncing `--all-extras` would install
       # the reporting and docs stacks to run scripts that use neither.
-      run: uv sync --locked --extra data
+      run: uv sync --locked --extra data --extra riskbudget
 
     - name: Check out the explicitly selected factor pipeline
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

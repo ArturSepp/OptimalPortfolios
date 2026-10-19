@@ -30,11 +30,20 @@ def _script_cases():
     if not SCRIPTS:
         return []
     classifier = runpy.run_path(str(REPO_ROOT / '.github/scripts/run_examples.py'))
-    return [pytest.param(path, id=path.stem,
-                         marks=pytest.mark.factor_integration
-                         if classifier['external_dependencies'](path)
-                         & {'tradablefactors', 'factorlasso'} else ())
-            for path in SCRIPTS]
+    riskbudget_scripts = {
+        'risk_budgeting', 'implied_risk_budgets', 'optimization_module_readme',
+        'hierarchical_risk_parity_and_cluster_budgets', 'universe_data_and_unsmoothing',
+        'portfolio_risk_analytics', 'app_rosaa_multi_asset_allocation', 'app_crypto_allocation',
+    }
+    cases = []
+    for path in SCRIPTS:
+        marks = []
+        if classifier['external_dependencies'](path) & {'tradablefactors', 'factorlasso'}:
+            marks.append(pytest.mark.factor_integration)
+        if path.stem in riskbudget_scripts:
+            marks.append(pytest.mark.riskbudget)
+        cases.append(pytest.param(path, id=path.stem, marks=marks))
+    return cases
 
 
 @pytest.mark.parametrize('script', _script_cases())

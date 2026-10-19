@@ -32,6 +32,7 @@ def conic_reference(covar, budgets, bounds, c_rows=None, c_lhs=None):
     return y.value / y.value.sum()
 
 
+@pytest.mark.riskbudget
 @pytest.mark.parametrize('as_group', [False, True])
 def test_negative_correlation_floor_has_a_fully_invested_solution(as_group):
     """A min-risk endpoint at 150% must not reject the feasible 60/40 portfolio."""
@@ -47,6 +48,7 @@ def test_negative_correlation_floor_has_a_fully_invested_solution(as_group):
     assert weights.sum() == pytest.approx(1.0, abs=1e-12)
 
 
+@pytest.mark.riskbudget
 def test_complementary_group_bounds_define_the_same_portfolio():
     """A group's floor and its complement's cap are equivalent under full investment."""
     covar = np.diag([0.01, 0.02, 0.09, 0.16])
@@ -57,6 +59,7 @@ def test_complementary_group_bounds_define_the_same_portfolio():
     np.testing.assert_allclose(floor, cap, atol=1e-8)
 
 
+@pytest.mark.riskbudget
 @pytest.mark.parametrize('scale', [1e-6, 1.0, 1e6])
 def test_constrained_weights_match_independent_conic_reference(scale):
     """Covariance units must not alter the normalized bounded portfolio."""
@@ -75,6 +78,7 @@ def test_constrained_weights_match_independent_conic_reference(scale):
     assert np.all(rows @ weights <= lhs + 1e-12)
 
 
+@pytest.mark.riskbudget
 def test_inferred_budgets_reproduce_target_with_slack_bands():
     """Analytical diagonal-covariance inverse budgets recover their feasible target."""
     target = np.array([.50, .25, .15, .10])
@@ -89,6 +93,7 @@ def test_inferred_budgets_reproduce_target_with_slack_bands():
     np.testing.assert_allclose(weights, target, atol=2e-5)
 
 
+@pytest.mark.riskbudget
 def test_group_infeasibility_is_detected_with_full_investment():
     """A valid box does not excuse group caps that cannot reach 100%."""
     with pytest.raises(ValueError, match='infeasible'):
@@ -96,6 +101,7 @@ def test_group_infeasibility_is_detected_with_full_investment():
             np.eye(3), c_rows=np.ones((1, 3)), c_lhs=np.array([.9]))
 
 
+@pytest.mark.riskbudget
 def test_pinned_box_still_checks_group_bounds():
     """The unique box point is not feasible if it violates a group cap."""
     with pytest.raises(ValueError, match='infeasible'):
@@ -104,6 +110,7 @@ def test_pinned_box_still_checks_group_bounds():
             c_rows=np.array([[1., 0.]]), c_lhs=np.array([.5]))
 
 
+@pytest.mark.riskbudget
 def test_instrument_floors_can_exhaust_full_investment():
     """Minimums totalling 100% define a feasible ray, not a missing lambda bracket."""
     weights, _ = solve_constrained_risk_budgeting(
@@ -111,6 +118,7 @@ def test_instrument_floors_can_exhaust_full_investment():
     np.testing.assert_allclose(weights, [.4, .3, .3], atol=1e-12)
 
 
+@pytest.mark.riskbudget
 def test_partial_freeze_including_a_zero_position_is_preserved():
     """A zero-pinned asset stays zero and a positive frozen weight does not rescale."""
     weights, _ = solve_constrained_risk_budgeting(
@@ -120,6 +128,7 @@ def test_partial_freeze_including_a_zero_position_is_preserved():
     assert weights.sum() == pytest.approx(1.0, abs=1e-12)
 
 
+@pytest.mark.riskbudget
 def test_all_budgets_on_zero_pinned_assets_raise():
     """A forbidden budget cannot be reassigned implicitly to an unbudgeted universe."""
     with pytest.raises(ValueError, match='no positive risk budget'):
@@ -128,6 +137,7 @@ def test_all_budgets_on_zero_pinned_assets_raise():
             bounds=np.array([[0., 0.], [0., 1.], [0., 1.]]))
 
 
+@pytest.mark.riskbudget
 def test_ccd_iteration_exhaustion_is_not_accepted(monkeypatch):
     """Unfinished coordinate updates must not be returned as an optimum."""
     monkeypatch.setattr(rb_solver, 'MAX_CCD_CYCLES', 1)
@@ -136,6 +146,7 @@ def test_ccd_iteration_exhaustion_is_not_accepted(monkeypatch):
         solve_constrained_risk_budgeting(np.diag([.04, .01]))
 
 
+@pytest.mark.riskbudget
 @pytest.mark.parametrize('candidate', [np.zeros(2), np.full(2, np.nan)])
 def test_invalid_solver_scale_is_rejected(monkeypatch, candidate):
     """A numerical failure cannot become normalized weights or reach the projection."""
@@ -144,6 +155,7 @@ def test_invalid_solver_scale_is_rejected(monkeypatch, candidate):
         solve_constrained_risk_budgeting(np.eye(2))
 
 
+@pytest.mark.riskbudget
 def test_projection_does_not_repair_a_material_solver_violation(monkeypatch):
     """Only roundoff, not a failed optimizer allocation, may be projected at the end."""
     monkeypatch.setattr(rb_solver, '_admm_ccd_solve', lambda *args: np.array([.9, .1]))

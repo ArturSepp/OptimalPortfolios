@@ -154,6 +154,7 @@ def test_max_sharpe_matches_the_tangency_closed_form() -> None:
     np.testing.assert_allclose(np.asarray(weights, dtype=float), reference, atol=ANALYTIC_TOL)
 
 
+@pytest.mark.riskbudget
 def test_equal_risk_contribution_is_inverse_vol_under_equal_correlation() -> None:
     """with equal pairwise correlation the ERC portfolio is w_i ∝ 1/σ_i."""
     covar, _ = _equal_correlation_universe()
@@ -162,6 +163,7 @@ def test_equal_risk_contribution_is_inverse_vol_under_equal_correlation() -> Non
     np.testing.assert_allclose(np.asarray(weights, dtype=float), reference, atol=ITERATIVE_TOL)
 
 
+@pytest.mark.riskbudget
 def test_equal_risk_contribution_equalises_risk_contributions() -> None:
     """
     the defining property, away from the special case.

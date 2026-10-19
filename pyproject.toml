@@ -8,7 +8,7 @@ version = "8.0.0.dev1"
 description = "Production multi-asset portfolio construction and rolling backtesting in Python"
 readme = "README.md"
 license = "MIT"
-license-files = ["LICENSE.txt"]
+license-files = ["LICENSE.txt", "THIRD_PARTY_NOTICES.md"]
 authors = [
     {name = "Artur Sepp", email = "artursepp@gmail.com"},
 ]
@@ -53,11 +53,14 @@ dependencies = [
     "PyYAML>=6.0",
     "cvxpy>=1.5.2",
     "scs>=3.2.4.post3,!=3.3.0",
-    "quadprog>=0.1.11",
     "qis>=5.38.1",
 ]
 
 [project.optional-dependencies]
+riskbudget = [
+    "quadprog>=0.1.11",
+]
+
 data = [
     "yfinance>=0.2.40",
 ]
@@ -194,7 +197,7 @@ extend-select = ["TID251", "TID253", "ICN"]
 # A3: an optional extra is imported inside a function and guarded, never at module level, so a
 # core install keeps working. A module dedicated to a single optional backend is the documented
 # exception and is named in per-file-ignores below.
-banned-module-level-imports = ["yfinance", "pandas_datareader", "pybloqs", "plotly", "pyarrow",
+banned-module-level-imports = ["quadprog", "yfinance", "pandas_datareader", "pybloqs", "plotly", "pyarrow",
                                "psycopg2", "sqlalchemy"]
 
 [tool.ruff.lint.flake8-import-conventions.aliases]

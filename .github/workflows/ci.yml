@@ -4,7 +4,7 @@ run-name: ${{ github.event_name == 'schedule' && 'Dependency compatibility (live
 
 # Least privilege, declared rather than inherited. Without this block every job runs with the
 # repository's *default* `GITHUB_TOKEN` scope, which on a repository configured for read-write
-# defaults is write access to contents, issues, packages and more -- handed to fourteen matrix cells
+# defaults is write access to contents, issues, packages and more -- handed to fifteen matrix cells
 # that only check out a tree and run pytest.
 #
 # Nothing in this workflow uses the token: no `gh` call, no artifact upload, no PR comment, no push.
@@ -36,8 +36,8 @@ jobs:
   test:
     # The suite is pure-Python and NaN-aware pandas, but the scientific stack ships per-platform
     # wheels and pandas frequency/locale behaviour has bitten this kind of code before, so the
-    # matrix runs every supported Python on all three runners except the documented Windows/3.14
-    # dependency-wheel exclusion below.
+    # matrix runs every supported Python on all three runners including the formerly excluded Windows/3.14
+    # base environment.
     #
     # `primary` marks the one cell -- ubuntu/3.12 -- that gates coverage. Dependency mode is
     # selected by the event for the whole matrix: locked for change validation, floating for the
@@ -49,10 +49,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-        exclude:
-          # 3.14 excluded 2026-08-22: quadprog==0.1.13 provides no cp314 Windows wheel.
-          - os: windows-latest
-            python-version: "3.14"
         include:
           - os: ubuntu-latest
             python-version: "3.12"
@@ -157,10 +153,24 @@ jobs:
       # Measured on one cell so the floor keeps one authoritative number. A platform-specific skip
       # on another runner would otherwise fail the gate there for a reason that has nothing to do
       # with coverage regressing.
-      run: uv run --no-sync pytest ${{ matrix.primary && '--cov=src/optimalportfolios --cov-report=term-missing' || '' }}
+      # The primary cell combines base and explicitly installed backend coverage below.
+      run: uv run --no-sync pytest ${{ matrix.primary && '--cov=src/optimalportfolios --cov-report=term-missing --cov-fail-under=0' || '' }}
+
+    - name: Complete coverage with the explicitly selected risk-budgeting backend
+      if: matrix.primary
+      env:
+        OP_REQUIRE_RISKBUDGET: "1"
+      shell: bash
+      run: |
+        if [ "${{ github.event_name }}" = "schedule" ]; then
+          uv sync --group test --extra riskbudget --upgrade
+        else
+          uv sync --group test --extra riskbudget --locked
+        fi
+        uv run --no-sync pytest -m "riskbudget and not factor_integration" --cov=src/optimalportfolios --cov-append --cov-report=term-missing
 
   wheel:
-    # The fourteen `test` cells use the editable installation from the `src/` tree, not the wheel
+    # The fifteen `test` cells use the editable installation from the `src/` tree, not the wheel
     # that users receive. A subpackage missing from `[tool.setuptools.packages.find]`, or a data
     # file missing from `[tool.setuptools.package-data]` and MANIFEST.in, can therefore remain
     # invisible to all of them and reach PyPI intact.
@@ -172,7 +182,7 @@ jobs:
     # so running it here keeps it a guarantee rather than a claim.
     #
     # One runner, one interpreter: the wheel is `py3-none-any`, so its *contents* do not vary by
-    # platform, and the suite's platform behaviour is already covered fourteen ways above. What this
+    # platform, and the suite's platform behaviour is already covered fifteen ways above. What this
     # job tests is packaging, which is the same everywhere.
     #
     # No `if:` guard. GitHub reports a conditionally skipped job as successful, so a guard on a job
@@ -276,8 +286,50 @@ jobs:
       run: |
         mkdir -p "$RUNNER_TEMP/wheelcheck"
         cd "$RUNNER_TEMP/wheelcheck"
-        "$RUNNER_TEMP/wheelcheck-venv/bin/python" -c "import importlib.util as u; assert u.find_spec('factorlasso') is None; assert u.find_spec('tradablefactors') is None; import optimalportfolios; print('OP BASE IMPORT PASS')"
+        "$RUNNER_TEMP/wheelcheck-venv/bin/python" -c "import importlib.util as u; assert all(u.find_spec(n) is None for n in ('quadprog', 'factorlasso', 'tradablefactors')); import optimalportfolios; print('OP BASE IMPORT PASS')"
         "$RUNNER_TEMP/wheelcheck-venv/bin/python" -m pytest --pyargs optimalportfolios -q
+
+    - name: Install and verify the same wheel with its optional backend
+      env:
+        OP_REQUIRE_RISKBUDGET: "1"
+      run: |
+        if [ "${{ github.event_name }}" = "schedule" ]; then
+          uv pip install --python "$RUNNER_TEMP/wheelcheck-venv/bin/python" "$(ls dist/*.whl)[riskbudget]"
+        else
+          uv export --locked --extra riskbudget --group test --no-emit-project --output-file "$RUNNER_TEMP/riskbudget-requirements.txt"
+          uv pip install --python "$RUNNER_TEMP/wheelcheck-venv/bin/python" --requirements "$RUNNER_TEMP/riskbudget-requirements.txt"
+        fi
+        cd "$RUNNER_TEMP/wheelcheck"
+        "$RUNNER_TEMP/wheelcheck-venv/bin/python" -m pytest --pyargs optimalportfolios.optimization.tests -m riskbudget -q --junitxml=riskbudget.xml
+        "$RUNNER_TEMP/wheelcheck-venv/bin/python" -c "import xml.etree.ElementTree as E; s=E.parse('riskbudget.xml').getroot(); assert list(s.iter('testcase')); assert not list(s.iter('failure')); assert not list(s.iter('error')); assert not list(s.iter('skipped'))"
+
+  riskbudget:
+    name: optional riskbudget (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    env:
+      OP_REQUIRE_RISKBUDGET: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: "3.12"
+      - name: Install the explicit backend and test tooling
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            uv sync --group test --extra riskbudget --upgrade
+          else
+            uv sync --group test --extra riskbudget --locked
+          fi
+      - name: Require backend cases to execute without skips
+        run: |
+          uv run --no-sync pytest -m "riskbudget and not factor_integration" --junitxml=riskbudget.xml
+          uv run --no-sync python -c "import xml.etree.ElementTree as E; s=E.parse('riskbudget.xml').getroot(); assert list(s.iter('testcase')); assert not list(s.iter('failure')); assert not list(s.iter('error')); assert not list(s.iter('skipped'))"
 
   factor-integration:
     name: composed source and installed wheels
@@ -301,7 +353,7 @@ jobs:
           uv build --out-dir "$RUNNER_TEMP/op-dist"
           uv build .integration/tradablefactors --out-dir "$RUNNER_TEMP/tf-dist"
           uv venv "$RUNNER_TEMP/composed-source"
-          uv pip install --python "$RUNNER_TEMP/composed-source/bin/python" -e . \
+          uv pip install --python "$RUNNER_TEMP/composed-source/bin/python" -e ".[riskbudget]" \
             "$(ls "$RUNNER_TEMP"/tf-dist/*.whl)" pytest
       - name: Run composed source contracts
         env:
@@ -315,7 +367,7 @@ jobs:
         run: |
           uv venv "$RUNNER_TEMP/composed-wheel"
           uv pip install --python "$RUNNER_TEMP/composed-wheel/bin/python" \
-            "$(ls "$RUNNER_TEMP"/op-dist/*.whl)" "$(ls "$RUNNER_TEMP"/tf-dist/*.whl)" pytest
+            "$(ls "$RUNNER_TEMP"/op-dist/*.whl)[riskbudget]" "$(ls "$RUNNER_TEMP"/tf-dist/*.whl)" pytest
       - name: Enforce nonempty installed handoff tests without skips
         env:
           OP_REQUIRE_FACTOR_INTEGRATION: "1"

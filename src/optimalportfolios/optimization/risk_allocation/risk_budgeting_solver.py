@@ -33,7 +33,6 @@ import math
 from typing import Optional, Tuple
 
 import numpy as np
-import quadprog
 
 # Squared residuals in the dimensionless quadratic/log lift. The inner solve
 # must be more accurate than ADMM so a small proximal step is not false convergence.
@@ -138,6 +137,15 @@ def _project_polyhedron(v: np.ndarray,
                         lhs: np.ndarray,
                         full_investment: bool = False) -> np.ndarray:
     """Project onto inequality faces, optionally with sum(w) = 1 as an equality."""
+    try:
+        import quadprog
+    except ModuleNotFoundError as error:
+        if error.name != "quadprog":
+            raise
+        raise ImportError(
+            "Risk budgeting requires the optional quadprog backend. "
+            'Install it with: pip install "optimalportfolios[riskbudget]"'
+        ) from error
     if full_investment:
         rows = np.vstack([-np.ones(len(v)), rows])
         lhs = np.hstack([-1.0, lhs])
@@ -201,6 +209,7 @@ def solve_constrained_risk_budgeting(covar: np.ndarray,
         volatility/log multiplier); NaN multiplier for a completely pinned box.
 
     Raises:
+        ImportError: The optional ``optimalportfolios[riskbudget]`` backend is absent.
         ValueError: Invalid inputs, infeasible joint constraints or nonconvergence.
     """
     covar = np.ascontiguousarray(covar, dtype=float)

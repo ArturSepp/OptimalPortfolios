@@ -27,6 +27,18 @@ Composed tests use the `factor_integration` marker and import upstream packages 
 test bodies, so the full base wheel suite collects without either package. Run the
 separate composed wheel suite without skips. No OP factor extra or compatibility API.
 
+## L3 optional risk-budgeting backend (2026-10-19)
+
+The unreleased 8.0.0 development series installs quadprog only through `[riskbudget]`.
+Keep it guarded inside the projection function: ordinary imports and base optimisation
+must work without it, and missing-backend errors must propagate through public wrappers.
+Do not replace the algorithm or change numerical tolerances. Mark only tests that execute
+the backend with `riskbudget`; validation and missing-extra tests remain base tests.
+`OP_REQUIRE_RISKBUDGET=1` makes a missing extra fail the dedicated source/wheel lane.
+The primary coverage gate combines base and installed-extra runs at the existing 100% floor.
+Base CI now includes Windows/Python 3.14; the optional backend is checked separately on 3.12.
+Use fresh external source/installed environments and preserve the historical owning cohort.
+
 Guidance for AI coding agents working in the **OptimalPortfolios** repository.
 
 ## Project overview

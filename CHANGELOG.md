@@ -7,6 +7,18 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Optional risk-budgeting backend
+
+- Move `quadprog` to `optimalportfolios[riskbudget]` and load it only when a
+  risk-budgeting projection is requested. A missing backend raises an actionable
+  installation error; the existing algorithm, public signatures and numerical
+  tolerances are unchanged when the extra is installed.
+- Verify base imports and installed tests without quadprog, TF or FL; test the
+  unchanged backend separately. This development change is not yet a PyPI release.
+- Package the full supplemental OpenBLAS/LAPACK notices for the exact reviewed
+  Windows SCS and SparseDiffPy binaries. Dependency and bundled vendor terms remain
+  distinct from OP's MIT source licence.
+
 ### Completed-output documentation and TF workflow ownership
 
 - Document the finite supplied-input allocation, separate solver outcome, date and

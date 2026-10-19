@@ -70,6 +70,7 @@ def long_only(**overrides) -> Constraints:
 # --------------------------------------------------------------------------- #
 # how the budgets are stated
 # --------------------------------------------------------------------------- #
+@pytest.mark.riskbudget
 def test_a_budget_given_as_a_dict_is_the_same_as_one_given_as_a_series() -> None:
     """a plain dict is accepted, because that is how a config file states a budget"""
     from_dict = wrapper_risk_budgeting(pd_covar=COVAR_DF, constraints=long_only(),
@@ -79,6 +80,7 @@ def test_a_budget_given_as_a_dict_is_the_same_as_one_given_as_a_series() -> None
     pd.testing.assert_series_equal(from_dict, from_series)
 
 
+@pytest.mark.riskbudget
 def test_zero_budget_asset_with_fixed_weight_stays_in_full_covariance() -> None:
     """A pinned hedging sleeve has zero budget but retains its target weight."""
     target = pd.Series([0.5, 0.3, 0.2], index=TICKERS)
@@ -113,6 +115,7 @@ def test_a_budget_that_is_neither_a_dict_nor_a_series_is_rejected() -> None:
                                risk_budget=[0.3, 0.3, 0.4])
 
 
+@pytest.mark.riskbudget
 def test_a_zero_budget_asset_is_excluded_rather_than_solved_for() -> None:
     """eligibility is derived from the budgets: a zero budget means "do not hold" """
     budget = pd.Series([0.5, 0.5, 0.0], index=TICKERS)
@@ -125,6 +128,7 @@ def test_a_zero_budget_asset_is_excluded_rather_than_solved_for() -> None:
 # --------------------------------------------------------------------------- #
 # a universe the covariance cannot describe
 # --------------------------------------------------------------------------- #
+@pytest.mark.riskbudget
 @pytest.mark.parametrize('cash_variance', [1e-10, 0.001**2, 4e-6])
 def test_cash_variance_floor_matches_diagonal_risk_budget_solution(cash_variance) -> None:
     """Cash-like risk budgeting matches the independent diagonal closed-form solution."""
@@ -179,6 +183,7 @@ def test_a_covariance_with_no_usable_asset_returns_a_flat_zero_portfolio() -> No
     np.testing.assert_allclose(weights.to_numpy(), 0.0, atol=1e-12)
 
 
+@pytest.mark.riskbudget
 def test_rescaling_over_the_surviving_assets_can_be_switched_off() -> None:
     """without the rescale the budgets are left as stated over the reduced universe
 
@@ -201,6 +206,7 @@ def test_rescaling_over_the_surviving_assets_can_be_switched_off() -> None:
         assert weights.sum() == pytest.approx(1.0, abs=1e-6)
 
 
+@pytest.mark.riskbudget
 def test_detailed_output_reports_the_realised_risk_contributions() -> None:
     """the diagnostic form returns the contributions next to the weights, not just weights"""
     detailed = wrapper_risk_budgeting(pd_covar=COVAR_DF, constraints=long_only(),
@@ -233,6 +239,7 @@ def test_a_solver_rejection_is_logged_and_falls_back(caplog) -> None:
     assert np.isfinite(weights.to_numpy()).all()
 
 
+@pytest.mark.riskbudget
 def test_verbose_reports_the_group_constraint_slack(capsys) -> None:
     """the verbose path prints how much room is left on each group row
 
@@ -288,6 +295,7 @@ def test_a_one_asset_universe_skips_the_search_entirely() -> None:
     assert budgets.to_dict() == {TICKERS[0]: 1.0}
 
 
+@pytest.mark.riskbudget
 def test_a_good_fixed_point_skips_the_slow_slsqp_search(monkeypatch) -> None:
     """a valid inverse budget is returned before the fragile SLSQP refinement
 
@@ -313,6 +321,7 @@ def test_a_good_fixed_point_skips_the_slow_slsqp_search(monkeypatch) -> None:
     assert list(budgets.index) == TICKERS
 
 
+@pytest.mark.riskbudget
 def test_inferred_budgets_reproduce_weights_inside_asset_and_group_bands(
         monkeypatch) -> None:
     """The CCD inverse solution survives a banded ADMM forward solve."""
@@ -576,6 +585,7 @@ def test_a_hedging_target_is_pinned_without_changing_the_central_weights(monkeyp
     pd.testing.assert_series_equal(given, pd.Series([0.5, 0.3, 0.2], index=TICKERS))
 
 
+@pytest.mark.riskbudget
 def test_pinned_hedge_inverse_fit_matches_independent_kkt_reference() -> None:
     """The active budgets reproduce the unchanged target under the full covariance."""
     target = pd.Series([0.5, 0.3, 0.2], index=TICKERS)
@@ -621,6 +631,7 @@ def test_explicit_fixed_asset_keeps_positive_mrc_target_with_zero_budget(monkeyp
     assert budgets['defensive'] == 0.0
 
 
+@pytest.mark.riskbudget
 def test_explicit_positive_mrc_pin_matches_full_covariance_kkt_reference() -> None:
     """The explicit pin preserves its weight while active budgets fit normally."""
     target = pd.Series([0.5, 0.3, 0.2], index=TICKERS)
@@ -661,6 +672,7 @@ def make_sleeve_boundary_case() -> tuple[pd.DataFrame, pd.Series,
     return prices, target, covars
 
 
+@pytest.mark.riskbudget
 def test_sleeve_boundary_automatically_pins_two_distinct_failure_modes() -> None:
     """A positive-average-RC asset can still be infeasible at a positive budget."""
     prices, target, covars = make_sleeve_boundary_case()
@@ -691,6 +703,7 @@ def test_sleeve_boundary_automatically_pins_two_distinct_failure_modes() -> None
     np.testing.assert_allclose(forward.mean().to_numpy(), target.to_numpy(), atol=1e-3)
 
 
+@pytest.mark.riskbudget
 def test_boundary_probe_does_not_require_the_optimizer_to_reach_the_floor(
         monkeypatch) -> None:
     """A forward floor probe catches the XXX jump after an incomplete fit."""
@@ -758,6 +771,7 @@ def test_floor_probe_skips_an_infeasible_remaining_budget_cap() -> None:
     assert probe is None
 
 
+@pytest.mark.riskbudget
 def test_failed_boundary_trial_still_raises_instead_of_zeroing_a_budget(monkeypatch) -> None:
     """A floor-overweight candidate is fixed only after a validated complete refit."""
     prices, target, covars = make_sleeve_boundary_case()
@@ -778,6 +792,7 @@ def test_failed_boundary_trial_still_raises_instead_of_zeroing_a_budget(monkeypa
     assert 'LD19TRUU Index: RuntimeError' in str(excinfo.value)
 
 
+@pytest.mark.riskbudget
 def test_boundary_trial_result_is_checked_with_the_forward_solver(monkeypatch) -> None:
     """A trial-returned budget cannot bypass the full-path fit tolerance."""
     prices, target, covars = make_sleeve_boundary_case()
@@ -995,6 +1010,7 @@ def test_slsqp_can_refine_a_fixed_point_outside_tolerance(monkeypatch) -> None:
     np.testing.assert_allclose(budgets.to_numpy(), candidate, atol=1e-12)
 
 
+@pytest.mark.riskbudget
 def test_failed_inverse_calibration_raises_instead_of_returning_zeros(monkeypatch) -> None:
     """both solver diagnostics are reported when no candidate reproduces the target"""
     candidate = np.array([0.4, 0.35, 0.25])

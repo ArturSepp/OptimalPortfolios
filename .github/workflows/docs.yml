@@ -39,7 +39,7 @@ jobs:
           python-version: "3.12"
           version: "0.12.23"
       - name: Sync documentation environment
-        run: uv sync --locked --extra docs --group test
+        run: uv sync --locked --extra docs --extra riskbudget --group test
       - name: Check out the explicitly selected factor documentation dependency
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

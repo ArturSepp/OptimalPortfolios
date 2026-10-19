@@ -96,6 +96,7 @@ def assert_valid_weights(weights: pd.DataFrame, dates=REBALANCING_DATES) -> None
 # --------------------------------------------------------------------------- #
 # risk budgeting
 # --------------------------------------------------------------------------- #
+@pytest.mark.riskbudget
 def test_rolling_risk_budgeting_respects_the_budget_ordering() -> None:
     """the asset given the largest risk budget carries the largest risk contribution"""
     risk_budget = pd.Series([0.2, 0.3, 0.5], index=TICKERS)
@@ -109,6 +110,7 @@ def test_rolling_risk_budgeting_respects_the_budget_ordering() -> None:
     np.testing.assert_allclose(contributions, risk_budget.to_numpy(), atol=0.02)
 
 
+@pytest.mark.riskbudget
 def test_rolling_risk_budgeting_moves_weight_when_the_budget_moves() -> None:
     """shifting the budget towards an asset raises its weight — the objective bites"""
     prices, covar_dict = make_prices(), make_covar_dict()
@@ -131,6 +133,7 @@ def test_rolling_risk_budgeting_short_circuits_a_single_asset_budget() -> None:
     assert (weights[['growth', 'balanced']] == 0.0).all().all()
 
 
+@pytest.mark.riskbudget
 def test_rolling_risk_budgeting_accepts_rebalancing_indicators() -> None:
     """the freezing indicator is an optional input the wrapper aligns to the solve dates"""
     indicators = pd.DataFrame(1.0, index=REBALANCING_DATES, columns=TICKERS)
@@ -141,6 +144,7 @@ def test_rolling_risk_budgeting_accepts_rebalancing_indicators() -> None:
     assert_valid_weights(weights)
 
 
+@pytest.mark.riskbudget
 def test_solve_for_risk_budgets_recovers_the_budget_of_a_given_portfolio() -> None:
     """the inverse problem returns budgets that reproduce the weights it was given"""
     given = pd.Series([0.2, 0.3, 0.5], index=TICKERS)
@@ -373,7 +377,7 @@ def test_rolling_maximize_cara_mixture_produces_investable_weights() -> None:
 
 
 @pytest.mark.parametrize('objective', [
-    PortfolioObjective.EQUAL_RISK_CONTRIBUTION,
+    pytest.param(PortfolioObjective.EQUAL_RISK_CONTRIBUTION, marks=pytest.mark.riskbudget),
     PortfolioObjective.MAX_DIVERSIFICATION,
     PortfolioObjective.MIN_VARIANCE,
     PortfolioObjective.QUADRATIC_UTILITY,

@@ -29,6 +29,12 @@ reporting to QIS. OP retains explicit EWMA and signal utilities and rolling orch
 
 **Install:** `pip install optimalportfolios` · **Import:** `optimalportfolios` · **Status:** Stable
 
+In the unreleased 8.0.0 development series, risk-budgeting solves require
+`pip install "optimalportfolios[riskbudget]"`. This installs the existing GPL-licensed
+`quadprog` projection backend; OP's first-party source remains MIT. Ordinary imports,
+supplied-input optimisation with other solvers, and the offline quickstart use the base
+installation. See [installation and dependency licences](docs/installation.md).
+
 [![PyPI](https://img.shields.io/pypi/v/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/)
 [![Python](https://img.shields.io/pypi/pyversions/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/)
 [![CI](https://github.com/ArturSepp/OptimalPortfolios/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ArturSepp/OptimalPortfolios/actions/workflows/ci.yml)

@@ -17,6 +17,11 @@ Risk budgeting allocates capital to target shares of portfolio risk. A 30% risk 
 target contribution to total risk; it does not specify a 30% capital weight. Asset volatilities,
 correlations and binding constraints determine the resulting allocation.
 
+The unreleased 8.0.0 development series installs this solver's existing quadprog
+backend through `pip install "optimalportfolios[riskbudget]"`. The backend retains
+GPLv2+ terms; OP source remains MIT. See [installation](installation.md) for the base
+package and optional backend distinction. Solver formulas and tolerances are unchanged.
+
 ## Overview
 
 Use risk budgeting when an allocation policy is expressed through risk shares rather than

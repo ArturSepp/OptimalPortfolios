@@ -57,8 +57,10 @@ def test_base_checks_are_never_skipped_by_factor_lane(monkeypatch, installed):
     monkeypatch.delenv('OP_REQUIRE_FACTOR_INTEGRATION', raising=False)
     base_marks, composed_marks = [], []
     base = SimpleNamespace(get_closest_marker=lambda name: None, add_marker=base_marks.append)
-    composed = SimpleNamespace(get_closest_marker=lambda name: True,
-                               add_marker=composed_marks.append)
+    composed = SimpleNamespace(
+        get_closest_marker=lambda name: True if name == 'factor_integration' else None,
+        add_marker=composed_marks.append,
+    )
     hooks.pytest_collection_modifyitems(None, [base, composed])
     assert not base_marks
     assert len(composed_marks) == (0 if installed else 1)

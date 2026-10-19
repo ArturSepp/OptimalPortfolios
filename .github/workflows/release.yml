@@ -55,6 +55,13 @@ jobs:
         run: |
           uv sync --locked --group test
           uv run --no-sync pytest
+      - name: Verify the explicitly selected risk-budgeting backend
+        env:
+          OP_REQUIRE_RISKBUDGET: "1"
+        run: |
+          uv sync --locked --group test --extra riskbudget
+          uv run --no-sync pytest -m "riskbudget and not factor_integration" --junitxml="$RUNNER_TEMP/riskbudget.xml"
+          uv run --no-sync python -c "import os, xml.etree.ElementTree as E; s=E.parse(os.path.join(os.environ['RUNNER_TEMP'], 'riskbudget.xml')).getroot(); assert list(s.iter('testcase')); assert not list(s.iter('failure')); assert not list(s.iter('error')); assert not list(s.iter('skipped'))"
       - name: Build the tagged documentation with warnings as errors
         run: |
           uv sync --locked --extra docs

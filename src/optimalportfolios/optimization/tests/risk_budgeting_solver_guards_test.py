@@ -50,6 +50,7 @@ def equal_budgets() -> np.ndarray:
 # --------------------------------------------------------------------------- #
 # the happy path, for reference
 # --------------------------------------------------------------------------- #
+@pytest.mark.riskbudget
 def test_the_solution_is_fully_invested_and_returns_a_positive_multiplier() -> None:
     """Equal risk budgets give positive weights summing to one and a real multiplier."""
     weights, lam = solve_constrained_risk_budgeting(covar=covar_matrix(),
@@ -59,6 +60,7 @@ def test_the_solution_is_fully_invested_and_returns_a_positive_multiplier() -> N
     assert lam > 0.0
 
 
+@pytest.mark.riskbudget
 def test_budgets_default_to_equal_when_omitted() -> None:
     """``budgets=None`` means equal risk contribution, the usual entry point."""
     omitted, _ = solve_constrained_risk_budgeting(covar=covar_matrix(), budgets=None)
@@ -67,6 +69,7 @@ def test_budgets_default_to_equal_when_omitted() -> None:
     np.testing.assert_allclose(omitted, explicit, atol=1e-8)
 
 
+@pytest.mark.riskbudget
 def test_budgets_are_normalised_rather_than_required_to_sum_to_one() -> None:
     """Only the relative budgets matter, so an unnormalised vector is accepted."""
     normalised, _ = solve_constrained_risk_budgeting(covar=covar_matrix(),
@@ -178,6 +181,7 @@ def test_upper_bounds_summing_below_one_are_infeasible() -> None:
                                          bounds=bounds)
 
 
+@pytest.mark.riskbudget
 def test_a_fully_pinned_box_short_circuits_with_a_nan_multiplier() -> None:
     """When lo == hi the weights are determined, so there is nothing to solve.
 
@@ -195,6 +199,7 @@ def test_a_fully_pinned_box_short_circuits_with_a_nan_multiplier() -> None:
 # --------------------------------------------------------------------------- #
 # linear inequality validation
 # --------------------------------------------------------------------------- #
+@pytest.mark.riskbudget
 def test_the_solver_accepts_a_linear_inequality_block() -> None:
     """``C x <= d`` routes through the ADMM path and still returns a fully-invested solution."""
     c_rows = np.array([[1.0, 1.0, 0.0, 0.0]])
@@ -206,6 +211,7 @@ def test_the_solver_accepts_a_linear_inequality_block() -> None:
     assert float(weights[:2].sum()) <= 0.60 + 1e-5
 
 
+@pytest.mark.riskbudget
 def test_admm_iteration_cap_raises_instead_of_returning_an_unfinished_iterate(
         monkeypatch: pytest.MonkeyPatch,
 ) -> None:

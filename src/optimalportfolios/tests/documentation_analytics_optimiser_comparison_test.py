@@ -25,6 +25,7 @@ def analytics(producer):
         return producer.build_analytics(producer.configuration())
 
 
+@pytest.mark.riskbudget
 def test_registry_grid_and_native_solver_records(root, producer, analytics):
     """Each objective has 43 accepted and compliant native solves on the common dates."""
     config = producer.reports.load_registry(root)['producers'][producer.NAME]['configuration']
@@ -81,6 +82,7 @@ def test_shared_helper_refuses_two_overrides(producer):
             producer.reports.configuration(), objective='MIN_VARIANCE', span=26)
 
 
+@pytest.mark.riskbudget
 def test_max_diversification_preserves_the_portfolio_baseline(producer, analytics):
     """The default pipeline is unchanged and every case records its actual configuration."""
     base = producer.reports.configuration()
@@ -95,6 +97,7 @@ def test_max_diversification_preserves_the_portfolio_baseline(producer, analytic
             producer.reports.case_configuration(base, objective))
 
 
+@pytest.mark.riskbudget
 @pytest.mark.parametrize('position', [0, 21, 42])
 def test_minimum_variance_against_independent_slsqp(analytics, position):
     """Compare the convex solver to a scaled SciPy formulation on first, middle and last dates."""
@@ -122,6 +125,7 @@ def test_minimum_variance_against_independent_slsqp(analytics, position):
     np.testing.assert_allclose(actual, reference.x, atol=2e-5, rtol=0)
 
 
+@pytest.mark.riskbudget
 @pytest.mark.parametrize('position', [0, 21, 42])
 def test_risk_budgeting_against_independent_log_barrier(analytics, position):
     """Compare ADMM-CCD to a SciPy cone-constrained log-barrier problem, then normalize."""
@@ -150,6 +154,7 @@ def test_risk_budgeting_against_independent_log_barrier(analytics, position):
         case['tables']['target_weights'].loc[date], expected, atol=2e-5, rtol=0)
 
 
+@pytest.mark.riskbudget
 @pytest.mark.parametrize('objective', ['MIN_VARIANCE', 'EQUAL_RISK_CONTRIBUTION'])
 def test_future_prices_do_not_change_prior_targets(producer, analytics, objective):
     """A changed future and a truncated history preserve each added objective's earlier targets."""
@@ -173,6 +178,7 @@ def test_future_prices_do_not_change_prior_targets(producer, analytics, objectiv
     assert all(record.accepted for record in records)
 
 
+@pytest.mark.riskbudget
 def test_cost_summary_against_traded_units(analytics):
     """Reconstruct all displayed cost totals from unit changes and execution prices."""
     for label, case in analytics['cases'].items():
@@ -183,6 +189,7 @@ def test_cost_summary_against_traded_units(analytics):
             pytest.approx(0.001 * expected, rel=1e-12))
 
 
+@pytest.mark.riskbudget
 @pytest.mark.parametrize('defect', [
     'prices', 'covariance', 'schedule', 'sample', 'checks', 'configuration',
     'fallback', 'missing_solve', 'objective_reuse', 'floor',
@@ -227,6 +234,7 @@ def test_inconsistent_cases_fail_closed(producer, analytics, monkeypatch, defect
         producer.build_analytics(producer.configuration())
 
 
+@pytest.mark.riskbudget
 @pytest.mark.parametrize('backend,status', [
     ('CLARABEL', 'infeasible'), ('risk_budgeting', 'nonconverged'), ('unknown', '0'),
 ])
@@ -244,6 +252,7 @@ def test_native_failure_status_cannot_be_normalized_to_success(
     assert evidence['solves'][0]['status'] == 'rejected'
 
 
+@pytest.mark.riskbudget
 def test_repeated_previews_are_identical_and_not_publishable(
         root, producer, tmp_path, monkeypatch):
     """Run the shared writer twice, compare every output and preserve the complete-bundle gate."""

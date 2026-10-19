@@ -28,7 +28,8 @@ development checkout.
 The declared Python requirement is **Python 3.10 or later** (`requires-python = ">=3.10"`).
 Binary dependencies also determine which interpreter/platform combinations can be installed.
 The current [CI matrix](../.github/workflows/ci.yml) exercises Python 3.10–3.14 on Linux,
-macOS and Windows, with Windows/Python 3.14 excluded for the recorded `quadprog` wheel limitation.
+macOS and Windows. The optional risk-budgeting backend is checked separately on Python 3.12;
+its binary-wheel availability can differ from the base package.
 The metadata requirement alone does not certify every future Python release.
 
 Use an environment dedicated to your project. In the commands below, `python` means that
@@ -49,17 +50,20 @@ Do not create or use a Python environment under OneDrive.
 
 ## Choose optional integrations
 
-The checkout declares exactly these three package extras:
+The checkout declares these four package extras. The `riskbudget` split is part of
+unreleased 8.0.0 development; older published versions still install quadprog as a core dependency.
 
 | Extra | Adds | When to select it |
 |---|---|---|
+| `riskbudget` | `quadprog` | Risk-budgeting projection and solver; the backend retains GPLv2+ terms. |
 | `data` | `yfinance` | Examples or loaders that download Yahoo Finance data. |
 | `reports` | `pybloqs` | The dedicated HTML/PDF report backend. |
 | `docs` | Sphinx, Furo, MyST and the Mermaid extension | Building the documentation from a checkout. |
 
-Install either runtime integration, or both, with quoted package requirements:
+Install the runtime features needed by the workflow with quoted package requirements:
 
 ```console
+python -m pip install "optimalportfolios[riskbudget]"
 python -m pip install "optimalportfolios[data]"
 python -m pip install "optimalportfolios[reports]"
 python -m pip install "optimalportfolios[data,reports]"
@@ -69,11 +73,26 @@ These are alternatives; choose the integrations needed by the workflow. Installi
 adds the Python backend, not a guarantee that every external PDF-rendering prerequisite is
 available on the machine.
 
+OP's own source licence is MIT. Dependencies keep their own licences: installing
+`riskbudget` adds the GPLv2+ quadprog backend. The reviewed Windows/Python 3.12 base
+also retains GCC runtime exceptions in NumPy/SciPy, Microsoft runtime terms,
+Numba's NVIDIA header terms, and third-party font notices; it is not an all-MIT
+binary environment. The packaged [supplemental notices](https://github.com/ArturSepp/OptimalPortfolios/blob/main/THIRD_PARTY_NOTICES.md)
+preserve the full OpenBLAS/LAPACK text for the exact SCS/SparseDiffPy binaries reviewed.
+Other versions and platforms need their own review.
+
+Without `riskbudget`, public imports, covariance utilities and unrelated optimisers
+remain available. Calling the risk-budgeting solver raises an installation message;
+it does not silently select another algorithm or return a fallback portfolio.
+
 **`all` is a contributor dependency group, not a package extra.** The current metadata does not
 publish `optimalportfolios[all]`. Use `optimalportfolios[data,reports]` for both runtime
 integrations. Package extras and dependency groups have different installation semantics;
 [PyPA's specification](https://packaging.python.org/en/latest/specifications/dependency-groups/)
 explains why groups are not included as package metadata in distributions.
+
+The historical `all` contributor group continues to select `data,reports`. It deliberately
+does not select the GPL-licensed risk-budgeting backend; add `--extra riskbudget` explicitly.
 
 There is no `jupyter`, `clustering`, `test` or `dev` package extra. Install local notebook tooling
 separately. The repository's Colab quickstart uses its hosted notebook runtime. Risk-lineage
@@ -210,12 +229,17 @@ To include Yahoo examples, append `--extra data` to the sync command. To prepare
 tools and the documentation toolchain together, keep the same environment setting and use:
 
 ```console
-uv sync --locked --group test --group lint --extra docs
+uv sync --locked --group test --group lint --extra docs --extra riskbudget
 ```
 
 Sync selects the requested environment contents; retain the extras and groups the workflow needs
 when changing that selection. Follow AGENTS.md and the owning CI workflow for the actual checks.
 Documentation builds run from a C-local source export because autosummary generates source files.
+
+Base tests skip only explicitly marked backend cases when quadprog is absent. Run those
+cases with `uv run --no-sync pytest -m "riskbudget and not factor_integration"` after
+installing the extra; the separate composed lane supplies TF for tests needing both. CI requires
+the dedicated source and installed-wheel lanes to execute rather than silently skip them.
 
 <a id="current-development-verification-boundary"></a>
 

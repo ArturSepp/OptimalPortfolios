@@ -234,6 +234,7 @@ def test_bad_estimates_and_solver_evidence_fail_closed(producer, analytics, monk
         producer.build_analytics(producer.configuration())
 
 
+@pytest.mark.riskbudget
 def test_complete_real_bundle_repeats_and_validates(root, producer, tmp_path, monkeypatch):
     """All four real families produce identical six-image/62-table bundles without publication."""
     runner = importlib.import_module('tools.docs_analytics.run')

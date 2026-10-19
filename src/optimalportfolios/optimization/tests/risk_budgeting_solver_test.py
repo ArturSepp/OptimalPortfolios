@@ -13,6 +13,7 @@ Run with pytest and use ``-k`` to select paper-table, parity, or property cases.
 """
 # packages
 import numpy as np
+import pytest
 
 # optimalportfolios
 from optimalportfolios.optimization.risk_allocation.risk_budgeting_solver import (
@@ -199,6 +200,7 @@ PYRB_MIXED10 = np.array([0.06070571719316891, 0.08922865196895383,
 # 1. paper tables
 # -----------------------------------------------------------------------------
 
+@pytest.mark.riskbudget
 def test_paper_table1_erc():
     """Table 1, ERC column: weights and equal risk contributions."""
     x, _ = solve_constrained_risk_budgeting(covar=COV4)
@@ -208,6 +210,7 @@ def test_paper_table1_erc():
     np.testing.assert_allclose(rc / np.sum(rc), 0.25 * np.ones(4), atol=1e-6)
 
 
+@pytest.mark.riskbudget
 def test_paper_table1_rb():
     """Table 1, RB column with budgets (30, 30, 19.5, 20.5)%."""
     budgets = np.array([0.30, 0.30, 0.195, 0.205])
@@ -218,6 +221,7 @@ def test_paper_table1_rb():
     np.testing.assert_allclose(rc / np.sum(rc), budgets, atol=1e-6)
 
 
+@pytest.mark.riskbudget
 def test_paper_table5_erc():
     """Table 5: ERC over the five-asset dynamic-allocation universe."""
     x, _ = solve_constrained_risk_budgeting(covar=COV5)
@@ -225,6 +229,7 @@ def test_paper_table5_erc():
                                atol=PAPER_ATOL_PP)
 
 
+@pytest.mark.riskbudget
 def test_paper_table6_inputs_with_joint_full_investment():
     """Table 6's input now solves the homogeneous, not absolute-bound, objective."""
     x0 = np.array([0.25, 0.25, 0.10, 0.10, 0.30])
@@ -235,6 +240,7 @@ def test_paper_table6_inputs_with_joint_full_investment():
         legacy=np.array([22.89, 20.00, 11.69, 10.42, 35.00]) / 100.0)
 
 
+@pytest.mark.riskbudget
 def test_paper_table9_erc_unconstrained():
     """Table 9 column 1: ERC over the eight-asset multi-asset universe."""
     x, _ = solve_constrained_risk_budgeting(covar=COV8)
@@ -243,6 +249,7 @@ def test_paper_table9_erc_unconstrained():
                                atol=PAPER_ATOL_PP)
 
 
+@pytest.mark.riskbudget
 def test_paper_table9_equity_floor_with_joint_full_investment():
     """Table 9 column 2 inputs retain the 30% floor under the corrected objective."""
     c_rows = -np.array([[0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0]])
@@ -251,6 +258,7 @@ def test_paper_table9_equity_floor_with_joint_full_investment():
     _assert_homogeneous_solution(x, COV8, c_rows=c_rows, c_lhs=c_lhs)
 
 
+@pytest.mark.riskbudget
 def test_paper_table9_two_rows_with_joint_full_investment():
     """Table 9 column 3 inputs retain the floor and euro-vs-US overweight row."""
     c_rows = np.array([[0.0, 0.0, 0.0, 0.0, -1.0, -1.0, -1.0, -1.0],
@@ -264,12 +272,14 @@ def test_paper_table9_two_rows_with_joint_full_investment():
 # 2. frozen pyrb parity
 # -----------------------------------------------------------------------------
 
+@pytest.mark.riskbudget
 def test_pyrb_parity_erc4():
     """Frozen pyrb parity: unconstrained ERC on the four-asset problem."""
     x, _ = solve_constrained_risk_budgeting(covar=COV4)
     np.testing.assert_allclose(x, PYRB_ERC4, atol=PYRB_PARITY_ATOL)
 
 
+@pytest.mark.riskbudget
 def test_pyrb_parity_rb4():
     """Frozen pyrb parity: tilted budgets on the four-asset problem."""
     x, _ = solve_constrained_risk_budgeting(covar=COV4,
@@ -277,6 +287,7 @@ def test_pyrb_parity_rb4():
     np.testing.assert_allclose(x, PYRB_RB4, atol=PYRB_PARITY_ATOL)
 
 
+@pytest.mark.riskbudget
 def test_pyrb_migration_erc4_box():
     """Four-asset 30% box caps now satisfy the homogeneous conic reference."""
     x, _ = solve_constrained_risk_budgeting(covar=COV4,
@@ -285,6 +296,7 @@ def test_pyrb_migration_erc4_box():
                                  legacy=PYRB_ERC4_BOX30)
 
 
+@pytest.mark.riskbudget
 def test_pyrb_migration_erc8_one_row():
     """Retain the frozen eight-asset baseline as an explicit formulation comparator."""
     c_rows = -np.array([[0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0]])
@@ -294,6 +306,7 @@ def test_pyrb_migration_erc8_one_row():
                                  legacy=PYRB_ERC8_ROW1)
 
 
+@pytest.mark.riskbudget
 def test_pyrb_migration_erc8_two_rows():
     """Two group rows now describe the normalized portfolio, not an auxiliary scale."""
     c_rows = np.array([[0.0, 0.0, 0.0, 0.0, -1.0, -1.0, -1.0, -1.0],
@@ -304,6 +317,7 @@ def test_pyrb_migration_erc8_two_rows():
                                  legacy=PYRB_ERC8_ROW2)
 
 
+@pytest.mark.riskbudget
 def test_pyrb_migration_mixed10():
     """Tilted budgets, box and group cap match a separately solved convex program."""
     x, lambda_star = solve_constrained_risk_budgeting(covar=COV10_AR1,
@@ -321,6 +335,7 @@ def test_pyrb_migration_mixed10():
 # 3. properties: feasibility, KKT, degeneracies, validation
 # -----------------------------------------------------------------------------
 
+@pytest.mark.riskbudget
 def test_feasibility_and_kkt_mixed10():
     """Box, group row and full investment hold; free gradients share the budget dual."""
     x, _ = solve_constrained_risk_budgeting(covar=COV10_AR1, budgets=BUDGETS10,
@@ -339,6 +354,7 @@ def test_feasibility_and_kkt_mixed10():
     assert np.ptp(gradient[free]) < 1e-6
 
 
+@pytest.mark.riskbudget
 def test_stiff_constrained_problem_stays_fully_invested():
     """A stiff constrained solve must finish fully invested and feasible.
 
@@ -360,6 +376,7 @@ def test_stiff_constrained_problem_stays_fully_invested():
     assert np.all(weights <= bounds[:, 1] + 1e-12)
 
 
+@pytest.mark.riskbudget
 def test_strict_ccd_tolerance_controls_free_asset_kkt_spread():
     """A stiff box solve retains a narrow normalized-gradient KKT spread."""
     covar, budgets, bounds, _c_rows, _c_lhs = _make_stiff_constrained_case()
@@ -376,6 +393,7 @@ def test_strict_ccd_tolerance_controls_free_asset_kkt_spread():
     assert np.ptp(gradient[free]) < 1e-5
 
 
+@pytest.mark.riskbudget
 def test_kkt_box_only():
     """Box-constrained free gradients share the full-investment multiplier."""
     x, _ = solve_constrained_risk_budgeting(covar=COV4,
@@ -386,6 +404,7 @@ def test_kkt_box_only():
     np.testing.assert_allclose(gradient[free][0], gradient[free][1], atol=1e-7)
 
 
+@pytest.mark.riskbudget
 def test_pinned_box_returns_pinned_vector():
     """lo == hi with sum one short-circuits to the pinned weights (no root-finding)."""
     pinned = np.array([0.4, 0.3, 0.2, 0.1])
@@ -416,6 +435,7 @@ def test_invalid_covar_raises():
         assert "non-finite" in str(exc)
 
 
+@pytest.mark.riskbudget
 def test_zero_budget_asset_gets_zero_weight():
     """b_i = 0 drives x_i to its lower bound (paper: zero-budget exclusion)."""
     budgets = np.array([0.5, 0.5, 0.0, 0.0])

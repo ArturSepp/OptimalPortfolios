@@ -49,6 +49,7 @@ def pytest_configure(config) -> None:
     config.addinivalue_line(
         "markers", "factor_integration: requires explicit tradablefactors and factorlasso installs"
     )
+    config.addinivalue_line("markers", "riskbudget: executes the optional quadprog backend")
 
 
 def pytest_collection_modifyitems(config, items) -> None:
@@ -61,6 +62,14 @@ def pytest_collection_modifyitems(config, items) -> None:
         skip = pytest.mark.skip(reason="Composed integration: install tradablefactors separately")
         for item in items:
             if item.get_closest_marker("factor_integration") is not None:
+                item.add_marker(skip)
+    riskbudget_available = importlib.util.find_spec("quadprog") is not None
+    if os.environ.get("OP_REQUIRE_RISKBUDGET") == "1" and not riskbudget_available:
+        raise pytest.UsageError('The riskbudget lane requires optimalportfolios[riskbudget]')
+    if not riskbudget_available:
+        skip = pytest.mark.skip(reason='Optional backend: install optimalportfolios[riskbudget]')
+        for item in items:
+            if item.get_closest_marker("riskbudget") is not None:
                 item.add_marker(skip)
 
 
