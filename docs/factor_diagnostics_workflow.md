@@ -17,8 +17,8 @@ Estimation and inference use [FactorLasso](https://github.com/ArturSepp/FactorLa
 reporting use [qis](https://github.com/ArturSepp/QuantInvestStrats)
 ([citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff)).
 Factor-model geometry and uncertainty propagation use
-[TradableFactors](https://github.com/ArturSepp/tradablefactors)
-([citation](https://github.com/ArturSepp/tradablefactors/blob/main/CITATION.cff)).
+[TradableFactors](supplied_risk_inputs.md#tradablefactors-availability)
+(upstream citation: `CITATION.cff` in an authorised TF checkout).
 This is a composed workflow: OP supplies the executed-state decision integration;
 the factor methods finish in their owning packages before that handoff.
 
@@ -78,9 +78,11 @@ separately; a failed diagnostic remains visible and is not silently repaired.
 `FactorOpportunityModel`, `portfolio_opportunity_metrics` and `fixed_portfolio_alpha_interval` are
 imports from `tradablefactors.analytics`. OP's `OpportunityModel` is a distinct
 solver-input object; the extracted statistical imports are removed from OP.
-The [risk-model adapter](https://github.com/ArturSepp/tradablefactors/blob/main/src/tradablefactors/risk.py),
-[MATF opportunity diagnostics](https://github.com/ArturSepp/tradablefactors/blob/main/src/tradablefactors/analytics/opportunity.py) and
-[MATF uncertainty propagation](https://github.com/ArturSepp/tradablefactors/blob/main/src/tradablefactors/analytics/uncertainty.py) retain numerical ownership.
+The TF risk-model adapter, MATF opportunity diagnostics and MATF uncertainty
+propagation retain numerical ownership. Their source paths in an authorised TF
+checkout are, respectively, `src/tradablefactors/risk.py`,
+`src/tradablefactors/analytics/opportunity.py` and
+`src/tradablefactors/analytics/uncertainty.py`.
 
 ## Intervals, dependence and calibration
 

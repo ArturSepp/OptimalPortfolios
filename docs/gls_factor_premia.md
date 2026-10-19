@@ -8,18 +8,21 @@ myst:
 
 *Author: [Artur Sepp](https://github.com/ArturSepp)*
 
-Implemented upstream in [TradableFactors](https://github.com/ArturSepp/tradablefactors),
+Implemented upstream in [TradableFactors](supplied_risk_inputs.md#tradablefactors-availability),
 consumed by [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
-Upstream citation: [TradableFactors CITATION.cff](https://github.com/ArturSepp/tradablefactors/blob/main/CITATION.cff).
+Upstream citation: `CITATION.cff` in an authorised TradableFactors checkout.
 
 GLS projection, premium inference, factor-mimicking portfolios and conditional uncertainty belong to TradableFactors. OP consumes the prepared expected returns and covariance for constrained optimisation.
 
 ## Canonical method and runnable workflow
 
-The full [methodology and implementation guide](https://github.com/ArturSepp/tradablefactors/blob/main/docs/gls_factor_premia.md)
-has moved to TradableFactors with its original authorship and source history.
-Use that guide for the estimator, units, date cutoffs, diagnostics and runnable examples.
+The full methodology and implementation guide has moved to TradableFactors with
+its original authorship and source history. TF is private and unreleased; see the
+[availability prerequisite](supplied_risk_inputs.md#tradablefactors-availability).
+In an authorised TF checkout, `docs/gls_factor_premia.md`
+contains the estimator, units, date cutoffs, diagnostics and runnable examples.
+This local page records the owner and OP handoff, not the full private methodology.
 The old OP estimator and inference exports are removed in OP 8; there are no forwarding APIs.
 
 OP is complete once it produces the allocation and its solver outcome. See the
@@ -30,7 +33,7 @@ and [solver outcomes](solver_numerics_and_outcomes.md). The retained
 ## Earlier links
 
 The former section anchors are retained below so links from existing OP guides
-arrive at this ownership handoff. The linked TF page contains the corresponding method.
+arrive at this ownership handoff. The authorised TF guide contains the corresponding method.
 
 <a id="overview"></a>
 <a id="inputs-notation-and-assumptions"></a>

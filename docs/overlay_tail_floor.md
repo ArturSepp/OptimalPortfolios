@@ -468,8 +468,9 @@ bound rescaling; the example disables it explicitly with `apply_total_to_good_ra
 
 Source owners: [constraint compilation](../src/optimalportfolios/optimization/constraints/backends.py),
 [residual evaluation](../src/optimalportfolios/optimization/constraints/analytics.py),
-[solver outcomes](../src/optimalportfolios/optimization/solver_diagnostics.py), and
-[risk-model adapter](https://github.com/ArturSepp/tradablefactors/blob/main/src/tradablefactors/risk.py).
+[solver outcomes](../src/optimalportfolios/optimization/solver_diagnostics.py), and the
+TF risk-model adapter at `src/tradablefactors/risk.py` in an authorised TF checkout
+([availability](supplied_risk_inputs.md#tradablefactors-availability)).
 
 The [canonical script](../examples/docs/overlay_tail_floor.py) runs the eight blocks with
 sockets blocked. It checks the allocations against a linear-algebra solution, a first-order

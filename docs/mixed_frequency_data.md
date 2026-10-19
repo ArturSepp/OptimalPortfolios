@@ -415,9 +415,9 @@ historical input cutoffs. The test suite runs it, and so does the offline exampl
 - **Annualization assumptions:** multiplying variances by observations per year does not
   correct serial dependence, appraisal smoothing, stale marks or asynchronous exposure changes.
   The factor residual diagonal omits cross-asset residual covariance.
-- **Timing and configuration limits:** the
-  [factor covariance article](https://github.com/ArturSepp/tradablefactors/blob/main/docs/factor_covariance_hcgl.md#implementation-in-tradablefactors) records that
-  regression demeaning belongs on the `LassoModel`. TF's current fit requires an explicit
+- **Timing and configuration limits:** regression demeaning belongs on the `LassoModel`.
+  The [HCGL ownership handoff](factor_covariance_hcgl.md) identifies the full method's
+  location in an authorised TF checkout. TF's current fit requires an explicit
   `cutoff` and truncates every input history; supplied dates must reflect actual availability.
 
 ## See also

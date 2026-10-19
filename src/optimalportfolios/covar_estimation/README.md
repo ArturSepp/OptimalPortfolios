@@ -15,7 +15,7 @@ Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios
 
 Portfolio optimisers consume labelled, annual asset covariance matrices. This module
 retains direct EWMA estimation using QIS. The complete factor-model pipeline now
-belongs to [TradableFactors](https://github.com/ArturSepp/tradablefactors).
+belongs to [TradableFactors](../../../docs/supplied_risk_inputs.md#tradablefactors-availability).
 
 ## Retained interfaces
 
@@ -47,7 +47,9 @@ method-specific covariance reports. FactorLasso owns the statistical estimator.
 OP owns optimisation for supplied expected returns and covariance.
 
 The removed OP estimator, GLS/CMA, covariance-reporting and risk-adapter modules
-have no forwarding implementations. See the [direct migration guide](https://github.com/ArturSepp/tradablefactors/blob/main/docs/migration.md).
+have no forwarding implementations. See the
+[supplied-input migration boundary](../../../docs/supplied_risk_inputs.md#breaking-migration).
+The detailed TF migration guide is `docs/migration.md` in an authorised TF checkout.
 Historical reproduction uses its frozen prior source/dependency cohort.
 
 ## Development checkpoint

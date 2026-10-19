@@ -23,7 +23,7 @@ constraints to dated target weights and solver outcomes.**
 
 The [completed-output guide](docs/completed_output.md) identifies the result, its units,
 dates, status and explicit export boundary. Factor-model construction belongs to
-[TradableFactors](https://github.com/ArturSepp/tradablefactors); sparse estimation to
+[TradableFactors](docs/supplied_risk_inputs.md#tradablefactors-availability); sparse estimation to
 [FactorLasso](https://github.com/ArturSepp/FactorLasso); general risk, stress testing and
 reporting to QIS. OP retains explicit EWMA and signal utilities and rolling orchestration.
 
@@ -69,15 +69,15 @@ Rolling orchestration supports incomplete data, mixed-frequency assets and illiq
   backtest share one dated roll-forward state, with equities rebalancing monthly and
   alternatives quarterly. See the [ROSAA case study](https://optimalportfolios.readthedocs.io/en/latest/app_rosaa_multi_asset_allocation.html).
 - **Supplied risk inputs.** A dated covariance can come from any upstream model.
-  [TradableFactors' HCGL construction](https://github.com/ArturSepp/tradablefactors/blob/main/docs/factor_covariance_hcgl.md)
-  supplies a complete factor model using FactorLasso; OP consumes the selected covariance.
+  TradableFactors supplies a complete factor model using FactorLasso; OP consumes the selected
+  covariance. The [HCGL ownership handoff](docs/factor_covariance_hcgl.md) explains availability.
 - **Cluster-aware risk allocation.** Clusters, sectors or asset classes become asset-level risk
   budgets, static or dated, and canonical HRP runs from a supplied linkage. See
   [hierarchical risk parity and cluster risk budgets](https://optimalportfolios.readthedocs.io/en/latest/hierarchical_risk_parity_and_cluster_budgets.html).
 - **Prepared expected returns.** Forecasts and alphas enter the selected objective directly.
-  [TF GLS inference](https://github.com/ArturSepp/tradablefactors/blob/main/docs/gls_factor_premia.md)
-  and [CMA diagnostics](https://github.com/ArturSepp/tradablefactors/blob/main/docs/cma_diagnostics.md)
-  are separate upstream workflows, complete before optimisation.
+  TF GLS inference and CMA diagnostics are separate upstream workflows, complete before
+  optimisation; see their [GLS](docs/gls_factor_premia.md) and
+  [CMA](docs/cma_diagnostics.md) ownership handoffs.
 - **Drift-aware rolling backtests.** Turnover limits and cost penalties act on the drifted
   holdings rather than the previous target (`OptimiserConfig.use_drifted_weights_0`, default
   `True`). See [rolling backtests](https://optimalportfolios.readthedocs.io/en/latest/rolling_backtests.html).
@@ -468,7 +468,7 @@ This package is part of an open-source Python stack for quantitative finance. Th
 |---|---|
 | [`qis`](https://github.com/ArturSepp/QuantInvestStrats) | Risk and stress analytics, holdings simulation and reporting |
 | [`optimalportfolios`](https://github.com/ArturSepp/OptimalPortfolios) *(this package)* | Optimisation from supplied inputs to target weights and solver outcomes |
-| [`tradablefactors`](https://github.com/ArturSepp/tradablefactors) | Factor definitions, NAV construction and completed loadings/covariance models |
+| [`tradablefactors`](docs/supplied_risk_inputs.md#tradablefactors-availability) | Factor definitions, NAV construction and completed loadings/covariance models; private candidate |
 | [`factorlasso`](https://github.com/ArturSepp/factorlasso) | Sparse multi-output estimation and fitted statistical diagnostics |
 | [`bbg-fetch`](https://github.com/ArturSepp/BloombergFetch) | Bloomberg data fetching |
 | [`option-chain-analytics`](https://github.com/ArturSepp/OptionChainAnalytics) | Point-in-time option-chain normalisation, reconstruction, querying, and visualisation |

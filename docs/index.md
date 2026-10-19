@@ -21,7 +21,7 @@ objective: risk budgets, maximum diversification, minimum variance, maximum Shar
 error against a benchmark, or expected utility under fat-tailed returns. Holdings simulation,
 transaction costs and reporting belong to
 [qis](https://github.com/ArturSepp/QuantInvestStrats), and factor-model preparation to
-[TradableFactors](https://github.com/ArturSepp/tradablefactors), using FactorLasso upstream; optimalportfolios is the reference
+[TradableFactors](supplied_risk_inputs.md#tradablefactors-availability), using FactorLasso upstream; optimalportfolios is the reference
 implementation of the ROSAA framework of Sepp, Ossa and Kastenholz (2026).
 
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).

@@ -73,7 +73,7 @@ used for fitting only. Future test prices do not change fitted targets.
 
 ## Reconciliation and limitations
 
-[The B0 benchmark guide](https://github.com/ArturSepp/OptimalPortfolios/blob/main/tools/README_matched_benchmarks.md) defines the matched
+[The B0 benchmark guide](https://github.com/ArturSepp/OptimalPortfolios/blob/21f7581737d50a51a6afeff98f498b9bfd7c6e8d/tools/README_matched_benchmarks.md) defines the matched
 six two-asset ledgers and native semantic differences. L1 feeds those same dated
 targets through the bridge and reconciles NAV, units and trade costs against B0's
 existing independent QIS cash ledger. Fully quoted gross paths match native

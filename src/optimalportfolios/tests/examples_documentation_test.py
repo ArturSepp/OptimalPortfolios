@@ -121,7 +121,11 @@ def test_csv_construction_has_one_upstream_owner(root, guide):
     """OP keeps a handoff, not a second loader with an implicit fetching default."""
     assert not (root / 'examples/covar_estimation/rolling_factor_covar_from_csv.py').exists()
     assert not (root / 'examples/docs/rolling_factor_covar_from_csv.py').exists()
-    assert 'tradablefactors/blob/main/docs/rolling_factor_covar_from_csv.md' in guide[1]
+    assert '[TF bundle ownership and handoff](rolling_factor_covar_from_csv.md)' in guide[1]
+    handoff = (root / 'docs/rolling_factor_covar_from_csv.md').read_text(encoding='utf-8')
+    assert 'belong to the installed TradableFactors API' in handoff
+    assert 'supplied_risk_inputs.md#tradablefactors-availability' in handoff
+    assert 'TF is private and unreleased' in handoff
 
 
 def test_preview_writers_are_identified_in_output_guidance(root, guide):

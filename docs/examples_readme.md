@@ -20,7 +20,7 @@ reporting. The task table below leads from what you want to do to the article th
 the article's canonical script and the standalone examples; the catalogue after it maps each
 Python example to its data requirements and purpose.
 [QIS](https://github.com/ArturSepp/QuantInvestStrats) supplies backtesting, analytics and plots;
-[TradableFactors](https://github.com/ArturSepp/tradablefactors) supplies complete fitted factor
+[TradableFactors](supplied_risk_inputs.md#tradablefactors-availability) supplies complete fitted factor
 models and factor-premia analytics;
 [FactorLasso](https://github.com/ArturSepp/FactorLasso) supplies sparse factor estimation and
 clustering used by the relevant examples.
@@ -47,7 +47,7 @@ For a first run, start with the
 | Handle late starts, missing prices, index membership and frozen positions | [Incomplete histories](incomplete_histories.md) | [`incomplete_histories.py`](../examples/docs/incomplete_histories.py) (Offline) | [`comparisons/sp500_minvar_spans_local.py`](../examples/comparisons/sp500_minvar_spans_local.py) (Local) |
 | Estimate an EWMA covariance and choose its span | [Covariance estimators](covariance_estimators.md) | [`covariance_estimators.py`](../examples/docs/covariance_estimators.py) (Offline) | [`comparisons/parameter_sensitivity.py`](../examples/comparisons/parameter_sensitivity.py) (Network), [`comparisons/sp500_minvar_spans_local.py`](../examples/comparisons/sp500_minvar_spans_local.py) (Local) |
 | Estimate a sparse factor covariance | [Factor covariance with HCGL](factor_covariance_hcgl.md) | [`factor_covariance_hcgl.py`](../examples/docs/factor_covariance_hcgl.py) (Composed) | [`covar_estimation/simulate_factor_returns.py`](../examples/covar_estimation/simulate_factor_returns.py) (Offline), [`covar_estimation/lasso_covar_estimation.py`](../examples/covar_estimation/lasso_covar_estimation.py) (Network), [`comparisons/covar_estimators.py`](../examples/comparisons/covar_estimators.py) (Network) |
-| Load, inspect and fit a supplied factor bundle | [TF bundle workflow](https://github.com/ArturSepp/tradablefactors/blob/main/docs/rolling_factor_covar_from_csv.md) | TF installed API and reference example | Removed OP CSV scripts; no implicit acquisition. |
+| Load, inspect and fit a supplied factor bundle | [TF bundle ownership and handoff](rolling_factor_covar_from_csv.md) | TF installed API and reference example require an authorised candidate | Removed OP CSV scripts; no implicit acquisition. |
 | Compute risk contributions and benchmark betas | [Ex-ante risk contributions and betas](portfolio_risk_analytics.md) | [`portfolio_risk_analytics.py`](../examples/docs/portfolio_risk_analytics.py) (Composed) | — |
 | Infer factor premia from provider forecasts after historical estimation | [GLS factor-premia inference](gls_factor_premia.md) and [CMA reporting](cma_diagnostics.md) | [`gls_factor_premia.py`](../examples/docs/gls_factor_premia.py) (Composed; synthetic prices, FactorLasso fit, TF GLS and weighted-QR checks) | Exact consensus/JPM workflows require local licensed inputs and are not distributed as public examples. |
 | Connect factor diagnostics, alpha uncertainty and forward attribution | [Factor diagnostics workflow](factor_diagnostics_workflow.md) | [`factor_diagnostics_workflow.py`](../examples/docs/factor_diagnostics_workflow.py) (Composed) | Conditional fixed-model inference; no forecast or post-selection coverage guarantee. |

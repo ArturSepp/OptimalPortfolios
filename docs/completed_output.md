@@ -101,10 +101,11 @@ cost assumptions to `qis.backtest_model_portfolio` when simulation is wanted; th
 `RiskModel` context enables risk and stress workflows without fitting a new model.
 The result's convenience risk methods delegate to QIS.
 
-For upstream factor inputs, use the
-[TF completed model](https://github.com/ArturSepp/tradablefactors/blob/main/docs/completed_model.md)
-and the [supplied-risk integration guide](supplied_risk_inputs.md). TF can supply
-dated covariance and expected-return arrays; OP does not import TF or FL.
+For upstream factor inputs, start with the
+[TF availability and supplied-risk integration guide](supplied_risk_inputs.md#tradablefactors-availability).
+The full completed-model guide is `docs/completed_model.md` in an authorised TF
+checkout. TF can supply dated covariance and expected-return arrays; OP does not
+import TF or FL.
 EWMA and signal utilities remain explicit optional preparation steps in OP.
 
 ## See also

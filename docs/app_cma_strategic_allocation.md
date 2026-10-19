@@ -107,8 +107,9 @@ not the EWMA decay of the conventions page. The identity is this page's assumpti
 statement quoted from the paper. Its factor term pays for factor exposure only: the residual
 variance of an asset earns nothing unless its adjustment pays for it.
 
-In the package, `FactorCovarEstimator` estimates the loadings with FactorLasso and assembles the
-covariance in this form; see [factor covariance with HCGL](https://github.com/ArturSepp/tradablefactors/blob/main/docs/factor_covariance_hcgl.md#the-factor-model-and-its-covariance).
+In TradableFactors, `FactorCovarEstimator` estimates the loadings with FactorLasso and
+assembles the covariance in this form. The [HCGL ownership handoff](factor_covariance_hcgl.md)
+identifies the full method's location in an authorised TF checkout.
 FactorLasso's article
 [from loadings to portfolio risk and capital market assumptions](https://factorlasso.readthedocs.io/en/latest/app_portfolio_risk_models.html)
 starts from fitted loadings and explains their portfolio use. This page takes given
