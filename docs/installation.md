@@ -77,7 +77,7 @@ OP's own source licence is MIT. Dependencies keep their own licences: installing
 `riskbudget` adds the GPLv2+ quadprog backend. The reviewed Windows/Python 3.12 base
 also retains GCC runtime exceptions in NumPy/SciPy, Microsoft runtime terms,
 Numba's NVIDIA header terms, and third-party font notices; it is not an all-MIT
-binary environment. The packaged [supplemental notices](https://github.com/ArturSepp/OptimalPortfolios/blob/main/THIRD_PARTY_NOTICES.md)
+binary environment. The packaged [supplemental notices](https://github.com/ArturSepp/OptimalPortfolios/blob/2ed63d8c53a14540c17bbb71f8f7651255705643/THIRD_PARTY_NOTICES.md)
 preserve the full OpenBLAS/LAPACK text for the exact SCS/SparseDiffPy binaries reviewed.
 Other versions and platforms need their own review.
 
