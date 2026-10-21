@@ -8,6 +8,10 @@ myst:
 
 # optimalportfolios
 
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2023-07-08](https://github.com/ArturSepp/OptimalPortfolios/commit/6950e6d9310f70280891ddc4094be78c6f178e24)*
+
+Source: [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+
 **Production multi-asset portfolio construction and rolling backtesting in Python — constrained
 optimisation from supplied alphas, covariances and constraints to dated target weights and solver
 outcomes.**
@@ -172,7 +176,7 @@ and every number on the methodology pages is asserted by a script that CI runs.
 |---|---|---|
 | Sepp, A. (2023), *Optimal Allocation to Cryptocurrencies in Diversified Portfolios*, Risk Magazine, October 2023, 1–6, [SSRN 4217841](https://ssrn.com/abstract=4217841) | The four allocation methods of the paper, run offline on the replication design | [`papers/crypto_allocation_risk_2023`](papers/crypto_allocation_risk_2023/README.md), [cryptocurrency case study](https://optimalportfolios.readthedocs.io/en/latest/app_crypto_allocation.html) |
 | Sepp, A., Ossa, I. and Kastenholz, M. (2026), *Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios*, [The Journal of Portfolio Management, 52(4), 86–120](https://www.pm-research.com/content/iijpormgmt/52/4/86) | The ROSAA framework: factor-model covariance, risk-budgeted strategic allocation, alpha signals, tracking-error-constrained tactical allocation and the rolling backtest on one dated roll-forward state | [`papers/robust_optimisation_jpm_2026`](papers/robust_optimisation_jpm_2026/README.md), [ROSAA case study](https://optimalportfolios.readthedocs.io/en/latest/app_rosaa_multi_asset_allocation.html) |
-| Sepp, A., Hansen, E. and Kastenholz, M. (2026), *Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors*, [SSRN 6785958](https://ssrn.com/abstract=6785958) | Strategic allocation from capital market assumptions on a supplied factor-model covariance; the factor model itself is prepared upstream in FactorModels | [`papers/matf_cma_jpm_2026`](papers/matf_cma_jpm_2026), [CMA strategic allocation](docs/app_cma_strategic_allocation.md), [supplied risk inputs](docs/supplied_risk_inputs.md) |
+| Sepp, A., Hansen, E. and Kastenholz, M. (2026), *Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors*, [SSRN 6785958](https://ssrn.com/abstract=6785958) | Strategic allocation from capital market assumptions on a supplied factor-model covariance; the factor model itself is prepared upstream in FactorModels | [CMA strategic allocation](docs/app_cma_strategic_allocation.md), [supplied risk inputs](docs/supplied_risk_inputs.md) |
 | Sepp, A. and Kastenholz, M. (2026), *The Convexity Premium of Portfolio Overlays*, Journal of Investment Management, forthcoming | The Section II coverage-floor allocation: fixed-core maximum Sharpe ratio with a named linear row | [`papers/smart_diversification_joim_2026`](papers/smart_diversification_joim_2026/README.md), [overlay page](https://optimalportfolios.readthedocs.io/en/latest/overlay_tail_floor.html), [smart diversification case study](https://optimalportfolios.readthedocs.io/en/latest/app_smart_diversification_overlays.html) |
 
 ## Overview
@@ -447,7 +451,7 @@ documented in [GOVERNANCE.md](https://github.com/ArturSepp/OptimalPortfolios/blo
 
 ## Citation
 
-A machine-readable citation is available in [`CITATION.cff`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
+A machine-readable citation is available in [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 If you use optimalportfolios in your research, please cite it as:
 
