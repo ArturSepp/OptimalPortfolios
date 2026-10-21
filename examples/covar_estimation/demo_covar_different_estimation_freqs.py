@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import qis as qis
 
 from factorlasso import LassoModel, LassoModelType
-from tradablefactors import FactorCovarEstimator
+from factormodels import FactorCovarEstimator
 from examples.covar_estimation.simulate_factor_returns import simulate_factor_model_returns
 
 

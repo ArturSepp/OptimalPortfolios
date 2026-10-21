@@ -4,7 +4,7 @@ The page shows excerpts of this file; every number and property it states is ass
 against a reference computed a different way: explicit matrix products, central finite
 differences, least-squares regressions on simulated returns with a fixed seed, the joint
 covariance of a factor model, and the optimality conditions of the risk-based portfolios. The
-script runs offline after ``pip install optimalportfolios tradablefactors`` and needs no data file:
+script runs offline after ``pip install optimalportfolios factormodels`` and needs no data file:
 
     python -m examples.docs.portfolio_risk_analytics
 
@@ -17,7 +17,7 @@ import qis
 from factorlasso import CurrentFactorCovarData, RollingFactorCovarData
 
 import optimalportfolios as op
-import tradablefactors as tf
+import factormodels as fm
 
 TICKERS = ['Govt', 'Credit', 'US eq', 'EM eq', 'Gold']
 FACTORS = ['Rates', 'Equity', 'Commodities']
@@ -372,7 +372,7 @@ def main() -> None:
         loadings_ts)
 
     date = dates[0]
-    risk_model = tf.build_risk_model({date: snapshot}, residual_type='orthogonal')
+    risk_model = fm.build_risk_model({date: snapshot}, residual_type='orthogonal')
     tracking_error = risk_model.compute_tre_at_date(
         benchmark_weights=benchmark, portfolio_weights=weights, date=date)
     exposures = risk_model.compute_exposures_at_date(portfolio_weights=weights, date=date)
@@ -435,12 +435,12 @@ def main() -> None:
     assert np.isclose(weekly_model.compute_tre_at_date(
         benchmark_weights=benchmark, portfolio_weights=weights, date=date),
         tracking_error / np.sqrt(52.0), rtol=1e-13)
-    assert_raises(ValueError, tf.build_risk_model, model=[covar])
+    assert_raises(ValueError, fm.build_risk_model, model=[covar])
     # A RollingFactorCovarData container gives the same model as its dated snapshots.
     rolling = RollingFactorCovarData(data={dates[0]: snapshot,
                                            dates[1]: factor_snapshot(STRESSED_FACTOR_CORR)})
-    rolling_model = tf.build_risk_model(rolling, residual_type='orthogonal')
-    snapshots_model = tf.build_risk_model(dict(rolling.data), residual_type='orthogonal')
+    rolling_model = fm.build_risk_model(rolling, residual_type='orthogonal')
+    snapshots_model = fm.build_risk_model(dict(rolling.data), residual_type='orthogonal')
     pd.testing.assert_series_equal(
         rolling_model.compute_tre_history(benchmark_weights=benchmark, portfolio_weights=weights),
         snapshots_model.compute_tre_history(benchmark_weights=benchmark,

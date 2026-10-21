@@ -1,26 +1,26 @@
 ---
 myst:
   html_meta:
-    description: The TradableFactors owner and the supplied-input handoff to OptimalPortfolios for Factor covariance with HCGL.
+    description: The FactorModels owner and the supplied-input handoff to OptimalPortfolios for Factor covariance with HCGL.
 ---
 
 # Factor covariance with HCGL
 
 *Author: [Artur Sepp](https://github.com/ArturSepp)*
 
-Implemented upstream in [TradableFactors](supplied_risk_inputs.md#tradablefactors-availability),
+Implemented upstream in [FactorModels](supplied_risk_inputs.md#factormodels-availability),
 consumed by [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
-Upstream citation: `CITATION.cff` in an authorised TradableFactors checkout.
+Upstream citation: `CITATION.cff` in an authorised FactorModels checkout.
 
-Factor covariance construction, loadings, annualisation, residual policy and completed factor models belong to TradableFactors. OP consumes the selected dated covariance and supplied expected returns.
+Factor covariance construction, loadings, annualisation, residual policy and completed factor models belong to FactorModels. OP consumes the selected dated covariance and supplied expected returns.
 
 ## Canonical method and runnable workflow
 
-The full methodology and implementation guide has moved to TradableFactors with
-its original authorship and source history. TF is private and unreleased; see the
-[availability prerequisite](supplied_risk_inputs.md#tradablefactors-availability).
-In an authorised TF checkout, `docs/factor_covariance_hcgl.md`
+The full methodology and implementation guide has moved to FactorModels with
+its original authorship and source history. FM is private and unreleased; see the
+[availability prerequisite](supplied_risk_inputs.md#factormodels-availability).
+In an authorised FM checkout, `docs/factor_covariance_hcgl.md`
 contains the estimator, units, date cutoffs, diagnostics and runnable examples.
 This local page records the owner and OP handoff, not the full private methodology.
 The old OP estimator and inference exports are removed in OP 8; there are no forwarding APIs.
@@ -33,7 +33,7 @@ and [solver outcomes](solver_numerics_and_outcomes.md). The retained
 ## Earlier links
 
 The former section anchors are retained below so links from existing OP guides
-arrive at this ownership handoff. The authorised TF guide contains the corresponding method.
+arrive at this ownership handoff. The authorised FM guide contains the corresponding method.
 
 <a id="overview"></a>
 <a id="inputs-notation-and-assumptions"></a>
@@ -60,7 +60,7 @@ arrive at this ownership handoff. The authorised TF guide contains the correspon
 ## Historical exhibit
 
 This synthetic exhibit remains with its existing reviewed publication receipt and unchanged
-OP producer. The current method and numerical example are maintained in TradableFactors.
+OP producer. The current method and numerical example are maintained in FactorModels.
 The image compares systematic and residual variance, including the effect of retaining
 residual correlation in the synthetic private-asset sleeve.
 

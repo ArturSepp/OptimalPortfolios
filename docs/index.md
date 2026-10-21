@@ -21,7 +21,7 @@ objective: risk budgets, maximum diversification, minimum variance, maximum Shar
 error against a benchmark, or expected utility under fat-tailed returns. Holdings simulation,
 transaction costs and reporting belong to
 [qis](https://github.com/ArturSepp/QuantInvestStrats), and factor-model preparation to
-[TradableFactors](supplied_risk_inputs.md#tradablefactors-availability), using FactorLasso upstream; optimalportfolios is the reference
+[FactorModels](supplied_risk_inputs.md#factormodels-availability), using FactorLasso upstream; optimalportfolios is the reference
 implementation of the ROSAA framework of Sepp, Ossa and Kastenholz (2026).
 
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
@@ -43,18 +43,18 @@ repository-only scripts from the matching release or the source revision cited b
 |---|---|
 | Offline constrained allocation and rolling backtests | `optimalportfolios>=7.21.0` |
 | Completed supplied-input result and separate solver outcome | **OP 8 development branch; no released-version guarantee** |
-| Factor construction, GLS premia inference and CMA diagnostics | **Owned by TradableFactors in the development stack** |
+| Factor construction, GLS premia inference and CMA diagnostics | **Owned by FactorModels in the development stack** |
 
 Historical OP releases retain their own source and documentation. OP 8 removes the
 factor-estimation and inference exports; follow [GLS inference](gls_factor_premia.md)
-and [CMA diagnostics](cma_diagnostics.md) to their canonical TF owner.
+and [CMA diagnostics](cma_diagnostics.md) to their canonical FM owner.
 Use matching released documentation for an earlier installed version.
 The [compatibility policy](https://github.com/ArturSepp/OptimalPortfolios/blob/main/GOVERNANCE.md#releases-and-compatibility)
 requires explicit changelog/version treatment for public API and default changes; it does not
 promise a fixed deprecation period. The footer records the build's resolved dependencies.
 
 OptimalPortfolios source is [MIT licensed](https://github.com/ArturSepp/OptimalPortfolios/blob/main/LICENSE.txt).
-Its core stack dependency is MIT-licensed QIS. FactorLasso and TradableFactors
+Its core stack dependency is MIT-licensed QIS. FactorLasso and FactorModels
 are separately installed upstream packages, not OP runtime dependencies.
 Each dependency retains its own licence; the OP source licence does not relicense the stack.
 
@@ -102,7 +102,7 @@ $\Sigma_{F,t}$ and residual covariance $D_t$. The construction runs through the 
 
 ```mermaid
 flowchart TB
-    subgraph estimate ["Upstream preparation, including TF and FL"]
+    subgraph estimate ["Upstream preparation, including FM and FL"]
         direction LR
         A["Prices and<br/>metadata"] --> B["Estimation grid<br/>cadences, ragged histories"]
         B --> C["Completed dated<br/>covariance"]
@@ -149,18 +149,18 @@ actual fields, units, dates, mutability and explicit persistence boundary.
 - [Covariance estimators](covariance_estimators.md): EWMA covariance and the estimator contract
   shared with the factor model: return conventions, spans against half-lives, annualisation and
   point-in-time inputs.
-- [Factor covariance with HCGL](factor_covariance_hcgl.md): TF owns sparse loadings,
+- [Factor covariance with HCGL](factor_covariance_hcgl.md): FM owns sparse loadings,
   selected residual covariance, cadence penalties and the point-in-time model contract.
-- [Rolling factor risk model from CSV](rolling_factor_covar_from_csv.md): TF's installed
+- [Rolling factor risk model from CSV](rolling_factor_covar_from_csv.md): FM's installed
   six-file bundle loader and explicit fit; completed covariance is handed to OP or QIS.
 - [Ex-ante risk contributions, betas and the qis risk model](portfolio_risk_analytics.md):
   Euler risk contributions, benchmark betas and the hand-off to `qis.RiskModel`.
 
 ## Expected returns and signals
 
-- [GLS inference of factor risk premia](gls_factor_premia.md): an ownership handoff to TF's
+- [GLS inference of factor risk premia](gls_factor_premia.md): an ownership handoff to FM's
   provider-implied premia, mimicking portfolios, conditional intervals and forecast-box bounds.
-- [CMA diagnostics and reports](cma_diagnostics.md): TF-owned accounting, alpha views,
+- [CMA diagnostics and reports](cma_diagnostics.md): FM-owned accounting, alpha views,
   identification, sensitivity tables and method-specific PDFs from completed results.
 - [Alpha signals](alphas_module_readme.md): momentum, low beta, residual momentum and reversal,
   carry and managers' alpha, with cross-sectional and within-cluster scoring.

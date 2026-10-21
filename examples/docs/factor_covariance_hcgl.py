@@ -1,8 +1,8 @@
-"""TF estimation example accompanying OP's factor-covariance methodology.
+"""FM estimation example accompanying OP's factor-covariance methodology.
 
 Uses the original deterministic mixed-frequency panel, explicit EWMA reference
 sums, full residual covariance assembly and strict-cutoff comparisons. Run with
-tradablefactors and optimalportfolios installed in the composed example environment::
+factormodels and optimalportfolios installed in the composed example environment::
 
     python -m examples.docs.factor_covariance_hcgl
 
@@ -18,7 +18,7 @@ import pandas as pd
 import qis
 from factorlasso import CurrentFactorCovarData, LassoModel, LassoModelType, VarianceColumns
 
-from tradablefactors import DatedFactorCovariance, FactorCovarEstimator
+from factormodels import DatedFactorCovariance, FactorCovarEstimator
 
 SEED = 5
 FACTORS = ['Equity', 'Rates', 'Credit', 'Commodities']
@@ -160,7 +160,7 @@ def residual_block(data: CurrentFactorCovarData, rho: float) -> np.ndarray:
 
 
 def main() -> None:
-    """Check the TF completed object, selected risk policy and chronological estimates."""
+    """Check the FM completed object, selected risk policy and chronological estimates."""
     factor_prices, buckets = simulated_panel(SEED)
     assert factor_prices.shape == (241, 4) and buckets['ME'].shape == (240, 5)
     assert buckets['QE'].shape == (80, 3)
@@ -235,7 +235,7 @@ def main() -> None:
                                        rtol=1e-10, atol=1e-15)
         else:
             assert np.abs(changed.covariances[date] - matrix).max().max() > 1e-3
-    print('factor_covariance_hcgl: TF completed-object numerical references verified.')
+    print('factor_covariance_hcgl: FM completed-object numerical references verified.')
 
 def exhibit(path) -> dict:
     """Draw the page's figure: the variance split by asset and a portfolio's residual variance.

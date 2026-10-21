@@ -9,11 +9,11 @@
   "forbidden": [
     "bbg_fetch",
     "factorlasso",
+    "factormodels",
     "goal_based_allocation",
     "option_chain_analytics",
     "privateassets",
     "stochvolmodels",
-    "tradablefactors",
     "trendfollowing",
     "vanilla_option_pricers"
   ],
@@ -22,7 +22,7 @@
     {
       "path": "src/optimalportfolios/tests/factor_integration_test.py",
       "modules": [
-        "tradablefactors",
+        "factormodels",
         "factorlasso"
       ]
     },
@@ -35,7 +35,7 @@
     {
       "path": "src/optimalportfolios/alphas/signals/run_local/signals_run.py",
       "modules": [
-        "tradablefactors",
+        "factormodels",
         "factorlasso"
       ]
     }

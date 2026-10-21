@@ -183,7 +183,8 @@ extend-select = ["TID251", "TID253", "ICN"]
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 # A1: optimisers consume supplied risk inputs; factor estimation is upstream.
 "factorlasso".msg = "Prepare statistical estimates upstream and pass arrays to OP."
-"tradablefactors".msg = "Prepare factor models upstream and pass RiskModel or arrays to OP."
+"factormodels".msg = "Prepare factor models upstream and pass RiskModel or arrays to OP."
+"tradablefactors".msg = "The removed namespace is not an OP dependency; supply prepared inputs."
 # Subject packages never import each other.
 "trendfollowing".msg = "A1: subject packages never import each other."
 "privateassets".msg = "A1: subject packages never import each other."
@@ -265,11 +266,11 @@ DEP004 = ["pytest"]
 #   interpreter deptry does not count tomllib as standard library.
 # DEP001 fires where the module is absent, as in the `lint` group; DEP003 where another
 # dependency installs it, as in the full project environment.
-DEP001 = ["PIL", "tomllib", "tradablefactors", "factorlasso"]
-# TF/FL are independently installed only for marked composed tests and development runners.
+DEP001 = ["PIL", "tomllib", "factormodels", "factorlasso"]
+# FM/FL are independently installed only for marked composed tests and development runners.
 # Pair the existing DEP001 allowances with DEP003 for environments where they are present.
-# TID251 and dependency_boundary_test.py still prohibit every TF/FL library import.
-DEP003 = ["PIL", "tomli", "tradablefactors", "factorlasso"]
+# TID251 and dependency_boundary_test.py still prohibit every FM/FL library import.
+DEP003 = ["PIL", "tomli", "factormodels", "factorlasso"]
 
 [tool.coverage.run]
 source = ["optimalportfolios"]

@@ -43,11 +43,11 @@ jobs:
       - name: Check out the explicitly selected factor documentation dependency
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ArturSepp/tradablefactors
+          repository: ArturSepp/FactorModels
           ref: ${{ vars.TRADABLEFACTORS_REF || 'migration/tradablefactors-stage-4' }}
           path: .integration/tradablefactors
           token: ${{ secrets.TRADABLEFACTORS_READ_TOKEN || github.token }}
-      - name: Install the selected TF candidate for the complete analytical bundle
+      - name: Install the selected FM candidate for the complete analytical bundle
         run: uv pip install --python "$UV_PROJECT_ENVIRONMENT/bin/python" .integration/tradablefactors
       - name: Check every human-authored source
         run: uv run --no-sync python tools/check_docs.py --source-all

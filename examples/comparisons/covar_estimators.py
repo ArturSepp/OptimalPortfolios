@@ -27,7 +27,7 @@ from optimalportfolios import (Constraints, PortfolioObjective,
                                backtest_rolling_optimal_portfolio,
                                EwmaCovarEstimator)
 from factorlasso import LassoModelType, LassoModel
-from tradablefactors import FactorCovarEstimator
+from factormodels import FactorCovarEstimator
 from examples.data.universe import fetch_benchmark_universe_data
 import optimalportfolios.local_path as lp
 

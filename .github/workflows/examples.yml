@@ -113,12 +113,12 @@ jobs:
     - name: Check out the explicitly selected factor pipeline
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
-        repository: ArturSepp/tradablefactors
+        repository: ArturSepp/FactorModels
         ref: ${{ vars.TRADABLEFACTORS_REF || 'migration/tradablefactors-stage-4' }}
         path: .integration/tradablefactors
         token: ${{ secrets.TRADABLEFACTORS_READ_TOKEN || github.token }}
 
-    - name: Install TF explicitly for network examples that compose the factor pipeline
+    - name: Install FM explicitly for network examples that compose the factor pipeline
       run: uv pip install --python .venv/bin/python .integration/tradablefactors
 
     - name: Run the network examples

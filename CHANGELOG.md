@@ -7,6 +7,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+- Adapt composed workflows and documentation to the upstream `factormodels`
+  namespace (FactorModels), supplied from the private `ArturSepp/FactorModels`
+  repository. OP retains its supplied-input boundary and existing verification
+  access settings; algorithms, package version and dependency resolutions are unchanged.
+
 ### Optional risk-budgeting backend
 
 - Move `quadprog` to `optimalportfolios[riskbudget]` and load it only when a

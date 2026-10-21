@@ -78,7 +78,7 @@ def test_catalogue_matches_classifier_and_local_exclusions(root, guide):
 
 
 def test_factor_requirements_are_independent_of_network_lane(root):
-    """Network priority cannot hide TF imports or mark required base EWMA checks optional."""
+    """Network priority cannot hide FM imports or mark required base EWMA checks optional."""
     classifier = runpy.run_path(str(root / '.github/scripts/run_examples.py'))
     harness = runpy.run_path(str(
         root / 'src/optimalportfolios/tests/documentation_examples_test.py'))
@@ -96,7 +96,7 @@ def test_factor_requirements_are_independent_of_network_lane(root):
         assert marked is requires_factors, name
     # The base completed-output example must not pull factor packages transitively.
     completed = cases['completed_output'].values[0]
-    assert not {'tradablefactors', 'factorlasso', 'yfinance'} & (
+    assert not {'factormodels', 'factorlasso', 'yfinance'} & (
         classifier['external_dependencies'](completed))
 
 
@@ -121,11 +121,11 @@ def test_csv_construction_has_one_upstream_owner(root, guide):
     """OP keeps a handoff, not a second loader with an implicit fetching default."""
     assert not (root / 'examples/covar_estimation/rolling_factor_covar_from_csv.py').exists()
     assert not (root / 'examples/docs/rolling_factor_covar_from_csv.py').exists()
-    assert '[TF bundle ownership and handoff](rolling_factor_covar_from_csv.md)' in guide[1]
+    assert '[FM bundle ownership and handoff](rolling_factor_covar_from_csv.md)' in guide[1]
     handoff = (root / 'docs/rolling_factor_covar_from_csv.md').read_text(encoding='utf-8')
-    assert 'belong to the installed TradableFactors API' in handoff
-    assert 'supplied_risk_inputs.md#tradablefactors-availability' in handoff
-    assert 'TF is private and unreleased' in handoff
+    assert 'belong to the installed FactorModels API' in handoff
+    assert 'supplied_risk_inputs.md#factormodels-availability' in handoff
+    assert 'FM is private and unreleased' in handoff
 
 
 def test_preview_writers_are_identified_in_output_guidance(root, guide):

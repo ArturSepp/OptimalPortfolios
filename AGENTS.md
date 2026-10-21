@@ -17,10 +17,12 @@
 ## Stage-5 supplied-input boundary (2026-10-18)
 
 The authorised clean migration supersedes older factor-dependency statements below.
-OP depends on QIS; it must not import TF or FL in library code, including lazy
+OP depends on QIS; it must not import FM or FL in library code, including lazy
 imports. Factor aliases and the risk-labelling shim are removed. Results consume
 optional QIS RiskModel/covariance and prepared tables. Opportunity solvers consume
-prepared arrays; statistical inference and cluster extraction/pooling belong to TF/FL.
+prepared arrays; statistical inference and cluster extraction/pooling belong to FM/FL.
+The upstream distribution/import is `factormodels` (FactorModels, FM); its existing
+private GitHub repository is `ArturSepp/FactorModels`; its verification access configuration retains its names.
 The existing external OP environment remains a frozen historical cohort: do not
 upgrade it. Build source exports and clean base/composed environments outside OneDrive.
 Composed tests use the `factor_integration` marker and import upstream packages inside

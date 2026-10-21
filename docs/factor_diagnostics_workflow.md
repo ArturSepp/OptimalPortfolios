@@ -17,8 +17,8 @@ Estimation and inference use [FactorLasso](https://github.com/ArturSepp/FactorLa
 reporting use [qis](https://github.com/ArturSepp/QuantInvestStrats)
 ([citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff)).
 Factor-model geometry and uncertainty propagation use
-[TradableFactors](supplied_risk_inputs.md#tradablefactors-availability)
-(upstream citation: `CITATION.cff` in an authorised TF checkout).
+[FactorModels](supplied_risk_inputs.md#factormodels-availability)
+(upstream citation: `CITATION.cff` in an authorised FM checkout).
 This is a composed workflow: OP supplies the executed-state decision integration;
 the factor methods finish in their owning packages before that handoff.
 
@@ -76,13 +76,13 @@ separately; a failed diagnostic remains visible and is not silently repaired.
 | Accounting residual | Active NAV return less realised factor/residual contributions and the canonical QIS trade-cost effect. | Alpha or evidence of skill. A nonzero gap calls for accounting/convention investigation. |
 
 `FactorOpportunityModel`, `portfolio_opportunity_metrics` and `fixed_portfolio_alpha_interval` are
-imports from `tradablefactors.analytics`. OP's `OpportunityModel` is a distinct
+imports from `factormodels.analytics`. OP's `OpportunityModel` is a distinct
 solver-input object; the extracted statistical imports are removed from OP.
-The TF risk-model adapter, MATF opportunity diagnostics and MATF uncertainty
-propagation retain numerical ownership. Their source paths in an authorised TF
-checkout are, respectively, `src/tradablefactors/risk.py`,
-`src/tradablefactors/analytics/opportunity.py` and
-`src/tradablefactors/analytics/uncertainty.py`.
+The FM risk-model adapter, MATF opportunity diagnostics and MATF uncertainty
+propagation retain numerical ownership. Their source paths in an authorised FM
+checkout are, respectively, `src/factormodels/risk.py`,
+`src/factormodels/analytics/opportunity.py` and
+`src/factormodels/analytics/uncertainty.py`.
 
 ## Intervals, dependence and calibration
 

@@ -138,7 +138,7 @@ jobs:
         banned = config["tool"]["ruff"]["lint"]["flake8-tidy-imports"][
             "banned-module-level-imports"
         ]
-        banned = [*banned, "factorlasso", "tradablefactors"]
+        banned = [*banned, "factorlasso", "factormodels", "tradablefactors"]
         leaked = [name for name in banned if importlib.util.find_spec(name) is not None]
         assert not leaked, f"optional modules leaked into the test-over-core environment: {leaked}"
         print(f"optional-module absence confirmed: {len(banned)}/{len(banned)}")
@@ -286,7 +286,7 @@ jobs:
       run: |
         mkdir -p "$RUNNER_TEMP/wheelcheck"
         cd "$RUNNER_TEMP/wheelcheck"
-        "$RUNNER_TEMP/wheelcheck-venv/bin/python" -c "import importlib.util as u; assert all(u.find_spec(n) is None for n in ('quadprog', 'factorlasso', 'tradablefactors')); import optimalportfolios; print('OP BASE IMPORT PASS')"
+        "$RUNNER_TEMP/wheelcheck-venv/bin/python" -c "import importlib.util as u; assert all(u.find_spec(n) is None for n in ('quadprog', 'factorlasso', 'factormodels', 'tradablefactors')); import optimalportfolios; print('OP BASE IMPORT PASS')"
         "$RUNNER_TEMP/wheelcheck-venv/bin/python" -m pytest --pyargs optimalportfolios -q
 
     - name: Install and verify the same wheel with its optional backend
@@ -337,10 +337,10 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Check out the explicitly selected upstream pipeline
+      - name: Check out FactorModels from its existing private repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ArturSepp/tradablefactors
+          repository: ArturSepp/FactorModels
           ref: ${{ vars.TRADABLEFACTORS_REF || 'migration/tradablefactors-stage-4' }}
           path: .integration/tradablefactors
           token: ${{ secrets.TRADABLEFACTORS_READ_TOKEN || github.token }}

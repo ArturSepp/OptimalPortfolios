@@ -23,7 +23,7 @@ def test_library_has_no_factor_package_imports():
             modules = ([name.name for name in node.names] if isinstance(node, ast.Import)
                        else [node.module or ''] if isinstance(node, ast.ImportFrom) else [])
             for module in modules:
-                if module.split('.')[0] in {'factorlasso', 'tradablefactors'}:
+                if module.split('.')[0] in {'factorlasso', 'factormodels', 'tradablefactors'}:
                     violations.append(f'{relative}:{node.lineno}: {module}')
     assert inspected > 50
     assert not violations, violations
@@ -44,7 +44,19 @@ def test_missing_factor_installation_fails_required_lane(monkeypatch):
     hooks = importlib.import_module('optimalportfolios.conftest')
     monkeypatch.setattr(hooks.importlib.util, 'find_spec', lambda name: None)
     monkeypatch.setenv('OP_REQUIRE_FACTOR_INTEGRATION', '1')
-    with pytest.raises(pytest.UsageError, match='requires tradablefactors'):
+    with pytest.raises(pytest.UsageError, match='requires factormodels'):
+        hooks.pytest_collection_modifyitems(None, [])
+
+
+def test_legacy_factor_namespace_does_not_satisfy_required_lane(monkeypatch):
+    """The renamed integration requires FactorModels, even if the old package is installed."""
+    hooks = importlib.import_module('optimalportfolios.conftest')
+    monkeypatch.setattr(
+        hooks.importlib.util, 'find_spec',
+        lambda name: object() if name in {'tradablefactors', 'factorlasso'} else None,
+    )
+    monkeypatch.setenv('OP_REQUIRE_FACTOR_INTEGRATION', '1')
+    with pytest.raises(pytest.UsageError, match='requires factormodels'):
         hooks.pytest_collection_modifyitems(None, [])
 
 

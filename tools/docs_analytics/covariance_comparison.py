@@ -1,6 +1,6 @@
 """Compare six covariance estimators on a fixed, known-factor synthetic teaching panel.
 
-TradableFactors assembles fitted covariances using FactorLasso regressions;
+FactorModels assembles fitted covariances using FactorLasso regressions;
 OptimalPortfolios solves minimum-variance targets, and QIS converts returns,
 backtests holdings and produces statistics/plots.
 The existing simulator is unchanged. Known truth is used only for descriptive error checks.
@@ -91,7 +91,7 @@ def configuration() -> dict:
         'CLARABEL': {'options': 'CVXPY/CLARABEL defaults; no overrides or fallback chain'}}
     config['dependencies'].update({
         'cvxpy': 'cvxpy', 'clarabel': 'clarabel',
-        'factorlasso': 'factorlasso', 'tradablefactors': 'tradablefactors'})
+        'factorlasso': 'factorlasso', 'factormodels': 'factormodels'})
     return config
 
 
@@ -189,7 +189,7 @@ def _estimate_case(label, case, tables, dates, config):
         covars = {date: estimator.fit_current_covar(prices.loc[:date]) for date in dates}
     else:
         import factorlasso as fl
-        import tradablefactors as tf
+        import factormodels as fm
         model = fl.LassoModel(
             model_type=getattr(fl.LassoModelType, case['model']),
             group_data=tables['group_assignments']['group'], reg_lambda=case['reg_lambda'],
@@ -197,7 +197,7 @@ def _estimate_case(label, case, tables, dates, config):
             group_penalty=params['group_penalty'], l1_weight=params['l1_weight'],
             solver='CLARABEL', solver_fallbacks=None, auto_sign_constraints=False,
             auto_sign_adaptive_weights=False)
-        estimator = tf.FactorCovarEstimator(
+        estimator = fm.FactorCovarEstimator(
             lasso_model=model, factor_returns_freq=params['returns_freq'],
             factor_covar_span=params['span'],
             is_apply_vol_normalised_returns=case['vol_normalized'])
@@ -214,7 +214,7 @@ def _estimate_case(label, case, tables, dates, config):
                     assets=prices.columns, cutoff=date)
             if len(observed) != 1:
                 raise ValueError('Missing, duplicate or fallback factor solve')
-            # TF owns a cloned fit; the configured FL estimator is not mutated.
+            # FM owns a cloned fit; the configured FL estimator is not mutated.
             data = snapshot.data
             if not np.isfinite(data.y_betas.to_numpy()).all():
                 raise ValueError('Factor estimation returned non-finite coefficients')
@@ -436,7 +436,7 @@ def _figure(tables):
         ylabel='Relative Frobenius error', colors=COLORS, stacked=False, is_sns=False,
         x_rotation=0, yvar_format='{:.0%}', add_bar_values=True, legend_loc=None, **common)
     figure.text(0.11, 0.035,
-                'TradableFactors covariance | OptimalPortfolios optimisation | '
+                'FactorModels covariance | OptimalPortfolios optimisation | '
                 'qis backtesting and analytics\n'
                 'VN = volatility normalization; factor variants normalize factor covariance only.\n'
                 '35% asset cap; 10 bp costs include entry. One simulated path is not a ranking.',

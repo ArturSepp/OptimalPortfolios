@@ -29,7 +29,7 @@ the script from the same development revision and run it from the checkout:
 python -m examples.docs.completed_output
 ```
 
-No market data, TF or FL installation, network request or output directory is needed.
+No market data, FM or FL installation, network request or output directory is needed.
 The script returns a `PortfolioOptimisationResult` and the separate
 `OptimizationOutcome` from `wrapper_quadratic_optimisation`. It independently checks
 the equality-constrained solution by the Lagrange multiplier equation; the synthetic
@@ -102,10 +102,10 @@ cost assumptions to `qis.backtest_model_portfolio` when simulation is wanted; th
 The result's convenience risk methods delegate to QIS.
 
 For upstream factor inputs, start with the
-[TF availability and supplied-risk integration guide](supplied_risk_inputs.md#tradablefactors-availability).
-The full completed-model guide is `docs/completed_model.md` in an authorised TF
-checkout. TF can supply dated covariance and expected-return arrays; OP does not
-import TF or FL.
+[FM availability and supplied-risk integration guide](supplied_risk_inputs.md#factormodels-availability).
+The full completed-model guide is `docs/completed_model.md` in an authorised FM
+checkout. FM can supply dated covariance and expected-return arrays; OP does not
+import FM or FL.
 EWMA and signal utilities remain explicit optional preparation steps in OP.
 
 ## See also

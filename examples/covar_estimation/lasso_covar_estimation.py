@@ -3,7 +3,7 @@ Test script for LASSO / Group LASSO factor model estimator.
 
 Adapted to the new API:
     - LassoModel.fit() populates estimated_betas (DataFrame) and estimation_result_
-    - FactorCovarEstimator.fit_current() returns a completed TF factor model
+    - FactorCovarEstimator.fit_current() returns a completed FM factor model
       with its selected asset_covariance and an explicit information cutoff
     - qis.compute_asset_returns_dict() handles per-asset return frequencies
 """
@@ -17,7 +17,7 @@ import yfinance as yf
 import qis as qis
 
 from factorlasso import LassoModel, LassoModelType
-from tradablefactors import FactorCovarEstimator
+from factormodels import FactorCovarEstimator
 
 
 # ─────────────────────────────────────────────

@@ -95,7 +95,7 @@ html_css_files = ["optimalportfolios.css"]
 # Packages whose versions the footer names, with their usual spelling.
 BUILD_PACKAGES = {
     "qis": "qis",
-    "tradablefactors": "tradablefactors",
+    "factormodels": "factormodels",
     "factorlasso": "factorlasso",
     "cvxpy": "CVXPY",
     "numpy": "NumPy",

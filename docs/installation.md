@@ -99,12 +99,12 @@ separately. The repository's Colab quickstart uses its hosted notebook runtime. 
 matching uses the existing NumPy/SciPy path.
 
 Composed factor workflows use
-[TradableFactors](supplied_risk_inputs.md#tradablefactors-availability) to construct
+[FactorModels](supplied_risk_inputs.md#factormodels-availability) to construct
 factor models and covariances, then supply those estimates to OptimalPortfolios.
-TF is private and unreleased: obtain authorised access to a matching candidate
+FM is private and unreleased: obtain authorised access to a matching candidate
 checkout or a maintainer-supplied wheel before following a composed example.
 Install that candidate separately using its supplied installation instructions;
-there is currently no public TF installation recipe. It includes
+there is currently no public FM installation recipe. It includes
 [FactorLasso](https://github.com/ArturSepp/FactorLasso) for estimation and
 cluster-lineage analytics.
 
@@ -239,7 +239,7 @@ Documentation builds run from a C-local source export because autosummary genera
 
 Base tests skip only explicitly marked backend cases when quadprog is absent. Run those
 cases with `uv run --no-sync pytest -m "riskbudget and not factor_integration"` after
-installing the extra; the separate composed lane supplies TF for tests needing both. CI requires
+installing the extra; the separate composed lane supplies FM for tests needing both. CI requires
 the dedicated source and installed-wheel lanes to execute rather than silently skip them.
 
 <a id="current-development-verification-boundary"></a>

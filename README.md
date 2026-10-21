@@ -23,7 +23,7 @@ constraints to dated target weights and solver outcomes.**
 
 The [completed-output guide](docs/completed_output.md) identifies the result, its units,
 dates, status and explicit export boundary. Factor-model construction belongs to
-[TradableFactors](docs/supplied_risk_inputs.md#tradablefactors-availability); sparse estimation to
+[FactorModels](docs/supplied_risk_inputs.md#factormodels-availability); sparse estimation to
 [FactorLasso](https://github.com/ArturSepp/FactorLasso); general risk, stress testing and
 reporting to QIS. OP retains explicit EWMA and signal utilities and rolling orchestration.
 
@@ -69,13 +69,13 @@ Rolling orchestration supports incomplete data, mixed-frequency assets and illiq
   backtest share one dated roll-forward state, with equities rebalancing monthly and
   alternatives quarterly. See the [ROSAA case study](https://optimalportfolios.readthedocs.io/en/latest/app_rosaa_multi_asset_allocation.html).
 - **Supplied risk inputs.** A dated covariance can come from any upstream model.
-  TradableFactors supplies a complete factor model using FactorLasso; OP consumes the selected
+  FactorModels supplies a complete factor model using FactorLasso; OP consumes the selected
   covariance. The [HCGL ownership handoff](docs/factor_covariance_hcgl.md) explains availability.
 - **Cluster-aware risk allocation.** Clusters, sectors or asset classes become asset-level risk
   budgets, static or dated, and canonical HRP runs from a supplied linkage. See
   [hierarchical risk parity and cluster risk budgets](https://optimalportfolios.readthedocs.io/en/latest/hierarchical_risk_parity_and_cluster_budgets.html).
 - **Prepared expected returns.** Forecasts and alphas enter the selected objective directly.
-  TF GLS inference and CMA diagnostics are separate upstream workflows, complete before
+  FM GLS inference and CMA diagnostics are separate upstream workflows, complete before
   optimisation; see their [GLS](docs/gls_factor_premia.md) and
   [CMA](docs/cma_diagnostics.md) ownership handoffs.
 - **Drift-aware rolling backtests.** Turnover limits and cost penalties act on the drifted
@@ -194,7 +194,7 @@ estimator rather than portfolio construction.
 
 | Subpackage | What it holds | Articles |
 | --- | --- | --- |
-| `covar_estimation` | EWMA covariance estimation; factor models are prepared upstream in TF | [covariance estimators](https://optimalportfolios.readthedocs.io/en/latest/covariance_estimators.html), [supplied risk inputs](docs/supplied_risk_inputs.md) |
+| `covar_estimation` | EWMA covariance estimation; factor models are prepared upstream in FM | [covariance estimators](https://optimalportfolios.readthedocs.io/en/latest/covariance_estimators.html), [supplied risk inputs](docs/supplied_risk_inputs.md) |
 | `alphas` | Momentum, low-beta, carry, residual and managers' alpha signals, `AlphasData`, profiling and diagnostics | [alpha signals](https://optimalportfolios.readthedocs.io/en/latest/alphas_module_readme.html), [signal diagnostics](https://optimalportfolios.readthedocs.io/en/latest/signal_diagnostics_and_profiling.html) |
 | `optimization` | The rolling dispatcher, the general, risk-allocation, SAA and TAA solvers, `Constraints`, `OptimiserConfig` and solver diagnostics | [choosing an objective](https://optimalportfolios.readthedocs.io/en/latest/optimization_module_readme.html), [constraints](https://optimalportfolios.readthedocs.io/en/latest/constraints.html), [solver outcomes](https://optimalportfolios.readthedocs.io/en/latest/solver_numerics_and_outcomes.html) |
 | `universe` | `UniverseData` and its transforms, such as unsmoothing | [universe data](https://optimalportfolios.readthedocs.io/en/latest/universe_data_and_unsmoothing.html) |
@@ -210,7 +210,7 @@ The [software-design guide](https://optimalportfolios.readthedocs.io/en/latest/s
 | --- | --- |
 | Alpha construction | Momentum, low beta, risk-adjusted carry, managers alpha, residual momentum, residual reversal and rolling EWMA means; fixed-group and time-varying cluster scoring are supported. |
 | Alpha evaluation | Rank-portfolio profiling, cross-backtests, `AlphasData`, IC/IR panels, component diagnostics and comparison tables. |
-| Covariance inputs | Current/rolling EWMA or supplied covariance matrices, including completed TF estimates. |
+| Covariance inputs | Current/rolling EWMA or supplied covariance matrices, including completed FM estimates. |
 | Cluster inputs | Supplied static or dated cluster mappings and prepared scores. Lineage and statistical clustering remain in FactorLasso; OP aliases are removed. |
 | General optimisation | Minimum variance, quadratic utility, maximum Sharpe, maximum diversification, CARA Gaussian-mixture utility and minimum tracking error. |
 | Risk allocation | Constrained risk budgeting, point-in-time group risk budgets, date-varying rolling budgets, group Euler-risk attribution and external-linkage hierarchical risk parity. |
@@ -227,7 +227,7 @@ signatures are maintained in the [API reference](https://optimalportfolios.readt
 
 [`factorlasso`](https://github.com/ArturSepp/factorlasso) is the domain-agnostic sparse
 factor-model estimator, with sign constraints, prior-centred regularisation and HCGL clustering;
-it produces statistical estimates. `tradablefactors` constructs definitions and NAVs,
+it produces statistical estimates. `factormodels` constructs definitions and NAVs,
 fits the asset universe through FL and completes the dated loading/covariance model.
 OP receives supplied alphas and covariances and produces constrained weights. QIS
 provides general risk/stress analytics, backtesting and reporting. Each completed
@@ -266,8 +266,8 @@ See the [alpha signals guide](https://optimalportfolios.readthedocs.io/en/latest
 OP produces constrained target weights and solver outcomes from supplied alphas and
 covariances. `PortfolioOptimisationResult` can inspect those weights on their own,
 with a supplied covariance matrix, or with a QIS `RiskModel` and prepared diagnostic
-tables. Neither `tradablefactors` nor `factorlasso` is an OP dependency.
-Factor model construction and GLS inference belong to TradableFactors; statistical
+tables. Neither `factormodels` nor `factorlasso` is an OP dependency.
+Factor model construction and GLS inference belong to FactorModels; statistical
 estimation belongs to FactorLasso. See the [breaking migration contract](docs/supplied_risk_inputs.md).
 
 ## Installation
@@ -468,7 +468,7 @@ This package is part of an open-source Python stack for quantitative finance. Th
 |---|---|
 | [`qis`](https://github.com/ArturSepp/QuantInvestStrats) | Risk and stress analytics, holdings simulation and reporting |
 | [`optimalportfolios`](https://github.com/ArturSepp/OptimalPortfolios) *(this package)* | Optimisation from supplied inputs to target weights and solver outcomes |
-| [`tradablefactors`](docs/supplied_risk_inputs.md#tradablefactors-availability) | Factor definitions, NAV construction and completed loadings/covariance models; private candidate |
+| [`factormodels`](docs/supplied_risk_inputs.md#factormodels-availability) | Factor definitions, NAV construction and completed loadings/covariance models; private candidate |
 | [`factorlasso`](https://github.com/ArturSepp/factorlasso) | Sparse multi-output estimation and fitted statistical diagnostics |
 | [`bbg-fetch`](https://github.com/ArturSepp/BloombergFetch) | Bloomberg data fetching |
 | [`option-chain-analytics`](https://github.com/ArturSepp/OptionChainAnalytics) | Point-in-time option-chain normalisation, reconstruction, querying, and visualisation |
@@ -479,7 +479,7 @@ This package is part of an open-source Python stack for quantitative finance. Th
 | [`goal-based-allocation`](https://github.com/ArturSepp/GoalBasedAllocation) | Dynamic MV allocation under regime-switching jump-diffusions |
 
 Within the stack, `optimalportfolios` directly depends on `qis` for analytics and reporting.
-TF/FL are separately installed upstream tools. The profile catalogue explains the other
+FM/FL are separately installed upstream tools. The profile catalogue explains the other
 packages and their distinct boundaries.
 
 ## Feedback & contributing

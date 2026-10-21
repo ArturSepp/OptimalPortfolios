@@ -34,15 +34,18 @@ They are optional and do not turn the result into a statistical estimator.
 The result owns copies of its selected numerical context. In-memory pandas objects
 remain inspectable; there is no new universal serialisation schema.
 
-## TradableFactors availability
+<a id="tradablefactors-availability"></a>
 
-TradableFactors (TF) is currently private and unreleased. Composed factor workflows
+## FactorModels availability
+
+FactorModels (FM) is currently private and unreleased. Composed factor workflows
 require authorised access to a matching candidate checkout or a wheel supplied by
 its maintainer; a public package-index installation is not a prerequisite that
 readers can currently satisfy. The base OP installation and EWMA quickstart do not
-require TF or FactorLasso.
+require FM or FactorLasso.
 
-TF owns factor definitions, NAV construction and completed fitted loadings and
+FM consumes price or level histories with explicit return transformations. It owns
+factor definitions, NAV construction and completed fitted loadings and
 covariance for a specified asset universe. Its finite output is a completed model
 snapshot with an explicit cutoff, labelled assets and factors, return transforms,
 annualisation, residual policy and provenance. Prepared expected returns and
@@ -54,24 +57,24 @@ The OP boundary ends at target weights, solver status and feasibility diagnostic
 The local [HCGL](factor_covariance_hcgl.md), [GLS](gls_factor_premia.md),
 [CMA](cma_diagnostics.md) and [CSV bundle](rolling_factor_covar_from_csv.md) pages
 identify owners and handoff contracts. They are not copies of the private method
-guides. Paths labelled as TF sources or documentation below refer to an authorised
-TF checkout, not to publicly accessible web pages. That checkout retains the
+guides. Paths labelled as FM sources or documentation below refer to an authorised
+FM checkout, not to publicly accessible web pages. That checkout retains the
 upstream authorship, source history and software citation in `CITATION.cff`.
 
 ## Factor-model composition
 
-Use an authorised TF candidate when constructing factor inputs. A completed TF
-snapshot supplies `tf.prepare_portfolio_context(snapshot)` as keyword arguments to
+Use an authorised FM candidate when constructing factor inputs. A completed FM
+snapshot supplies `fm.prepare_portfolio_context(snapshot)` as keyword arguments to
 `PortfolioOptimisationResult`, alongside independently obtained weights and benchmark.
 The adapter does not import OP. Full selected covariance remains authoritative for
 portfolio variance and tracking error. For correlated residuals, a requested
 `diagonal_reference=True` view labels approximate component rows with `reference`;
 those components need not sum to total risk.
 
-`tradablefactors.analytics.FactorOpportunityModel.optimisation_inputs()` returns
+`factormodels.analytics.FactorOpportunityModel.optimisation_inputs()` returns
 labelled arrays for `optimalportfolios.matf.OpportunityModel`. Constrained solving
 stays in OP. GLS decomposition, uncertainty estimation and universe diagnostics
-stay in TF/FL; any projected alpha covariance is prepared before optimisation.
+stay in FM/FL; any projected alpha covariance is prepared before optimisation.
 Cluster mappings and optional pooled signal panels are likewise prepared upstream.
 
 ## Breaking migration
@@ -79,14 +82,14 @@ Cluster mappings and optional pooled signal panels are likewise prepared upstrea
 OP 8 removes the FactorLasso dependency, root aliases, `risk_labelling` shim,
 factor-estimator modules and statistical MATF modules. There is no factor extra or
 legacy `covar_data` result constructor. Import statistical objects from their owning
-package and supply completed inputs. The TF migration guide at `docs/migration.md`
-in an authorised TF checkout lists canonical owners. Existing research snapshots
+package and supply completed inputs. The FM migration guide at `docs/migration.md`
+in an authorised FM checkout lists canonical owners. Existing research snapshots
 retain their original environment.
 
 ## Verification
 
-The base CI lane imports and tests an installed OP wheel with neither TF nor FL
-installed. A separate composed lane installs both candidate OP and TF wheels and
+The base CI lane imports and tests an installed OP wheel with neither FM nor FL
+installed. A separate composed lane installs both candidate OP and FM wheels and
 runs the shipped `optimalportfolios.tests.factor_integration_test` suite without
 skips. Repository examples are classified from their imports into base offline,
 composed offline and network lanes. The [EWMA quickstart](quickstart.md) remains a
