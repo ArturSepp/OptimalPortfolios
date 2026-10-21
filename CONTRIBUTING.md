@@ -27,10 +27,10 @@ Out of scope — these will be declined, so please open an issue to discuss befo
 writing code:
 
 - A third optimisation backend. The package uses `cvxpy` and `quadprog`
-- Reimplementations of analytics or plotting that belong in
-  [`qis`](https://github.com/ArturSepp/QuantInvestStrats), or of factor estimation that
-  belongs in [`factorlasso`](https://github.com/ArturSepp/factorlasso) — both are
-  declared dependencies
+- Reimplementations of analytics or plotting owned by
+  [`qis`](https://github.com/ArturSepp/QuantInvestStrats), or factor estimation owned by
+  FactorModels and [`factorlasso`](https://github.com/ArturSepp/factorlasso). The OP library
+  consumes QIS and supplied risk inputs, without importing either factor package
 - Silent changes to optimiser defaults, constraint semantics, or rebalancing conventions
 - Changes to `papers/`, which accompanies the published papers
 - Examples that require a paid data subscription to run
@@ -38,9 +38,9 @@ writing code:
 ## Starter tasks
 
 These are proposed, unassigned tasks, not reports of confirmed numerical defects. Check for
-existing or completed work and agree a bounded scope before starting. The
-[shared contributor guide](https://github.com/ArturSepp/ArturSepp/blob/main/docs/contributing_to_stack.md)
-explains setup, review, attribution and validation of automation-assisted work. Reuse this
+existing or completed work and agree a bounded scope before starting. Follow the
+[development setup](#development-setup) and [pull request guidelines](#pull-requests)
+below for setup, review and validation. Reuse this
 repository's [feature request form](.github/ISSUE_TEMPLATE/feature_request.yml), or its
 [bug report form](.github/ISSUE_TEMPLATE/bug_report.yml) for an observed defect.
 No starter label implies that numerical redesign is included.
@@ -48,9 +48,9 @@ No starter label implies that numerical redesign is included.
 Commands below use PowerShell's `& $py`, where `$py` is the selected development interpreter.
 Run them from the repository source root (a C-local source export on the maintainer host).
 Follow [development setup](#development-setup) first; for this Windows/OneDrive checkout,
-use the external environment and generated-state helper described in `AGENTS.md` before
-running Python or uv. The shared guide gives the exact interpreter table. Each command is
-a focused check, not a substitute for the package's documentation and PR gates.
+use the external environment and generated-state helper described in [AGENTS.md](AGENTS.md)
+before running Python or uv. It gives the required interpreter and generated-state paths.
+Each command is a focused check, not a substitute for the package's documentation and PR gates.
 
 ### OP-1: Add a short example-classification rehearsal
 
@@ -127,7 +127,7 @@ For the maintainer's Windows/OneDrive checkout, first run the setup helper named
 `UV_PROJECT_ENVIRONMENT` to that external environment before any uv project operation;
 never use the unqualified uv examples below against a OneDrive-local environment.
 Keep generated output and pure verification source exports on C: as described in the
-[shared contributor guide](https://github.com/ArturSepp/ArturSepp/blob/main/docs/contributing_to_stack.md#setup-and-a-first-check).
+[repository workspace policy](AGENTS.md#temporary-workspace-hygiene).
 
 ```bash
 git clone https://github.com/ArturSepp/OptimalPortfolios.git
