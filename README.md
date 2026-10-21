@@ -292,7 +292,7 @@ Clone the repository with:
 git clone https://github.com/ArturSepp/OptimalPortfolios.git
 ```
 
-The core package supports Python >=3.10; `pyproject.toml` is the source of truth for dependency
+The core package supports Python >=3.11; `pyproject.toml` is the source of truth for dependency
 floors, and the [installation guide](https://optimalportfolios.readthedocs.io/en/latest/installation.html) describes the locked environment.
 Optional extras keep network-data and reporting integrations out of the core installation:
 
@@ -503,7 +503,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
   year={2026},
-  version={8.0.0.dev1},
+  version={8.0.0rc2},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

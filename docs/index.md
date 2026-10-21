@@ -356,6 +356,7 @@ strategic_allocation_targets
 cara_gaussian_mixture
 minimum_tracking_error
 execution
+execution_v2
 alpha_over_tracking_error
 overlay_tail_floor
 ```

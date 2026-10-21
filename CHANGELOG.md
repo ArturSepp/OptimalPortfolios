@@ -89,6 +89,26 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   package requires `qis>=5.38.1`. Install the current declared dependencies rather than
   treating the feature's historical floor as the full package support floor.
 
+## [8.0.0rc2] - 2026-10-21
+
+### Prepared execution research API (local, unpublished)
+
+- Integrate the qualified `optimalportfolios.execution.v2` namespace into the
+  owning package: immutable prepared problems, executable states, independent
+  audits, ranked selection and joint sizing, matched Exact wrappers and optional
+  relaxation bounds. Import v2 explicitly to opt in. Existing execution exports,
+  production dispatch, defaults and numerical algorithms are unchanged.
+- Add the optional `exact` extra for the qualified MOSEK interface. Ordinary
+  imports and ranked sizing do not require it. Native starts remain guarded by
+  their qualified canonicalisation versions, and native bounds remain diagnostic.
+- Preserve the execution paper's separately frozen inputs, source and research
+  wheel. It does not depend on the development worktree or this candidate version.
+
+### Supported Python
+
+- Require Python 3.11 or later. The supported dependency range includes the
+  reviewed Pillow security fix available on that Python floor.
+
 ## [7.22.1] - 2026-10-17
 
 - Regenerate the registered teaching exhibits and their reviewed provenance after the

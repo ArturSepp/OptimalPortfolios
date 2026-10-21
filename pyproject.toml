@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optimalportfolios"
-version = "8.0.0.dev1"
+version = "8.0.0rc2"
 description = "Production multi-asset portfolio construction and rolling backtesting in Python"
 readme = "README.md"
 license = "MIT"
@@ -32,7 +32,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -41,13 +40,15 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Mathematics",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 dependencies = [
     "numpy>=2.0",
     "scipy>=1.12.0",
     "pandas>=2.2.0",
     "matplotlib>=3.8.0",
+    # Raise the imaging dependency floor to the security-fixed Python 3.11+ series.
+    "Pillow>=13.0.0",
     "seaborn>=0.13.0",
     "openpyxl>=3.1.0",
     "PyYAML>=6.0",
@@ -57,6 +58,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+exact = [
+    "Mosek==11.2.3",
+]
+
 riskbudget = [
     "quadprog>=0.1.11",
 ]
@@ -160,6 +165,7 @@ addopts = "-ra -q --tb=short"
 # `papers/` reproduces published code and is left exactly as-is.
 [tool.ruff]
 line-length = 100
+target-version = "py311"
 exclude = ["papers"]
 
 [tool.ruff.lint]
@@ -198,7 +204,7 @@ extend-select = ["TID251", "TID253", "ICN"]
 # A3: an optional extra is imported inside a function and guarded, never at module level, so a
 # core install keeps working. A module dedicated to a single optional backend is the documented
 # exception and is named in per-file-ignores below.
-banned-module-level-imports = ["quadprog", "yfinance", "pandas_datareader", "pybloqs", "plotly", "pyarrow",
+banned-module-level-imports = ["quadprog", "mosek", "yfinance", "pandas_datareader", "pybloqs", "plotly", "pyarrow",
                                "psycopg2", "sqlalchemy"]
 
 [tool.ruff.lint.flake8-import-conventions.aliases]
@@ -239,8 +245,8 @@ exclude = ["papers", "rosaa", ".codex_analysis", "outputs", "tmp"]
 [tool.deptry]
 # static.yml runs deptry from the `lint` group alone, as `uvx deptry src` does, so none of the
 # dependencies it checks are installed and it guesses each import name from the distribution
-# name. PyYAML is the one dependency where that guess is wrong: it is imported as `yaml`.
-package_module_name_map = {PyYAML = "yaml"}
+# name. PyYAML and Pillow use different import names: `yaml` and `PIL`, respectively.
+package_module_name_map = {PyYAML = "yaml", Pillow = "PIL"}
 # `examples/` is this repository's own tree, not a package. One checkout-only test puts the
 # checkout on sys.path to import it and is skipped when there is no checkout.
 known_first_party = ["examples"]
@@ -260,17 +266,15 @@ DEP002 = ["openpyxl", "scs", "sphinx", "furo", "myst-parser", "sphinxcontrib-mer
 # Tests ship inside the package, so test modules and the package conftest import pytest from
 # the `test` group. The ignore is global, because deptry cannot scope one to `tests/`.
 DEP004 = ["pytest"]
-# Imported in tests without being declared:
-# - PIL (Pillow, required by matplotlib) draws a blank image in the docs-bundle validator test.
-# - tomli / tomllib: the Python 3.10 fallback in installation_documentation_test.py. On a 3.10
-#   interpreter deptry does not count tomllib as standard library.
-# DEP001 fires where the module is absent, as in the `lint` group; DEP003 where another
-# dependency installs it, as in the full project environment.
-DEP001 = ["PIL", "tomllib", "factormodels", "factorlasso"]
+# FM/FL imports in marked composed tests and development runners are not core dependencies.
+# DEP001 fires where the module is absent, as in the `lint` group; DEP003 where an independently
+# installed composed dependency provides it. Pillow is declared directly above, and tomllib is
+# part of the standard library on every supported Python version.
+DEP001 = ["factormodels", "factorlasso"]
 # FM/FL are independently installed only for marked composed tests and development runners.
 # Pair the existing DEP001 allowances with DEP003 for environments where they are present.
 # TID251 and dependency_boundary_test.py still prohibit every FM/FL library import.
-DEP003 = ["PIL", "tomli", "factormodels", "factorlasso"]
+DEP003 = ["factormodels", "factorlasso"]
 
 [tool.coverage.run]
 source = ["optimalportfolios"]

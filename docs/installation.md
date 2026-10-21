@@ -25,9 +25,9 @@ development checkout.
 
 ## Install the released package
 
-The declared Python requirement is **Python 3.10 or later** (`requires-python = ">=3.10"`).
+The declared Python requirement is **Python 3.11 or later** (`requires-python = ">=3.11"`).
 Binary dependencies also determine which interpreter/platform combinations can be installed.
-The current [CI matrix](../.github/workflows/ci.yml) exercises Python 3.10–3.14 on Linux,
+The current [CI matrix](../.github/workflows/ci.yml) exercises Python 3.11–3.14 on Linux,
 macOS and Windows. The optional risk-budgeting backend is checked separately on Python 3.12;
 its binary-wheel availability can differ from the base package.
 The metadata requirement alone does not certify every future Python release.
@@ -50,11 +50,12 @@ Do not create or use a Python environment under OneDrive.
 
 ## Choose optional integrations
 
-The checkout declares these four package extras. The `riskbudget` split is part of
+The checkout declares these five package extras. The `riskbudget` split is part of
 unreleased 8.0.0 development; older published versions still install quadprog as a core dependency.
 
 | Extra | Adds | When to select it |
 |---|---|---|
+| `exact` | MOSEK Python interface | Optional prepared-execution integer solver, with a separately available solver licence. |
 | `riskbudget` | `quadprog` | Risk-budgeting projection and solver; the backend retains GPLv2+ terms. |
 | `data` | `yfinance` | Examples or loaders that download Yahoo Finance data. |
 | `reports` | `pybloqs` | The dedicated HTML/PDF report backend. |
@@ -64,6 +65,7 @@ Install the runtime features needed by the workflow with quoted package requirem
 
 ```console
 python -m pip install "optimalportfolios[riskbudget]"
+python -m pip install "optimalportfolios[exact]"
 python -m pip install "optimalportfolios[data]"
 python -m pip install "optimalportfolios[reports]"
 python -m pip install "optimalportfolios[data,reports]"
@@ -72,6 +74,13 @@ python -m pip install "optimalportfolios[data,reports]"
 These are alternatives; choose the integrations needed by the workflow. Installing `reports`
 adds the Python backend, not a guarantee that every external PDF-rendering prerequisite is
 available on the machine.
+
+The prepared [execution research API](execution_v2.md) is explicitly imported as
+`optimalportfolios.execution.v2`. Its ranked solver uses the ordinary numerical
+dependencies. The `exact` extra adds the optional native integer solver, whose
+start adapter checks its qualified canonicalisation versions. It does not switch
+the existing production execution interface to v2. The paper's frozen software
+bundle retains its own research identity independently of this development checkout.
 
 OP's own source licence is MIT. Dependencies keep their own licences: installing
 `riskbudget` adds the GPLv2+ quadprog backend. The reviewed Windows/Python 3.12 base
