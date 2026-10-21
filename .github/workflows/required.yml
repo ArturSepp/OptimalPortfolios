@@ -46,16 +46,19 @@ jobs:
     uses: ./.github/workflows/ci.yml
     secrets:
       TRADABLEFACTORS_READ_TOKEN: ${{ secrets.TRADABLEFACTORS_READ_TOKEN }}
+      FACTORMODELS_READ_SSH_KEY: ${{ secrets.FACTORMODELS_READ_SSH_KEY }}
   docs:
     uses: ./.github/workflows/docs.yml
     secrets:
       TRADABLEFACTORS_READ_TOKEN: ${{ secrets.TRADABLEFACTORS_READ_TOKEN }}
+      FACTORMODELS_READ_SSH_KEY: ${{ secrets.FACTORMODELS_READ_SSH_KEY }}
   static:
     uses: ./.github/workflows/static.yml
   examples:
     uses: ./.github/workflows/examples.yml
     secrets:
       TRADABLEFACTORS_READ_TOKEN: ${{ secrets.TRADABLEFACTORS_READ_TOKEN }}
+      FACTORMODELS_READ_SSH_KEY: ${{ secrets.FACTORMODELS_READ_SSH_KEY }}
   replication:
     uses: ./.github/workflows/replication.yml
   audit:

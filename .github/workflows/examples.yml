@@ -27,6 +27,8 @@ on:
     secrets:
       TRADABLEFACTORS_READ_TOKEN:
         required: false
+      FACTORMODELS_READ_SSH_KEY:
+        required: false
   schedule:
     - cron: "47 4 * * *"
   workflow_dispatch:
@@ -104,36 +106,51 @@ jobs:
       uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       with:
         python-version: "3.12"
+        enable-cache: false
+        save-cache: false
 
     - name: Sync with the data extra
       # `data` is the extra these examples actually need; syncing `--all-extras` would install
       # the reporting and docs stacks to run scripts that use neither.
       run: uv sync --locked --extra data --extra riskbudget
 
+    - name: Test private dependency containment
+      run: python -m unittest discover -s .github/scripts -p private_dependency_test.py
+    - name: Verify the private dependency boundary
+      env:
+        FM_SOURCE_SHA: ${{ vars.TRADABLEFACTORS_REF }}
+        FM_READ_CREDENTIAL_PRESENT: ${{ secrets.FACTORMODELS_READ_SSH_KEY != '' || secrets.TRADABLEFACTORS_READ_TOKEN != '' }}
+      run: python .github/scripts/private_dependency.py check-config
     - name: Check out the explicitly selected factor pipeline
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         repository: ArturSepp/FactorModels
-        ref: ${{ vars.TRADABLEFACTORS_REF || 'migration/tradablefactors-stage-4' }}
+        ref: ${{ vars.TRADABLEFACTORS_REF }}
         path: .integration/tradablefactors
+        ssh-key: ${{ secrets.FACTORMODELS_READ_SSH_KEY }}
         token: ${{ secrets.TRADABLEFACTORS_READ_TOKEN || github.token }}
+        persist-credentials: false
+    - name: Verify the checked-out dependency identity
+      env:
+        FM_SOURCE_SHA: ${{ vars.TRADABLEFACTORS_REF }}
+      run: >-
+        python .github/scripts/private_dependency.py run checkout-identity --
+        python -c "import os,subprocess; actual=subprocess.check_output(['git','-C','.integration/tradablefactors','rev-parse','HEAD'],text=True).strip(); assert actual.lower()==os.environ['FM_SOURCE_SHA'].lower()"
 
     - name: Install FM explicitly for network examples that compose the factor pipeline
-      run: uv pip install --python .venv/bin/python .integration/tradablefactors
+      run: python .github/scripts/private_dependency.py run install-network -- uv pip install --python .venv/bin/python .integration/tradablefactors
 
     - name: Run the network examples
       # `--jobs 4` rather than the default: these are all hitting one host, and Yahoo rate-limits.
       # Serialising entirely would take too long; four is a compromise that has to be tuned by
       # observation, not derived.
       #
-      # `tee` because the step's own outcome is swallowed by `continue-on-error`, and the summary
-      # step below is what makes a real failure visible without opening the log.
+      # Keep output private; the controlled summary below still exposes the advisory outcome.
       id: run
       shell: bash
       run: |
-        set -o pipefail
-        uv run --no-sync python .github/scripts/run_examples.py \
-          --lane network --jobs 4 | tee "$RUNNER_TEMP/network.log"
+        python .github/scripts/private_dependency.py run network-examples -- \
+          uv run --no-sync python .github/scripts/run_examples.py --lane network --jobs 4
 
     - name: Summarise
       # Runs whatever the step above did. `continue-on-error` turns a failed job green in the UI,
@@ -149,11 +166,7 @@ jobs:
             echo "All network examples passed."
           else
             echo "**Some network examples failed.** This lane is advisory: the cause is often"
-            echo "Yahoo Finance rather than this repository. Check the failures below against a"
-            echo "local run before treating them as rot."
+            echo "Yahoo Finance rather than this repository. Use the private-host verification"
+            echo "for full diagnostics."
           fi
-          echo
-          echo '```'
-          grep -E "^  (PASS|FAIL)|passed in" "$RUNNER_TEMP/network.log" || echo "no results parsed"
-          echo '```'
         } >> "$GITHUB_STEP_SUMMARY"

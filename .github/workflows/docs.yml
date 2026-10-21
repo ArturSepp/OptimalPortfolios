@@ -9,6 +9,8 @@ on:
     secrets:
       TRADABLEFACTORS_READ_TOKEN:
         required: false
+      FACTORMODELS_READ_SSH_KEY:
+        required: false
     inputs:
       online:
         type: boolean
@@ -37,50 +39,68 @@ jobs:
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version: "3.12"
+          enable-cache: false
+          save-cache: false
           version: "0.12.23"
       - name: Sync documentation environment
         run: uv sync --locked --extra docs --extra riskbudget --group test
+      - name: Test private dependency containment
+        run: python -m unittest discover -s .github/scripts -p private_dependency_test.py
+      - name: Verify the private dependency boundary
+        env:
+          FM_SOURCE_SHA: ${{ vars.TRADABLEFACTORS_REF }}
+          FM_READ_CREDENTIAL_PRESENT: ${{ secrets.FACTORMODELS_READ_SSH_KEY != '' || secrets.TRADABLEFACTORS_READ_TOKEN != '' }}
+        run: python .github/scripts/private_dependency.py check-config
       - name: Check out the explicitly selected factor documentation dependency
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ArturSepp/FactorModels
-          ref: ${{ vars.TRADABLEFACTORS_REF || 'migration/tradablefactors-stage-4' }}
+          ref: ${{ vars.TRADABLEFACTORS_REF }}
           path: .integration/tradablefactors
+          ssh-key: ${{ secrets.FACTORMODELS_READ_SSH_KEY }}
           token: ${{ secrets.TRADABLEFACTORS_READ_TOKEN || github.token }}
+          persist-credentials: false
+      - name: Verify the checked-out dependency identity
+        env:
+          FM_SOURCE_SHA: ${{ vars.TRADABLEFACTORS_REF }}
+        run: >-
+          python .github/scripts/private_dependency.py run checkout-identity --
+          python -c "import os,subprocess; actual=subprocess.check_output(['git','-C','.integration/tradablefactors','rev-parse','HEAD'],text=True).strip(); assert actual.lower()==os.environ['FM_SOURCE_SHA'].lower()"
       - name: Install the selected FM candidate for the complete analytical bundle
-        run: uv pip install --python "$UV_PROJECT_ENVIRONMENT/bin/python" .integration/tradablefactors
+        run: python .github/scripts/private_dependency.py run install-docs -- uv pip install --python "$UV_PROJECT_ENVIRONMENT/bin/python" .integration/tradablefactors
       - name: Check every human-authored source
-        run: uv run --no-sync python tools/check_docs.py --source-all
+        run: python .github/scripts/private_dependency.py run check-source -- uv run --no-sync python tools/check_docs.py --source-all
       - name: Test source-checker regressions
         run: >-
-          uv run --no-sync python -m pytest
+          python .github/scripts/private_dependency.py run source-regressions -- uv run --no-sync python -m pytest
           src/optimalportfolios/tests/documentation_standard_test.py
           -o cache_dir="$AGENT_LOCAL_ROOT/cache/pytest"
           --basetemp="$AGENT_LOCAL_ROOT/tests"
       - name: Check displayed-image registration
-        run: uv run --no-sync python -m tools.docs_analytics.run --list
+        run: python .github/scripts/private_dependency.py run list-images -- uv run --no-sync python -m tools.docs_analytics.run --list
       - name: Verify published preview integrity and teaching exhibits
-        run: uv run --no-sync python -m tools.docs_analytics.run --verify
+        run: python .github/scripts/private_dependency.py run verify-images -- uv run --no-sync python -m tools.docs_analytics.run --verify
       - name: Generate and validate the complete offline analytics bundle
         run: >-
-          uv run --no-sync python -m tools.docs_analytics.run --all
+          python .github/scripts/private_dependency.py run generate-images -- uv run --no-sync python -m tools.docs_analytics.run --all
           --output-root "$AGENT_LOCAL_ROOT/bundle"
       - name: Build documentation with the shared profile
-        run: uv run --no-sync python .github/oss_checks.py docs --working-tree --output-dir "$RUNNER_TEMP/oss-docs"
+        run: python .github/scripts/private_dependency.py run build-docs -- uv run --no-sync python .github/oss_checks.py docs --working-tree --output-dir "$RUNNER_TEMP/oss-docs"
       - name: Test external-link failure classification
-        run: uv run --no-sync python .github/scripts/test_external_links.py
+        run: python .github/scripts/private_dependency.py run test-links -- uv run --no-sync python .github/scripts/test_external_links.py
       - name: Check documentation links
         if: inputs.online || github.event_name == 'workflow_dispatch'
         run: >-
-          uv run --no-sync python .github/scripts/check_external_links.py
+          python .github/scripts/private_dependency.py run check-links -- uv run --no-sync python .github/scripts/check_external_links.py
           --output-dir "$AGENT_LOCAL_ROOT/linkcheck"
       - name: Confirm the reviewed lockfile was preserved
-        run: git diff --exit-code -- pyproject.toml uv.lock
+        run: python .github/scripts/private_dependency.py run lock-preserved -- git diff --exit-code -- pyproject.toml uv.lock
 
-      - name: Retain external-link health evidence
+      # Only this fixed-schema status is public; full reports stay on the runner.
+      - name: Retain external-link health status
         if: always() && (inputs.online || github.event_name == 'workflow_dispatch')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: external-link-health
-          path: ${{ env.AGENT_LOCAL_ROOT }}/linkcheck/*.json
+          path: ${{ runner.temp }}/private-factor-checks/check-links.status.json
           if-no-files-found: error
