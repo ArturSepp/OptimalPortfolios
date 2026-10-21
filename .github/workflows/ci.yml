@@ -19,11 +19,6 @@ permissions:
 
 on:
   workflow_call:
-    secrets:
-      TRADABLEFACTORS_READ_TOKEN:
-        required: false
-      FACTORMODELS_READ_SSH_KEY:
-        required: false
   schedule:
     - cron: "37 3 * * *"
   workflow_dispatch:
@@ -339,73 +334,44 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Test private dependency containment
-        run: python -m unittest discover -s .github/scripts -p private_dependency_test.py
-      - name: Verify the private dependency boundary
-        env:
-          FM_SOURCE_SHA: ${{ vars.TRADABLEFACTORS_REF }}
-          FM_READ_CREDENTIAL_PRESENT: ${{ secrets.FACTORMODELS_READ_SSH_KEY != '' || secrets.TRADABLEFACTORS_READ_TOKEN != '' }}
-        run: python .github/scripts/private_dependency.py check-config
-      - name: Check out FactorModels from its existing private repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: ArturSepp/FactorModels
-          ref: ${{ vars.TRADABLEFACTORS_REF }}
-          path: .integration/tradablefactors
-          ssh-key: ${{ secrets.FACTORMODELS_READ_SSH_KEY }}
-          token: ${{ secrets.TRADABLEFACTORS_READ_TOKEN || github.token }}
-          persist-credentials: false
-      - name: Verify the checked-out dependency identity
-        env:
-          FM_SOURCE_SHA: ${{ vars.TRADABLEFACTORS_REF }}
-        run: >-
-          python .github/scripts/private_dependency.py run checkout-identity --
-          python -c "import os,subprocess; actual=subprocess.check_output(['git','-C','.integration/tradablefactors','rev-parse','HEAD'],text=True).strip(); assert actual.lower()==os.environ['FM_SOURCE_SHA'].lower()"
+      - name: Verify public dependency workflow contracts
+        run: python -m unittest discover -s .github/scripts -p public_dependency_test.py
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version: "3.12"
           enable-cache: false
           save-cache: false
-      - name: Build both candidates and install composed source lane
+      - name: Build the OP candidate and install the released FM source lane
         shell: bash
         run: |
-          python .github/scripts/private_dependency.py run-script build-composed <<'PRIVATE_SCRIPT'
           uv build --out-dir "$RUNNER_TEMP/op-dist"
-          uv build .integration/tradablefactors --out-dir "$RUNNER_TEMP/tf-dist"
           uv venv "$RUNNER_TEMP/composed-source"
           uv pip install --python "$RUNNER_TEMP/composed-source/bin/python" -e ".[riskbudget]" \
-            "$(ls "$RUNNER_TEMP"/tf-dist/*.whl)" pytest
-          PRIVATE_SCRIPT
+            "factormodels==0.1.0" pytest
 
       - name: Run composed source contracts
         env:
           OP_REQUIRE_FACTOR_INTEGRATION: "1"
         run: |
-          python .github/scripts/private_dependency.py run-script source-contracts <<'PRIVATE_SCRIPT'
           "$RUNNER_TEMP/composed-source/bin/python" -m pytest -m factor_integration \
             --junitxml="$RUNNER_TEMP/source-handoff.xml"
           "$RUNNER_TEMP/composed-source/bin/python" -c "import os, xml.etree.ElementTree as E; s=E.parse(os.path.join(os.environ['RUNNER_TEMP'], 'source-handoff.xml')).getroot(); cases=list(s.iter('testcase')); assert cases; assert not list(s.iter('skipped')); assert not list(s.iter('failure')); assert not list(s.iter('error'))"
           "$RUNNER_TEMP/composed-source/bin/python" .github/scripts/run_examples.py --lane composed
-          PRIVATE_SCRIPT
 
-      - name: Install both candidate wheels into a fresh environment
+      - name: Install the OP wheel and released FM into a fresh environment
         run: |
-          python .github/scripts/private_dependency.py run-script install-composed <<'PRIVATE_SCRIPT'
           uv venv "$RUNNER_TEMP/composed-wheel"
           uv pip install --python "$RUNNER_TEMP/composed-wheel/bin/python" \
-            "$(ls "$RUNNER_TEMP"/op-dist/*.whl)[riskbudget]" "$(ls "$RUNNER_TEMP"/tf-dist/*.whl)" pytest
-          PRIVATE_SCRIPT
+            "$(ls "$RUNNER_TEMP"/op-dist/*.whl)[riskbudget]" "factormodels==0.1.0" pytest
 
       - name: Enforce nonempty installed handoff tests without skips
         env:
           OP_REQUIRE_FACTOR_INTEGRATION: "1"
         run: |
-          python .github/scripts/private_dependency.py run-script wheel-contracts <<'PRIVATE_SCRIPT'
           cd "$RUNNER_TEMP"
           "$RUNNER_TEMP/composed-wheel/bin/python" -m pytest \
             --pyargs optimalportfolios.tests.factor_integration_test --junitxml=handoff.xml
           "$RUNNER_TEMP/composed-wheel/bin/python" -c "import xml.etree.ElementTree as E; s=E.parse('handoff.xml').getroot(); cases=list(s.iter('testcase')); assert cases; assert not list(s.iter('skipped')); assert not list(s.iter('failure')); assert not list(s.iter('error'))"
-          PRIVATE_SCRIPT
 
   stack-policy:
     name: stack import boundaries

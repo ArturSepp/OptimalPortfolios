@@ -44,21 +44,12 @@ jobs:
           uv run --no-project --with-requirements .github/oss-checks-requirements.txt python .github/oss_checks.py preflight --working-tree --revision HEAD --base "$BASE" --python "$GITHUB_WORKSPACE/.venv/bin/python" --output-dir "$RUNNER_TEMP/oss-checks"
   ci:
     uses: ./.github/workflows/ci.yml
-    secrets:
-      TRADABLEFACTORS_READ_TOKEN: ${{ secrets.TRADABLEFACTORS_READ_TOKEN }}
-      FACTORMODELS_READ_SSH_KEY: ${{ secrets.FACTORMODELS_READ_SSH_KEY }}
   docs:
     uses: ./.github/workflows/docs.yml
-    secrets:
-      TRADABLEFACTORS_READ_TOKEN: ${{ secrets.TRADABLEFACTORS_READ_TOKEN }}
-      FACTORMODELS_READ_SSH_KEY: ${{ secrets.FACTORMODELS_READ_SSH_KEY }}
   static:
     uses: ./.github/workflows/static.yml
   examples:
     uses: ./.github/workflows/examples.yml
-    secrets:
-      TRADABLEFACTORS_READ_TOKEN: ${{ secrets.TRADABLEFACTORS_READ_TOKEN }}
-      FACTORMODELS_READ_SSH_KEY: ${{ secrets.FACTORMODELS_READ_SSH_KEY }}
   replication:
     uses: ./.github/workflows/replication.yml
   audit:
