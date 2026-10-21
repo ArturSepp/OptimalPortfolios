@@ -8,32 +8,17 @@ myst:
 
 # optimalportfolios
 
-*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2023-07-08](https://github.com/ArturSepp/OptimalPortfolios/commit/6950e6d9310f70280891ddc4094be78c6f178e24)*
-
-Source: [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
-Analytics and holdings simulation use [qis](https://github.com/ArturSepp/QuantInvestStrats);
-cite its [software record](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).
-
-Explore the [analytics gallery](https://optimalportfolios.readthedocs.io/en/latest/analytics_gallery.html) for reproducible synthetic examples
-with sample dates, conventions, producer links and reviewed provenance.
-
-**Constrained multi-asset portfolio optimisation from supplied alphas, covariances and
-constraints to dated target weights and solver outcomes.**
+**Production multi-asset portfolio construction and rolling backtesting in Python — constrained
+optimisation from supplied alphas, covariances and constraints to dated target weights and solver
+outcomes.**
 
 The [completed-output guide](docs/completed_output.md) identifies the result, its units,
 dates, status and explicit export boundary. Factor-model construction belongs to
-[TradableFactors](docs/supplied_risk_inputs.md#tradablefactors-availability); sparse estimation to
-[FactorLasso](https://github.com/ArturSepp/FactorLasso); general risk, stress testing and
+[FactorModels](docs/supplied_risk_inputs.md#factormodels-availability); sparse estimation to
+[FactorLasso](https://github.com/ArturSepp/factorlasso); general risk, stress testing and
 reporting to QIS. OP retains explicit EWMA and signal utilities and rolling orchestration.
 
 **Install:** `pip install optimalportfolios` · **Import:** `optimalportfolios` · **Status:** Stable
-
-In the unreleased 8.0.0 development series, risk-budgeting solves require
-`pip install "optimalportfolios[riskbudget]"`. This installs the existing GPL-licensed
-`quadprog` projection backend; OP's first-party source remains MIT. Ordinary imports,
-supplied-input optimisation with other solvers, and the offline quickstart use the base
-installation. See [installation and dependency licences](docs/installation.md).
 
 [![PyPI](https://img.shields.io/pypi/v/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/)
 [![Python](https://img.shields.io/pypi/pyversions/optimalportfolios?style=flat-square)](https://pypi.org/project/optimalportfolios/)
@@ -44,7 +29,18 @@ installation. See [installation and dependency licences](docs/installation.md).
 [![Monthly](https://static.pepy.tech/badge/optimalportfolios/month)](https://pepy.tech/project/optimalportfolios)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ArturSepp/OptimalPortfolios/blob/main/examples/getting_started/production_quickstart.ipynb)
 
-**Papers:** Sepp, A. (2023), *Optimal Allocation to Cryptocurrencies in Diversified Portfolios*, Risk Magazine — [SSRN 4217841](https://ssrn.com/abstract=4217841) · Sepp, A., Ossa, I. and Kastenholz, M. (2026), *Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios*, [The Journal of Portfolio Management, 52(4), 86–120](https://www.pm-research.com/content/iijpormgmt/52/4/86) · Sepp, A., Hansen, E. and Kastenholz, M. (2026), *Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors* — [SSRN 6785958](https://ssrn.com/abstract=6785958) · Sepp, A. and Kastenholz, M. (2026), *The Convexity Premium of Portfolio Overlays*, Journal of Investment Management, forthcoming — [companion](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/smart_diversification_joim_2026). See [References](#references).
+**Papers:** Sepp, A. (2023), *Optimal Allocation to Cryptocurrencies in Diversified Portfolios*,
+Risk Magazine · Sepp, A., Ossa, I. and Kastenholz, M. (2026), *Robust Optimization of Strategic
+and Tactical Asset Allocation for Multi-Asset Portfolios*, The Journal of Portfolio Management
+52(4) · Sepp, A., Hansen, E. and Kastenholz, M. (2026), *Capital Market Assumptions and Strategic
+Asset Allocation Using Multi-Asset Tradable Factors* · Sepp, A. and Kastenholz, M. (2026), *The
+Convexity Premium of Portfolio Overlays*, Journal of Investment Management. See
+[Statement of need](#statement-of-need) for what each paper contributes and [Citation](#citation)
+for the BibTeX entries.
+
+**Documentation:** [optimalportfolios.readthedocs.io](https://optimalportfolios.readthedocs.io/en/latest/) ·
+[analytics gallery](https://optimalportfolios.readthedocs.io/en/latest/analytics_gallery.html) ·
+[production quickstart](examples/getting_started/production_quickstart.py)
 
 ---
 
@@ -69,13 +65,13 @@ Rolling orchestration supports incomplete data, mixed-frequency assets and illiq
   backtest share one dated roll-forward state, with equities rebalancing monthly and
   alternatives quarterly. See the [ROSAA case study](https://optimalportfolios.readthedocs.io/en/latest/app_rosaa_multi_asset_allocation.html).
 - **Supplied risk inputs.** A dated covariance can come from any upstream model.
-  TradableFactors supplies a complete factor model using FactorLasso; OP consumes the selected
+  FactorModels supplies a complete factor model using FactorLasso; OP consumes the selected
   covariance. The [HCGL ownership handoff](docs/factor_covariance_hcgl.md) explains availability.
 - **Cluster-aware risk allocation.** Clusters, sectors or asset classes become asset-level risk
   budgets, static or dated, and canonical HRP runs from a supplied linkage. See
   [hierarchical risk parity and cluster risk budgets](https://optimalportfolios.readthedocs.io/en/latest/hierarchical_risk_parity_and_cluster_budgets.html).
 - **Prepared expected returns.** Forecasts and alphas enter the selected objective directly.
-  TF GLS inference and CMA diagnostics are separate upstream workflows, complete before
+  FM GLS inference and CMA diagnostics are separate upstream workflows, complete before
   optimisation; see their [GLS](docs/gls_factor_premia.md) and
   [CMA](docs/cma_diagnostics.md) ownership handoffs.
 - **Drift-aware rolling backtests.** Turnover limits and cost penalties act on the drifted
@@ -87,6 +83,162 @@ Rolling orchestration supports incomplete data, mixed-frequency assets and illiq
 - **Research-backed.** The reference implementation of the ROSAA framework in *The Journal of
   Portfolio Management*; every number on the methodology pages is asserted by a script that CI
   runs. See [research papers](https://optimalportfolios.readthedocs.io/en/latest/research_papers.html).
+
+### When to use it — and when not
+
+Use `optimalportfolios` when you need a dated roll-forward pipeline from point-in-time covariance
+and alpha estimates to constrained targets, scheduled rebalancing, and drift-aware backtests with
+transaction costs across incomplete or mixed-frequency multi-asset panels.
+
+The solvers use quadratic and conic objectives (variance, tracking error, Sharpe ratio,
+diversification ratio, CARA utility). Choose another package when the core problem is a
+non-quadratic risk measure such as CVaR, MAD, or drawdown constraints; the
+[package comparison](https://optimalportfolios.readthedocs.io/en/latest/package_comparison.html)
+points to Riskfolio-Lib and skfolio for those workflows and records the versioned evidence for the
+field comparison. Use `factorlasso` directly when you need its standalone sparse multi-output
+factor-model estimator rather than portfolio construction. Each solver lives in its own module and
+plugs into the rolling backtester through one dispatch function; the
+[software-design guide](https://optimalportfolios.readthedocs.io/en/latest/software_design.html)
+explains these boundaries.
+
+## Installation
+
+Install from PyPI:
+
+```bash
+pip install optimalportfolios
+```
+
+Upgrade with:
+
+```bash
+pip install --upgrade optimalportfolios
+```
+
+Clone the repository with:
+
+```bash
+git clone https://github.com/ArturSepp/OptimalPortfolios.git
+```
+
+The core package supports Python >=3.10; `pyproject.toml` is the source of truth for dependency
+floors, and the [installation guide](https://optimalportfolios.readthedocs.io/en/latest/installation.html) describes the locked environment.
+Optional extras keep network-data and reporting integrations out of the core installation:
+
+| Extra | Adds |
+| --- | --- |
+| `data` | `yfinance` for free-data example loaders. |
+| `reports` | `pybloqs` for HTML/PDF report backends. |
+| `riskbudget` | `quadprog` projection backend for risk-budgeting solves (8.0.0 development series). |
+| `docs` | Sphinx, Furo and MyST for documentation builds. |
+
+For both runtime integrations, install `optimalportfolios[data,reports]`. In the unreleased
+8.0.0 development series, risk-budgeting solves require
+`pip install "optimalportfolios[riskbudget]"`. This installs the existing GPL-licensed
+`quadprog` projection backend; OP's first-party source remains MIT. Ordinary imports,
+supplied-input optimisation with other solvers, and the offline quickstart use the base
+installation. See [installation and dependency licences](docs/installation.md). There is no
+`jupyter` or `dev` extra; tests and static checks are the PEP 735 `test` and `lint` dependency
+groups described under [Testing](#testing).
+
+## Table of contents
+
+1. [Why optimalportfolios](#why-optimalportfolios)
+2. [Installation](#installation)
+3. [Statement of need](#statement-of-need)
+4. [Overview](#overview)
+5. [Five-minute quickstart](#five-minute-quickstart)
+6. [Examples](#examples)
+7. [Testing](#testing)
+8. [Changelog](#changelog)
+9. [Feedback & contributing](#feedback-contributing)
+10. [Acknowledgments](#acknowledgments)
+11. [Citation](#citation)
+12. [Ecosystem](#ecosystem)
+13. [License](#license)
+14. [Disclaimer](#disclaimer)
+
+## Statement of need
+
+Multi-asset allocation in production is a dated state transition: point-in-time estimates and
+current holdings go in, constrained targets, solver outcomes and a realised backtest come out, and
+the next date starts from the drifted result. `optimalportfolios` implements that transition for
+panels with incomplete histories, mixed rebalancing frequencies and illiquid positions, with the
+covariance and expected returns supplied by upstream models rather than estimated inside the
+optimiser. The papers below define the methods; the package is their reference implementation,
+and every number on the methodology pages is asserted by a script that CI runs.
+
+| Paper | Implemented analytics | Where |
+|---|---|---|
+| Sepp, A. (2023), *Optimal Allocation to Cryptocurrencies in Diversified Portfolios*, Risk Magazine, October 2023, 1–6, [SSRN 4217841](https://ssrn.com/abstract=4217841) | The four allocation methods of the paper, run offline on the replication design | [`papers/crypto_allocation_risk_2023`](papers/crypto_allocation_risk_2023/README.md), [cryptocurrency case study](https://optimalportfolios.readthedocs.io/en/latest/app_crypto_allocation.html) |
+| Sepp, A., Ossa, I. and Kastenholz, M. (2026), *Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios*, [The Journal of Portfolio Management, 52(4), 86–120](https://www.pm-research.com/content/iijpormgmt/52/4/86) | The ROSAA framework: factor-model covariance, risk-budgeted strategic allocation, alpha signals, tracking-error-constrained tactical allocation and the rolling backtest on one dated roll-forward state | [`papers/robust_optimisation_jpm_2026`](papers/robust_optimisation_jpm_2026/README.md), [ROSAA case study](https://optimalportfolios.readthedocs.io/en/latest/app_rosaa_multi_asset_allocation.html) |
+| Sepp, A., Hansen, E. and Kastenholz, M. (2026), *Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors*, [SSRN 6785958](https://ssrn.com/abstract=6785958) | Strategic allocation from capital market assumptions on a supplied factor-model covariance; the factor model itself is prepared upstream in FactorModels | [`papers/matf_cma_jpm_2026`](papers/matf_cma_jpm_2026), [CMA strategic allocation](docs/app_cma_strategic_allocation.md), [supplied risk inputs](docs/supplied_risk_inputs.md) |
+| Sepp, A. and Kastenholz, M. (2026), *The Convexity Premium of Portfolio Overlays*, Journal of Investment Management, forthcoming | The Section II coverage-floor allocation: fixed-core maximum Sharpe ratio with a named linear row | [`papers/smart_diversification_joim_2026`](papers/smart_diversification_joim_2026/README.md), [overlay page](https://optimalportfolios.readthedocs.io/en/latest/overlay_tail_floor.html), [smart diversification case study](https://optimalportfolios.readthedocs.io/en/latest/app_smart_diversification_overlays.html) |
+
+## Overview
+
+<a id="package-overview"></a>
+<a id="group-risk-budgets"></a>
+<a id="hierarchical-risk-parity"></a>
+<a id="naming-convention"></a>
+<a id="available-signals"></a>
+<a id="mixed-frequency-support"></a>
+<a id="alphasdata-container"></a>
+<a id="1-implementation-structure"></a>
+<a id="2-example-of-implementation-for-maximum-diversification-solver"></a>
+<a id="3-constraints"></a>
+<a id="4-wrapper-for-implemented-rolling-portfolios"></a>
+<a id="5-adding-an-optimiser"></a>
+<a id="6-default-parameters"></a>
+<a id="7-price-time-series-data"></a>
+<a id="8-drift-aware-rolling-backtests-v531"></a>
+
+| Subpackage | What it holds | Articles |
+| --- | --- | --- |
+| `covar_estimation` | EWMA covariance estimation; factor models are prepared upstream in FM | [covariance estimators](https://optimalportfolios.readthedocs.io/en/latest/covariance_estimators.html), [supplied risk inputs](docs/supplied_risk_inputs.md) |
+| `alphas` | Momentum, low-beta, carry, residual and managers' alpha signals, `AlphasData`, profiling and diagnostics | [alpha signals](https://optimalportfolios.readthedocs.io/en/latest/alphas_module_readme.html), [signal diagnostics](https://optimalportfolios.readthedocs.io/en/latest/signal_diagnostics_and_profiling.html) |
+| `optimization` | The rolling dispatcher, the general, risk-allocation, SAA and TAA solvers, `Constraints`, `OptimiserConfig` and solver diagnostics | [choosing an objective](https://optimalportfolios.readthedocs.io/en/latest/optimization_module_readme.html), [constraints](https://optimalportfolios.readthedocs.io/en/latest/constraints.html), [solver outcomes](https://optimalportfolios.readthedocs.io/en/latest/solver_numerics_and_outcomes.html), [risk budgeting](https://optimalportfolios.readthedocs.io/en/latest/risk_budgeting.html), [HRP and cluster budgets](https://optimalportfolios.readthedocs.io/en/latest/hierarchical_risk_parity_and_cluster_budgets.html), [rolling backtests](https://optimalportfolios.readthedocs.io/en/latest/rolling_backtests.html) |
+| `universe` | `UniverseData` and its transforms, such as unsmoothing | [universe data](https://optimalportfolios.readthedocs.io/en/latest/universe_data_and_unsmoothing.html) |
+| `utils` | Risk contributions, benchmark betas, weight drift, NaN filtering, Gaussian mixtures | [risk contributions and betas](https://optimalportfolios.readthedocs.io/en/latest/portfolio_risk_analytics.html) |
+| `reports` | Result plots, marginal backtests and optional PyBloqs reports | [analytics gallery](https://optimalportfolios.readthedocs.io/en/latest/analytics_gallery.html) |
+
+The [software-design guide](https://optimalportfolios.readthedocs.io/en/latest/software_design.html) draws the module imports, and the
+[API reference](https://optimalportfolios.readthedocs.io/en/latest/api.html) lists every public object.
+
+OP produces constrained target weights and solver outcomes from supplied alphas and
+covariances. `PortfolioOptimisationResult` can inspect those weights on their own,
+with a supplied covariance matrix, or with a QIS `RiskModel` and prepared diagnostic
+tables. Neither `factormodels` nor `factorlasso` is an OP dependency.
+Factor model construction and GLS inference belong to FactorModels; statistical
+estimation belongs to FactorLasso. See the [breaking migration contract](docs/supplied_risk_inputs.md).
+
+**Architecture: completed outputs across the stack.**
+[`factorlasso`](https://github.com/ArturSepp/factorlasso) is the domain-agnostic sparse
+factor-model estimator, with sign constraints, prior-centered regularisation and HCGL clustering;
+it produces statistical estimates. `factormodels` constructs definitions and NAVs,
+fits the asset universe through FL and completes the dated loading/covariance model.
+OP receives supplied alphas and covariances and produces constrained weights. QIS
+provides general risk/stress analytics, backtesting and reporting. Each completed
+object can be inspected before its separate downstream use.
+
+### Analytics at a glance
+
+| Area | Current user-facing analytics |
+| --- | --- |
+| Alpha construction | Momentum, low beta, risk-adjusted carry, managers alpha, residual momentum, residual reversal and rolling EWMA means; fixed-group and time-varying cluster scoring are supported. |
+| Alpha evaluation | Rank-portfolio profiling, cross-backtests, `AlphasData`, IC/IR panels, component diagnostics and comparison tables. |
+| Covariance inputs | Current/rolling EWMA or supplied covariance matrices, including completed FM estimates. |
+| Cluster inputs | Supplied static or dated cluster mappings and prepared scores. Lineage and statistical clustering remain in FactorLasso; OP aliases are removed. |
+| General optimisation | Minimum variance, quadratic utility, maximum Sharpe, maximum diversification, CARA Gaussian-mixture utility and minimum tracking error. |
+| Risk allocation | Constrained risk budgeting, point-in-time group risk budgets, date-varying rolling budgets, group Euler-risk attribution and external-linkage hierarchical risk parity. |
+| SAA and TAA optimisation | Minimum variance at target return, maximum return at target volatility, alpha over tracking error and alpha at target portfolio return. |
+| Constraints and implementation | Instrument/group bounds, exposure, turnover, tracking error, target return/volatility, benchmark-relative sector/style/beta limits, frozen holdings and current-to-model eligibility corridors. |
+| Solver controls and diagnostics | One covariance factorization per compatible CVXPY solve, input-contract validation, structured `OptimizationOutcome`/`ConstraintResidual` output, infeasibility diagnosis and run-level warning summaries. |
+| Portfolio and risk results | `PortfolioOptimisationResult` provides weights/trades, volatility, turnover, tracking error, factor/residual risk, group attribution, factor exposures, efficient-frontier data and report tables using `qis.RiskModel`. |
+| Universe, backtest and reporting | Validated `UniverseData`, metadata/group-loadings persistence and transforms, drift-aware rolling weights, transaction-cost backtests through `qis`, efficient-frontier plots, marginal portfolio backtests and optional PyBloqs HTML/PDF reports. |
+
+This table groups the analytics by workflow. The exact package-root import inventory and callable
+signatures are maintained in the [API reference](https://optimalportfolios.readthedocs.io/en/latest/api.html).
 
 <a id="quick-start-offline-rolling-backtest"></a>
 
@@ -169,156 +321,6 @@ The committed multi-asset fixture keeps this example offline. The same pipeline
 supports price panels with NaNs and different start dates, while preserving
 roll-forward estimation (no hindsight bias) and drift-aware turnover accounting.
 
-### Design scope
-
-The solvers use quadratic and conic objectives (variance, tracking error, Sharpe ratio,
-diversification ratio, CARA utility); non-quadratic risk measures such as CVaR, MAD or drawdown
-constraints are out of scope, and Riskfolio-Lib or skfolio cover them. Each solver lives in its
-own module and plugs into the rolling backtester through one dispatch function: the
-[software-design guide](https://optimalportfolios.readthedocs.io/en/latest/software_design.html) explains these boundaries, and the
-[package comparison](https://optimalportfolios.readthedocs.io/en/latest/package_comparison.html) records the versioned evidence for the field
-comparison.
-
-## When to use it — and when not
-
-Use `optimalportfolios` when you need a dated roll-forward pipeline from point-in-time covariance
-and alpha estimates to constrained targets, scheduled rebalancing, and drift-aware backtests with
-transaction costs across incomplete or mixed-frequency multi-asset panels.
-
-Choose another package when the core problem is a non-quadratic risk measure such as CVaR, MAD,
-or drawdown constraints; the package comparison points to Riskfolio-Lib and skfolio for those
-workflows. Use `factorlasso` directly when you need its standalone sparse multi-output factor-model
-estimator rather than portfolio construction.
-
-## Package overview
-
-| Subpackage | What it holds | Articles |
-| --- | --- | --- |
-| `covar_estimation` | EWMA covariance estimation; factor models are prepared upstream in TF | [covariance estimators](https://optimalportfolios.readthedocs.io/en/latest/covariance_estimators.html), [supplied risk inputs](docs/supplied_risk_inputs.md) |
-| `alphas` | Momentum, low-beta, carry, residual and managers' alpha signals, `AlphasData`, profiling and diagnostics | [alpha signals](https://optimalportfolios.readthedocs.io/en/latest/alphas_module_readme.html), [signal diagnostics](https://optimalportfolios.readthedocs.io/en/latest/signal_diagnostics_and_profiling.html) |
-| `optimization` | The rolling dispatcher, the general, risk-allocation, SAA and TAA solvers, `Constraints`, `OptimiserConfig` and solver diagnostics | [choosing an objective](https://optimalportfolios.readthedocs.io/en/latest/optimization_module_readme.html), [constraints](https://optimalportfolios.readthedocs.io/en/latest/constraints.html), [solver outcomes](https://optimalportfolios.readthedocs.io/en/latest/solver_numerics_and_outcomes.html) |
-| `universe` | `UniverseData` and its transforms, such as unsmoothing | [universe data](https://optimalportfolios.readthedocs.io/en/latest/universe_data_and_unsmoothing.html) |
-| `utils` | Risk contributions, benchmark betas, weight drift, NaN filtering, Gaussian mixtures | [risk contributions and betas](https://optimalportfolios.readthedocs.io/en/latest/portfolio_risk_analytics.html) |
-| `reports` | Result plots, marginal backtests and optional PyBloqs reports | [analytics gallery](https://optimalportfolios.readthedocs.io/en/latest/analytics_gallery.html) |
-
-The [software-design guide](https://optimalportfolios.readthedocs.io/en/latest/software_design.html) draws the module imports, and the
-[API reference](https://optimalportfolios.readthedocs.io/en/latest/api.html) lists every public object.
-
-### Analytics at a glance
-
-| Area | Current user-facing analytics |
-| --- | --- |
-| Alpha construction | Momentum, low beta, risk-adjusted carry, managers alpha, residual momentum, residual reversal and rolling EWMA means; fixed-group and time-varying cluster scoring are supported. |
-| Alpha evaluation | Rank-portfolio profiling, cross-backtests, `AlphasData`, IC/IR panels, component diagnostics and comparison tables. |
-| Covariance inputs | Current/rolling EWMA or supplied covariance matrices, including completed TF estimates. |
-| Cluster inputs | Supplied static or dated cluster mappings and prepared scores. Lineage and statistical clustering remain in FactorLasso; OP aliases are removed. |
-| General optimisation | Minimum variance, quadratic utility, maximum Sharpe, maximum diversification, CARA Gaussian-mixture utility and minimum tracking error. |
-| Risk allocation | Constrained risk budgeting, point-in-time group risk budgets, date-varying rolling budgets, group Euler-risk attribution and external-linkage hierarchical risk parity. |
-| SAA and TAA optimisation | Minimum variance at target return, maximum return at target volatility, alpha over tracking error and alpha at target portfolio return. |
-| Constraints and implementation | Instrument/group bounds, exposure, turnover, tracking error, target return/volatility, benchmark-relative sector/style/beta limits, frozen holdings and current-to-model eligibility corridors. |
-| Solver controls and diagnostics | One covariance factorization per compatible CVXPY solve, input-contract validation, structured `OptimizationOutcome`/`ConstraintResidual` output, infeasibility diagnosis and run-level warning summaries. |
-| Portfolio and risk results | `PortfolioOptimisationResult` provides weights/trades, volatility, turnover, tracking error, factor/residual risk, group attribution, factor exposures, efficient-frontier data and report tables using `qis.RiskModel`. |
-| Universe, backtest and reporting | Validated `UniverseData`, metadata/group-loadings persistence and transforms, drift-aware rolling weights, transaction-cost backtests through `qis`, efficient-frontier plots, marginal portfolio backtests and optional PyBloqs HTML/PDF reports. |
-
-This table groups the analytics by workflow. The exact package-root import inventory and callable
-signatures are maintained in the [API reference](https://optimalportfolios.readthedocs.io/en/latest/api.html).
-
-**Architecture: completed outputs across the stack**
-
-[`factorlasso`](https://github.com/ArturSepp/factorlasso) is the domain-agnostic sparse
-factor-model estimator, with sign constraints, prior-centred regularisation and HCGL clustering;
-it produces statistical estimates. `tradablefactors` constructs definitions and NAVs,
-fits the asset universe through FL and completes the dated loading/covariance model.
-OP receives supplied alphas and covariances and produces constrained weights. QIS
-provides general risk/stress analytics, backtesting and reporting. Each completed
-object can be inspected before its separate downstream use.
-
-## Cluster-aware risk allocation
-
-<a id="group-risk-budgets"></a>
-<a id="hierarchical-risk-parity"></a>
-
-See [hierarchical risk parity and cluster risk budgets](https://optimalportfolios.readthedocs.io/en/latest/hierarchical_risk_parity_and_cluster_budgets.html) for group risk budgets and hierarchical risk parity, including date-by-asset cluster labels, and the [risk-budgeting guide](https://optimalportfolios.readthedocs.io/en/latest/risk_budgeting.html) for the solver that group budgets feed.
-
-## Alpha signals module
-
-<a id="naming-convention"></a>
-<a id="available-signals"></a>
-<a id="mixed-frequency-support"></a>
-<a id="alphasdata-container"></a>
-
-See the [alpha signals guide](https://optimalportfolios.readthedocs.io/en/latest/alphas_module_readme.html) for the signal catalogue, mixed-frequency inputs, cluster scoring, and the `AlphasData` container.
-
-## Table of contents
-
-1. [Why optimalportfolios](#why-optimalportfolios)
-2. [Package overview](#package-overview)
-3. [Cluster-aware risk allocation](#cluster-aware-risk-allocation)
-4. [Alpha signals module](#alpha-signals-module)
-5. [Installation](#installation)
-6. [Portfolio Optimisers](#portfolio-optimisers)
-7. [Examples](#examples)
-8. [Updates](#updates)
-9. [Disclaimer](#disclaimer)
-
-## Supplied risk inputs
-
-OP produces constrained target weights and solver outcomes from supplied alphas and
-covariances. `PortfolioOptimisationResult` can inspect those weights on their own,
-with a supplied covariance matrix, or with a QIS `RiskModel` and prepared diagnostic
-tables. Neither `tradablefactors` nor `factorlasso` is an OP dependency.
-Factor model construction and GLS inference belong to TradableFactors; statistical
-estimation belongs to FactorLasso. See the [breaking migration contract](docs/supplied_risk_inputs.md).
-
-## Installation
-
-Install from PyPI:
-
-```bash
-pip install optimalportfolios
-```
-
-After installing `pytest`, verify the installed wheel with `python -m pytest --pyargs optimalportfolios`.
-
-Upgrade with:
-
-```bash
-pip install --upgrade optimalportfolios
-```
-
-Clone the repository with:
-
-```bash
-git clone https://github.com/ArturSepp/OptimalPortfolios.git
-```
-
-The core package supports Python >=3.10; `pyproject.toml` is the source of truth for dependency
-floors, and the [installation guide](https://optimalportfolios.readthedocs.io/en/latest/installation.html) describes the locked environment.
-Optional extras keep network-data and reporting integrations out of the core installation:
-
-| Extra | Adds |
-| --- | --- |
-| `data` | `yfinance` for free-data example loaders. |
-| `reports` | `pybloqs` for HTML/PDF report backends. |
-| `docs` | Sphinx, Furo and MyST for documentation builds. |
-
-For both runtime integrations, install `optimalportfolios[data,reports]`. There is no `jupyter`
-or `dev` extra; tests and static checks are the PEP 735 `test` and `lint` dependency groups, and
-[CONTRIBUTING.md](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CONTRIBUTING.md) describes the contributor environment.
-
-## Portfolio optimisers
-
-<a id="1-implementation-structure"></a>
-<a id="2-example-of-implementation-for-maximum-diversification-solver"></a>
-<a id="3-constraints"></a>
-<a id="4-wrapper-for-implemented-rolling-portfolios"></a>
-<a id="5-adding-an-optimiser"></a>
-<a id="6-default-parameters"></a>
-<a id="7-price-time-series-data"></a>
-<a id="8-drift-aware-rolling-backtests-v531"></a>
-
-See the [optimisation module guide](https://optimalportfolios.readthedocs.io/en/latest/optimization_module_readme.html) for solver architecture, constraints, backends, and configuration. The [rolling backtest guide](https://optimalportfolios.readthedocs.io/en/latest/rolling_backtests.html) covers rebalancing and transaction costs; [supported examples](https://optimalportfolios.readthedocs.io/en/latest/examples_readme.html) provide complete runnable workflows.
-
 ## Examples
 
 The `examples/` folder is organised by purpose. The
@@ -331,7 +333,7 @@ examples/
 ├── data/                  Shared Yahoo loaders and local universe builders
 ├── solvers/               Objective-specific examples
 ├── backtests/             Complete rolling workflows
-├── comparisons/           Comparisons of methods or configurations
+├── comparisons/           Comparisons of methods or configurations, including the drift policy
 ├── covar_estimation/      Covariance and factor-model examples
 ├── alphas/                Signal profiling
 ├── reports/               Manually prepared portfolio reports
@@ -348,16 +350,18 @@ examples/
 5. [`examples/solvers/tracking_error.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/solvers/tracking_error.py) — benchmark-relative allocation with a signal.
 6. [`examples/comparisons/optimisers.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/comparisons/optimisers.py) — how objectives differ on the same universe.
 
-### Highlighted demos
+### Highlighted examples
+
+The previews in this section are offline teaching exhibits on a fixed synthetic sample ending
+31 December 2025, produced by the scripts named with each; the
+[shared provenance record](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/figures/analytics_manifest.json) records their
+inputs, configuration, software versions and visual review.
 
 #### Optimal portfolio backtest
 
 [`examples/backtests/minimal_backtest.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/backtests/minimal_backtest.py) fetches eight
 ETFs, estimates an EWMA covariance, solves maximum diversification each quarter, backtests with
-transaction costs and writes a qis factsheet. The previews in this section are offline teaching
-exhibits on a fixed synthetic sample ending 31 December 2025, produced by the scripts named with
-each; the [shared provenance record](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/figures/analytics_manifest.json) records their
-inputs, configuration, software versions and visual review.
+transaction costs and writes a qis factsheet.
 
 [![Synthetic maximum-diversification portfolio growth and drawdowns](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/example_portfolio_factsheet1.PNG)](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/example_portfolio_factsheet1.PNG)
 [![Synthetic maximum-diversification target weights and contributions to annualized volatility](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/example_portfolio_factsheet2.PNG)](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/example_portfolio_factsheet2.PNG)
@@ -396,93 +400,35 @@ on one known-factor simulation, which does not establish an estimator ranking.
 
 [![Synthetic minimum-variance performance and covariance errors for six estimators](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)](https://raw.githubusercontent.com/ArturSepp/OptimalPortfolios/main/examples/figures/MinVariance_multi_covar_estimator_backtest.PNG)
 
-#### Drift-policy comparison (new in v5.3.1)
+### From method to implementation
 
-[`examples/comparisons/drift_policy.py`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/comparisons/drift_policy.py) compares
-`OptimiserConfig.use_drifted_weights_0 = True` (the default) with `False` under a binding
-turnover budget; see [turnover and transaction costs](https://optimalportfolios.readthedocs.io/en/latest/turnover_and_transaction_costs.html).
+| Method | Documentation page | Canonical script |
+|---|---|---|
+| ROSAA: risk-budgeted SAA and tracking-error-constrained TAA on one roll-forward state | [ROSAA case study](https://optimalportfolios.readthedocs.io/en/latest/app_rosaa_multi_asset_allocation.html) | [`examples/docs/app_rosaa_multi_asset_allocation.py`](examples/docs/app_rosaa_multi_asset_allocation.py) |
+| Optimal allocation to cryptocurrencies: the four methods of the paper | [cryptocurrency case study](https://optimalportfolios.readthedocs.io/en/latest/app_crypto_allocation.html) | [`examples/docs/app_crypto_allocation.py`](examples/docs/app_crypto_allocation.py) |
+| CMA-based strategic allocation on a supplied factor-model covariance | [CMA strategic allocation](docs/app_cma_strategic_allocation.md) | [`examples/docs/app_cma_strategic_allocation.py`](examples/docs/app_cma_strategic_allocation.py) |
+| Coverage-floor overlay allocation (convexity premium, Section II) | [overlay page](https://optimalportfolios.readthedocs.io/en/latest/overlay_tail_floor.html), [smart diversification case study](https://optimalportfolios.readthedocs.io/en/latest/app_smart_diversification_overlays.html) | [`examples/docs/overlay_tail_floor.py`](examples/docs/overlay_tail_floor.py), [`examples/docs/app_smart_diversification_overlays.py`](examples/docs/app_smart_diversification_overlays.py) |
+| Drift-aware turnover under a binding budget (`use_drifted_weights_0` True vs False) | [turnover and transaction costs](https://optimalportfolios.readthedocs.io/en/latest/turnover_and_transaction_costs.html) | [`examples/comparisons/drift_policy.py`](examples/comparisons/drift_policy.py) |
 
-#### Optimal allocation to cryptocurrencies
+## Testing
 
-The paper's replication code is in
-[`papers/crypto_allocation_risk_2023`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/papers/crypto_allocation_risk_2023/README.md); the
-[cryptocurrency case study](https://optimalportfolios.readthedocs.io/en/latest/app_crypto_allocation.html) reports its design and results and runs
-the four methods offline.
+```bash
+uv sync --locked --group test
+uv run --no-sync pytest
+uv run --locked --only-group lint ruff check --select TID251,TID253,ICN,F src/optimalportfolios/
+```
 
-#### Robust optimisation of strategic and tactical asset allocation
+After installing `pytest`, verify an installed wheel with `python -m pytest --pyargs optimalportfolios`.
+`readme_test.py` executes the minimal example above and diffs its output against the `result`
+fence. Tests that need an optional extra skip rather than fail, so a core install stays green.
+[CONTRIBUTING.md](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CONTRIBUTING.md)
+describes the contributor environment.
 
-The paper's example is in
-[`papers/robust_optimisation_jpm_2026`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/papers/robust_optimisation_jpm_2026/README.md); the
-[ROSAA case study](https://optimalportfolios.readthedocs.io/en/latest/app_rosaa_multi_asset_allocation.html) reports the framework, its study
-design and results, and runs the same configuration offline.
+## Changelog
 
-#### The convexity premium of portfolio overlays
+Release history is maintained in [CHANGELOG.md](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CHANGELOG.md).
 
-The paper's synthetic companion is in
-[`papers/smart_diversification_joim_2026`](https://github.com/ArturSepp/OptimalPortfolios/blob/main/papers/smart_diversification_joim_2026/README.md);
-its Section II coverage-floor allocation is the fixed-core maximum Sharpe ratio with a named
-linear row described in the
-[overlay page](https://optimalportfolios.readthedocs.io/en/latest/overlay_tail_floor.html), section *The coverage floor*.
-The [smart diversification case study](https://optimalportfolios.readthedocs.io/en/latest/app_smart_diversification_overlays.html)
-builds the workflow on the companion's synthetic design.
-
-## Updates
-
-See the [changelog](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CHANGELOG.md) for release history and migration notes.
-
-## Acknowledgments
-
-- [Thomas Schmelzer](https://github.com/tschm), creator of
-  [Jebel-Quant/rhiza](https://github.com/Jebel-Quant/rhiza), for substantial contributions to test
-  coverage, cross-platform CI/CD, dependency auditing, example validation, packaging, and
-  built-wheel verification.
-
-## References
-
-Sepp A. (2023),
-"Optimal Allocation to Cryptocurrencies in Diversified Portfolios",
-*Risk Magazine*, October 2023, 1-6.
-Available at <https://ssrn.com/abstract=4217841>
-
-Sepp A., Ossa I., and Kastenholz M. (2026),
-"Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios",
-*The Journal of Portfolio Management*, 52(4), 86-120.
-[Paper link](https://eprints.pm-research.com/17511/143431/index.html)
-
-Sepp A., Hansen E., and Kastenholz M. (2026),
-"Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors",
-*Under revision at the Journal of Portfolio Management*.
-Available at <https://ssrn.com/abstract=6785958>
-
-Sepp A., and Kastenholz M. (2026),
-"The Convexity Premium of Portfolio Overlays",
-*Journal of Investment Management*, forthcoming.
-Companion code at <https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/smart_diversification_joim_2026>
-
-## Ecosystem
-
-This package is part of an open-source Python stack for quantitative finance. The
-[ArturSepp profile](https://github.com/ArturSepp) is the canonical full catalogue:
-
-| Package | Purpose |
-|---|---|
-| [`qis`](https://github.com/ArturSepp/QuantInvestStrats) | Risk and stress analytics, holdings simulation and reporting |
-| [`optimalportfolios`](https://github.com/ArturSepp/OptimalPortfolios) *(this package)* | Optimisation from supplied inputs to target weights and solver outcomes |
-| [`tradablefactors`](docs/supplied_risk_inputs.md#tradablefactors-availability) | Factor definitions, NAV construction and completed loadings/covariance models; private candidate |
-| [`factorlasso`](https://github.com/ArturSepp/factorlasso) | Sparse multi-output estimation and fitted statistical diagnostics |
-| [`bbg-fetch`](https://github.com/ArturSepp/BloombergFetch) | Bloomberg data fetching |
-| [`option-chain-analytics`](https://github.com/ArturSepp/OptionChainAnalytics) | Point-in-time option-chain normalisation, reconstruction, querying, and visualisation |
-| [`vanilla-option-pricers`](https://github.com/ArturSepp/VanillaOptionPricers) | Vectorised vanilla option pricers and implied volatility fitters |
-| [`stochvolmodels`](https://github.com/ArturSepp/StochVolModels) | Stochastic volatility pricing analytics |
-| [`trendfollowing`](https://github.com/ArturSepp/TrendFollowingSystems) | Trend-following systems: closed-form theory and replication |
-| [`privateassets`](https://github.com/ArturSepp/privateassets) | Money-weighted multi-factor alpha from private-asset cash flows |
-| [`goal-based-allocation`](https://github.com/ArturSepp/GoalBasedAllocation) | Dynamic MV allocation under regime-switching jump-diffusions |
-
-Within the stack, `optimalportfolios` directly depends on `qis` for analytics and reporting.
-TF/FL are separately installed upstream tools. The profile catalogue explains the other
-packages and their distinct boundaries.
-
-## Feedback & contributing
+## Feedback & contributing <a name="feedback-contributing"></a>
 
 - **Bug:** use the [bug-report form](https://github.com/ArturSepp/OptimalPortfolios/issues/new?template=bug_report.yml) with the package version, Python/platform, a minimal public-data reproducer, and expected versus actual output.
 - **Feature:** use the [feature-request form](https://github.com/ArturSepp/OptimalPortfolios/issues/new?template=feature_request.yml) and describe the user goal, current workaround, and smallest useful API. In particular: which constraint, report, or portfolio workflow cannot be expressed today?
@@ -491,6 +437,13 @@ packages and their distinct boundaries.
 
 Project decisions, maintenance expectations, release policy, and best-effort support routes are
 documented in [GOVERNANCE.md](https://github.com/ArturSepp/OptimalPortfolios/blob/main/GOVERNANCE.md).
+
+## Acknowledgments
+
+- [Thomas Schmelzer](https://github.com/tschm), creator of
+  [Jebel-Quant/rhiza](https://github.com/Jebel-Quant/rhiza), for substantial contributions to test
+  coverage, cross-platform CI/CD, dependency auditing, example validation, packaging, and
+  built-wheel verification.
 
 ## Citation
 
@@ -551,15 +504,36 @@ If you use optimalportfolios in your research, please cite it as:
 }
 ```
 
+## Ecosystem
+
+This package is part of an open-source Python stack for quantitative finance. The
+[ArturSepp profile](https://github.com/ArturSepp) is the canonical catalogue:
+
+| Package | Purpose |
+|---|---|
+| [`qis`](https://github.com/ArturSepp/QuantInvestStrats) | Performance analytics, backtesting, and factsheet reporting |
+| [`optimalportfolios`](https://github.com/ArturSepp/OptimalPortfolios) *(this package)* | Portfolio construction and rolling backtesting |
+| [`factorlasso`](https://github.com/ArturSepp/factorlasso) | Sparse factor-model estimation |
+| [`bbg-fetch`](https://github.com/ArturSepp/BloombergFetch) | Bloomberg data in pandas DataFrames |
+| [`option-chain-analytics`](https://github.com/ArturSepp/OptionChainAnalytics) | Point-in-time option-chain data and queries |
+| [`vanilla-option-pricers`](https://github.com/ArturSepp/VanillaOptionPricers) | Numba-vectorised BSM and Bachelier pricing |
+| [`stochvolmodels`](https://github.com/ArturSepp/StochVolModels) | Stochastic-volatility pricing and calibration |
+| [`trendfollowing`](https://github.com/ArturSepp/TrendFollowingSystems) | Closed-form trend-following analytics |
+| [`privateassets`](https://github.com/ArturSepp/privateassets) | Multi-factor PME for private assets |
+| [`goal-based-allocation`](https://github.com/ArturSepp/GoalBasedAllocation) | Goal-based allocation under regime-switching jump-diffusions |
+
+Within the stack, `optimalportfolios` directly depends on `qis` for analytics and reporting.
+`factormodels` and `factorlasso` are separately installed upstream tools, not dependencies; see
+[supplied risk inputs](docs/supplied_risk_inputs.md#factormodels-availability) for the
+`factormodels` availability note.
+
 ## License
 
 MIT — see [LICENSE.txt](https://github.com/ArturSepp/OptimalPortfolios/blob/main/LICENSE.txt).
 
 ## Disclaimer
 
-OptimalPortfolios package is distributed FREE & WITHOUT ANY WARRANTY under the MIT License.
-
-See the [LICENSE.txt](https://github.com/ArturSepp/OptimalPortfolios/blob/main/LICENSE.txt) in the release for details.
-
-Use the dedicated routes in [Feedback & contributing](#feedback-contributing) for bugs, feature
-requests, and methodology questions.
+`optimalportfolios` is distributed FREE & WITHOUT ANY WARRANTY under the MIT License. See
+[LICENSE.txt](https://github.com/ArturSepp/OptimalPortfolios/blob/main/LICENSE.txt) in the
+release for details. Use the routes in [Feedback & contributing](#feedback-contributing) for
+bugs, feature requests and methodology questions.
