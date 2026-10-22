@@ -38,11 +38,11 @@ remain inspectable; there is no new universal serialisation schema.
 
 ## FactorModels availability
 
-FactorModels (FM) is currently private and unreleased. Composed factor workflows
-require authorised access to a matching candidate checkout or a wheel supplied by
-its maintainer; a public package-index installation is not a prerequisite that
-readers can currently satisfy. The base OP installation and EWMA quickstart do not
-require FM or FactorLasso.
+The [FactorModels distribution](https://pypi.org/project/factormodels/) is published
+separately as `factormodels`; install it with `pip install factormodels` for composed
+factor workflows. Composed CI verifies `factormodels==0.1.0`. Its source repository
+and method guides retain their existing access requirements. The base OP installation
+and EWMA quickstart do not require FM or FactorLasso.
 
 FM consumes price or level histories with explicit return transformations. It owns
 factor definitions, NAV construction and completed fitted loadings and
@@ -63,7 +63,7 @@ upstream authorship, source history and software citation in `CITATION.cff`.
 
 ## Factor-model composition
 
-Use an authorised FM candidate when constructing factor inputs. A completed FM
+Use the separately installed FM package when constructing factor inputs. A completed FM
 snapshot supplies `fm.prepare_portfolio_context(snapshot)` as keyword arguments to
 `PortfolioOptimisationResult`, alongside independently obtained weights and benchmark.
 The adapter does not import OP. Full selected covariance remains authoritative for

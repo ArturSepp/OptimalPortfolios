@@ -110,10 +110,10 @@ matching uses the existing NumPy/SciPy path.
 Composed factor workflows use
 [FactorModels](supplied_risk_inputs.md#factormodels-availability) to construct
 factor models and covariances, then supply those estimates to OptimalPortfolios.
-FM is private and unreleased: obtain authorised access to a matching candidate
-checkout or a maintainer-supplied wheel before following a composed example.
-Install that candidate separately using its supplied installation instructions;
-there is currently no public FM installation recipe. It includes
+Install the separately published [factormodels distribution](https://pypi.org/project/factormodels/)
+with `pip install factormodels`; composed CI verifies `factormodels==0.1.0`.
+Its source repository and method guides retain their existing access requirements.
+It includes
 [FactorLasso](https://github.com/ArturSepp/FactorLasso) for estimation and
 cluster-lineage analytics.
 

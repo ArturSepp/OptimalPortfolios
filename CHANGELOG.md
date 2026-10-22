@@ -5,7 +5,21 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [8.0.0] - 2026-10-22
+
+- Publish the supplied-input API as a major release. Factor-model construction and
+  estimation belong to separately installed FactorModels/FactorLasso; OP depends
+  on QIS and accepts prepared covariance, risk context, alphas and diagnostic tables.
+  Removed factor-estimator exports and compatibility aliases require callers to
+  migrate to the upstream packages.
+- Require Python 3.11 or later. Install `optimalportfolios[riskbudget]` explicitly
+  for the existing quadprog projection backend; ordinary imports and base
+  optimisation do not require it.
+- Include the opt-in `optimalportfolios.execution.v2` prepared execution API and
+  optional `exact` extra. Existing execution entry points and solver tolerances
+  retain their established behavior.
+- Verify composed workflows against the public `factormodels==0.1.0`
+  distribution and retain the independently supplied base-package boundary.
 
 - Adapt composed workflows and documentation to the upstream `factormodels`
   namespace (FactorModels). OP continues to consume supplied inputs without a
