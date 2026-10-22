@@ -10,7 +10,7 @@ import pandas as pd
 from scipy.stats import t
 
 from factorlasso import LassoModel, LassoModelType
-from tradablefactors.premia import infer_factor_premia
+from factormodels.premia import infer_factor_premia
 
 
 def main():

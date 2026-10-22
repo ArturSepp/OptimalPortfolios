@@ -6,7 +6,7 @@ different way: the page's filter formulas as explicit geometric sums, an EWMA re
 as loops, endpoint price ratios, residuals rebuilt from dated loadings, and clipped population
 or sample z-scores written out by hand. Later prices, benchmark, carry and cluster labels are
 perturbed to show that no earlier signal or score moves. Sockets are blocked while the blocks
-run. The composed script runs offline after ``pip install optimalportfolios tradablefactors``
+run. The composed script runs offline after ``pip install optimalportfolios factormodels``
 and needs no data file or
 random seed:
 
@@ -23,7 +23,7 @@ from unittest.mock import patch
 import warnings
 
 import factorlasso as fl
-import tradablefactors as tf
+import factormodels as fm
 import numpy as np
 import pandas as pd
 
@@ -493,7 +493,7 @@ def main() -> None:
         cadence = inspect.signature(getattr(signals, name)).parameters["returns_freq"].default
         assert cadence == ("W-WED" if "carry" in name else "ME")
 
-    factor_estimator = tf.FactorCovarEstimator(
+    factor_estimator = fm.FactorCovarEstimator(
         rebalancing_freq="YE", factor_returns_freq="ME", factor_covar_span=36,
         lasso_model=fl.LassoModel(
             model_type=fl.LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
@@ -566,7 +566,7 @@ def main() -> None:
     pd.testing.assert_frame_equal(extreme_alpha, raw_alpha)
     pd.testing.assert_frame_equal(extreme_score, mgr_score)
 
-    from tradablefactors.signals import extract_rolling_clusters
+    from factormodels.signals import extract_rolling_clusters
 
     rolling_clusters = extract_rolling_clusters(
         model=taa_covar_data,
@@ -589,10 +589,10 @@ def main() -> None:
     )
 
     # Statistical pooling is completed upstream; OP receives the resulting score panel.
-    prepared_scores = tf.prepare_cluster_scores(raw_momentum, rolling_clusters)
+    prepared_scores = fm.prepare_cluster_scores(raw_momentum, rolling_clusters)
     pd.testing.assert_frame_equal(prepared_scores, cluster_score, check_exact=True)
     unit_stability = pd.DataFrame(1.0, index=raw_momentum.index, columns=raw_momentum.columns)
-    pooled_scores = tf.prepare_cluster_scores(
+    pooled_scores = fm.prepare_cluster_scores(
         raw_momentum, rolling_clusters, pooling_type="asset_variance",
         stability_weights=unit_stability,
     )

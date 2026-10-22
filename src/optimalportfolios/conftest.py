@@ -47,7 +47,7 @@ def pytest_configure(config) -> None:
 
     vars(optimalportfolios).pop("conftest", None)
     config.addinivalue_line(
-        "markers", "factor_integration: requires explicit tradablefactors and factorlasso installs"
+        "markers", "factor_integration: requires explicit factormodels and factorlasso installs"
     )
     config.addinivalue_line("markers", "riskbudget: executes the optional quadprog backend")
 
@@ -55,11 +55,11 @@ def pytest_configure(config) -> None:
 def pytest_collection_modifyitems(config, items) -> None:
     """Keep composed checks collectable in base installs and strict in the integration lane."""
     available = all(importlib.util.find_spec(name) is not None
-                    for name in ("tradablefactors", "factorlasso"))
+                    for name in ("factormodels", "factorlasso"))
     if os.environ.get("OP_REQUIRE_FACTOR_INTEGRATION") == "1" and not available:
-        raise pytest.UsageError("The integration lane requires tradablefactors and factorlasso")
+        raise pytest.UsageError("The integration lane requires factormodels and factorlasso")
     if not available:
-        skip = pytest.mark.skip(reason="Composed integration: install tradablefactors separately")
+        skip = pytest.mark.skip(reason="Composed integration: install factormodels separately")
         for item in items:
             if item.get_closest_marker("factor_integration") is not None:
                 item.add_marker(skip)

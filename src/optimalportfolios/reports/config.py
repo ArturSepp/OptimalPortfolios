@@ -45,34 +45,71 @@ margin_bottom = 0.0
 line_height = 1.0
 font_family = 'Calibri'
 
-KWARGS_SUPTITLE = {'title_wrap': True, 'text_align': 'center', 'color': 'blue', 'font_size': "12px", 'font-weight': 'normal',
-                   'title_level': 1, 'line_height': 0.7, 'inherit_cfg': False,
-                   'margin_top': 0, 'margin_bottom': 0,
-                   'font-family': 'sans-serif'}
+KWARGS_SUPTITLE = {
+    "title_wrap": True,
+    "text_align": "center",
+    "color": "blue",
+    "font_size": "12px",
+    "font-weight": "normal",
+    "title_level": 1,
+    "line_height": 0.7,
+    "inherit_cfg": False,
+    "margin_top": 0,
+    "margin_bottom": 0,
+    "font-family": "sans-serif",
+}
 KWARGS_TITLE = {'title_wrap': True, 'text_align': 'left', 'color': 'blue', 'font_size': "12px",
                 'title_level': 2, 'line_height': line_height, 'inherit_cfg': False,
                 'margin_top': margin_top,  'margin_bottom': margin_bottom,
                 'font-family': font_family}
-KWARGS_DESC = {'title_wrap': True, 'text_align': 'left', 'font_size': "12px", 'font-weight': 'normal',
-               'title_level': 3, 'line_height': line_height, 'inherit_cfg': False,
-               'margin_top': margin_top, 'margin_bottom': margin_bottom,
-               'font-family': font_family}
-KWARGS_TEXT = {'title_wrap': True, 'text_align': 'left', 'font_size': "12px", 'font-weight': 'normal',
-               'title_level': 3, 'line_height': line_height, 'inherit_cfg': False,
-               'margin_top': margin_top, 'margin_bottom': margin_bottom,
-               'font-family': font_family}
+KWARGS_DESC = {
+    "title_wrap": True,
+    "text_align": "left",
+    "font_size": "12px",
+    "font-weight": "normal",
+    "title_level": 3,
+    "line_height": line_height,
+    "inherit_cfg": False,
+    "margin_top": margin_top,
+    "margin_bottom": margin_bottom,
+    "font-family": font_family,
+}
+KWARGS_TEXT = {
+    "title_wrap": True,
+    "text_align": "left",
+    "font_size": "12px",
+    "font-weight": "normal",
+    "title_level": 3,
+    "line_height": line_height,
+    "inherit_cfg": False,
+    "margin_top": margin_top,
+    "margin_bottom": margin_bottom,
+    "font-family": font_family,
+}
 KWARGS_FIG = {'title_wrap': True, 'text_align': 'left', 'font_size': "12px",
               'title_level': 3, 'line_height': line_height, 'inherit_cfg': False,
               'margin_top': margin_top, 'margin_bottom': margin_bottom,
               'font-family': font_family}
-KWARGS_FOOTNOTE = {'title_wrap': True, 'text_align': 'left', 'font_size': "12px", 'font-weight': 'normal',
-                   'title_level': 8, 'line_height': line_height, 'inherit_cfg': False,
-                   'margin_top': 0, 'margin_bottom': 0,
-                   'font-family': font_family}
+KWARGS_FOOTNOTE = {
+    "title_wrap": True,
+    "text_align": "left",
+    "font_size": "12px",
+    "font-weight": "normal",
+    "title_level": 8,
+    "line_height": line_height,
+    "inherit_cfg": False,
+    "margin_top": 0,
+    "margin_bottom": 0,
+    "font-family": font_family,
+}
 
-RA_TABLE_FOOTNOTE = (u"\u002A" + "Vol (annualized volatility) and Skew (Skeweness) are computed using daily returns, "
-                                 "Sharpe is computed assuming zero risk-free rate, "
-                                 "Max DD is maximum drawdown, "
-                                 "Best and Worst are the highest and lowest daily returns, "
-                                 "Alpha (annualized daily alpha), Beta, R2 (R squared) are estimated using regression "
-                                 "of daily returns explained by underlying coin")
+RA_TABLE_FOOTNOTE = (
+    u"\u002A" + "Vol (annualized volatility) and Skew (Skeweness) are computed using daily "
+    "returns, "
+    "Sharpe is computed assuming zero risk-free rate, "
+    "Max DD is maximum drawdown, "
+    "Best and Worst are the highest and lowest daily returns, "
+    "Alpha (annualized daily alpha), Beta, R2 (R squared) are "
+    "estimated using regression "
+    "of daily returns explained by underlying coin"
+)

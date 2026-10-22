@@ -14,7 +14,7 @@ constants below and records their values.
 from dataclasses import replace
 
 import factorlasso as fl
-import tradablefactors as tf
+import factormodels as fm
 import numpy as np
 import pandas as pd
 
@@ -178,7 +178,7 @@ def main() -> None:
     factor_prices = prices[["Global Equity", "Government Bonds"]].rename(columns={
         "Global Equity": "Market", "Government Bonds": "Rates",
     })
-    factor_estimator = tf.FactorCovarEstimator(
+    factor_estimator = fm.FactorCovarEstimator(
         lasso_model=fl.LassoModel(
             model_type=fl.LassoModelType.LASSO,
             reg_lambda=1e-5,
@@ -238,7 +238,7 @@ def main() -> None:
     assert list(rolling_covars) == quarter_ends
     np.testing.assert_allclose(annual_covar, rolling_covars[cutoff], atol=1e-12)
 
-    def fresh_estimator(**overrides) -> tf.FactorCovarEstimator:
+    def fresh_estimator(**overrides) -> fm.FactorCovarEstimator:
         """The page's estimator with a new LASSO model, so no fitted state is shared."""
         model = fl.LassoModel(**factor_estimator.lasso_model.get_params())
         return replace(factor_estimator, lasso_model=model, **overrides)

@@ -10,13 +10,9 @@ import re
 import runpy
 import subprocess
 import sys
+import tomllib
 
 import pytest
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib  # pytest requires tomli on Python 3.10.
 
 
 @pytest.fixture
@@ -115,7 +111,8 @@ class NoOptionalImports(importlib.abc.MetaPathFinder):
         """Reject optional integration imports before delegating core imports."""
         if fullname.split(".")[0] in {
             "yfinance", "pandas_datareader", "pybloqs", "plotly", "pyarrow",
-            "psycopg2", "sqlalchemy", "tradablefactors", "factorlasso", "quadprog",
+            "psycopg2", "sqlalchemy", "factormodels", "tradablefactors",
+            "factorlasso", "quadprog", "mosek",
         }:
             raise ModuleNotFoundError(fullname)
         return None

@@ -24,9 +24,6 @@ permissions:
 # more often from a change to the package it calls than from an edit to itself.
 on:
   workflow_call:
-    secrets:
-      TRADABLEFACTORS_READ_TOKEN:
-        required: false
   schedule:
     - cron: "47 4 * * *"
   workflow_dispatch:
@@ -104,36 +101,28 @@ jobs:
       uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       with:
         python-version: "3.12"
+        enable-cache: false
+        save-cache: false
 
     - name: Sync with the data extra
       # `data` is the extra these examples actually need; syncing `--all-extras` would install
       # the reporting and docs stacks to run scripts that use neither.
       run: uv sync --locked --extra data --extra riskbudget
 
-    - name: Check out the explicitly selected factor pipeline
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        repository: ArturSepp/tradablefactors
-        ref: ${{ vars.TRADABLEFACTORS_REF || 'migration/tradablefactors-stage-4' }}
-        path: .integration/tradablefactors
-        token: ${{ secrets.TRADABLEFACTORS_READ_TOKEN || github.token }}
-
-    - name: Install TF explicitly for network examples that compose the factor pipeline
-      run: uv pip install --python .venv/bin/python .integration/tradablefactors
+    - name: Verify public dependency workflow contracts
+      run: python -m unittest discover -s .github/scripts -p public_dependency_test.py
+    - name: Install released FM for the composed network examples
+      run: uv pip install --python .venv/bin/python "factormodels==0.1.0"
 
     - name: Run the network examples
       # `--jobs 4` rather than the default: these are all hitting one host, and Yahoo rate-limits.
       # Serialising entirely would take too long; four is a compromise that has to be tuned by
       # observation, not derived.
       #
-      # `tee` because the step's own outcome is swallowed by `continue-on-error`, and the summary
-      # step below is what makes a real failure visible without opening the log.
       id: run
       shell: bash
       run: |
-        set -o pipefail
-        uv run --no-sync python .github/scripts/run_examples.py \
-          --lane network --jobs 4 | tee "$RUNNER_TEMP/network.log"
+        uv run --no-sync python .github/scripts/run_examples.py --lane network --jobs 4
 
     - name: Summarise
       # Runs whatever the step above did. `continue-on-error` turns a failed job green in the UI,
@@ -149,11 +138,6 @@ jobs:
             echo "All network examples passed."
           else
             echo "**Some network examples failed.** This lane is advisory: the cause is often"
-            echo "Yahoo Finance rather than this repository. Check the failures below against a"
-            echo "local run before treating them as rot."
+            echo "Yahoo Finance rather than this repository. See the public job log for diagnostics."
           fi
-          echo
-          echo '```'
-          grep -E "^  (PASS|FAIL)|passed in" "$RUNNER_TEMP/network.log" || echo "no results parsed"
-          echo '```'
         } >> "$GITHUB_STEP_SUMMARY"

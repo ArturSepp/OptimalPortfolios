@@ -505,6 +505,20 @@ def test_repository_ownership_is_complete(repository_inventory):
     assert CHECKER['check_papers'](repository_inventory, REPO_ROOT) == []
 
 
+@pytest.mark.parametrize('field', ['symbols', 'parameters', 'owner'])
+def test_research_namespace_ownership_detects_omissions(repository_inventory, field):
+    """A separately exported research namespace still owns every symbol and field."""
+    inventory = json.loads(json.dumps(repository_inventory))
+    entry = inventory['namespace_api']['optimalportfolios.execution.v2']
+    if field == 'symbols':
+        entry['symbols'].remove('ExecutionRules')
+    elif field == 'parameters':
+        entry['parameters']['ExecutionRules'].remove('ticket_cap')
+    else:
+        entry['owner'] = 'docs/not_registered.md'
+    assert CHECKER['check_ownership'](inventory, REPO_ROOT)
+
+
 def _mutated(inventory, change):
     """Return a deep copy of the inventory after applying one change to it."""
     copy = json.loads(json.dumps(inventory))

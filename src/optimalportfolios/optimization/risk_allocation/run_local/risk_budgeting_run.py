@@ -27,7 +27,8 @@ def run_local(local: Locals):
     """Run local tests for product_development and debugging purposes."""
 
     if local == Locals.RISK_PARITY_COMPARE:
-        # three-asset case with negative correlations: compare scipy vs CCD/ADMM vs CCD/ADMM-with-bounds
+        # three-asset case with negative correlations: compare scipy vs CCD/ADMM vs
+        # CCD/ADMM-with-bounds
         risk_budget = np.array([0.45, 0.45, 0.1])
         covar = np.array([[0.2 ** 2,       0.5*0.15*0.2, -0.01],
                           [0.5*0.15*0.2,  0.15 ** 2,     -0.005],
@@ -78,14 +79,23 @@ def run_local(local: Locals):
 
         print("\n── CCD/ADMM (max 40% per asset) ──")
         print(f"Weights:    {np.array2string(w_rb_bounded, precision=4)}")
-        print(f"RC (norm):  {np.array2string(rc_rb_bounded / np.nansum(rc_rb_bounded), precision=4)}")
+        print(
+            f"RC (norm):  {np.array2string(rc_rb_bounded / np.nansum(rc_rb_bounded), precision=4)}"
+        )
         print(f"Port vol:   {vol_rb_bounded:.4%}")
 
         # budget tracking error: |realised RC - target budget|
         print("\n── Budget tracking ──")
-        print(f"Scipy MAE:        {np.mean(np.abs(rc_scipy / np.nansum(rc_scipy) - risk_budget)):.6f}")
-        print(f"CCD/ADMM MAE:         {np.mean(np.abs(rc_rb / np.nansum(rc_rb) - risk_budget)):.6f}")
-        print(f"CCD/ADMM bounded MAE: {np.mean(np.abs(rc_rb_bounded / np.nansum(rc_rb_bounded) - risk_budget)):.6f}")
+        print(
+            f"Scipy MAE:        {np.mean(np.abs(rc_scipy / np.nansum(rc_scipy) - risk_budget)):.6f}"
+        )
+        print(
+            f"CCD/ADMM MAE:         {np.mean(np.abs(rc_rb / np.nansum(rc_rb) - risk_budget)):.6f}"
+        )
+        print(
+            f"CCD/ADMM bounded MAE: "
+            f"{np.mean(np.abs(rc_rb_bounded / np.nansum(rc_rb_bounded) - risk_budget)):.6f}"
+        )
 
     elif local == Locals.RISK_BUDGETING_WITH_BOUNDS:
         # four-asset case: equal risk vs tilted budget, with and without weight caps
@@ -124,7 +134,10 @@ def run_local(local: Locals):
                 print(f"Budget: {budget_name} | Constraints: {constr_name}")
                 for i, t in enumerate(tickers):
                     print(f"  {t:12s}  w={w[i]:.4f}  RC={rc_norm[i]:.4f}  target={budget[i]:.4f}")
-                print(f"  Portfolio vol: {port_vol:.4%}  |  Budget MAE: {np.mean(np.abs(rc_norm - budget)):.6f}")
+                print(
+                    f"  Portfolio vol: {port_vol:.4%}  |  Budget MAE: "
+                    f"{np.mean(np.abs(rc_norm - budget)):.6f}"
+                )
                 print()
 
     elif local == Locals.WRAPPER_RISK_BUDGETING:

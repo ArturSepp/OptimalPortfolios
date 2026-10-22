@@ -16,7 +16,7 @@ import qis
 from factorlasso import LassoModel, LassoModelType
 
 import optimalportfolios as op
-from tradablefactors import FactorCovarEstimator
+from factormodels import FactorCovarEstimator
 
 SEED = 11
 FACTORS = ['Equity', 'Rates', 'Credit']

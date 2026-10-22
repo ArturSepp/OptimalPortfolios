@@ -215,7 +215,9 @@ def backtest_alpha_signals(prices: pd.DataFrame,
         mandate_portfolio.set_group_data(group_data=group_data, group_order=group_order)
         portfolio_datas.append(mandate_portfolio)
 
-    multi_portfolio_data = qis.MultiPortfolioData(portfolio_datas, benchmark_prices=benchmark_prices)
+    multi_portfolio_data = qis.MultiPortfolioData(
+        portfolio_datas, benchmark_prices=benchmark_prices
+    )
     kwargs = qis.fetch_default_report_kwargs(
         time_period=time_period,
         reporting_frequency=qis.ReportingFrequency.MONTHLY,
@@ -298,7 +300,9 @@ def multi_backtest_alpha_signals(prices: pd.DataFrame,
         mandate_portfolio.set_group_data(group_data=group_data, group_order=group_order)
         portfolio_datas.append(mandate_portfolio)
 
-    multi_portfolio_data = qis.MultiPortfolioData(portfolio_datas, benchmark_prices=benchmark_prices)
+    multi_portfolio_data = qis.MultiPortfolioData(
+        portfolio_datas, benchmark_prices=benchmark_prices
+    )
     kwargs = qis.fetch_default_report_kwargs(
         time_period=time_period,
         reporting_frequency=qis.ReportingFrequency.MONTHLY,
@@ -325,20 +329,21 @@ class CrossBacktestParam(Enum):
     RESIDUAL_MOM_SPAN = 'RESIDUAL_MOM_SPAN'
 
 
-def cross_backtest_alpha_signals(prices: pd.DataFrame,
-                                 group_data: pd.Series,
-                                 group_order: List[str],
-                                 rebalancing_costs: pd.Series,
-                                 benchmark_prices: pd.DataFrame,
-                                 time_period: qis.TimePeriod,
-                                 cross_backtest_param: CrossBacktestParam = CrossBacktestParam.MOM_SPAN,
-                                 mom_long_span: int = 12,
-                                 mom_short_span: Optional[int] = 1,
-                                 beta_span: int = 24,
-                                 momentum_span: int = 12,
-                                 rebalancing_freq: str = 'ME',
-                                 returns_freq: Optional[str] = None
-                                 ) -> List[plt.Figure]:
+def cross_backtest_alpha_signals(
+    prices: pd.DataFrame,
+    group_data: pd.Series,
+    group_order: List[str],
+    rebalancing_costs: pd.Series,
+    benchmark_prices: pd.DataFrame,
+    time_period: qis.TimePeriod,
+    cross_backtest_param: CrossBacktestParam = CrossBacktestParam.MOM_SPAN,
+    mom_long_span: int = 12,
+    mom_short_span: Optional[int] = 1,
+    beta_span: int = 24,
+    momentum_span: int = 12,
+    rebalancing_freq: str = "ME",
+    returns_freq: Optional[str] = None,
+) -> List[plt.Figure]:
     """
     Parameter sensitivity sweep for alpha signals.
 
@@ -408,7 +413,9 @@ def cross_backtest_alpha_signals(prices: pd.DataFrame,
         mandate_portfolio.set_group_data(group_data=group_data, group_order=group_order)
         portfolio_datas.append(mandate_portfolio)
 
-    multi_portfolio_data = qis.MultiPortfolioData(portfolio_datas, benchmark_prices=benchmark_prices)
+    multi_portfolio_data = qis.MultiPortfolioData(
+        portfolio_datas, benchmark_prices=benchmark_prices
+    )
     kwargs = qis.fetch_default_report_kwargs(
         time_period=time_period,
         reporting_frequency=qis.ReportingFrequency.MONTHLY,

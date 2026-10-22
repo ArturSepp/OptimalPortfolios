@@ -14,8 +14,8 @@ import factorlasso as fl
 import qis
 
 from optimalportfolios.optimization.executed_state import backtest_with_qis_state
-from tradablefactors.premia.sharpe_accounting import gls_projector, gls_split
-from tradablefactors.analytics import (
+from factormodels.premia.sharpe_accounting import gls_projector, gls_split
+from factormodels.analytics import (
     FactorOpportunityModel, portfolio_opportunity_metrics, fixed_portfolio_alpha_interval,
 )
 

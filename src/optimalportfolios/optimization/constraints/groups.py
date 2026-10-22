@@ -42,7 +42,8 @@ class GroupLowerUpperConstraints:
     """Group-based allocation constraints with min/max limits.
 
     Enables portfolio constraints at the group level (e.g., sector, region, asset class)
-    rather than individual asset level. Groups are defined via loading matrices (binary or fractional).
+    rather than individual asset level. Groups are defined via loading matrices
+    (binary or fractional).
 
     Attributes:
         group_loadings: Matrix (assets x groups) where positive values indicate membership/exposure.
@@ -146,8 +147,12 @@ class GroupLowerUpperConstraints:
         """
         return GroupLowerUpperConstraints(
             group_loadings=self.group_loadings.drop([name], axis=1),
-            group_min_allocation=self.group_min_allocation.drop([name], axis=0) if self.group_min_allocation is not None else None,
-            group_max_allocation=self.group_max_allocation.drop([name], axis=0) if self.group_max_allocation is not None else None,
+            group_min_allocation=self.group_min_allocation.drop([name], axis=0)
+            if self.group_min_allocation is not None
+            else None,
+            group_max_allocation=self.group_max_allocation.drop([name], axis=0)
+            if self.group_max_allocation is not None
+            else None,
         )
 
     def set_cvx_group_lower_upper_constraints(self,
@@ -171,21 +176,25 @@ class GroupLowerUpperConstraints:
         multiplier = 1.0 if exposure_scaler is None else exposure_scaler
         for group in self.group_loadings.columns:
             group_loading = self.group_loadings[group].to_numpy()
-            if np.any(np.isclose(group_loading, 0.0) == False):
+            if np.any(~np.isclose(group_loading, 0.0)):
                 if self.group_min_allocation is not None:
                     if group in self.group_min_allocation.index:
                         this = self.group_min_allocation.loc[group]
                         if not np.isnan(this):
                             constraints += [group_loading @ w >= multiplier * this]
                     else:
-                        warnings.warn(f"no group={group} in group_min_allocation, constraint skipped")
+                        warnings.warn(
+                            f"no group={group} in group_min_allocation, constraint skipped"
+                        )
                 if self.group_max_allocation is not None:
                     if group in self.group_max_allocation.index:
                         this = self.group_max_allocation.loc[group]
                         if not np.isnan(this):
                             constraints += [group_loading @ w <= multiplier * this]
                     else:
-                        warnings.warn(f"no group={group} in group_max_allocation, constraint skipped")
+                        warnings.warn(
+                            f"no group={group} in group_max_allocation, constraint skipped"
+                        )
         return constraints
 
     def print(self):
@@ -225,13 +234,17 @@ def merge_group_lower_upper_constraints(
 
     duplicates = group_lower_upper_constraints1.group_loadings.index.duplicated()
     if duplicates.any():
-        warnings.warn(f"Duplicate values in group_lower_upper_constraints1.group_loadings.index:"
-                      f" {group_lower_upper_constraints1.group_loadings.index[duplicates].unique()}")
+        warnings.warn(
+            f"Duplicate values in group_lower_upper_constraints1.group_loadings.index:"
+            f" {group_lower_upper_constraints1.group_loadings.index[duplicates].unique()}"
+        )
 
     duplicates = group_lower_upper_constraints2.group_loadings.index.duplicated()
     if duplicates.any():
-        warnings.warn(f"Duplicate values in group_lower_upper_constraints2.group_loadings.index"
-                      f" {group_lower_upper_constraints2.group_loadings.index[duplicates].unique()}")
+        warnings.warn(
+            f"Duplicate values in group_lower_upper_constraints2.group_loadings.index"
+            f" {group_lower_upper_constraints2.group_loadings.index[duplicates].unique()}"
+        )
 
     group_loadings = pd.concat([
         group_lower_upper_constraints1.group_loadings.rename(overlaps1, axis=1),
@@ -463,7 +476,9 @@ class GroupTurnoverConstraint:
         return GroupTurnoverConstraint(
             group_loadings=self.group_loadings.loc[valid_tickers, :],
             group_max_turnover=_copy_optional_series(self.group_max_turnover),
-            group_turnover_utility_weights=_copy_optional_series(self.group_turnover_utility_weights),
+            group_turnover_utility_weights=_copy_optional_series(
+                self.group_turnover_utility_weights
+            ),
         )
 
     def set_group_turnover_constraints(
@@ -487,9 +502,11 @@ class GroupTurnoverConstraint:
         else:
             for group in self.group_loadings.columns:
                 group_loading = self.group_loadings[group].reindex(weights_0.index, fill_value=0.0)
-                if np.any(np.isclose(group_loading, 0.0) == False):
-                    constraints += [cvx.norm(cvx.multiply(group_loading.to_numpy(), w - weights_0), 1)
-                                    <= self.group_max_turnover.loc[group]]
+                if np.any(~np.isclose(group_loading, 0.0)):
+                    constraints += [
+                        cvx.norm(cvx.multiply(group_loading.to_numpy(), w - weights_0), 1)
+                        <= self.group_max_turnover.loc[group]
+                    ]
         return constraints
 
     def set_cvx_group_turnover_utility(self,
@@ -517,7 +534,7 @@ class GroupTurnoverConstraint:
         else:
             for group in self.group_loadings.columns:
                 group_loading = self.group_loadings[group].reindex(weights_0.index, fill_value=0.0)
-                if np.any(np.isclose(group_loading, 0.0) == False):
+                if np.any(~np.isclose(group_loading, 0.0)):
                     turnover_utility_weight = self.group_turnover_utility_weights.loc[group]
                     if not np.isnan(turnover_utility_weight):
                         term = -1.0 * turnover_utility_weight * cvx.norm(

@@ -72,7 +72,9 @@ def cvx_covar_variance(
     return cvx.quad_form(active_weights, covar)
 
 
-def add_term_to_objective_function(objective_fun: AddExpression, term: AddExpression) -> AddExpression:
+def add_term_to_objective_function(
+    objective_fun: AddExpression, term: AddExpression
+) -> AddExpression:
     """Safely add a term to CVXPY objective function, handling None cases.
 
     Args:

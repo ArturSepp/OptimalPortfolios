@@ -19,9 +19,6 @@ permissions:
 
 on:
   workflow_call:
-    secrets:
-      TRADABLEFACTORS_READ_TOKEN:
-        required: false
   schedule:
     - cron: "37 3 * * *"
   workflow_dispatch:
@@ -48,7 +45,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
         include:
           - os: ubuntu-latest
             python-version: "3.12"
@@ -138,7 +135,7 @@ jobs:
         banned = config["tool"]["ruff"]["lint"]["flake8-tidy-imports"][
             "banned-module-level-imports"
         ]
-        banned = [*banned, "factorlasso", "tradablefactors"]
+        banned = [*banned, "factorlasso", "factormodels", "tradablefactors"]
         leaked = [name for name in banned if importlib.util.find_spec(name) is not None]
         assert not leaked, f"optional modules leaked into the test-over-core environment: {leaked}"
         print(f"optional-module absence confirmed: {len(banned)}/{len(banned)}")
@@ -286,7 +283,7 @@ jobs:
       run: |
         mkdir -p "$RUNNER_TEMP/wheelcheck"
         cd "$RUNNER_TEMP/wheelcheck"
-        "$RUNNER_TEMP/wheelcheck-venv/bin/python" -c "import importlib.util as u; assert all(u.find_spec(n) is None for n in ('quadprog', 'factorlasso', 'tradablefactors')); import optimalportfolios; print('OP BASE IMPORT PASS')"
+        "$RUNNER_TEMP/wheelcheck-venv/bin/python" -c "import importlib.util as u; assert all(u.find_spec(n) is None for n in ('quadprog', 'factorlasso', 'factormodels', 'tradablefactors')); import optimalportfolios; print('OP BASE IMPORT PASS')"
         "$RUNNER_TEMP/wheelcheck-venv/bin/python" -m pytest --pyargs optimalportfolios -q
 
     - name: Install and verify the same wheel with its optional backend
@@ -337,24 +334,21 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Check out the explicitly selected upstream pipeline
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: ArturSepp/tradablefactors
-          ref: ${{ vars.TRADABLEFACTORS_REF || 'migration/tradablefactors-stage-4' }}
-          path: .integration/tradablefactors
-          token: ${{ secrets.TRADABLEFACTORS_READ_TOKEN || github.token }}
+      - name: Verify public dependency workflow contracts
+        run: python -m unittest discover -s .github/scripts -p public_dependency_test.py
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version: "3.12"
-      - name: Build both candidates and install composed source lane
+          enable-cache: false
+          save-cache: false
+      - name: Build the OP candidate and install the released FM source lane
         shell: bash
         run: |
           uv build --out-dir "$RUNNER_TEMP/op-dist"
-          uv build .integration/tradablefactors --out-dir "$RUNNER_TEMP/tf-dist"
           uv venv "$RUNNER_TEMP/composed-source"
           uv pip install --python "$RUNNER_TEMP/composed-source/bin/python" -e ".[riskbudget]" \
-            "$(ls "$RUNNER_TEMP"/tf-dist/*.whl)" pytest
+            "factormodels==0.1.0" pytest
+
       - name: Run composed source contracts
         env:
           OP_REQUIRE_FACTOR_INTEGRATION: "1"
@@ -363,11 +357,13 @@ jobs:
             --junitxml="$RUNNER_TEMP/source-handoff.xml"
           "$RUNNER_TEMP/composed-source/bin/python" -c "import os, xml.etree.ElementTree as E; s=E.parse(os.path.join(os.environ['RUNNER_TEMP'], 'source-handoff.xml')).getroot(); cases=list(s.iter('testcase')); assert cases; assert not list(s.iter('skipped')); assert not list(s.iter('failure')); assert not list(s.iter('error'))"
           "$RUNNER_TEMP/composed-source/bin/python" .github/scripts/run_examples.py --lane composed
-      - name: Install both candidate wheels into a fresh environment
+
+      - name: Install the OP wheel and released FM into a fresh environment
         run: |
           uv venv "$RUNNER_TEMP/composed-wheel"
           uv pip install --python "$RUNNER_TEMP/composed-wheel/bin/python" \
-            "$(ls "$RUNNER_TEMP"/op-dist/*.whl)[riskbudget]" "$(ls "$RUNNER_TEMP"/tf-dist/*.whl)" pytest
+            "$(ls "$RUNNER_TEMP"/op-dist/*.whl)[riskbudget]" "factormodels==0.1.0" pytest
+
       - name: Enforce nonempty installed handoff tests without skips
         env:
           OP_REQUIRE_FACTOR_INTEGRATION: "1"
@@ -395,19 +391,19 @@ jobs:
   lowest-dependencies:
     # Floor resolution is compatibility maintenance, not a verdict on an unrelated edit.
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    name: lowest direct dependencies (Python 3.10)
+    name: lowest direct dependencies (Python 3.11)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
-          python-version: "3.10"
+          python-version: "3.11"
       - name: Keep the test environment outside the checkout
         run: echo "UV_PROJECT_ENVIRONMENT=$RUNNER_TEMP/lowest-dependencies" >> "$GITHUB_ENV"
       - name: Resolve a fresh lowest-direct test environment
         # Upgrade ignores lockfile preference; this job never commits its experimental lock.
-        run: uv sync --python 3.10 --resolution lowest-direct --upgrade --group test
+        run: uv sync --python 3.11 --resolution lowest-direct --upgrade --group test
       - name: Record installed versions
         run: uv pip freeze --python "$UV_PROJECT_ENVIRONMENT/bin/python"
       - name: Check optional dependencies stay outside package-root import

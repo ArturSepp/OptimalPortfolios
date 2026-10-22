@@ -38,7 +38,7 @@ def _script_cases():
     cases = []
     for path in SCRIPTS:
         marks = []
-        if classifier['external_dependencies'](path) & {'tradablefactors', 'factorlasso'}:
+        if classifier['external_dependencies'](path) & {'factormodels', 'factorlasso'}:
             marks.append(pytest.mark.factor_integration)
         if path.stem in riskbudget_scripts:
             marks.append(pytest.mark.riskbudget)

@@ -1,26 +1,26 @@
 ---
 myst:
   html_meta:
-    description: The TradableFactors owner and the supplied-input handoff to OptimalPortfolios for Rolling factor risk model from CSV.
+    description: The FactorModels owner and the supplied-input handoff to OptimalPortfolios for Rolling factor risk model from CSV.
 ---
 
 # Rolling factor risk model from CSV
 
 *Author: [Artur Sepp](https://github.com/ArturSepp)*
 
-Implemented upstream in [TradableFactors](supplied_risk_inputs.md#tradablefactors-availability),
+Implemented upstream in [FactorModels](supplied_risk_inputs.md#factormodels-availability),
 consumed by [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
-Upstream citation: `CITATION.cff` in an authorised TradableFactors checkout.
+Upstream citation: `CITATION.cff` in an authorised FactorModels checkout.
 
-The versioned six-file bundle loader, financial preparation and rolling factor-model fit belong to the installed TradableFactors API. Loading, fitting in memory and explicit persistence are separate operations.
+The versioned six-file bundle loader, financial preparation and rolling factor-model fit belong to the installed FactorModels API. Loading, fitting in memory and explicit persistence are separate operations.
 
 ## Canonical method and runnable workflow
 
-The full methodology and implementation guide has moved to TradableFactors with
-its original authorship and source history. TF is private and unreleased; see the
-[availability prerequisite](supplied_risk_inputs.md#tradablefactors-availability).
-In an authorised TF checkout, `docs/rolling_factor_covar_from_csv.md`
+The full methodology and implementation guide has moved to FactorModels with
+its original authorship and source history. FM is private and unreleased; see the
+[availability prerequisite](supplied_risk_inputs.md#factormodels-availability).
+In an authorised FM checkout, `docs/rolling_factor_covar_from_csv.md`
 contains the estimator, units, date cutoffs, diagnostics and runnable examples.
 This local page records the owner and OP handoff, not the full private methodology.
 The old OP estimator and inference exports are removed in OP 8; there are no forwarding APIs.
@@ -33,7 +33,7 @@ and [solver outcomes](solver_numerics_and_outcomes.md). The retained
 ## Earlier links
 
 The former section anchors are retained below so links from existing OP guides
-arrive at this ownership handoff. The authorised TF guide contains the corresponding method.
+arrive at this ownership handoff. The authorised FM guide contains the corresponding method.
 
 <a id="overview"></a>
 <a id="pipeline-at-a-glance"></a>

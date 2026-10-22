@@ -35,7 +35,7 @@ from tools.docs_analytics.registry import ROOT, relative_path, source_file
 TEACHING_PATH = 'tools/docs_analytics/teaching.json'
 IMAGES_DIR = PurePosixPath('docs/images')
 MANIFEST = 'docs/images/analytics_manifest.json'
-PACKAGES = ('optimalportfolios', 'qis', 'tradablefactors', 'factorlasso', 'numpy', 'pandas',
+PACKAGES = ('optimalportfolios', 'qis', 'factormodels', 'factorlasso', 'numpy', 'pandas',
             'scipy', 'cvxpy', 'matplotlib')
 
 

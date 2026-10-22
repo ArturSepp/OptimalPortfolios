@@ -20,7 +20,7 @@ reporting. The task table below leads from what you want to do to the article th
 the article's canonical script and the standalone examples; the catalogue after it maps each
 Python example to its data requirements and purpose.
 [QIS](https://github.com/ArturSepp/QuantInvestStrats) supplies backtesting, analytics and plots;
-[TradableFactors](supplied_risk_inputs.md#tradablefactors-availability) supplies complete fitted factor
+[FactorModels](supplied_risk_inputs.md#factormodels-availability) supplies complete fitted factor
 models and factor-premia analytics;
 [FactorLasso](https://github.com/ArturSepp/FactorLasso) supplies sparse factor estimation and
 clustering used by the relevant examples.
@@ -33,9 +33,9 @@ Each row names a task and the article that explains it. The article's canonical 
 examples under `examples/` are separate scripts on the same method, often on downloaded or local
 data. The lane in parentheses is the one the catalogue below assigns
 ([unattended execution lanes](#unattended-execution-lanes)): Offline needs base OP; Composed
-also needs separately installed TF/FL; Network means that `yfinance` is reachable from the
+also needs separately installed FM/FL; Network means that `yfinance` is reachable from the
 script's imports. Local marks a `*_local.py` workflow whose data or optional tools you prepare
-first. Offline and Composed canonical scripts use supplied or synthetic inputs. The supplied-bundle loader is owned by TF and is linked separately.
+first. Offline and Composed canonical scripts use supplied or synthetic inputs. The supplied-bundle loader is owned by FM and is linked separately.
 For a first run, start with the
 [offline quickstart](quickstart.md).
 
@@ -47,9 +47,9 @@ For a first run, start with the
 | Handle late starts, missing prices, index membership and frozen positions | [Incomplete histories](incomplete_histories.md) | [`incomplete_histories.py`](../examples/docs/incomplete_histories.py) (Offline) | [`comparisons/sp500_minvar_spans_local.py`](../examples/comparisons/sp500_minvar_spans_local.py) (Local) |
 | Estimate an EWMA covariance and choose its span | [Covariance estimators](covariance_estimators.md) | [`covariance_estimators.py`](../examples/docs/covariance_estimators.py) (Offline) | [`comparisons/parameter_sensitivity.py`](../examples/comparisons/parameter_sensitivity.py) (Network), [`comparisons/sp500_minvar_spans_local.py`](../examples/comparisons/sp500_minvar_spans_local.py) (Local) |
 | Estimate a sparse factor covariance | [Factor covariance with HCGL](factor_covariance_hcgl.md) | [`factor_covariance_hcgl.py`](../examples/docs/factor_covariance_hcgl.py) (Composed) | [`covar_estimation/simulate_factor_returns.py`](../examples/covar_estimation/simulate_factor_returns.py) (Offline), [`covar_estimation/lasso_covar_estimation.py`](../examples/covar_estimation/lasso_covar_estimation.py) (Network), [`comparisons/covar_estimators.py`](../examples/comparisons/covar_estimators.py) (Network) |
-| Load, inspect and fit a supplied factor bundle | [TF bundle ownership and handoff](rolling_factor_covar_from_csv.md) | TF installed API and reference example require an authorised candidate | Removed OP CSV scripts; no implicit acquisition. |
+| Load, inspect and fit a supplied factor bundle | [FM bundle ownership and handoff](rolling_factor_covar_from_csv.md) | FM installed API and reference example require an authorised candidate | Removed OP CSV scripts; no implicit acquisition. |
 | Compute risk contributions and benchmark betas | [Ex-ante risk contributions and betas](portfolio_risk_analytics.md) | [`portfolio_risk_analytics.py`](../examples/docs/portfolio_risk_analytics.py) (Composed) | — |
-| Infer factor premia from provider forecasts after historical estimation | [GLS factor-premia inference](gls_factor_premia.md) and [CMA reporting](cma_diagnostics.md) | [`gls_factor_premia.py`](../examples/docs/gls_factor_premia.py) (Composed; synthetic prices, FactorLasso fit, TF GLS and weighted-QR checks) | Exact consensus/JPM workflows require local licensed inputs and are not distributed as public examples. |
+| Infer factor premia from provider forecasts after historical estimation | [GLS factor-premia inference](gls_factor_premia.md) and [CMA reporting](cma_diagnostics.md) | [`gls_factor_premia.py`](../examples/docs/gls_factor_premia.py) (Composed; synthetic prices, FactorLasso fit, FM GLS and weighted-QR checks) | Exact consensus/JPM workflows require local licensed inputs and are not distributed as public examples. |
 | Connect factor diagnostics, alpha uncertainty and forward attribution | [Factor diagnostics workflow](factor_diagnostics_workflow.md) | [`factor_diagnostics_workflow.py`](../examples/docs/factor_diagnostics_workflow.py) (Composed) | Conditional fixed-model inference; no forecast or post-selection coverage guarantee. |
 | Build alpha signals | [Alpha signals](alphas_module_readme.md) | [`alphas_module_readme.py`](../examples/docs/alphas_module_readme.py) (Composed) | [`alphas/profile_alpha_signals.py`](../examples/alphas/profile_alpha_signals.py) (Network) |
 | Diagnose signals and profile alpha-rank portfolios | [Signal diagnostics](signal_diagnostics_and_profiling.md) | [`signal_diagnostics_and_profiling.py`](../examples/docs/signal_diagnostics_and_profiling.py) (Offline) | [`alphas/profile_alpha_signals.py`](../examples/alphas/profile_alpha_signals.py) (Network) |
@@ -98,10 +98,10 @@ The [quickstart notebook](../examples/getting_started/production_quickstart.ipyn
 canonical Python script. Its hosted setup installs the released package and needs a network
 connection; the analysis then uses the packaged fixture.
 
-For a composed factor-model or cluster comparison, install TF alongside OP:
+For a composed factor-model or cluster comparison, install FM alongside OP:
 
 ```console
-python -m pip install optimalportfolios tradablefactors
+python -m pip install optimalportfolios factormodels
 python -m examples.comparisons.hrp_linkage_semantics
 ```
 
@@ -129,7 +129,7 @@ python .github/scripts/run_examples.py --lane offline --jobs 2
 python .github/scripts/run_examples.py --lane composed --jobs 2
 ```
 
-`--list` classifies all examples and runs none. A composed label means TF or FL is reachable
+`--list` classifies all examples and runs none. A composed label means FM or FL is reachable
 through the example import closure. A network label takes precedence when `yfinance` is reachable
 directly or through intra-`examples` imports, including imports inside optional branches.
 This is a dependency classification, not a network sandbox or proof that every possible mode is
@@ -298,14 +298,14 @@ historical trading result.
 Each script is the canonical example of one documentation page: the page shows excerpts of
 it, and the script asserts every number the page quotes. The test suite runs every script,
 and some also draw the page's teaching exhibit. Base examples run after
-`pip install optimalportfolios`; composed examples require `tradablefactors` alongside OP.
+`pip install optimalportfolios`; composed examples require `factormodels` alongside OP.
 Two need other checkout files: the overlay
 script imports a repository example, and the cryptocurrency script reads the tracked 2023 panel
 under `papers/`.
 
 | Source | Lane | Purpose and prerequisites |
 |---|---|---|
-| [GLS factor-premia inference](../examples/docs/gls_factor_premia.py) | Composed | The [GLS guide](gls_factor_premia.md): synthetic index/factor prices, FactorLasso loadings and historical alpha, TF premium/interval estimates checked independently by weighted QR, and zero/half/full alpha views. |
+| [GLS factor-premia inference](../examples/docs/gls_factor_premia.py) | Composed | The [GLS guide](gls_factor_premia.md): synthetic index/factor prices, FactorLasso loadings and historical alpha, FM premium/interval estimates checked independently by weighted QR, and zero/half/full alpha views. |
 | [Factor diagnostics and attribution uncertainty](../examples/docs/factor_diagnostics_workflow.py) | Composed | Existing FactorLasso estimates/HAC/bootstrap, MATF spanned/orthogonal alpha and QIS risk/accounting; independent references and a prespecified conditional Gaussian coverage experiment. |
 | [Alpha over tracking error](../examples/docs/alpha_over_tracking_error.py) | Offline | The worked example of the [alpha over tracking error](alpha_over_tracking_error.md) page: the closed-form active weights against the solver, the tracking error from `qis.RiskModel`, the utility weight that reproduces the forced solve, group limits and the yield-target variant. |
 | [Alpha signals](../examples/docs/alphas_module_readme.py) | Composed | The worked examples of the [alpha signals](alphas_module_readme.md) page: every signal family against its formula, cross-sectional and within-cluster scoring, cluster extraction, mixed cadences, point-in-time signals, the `AlphasData` container and rolling EWMA means. |

@@ -85,22 +85,29 @@ def generate_portfolio_report(
             diff_heatmap_cols.append('trade')
 
         b_weights = p.Block(
-            [p.Paragraph("Optimised portfolio weights", **KWARGS_TITLE),
-             p.Block(weights,
-                     formatters=[
-                         tf.FmtPercent(n_decimals=2, columns=numeric_cols,
-                                       apply_to_header_and_index=False),
-                         tf.FmtReplaceNaN(value=''),
-                         tf.FmtHeatmap(columns=['CMA']),
-                         tf.FmtHeatmap(columns=weight_heatmap_cols),
-                         tf.FmtHeatmap(columns=diff_heatmap_cols),
-                         tf.FmtAddCellBorder(each=1.0,
-                                             columns=weights.columns.to_list(),
-                                             color=tf.colors.GREY,
-                                             apply_to_header_and_index=True),
-                     ]),
-             p.Paragraph("  ", **KWARGS_FOOTNOTE)],
-            **KWARGS_TEXT
+            [
+                p.Paragraph("Optimised portfolio weights", **KWARGS_TITLE),
+                p.Block(
+                    weights,
+                    formatters=[
+                        tf.FmtPercent(
+                            n_decimals=2, columns=numeric_cols, apply_to_header_and_index=False
+                        ),
+                        tf.FmtReplaceNaN(value=""),
+                        tf.FmtHeatmap(columns=["CMA"]),
+                        tf.FmtHeatmap(columns=weight_heatmap_cols),
+                        tf.FmtHeatmap(columns=diff_heatmap_cols),
+                        tf.FmtAddCellBorder(
+                            each=1.0,
+                            columns=weights.columns.to_list(),
+                            color=tf.colors.GREY,
+                            apply_to_header_and_index=True,
+                        ),
+                    ],
+                ),
+                p.Paragraph("  ", **KWARGS_FOOTNOTE),
+            ],
+            **KWARGS_TEXT,
         )
         blocks.append(b_weights)
 
@@ -111,20 +118,27 @@ def generate_portfolio_report(
         turnover_df = turnover.to_frame().T
         pct_cols = ['turnover', 'buys', 'sells', 'avg_trade_size', 'max_trade_size']
         b_turnover = p.Block(
-            [p.Paragraph("Turnover analysis", **KWARGS_TITLE),
-             p.Block(turnover_df,
-                     formatters=[
-                         tf.FmtPercent(n_decimals=2, columns=pct_cols,
-                                       apply_to_header_and_index=False),
-                         tf.FmtDecimals(n=0, columns=['n_trades'], apply_to_header_and_index=False),
-                         tf.FmtReplaceNaN(value=''),
-                         tf.FmtAddCellBorder(each=1.0,
-                                             columns=turnover_df.columns.to_list(),
-                                             color=tf.colors.GREY,
-                                             apply_to_header_and_index=True),
-                     ]),
-             p.Paragraph("  ", **KWARGS_FOOTNOTE)],
-            **KWARGS_TEXT
+            [
+                p.Paragraph("Turnover analysis", **KWARGS_TITLE),
+                p.Block(
+                    turnover_df,
+                    formatters=[
+                        tf.FmtPercent(
+                            n_decimals=2, columns=pct_cols, apply_to_header_and_index=False
+                        ),
+                        tf.FmtDecimals(n=0, columns=["n_trades"], apply_to_header_and_index=False),
+                        tf.FmtReplaceNaN(value=""),
+                        tf.FmtAddCellBorder(
+                            each=1.0,
+                            columns=turnover_df.columns.to_list(),
+                            color=tf.colors.GREY,
+                            apply_to_header_and_index=True,
+                        ),
+                    ],
+                ),
+                p.Paragraph("  ", **KWARGS_FOOTNOTE),
+            ],
+            **KWARGS_TEXT,
         )
         blocks.append(b_turnover)
 
@@ -153,7 +167,9 @@ def generate_portfolio_report(
             ))
 
         metric_titles = {
-            'weight': 'Weight', 'rc': 'Risk contribution', 'rc_pct': 'Risk contribution %',
+            "weight": "Weight",
+            "rc": "Risk contribution",
+            "rc_pct": "Risk contribution %",
         }
         for metric in ['weight', 'rc', 'rc_pct']:
             if metric not in metric_dfs:

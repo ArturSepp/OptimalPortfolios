@@ -118,7 +118,7 @@ def run_local(local: Locals):
 
     elif local == Locals.MANAGERS_ALPHA:
         from factorlasso import LassoModel, LassoModelType
-        from tradablefactors import FactorCovarEstimator
+        from factormodels import FactorCovarEstimator
 
         risk_factor_prices = prices.iloc[:, :2]
         asset_prices = prices.iloc[:, 2:]

@@ -52,11 +52,12 @@ def run_local(local: Locals):
     constraints = Constraints()
 
     if local == Locals.MIN_VAR:
-
-        optimal_weights = cvx_quadratic_optimisation(portfolio_objective=PortfolioObjective.MIN_VARIANCE,
-                                                     covar=covar,
-                                                     means=means,
-                                                     constraints=constraints).weights
+        optimal_weights = cvx_quadratic_optimisation(
+            portfolio_objective=PortfolioObjective.MIN_VARIANCE,
+            covar=covar,
+            means=means,
+            constraints=constraints,
+        ).weights
 
         _print_portfolio_outputs(optimal_weights=optimal_weights,
                                 covar=covar,
@@ -65,11 +66,13 @@ def run_local(local: Locals):
     elif local == Locals.MAX_UTILITY:
 
         gamma = 5.0*np.trace(covar)
-        optimal_weights = cvx_quadratic_optimisation(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
-                                                     covar=covar,
-                                                     means=means,
-                                                     constraints=constraints,
-                                                     carra=gamma).weights
+        optimal_weights = cvx_quadratic_optimisation(
+            portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
+            covar=covar,
+            means=means,
+            constraints=constraints,
+            carra=gamma,
+        ).weights
 
         _print_portfolio_outputs(optimal_weights=optimal_weights,
                                 covar=covar,
@@ -92,11 +95,13 @@ def run_local(local: Locals):
                                                   exposure_budget_eq=exposure_budget_eq,
                                                   gamma=lang_lambda)
             else:
-                w_lambda = cvx_quadratic_optimisation(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
-                                                      covar=covar,
-                                                      means=means,
-                                                      constraints=constraints,
-                                                      carra=lang_lambda).weights
+                w_lambda = cvx_quadratic_optimisation(
+                    portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
+                    covar=covar,
+                    means=means,
+                    constraints=constraints,
+                    carra=lang_lambda,
+                ).weights
 
             portfolio_vol = np.sqrt(w_lambda. T @covar @w_lambda)
             portfolio_sharpe = means.T @ w_lambda / portfolio_vol
@@ -133,11 +138,13 @@ def run_local(local: Locals):
                                                   exposure_budget_eq=exposure_budget_eq,
                                                   gamma=lang_lambda)
             else:
-                w_lambda = cvx_quadratic_optimisation(portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
-                                                      covar=covar,
-                                                      means=means,
-                                                      constraints=constraints,
-                                                      carra=lang_lambda).weights
+                w_lambda = cvx_quadratic_optimisation(
+                    portfolio_objective=PortfolioObjective.QUADRATIC_UTILITY,
+                    covar=covar,
+                    means=means,
+                    constraints=constraints,
+                    carra=lang_lambda,
+                ).weights
 
             print(f"portfolio with lambda = {lang_lambda}")
             _print_portfolio_outputs(optimal_weights=w_lambda,

@@ -247,12 +247,12 @@ fitted model. It does not cluster a factor correlation matrix after estimating b
 Dependence measure, clustering horizon, linkage, distance, external partitions and rolling
 smoothing settings can change the resulting labels.
 
-`tradablefactors.extract_rolling_clusters` reads stored asset labels from each fitted snapshot;
+`factormodels.extract_rolling_clusters` reads stored asset labels from each fitted snapshot;
 it does not estimate clusters. Labels can include cadence prefixes such as `ME:1`.
 `align_rolling_clusters` provides overlap-based label alignment for interpretation through
 time. Relabeling a partition does not change its memberships or basic within-cluster scores.
 OP accepts the completed mapping and estimates no clusters. Optional statistical stability
-pooling is prepared upstream with `tradablefactors.prepare_cluster_scores`; its completed
+pooling is prepared upstream with `factormodels.prepare_cluster_scores`; its completed
 dates-by-assets panel can be supplied as alpha scores to OP. The cluster-aware signal
 families and `compute_managers_alpha` continue to consume supplied mappings or betas.
 
@@ -292,7 +292,7 @@ not exercised by the basic examples below.
 
 ## Worked example
 
-The Python blocks below run in order with the composed OP, TF and FactorLasso dependencies.
+The Python blocks below run in order with the composed OP, FM and FactorLasso dependencies.
 They are excerpts of
 the canonical script
 [`examples/docs/alphas_module_readme.py`](../examples/docs/alphas_module_readme.py), which runs
@@ -311,7 +311,7 @@ network or random seed. All prices share one illustrative currency and total-ret
 
 ```python
 import factorlasso as fl
-import tradablefactors as tf
+import factormodels as fm
 ```
 
 ```python
@@ -413,12 +413,12 @@ legacy_carry_score = alphas.compute_ra_carry_alphas(
 
 ### A factor model for managers' residuals
 
-TF constructs the completed rolling factor model using FactorLasso. Its `.data` view supplies
+FM constructs the completed rolling factor model using FactorLasso. Its `.data` view supplies
 the dated loadings and clusters consumed by these OP signal helpers. The first manager price endpoint
 is retained before the first beta date so manager returns can begin in January 2023.
 
 ```python
-factor_estimator = tf.FactorCovarEstimator(
+factor_estimator = fm.FactorCovarEstimator(
     rebalancing_freq="YE", factor_returns_freq="ME", factor_covar_span=36,
     lasso_model=fl.LassoModel(
         model_type=fl.LassoModelType.HIERARCHICAL_CLUSTER_GROUP_LASSO,
@@ -455,7 +455,7 @@ mgr_score = score
 The cluster-extraction example uses the same fitted collection and the explicit asset list.
 
 ```python
-from tradablefactors.signals import extract_rolling_clusters
+from factormodels.signals import extract_rolling_clusters
 
 rolling_clusters = extract_rolling_clusters(
     model=taa_covar_data,

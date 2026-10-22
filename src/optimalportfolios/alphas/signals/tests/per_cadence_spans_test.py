@@ -69,10 +69,22 @@ def _signal_cases():
     prices, benchmark, returns_freq, carry = _panel()
     common = dict(prices=prices, returns_freq=returns_freq)
     return [
-        ('momentum', lambda **k: compute_momentum_alpha(
-            benchmark_price=benchmark, short_span=None, vol_span=13, **common, **k), 'long_span', 12),
-        ('momentum_vol', lambda **k: compute_momentum_alpha(
-            benchmark_price=benchmark, short_span=None, long_span=12, **common, **k), 'vol_span', 13),
+        (
+            "momentum",
+            lambda **k: compute_momentum_alpha(
+                benchmark_price=benchmark, short_span=None, vol_span=13, **common, **k
+            ),
+            "long_span",
+            12,
+        ),
+        (
+            "momentum_vol",
+            lambda **k: compute_momentum_alpha(
+                benchmark_price=benchmark, short_span=None, long_span=12, **common, **k
+            ),
+            "vol_span",
+            13,
+        ),
         ('classic_momentum', lambda **k: compute_classic_momentum_alpha(
             skip_periods=1, **common, **k), 'lookback_periods', 12),
         ('low_beta', lambda **k: compute_low_beta_alpha(

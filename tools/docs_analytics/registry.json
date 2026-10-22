@@ -520,7 +520,7 @@
           "seaborn": "seaborn",
           "cvxpy": "cvxpy",
           "clarabel": "clarabel",
-          "tradablefactors": "tradablefactors"
+          "factormodels": "factormodels"
         }
       },
       "legacy_sources": [

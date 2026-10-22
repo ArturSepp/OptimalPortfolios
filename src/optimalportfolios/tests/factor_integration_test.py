@@ -1,4 +1,4 @@
-"""Composed TF-to-OP handoff checks; imports remain safe in OP-only installations."""
+"""Composed FM-to-OP handoff checks; imports remain safe in OP-only installations."""
 import numpy as np
 import pandas as pd
 import pytest
@@ -39,7 +39,7 @@ def fitted_snapshot():
     """Fit mixed native coordinates and empirical residual risk on a deterministic panel."""
     from factorlasso import LassoModel, LassoModelType
     from qis.perfstats.config import ReturnTypes
-    from tradablefactors import FactorCovarEstimator
+    from factormodels import FactorCovarEstimator
 
     rng = np.random.default_rng(5102026)
     dates = pd.date_range('2020-01-31', periods=72, freq='ME')
@@ -94,9 +94,9 @@ def _assert_report_equal(left, right):
 @pytest.mark.parametrize('diagonal_reference', [False, True])
 def test_fitted_tf_context_matches_manual_risk_and_complete_report(
         fitted_snapshot, diagonal_reference):
-    """A real TF fit and independent supplied matrices produce identical OP reporting data."""
+    """A real FM fit and independent supplied matrices produce identical OP reporting data."""
     from qis.perfstats.config import ReturnTypes
-    from tradablefactors import prepare_portfolio_context
+    from factormodels import prepare_portfolio_context
     from optimalportfolios import PortfolioOptimisationResult
 
     snapshot = fitted_snapshot
@@ -136,7 +136,7 @@ def test_fitted_tf_context_matches_manual_risk_and_complete_report(
 @pytest.mark.parametrize('mode', ['none', 'cluster_variance', 'asset_variance'])
 def test_prepared_cluster_scores_match_supplied_cluster_mapping(mode):
     """Upstream preparation and unit-stability pooling retain OP's generic score formula."""
-    from tradablefactors import prepare_cluster_scores
+    from factormodels import prepare_cluster_scores
     from optimalportfolios.alphas.signals.utils import score_within_clusters
 
     dates = pd.date_range('2024-01-31', periods=3, freq='ME')
@@ -158,7 +158,7 @@ def test_prepared_cluster_scores_match_supplied_cluster_mapping(mode):
 def test_prepared_opportunity_matches_manual_arrays_and_constraint_audit(objective):
     """Statistical preparation upstream preserves constrained solutions and hard feasibility."""
     from factorlasso import ResidualCorrelationData
-    from tradablefactors.analytics import FactorOpportunityModel
+    from factormodels.analytics import FactorOpportunityModel
     from optimalportfolios.matf.opportunity import OpportunityModel, solve_opportunity
 
     ids, date = pd.Index(['a', 'b', 'c', 'd']), pd.Timestamp('2026-06-30')
@@ -196,7 +196,7 @@ def test_prepared_opportunity_matches_manual_arrays_and_constraint_audit(objecti
 def test_tf_covariance_preserves_execution_scoring_branches_and_feasibility(fitted_snapshot):
     """The execution engine produces the same selected branch and audited holdings."""
     from dataclasses import replace
-    from tradablefactors import prepare_portfolio_context
+    from factormodels import prepare_portfolio_context
     from optimalportfolios.execution.branches import ExecutionBranchConfig, solve_branched_execution
     from optimalportfolios.execution.improvement import score_execution_candidates
     from optimalportfolios.execution.tests.ranking_contract_test import make_problem

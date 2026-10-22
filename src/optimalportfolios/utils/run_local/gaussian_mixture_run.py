@@ -82,13 +82,19 @@ def run_local(local: Locals):
 
     elif local == Locals.PLOT_MIXURE:
         import yfinance as yf
-        prices = yf.download(tickers=['SPY', 'TLT'], start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)['Close'].dropna()
+
+        prices = yf.download(
+            tickers=["SPY", "TLT"], start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True
+        )["Close"].dropna()
         perf_params = qis.PerfParams(freq='W-WED')
         kwargs = dict(fontsize=12, digits_to_show=1, sharpe_digits=2,
                       alpha_format='{0:+0.0%}',
                       beta_format='{:0.1f}')
 
-        time_periods = [qis.TimePeriod('31Aug2002', '31Dec2019'), qis.TimePeriod('31Dec2019', '16Dec2022')]
+        time_periods = [
+            qis.TimePeriod("31Aug2002", "31Dec2019"),
+            qis.TimePeriod("31Dec2019", "16Dec2022"),
+        ]
 
         n_components = 3
 
@@ -97,14 +103,19 @@ def run_local(local: Locals):
 
         for idx, time_period in enumerate(time_periods):
             prices_ = time_period.locate(prices)
-            rets = qis.to_returns(prices=prices_, is_log_returns=True, drop_first=True, freq=perf_params.freq)
+            rets = qis.to_returns(
+                prices=prices_, is_log_returns=True, drop_first=True, freq=perf_params.freq
+            )
             params = fit_gaussian_mixture(x=rets.to_numpy(), n_components=n_components, idx=1)
-            plot_mixure2(x=rets.to_numpy(),
-                            n_components=n_components,
-                            columns=prices.columns,
-                            title=f"({idx+1}) Returns and ellipsoids of Gaussian clusters for period {time_period.to_str()}",
-                            ax=axs[idx],
-                            **kwargs)
+            plot_mixure2(
+                x=rets.to_numpy(),
+                n_components=n_components,
+                columns=prices.columns,
+                title=f"({idx + 1}) Returns and ellipsoids of Gaussian clusters for "
+                f"period {time_period.to_str()}",
+                ax=axs[idx],
+                **kwargs,
+            )
 
             means, vols, corrs = params.get_all_params(columns=prices.columns, vol_scaler=12.0)
             print(f"means=\n{means}")

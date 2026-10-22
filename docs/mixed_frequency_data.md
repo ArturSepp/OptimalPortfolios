@@ -15,7 +15,7 @@ Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios
 
 **Mixed-frequency data** are observations whose reliable measurement intervals differ across
 assets or model inputs. The stack keeps separate return panels for each cadence. OP computes
-signals; TF constructs factor exposures and annual covariance using FactorLasso, then supplies
+signals; FM constructs factor exposures and annual covariance using FactorLasso, then supplies
 those completed risk inputs to OP. This does not turn quarterly observations into monthly
 statistical observations.
 
@@ -144,7 +144,7 @@ valid value across a missing update; it does not provide an explicit staleness f
 
 ### Risk estimation and rebalancing
 
-`tradablefactors.FactorCovarEstimator` consumes the frequency-keyed asset-return dictionary. To estimate
+`factormodels.FactorCovarEstimator` consumes the frequency-keyed asset-return dictionary. To estimate
 each asset's factor exposure, it aligns factor prices to that bucket's endpoints and computes
 factor log returns over the same intervals. Separately, `factor_returns_freq` controls the
 factor covariance observations, and `factor_covar_span` counts those observations.
@@ -324,14 +324,14 @@ clustering and fallback solvers are disabled by the selected defaults.
 
 ```python
 import factorlasso as fl
-import tradablefactors as tf
+import factormodels as fm
 ```
 
 ```python
 factor_prices = prices[["Global Equity", "Government Bonds"]].rename(columns={
     "Global Equity": "Market", "Government Bonds": "Rates",
 })
-factor_estimator = tf.FactorCovarEstimator(
+factor_estimator = fm.FactorCovarEstimator(
     lasso_model=fl.LassoModel(
         model_type=fl.LassoModelType.LASSO,
         reg_lambda=1e-5,
@@ -364,10 +364,10 @@ rolling_covars = rolling_data.get_y_covars()
 ```
 
 The current covariance has three assets in the original order. The rolling result has
-three quarterly keys: 30 June, 30 September and 31 December 2023. TF truncates input
+three quarterly keys: 30 June, 30 September and 31 December 2023. FM truncates input
 histories at each cutoff for both current and rolling fits. The example also slices
 factor prices and every asset-return bucket explicitly. The `.data` views expose the
-underlying FL decompositions; TF's completed objects retain the selected covariance policy.
+underlying FL decompositions; FM's completed objects retain the selected covariance policy.
 Calendar dates also do not certify that a delayed NAV was already published.
 
 ## Implementation in optimalportfolios
@@ -378,12 +378,12 @@ Calendar dates also do not certify that a delayed NAV was already published.
 | `opt.UniverseData.get_asset_returns_dict` | Same sampling via the universe container; arithmetic by default |
 | `opt.compute_momentum_alpha` | Prices to cadence/group scores and raw risk-adjusted EWMA signals |
 | `opt.compute_classic_momentum_alpha` | Prices to cadence/group scores and raw fixed-window log returns |
-| `tf.FactorCovarEstimator` | Factor prices and asset-return buckets to completed TF models with annual covariance and FL decompositions |
+| `fm.FactorCovarEstimator` | Factor prices and asset-return buckets to completed FM models with annual covariance and FL decompositions |
 
 Ordinary sources: [universe adapter](../src/optimalportfolios/universe/universe_data.py),
 [EWMA momentum](../src/optimalportfolios/alphas/signals/momentum.py),
 [classic momentum](../src/optimalportfolios/alphas/signals/classic_momentum.py), and
-TF's `tradablefactors.estimation.FactorCovarEstimator`, described in the
+FM's `factormodels.estimation.FactorCovarEstimator`, described in the
 [factor covariance article](factor_covariance_hcgl.md).
 Generated signatures are in the [API reference](api.rst). QIS owns the
 [return sampler](https://github.com/ArturSepp/QuantInvestStrats/blob/main/src/qis/perfstats/returns.py).
@@ -417,7 +417,7 @@ historical input cutoffs. The test suite runs it, and so does the offline exampl
   The factor residual diagonal omits cross-asset residual covariance.
 - **Timing and configuration limits:** regression demeaning belongs on the `LassoModel`.
   The [HCGL ownership handoff](factor_covariance_hcgl.md) identifies the full method's
-  location in an authorised TF checkout. TF's current fit requires an explicit
+  location in an authorised FM checkout. FM's current fit requires an explicit
   `cutoff` and truncates every input history; supplied dates must reflect actual availability.
 
 ## See also

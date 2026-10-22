@@ -29,7 +29,9 @@ def print_portfolio(label: str,
     print(f"  {label}")
     print(f"{'─' * 55}")
     for i, t in enumerate(tickers):
-        print(f"  {t:12s}  w={weights[i]:7.4f}  bench={benchmark[i]:5.2f}  active={active[i]:+7.4f}")
+        print(
+            f"  {t:12s}  w={weights[i]:7.4f}  bench={benchmark[i]:5.2f}  active={active[i]:+7.4f}"
+        )
     print(f"  Portfolio vol:    {port_vol:.4%}")
     print(f"  Tracking error:   {te:.4%}")
     print(f"  Active alpha:     {active_alpha:.4%}")
@@ -164,7 +166,14 @@ def run_local(local: Locals):
 
         print(f"── Hard constraint vs Utility at TE ≈ {te_budget:.1%} ──")
         print_portfolio("Hard constraint", w_hard, covar, alphas, benchmark, tickers)
-        print_portfolio(f"Utility (λ={best_lam:.1f}, matched TE)", best_w_util, covar, alphas, benchmark, tickers)
+        print_portfolio(
+            f"Utility (λ={best_lam:.1f}, matched TE)",
+            best_w_util,
+            covar,
+            alphas,
+            benchmark,
+            tickers,
+        )
 
         # weight difference
         diff = w_hard - best_w_util

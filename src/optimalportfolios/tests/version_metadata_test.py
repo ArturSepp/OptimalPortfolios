@@ -15,7 +15,6 @@ import re
 import datetime as dt
 from pathlib import Path
 import runpy
-import sys
 from types import SimpleNamespace
 from typing import Optional
 
@@ -39,7 +38,7 @@ pytestmark = pytest.mark.skipif(ROOT is None,
 
 
 def _pyproject_version() -> str:
-    """read [project] version from pyproject.toml without a TOML parser on 3.10."""
+    """Read the declared project version from checkout metadata."""
     text = (ROOT / 'pyproject.toml').read_text(encoding='utf-8')
     match = re.search(r'^\s*version\s*=\s*["\']([^"\']+)["\']',
                       text.split('[project]', 1)[-1], flags=re.MULTILINE)
@@ -91,8 +90,6 @@ def test_citation_cff_date_released_is_iso():
         f"date-released must be YYYY-MM-DD, got {data['date-released']!r}"
 
 
-@pytest.mark.skipif(sys.version_info < (3, 11),
-                    reason='The release helper runs on Python 3.11+ and imports tomllib.')
 @pytest.mark.parametrize('release_date, accepted', [
     ('2026-10-15', True), ('2026-10-16', True), ('2026-10-17', False),
 ])

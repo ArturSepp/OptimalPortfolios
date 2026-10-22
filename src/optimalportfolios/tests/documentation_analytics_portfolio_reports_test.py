@@ -123,7 +123,9 @@ def test_holdings_and_entry_cost_against_buy_and_hold_reference(analytics):
     # within tolerance rather than exactly one; retain the strict NAV comparison.
     residual_cash = 100 * (1 - targets.iloc[0].sum())
     entry_cost = 100 * targets.iloc[0].abs().sum() * 0.001
-    expected_nav = portfolio.prices.loc[holding_dates].dot(expected_units) + residual_cash - entry_cost
+    expected_nav = (
+        portfolio.prices.loc[holding_dates].dot(expected_units) + residual_cash - entry_cost
+    )
     np.testing.assert_allclose(portfolio.nav.loc[holding_dates], expected_nav, rtol=1e-12)
     changes = portfolio.units.diff().fillna(0)
     assert (changes.loc[~portfolio.is_rebalancing] == 0).all().all()

@@ -158,7 +158,7 @@ def classify(examples: List[Path]) -> Dict[Path, str]:
     for path in examples:
         imports = external_dependencies(path)
         labels[path] = ('network' if imports & NETWORK_MODULES else
-                        'composed' if imports & {'tradablefactors', 'factorlasso'} else 'offline')
+                        'composed' if imports & {'factormodels', 'factorlasso'} else 'offline')
     return labels
 
 

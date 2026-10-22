@@ -2,8 +2,8 @@
 Canonical offline multi-asset universe for the installed test suite.
 
 Loads the committed CSV fixture ``multiasset_returns.csv`` (monthly total
-returns, decimal) — no network access. The fixture carries two metadata header rows (Asset Class, Sub
-Asset Class) so the group structure travels with the data and feeds
+returns, decimal) — no network access. The fixture carries two metadata header rows
+(Asset Class, Sub Asset Class) so the group structure travels with the data and feeds
 ``group_data`` / ``GroupLowerUpperConstraints`` directly.
 
 Source: public index data [TODO: add source and attribution].

@@ -187,15 +187,23 @@ def run_local(local: Locals) -> None:
         print("Group allocation: Eq [0.30,0.50], FI [0.20,0.40], Alt [0.10,0.30]")
         gluc = GroupLowerUpperConstraints(
             group_loadings=GROUP_LOADINGS.copy(),
-            group_min_allocation=pd.Series({"Equities": 0.30, "FixedIncome": 0.20, "Alternatives": 0.10}),
-            group_max_allocation=pd.Series({"Equities": 0.50, "FixedIncome": 0.40, "Alternatives": 0.30}),
+            group_min_allocation=pd.Series(
+                {"Equities": 0.30, "FixedIncome": 0.20, "Alternatives": 0.10}
+            ),
+            group_max_allocation=pd.Series(
+                {"Equities": 0.50, "FixedIncome": 0.40, "Alternatives": 0.30}
+            ),
         )
         c = Constraints(is_long_only=True, group_lower_upper_constraints=gluc)
         w = cvx.Variable(N)
         constraints = c.set_cvx_all_constraints(w=w, covar=COVAR)
         weights = _solve(w, cvx.Minimize(cvx.quad_form(w, COVAR)), constraints)
 
-        for grp, lo, hi in [("Equities", 0.30, 0.50), ("FixedIncome", 0.20, 0.40), ("Alternatives", 0.10, 0.30)]:
+        for grp, lo, hi in [
+            ("Equities", 0.30, 0.50),
+            ("FixedIncome", 0.20, 0.40),
+            ("Alternatives", 0.10, 0.30),
+        ]:
             mask = GROUP_LOADINGS[grp].to_numpy().astype(bool)
             alloc = weights[mask].sum()
             print(f"  {grp}: {alloc:.4f} in [{lo}, {hi}]")
@@ -223,8 +231,12 @@ def run_local(local: Locals) -> None:
         print("Drop a group constraint")
         gluc = GroupLowerUpperConstraints(
             group_loadings=GROUP_LOADINGS.copy(),
-            group_min_allocation=pd.Series({"Equities": 0.20, "FixedIncome": 0.10, "Alternatives": 0.05}),
-            group_max_allocation=pd.Series({"Equities": 0.60, "FixedIncome": 0.50, "Alternatives": 0.40}),
+            group_min_allocation=pd.Series(
+                {"Equities": 0.20, "FixedIncome": 0.10, "Alternatives": 0.05}
+            ),
+            group_max_allocation=pd.Series(
+                {"Equities": 0.60, "FixedIncome": 0.50, "Alternatives": 0.40}
+            ),
         )
         dropped = gluc.drop_constraint("FixedIncome")
         print(f"  Remaining groups: {dropped.group_loadings.columns.tolist()}")
@@ -305,7 +317,9 @@ def run_local(local: Locals) -> None:
             ),
             style_deviation_constraints=BenchmarkDeviationConstraints(
                 factor_loading_mat=GROUP_LOADINGS.copy(),
-                factor_max_deviation=pd.Series({"Equities": 0.08, "FixedIncome": 0.06, "Alternatives": 0.05}),
+                factor_max_deviation=pd.Series(
+                    {"Equities": 0.08, "FixedIncome": 0.06, "Alternatives": 0.05}
+                ),
             ),
         )
         w = cvx.Variable(N)
@@ -383,7 +397,9 @@ def run_local(local: Locals) -> None:
         w0 = pd.Series(0.10, index=TICKERS)
         gtc = GroupTurnoverConstraint(
             group_loadings=GROUP_LOADINGS.copy(),
-            group_max_turnover=pd.Series({"Equities": 0.05, "FixedIncome": 0.05, "Alternatives": 0.05}),
+            group_max_turnover=pd.Series(
+                {"Equities": 0.05, "FixedIncome": 0.05, "Alternatives": 0.05}
+            ),
         )
         c = Constraints(is_long_only=True, weights_0=w0, group_turnover_constraint=gtc)
         w = cvx.Variable(N)
@@ -412,8 +428,12 @@ def run_local(local: Locals) -> None:
             turnover_constraint=0.15,
             group_lower_upper_constraints=GroupLowerUpperConstraints(
                 group_loadings=GROUP_LOADINGS.copy(),
-                group_min_allocation=pd.Series({"Equities": 0.30, "FixedIncome": 0.20, "Alternatives": 0.10}),
-                group_max_allocation=pd.Series({"Equities": 0.60, "FixedIncome": 0.50, "Alternatives": 0.40}),
+                group_min_allocation=pd.Series(
+                    {"Equities": 0.30, "FixedIncome": 0.20, "Alternatives": 0.10}
+                ),
+                group_max_allocation=pd.Series(
+                    {"Equities": 0.60, "FixedIncome": 0.50, "Alternatives": 0.40}
+                ),
             ),
             sector_deviation_constraints=BenchmarkDeviationConstraints(
                 factor_loading_mat=SECTOR_LOADINGS.copy(),
@@ -458,7 +478,9 @@ def run_local(local: Locals) -> None:
         subset = ["A1", "A2", "A5", "A6", "A9", "A10"]
         updated = c.update(valid_tickers=subset)
         print(f"  Original tickers: {N}")
-        print(f"  Filtered tickers: {updated.group_lower_upper_constraints.group_loadings.shape[0]}")
+        print(
+            f"  Filtered tickers: {updated.group_lower_upper_constraints.group_loadings.shape[0]}"
+        )
         print(f"  GLUC shape: {updated.group_lower_upper_constraints.group_loadings.shape}")
         print(f"  BDC shape:  {updated.sector_deviation_constraints.factor_loading_mat.shape}")
         assert updated.group_lower_upper_constraints.group_loadings.shape[0] == 6
@@ -477,12 +499,21 @@ def run_local(local: Locals) -> None:
         updated = c.update_with_valid_tickers(
             valid_tickers=TICKERS, weights_0=w0, rebalancing_indicators=rebal,
         )
-        print(f"  A3 bounds: [{updated.min_weights.loc['A3']:.4f}, {updated.max_weights.loc['A3']:.4f}]"
-              f"  (frozen at {w0.loc['A3']:.4f})")
-        print(f"  A4 bounds: [{updated.min_weights.loc['A4']:.4f}, {updated.max_weights.loc['A4']:.4f}]"
-              f"  (frozen at {w0.loc['A4']:.4f})")
-        print(f"  A1 bounds: [{updated.min_weights.loc['A1']:.4f}, {updated.max_weights.loc['A1']:.4f}]"
-              f"  (free)")
+        print(
+            f"  A3 bounds: [{updated.min_weights.loc['A3']:.4f}, "
+            f"{updated.max_weights.loc['A3']:.4f}]"
+            f"  (frozen at {w0.loc['A3']:.4f})"
+        )
+        print(
+            f"  A4 bounds: [{updated.min_weights.loc['A4']:.4f}, "
+            f"{updated.max_weights.loc['A4']:.4f}]"
+            f"  (frozen at {w0.loc['A4']:.4f})"
+        )
+        print(
+            f"  A1 bounds: [{updated.min_weights.loc['A1']:.4f}, "
+            f"{updated.max_weights.loc['A1']:.4f}]"
+            f"  (free)"
+        )
         assert abs(updated.min_weights.loc["A3"] - 0.05) < 1e-10
         assert abs(updated.max_weights.loc["A3"] - 0.05) < 1e-10
         assert abs(updated.min_weights.loc["A1"] - 0.0) < 1e-10

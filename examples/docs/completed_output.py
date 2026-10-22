@@ -1,6 +1,6 @@
 """Complete one dated allocation from supplied inputs, then inspect its outputs.
 
-Runs offline with the base installed optimalportfolios package; TF and FL are not
+Runs offline with the base installed optimalportfolios package; FM and FL are not
 required. The independent equality-constrained KKT solution checks the optimizer,
 and a Cholesky norm checks the QIS risk handoff. No files are written by default.
 Call save_tables with a new directory to explicitly save inspectable CSV/JSON tables.

@@ -221,8 +221,8 @@ documented in the solver guide; they are not additional members of this six-valu
 - [Installation](installation.md), [examples](examples_readme.md), and [documentation standard](documentation_standard.md).
 - [Canonical Python script](../examples/getting_started/production_quickstart.py) and [Colab notebook](../examples/getting_started/production_quickstart.ipynb).
 - [EWMA estimator source](../src/optimalportfolios/covar_estimation/ewma_covar_estimator.py).
-- Factor estimator source: `src/tradablefactors/estimation.py` in an authorised
-  TradableFactors checkout ([availability](supplied_risk_inputs.md#tradablefactors-availability)).
+- Factor estimator source: `src/factormodels/estimation.py` in an authorised
+  FactorModels checkout ([availability](supplied_risk_inputs.md#factormodels-availability)).
 - [QIS backtester source](https://github.com/ArturSepp/QuantInvestStrats/blob/main/src/qis/portfolio/backtester.py).
 - [OptimalPortfolios software citation](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 - [QIS software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).

@@ -27,17 +27,17 @@ documents the detailed solver interfaces and limitations.
 
 | Responsibility | Owning layer | Integration in OptimalPortfolios |
 |---|---|---|
-| Sparse factor fitting, clustering and factor-covariance containers | [FactorLasso](https://github.com/ArturSepp/FactorLasso), orchestrated by TradableFactors | `tradablefactors.FactorCovarEstimator`: prepare financial inputs, cutoffs, return frequencies and annualization; supply completed models to consumers. |
-| Provider-implied factor premia and conditional inference | TradableFactors | [`tradablefactors.premia`](gls_factor_premia.md): fixed historical loadings and residual risk, explicit cash and admitted alpha, GLS geometry, intervals and forecast-box sensitivities. |
-| CMA accounting, identification and diagnostic PDFs | TradableFactors, using QIS rendering primitives | [CMA diagnostics and reports](cma_diagnostics.md): complete numerical results before rendering; application adapters own provider mappings, scenarios and persistence. |
+| Sparse factor fitting, clustering and factor-covariance containers | [FactorLasso](https://github.com/ArturSepp/FactorLasso), orchestrated by FactorModels | `factormodels.FactorCovarEstimator`: prepare financial inputs, cutoffs, return frequencies and annualization; supply completed models to consumers. |
+| Provider-implied factor premia and conditional inference | FactorModels | [`factormodels.premia`](gls_factor_premia.md): fixed historical loadings and residual risk, explicit cash and admitted alpha, GLS geometry, intervals and forecast-box sensitivities. |
+| CMA accounting, identification and diagnostic PDFs | FactorModels, using QIS rendering primitives | [CMA diagnostics and reports](cma_diagnostics.md): complete numerical results before rendering; application adapters own provider mappings, scenarios and persistence. |
 | Return transformations and EWMA covariance primitives | QIS | [EWMA estimator](../src/optimalportfolios/covar_estimation/ewma_covar_estimator.py): select the sample and schedule, then expose dated covariance matrices. |
 | Objectives, constraints, asset eligibility and construction state | OptimalPortfolios | [Rolling dispatcher](../src/optimalportfolios/optimization/wrapper_rolling_portfolios.py) and [constraints facade](../src/optimalportfolios/optimization/constraints/__init__.py). |
 | Unit-based simulation, cash costs, performance analytics and factsheets | QIS | Pass dated targets, prices, costs and implementation lag to `qis.backtest_model_portfolio`. |
-| Canonical ex-ante risk and tracking-error analytics | `qis.RiskModel` | `tradablefactors.build_risk_model` for factor-model export and the OP [result container](../src/optimalportfolios/optimization/portfolio_result.py). |
+| Canonical ex-ante risk and tracking-error analytics | `qis.RiskModel` | `factormodels.build_risk_model` for factor-model export and the OP [result container](../src/optimalportfolios/optimization/portfolio_result.py). |
 
 These boundaries keep shared calculations in their owning package. FactorLasso owns generic
 factor estimation, QIS owns the reusable analytics and holdings simulator, and OptimalPortfolios
-owns portfolio construction. TradableFactors owns completed factor-model preparation
+owns portfolio construction. FactorModels owns completed factor-model preparation
 and risk-premia inference. Some historical utility
 functions remain in this repository; their presence does not establish a separate canonical
 analytics layer.
@@ -46,7 +46,7 @@ The ordinary workflow runs from dated estimates to a simulated portfolio:
 
 ```mermaid
 flowchart TB
-    subgraph estimate ["TradableFactors: completed factor models"]
+    subgraph estimate ["FactorModels: completed factor models"]
         P["Factor prices and<br/>asset returns"] --> E["FactorLasso estimation,<br/>cutoffs and annualization"]
         E --> F["Completed current or<br/>rolling model"]
     end
@@ -66,13 +66,13 @@ flowchart TB
     W --> Q
 ```
 
-TradableFactors prepares completed factor models from financial inputs using FactorLasso.
+FactorModels prepares completed factor models from financial inputs using FactorLasso.
 Their dated covariance matrices are inputs to portfolio construction, alongside expected
 returns or alphas and constraints. OP combines those inputs with the previous target drifted
 by prices and produces dated target weights. QIS turns the targets into units traded after
 the implementation lag and charged cash costs, returning `PortfolioData` for reports.
 OP retains EWMA and signal utilities as explicit preparation paths. Its optimisers
-consume supplied arrays; TF and FL are absent from OP library imports and runtime
+consume supplied arrays; FM and FL are absent from OP library imports and runtime
 dependencies. The [completed-output guide](completed_output.md) shows the finite
 allocation, separate solver status, inspection and persistence boundary.
 
@@ -124,14 +124,14 @@ flowchart LR
 Inside `optimization`, the rolling dispatcher imports the solver families, which, like
 `portfolio_result`, import `constraints`. The `matf` opportunity solvers consume
 prepared covariance, alpha and optional factor/uncertainty arrays. Pure GLS, CMA
-and Sharpe accounting live in TF. QIS supplies shared analytics and risk primitives.
+and Sharpe accounting live in FM. QIS supplies shared analytics and risk primitives.
 
 An arrow A → B means that at least one module of A imports B; an arrow that leaves a box stands
 for the modules inside it. The graph excludes `tests` and `run_local` directories.
 The dispatcher still imports `alphas` for its explicit EWMA expected-return utility
 (`estimate_rolling_ewma_means`); `portfolio_result` imports QIS `RiskModel` and
 accepts optional supplied risk context. The base installed OP package is tested
-without TF or FL; their adapters operate upstream of this import graph.
+without FM or FL; their adapters operate upstream of this import graph.
 The diagram omits the package root, whose
 `config.py` defines `PortfolioObjective`; the shared `optimization` modules `config.py`,
 `covar_factorization.py` and `solver_diagnostics.py`; and the matplotlib and seaborn plotting
@@ -145,8 +145,8 @@ which no other package module imports, so `import optimalportfolios` does not ne
 
 Historical index and factor prices determine estimated loadings, residual means and
 residual risk through FactorLasso and the application's estimation configuration.
-Provider forecasts enter only the subsequent `tradablefactors.premia`
-calculation. TradableFactors owns this risk-premia application of GLS, including
+Provider forecasts enter only the subsequent `factormodels.premia`
+calculation. FactorModels owns this risk-premia application of GLS, including
 its conditional confidence intervals; FactorLasso owns historical estimation.
 
 The application supplies provider/index mappings, price and currency preparation,
@@ -155,16 +155,16 @@ forecasts and subtracts cash and weighted admitted alpha. Existing CMA audit ada
 accept an already adjusted excess-return target. Their contracts must not be mixed:
 recording an alpha channel in `CmaDiagnosticInputs` does not subtract it.
 
-Numerical tables remain independent of presentation. TradableFactors supplies
+Numerical tables remain independent of presentation. FactorModels supplies
 CMA accounting, individual/pair identification, forecast influence and deletion
-checks. `tradablefactors.reports.cma_inference` composes completed views into a compact PDF; it does
+checks. `factormodels.reports.cma_inference` composes completed views into a compact PDF; it does
 not fit loadings or adjust forecasts. Rosaa and the local consensus/JPM examples
 own scenario choices, licensed input snapshots, source hashes and output bundles.
 Production modules never import the paper workspace.
 
-The extracted OP imports are removed; active callers import TradableFactors
+The extracted OP imports are removed; active callers import FactorModels
 directly. The [methodology](gls_factor_premia.md),
-[CMA adapter guide](cma_diagnostics.md) and TradableFactors `premia/README.md`
+[CMA adapter guide](cma_diagnostics.md) and FactorModels `premia/README.md`
 document these contracts. Opportunity solvers in OP consume supplied arrays;
 statistical decomposition and uncertainty preparation finish upstream. No additional
 FactorLasso GLS API is required.
@@ -174,7 +174,7 @@ FactorLasso GLS API is required.
 The abstract [`CovarEstimator` interface](../src/optimalportfolios/covar_estimation/covar_estimator.py),
 which the package root does not re-export, remains the interface for OP's EWMA
 estimator. Its `fit_rolling_covars(...)` produces dated annual covariance matrices
-from an asset-price panel. The separate TF `fit_rolling(...)` produces a completed
+from an asset-price panel. The separate FM `fit_rolling(...)` produces a completed
 model from factor prices and asset returns grouped by estimation frequency;
 `.covariances` supplies the same kind of dictionary to OP.
 
@@ -289,7 +289,7 @@ at the chosen entry point. This architecture description makes no comparative ru
 
 `PortfolioOptimisationResult` combines construction output and risk context; it does not perform
 portfolio optimization. Its risk calculations delegate to `qis.RiskModel`.
-The upstream `tradablefactors.build_risk_model` adapter exports completed factor context.
+The upstream `factormodels.build_risk_model` adapter exports completed factor context.
 OP accepts the resulting QIS object or a supplied covariance directly. A covariance-only
 input does not reconstruct missing factor loadings.
 
@@ -299,7 +299,7 @@ shows how factor inputs and risk-model context cross the package boundary.
 
 ## Core installation and integrations
 
-The OP numerical pipeline depends on QIS as its only core stack package. TF and FL
+The OP numerical pipeline depends on QIS as its only core stack package. FM and FL
 are separately installed upstream providers and are absent from OP library imports.
 The [packaging metadata](../pyproject.toml) declares the remaining numerical dependencies
 and three published extras:

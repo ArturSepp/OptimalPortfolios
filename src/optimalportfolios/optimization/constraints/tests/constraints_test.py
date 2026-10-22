@@ -269,7 +269,9 @@ def _make_bdc(
 ) -> BenchmarkDeviationConstraints:
     """A benchmark-deviation constraint over the sector loadings, capped at 5% by default."""
     if max_deviation is None:
-        max_deviation = {col: 0.05 for col in (loadings if loadings is not None else SECTOR_LOADINGS).columns}
+        max_deviation = {
+            col: 0.05 for col in (loadings if loadings is not None else SECTOR_LOADINGS).columns
+        }
     return BenchmarkDeviationConstraints(
         factor_loading_mat=(loadings if loadings is not None else SECTOR_LOADINGS).copy(),
         factor_max_deviation=pd.Series(max_deviation, dtype=float),

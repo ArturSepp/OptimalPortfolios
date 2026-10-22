@@ -38,7 +38,10 @@ class BenchmarkDeviationConstraints:
             this = self.factor_max_deviation.index.isin(self.factor_loading_mat.columns)
             if not this.all():
                 missing = self.factor_max_deviation.index[~this]
-                warnings.warn(f"factor_max_deviation entries not in factor_loading_mat.columns: {missing.tolist()}")
+                warnings.warn(
+                    f"factor_max_deviation entries not in factor_loading_mat.columns: "
+                    f"{missing.tolist()}"
+                )
         else:
             raise ValueError("factor_max_deviation must be given")
 
@@ -84,10 +87,12 @@ class BenchmarkDeviationConstraints:
         constraints = []
         for group in self.factor_max_deviation.index:
             group_loading = self.factor_loading_mat[group]
-            if np.any(np.isclose(group_loading, 0.0) == False):  # exclude groups with zero loading
+            if np.any(~np.isclose(group_loading, 0.0)):  # exclude groups with zero loading
                 # Align indices
                 group_loading = group_loading.loc[benchmark_weights.index]
-                active_deviation = cvx.sum(cvx.multiply(group_loading.to_numpy(), w - benchmark_weights.to_numpy()))
+                active_deviation = cvx.sum(
+                    cvx.multiply(group_loading.to_numpy(), w - benchmark_weights.to_numpy())
+                )
                 constraints += [cvx.abs(active_deviation) <= self.factor_max_deviation.loc[group]]
         return constraints
 

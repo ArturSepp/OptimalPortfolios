@@ -1,4 +1,4 @@
-"""The QIS five-stock, ten-short-option book under a TradableFactors four-factor FCGL model.
+"""The QIS five-stock, ten-short-option book under a FactorModels four-factor FCGL model.
 
 Run python -m examples.reports.stress_testing_with_options_local --output-dir <fresh directory>.
 The first run downloads Yahoo data; subsequent runs replay a hashed local cache.
@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 
 import qis
-import tradablefactors as tf
+import factormodels as fm
 import factorlasso as fl
 from factorlasso.diagnostics import analyze_cluster_lineage
 
@@ -91,7 +91,7 @@ def load_prices(cache_dir, as_of=AS_OF, refresh=False):
 
 
 def fit_risk_model(prices):
-    """Fit FCGL through TradableFactors and retain the exact partition, linkage and cut distance."""
+    """Fit FCGL through FactorModels and retain the exact partition, linkage and cut distance."""
     adjusted = prices["Adj Close"]
     weekly = qis.to_returns(adjusted, freq=FREQUENCY, is_log_returns=True,
                             is_first_zero=False, drop_first=False).loc[:adjusted.index[-1]]
@@ -112,16 +112,16 @@ def fit_risk_model(prices):
         group_penalty="normalized", l1_weight=0.0, demean=False,
         nonneg=False, auto_sign_constraints=False, solver="CLARABEL",
     )
-    estimator = tf.FactorCovarEstimator(
+    estimator = fm.FactorCovarEstimator(
         lasso_model=lasso, factor_returns_freq=FREQUENCY, factor_covar_span=SPAN,
         rebalancing_freq=FREQUENCY, is_apply_vol_normalised_returns=False,
     )
     # Explicit annual covariance preserves the QIS example's zero-mean EWMA convention.
-    # TF's internally estimated factor covariance otherwise applies demeaning.
+    # FM's internally estimated factor covariance otherwise applies demeaning.
     fitted_model = estimator.fit_current(
         risk_factor_prices=adjusted[list(FACTORS)].loc[:date],
         asset_returns_dict={FREQUENCY: y.loc[:date]}, assets=list(STOCKS),
-        cutoff=date, factor_covariance=tf.DatedFactorCovariance(factor_covar, date, date),
+        cutoff=date, factor_covariance=fm.DatedFactorCovariance(factor_covar, date, date),
     )
     model = fitted_model.to_risk_model()
     snapshot = fitted_model.data
@@ -501,7 +501,7 @@ def run_example(cache_dir, output_dir=None, as_of=AS_OF, refresh=False):
                 str(path.relative_to(Path(package.__file__).parent)):
                     hashlib.sha256(path.read_bytes()).hexdigest()
                 for path in sorted(Path(package.__file__).parent.rglob("*.py"))}
-                for package in (tf, fl, qis)},
+                for package in (fm, fl, qis)},
             "vop_version": version("vanilla-option-pricers"),
             "example_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             "verification": verification}

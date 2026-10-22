@@ -25,7 +25,9 @@ def update_test_prices() -> pd.DataFrame:
         raise ImportError("update_test_prices needs yfinance: "
                           "pip install optimalportfolios[data]") from e
     tickers = list(UNIVERSE_DATA.keys())
-    prices = yf.download(tickers=tickers, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True)
+    prices = yf.download(
+        tickers=tickers, start="2003-12-31", end=None, ignore_tz=True, auto_adjust=True
+    )
     prices = prices['Close']
     prices = prices.asfreq('B', method='ffill')  # rescale to business days
     prices = prices[tickers]  # align order

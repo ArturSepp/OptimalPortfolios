@@ -7,6 +7,45 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+- Adapt composed workflows and documentation to the upstream `factormodels`
+  namespace (FactorModels). OP continues to consume supplied inputs without a
+  FactorModels or FactorLasso runtime dependency. The private verification repository
+  and its existing access configuration remain unchanged; numerical algorithms and
+  dependency resolutions are unchanged.
+
+## [8.0.0rc2] - 2026-10-21
+
+### Prepared execution research API (local, unpublished)
+
+- Integrate the qualified `optimalportfolios.execution.v2` namespace into the
+  owning package: immutable prepared problems, executable states, independent
+  audits, ranked selection and joint sizing, matched Exact wrappers and optional
+  relaxation bounds. Import v2 explicitly to opt in. Existing execution exports,
+  production dispatch, defaults and numerical algorithms are unchanged.
+- Add the optional `exact` extra for the qualified MOSEK interface. Ordinary
+  imports and ranked sizing do not require it. Native starts remain guarded by
+  their qualified canonicalisation versions, and native bounds remain diagnostic.
+- Preserve the execution paper's separately frozen inputs, source and research
+  wheel. It does not depend on the development worktree or this candidate version.
+
+### Supported Python
+
+- Require Python 3.11 or later. The supported dependency range includes the
+  reviewed Pillow security fix available on that Python floor.
+
+## [8.0.0rc1] - 2026-10-19
+
+### Local release candidate (unpublished)
+
+- Prepare the supplied-input optimisation boundary and explicit `riskbudget` extra
+  for release-candidate verification. This candidate remains local and unpublished;
+  its date records candidate preparation, not a PyPI publication or production cutover.
+- Align package, citation and lockfile identity without changing solver algorithms,
+  numerical defaults, public APIs or the resolved dependency versions.
+- Retain OP's MIT source licence and the complete supplemental dependency notices.
+  TradableFactors is a separately supplied upstream pipeline; OP's base installation
+  requires neither TradableFactors nor FactorLasso.
+
 ### Optional risk-budgeting backend
 
 - Move `quadprog` to `optimalportfolios[riskbudget]` and load it only when a

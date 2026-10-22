@@ -78,7 +78,7 @@ strategic asset allocation. On this site it is cited only in its public SSRN ver
 with the package on synthetic inputs; it reproduces none of the paper's results.
 
 For the inverse question, the separate [GLS factor-premia guide](gls_factor_premia.md)
-shows historical estimation with FactorLasso followed by TradableFactors inference from supplied
+shows historical estimation with FactorLasso followed by FactorModels inference from supplied
 asset forecasts. [CMA diagnostics and reports](cma_diagnostics.md) documents the
 conditional intervals, sensitivity tables and PDF interfaces used by consuming
 provider workflows. Its public example is synthetic; licensed consensus/JPM data

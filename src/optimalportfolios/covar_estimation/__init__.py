@@ -1,6 +1,6 @@
 """OP's retained EWMA covariance convenience functions.
 
-Factor estimation, diagnostics and covariance reporting live in TradableFactors.
+Factor estimation, diagnostics and covariance reporting live in FactorModels.
 """
 
 from optimalportfolios.covar_estimation.ewma_covar_estimator import (EwmaCovarEstimator,

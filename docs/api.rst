@@ -87,7 +87,7 @@ OptimalPortfolios owns portfolio construction and rolling orchestration.
 holdings simulation and reporting.
 `FactorLasso <https://github.com/ArturSepp/FactorLasso>`_ supplies generic sparse
 factor estimation and related containers upstream through
-:doc:`TradableFactors (availability and handoff) <supplied_risk_inputs>`. OP accepts
+:doc:`FactorModels (availability and handoff) <supplied_risk_inputs>`. OP accepts
 supplied alpha/covariance arrays or QIS RiskModel context; neither factor package
 is an OP dependency. The :doc:`software design guide <software_design>` maps these
 responsibilities to their implementations.

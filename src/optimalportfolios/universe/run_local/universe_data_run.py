@@ -39,10 +39,16 @@ def fetch_universe_data(start_date: str = "2003-12-31") -> UniverseData:
                          GSG='Commodts',
                          COMT='Commodts')
     group_data = pd.Series(universe_data, name=MetadataField.ASSET_CLASS)  # for portfolio report
-    names = pd.Series([f"{ticker}_{ac}" for ticker, ac in group_data.to_dict().items()], index=group_data.index, name=MetadataField.NAME)
+    names = pd.Series(
+        [f"{ticker}_{ac}" for ticker, ac in group_data.to_dict().items()],
+        index=group_data.index,
+        name=MetadataField.NAME,
+    )
     group_loadings_level1 = qis.set_group_loadings(group_data=group_data)
     tickers = list(universe_data.keys())
-    prices = yf.download(tickers=tickers, start=start_date, end=None, ignore_tz=True, auto_adjust=True)['Close'][tickers]
+    prices = yf.download(
+        tickers=tickers, start=start_date, end=None, ignore_tz=True, auto_adjust=True
+    )["Close"][tickers]
     prices = prices.asfreq('B').ffill()
 
     metadata = pd.concat([names,
@@ -50,7 +56,9 @@ def fetch_universe_data(start_date: str = "2003-12-31") -> UniverseData:
                           pd.Series('USD', index=group_data.index, name=MetadataField.CURRENCY)
                           ], axis=1, sort=False)
 
-    universe_data = UniverseData(prices=prices, metadata=metadata, group_loadings_level1=group_loadings_level1)
+    universe_data = UniverseData(
+        prices=prices, metadata=metadata, group_loadings_level1=group_loadings_level1
+    )
 
     return universe_data
 
@@ -63,7 +71,9 @@ def fetch_risk_factor_prices(start_date: str = "2003-12-31") -> pd.DataFrame:
         raise ImportError("fetch_risk_factor_prices needs yfinance: "
                           "pip install optimalportfolios[data]") from e
     tickers = {'SPY': 'Equity', 'TLT': 'Rate'}
-    risk_factor_prices = yf.download(tickers=list(tickers.keys()), start=start_date, end=None, ignore_tz=True, auto_adjust=True)['Close']
+    risk_factor_prices = yf.download(
+        tickers=list(tickers.keys()), start=start_date, end=None, ignore_tz=True, auto_adjust=True
+    )["Close"]
     risk_factor_prices = risk_factor_prices.rename(tickers)
     return risk_factor_prices
 
@@ -88,7 +98,9 @@ def run_local(local: Locals):
         universe_data.save(file_name='universe_test', local_path=lp.get_output_path())
 
     elif local == Locals.LOAD_UNIVERSE_DATA:
-        universe_data = UniverseData.load(file_name='universe_test', local_path=lp.get_output_path())
+        universe_data = UniverseData.load(
+            file_name="universe_test", local_path=lp.get_output_path()
+        )
         print(universe_data)
 
 

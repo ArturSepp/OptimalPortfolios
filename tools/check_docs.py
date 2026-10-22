@@ -655,6 +655,22 @@ def check_ownership(inventory: dict, root: Path) -> list[str]:
     own = {name for name, package in surface.items() if package == PACKAGE}
     external = {name: package for name, package in surface.items() if package != PACKAGE}
     seen = {}
+    for module, entry in inventory.get('namespace_api', {}).items():
+        owner = entry['owner']
+        if owner not in owners_allowed:
+            errors.append(f'{owner}:1: Namespace owner is not inventoried.')
+            continue
+        exports = set(exported_names(root, module))
+        if exports != set(entry['symbols']):
+            errors.append(f'{owner}:1: Namespace symbol ownership differs from {module}.')
+        for name, declared_fields in entry.get('parameters', {}).items():
+            actual_fields = set(dataclass_fields_of(root, module, name))
+            if set(declared_fields) != actual_fields:
+                errors.append(f'{owner}:1: Namespace parameter ownership differs for {name}.')
+        named = owned_names((root / owner).read_text(encoding='utf-8'))
+        required = exports | {field for fields in entry.get('parameters', {}).values() for field in fields}
+        for name in sorted(required - named):
+            errors.append(f'{owner}:1: Name the owned `{name}` in inline code.')
     for page, names in inventory['symbols'].items():
         if page not in owners_allowed:
             errors.append(f'{page}:1: Symbol owner is neither an inventoried nor a planned page.')

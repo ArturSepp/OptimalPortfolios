@@ -122,7 +122,7 @@ Every article cites OptimalPortfolios. If calculations use
 [factorlasso citation](https://github.com/ArturSepp/FactorLasso/blob/main/CITATION.cff) as appropriate.
 
 OptimalPortfolios owns optimisation and rolling orchestration from supplied inputs.
-TradableFactors owns [risk-premia GLS inference](gls_factor_premia.md), complete
+FactorModels owns [risk-premia GLS inference](gls_factor_premia.md), complete
 factor-model construction and [CMA diagnostics and report composition](cma_diagnostics.md).
 Generic sparse estimation and HCGL belong to FactorLasso. QIS supplies holdings
 simulation, general risk/stress reporting and analytics primitives.

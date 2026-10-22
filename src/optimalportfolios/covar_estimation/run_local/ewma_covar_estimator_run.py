@@ -63,8 +63,12 @@ def run_local(local: Locals):
         mean_diff = diff.mean()
 
         # extract vols for readable comparison
-        vols_current = pd.Series(np.sqrt(np.diag(current_covar.values)), index=tickers, name='Current')
-        vols_rolling = pd.Series(np.sqrt(np.diag(last_rolling_covar.values)), index=tickers, name='Rolling Last')
+        vols_current = pd.Series(
+            np.sqrt(np.diag(current_covar.values)), index=tickers, name="Current"
+        )
+        vols_rolling = pd.Series(
+            np.sqrt(np.diag(last_rolling_covar.values)), index=tickers, name="Rolling Last"
+        )
         vol_comparison = pd.concat([vols_current, vols_rolling,
                                     (vols_current - vols_rolling).rename('Diff')],
                                    axis=1,
