@@ -204,8 +204,8 @@ extend-select = ["TID251", "TID253", "ICN"]
 # A3: an optional extra is imported inside a function and guarded, never at module level, so a
 # core install keeps working. A module dedicated to a single optional backend is the documented
 # exception and is named in per-file-ignores below.
-banned-module-level-imports = ["quadprog", "yfinance", "pandas_datareader", "pybloqs", "plotly", "pyarrow",
-                               "psycopg2", "sqlalchemy", "mosek"]
+banned-module-level-imports = ["quadprog", "mosek", "yfinance", "pandas_datareader", "pybloqs", "plotly", "pyarrow",
+                               "psycopg2", "sqlalchemy"]
 
 [tool.ruff.lint.flake8-import-conventions.aliases]
 # replaces ruff's default alias map, which also demands `matplotlib as mpl` everywhere. Only

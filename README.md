@@ -19,7 +19,7 @@ outcomes.**
 The [completed-output guide](docs/completed_output.md) identifies the result, its units,
 dates, status and explicit export boundary. Factor-model construction belongs to
 [FactorModels](docs/supplied_risk_inputs.md#factormodels-availability); sparse estimation to
-[FactorLasso](https://github.com/ArturSepp/factorlasso); general risk, stress testing and
+[FactorLasso](https://github.com/ArturSepp/FactorLasso); general risk, stress testing and
 reporting to QIS. OP retains explicit EWMA and signal utilities and rolling orchestration.
 
 **Install:** `pip install optimalportfolios` · **Import:** `optimalportfolios` · **Status:** Stable
