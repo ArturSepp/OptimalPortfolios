@@ -5,6 +5,12 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+- Fix `UniverseData.load()` with pandas 3.1 and QIS 5.38.1 by passing an explicit
+  boolean date-order default to the shared CSV loader. Saved prices, metadata,
+  and group loadings retain their existing round-trip behavior.
+
 ## [8.0.0] - 2026-10-22
 
 - Publish the supplied-input API as a major release. Factor-model construction and

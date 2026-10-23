@@ -259,6 +259,8 @@ class UniverseData:
             dataset_keys=dataset_keys,
             file_name=file_name,
             local_path=local_path,
+            # Match pandas' historical default; pandas 3.1 rejects QIS 5.38.1's None.
+            dayfirst=False,
         )
 
         metadata = datasets.get('metadata')
