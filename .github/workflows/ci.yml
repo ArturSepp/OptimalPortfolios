@@ -1,6 +1,6 @@
 # SHARED CI CORE v1.0 — T2 — synced 2026-08-22
 name: CI
-run-name: ${{ github.event_name == 'schedule' && 'Dependency compatibility (live resolution)' || github.event.head_commit.message || github.event.pull_request.title || 'CI' }}
+run-name: ${{ (github.event_name == 'schedule' || inputs.upgrade_dependencies) && 'Dependency compatibility (live resolution)' || github.event.head_commit.message || github.event.pull_request.title || 'CI' }}
 
 # Least privilege, declared rather than inherited. Without this block every job runs with the
 # repository's *default* `GITHUB_TOKEN` scope, which on a repository configured for read-write
@@ -19,13 +19,24 @@ permissions:
 
 on:
   workflow_call:
+    inputs:
+      upgrade_dependencies:
+        description: Resolve current compatible dependencies, as in scheduled CI
+        type: boolean
+        default: false
   schedule:
     - cron: "37 3 * * *"
   workflow_dispatch:
+    inputs:
+      upgrade_dependencies:
+        description: Resolve current compatible dependencies, as in scheduled CI
+        type: boolean
+        default: false
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   MPLBACKEND: Agg
+  UPGRADE_DEPENDENCIES: ${{ github.event_name == 'schedule' || inputs.upgrade_dependencies }}
 
 # This workflow is the part of CI that needs the package installed. The checks that do not --
 # ruff and interrogate in static.yml, pip-audit in audit.yml -- run in parallel with it.
@@ -91,7 +102,7 @@ jobs:
       # Both modes still download, so both take the same transport-retry wrapper.
       shell: bash
       run: |
-        if [ "${{ github.event_name }}" = "schedule" ]; then
+        if [ "$UPGRADE_DEPENDENCIES" = "true" ]; then
           dependency_mode=--upgrade
         else
           dependency_mode=--locked
@@ -159,7 +170,7 @@ jobs:
         OP_REQUIRE_RISKBUDGET: "1"
       shell: bash
       run: |
-        if [ "${{ github.event_name }}" = "schedule" ]; then
+        if [ "$UPGRADE_DEPENDENCIES" = "true" ]; then
           uv sync --group test --extra riskbudget --upgrade
         else
           uv sync --group test --extra riskbudget --locked
@@ -261,7 +272,7 @@ jobs:
       # breaks collection even though ruff and the source-environment assertion both pass.
       run: |
         uv venv --python 3.12 "$RUNNER_TEMP/wheelcheck-venv"
-        if [ "${{ github.event_name }}" = "schedule" ]; then
+        if [ "$UPGRADE_DEPENDENCIES" = "true" ]; then
           uv pip install --python "$RUNNER_TEMP/wheelcheck-venv/bin/python" \
             "$(ls dist/*.whl)" pytest
         else
@@ -290,7 +301,7 @@ jobs:
       env:
         OP_REQUIRE_RISKBUDGET: "1"
       run: |
-        if [ "${{ github.event_name }}" = "schedule" ]; then
+        if [ "$UPGRADE_DEPENDENCIES" = "true" ]; then
           uv pip install --python "$RUNNER_TEMP/wheelcheck-venv/bin/python" "$(ls dist/*.whl)[riskbudget]"
         else
           uv export --locked --extra riskbudget --group test --no-emit-project --output-file "$RUNNER_TEMP/riskbudget-requirements.txt"
@@ -318,7 +329,7 @@ jobs:
       - name: Install the explicit backend and test tooling
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "schedule" ]; then
+          if [ "$UPGRADE_DEPENDENCIES" = "true" ]; then
             uv sync --group test --extra riskbudget --upgrade
           else
             uv sync --group test --extra riskbudget --locked
