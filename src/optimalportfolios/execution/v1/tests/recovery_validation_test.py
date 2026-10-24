@@ -176,7 +176,7 @@ def test_group_rescue_requires_proved_infeasibility(monkeypatch, first, second):
     monkeypatch.setattr(
         s,
         "_compute_selected_execution_bridges",
-        lambda **kwargs: pd.DataFrame(columns=["bridge_min", "bridge_max"]),
+        lambda *args, **kwargs: pd.DataFrame(columns=["bridge_min", "bridge_max"]),
     )
     if second != "none":
 

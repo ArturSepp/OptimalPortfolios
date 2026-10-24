@@ -677,6 +677,35 @@ def _format_bridge_failure(bridges: pd.DataFrame) -> str:
     return "Infeasible execution intervals:\n" + "\n".join(rows)
 
 
+def _resolve_selected_execution_groups(
+        base_constraints: Constraints,
+        trade_table: pd.DataFrame,
+        relax_selected_corridors: bool = False,
+        partition_groups: tuple[str, ...] = (),
+) -> tuple[Constraints, pd.DataFrame]:
+    """Resolve the same audited group endpoints for sizing and rescue admission.
+
+    Rescue must not reject an interval that the sizing problem already accepts
+    under its fixed rounding contract. Cash, target-band and explicit original-
+    bound scopes retain their existing strict checks. Original inputs are copied
+    only when a group endpoint qualifies for normalization.
+    """
+    bridges = _compute_selected_execution_bridges(
+        base_constraints, trade_table, relax_selected_corridors, partition_groups,
+    )
+    risk_banded = {TARGET_BAND_LOWER, TARGET_BAND_UPPER}.issubset(trade_table.columns)
+    effective_constraints = (
+        base_constraints if risk_banded else _snap_group_bounds_within_rounding_tolerance(
+            base_constraints, bridges,
+        )
+    )
+    if effective_constraints is not base_constraints:
+        bridges = _compute_selected_execution_bridges(
+            effective_constraints, trade_table, relax_selected_corridors, partition_groups,
+        )
+    return effective_constraints, bridges
+
+
 def build_selected_execution_constraints(
         base_constraints: Constraints,
         trade_table: pd.DataFrame,
@@ -716,7 +745,7 @@ def build_selected_execution_constraints(
         trade_table=trade_table,
         relax_selected_corridors=relax_selected_corridors,
     )
-    bridges = _compute_selected_execution_bridges(
+    effective_constraints, bridges = _resolve_selected_execution_groups(
         base_constraints=base_constraints,
         trade_table=trade_table,
         relax_selected_corridors=relax_selected_corridors,
@@ -725,20 +754,6 @@ def build_selected_execution_constraints(
     risk_banded = {
         TARGET_BAND_LOWER, TARGET_BAND_UPPER,
     }.issubset(trade_table.columns)
-    effective_constraints = (
-        base_constraints
-        if risk_banded else _snap_group_bounds_within_rounding_tolerance(
-            base_constraints=base_constraints,
-            bridges=bridges,
-        )
-    )
-    if effective_constraints is not base_constraints:
-        bridges = _compute_selected_execution_bridges(
-            base_constraints=effective_constraints,
-            trade_table=trade_table,
-            relax_selected_corridors=relax_selected_corridors,
-            partition_groups=partition_groups,
-        )
     if not _positive_bridges(bridges).empty:
         raise ExecutionSolverInfeasibility(
             _format_bridge_failure(bridges),
@@ -1536,7 +1551,7 @@ def solve_feasible_execution_portfolio(
         latest_error: Optional[ExecutionSolverInfeasibility] = None
         admission_count = int(candidate[FEASIBILITY_RESCUE_TRADE].sum())
         while True:
-            bridges = _compute_selected_execution_bridges(
+            _, bridges = _resolve_selected_execution_groups(
                 base_constraints=base_constraints,
                 trade_table=candidate,
                 relax_selected_corridors=relax_selected_corridors,
@@ -1619,7 +1634,7 @@ def solve_feasible_execution_portfolio(
                 reason if reason else 'solver_residual'
             )
 
-            post_bridges = _compute_selected_execution_bridges(
+            _, post_bridges = _resolve_selected_execution_groups(
                 base_constraints=base_constraints,
                 trade_table=candidate,
                 relax_selected_corridors=relax_selected_corridors,

@@ -5,6 +5,16 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [9.0.1] - 2026-10-24
+
+### Fixed
+
+- Apply V1's existing group-bound rounding contract consistently during feasibility
+  rescue and final sizing. A rescue that closes a material gap to a rounding-sized
+  residual now reaches the audited sizing solve instead of being rejected early.
+  Preserve the 0.5 bp group-rounding limit, cash bounds, mandatory pins, strict
+  original-bound scopes and target-band policies. V2 and MIQP are unchanged.
+
 ## [9.0.0] - 2026-10-24
 
 - Require QIS 5.44.3, including the bounded joint-unsmoothing implementation, and refresh the unsmoothing worked example and reviewed

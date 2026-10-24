@@ -43,6 +43,16 @@ retained for diagnostics and objectives. This classifier is shared by preparatio
 target-band ranking, cash-start recovery and Operational Exact. V2's actual-ticket
 zero tolerance has a different meaning and is unchanged.
 
+V1's ordinary corridor solver has a separate group-bound rounding contract:
+a positive group interval gap of at most 0.5 bp may move the effective bound to
+the executable endpoint on a copied constraint object. The original bound,
+effective endpoint and gap are logged. Rescue admission and final sizing use
+the same effective intervals, so a rescue leaving only such a gap still reaches
+the audited sizing solve. This does not relax settlement-cash bounds, mandatory
+pins, target-band policies or an explicitly requested original-group-bound scope.
+Gaps above 0.5 bp remain infeasible. This existing normalization is distinct from
+model-support classification and from the final solver's residual validation.
+
 Instruction audit flags `allow_current_pin` and `model_max_repair` are explicit
 consumer inputs. The former enables the audited current-holding pin exception; the
 latter requests model-or-cap targeting for a maximum-weight repair. Provenance text
