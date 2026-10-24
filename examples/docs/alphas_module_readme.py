@@ -566,7 +566,7 @@ def main() -> None:
     pd.testing.assert_frame_equal(extreme_alpha, raw_alpha)
     pd.testing.assert_frame_equal(extreme_score, mgr_score)
 
-    from factormodels.signals import extract_rolling_clusters
+    from factormodels import extract_rolling_clusters
 
     rolling_clusters = extract_rolling_clusters(
         model=taa_covar_data,
