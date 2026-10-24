@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-10-20T03:53:31+00:00",
+  "generated_at_utc": "2026-10-24T06:10:15+00:00",
   "platform": "Windows-11-10.0.26300-SP0",
   "versions": {
     "python": "3.12.14",
-    "optimalportfolios": "8.0.0rc1",
+    "optimalportfolios": "8.0.0",
     "qis": "5.38.1",
-    "factormodels": "0.1.0rc4",
-    "factorlasso": "1.0.5.dev3",
+    "factormodels": "0.2.0.dev0",
+    "factorlasso": "1.0.5",
     "numpy": "2.5.2",
     "pandas": "3.0.5",
-    "scipy": "1.18.1",
+    "scipy": "1.18.0",
     "cvxpy": "1.9.2",
     "matplotlib": "3.11.1"
   },
@@ -514,7 +514,7 @@
     "alpha_scoring_cross_section_vs_cluster": {
       "path": "docs/images/alpha_scoring_cross_section_vs_cluster.png",
       "script": "examples/docs/alphas_module_readme.py",
-      "script_sha256": "1d79e44df2049d8478be8744c55dd4521988ebe187ebea288a7a208994253050",
+      "script_sha256": "bb45c7ea02c34458b654f45d5ca43ad229c72cdcc82fcab4dd50fd43b38e10fd",
       "image_sha256": "9dced35a18fe531090674b5b266346e1c216a89347ee844b116bff0221dbca7d",
       "table_sha256": "e32465f33d2dc9b7086b8abb526b7dfe3f8911ce125102d878da3cb82388f022",
       "parameters": {
@@ -2158,7 +2158,7 @@
     }
   },
   "review": {
-    "note": "2026-10-20 local FactorModels identity refresh explicitly approved by owner. Codex governance executor reviewed all 26 PNGs individually at full resolution and 800-pixel article width: labels, units, legends, axes, math, endpoint annotations and panel layouts readable, without clipping or blocking overlap. All 26 teaching PNGs and CSVs are byte-identical to matched frozen-baseline generation. Original assets and manifests preserved in external frozen baseline. No external publication.",
-    "published_at_utc": "2026-10-20T04:05:38+00:00"
+    "note": "Inspected the alpha scoring exhibit after the public FactorModels import cleanup. All 26 regenerated PNGs and all 26 numerical tables match the previously reviewed bundle byte-for-byte; existing image review remains applicable. Only the alpha script identity and generation provenance changed.",
+    "published_at_utc": "2026-10-24T06:11:14+00:00"
   }
 }
