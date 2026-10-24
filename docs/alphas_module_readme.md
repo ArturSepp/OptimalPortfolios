@@ -455,7 +455,7 @@ mgr_score = score
 The cluster-extraction example uses the same fitted collection and the explicit asset list.
 
 ```python
-from factormodels.signals import extract_rolling_clusters
+from factormodels import extract_rolling_clusters
 
 rolling_clusters = extract_rolling_clusters(
     model=taa_covar_data,
