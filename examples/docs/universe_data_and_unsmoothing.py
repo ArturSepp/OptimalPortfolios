@@ -383,8 +383,8 @@ def main() -> None:
         'annualised volatility': [annualised_vol(x_before), annualised_vol(x_after)]},
         index=['smoothed', 'unsmoothed'])
     assert np.allclose(stats.to_numpy(), reference.to_numpy(), atol=1e-12)
-    assert stats.round(2)['lag-1 autocorrelation'].tolist() == [0.61, -0.04]
-    assert stats.round(3)['annualised volatility'].tolist() == [0.102, 0.205]
+    assert stats.round(2)['lag-1 autocorrelation'].tolist() == [0.61, 0.08]
+    assert stats.round(3)['annualised volatility'].tolist() == [0.102, 0.167]
     assert round(annualised_vol(x_true), 3) == 0.204
     assert round(lag1_autocorrelation(x_true), 2) == -0.02
     # The Insight: reported volatility is half the true one in the sample, as for phi = 0.6,
@@ -393,12 +393,12 @@ def main() -> None:
     assert round((annualised_vol(x_true) / annualised_vol(x_before)) ** 2) == 4
     # The coefficient sum that qis estimates stays inside its clipping bounds.
     _, _, theta_sum, _ = qis.compute_ar_unsmoothed_prices(prices=prices[['PE']])
-    assert round(theta_sum['PE'].min(), 2) == 0.45 and round(theta_sum['PE'].max(), 2) == 0.67
-    # Another seed over-corrects: unsmoothed volatility well above the true one.
+    assert round(theta_sum['PE'].min(), 2) == 0.03 and round(theta_sum['PE'].max(), 2) == 0.66
+    # Another seed also leaves unsmoothed volatility below the true one.
     _, other_unsmoothed, other_true = example_universes(seed=3)
     other_after = op.compute_returns_from_prices(other_unsmoothed.prices, returns_freq='QE',
                                                  demean=False)['PE'].dropna()
-    assert round(annualised_vol(other_after.to_numpy()), 3) == 0.307
+    assert round(annualised_vol(other_after.to_numpy()), 3) == 0.164
     assert round(annualised_vol(other_true.loc[other_after.index, 'PE'].to_numpy()), 3) == 0.195
 
     # compute_returns_from_prices with its EWMA demeaning: lambda times the deviation from

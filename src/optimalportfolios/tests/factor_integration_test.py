@@ -159,7 +159,7 @@ def test_prepared_opportunity_matches_manual_arrays_and_constraint_audit(objecti
     """Statistical preparation upstream preserves constrained solutions and hard feasibility."""
     from factorlasso import ResidualCorrelationData
     from factormodels.analytics import FactorOpportunityModel
-    from optimalportfolios.matf.opportunity import OpportunityModel, solve_opportunity
+    from optimalportfolios.optimization.opportunity import OpportunityModel, solve_opportunity
 
     ids, date = pd.Index(['a', 'b', 'c', 'd']), pd.Timestamp('2026-06-30')
     b = pd.DataFrame([.5, 1., 1., 1.5], index=ids, columns=['factor'])
@@ -199,7 +199,7 @@ def test_tf_covariance_preserves_execution_scoring_branches_and_feasibility(fitt
     from factormodels import prepare_portfolio_context
     from optimalportfolios.execution.branches import ExecutionBranchConfig, solve_branched_execution
     from optimalportfolios.execution.improvement import score_execution_candidates
-    from optimalportfolios.execution.tests.ranking_contract_test import make_problem
+    from optimalportfolios.execution.v1.tests.ranking_contract_test import make_problem
 
     snapshot = fitted_snapshot
     risk, _ = _manual_risk_inputs(snapshot)

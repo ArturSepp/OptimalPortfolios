@@ -5,7 +5,32 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [9.0.0] - 2026-10-24
+
+- Require QIS 5.44.3, including the bounded joint-unsmoothing implementation, and refresh the unsmoothing worked example and reviewed
+  teaching exhibits for zero-seeded filters after warmup. Preserve the fixed inputs
+  and independent numerical references.
+
+- Move the production ranked implementation to `optimalportfolios.execution.v1`,
+  retaining unnumbered module aliases and the opt-in guarded/branched methods.
+  Add generic target/instruction preparation, target-band ranking, audited cash-start
+  recovery and same-date target retry. Consumers supply class labels and policy maps.
+- Add `optimalportfolios.execution.MIQP` for Operational Exact, preserving alpha,
+  position/ticket caps, repair-on-touch and live/history/inception contracts.
+  V2 and its matched Exact comparator retain their separate formulation.
+- Share model-support classification at 1e-6 without altering raw model targets or
+  the 1e-8 holding/trade tolerance. Add `preserve_model_directions` to resolved V1
+  problems and rescue calls so production relaxed rescue retains its original signs.
+
+### Supplied-input namespace
+
+- Move the supplied-input opportunity solver to `optimalportfolios.optimization.opportunity`
+  and remove `optimalportfolios.matf`. Update imports of `OpportunityModel`,
+  `OpportunitySolution`, `solve_opportunity` and `portfolio_opportunity_metrics` to
+  the new module. No compatibility shim remains; the solver implementation,
+  defaults, tolerances and numerical behaviour are unchanged.
+- Move adjacent tests under `optimization/tests` and update the composed FactorModels
+  callers and documentation. Historical research environments and provenance stay intact.
 
 - Fix `UniverseData.load()` with pandas 3.1 and QIS 5.38.1 by passing an explicit
   boolean date-order default to the shared CSV loader. Saved prices, metadata,

@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-10-24T06:10:15+00:00",
+  "generated_at_utc": "2026-10-24T06:49:01+00:00",
   "platform": "Windows-11-10.0.26300-SP0",
   "versions": {
-    "python": "3.12.14",
-    "optimalportfolios": "8.0.0",
-    "qis": "5.38.1",
-    "factormodels": "0.2.0.dev0",
+    "python": "3.12.7",
+    "optimalportfolios": "9.0.0",
+    "qis": "5.44.3",
+    "factormodels": "0.1.1",
     "factorlasso": "1.0.5",
     "numpy": "2.5.2",
     "pandas": "3.0.5",
-    "scipy": "1.18.0",
+    "scipy": "1.18.1",
     "cvxpy": "1.9.2",
     "matplotlib": "3.11.1"
   },
@@ -1242,9 +1242,9 @@
     "unsmoothing_autocorrelation": {
       "path": "docs/images/unsmoothing_autocorrelation.png",
       "script": "examples/docs/universe_data_and_unsmoothing.py",
-      "script_sha256": "76430fdcd1dc9e455250040375a77a3429aab89dc3c5ee1cdd6cbef8a2cb5fd5",
-      "image_sha256": "6d0ef03b9579037dd6388385caac5e7ba4d13ab698d77b311a9dec6b2cb516a9",
-      "table_sha256": "79e14794b0ab5af2e3ece2fd6d68d389823b9ba8fcc24c1ce5c9edbb19293137",
+      "script_sha256": "7323c0ea848f206ec6e41a326e0ecb38f8e922339ddb2e166c8cebe2d7160f9b",
+      "image_sha256": "955240ceb333ddb6219e1868743fb4c431dbd85acbfac1ba884eeb68e56e0e34",
+      "table_sha256": "fc373a88153ca43f54545cc961b3a86e15afe187b8d1a591c652d24be6a6a61d",
       "parameters": {
         "TICKERS": [
           "Govt",
@@ -2158,7 +2158,7 @@
     }
   },
   "review": {
-    "note": "Inspected the alpha scoring exhibit after the public FactorModels import cleanup. All 26 regenerated PNGs and all 26 numerical tables match the previously reviewed bundle byte-for-byte; existing image review remains applicable. Only the alpha script identity and generation provenance changed.",
-    "published_at_utc": "2026-10-24T06:11:14+00:00"
+    "note": "Codex reviewed the changed unsmoothing and alpha exhibits at full 1500-pixel resolution and the unsmoothing page at browser width. All 26 final QIS 5.44.3 images are byte-identical to the reviewed bundle; labels, units, values and captions remain consistent.",
+    "published_at_utc": "2026-10-24T06:50:45+00:00"
   }
 }

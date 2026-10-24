@@ -10,11 +10,13 @@ myst:
 
 # Universe data and appraisal unsmoothing
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-27](https://github.com/ArturSepp/OptimalPortfolios/commit/6d3fd2c129946dea248a26d62599083002b5a34a)*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 The universe container and its unsmoothing transform are implemented in
 [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 ## Overview
 
@@ -307,12 +309,14 @@ unsmoothed = op.copy_universe_data_with_unsmoothed_prices(universe_data=universe
 The government-bond, credit and equity prices of the copy equal the originals bit for bit, and
 the copy holds the same metadata and loading objects. The private-equity column is missing for the
 first 17 quarters, equals 1.0 on 31 March 1994 and compounds the unsmoothed returns from
-30 June 1994. Over the sample, the coefficient sum that qis estimates stays between 0.45 and
-0.67, inside its bounds.
+30 June 1994. Over the sample, the coefficient sum that qis estimates stays between 0.03 and
+0.66, inside its bounds. The rolling means and coefficient filters start from zero;
+warmup estimates are excluded before coefficient smoothing.
 
 Over the 123 quarters from June 1994, the reported series has a lag-1 autocorrelation of 0.61
-and a volatility of 10.2%. The unsmoothed series has an autocorrelation of −0.04 and a volatility
-of 20.5%, close to the −0.02 and 20.4% of the simulated true returns:
+and a volatility of 10.2%. The unsmoothed series has an autocorrelation of 0.08 and a volatility
+of 16.7%, compared with −0.02 and 20.4% for the simulated true returns. The correction reduces
+serial dependence and recovers part of the suppressed volatility:
 
 ```python
 before = op.compute_returns_from_prices(universe.prices, returns_freq='QE', demean=False)
@@ -327,9 +331,9 @@ stats = pd.DataFrame({
 ```
 
 ![Left: the cumulative log returns of private equity from March 1994; the reported path is visibly
-smoother than the unsmoothed path, which tracks the simulated true path closely. Middle: the lag-1
-autocorrelation falls from 0.61 reported to -0.04 unsmoothed, against -0.02 for the true returns.
-Right: the annualised volatility rises from 10.2% to 20.5%, against 20.4% for the true
+smoother than the unsmoothed path. Middle: the lag-1
+autocorrelation falls from 0.61 reported to 0.08 unsmoothed, against -0.02 for the true returns.
+Right: the annualised volatility rises from 10.2% to 16.7%, against 20.4% for the true
 returns.](images/unsmoothing_autocorrelation.png)
 
 *Figure: the reported, unsmoothed and simulated true returns of the private-equity column of the
@@ -403,9 +407,10 @@ The four objects are exported at the package root:
   that market returns are uncorrelated over time, nor its corrections for temporal aggregation and
   seasonal reappraisal. qis estimates the smoothing from the autocorrelation of the reported
   series, so all serial correlation is treated as smoothing, including any in the true returns.
-- **Estimation noise.** The coefficients come from a rolling EWMA regression with a span of 40
-  quarters. The example's unsmoothed volatility is close to the true one, but other samples
-  differ: with seed 3 instead of 19, the unsmoothed volatility is 30.7% against a true 19.5%.
+- **Estimation noise and initialization.** The coefficients come from a rolling EWMA regression
+  with a span of 40 quarters and zero-seeded coefficient smoothing after warmup. The estimated
+  correction does not recover the latent series exactly: with seed 19 its volatility is 16.7%
+  against a true 20.4%; with seed 3 it is 16.4% against a true 19.5%.
 - **Shorter history.** The unsmoothed column is missing for the first 17 quarters of the example,
   and the example's covariance starts after them. Its level starts at 1.0, so only its returns are
   comparable with the original.

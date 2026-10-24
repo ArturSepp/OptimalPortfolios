@@ -72,7 +72,7 @@ portfolio variance and tracking error. For correlated residuals, a requested
 those components need not sum to total risk.
 
 `factormodels.analytics.FactorOpportunityModel.optimisation_inputs()` returns
-labelled arrays for `optimalportfolios.matf.OpportunityModel`. Constrained solving
+labelled arrays for `optimalportfolios.optimization.opportunity.OpportunityModel`. Constrained solving
 stays in OP. GLS decomposition, uncertainty estimation and universe diagnostics
 stay in FM/FL; any projected alpha covariance is prepared before optimisation.
 Cluster mappings and optional pooled signal panels are likewise prepared upstream.

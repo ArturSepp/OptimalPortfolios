@@ -139,7 +139,7 @@ html_theme_options = {
 GENERATED_DIR = DOCS_DIR / "_generated"
 STUB_DIR = DOCS_DIR / "generated"
 PACKAGE_MODULES = (
-    "alphas", "config", "covar_estimation", "local_path", "matf",
+    "alphas", "config", "covar_estimation", "execution", "local_path",
     "optimization", "reports", "universe",
     "utils",
 )

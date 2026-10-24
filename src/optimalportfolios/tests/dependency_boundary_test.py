@@ -34,8 +34,7 @@ def test_removed_modules_are_not_shipped():
     package = Path(optimalportfolios.__file__).parent
     removed = ('covar_estimation/risk_labelling.py', 'covar_estimation/factor_covar_estimator.py',
                'covar_estimation/risk_model_adapter.py',
-               'matf/uncertainty.py', 'matf/universe_diagnostics.py', 'matf/gls_diagnostic.py',
-               'matf/sharpe_accounting.py', 'matf/cma_diagnostics.py')
+               'matf')
     assert not [name for name in removed if (package / name).exists()]
 
 

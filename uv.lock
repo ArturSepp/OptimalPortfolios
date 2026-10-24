@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'win32'",
@@ -1699,7 +1699,7 @@ wheels = [
 
 [[package]]
 name = "optimalportfolios"
-version = "8.0.0"
+version = "9.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "cvxpy" },
@@ -1768,7 +1768,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=13.0.0" },
     { name = "pybloqs", marker = "extra == 'reports'", specifier = ">=1.2.13" },
     { name = "pyyaml", specifier = ">=6.0" },
-    { name = "qis", specifier = ">=5.38.1" },
+    { name = "qis", specifier = ">=5.44.3" },
     { name = "quadprog", marker = "extra == 'riskbudget'", specifier = ">=0.1.11" },
     { name = "scipy", specifier = ">=1.12.0" },
     { name = "scs", specifier = ">=3.2.4.post3,!=3.3.0" },
@@ -2333,7 +2333,7 @@ wheels = [
 
 [[package]]
 name = "qis"
-version = "5.38.1"
+version = "5.44.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "matplotlib" },
@@ -2348,9 +2348,9 @@ dependencies = [
     { name = "seaborn" },
     { name = "statsmodels" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a6/cf/a74d40428eb9897551e7e0729a397becb184eb3972e130c2eb724f533a54/qis-5.38.1.tar.gz", hash = "sha256:968e657942e364ef5b9772379d0bf92cbd0cfe82bc44628489ab5beccd0c410e", size = 1289369, upload-time = "2026-10-17T09:17:12.684Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cb/aa/51fceb0a2775a8f26fa553bee9dcebb150ba6d5db8007dd4ea87a860efd9/qis-5.44.3.tar.gz", hash = "sha256:ebcec5b694306607fb01803aa7a64b1b1608af797e1e5e3ee31b2cd21668a07f", size = 1347855, upload-time = "2026-10-24T07:32:08.195Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5f/44/b8bb615466b5788515027549efd1c8587fd3b5374397d30cf86de70e141a/qis-5.38.1-py3-none-any.whl", hash = "sha256:2b016ea29d66ca8794d3c35bca0c72cb07562613670fa096c5a2b0883bc4242a", size = 1568409, upload-time = "2026-10-17T09:17:11.006Z" },
+    { url = "https://files.pythonhosted.org/packages/9a/13/500f6568641626adae75fedf0f7be9a6c0ca1c40daa0429dbc4328a0d81c/qis-5.44.3-py3-none-any.whl", hash = "sha256:8fba227d320807335a5706fba9bafe0ad61459df2ccd762e077ce99b880cc35d", size = 1639461, upload-time = "2026-10-24T07:32:06.578Z" },
 ]
 
 [[package]]
@@ -2642,11 +2642,11 @@ wheels = [
 
 [[package]]
 name = "setuptools"
-version = "84.0.0"
+version = "84.2.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/6d/44/f5da03a8ef95d369145c5bb53050e7877c9f3d312e128605fd9504829143/setuptools-84.0.0.tar.gz", hash = "sha256:f4695c21257f0d9b537ec2692c941d02ee143b7cc1276941349a546573b2ef73", size = 1168449, upload-time = "2026-08-08T18:27:58.365Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/70/b3/c19426f783614d625699a4b247faf628ea9ab1db228674491767b417f9e1/setuptools-84.2.1.tar.gz", hash = "sha256:3ff8b3b5492a0aa66960f4419365a86b84e013070d4313e4d4a6894f5d64d6bc", size = 1230289, upload-time = "2026-10-20T19:01:37.742Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/95/9c/c510029fc6ef33a6275cd2c5d3cecd6613dfd6aa401d57c54f1c18852ccf/setuptools-84.0.0-py3-none-any.whl", hash = "sha256:51a52592b3b99e102b609654876bd65f19f999935166d1352678931132b0c670", size = 818216, upload-time = "2026-08-08T18:27:56.719Z" },
+    { url = "https://files.pythonhosted.org/packages/ef/55/6dc6d6bb953bdfc52519a0059592c52b6e3b8ad51cf8256dffceb55b0610/setuptools-84.2.1-py3-none-any.whl", hash = "sha256:ca140b45d5325a9478f880e351484f62fef15f336462e449ca0c03c873d589c2", size = 876263, upload-time = "2026-10-20T19:01:35.678Z" },
 ]
 
 [[package]]
