@@ -72,7 +72,7 @@ portfolio variance and tracking error. For correlated residuals, a requested
 `diagonal_reference=True` view labels approximate component rows with `reference`;
 those components need not sum to total risk.
 
-`factormodels.gls_diagnostic.FactorOpportunityModel.optimisation_inputs()` returns
+`factormodels.analytics.FactorOpportunityModel.optimisation_inputs()` returns
 labelled arrays for `optimalportfolios.optimization.opportunity.OpportunityModel`. Constrained solving
 stays in OP. GLS decomposition, uncertainty estimation and universe diagnostics
 stay in FM/FL; any projected alpha covariance is prepared before optimisation.
