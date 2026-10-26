@@ -1,4 +1,4 @@
-"""Explicit offline checks for the public example; excluded from unattended example discovery.
+"""Offline composed checks for the public example's inputs.
 
 Run with pytest against this file. Synthetic held-unit and EWMA references deliberately
 compute the accounting independently of FM/QIS so a plausible numerical regression fails.
@@ -21,6 +21,8 @@ from examples.oss_portfolio_pipeline.factors import (
     build_factors, factor_model, month_end_dates,
 )
 from examples.oss_portfolio_pipeline.pipeline import build_inputs, save_inputs
+
+pytestmark = pytest.mark.factor_integration
 
 
 @pytest.fixture(scope='module')

@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from examples.oss_portfolio_pipeline import covariance_validation_local as covariance_checks
+from examples.oss_portfolio_pipeline.tests import covariance_test as covariance_checks
 from examples.oss_portfolio_pipeline.backtest import BacktestConfig, run_backtest
 from examples.oss_portfolio_pipeline.covariance import estimate_covariances
 from examples.oss_portfolio_pipeline.diagnostics import (
@@ -16,6 +16,8 @@ from examples.oss_portfolio_pipeline.diagnostics import (
 )
 from examples.oss_portfolio_pipeline.factsheets import comparison_runs, save_native_factsheets
 from examples.oss_portfolio_pipeline.pipeline import build_inputs
+
+pytestmark = pytest.mark.factor_integration
 
 
 @pytest.fixture(scope='module')

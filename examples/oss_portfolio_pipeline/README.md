@@ -581,15 +581,12 @@ return conventions, solver and package versions. `result.executed.portfolio` and
 are QIS `PortfolioData` objects. The gross benchmark in the original input bundle remains
 available; the new benchmark output applies the selected execution and cost assumptions.
 
-Focused offline checks are explicitly invoked; the `_local.py` suffix keeps the check module
-out of the unattended examples runner:
+Offline composed checks live in the example's `tests/` directory. They run in the
+composed source CI lane with the published FM/FL packages and synthetic inputs;
+the unattended examples runner excludes pytest modules.
 
 ```console
-python -m pytest examples/oss_portfolio_pipeline/validation_local.py examples/oss_portfolio_pipeline/covariance_validation_local.py examples/oss_portfolio_pipeline/backtest_validation_local.py
-python -m pytest examples/oss_portfolio_pipeline/reporting_validation_local.py
-python -m pytest examples/oss_portfolio_pipeline/attribution_validation_local.py
-python -m pytest examples/oss_portfolio_pipeline/stress_validation_local.py
-python -m pytest examples/oss_portfolio_pipeline/diagnostics_validation_local.py
+python -m pytest examples/oss_portfolio_pipeline/tests
 python -m ruff check examples/oss_portfolio_pipeline
 ```
 

@@ -70,7 +70,8 @@ def _is_example(path: Path) -> bool:
     """a runnable example, as opposed to a local dispatcher or a package marker."""
     return (path.suffix == ".py"
             and not path.name.endswith("_local.py")
-            and path.name != "__init__.py")
+            and path.name != "__init__.py"
+            and "tests" not in path.relative_to(EXAMPLES_ROOT).parts)
 
 
 def discover() -> List[Path]:

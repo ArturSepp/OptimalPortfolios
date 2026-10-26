@@ -238,3 +238,12 @@ def test_example_discovery_excludes_local_diagnostics(root: Path) -> None:
     assert not local_modules_with_tests, (
         f"local diagnostics contain pytest test definitions: {local_modules_with_tests}"
     )
+    example_tests = [
+        path for path in (root / "examples").rglob("*.py")
+        if "tests" in path.relative_to(root / "examples").parts
+        and path.name != "__init__.py"
+    ]
+    assert example_tests, "expected repository-only example tests"
+    assert not discovered.intersection(example_tests)
+    assert all(path.name.endswith("_test.py") for path in example_tests)
+    assert all(_has_test_definition(path) for path in example_tests)

@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 import qis
 
-from examples.oss_portfolio_pipeline import covariance_validation_local as covariance_checks
+from examples.oss_portfolio_pipeline.tests import covariance_test as covariance_checks
 from examples.oss_portfolio_pipeline.attribution import (
     BRIDGE_COLUMNS, LAYER_FIELDS, MOMENTUM_FEATURE, TE_FEATURE,
     run_attribution, save_attribution,
@@ -17,6 +17,8 @@ from examples.oss_portfolio_pipeline.attribution import (
 from examples.oss_portfolio_pipeline.backtest import BacktestConfig, run_backtest
 from examples.oss_portfolio_pipeline.covariance import estimate_covariances
 from examples.oss_portfolio_pipeline.pipeline import build_inputs
+
+pytestmark = pytest.mark.factor_integration
 
 
 @pytest.fixture(scope='module')

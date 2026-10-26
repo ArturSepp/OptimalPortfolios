@@ -13,6 +13,8 @@ from examples.oss_portfolio_pipeline.covariance import (
 )
 from examples.oss_portfolio_pipeline.pipeline import build_inputs, save_inputs
 
+pytestmark = pytest.mark.factor_integration
+
 
 @pytest.fixture(scope='module')
 def prepared():

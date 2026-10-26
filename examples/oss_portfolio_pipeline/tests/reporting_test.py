@@ -9,11 +9,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from examples.oss_portfolio_pipeline import backtest_validation_local as backtest_checks
+from examples.oss_portfolio_pipeline.tests import backtest_test as backtest_checks
 from examples.oss_portfolio_pipeline.backtest import BacktestConfig, run_backtest
 from examples.oss_portfolio_pipeline.reporting import (
     calendar_month_labels, create_report_figures, prepare_report_tables, save_reports,
 )
+
+pytestmark = pytest.mark.factor_integration
 
 
 @pytest.fixture(scope='module')

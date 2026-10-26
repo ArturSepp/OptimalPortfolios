@@ -365,6 +365,7 @@ jobs:
           OP_REQUIRE_FACTOR_INTEGRATION: "1"
         run: |
           "$RUNNER_TEMP/composed-source/bin/python" -m pytest -m factor_integration \
+            src/optimalportfolios examples/oss_portfolio_pipeline/tests \
             --junitxml="$RUNNER_TEMP/source-handoff.xml"
           "$RUNNER_TEMP/composed-source/bin/python" -c "import os, xml.etree.ElementTree as E; s=E.parse(os.path.join(os.environ['RUNNER_TEMP'], 'source-handoff.xml')).getroot(); cases=list(s.iter('testcase')); assert cases; assert not list(s.iter('skipped')); assert not list(s.iter('failure')); assert not list(s.iter('error'))"
           "$RUNNER_TEMP/composed-source/bin/python" .github/scripts/run_examples.py --lane composed

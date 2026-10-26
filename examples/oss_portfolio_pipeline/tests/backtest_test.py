@@ -9,13 +9,15 @@ import pytest
 import optimalportfolios as op
 import qis
 
-from examples.oss_portfolio_pipeline import covariance_validation_local as covariance_checks
+from examples.oss_portfolio_pipeline.tests import covariance_test as covariance_checks
 from examples.oss_portfolio_pipeline.backtest import (
     BacktestConfig, build_alpha_scores, execution_outcome, portfolio_constraints,
     run_backtest, save_backtest,
 )
 from examples.oss_portfolio_pipeline.covariance import estimate_covariances, save_covariances
 from examples.oss_portfolio_pipeline.pipeline import build_inputs, save_inputs
+
+pytestmark = pytest.mark.factor_integration
 
 
 @pytest.fixture(scope='module')

@@ -7,7 +7,7 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [9.1.3] - 2026-10-26
+## [9.1.4] - 2026-10-26
 
 ### Changed
 
@@ -16,8 +16,20 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   numerical inputs. Retain the full internal research workspace locally.
 - Unify execution-method references and practical integration documentation,
   and include the supplied-input portfolio pipeline examples.
-- Preserve all executable package code from 9.1.2: V2 production execution,
+- Preserve all runtime package code from 9.1.2: V2 production execution,
   independently audited V1 fallback and operational MIQP are unchanged.
+
+### Fixed
+
+- Register the OSS pipeline modules in the example catalogue and place their
+  numerical pytest suites in a dedicated tests directory, excluded from example
+  execution and exercised by composed source CI. Preserve every numerical test
+  body. Use the matching published FactorModels 0.3.0 in composed workflows.
+
+## [9.1.3] - 2026-10-26
+
+- Not published: the source release gate rejected the new example catalogue and
+  test-layout omissions before upload. The original tag is retained unchanged.
 
 ## [9.1.2] - 2026-10-26
 

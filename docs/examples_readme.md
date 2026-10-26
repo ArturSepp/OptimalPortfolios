@@ -119,7 +119,7 @@ scenario; it does not execute every branch of a `Locals` enum.
 ### Unattended execution lanes
 
 The [classifier and runner](../.github/scripts/run_examples.py) derives lanes from Python imports.
-Its current inventory is **28 offline, 11 composed, 18 network, 57 unattended examples**. The **5 local-data workflows** ending in
+Its current inventory is **29 offline, 11 composed, 29 network, 69 unattended examples**. The **5 local-data workflows** ending in
 `*_local.py` are excluded; this manual category also includes the optional skfolio bridge
 using the packaged fixture. Each catalogue row below states the classification.
 
@@ -188,6 +188,30 @@ of local data or optional tooling.
 | Source | Lane | Purpose |
 |---|---|---|
 | [Production quickstart](../examples/getting_started/production_quickstart.py) | Offline | Six assets from the packaged monthly fixture; EWMA covariance, constrained minimum variance and a QIS backtest. Prints weights, NAV and runtime. See the [calculation and execution conventions](quickstart.md). |
+
+## `oss_portfolio_pipeline/` — composed public ETF study
+
+The [pipeline guide](../examples/oss_portfolio_pipeline/README.md) documents the
+complete study, explicit dates, solver choice and external output paths. The
+Network label follows reachable acquisition imports; supplied-input helper calls
+do not themselves download data. Its synthetic pytest suites live under
+`examples/oss_portfolio_pipeline/tests/` and run in composed source CI, separately
+from these example entry points. They are excluded from distributions.
+
+| Source | Lane | Purpose |
+|---|---|---|
+| [__main__.py](../examples/oss_portfolio_pipeline/__main__.py) | Network | Command-line entry point; choose an explicit study end and solver. |
+| [attribution.py](../examples/oss_portfolio_pipeline/attribution.py) | Network | Model-layer portfolio attribution from supplied pipeline outputs. |
+| [backtest.py](../examples/oss_portfolio_pipeline/backtest.py) | Network | Active portfolio optimisation and QIS holdings accounting. |
+| [config.py](../examples/oss_portfolio_pipeline/config.py) | Offline | Public ETF universe, fixed benchmark and study configuration. |
+| [covariance.py](../examples/oss_portfolio_pipeline/covariance.py) | Network | Monthly factor covariance estimation through FM and FL. |
+| [data.py](../examples/oss_portfolio_pipeline/data.py) | Network | Validated Yahoo price acquisition and external cache provenance. |
+| [diagnostics.py](../examples/oss_portfolio_pipeline/diagnostics.py) | Network | Factor, alpha and portfolio diagnostics for a completed run. |
+| [factors.py](../examples/oss_portfolio_pipeline/factors.py) | Network | Financed factor portfolios and their causal volatility targets. |
+| [factsheets.py](../examples/oss_portfolio_pipeline/factsheets.py) | Network | QIS portfolio factsheets from completed pipeline results. |
+| [pipeline.py](../examples/oss_portfolio_pipeline/pipeline.py) | Network | Input preparation and orchestration of the public study. |
+| [reporting.py](../examples/oss_portfolio_pipeline/reporting.py) | Network | Aligned portfolio, turnover, cost and tracking-error tables. |
+| [stress.py](../examples/oss_portfolio_pipeline/stress.py) | Network | Scenario analysis from supplied fitted risk and portfolio results. |
 
 ## `integrations/` — optional portfolio bridges
 
