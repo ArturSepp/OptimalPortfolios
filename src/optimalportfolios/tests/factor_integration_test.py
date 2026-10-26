@@ -63,10 +63,10 @@ def fitted_snapshot():
 
 def _manual_risk_inputs(snapshot, diagonal_reference=False):
     """Independently assemble full selected residual risk and a plain QIS interchange view."""
-    data, date = snapshot.data, snapshot.cutoff
-    b, f = data.y_betas, data.x_covar
-    variances = data.y_variances['residual_var'].to_numpy()
-    corr = data.residual_correlation.correlation.to_numpy()
+    data, date = snapshot, snapshot.cutoff
+    b, f = data.loadings, data.factor_covariance
+    variances = data.fit_statistics['residual_var'].to_numpy()
+    corr = data.residual_correlation.to_numpy()
     residual = .7 * (.6 * corr + .4 * np.eye(len(variances))) * np.sqrt(
         np.outer(variances, variances))
     residual = pd.DataFrame(residual, index=b.index, columns=b.index)
@@ -96,19 +96,20 @@ def test_fitted_tf_context_matches_manual_risk_and_complete_report(
         fitted_snapshot, diagonal_reference):
     """A real FM fit and independent supplied matrices produce identical OP reporting data."""
     from qis.perfstats.config import ReturnTypes
-    from factormodels import prepare_portfolio_context
+    from factormodels import prepare_portfolio_context, prepare_snapshot_diagnostics
     from optimalportfolios import PortfolioOptimisationResult
 
     snapshot = fitted_snapshot
     risk, residual = _manual_risk_inputs(snapshot, diagonal_reference)
-    b, f = snapshot.data.y_betas, snapshot.data.x_covar
+    b, f = snapshot.loadings, snapshot.factor_covariance
     ids, date = b.index, snapshot.cutoff
     volatility = pd.DataFrame({
         'total_vol': np.sqrt(np.diag(risk.covar[date])),
         'sys_vol': np.sqrt(np.diag(b @ f @ b.T)),
         'resid_vol': np.sqrt(np.diag(residual)),
     }, index=ids)
-    diagnostics = snapshot.data.get_snapshot()
+    prepared = prepare_snapshot_diagnostics(snapshot, alpha_span=120)
+    diagnostics = prepared.table
     diagnostics.loc[:, volatility.columns] = volatility
     weights = pd.Series([.4, .2, .3, .1], index=ids, name='candidate')
     benchmark = pd.Series([.3, .3, .25, .15], index=ids, name='benchmark')
@@ -116,7 +117,7 @@ def test_fitted_tf_context_matches_manual_risk_and_complete_report(
                   current_weights=benchmark, expected_return=pd.Series(.04, index=ids),
                   group_attributions={'class': pd.Series(['risk'] * 3 + ['cash'], index=ids)})
     adapted = PortfolioOptimisationResult(**common, **prepare_portfolio_context(
-        snapshot, diagonal_reference=diagonal_reference))
+        snapshot, diagnostics=prepared, diagonal_reference=diagonal_reference))
     manual = PortfolioOptimisationResult(**common, risk_model=risk, risk_model_date=date,
         decomposition_mode='diagonal_reference' if diagonal_reference else 'exact',
         asset_diagnostics=diagnostics, asset_volatilities=volatility)
@@ -158,7 +159,7 @@ def test_prepared_cluster_scores_match_supplied_cluster_mapping(mode):
 def test_prepared_opportunity_matches_manual_arrays_and_constraint_audit(objective):
     """Statistical preparation upstream preserves constrained solutions and hard feasibility."""
     from factorlasso import ResidualCorrelationData
-    from factormodels.analytics import FactorOpportunityModel
+    from factormodels import FactorOpportunityModel, snapshot_from_moments
     from optimalportfolios.optimization.opportunity import OpportunityModel, solve_opportunity
 
     ids, date = pd.Index(['a', 'b', 'c', 'd']), pd.Timestamp('2026-06-30')
@@ -169,8 +170,10 @@ def test_prepared_opportunity_matches_manual_arrays_and_constraint_audit(objecti
     prepared = ResidualCorrelationData(correlation,
         pd.DataFrame([[0.] * 4], index=[date], columns=ids), pd.DataFrame(index=ids),
         'ME', 24., date, date)
-    upstream = FactorOpportunityModel(b, pd.Series(.04, index=ids), f, alpha,
-                                      date, prepared, .5)
+    upstream = FactorOpportunityModel.from_snapshot(snapshot_from_moments(
+        b, f, pd.Series(.04, index=ids),
+        date=date, residual_correlation=prepared, residual_type='empirical',
+        residual_corr_weight=.5), alpha)
     residual = .04 * (.5 * correlation + .5 * np.eye(4))
     design = np.column_stack([np.ones(4), b])
     projection = np.eye(4) - design @ np.linalg.pinv(design)

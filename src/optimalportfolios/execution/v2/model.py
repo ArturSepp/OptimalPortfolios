@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import cvxpy as cp
 import numpy as np
 
@@ -45,6 +45,7 @@ class ConicModel:
     constant: float
     gradient: np.ndarray
     direction: np.ndarray
+    qp_diagnostics: dict = field(default_factory=dict, init=False)
 
     def initial_values(self, weights):
         """Map an audited original-space vector into the complete state assignment."""
@@ -66,13 +67,36 @@ class ConicModel:
         return initial
 
 
+def _interval_rows(values, directions, constant, lower, upper, reduce_fixed):
+    """Omit only satisfied constant intervals from a fixed-state sizing graph.
+
+    Zero coefficients are tested exactly, without a numerical threshold. Keep
+    every nonconstant row and every constant contradiction. This removes barrier
+    degeneracy after fixed-coordinate elimination without enlarging the domain.
+    """
+    if not reduce_fixed:
+        return [values >= lower, values <= upper]
+    keep = (
+        np.any(directions != 0.0, axis=1)
+        | (constant < lower)
+        | (constant > upper)
+    )
+    if not keep.any():
+        return []
+    return [values[keep] >= lower[keep], values[keep] <= upper[keep]]
+
+
 def build_model(
     problem, formulation="CORRIDOR", perspective=False, continuous=False, fixed_states=None
 ):
-    """Build the exact state hull or a fixed-state QP with no hard-rule relaxation.
+    """Build a state hull or fixed-state QP using the declared group audit envelope.
 
     All coordinates fixed by original bounds are eliminated algebraically. Cash
     is eliminated through exact funding, while its original bounds remain rows.
+    Group rows admit only the existing original-space audit tolerance. Original
+    limits remain immutable and every delivered vector still requires that audit.
+    Fixed-state QPs omit satisfied constant bound/group rows; contradictory rows
+    remain. Integer hulls and their continuous relaxations keep their original graph.
     """
     states = compile_states(problem, formulation)
     lower, upper = domain_bounds(problem, formulation)
@@ -96,12 +120,23 @@ def build_model(
     x = cp.Variable(len(indices), name="funded_bp") if len(indices) else None
     wbp = cp.Constant(SCALE * r) if x is None else SCALE * r + u @ x
     w = wbp / SCALE
-    rows = [wbp >= SCALE * lo, wbp <= SCALE * hi]
+    rows = _interval_rows(
+        wbp, u, SCALE * r, SCALE * lo, SCALE * hi, fixed_states is not None
+    )
     if len(problem.group_lower):
-        rows += [
-            problem.groups @ wbp >= SCALE * problem.group_lower,
-            problem.groups @ wbp <= SCALE * problem.group_upper,
-        ]
+        # Compile the same per-row residual envelope for fixed QPs, integer
+        # models and continuous relaxations. Inward rounding avoids exceeding
+        # the declared allowance merely through endpoint subtraction/addition.
+        group_lo = np.nextafter(
+            problem.group_lower - problem.rules.audit_tolerance, problem.group_lower
+        )
+        group_hi = np.nextafter(
+            problem.group_upper + problem.rules.audit_tolerance, problem.group_upper
+        )
+        rows += _interval_rows(
+            problem.groups @ wbp, problem.groups @ u, problem.groups @ (SCALE * r),
+            SCALE * group_lo, SCALE * group_hi, fixed_states is not None
+        )
     selectors, contributions, occupancy = {}, {}, {}
     tickets, optional = [], []
     for i, row in enumerate(states):
@@ -183,9 +218,28 @@ def build_model(
 
 
 def solve_qp(model, solver="CLARABEL"):
-    """Solve a fixed-state graph with explicit tolerances and return raw weights."""
+    """Return raw sizing weights, with one equivalent CLARABEL numerical retry.
+
+    Automatic equilibration can stall on a heavily fixed funded-coordinate QP.
+    A SolverError permits one fresh solve without that scaling, using the same
+    graph and tolerances. Native infeasibility is not retried. Callers must still
+    audit the returned weights in original space; no failure implies feasibility.
+    """
     kwargs = (
         dict(tol_gap_abs=1e-10, tol_gap_rel=1e-10, tol_feas=1e-10) if solver == "CLARABEL" else {}
     )
-    model.optimisation.solve(solver=solver, **kwargs)
+    model.qp_diagnostics.clear()
+    model.qp_diagnostics.update(attempts=1, equilibration_retry=False)
+    try:
+        model.optimisation.solve(solver=solver, **kwargs)
+    except cp.SolverError as error:
+        model.qp_diagnostics["initial_error"] = str(error)
+        if solver != "CLARABEL":
+            raise
+        model.qp_diagnostics.update(attempts=2, equilibration_retry=True)
+        # A fresh native instance is required: equilibration is an immutable
+        # CLARABEL setting on a cached solver. No graph coefficient is changed.
+        model.optimisation.solve(
+            solver=solver, warm_start=False, equilibrate_enable=False, **kwargs
+        )
     return None if model.weights.value is None else np.asarray(model.weights.value).reshape(-1)

@@ -372,7 +372,8 @@ def main() -> None:
         loadings_ts)
 
     date = dates[0]
-    risk_model = fm.build_risk_model({date: snapshot}, residual_type='orthogonal')
+    risk_model = fm.build_risk_model(
+        fm.snapshots_from_factorlasso({date: snapshot}, residual_type='orthogonal'))
     tracking_error = risk_model.compute_tre_at_date(
         benchmark_weights=benchmark, portfolio_weights=weights, date=date)
     exposures = risk_model.compute_exposures_at_date(portfolio_weights=weights, date=date)
@@ -439,8 +440,10 @@ def main() -> None:
     # A RollingFactorCovarData container gives the same model as its dated snapshots.
     rolling = RollingFactorCovarData(data={dates[0]: snapshot,
                                            dates[1]: factor_snapshot(STRESSED_FACTOR_CORR)})
-    rolling_model = fm.build_risk_model(rolling, residual_type='orthogonal')
-    snapshots_model = fm.build_risk_model(dict(rolling.data), residual_type='orthogonal')
+    rolling_model = fm.build_risk_model(
+        fm.snapshots_from_factorlasso(rolling, residual_type='orthogonal'))
+    snapshots_model = fm.build_risk_model(
+        fm.snapshots_from_factorlasso(dict(rolling.data), residual_type='orthogonal'))
     pd.testing.assert_series_equal(
         rolling_model.compute_tre_history(benchmark_weights=benchmark, portfolio_weights=weights),
         snapshots_model.compute_tre_history(benchmark_weights=benchmark,

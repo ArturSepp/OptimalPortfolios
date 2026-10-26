@@ -96,8 +96,8 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
         risk_factor_prices=ac_benchmark_prices,
         asset_returns_dict=asset_returns_dict,
         time_period=time_period
-    ).data
-    lasso_covars = lasso_covar_data.get_y_covars()
+    )
+    lasso_covars = lasso_covar_data.covariances
 
     # 4. LASSO with vol-normalised returns
     asset_returns_dict_vol_norm = qis.compute_asset_returns_dict(
@@ -108,8 +108,8 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
         risk_factor_prices=ac_benchmark_prices,
         asset_returns_dict=asset_returns_dict_vol_norm,
         time_period=time_period,
-    ).data
-    lasso_covars_norm = lasso_covar_data_norm.get_y_covars()
+    )
+    lasso_covars_norm = lasso_covar_data_norm.covariances
 
     # 5. Group LASSO factor model
     group_lasso_model = LassoModel(model_type=LassoModelType.GROUP_LASSO,
@@ -125,16 +125,16 @@ def run_multi_covar_estimators_backtest(prices: pd.DataFrame,
         risk_factor_prices=ac_benchmark_prices,
         asset_returns_dict=asset_returns_dict,
         time_period=time_period,
-    ).data
-    group_lasso_covars = group_lasso_covar_data.get_y_covars()
+    )
+    group_lasso_covars = group_lasso_covar_data.covariances
 
     # 6. Group LASSO with vol-normalised returns
     group_lasso_covar_data_norm = group_lasso_estimator.fit_rolling(
         risk_factor_prices=ac_benchmark_prices,
         asset_returns_dict=asset_returns_dict_vol_norm,
         time_period=time_period,
-    ).data
-    group_lasso_covars_norm = group_lasso_covar_data_norm.get_y_covars()
+    )
+    group_lasso_covars_norm = group_lasso_covar_data_norm.covariances
 
     # create dict of estimated covars
     covars_dict = {'EWMA': ewma_covars, 'EWMA vol norm': ewma_covars_vol_norm,

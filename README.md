@@ -461,7 +461,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
   year={2026},
-  version={9.0.1},
+  version={9.1.0},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

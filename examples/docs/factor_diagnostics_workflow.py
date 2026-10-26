@@ -8,14 +8,16 @@ No file writes or network access. ``render_report`` returns a QIS-based figure t
 """
 from __future__ import annotations
 
+from factormodels import snapshot_from_moments
+
 import numpy as np
 import pandas as pd
 import factorlasso as fl
 import qis
 
 from optimalportfolios.optimization.executed_state import backtest_with_qis_state
-from factormodels.premia.sharpe_accounting import gls_projector, gls_split
-from factormodels.analytics import (
+from factormodels.gls_diagnostic.geometry import gls_projector, gls_split
+from factormodels.gls_diagnostic import (
     FactorOpportunityModel, portfolio_opportunity_metrics, fixed_portfolio_alpha_interval,
 )
 
@@ -77,7 +79,9 @@ def run_workflow(factor_returns=None, asset_returns=None):
     snapshot = fl.CurrentFactorCovarData(x_covar=f, y_betas=b,
         y_variances=pd.DataFrame({'residual_var': d}), residuals=residuals,
         estimation_date=asof)
-    opportunity = FactorOpportunityModel(b, d, f, uncertainty.estimates, date=asof)
+    opportunity = FactorOpportunityModel.from_snapshot(snapshot_from_moments(
+        b, f, d,
+        date=asof), uncertainty.estimates)
     weights = pd.Series([.30, .15, .10, .10, .20, .15], index=y.columns)
     benchmark = pd.Series(1 / len(weights), index=y.columns)
     active = weights - benchmark

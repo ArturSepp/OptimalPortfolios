@@ -16,9 +16,9 @@ from dataclasses import replace
 import numpy as np
 import pandas as pd
 import qis
-from factorlasso import CurrentFactorCovarData, LassoModel, LassoModelType, VarianceColumns
+from factorlasso import LassoModel, LassoModelType, VarianceColumns
 
-from factormodels import DatedFactorCovariance, FactorCovarEstimator
+from factormodels import DatedFactorCovariance, FactorCovarEstimator, FactorModelSnapshot
 
 SEED = 5
 FACTORS = ['Equity', 'Rates', 'Credit', 'Commodities']
@@ -129,15 +129,15 @@ def residual_correlation_reference(residuals: pd.DataFrame, scale: pd.Series,
     return pd.DataFrame(moment / np.outer(vols, vols), index=raw.columns, columns=raw.columns)
 
 
-def systematic(data: CurrentFactorCovarData) -> np.ndarray:
+def systematic(data: FactorModelSnapshot) -> np.ndarray:
     """Return beta Sigma_F beta' of a fitted decomposition as an explicit matrix product."""
-    beta = data.y_betas.to_numpy()
-    return np.einsum('if,fg,jg->ij', beta, data.x_covar.to_numpy(), beta)
+    beta = data.loadings.to_numpy()
+    return np.einsum('if,fg,jg->ij', beta, data.factor_covariance.to_numpy(), beta)
 
 
-def residual_vars(data: CurrentFactorCovarData) -> pd.Series:
+def residual_vars(data: FactorModelSnapshot) -> pd.Series:
     """Return the annual residual variances, the diagonal of D."""
-    return data.y_variances[VarianceColumns.RESIDUAL_VARS.value]
+    return data.fit_statistics[VarianceColumns.RESIDUAL_VARS.value]
 
 
 def history_through(factor_prices: pd.DataFrame, buckets: dict, date) -> dict:
@@ -152,10 +152,10 @@ def private_weights() -> np.ndarray:
     return np.array([0.0] * len(MONTHLY) + [1.0 / len(QUARTERLY)] * len(QUARTERLY))
 
 
-def residual_block(data: CurrentFactorCovarData, rho: float) -> np.ndarray:
+def residual_block(data: FactorModelSnapshot, rho: float) -> np.ndarray:
     """S[(1 - rho) I + rho R]S from the stored variances and the prepared correlation."""
     vols = np.sqrt(residual_vars(data).to_numpy())
-    corr = data.residual_correlation.correlation.loc[ASSETS, ASSETS].to_numpy()
+    corr = data.residual_correlation.loc[ASSETS, ASSETS].to_numpy()
     return vols[:, None] * ((1 - rho) * np.eye(len(vols)) + rho * corr) * vols[None, :]
 
 
@@ -170,17 +170,17 @@ def main() -> None:
         lasso_model=hcgl_model(), factor_returns_freq='ME', factor_covar_span=36,
         rebalancing_freq='QE')
     snapshot = estimator.fit_current(**history)
-    data, covariance = snapshot.data, snapshot.asset_covariance
-    assert snapshot.cutoff == as_of and data.estimation_date == as_of
-    assert data.y_betas.index.tolist() == ASSETS and data.y_betas.columns.tolist() == FACTORS
+    data, covariance = snapshot, snapshot.asset_covariance
+    assert snapshot.cutoff == as_of and data.cutoff == as_of
+    assert data.loadings.index.tolist() == ASSETS and data.loadings.columns.tolist() == FACTORS
     assert data.clusters.loc[MONTHLY].str.startswith('ME:').all()
     assert data.clusters.loc[QUARTERLY].str.startswith('QE:').all()
 
     # Independent explicit EWMA sums verify both factor and residual scaling.
     factor_covariance = factor_covar_reference(factor_prices.loc[:as_of], 36, 12)
-    np.testing.assert_allclose(data.x_covar, factor_covariance, rtol=1e-10, atol=1e-14)
+    np.testing.assert_allclose(data.factor_covariance, factor_covariance, rtol=1e-10, atol=1e-14)
     variances = pd.concat([
-        residual_variance_reference(factor_prices.loc[:as_of], returns, data.y_betas,
+        residual_variance_reference(factor_prices.loc[:as_of], returns, data.loadings,
                                     SPANS[freq], PERIODS_PER_YEAR[freq])
         for freq, returns in history['asset_returns_dict'].items()])
     np.testing.assert_allclose(residual_vars(data).loc[ASSETS], variances.loc[ASSETS],
@@ -196,18 +196,18 @@ def main() -> None:
     # Strict cutoff applies to every mode, including the orthogonal residual policy.
     full_history = estimator.fit_current(factor_prices, buckets, cutoff=as_of)
     pd.testing.assert_frame_equal(full_history.asset_covariance, covariance)
-    supplied = DatedFactorCovariance(data.x_covar * 1.7, as_of, as_of)
+    supplied = DatedFactorCovariance(data.factor_covariance * 1.7, as_of, as_of)
     external = estimator.fit_current(**history, factor_covariance=supplied)
-    pd.testing.assert_frame_equal(external.data.x_covar, data.x_covar * 1.7)
+    pd.testing.assert_frame_equal(external.factor_covariance, data.factor_covariance * 1.7)
 
     # A correlated residual policy keeps the full selected matrix in the completed object.
     empirical = replace(estimator, residual_type='empirical', residual_corr_weight=.5)
     correlated = empirical.fit_current(**history)
-    fitted = correlated.data
+    fitted = correlated
     metadata = fitted.residual_metadata.loc[ASSETS]
     reference_correlation = residual_correlation_reference(
         fitted.residuals, metadata['residual_scale'], 12)
-    np.testing.assert_allclose(fitted.residual_correlation.correlation.loc[ASSETS, ASSETS],
+    np.testing.assert_allclose(fitted.residual_correlation.loc[ASSETS, ASSETS],
                                reference_correlation.loc[ASSETS, ASSETS], rtol=0, atol=1e-12)
     np.testing.assert_allclose(correlated.asset_covariance,
                                systematic(fitted) + residual_block(fitted, .5),
@@ -254,11 +254,11 @@ def exhibit(path) -> dict:
     history = history_through(factor_prices, buckets, AS_OF)
     data = FactorCovarEstimator(
         lasso_model=hcgl_model(), factor_returns_freq='ME', factor_covar_span=36,
-        residual_type='empirical').fit_current(**history).data
+        residual_type='empirical').fit_current(**history)
     systematic_vars = np.diag(systematic(data))
     residual = residual_vars(data).loc[ASSETS].to_numpy()
-    totals = {kind: np.diag(data.get_y_covar(residual_type=kind)) for kind in
-              ('orthogonal', 'empirical')}
+    totals = {'orthogonal': np.diag(data.raw_diagonal_reference_covariance),
+              'empirical': np.diag(data.asset_covariance)}
     w = private_weights()
     diagonal_part = w @ np.diag(residual) @ w
     retained = {}

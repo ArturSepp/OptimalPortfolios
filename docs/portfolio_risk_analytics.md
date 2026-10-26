@@ -491,7 +491,8 @@ with the explicitly selected orthogonal residual policy. The canonical script im
 
 ```python
 date = dates[0]
-risk_model = fm.build_risk_model({date: snapshot}, residual_type='orthogonal')
+risk_model = fm.build_risk_model(
+    fm.snapshots_from_factorlasso({date: snapshot}, residual_type='orthogonal'))
 tracking_error = risk_model.compute_tre_at_date(
     benchmark_weights=benchmark, portfolio_weights=weights, date=date)
 exposures = risk_model.compute_exposures_at_date(portfolio_weights=weights, date=date)

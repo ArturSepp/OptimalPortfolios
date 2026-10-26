@@ -413,7 +413,7 @@ legacy_carry_score = alphas.compute_ra_carry_alphas(
 
 ### A factor model for managers' residuals
 
-FM constructs the completed rolling factor model using FactorLasso. Its `.data` view supplies
+FM constructs the completed rolling factor model using FactorLasso. Its `snapshots` mapping supplies
 the dated loadings and clusters consumed by these OP signal helpers. The first manager price endpoint
 is retained before the first beta date so manager returns can begin in January 2023.
 
@@ -432,7 +432,7 @@ rolling_data = factor_estimator.fit_rolling(
     },
     assets=prices.columns,
     time_period=qis.TimePeriod("2022-12-31", "2024-12-31"),
-).data
+)
 taa_covar_data = rolling_data
 asset_prices = prices.loc["2022-11-30":]
 ```
@@ -443,7 +443,8 @@ from optimalportfolios.alphas import compute_managers_alpha
 score, raw_alpha = compute_managers_alpha(
     prices=asset_prices,
     risk_factor_prices=factor_prices,
-    estimated_betas=rolling_data.get_y_betas(),
+    estimated_betas={
+        date: snapshot.loadings for date, snapshot in rolling_data.snapshots.items()},
     returns_freq='ME',
     alpha_span=12,
 )

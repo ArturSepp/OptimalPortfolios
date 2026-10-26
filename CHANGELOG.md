@@ -5,6 +5,78 @@ All notable changes to optimalportfolios are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [9.1.0] - 2026-10-26
+
+### Added
+
+- Add V2 common risk-neutral preparation and an opt-in production adapter. The
+  adapter preserves supplied lifecycle, calendar and hard group rules, enforces
+  actual-ticket minima and caps, and accepts a supplied V1 fallback only after
+  the same independent audit. Preparation records compulsory pins and corridor
+  exceptions separately from risk optimisation. Existing V1 and MIQP defaults
+  remain unchanged; consumers explicitly select V2.
+
+### Changed
+
+- Restart V2 coordinated search from an improved incumbent for at most three
+  anchors, sharing the existing total support-trial budget. This recovers useful
+  third trades exposed by a jointly sized pair without changing any constraint
+  or audit tolerance; `RankedConfig.improvement_passes=1` retains the prior search.
+
+- Migrate composed FactorModels examples and integration tests to the published
+  FM 0.3.0 completed-result contract: named snapshot fields, explicit raw-FL risk
+  adapters and prepared opportunity/report inputs. Base optimisation remains
+  independent of FM. These development workflows require FM 0.3.0.
+
+### Fixed
+
+- Stabilise V2 compulsory preparation after the existing excursion, turnover
+  and repair-count objectives: select tied repair identities lexicographically,
+  then prefer retained holding states in identity order before continuous sizing.
+  Keep numerical-only legal endpoint corrections and whole numerical corridors
+  within the existing zero-trade convention, without giving them a material
+  repair interval or repair-count cost; pin their endpoints before risk search.
+  Require proven tie-break optima within the existing shared deadline. Preserve
+  hard constraints, audit tolerances, V1, MIQP and Rosaa production selection.
+
+- Eliminate satisfied constant instrument/group rows from V2 fixed-state sizing
+  after funded-coordinate substitution. Exact zero coefficients and unchanged
+  endpoints determine removal; keep constant contradictions and every movable
+  row. This resolves a CLARABEL iteration-limit stall without changing solver or
+  audit tolerances, ticket rules, or native integer hulls. V1, operational MIQP
+  and Rosaa production settings remain unchanged.
+
+- Size mandatory intervals with no discretionary tickets before evaluating
+  ranked additions. A feasible prepared base need not be the best mandatory-only
+  portfolio; previously a non-improving optional selection could hide this case.
+  Preserve constraints, audit tolerance, V1 and operational MIQP.
+
+- Refine an Exact candidate rejected only by the group audit with at most one
+  fixed-state convex sizing solve inside the remaining Exact time budget. Keep
+  the original constraints, audit tolerance and native status; accept only a
+  separately audited improvement and record its source. Genuine infeasibility
+  remains rejected. V2 Ranked, V1 and operational MIQP are unchanged.
+
+- Compile V2 group constraints with the existing per-row audit tolerance, shared
+  by ranked sizing, matched Exact and continuous relaxations. Preserve original
+  limits and independent validation: breaches beyond the declared tolerance still
+  fail. This resolves tiny pinned-group contradictions without changing ticket,
+  holding, funding or instrument-bound rules. V1 and operational MIQP are unchanged.
+
+- Recover V2 sizing after a CLARABEL numerical error with one fresh attempt
+  without automatic equilibration. Retain the identical QP, solver tolerances
+  and original-space audit; reported infeasibility is not retried. Record native
+  attempt counts per sizing trial. V1 and operational MIQP are unchanged.
+
+- Let V2 ranked execution test coordinated optional trades after its existing
+  sizing and improvement passes, including useful pairs that scalar ranking
+  misses. Rank one- or two-instrument state changes by funded quadratic gain
+  and jointly size a bounded shortlist under the existing audit. The existing
+  `rescue_trials` setting separately caps this pass; `exchange=False` disables it.
+  Constraints, numerical tolerances, V1 and operational MIQP are unchanged.
+
 ## [9.0.1] - 2026-10-24
 
 ### Fixed
@@ -17,9 +89,9 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [9.0.0] - 2026-10-24
 
-- Require QIS 5.44.3, including the bounded joint-unsmoothing implementation, and refresh the unsmoothing worked example and reviewed
-  teaching exhibits for zero-seeded filters after warmup. Preserve the fixed inputs
-  and independent numerical references.
+- Require QIS 5.44.3, including the bounded joint-unsmoothing implementation, and refresh
+  the unsmoothing worked example and reviewed teaching exhibits. Fixed inputs and
+  independent numerical references are preserved.
 
 - Move the production ranked implementation to `optimalportfolios.execution.v1`,
   retaining unnumbered module aliases and the opt-in guarded/branched methods.

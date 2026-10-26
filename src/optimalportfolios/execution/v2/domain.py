@@ -153,6 +153,11 @@ def result(problem, weights, status, diagnostics, formulation="CORRIDOR"):
         K=problem.rules.ticket_cap,
         b=problem.rules.discretionary_allowance,
         candidate_instruments=candidates,
+        group_feasibility=dict(
+            native_policy="original_limits_plus_audit_tolerance",
+            tolerance=problem.rules.audit_tolerance,
+            audit_limits="original",
+        ),
         cap_convention=(
             "mandatory_adjusted"
             if problem.rules.discretionary_allowance is not None

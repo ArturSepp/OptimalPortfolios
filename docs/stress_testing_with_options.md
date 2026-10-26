@@ -297,7 +297,8 @@ snapshot = CurrentFactorCovarData(
                              index=stocks),
 )
 date = pd.Timestamp("2025-12-31")  # Synthetic snapshot label.
-risk_model = fm.build_risk_model({date: snapshot}, residual_type='orthogonal')
+risk_model = fm.build_risk_model(
+    fm.snapshots_from_factorlasso({date: snapshot}, residual_type='orthogonal'))
 ```
 
 ### European options without an external pricer

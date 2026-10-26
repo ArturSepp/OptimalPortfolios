@@ -124,14 +124,14 @@ def fit_risk_model(prices):
         cutoff=date, factor_covariance=fm.DatedFactorCovariance(factor_covar, date, date),
     )
     model = fitted_model.to_risk_model()
-    snapshot = fitted_model.data
+    snapshot = fitted_model
     regression_factors = qis.to_returns(
         adjusted[list(FACTORS)].reindex(y.index, method="ffill").ffill(),
         freq=None, is_log_returns=True, is_first_zero=False, drop_first=False)
     valid_mask = y.notna().to_numpy() & ~regression_factors.isna().all(axis=1).to_numpy()[:, None]
     fit_inputs = {"x": regression_factors, "y": y, "valid_mask": valid_mask,
                   "model_type": lasso.model_type}
-    diagnostics = snapshot.y_variances[["r2"]].copy()
+    diagnostics = snapshot.fit_statistics[["r2"]].copy()
     diagnostics["weekly_observations"] = valid_mask.sum(axis=0).astype(int)
     history = qis.to_returns(adjusted[list(FACTORS)], freq="ME", is_log_returns=True,
                              drop_first=True).loc[:adjusted.index[-1]].dropna()
@@ -144,8 +144,12 @@ def cluster_report_inputs(snapshot):
     linkages = fl.get_linkages_by_freq(snapshot.linkages)
     cutoffs = snapshot.cutoffs.to_dict()
     lineage = analyze_cluster_lineage(fl.RollingFactorCovarData(
-        data={snapshot.estimation_date: snapshot}), weighting="equal")
-    labels = lineage.labels_at(snapshot.estimation_date)
+        data={snapshot.cutoff: fl.CurrentFactorCovarData(
+            x_covar=snapshot.factor_covariance, y_betas=snapshot.loadings,
+            y_variances=snapshot.fit_statistics, clusters=snapshot.clusters,
+            linkages=snapshot.linkages, cutoffs=snapshot.cutoffs,
+            estimation_date=snapshot.cutoff)}), weighting="equal")
+    labels = lineage.labels_at(snapshot.cutoff)
     display_labels = {}
     for cadence, members in memberships.items():
         for group in members.unique():
@@ -353,7 +357,7 @@ def verify_example(portfolio, result, inventory, snapshot, fit_inputs):
     np.testing.assert_allclose(result.factor_loadings, snapshot.y_betas)
     np.testing.assert_allclose(result.factor_covariance, snapshot.x_covar)
     pd.testing.assert_frame_equal(
-        portfolio.risk_model.covar[portfolio.risk_date], snapshot.get_y_covar())
+        portfolio.risk_model.covar[portfolio.risk_date], snapshot.asset_covariance)
     linkage = fl.get_linkages_by_freq(snapshot.linkages)[FREQUENCY]
     recovered = fcluster(linkage, snapshot.cutoffs[FREQUENCY], criterion="distance")
     members = fl.get_clusters_by_freq(snapshot.clusters)[FREQUENCY].reindex(

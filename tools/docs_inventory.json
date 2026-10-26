@@ -13,7 +13,11 @@
         "wrapper_ranked_execution",
         "wrapper_exact_execution",
         "compute_perspective_lower_bound",
-        "from_resolved_problem"
+        "from_resolved_problem",
+        "prepare_common_execution",
+        "V2ExecutionPolicyConfig",
+        "resolve_production_problem",
+        "solve_v2_execution_portfolio"
       ],
       "parameters": {
         "ExecutionProblem": [
@@ -59,6 +63,7 @@
           "compute_bound",
           "rescue_trials",
           "mandatory_state_trials",
+          "improvement_passes",
           "objective_tolerance",
           "qp_solver"
         ],
@@ -66,6 +71,30 @@
           "weights",
           "status",
           "diagnostics"
+        ],
+        "V2ExecutionPolicyConfig": [
+          "small_trade_cutoff",
+          "small_trade_cutoff_by_asset_class",
+          "sell_down_dust_threshold",
+          "material_trade_threshold",
+          "max_trades",
+          "expand_for_feasibility",
+          "minimum_trade_score",
+          "sequential_greedy_selection",
+          "sign_directed_rescue",
+          "allow_corridor_relaxation",
+          "tre_weight_by_asset_class",
+          "use_weight_drift",
+          "mandatory_trades",
+          "output_by_ticker",
+          "instruction_correction_tolerance",
+          "exact_execution",
+          "add_mandatory_trades_to_max_trades",
+          "constraint_set",
+          "ranked_config",
+          "preparation_time_limit_s",
+          "preparation_solver",
+          "allow_v1_fallback"
         ]
       }
     },

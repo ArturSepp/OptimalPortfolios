@@ -246,7 +246,13 @@ def check_psd(matrix):
 
 @dataclass(frozen=True)
 class RankedConfig:
-    """Explicit bounded state search, sizing and improvement controls."""
+    """Explicit bounded state search, sizing and improvement controls.
+
+    ``rescue_trials`` separately caps initial feasibility rescue and the coordinated
+    improvement trials across at most ``improvement_passes`` incumbent anchors.
+    ``exchange`` enables these after the single-exchange pass. Each support retains
+    the same ``mandatory_state_trials`` branch limit.
+    """
 
     drop: bool = True
     exchange: bool = True
@@ -255,10 +261,11 @@ class RankedConfig:
     mandatory_state_trials: int = 32
     objective_tolerance: float = 1e-12
     qp_solver: str = "CLARABEL"
+    improvement_passes: int = 3
 
     def __post_init__(self):
         """Reject unbounded or invalid numerical search controls."""
-        for x in (self.rescue_trials, self.mandatory_state_trials):
+        for x in (self.rescue_trials, self.mandatory_state_trials, self.improvement_passes):
             if checked_cap(x) is None:
                 raise ValueError("State search must be bounded")
         if self.mandatory_state_trials == 0 or self.objective_tolerance < 0:
