@@ -7,7 +7,7 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [9.1.0] - 2026-10-26
+## [9.1.1] - 2026-10-26
 
 ### Added
 
@@ -31,6 +31,9 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   independent of FM. These development workflows require FM 0.3.0.
 
 ### Fixed
+
+- Refresh the teaching-exhibit provenance after the FM 0.3.0 example updates.
+  Execution implementation and tolerances are unchanged from the qualified candidate.
 
 - Stabilise V2 compulsory preparation after the existing excursion, turnover
   and repair-count objectives: select tied repair identities lexicographically,

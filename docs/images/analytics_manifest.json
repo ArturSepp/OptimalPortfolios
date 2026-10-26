@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-10-24T06:49:01+00:00",
+  "generated_at_utc": "2026-10-26T05:01:35+00:00",
   "platform": "Windows-11-10.0.26300-SP0",
   "versions": {
     "python": "3.12.7",
-    "optimalportfolios": "9.0.0",
+    "optimalportfolios": "9.1.1",
     "qis": "5.44.3",
-    "factormodels": "0.1.1",
+    "factormodels": "0.3.0",
     "factorlasso": "1.0.5",
     "numpy": "2.5.2",
     "pandas": "3.0.5",
@@ -21,7 +21,7 @@
       "script": "examples/docs/maximum_diversification.py",
       "script_sha256": "028602bc6939cf40fcddaaa63ad7f7a6d15733e73db22e15eb649b7ae56c8282",
       "image_sha256": "4c4ce1196c4f1f65ba2be117fe635247f70a0240a7a5fe1dc55cbd62fb1aef45",
-      "table_sha256": "3031281898616f021871e7192367edef3663fe35e64aa036936873f88664661c",
+      "table_sha256": "96880e5056eb9659b653b37fda6bccfd300e874084bacd5db1bd299e10327a8d",
       "parameters": {
         "TICKERS": [
           "Govt",
@@ -228,7 +228,7 @@
     "mixed_frequency_grids": {
       "path": "docs/images/mixed_frequency_grids.png",
       "script": "examples/docs/mixed_frequency_data.py",
-      "script_sha256": "710edee63349675dc496809ea22a8085eca905248cb4e644268c4ed2abda00f3",
+      "script_sha256": "12dbad21f97fc7da399aba0c7521f219bb9aa7560754c689ea4fc490ff6317ad",
       "image_sha256": "1c45d191df58d071ad21cf5a7be1a1ec257ad16c35495e38ceab1ca5884131c5",
       "table_sha256": "547836425ad581fd76815528a815bb744a5a8caf696078d8deabd384cce96715",
       "parameters": {
@@ -514,7 +514,7 @@
     "alpha_scoring_cross_section_vs_cluster": {
       "path": "docs/images/alpha_scoring_cross_section_vs_cluster.png",
       "script": "examples/docs/alphas_module_readme.py",
-      "script_sha256": "bb45c7ea02c34458b654f45d5ca43ad229c72cdcc82fcab4dd50fd43b38e10fd",
+      "script_sha256": "5208d61b701861851a19f5eb3f0ed59f02c32f865225cf8e99f0baaffccaf776",
       "image_sha256": "9dced35a18fe531090674b5b266346e1c216a89347ee844b116bff0221dbca7d",
       "table_sha256": "e32465f33d2dc9b7086b8abb526b7dfe3f8911ce125102d878da3cb82388f022",
       "parameters": {
@@ -647,7 +647,7 @@
     "option_stress_scenarios": {
       "path": "docs/images/option_stress_scenarios.png",
       "script": "examples/docs/stress_testing_with_options.py",
-      "script_sha256": "4a9eb64c7d6fe70a64ab119f20ecebc56f61ee119f33d39f243892e02f469f64",
+      "script_sha256": "61798ec447fdb18d20394310ddda6b842f24d6561354eb2e88ff1c0d800a56e2",
       "image_sha256": "12fa6de3ed0666b8f9de976a0d5917bd03af6c9940df9752497731aea39d908a",
       "table_sha256": "44e3bd8b90373c8163ed01e8b90d160ae0e7ef4f3d63dda7876067336cb196f9",
       "parameters": {
@@ -896,9 +896,9 @@
     "risk_contributions_vs_weights": {
       "path": "docs/images/risk_contributions_vs_weights.png",
       "script": "examples/docs/portfolio_risk_analytics.py",
-      "script_sha256": "b830f1ced3370b07d8326bebcb0087af12db4b248ca211004fae87981019d195",
+      "script_sha256": "10e912990761bbda130799f85bb4ea50e0ed1ab4bf9beb936b07bd4a89f5223b",
       "image_sha256": "233eccb48e1271703a2d5b2b94edd098453dd13e76af3b8160d0a6b7241c4336",
-      "table_sha256": "4825d3c35d5ca40286e4208c3309cc08802928a9c98b3de8742068338830b836",
+      "table_sha256": "cb853812a4ba7d99a92b1e16fcac0ddad729d6d430acb572806c2a1bb0f6c827",
       "parameters": {
         "TICKERS": [
           "Govt",
@@ -1093,7 +1093,7 @@
     "factor_covariance_variance_split": {
       "path": "docs/images/factor_covariance_variance_split.png",
       "script": "examples/docs/factor_covariance_hcgl.py",
-      "script_sha256": "4d9e9860f050a01201036401999baa563fbff0435afb6b11c15f5312cd487e45",
+      "script_sha256": "10065b3293ccc01a32f1bd7bcf67d744e287ff0577605f5fd1c0d7678ae0de4c",
       "image_sha256": "df44432e853c3a95842ac3896e05458736e0c6c82ab8588eb600fb988d5ac2f0",
       "table_sha256": "cc33c07a7921bfab0123d0bffe7fe5ffedf8fa922a33bc1601e6891e1bbf3f8c",
       "parameters": {
@@ -1591,7 +1591,7 @@
       "script": "examples/docs/cara_gaussian_mixture.py",
       "script_sha256": "552ad072d99487ad54c66a52fdd247727f027c6e35999e9606dbdf2c9f892458",
       "image_sha256": "46dd3d45488ce43e53a944fc66050facbd1028f1fe99a42b88c8f83c32cc0c0e",
-      "table_sha256": "4eac5805db32fd3a79c6328b94b9d90fd67d0c10e858920b06f7e9a3518f833e",
+      "table_sha256": "68fd4f61dde800154a610b838af54ddd699854f716aeb26d0d4a8ec366d7ded2",
       "parameters": {
         "TICKERS": [
           "Bonds",
@@ -1862,7 +1862,7 @@
       "script": "examples/docs/app_crypto_allocation.py",
       "script_sha256": "62a3267d6fc6fad55784963d27a1e357d9a9de61ad742dd38db01d3789862f25",
       "image_sha256": "27ca33468b16b31f7b252d3f92986a10ad32fdb479a91208c1bfa300b097b539",
-      "table_sha256": "63b9b9b67b706715f72e43c8f430b46930c95a60b956f0b88707169214a76723",
+      "table_sha256": "c71dfd645e479ce08df4603adc6e7b89aabbabec8e00484349993cca595cfe93",
       "parameters": {
         "METHODS": {
           "ERC": "EQUAL_RISK_CONTRIBUTION",
@@ -2158,7 +2158,7 @@
     }
   },
   "review": {
-    "note": "Codex reviewed the changed unsmoothing and alpha exhibits at full 1500-pixel resolution and the unsmoothing page at browser width. All 26 final QIS 5.44.3 images are byte-identical to the reviewed bundle; labels, units, values and captions remain consistent.",
-    "published_at_utc": "2026-10-24T06:50:45+00:00"
+    "note": "Regenerated all 26 registered exhibits after FM 0.3.0 API and formatting updates. All numerical checks pass and every PNG is byte-identical to its previously visually reviewed committed image; that existing visual review is retained. Verified complete image and current script hashes on 2026-10-26.",
+    "published_at_utc": "2026-10-26T05:02:30+00:00"
   }
 }
