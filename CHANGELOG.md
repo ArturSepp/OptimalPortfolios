@@ -7,6 +7,18 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [9.1.3] - 2026-10-26
+
+### Changed
+
+- Consolidate the public Ranked Execution manuscript and portable 302-ETF
+  benchmark runner, with anonymised identifiers and separately distributed
+  numerical inputs. Retain the full internal research workspace locally.
+- Unify execution-method references and practical integration documentation,
+  and include the supplied-input portfolio pipeline examples.
+- Preserve all executable package code from 9.1.2: V2 production execution,
+  independently audited V1 fallback and operational MIQP are unchanged.
+
 ## [9.1.2] - 2026-10-26
 
 ### Fixed
