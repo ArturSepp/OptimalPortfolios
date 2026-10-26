@@ -191,7 +191,7 @@ of local data or optional tooling.
 
 ## `oss_portfolio_pipeline/` — composed public ETF study
 
-The [pipeline guide](../examples/oss_portfolio_pipeline/README.md) documents the
+The [pipeline guide](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/oss_portfolio_pipeline/README.md) documents the
 complete study, explicit dates, solver choice and external output paths. The
 Network label follows reachable acquisition imports; supplied-input helper calls
 do not themselves download data. Its synthetic pytest suites live under

@@ -7,7 +7,7 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [9.1.4] - 2026-10-26
+## [9.1.5] - 2026-10-26
 
 ### Changed
 
@@ -24,7 +24,24 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Register the OSS pipeline modules in the example catalogue and place their
   numerical pytest suites in a dedicated tests directory, excluded from example
   execution and exercised by composed source CI. Preserve every numerical test
-  body. Use the matching published FactorModels 0.3.0 in composed workflows.
+  body. Use the matching published FactorModels 0.3.0 in composed workflows
+  and install the documented data extra for the pipeline provenance tests.
+- Link the repository-only pipeline guide through its public source URL so
+  strict Sphinx builds do not treat it as an absent documentation source.
+
+### Known issues
+
+- The repository-only pipeline's optional feature-attribution study can fail
+  with published QIS 5.44.4 when a feature has an exactly zero effect and its
+  HAC alpha p-value is undefined. Six attribution fixture checks expose this
+  in a clean environment. A locally modified QIS installation is not a portable
+  workaround; production execution and the shipped OP package tests are unaffected.
+
+## [9.1.4] - 2026-10-26
+
+- Not published: strict documentation validation found a repository-only guide
+  linked as a Sphinx source. Publication was stopped before upload; the original
+  tag is retained unchanged.
 
 ## [9.1.3] - 2026-10-26
 
