@@ -69,6 +69,15 @@ order. These tie-breaks retain all preceding objective caps and require an optim
 native result within the same shared preparation deadline; an unproven choice fails
 closed. A strictly convex, covariance-free tie break then sizes the selected repairs.
 Renaming identifiers can change a tied choice, so consumers must keep them stable.
+If a native repair-identity stage reports infeasibility after accepting a discrete
+incumbent, preparation can re-prove the repair count and canonical identities
+using the existing SciPy/HiGHS route with presolve disabled and tighter native
+precision. This bounded numerical retry retains the exact earlier excursion and
+turnover caps, instrument and group bounds, no-repair intervals and shared deadline.
+It cannot enlarge the policy ticket cap or weaken the final audit. The discarded
+native count is re-optimised, not accepted as a feasible integer certificate;
+both attempts are retained in diagnostics. A failed or unproved retry remains a
+failed preparation.
 If an optional base lies just outside a legal interval or holding-state endpoint,
 the no-repair branch may use the nearest legal endpoint only when its distance
 from both base and original holdings is within the existing zero-trade convention.

@@ -7,6 +7,17 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [9.1.2] - 2026-10-26
+
+### Fixed
+
+- Recover a V2 preparation tie-break that becomes infeasible after fixing a
+  near-integral native repair prefix. Re-prove discrete repair selection with
+  independent HiGHS precision and presolve disabled, retaining the original
+  excursion and turnover caps, hard domain, shared deadline and return audit.
+  Genuine breaches and unproved retries remain failures. V1 and operational
+  MIQP are unchanged.
+
 ## [9.1.1] - 2026-10-26
 
 ### Added

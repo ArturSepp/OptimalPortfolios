@@ -172,8 +172,16 @@ def _solve(objective, rows, solver, deadline, log, label):
             'MSK_DPAR_MIO_TOL_FEAS': 1e-9,
             'MSK_DPAR_MIO_TOL_ABS_RELAX_INT': 1e-9,
         }
-    elif solver == 'SCIPY':
+    elif solver in ('SCIPY', 'SCIPY_REPAIR'):
         options['scipy_options'] = dict(time_limit=remaining, mip_rel_gap=0.)
+        if solver == 'SCIPY_REPAIR':
+            # HiGHS' independent numerical retry preserves the mathematical
+            # graph. Disable presolve and tighten native precision only; the
+            # original-space audit and objective guards are unchanged.
+            options['scipy_options'].update(
+                presolve=False, mip_feasibility_tolerance=1e-10,
+                primal_feasibility_tolerance=1e-10, dual_feasibility_tolerance=1e-10)
+            solver = 'SCIPY'
     elif solver == 'CLARABEL':
         options.update(time_limit=remaining, tol_gap_abs=1e-10,
                        tol_gap_rel=1e-10, tol_feas=1e-10)
@@ -260,6 +268,28 @@ def _canonical_choices(problem, variables, rows, count, solver, deadline, log, m
     return choices
 
 
+def _retry_repair_choices(problem, mode, limits, deadline, log):
+    """Re-prove a contradictory discrete optimum within unchanged primary caps.
+
+    Near-integral native flags can admit tiny flows that disappear when a
+    canonical prefix is fixed. A fresh graph removes that unproved count cap,
+    then minimises the count again under the original excursion and turnover
+    caps. The same deadline, identity order and final sizing/audit still apply.
+    """
+    _, rows, variables, count, turnover, excursion, _, _ = _graph(problem, mode)
+    caps = {'turnover': limits['turnover']+_OBJECTIVE_GUARD_BP}
+    rows += [turnover <= caps['turnover']]
+    if 'excursion' in limits:
+        caps['excursion'] = limits['excursion']+_OBJECTIVE_GUARD_BP
+        rows += [excursion <= caps['excursion']]
+    log.append(dict(stage=mode, status='discrete_retry', solver='SCIPY', primary_caps=caps))
+    if (not _solve(count, rows, 'SCIPY_REPAIR', deadline, log, f'{mode}:retry_repair_count')
+            or log[-1]['status'] != cp.OPTIMAL):
+        return None
+    return _canonical_choices(
+        problem, variables, rows, count, 'SCIPY_REPAIR', deadline, log, mode)
+
+
 def _repair(problem, mode, solver, deadline, log):
     """Minimise primary repairs, canonically select tied states, then size them."""
     try:
@@ -277,6 +307,9 @@ def _repair(problem, mode, solver, deadline, log):
         limits[label] = value
         rows = rows + [objective <= value+_OBJECTIVE_GUARD_BP]
     choices = _canonical_choices(problem, variables, rows, count, solver, deadline, log, mode)
+    if (choices is None and log[-1]['status'] in (cp.INFEASIBLE, cp.INFEASIBLE_INACCURATE)
+            and ':repair_identity:' in log[-1]['stage']):
+        choices = _retry_repair_choices(problem, mode, limits, deadline, log)
     if choices is None:
         return None
     for attempt in range(2):
