@@ -42,7 +42,7 @@ jobs:
       - name: Verify public dependency workflow contracts
         run: python -m unittest discover -s .github/scripts -p public_dependency_test.py
       - name: Install released FM for the complete analytical bundle
-        run: uv pip install --python "$UV_PROJECT_ENVIRONMENT/bin/python" "factormodels==0.1.0"
+        run: uv pip install --python "$UV_PROJECT_ENVIRONMENT/bin/python" "factormodels==0.3.0"
       - name: Check every human-authored source
         run: uv run --no-sync python tools/check_docs.py --source-all
       - name: Test source-checker regressions
