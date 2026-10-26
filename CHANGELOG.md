@@ -10,6 +10,8 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Require QIS 5.44.5 or later for composed source/wheel qualification and the
   public pipeline's attribution study. Its deterministic zero-effect HAC fix
   resolves the QIS 5.44.4 limitation recorded below; keep base installs unchanged.
+- Cover MIQP frozen and forced-zero coordinates and the independent audit after
+  numerical-dust cleanup with portable regressions; retain the 100% coverage gate.
 
 ## [9.1.5] - 2026-10-26
 
