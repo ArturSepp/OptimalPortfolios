@@ -10,11 +10,13 @@ myst:
 
 # Maximum diversification
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-27](https://github.com/ArturSepp/OptimalPortfolios/commit/76f517fb295b51a69ce1a767fc080c987c08d896)*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 The maximum diversification portfolio is implemented in
 [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 ## Overview
 

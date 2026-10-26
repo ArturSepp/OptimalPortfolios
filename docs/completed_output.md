@@ -6,7 +6,7 @@ myst:
 
 # The completed optimisation output
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-10-18](https://github.com/ArturSepp/OptimalPortfolios/commit/837105bd1f34baeec538d9c8782d272d347a7947)*
 
 Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).

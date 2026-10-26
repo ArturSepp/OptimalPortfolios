@@ -10,7 +10,10 @@ myst:
 
 # Research papers and replication
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-27](https://github.com/ArturSepp/OptimalPortfolios/commit/f752bcefa99dc0afd4188f9d6d714f925ad12110)*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 The methods of [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios) are described
 in the papers below. This page lists each paper once, with the citation used everywhere on the
@@ -18,7 +21,6 @@ site, what it contributes to the package, and what the repository's
 [paper folders](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers) let a public
 checkout reproduce.
 
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 ## How the papers are used
 
@@ -31,6 +33,20 @@ represented only by specifically approved public introductions and synthetic exa
 results are not quoted before publication.
 
 ## Papers
+
+### Ranked execution
+
+Sepp, A. (2026). *Ranked Execution: Cash-Funded Search for Sparse Portfolio
+Rebalancing*. Working draft intended for Computers & Operations Research.
+
+The [separate manuscript and replication guide](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/ranked_execution_2026)
+describe the method in [prepared execution optimisation](execution_v2.md).
+The study compares Ranked Execution, matched Exact and search ablations on
+219 supplied-input decisions from a retrospective 302-ETF universe. It reports
+conditional execution outcomes, including the small effective candidate sets;
+it does not establish realised performance or universal heuristic superiority.
+The de-identified numerical archive is prepared locally for a separate public
+deposit. No acceptance, submission or completed deposit is claimed.
 
 ### Robust optimization of strategic and tactical asset allocation
 
@@ -118,6 +134,7 @@ requirements. The table summarises what a public checkout can run.
 
 | Paper | Folder | What a public checkout reproduces |
 |---|---|---|
+| Ranked Execution | [`ranked_execution_2026`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/ranked_execution_2026) | The public-facing manuscript, portable runner, audit tests and frozen reference summaries. Numerical decision inputs require the separate archive; its permanent deposit remains pending. |
 | ROSAA | [`robust_optimisation_jpm_2026`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/robust_optimisation_jpm_2026) | A methodological example of the HCGL covariance and risk-budgeted strategic allocation. It downloads its ETF panel with `yfinance`, carries no frozen inputs and records no environment, so it is not an exact rebuild of the published exhibits. |
 | Cryptocurrencies | [`crypto_allocation_risk_2023`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/crypto_allocation_risk_2023) | The manuscript source, the analysis code and historical price files; no CI workflow runs this folder's tests. The [cryptocurrency case study](app_crypto_allocation.md) runs the four methods offline on the tracked price panel. The full update route needs licensed Bloomberg data, so the headline numbers are not promised to reproduce exactly. |
 | Capital market assumptions | Local shared data and replication workspaces | The MATF-CMA and FAJ snapshots, configuration tables, licensed histories and replication code are not redistributed. |

@@ -10,11 +10,13 @@ myst:
 
 # Ex-ante risk contributions, betas and the qis risk model
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-27](https://github.com/ArturSepp/OptimalPortfolios/commit/93d3cf3af014880afeb50a6ca8a57abe0fb23099)*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 The ex-ante risk analytics are implemented in
 [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 ## Overview
 
@@ -491,7 +493,8 @@ with the explicitly selected orthogonal residual policy. The canonical script im
 
 ```python
 date = dates[0]
-risk_model = fm.build_risk_model({date: snapshot}, residual_type='orthogonal')
+risk_model = fm.build_risk_model(
+    fm.snapshots_from_factorlasso({date: snapshot}, residual_type='orthogonal'))
 tracking_error = risk_model.compute_tre_at_date(
     benchmark_weights=benchmark, portfolio_weights=weights, date=date)
 exposures = risk_model.compute_exposures_at_date(portfolio_weights=weights, date=date)

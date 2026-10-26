@@ -215,16 +215,16 @@ def _estimate_case(label, case, tables, dates, config):
             if len(observed) != 1:
                 raise ValueError('Missing, duplicate or fallback factor solve')
             # FM owns a cloned fit; the configured FL estimator is not mutated.
-            data = snapshot.data
-            if not np.isfinite(data.y_betas.to_numpy()).all():
+            data = snapshot
+            if not np.isfinite(data.loadings.to_numpy()).all():
                 raise ValueError('Factor estimation returned non-finite coefficients')
             records.extend({**record, 'stage': 'factor_fit', 'estimator': label,
                             'decision_date': date.strftime('%Y-%m-%d')} for record in observed)
             covars[date] = snapshot.asset_covariance
             components[date] = {
-                'estimated_betas': data.y_betas.copy(),
-                'estimated_factor_covariances': data.x_covar.copy(),
-                'estimated_residual_variances': data.y_variances[['residual_var']].copy(),
+                'estimated_betas': data.loadings.copy(),
+                'estimated_factor_covariances': data.factor_covariance.copy(),
+                'estimated_residual_variances': data.fit_statistics[['residual_var']].copy(),
             }
     component_tables = {}
     if components:

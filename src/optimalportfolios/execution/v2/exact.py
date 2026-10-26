@@ -6,7 +6,7 @@ from time import perf_counter
 import cvxpy as cp
 import numpy as np
 
-from .domain import audit_execution, result, variance
+from .domain import audit_execution, compile_states, result, variance
 from .model import SCALE, build_model
 from .types import ExecutionProblem, ExecutionResult
 
@@ -150,6 +150,50 @@ def native_mosek(problem, model, initial, deadline, threads, gap_rel, retain):
     return record
 
 
+def _refine_group_candidate(problem, weights, formulation, deadline):
+    """Re-solve one rejected candidate's nearest states inside the original budget.
+
+    The native vector remains rejected. This fresh fixed-state QP uses the same
+    objective, group envelope and all other constraints, with the existing sizing
+    tolerances. It neither rounds weights nor changes the independent audit.
+    """
+    record = dict(attempted=False, status="deadline", input_weights=weights.tolist())
+    if perf_counter() >= deadline:
+        return None, record
+    try:
+        states = compile_states(problem, formulation)
+        fixed = {}
+        for i, row in enumerate(states):
+            if i == problem.cash:
+                continue
+            errors = [max(s.lower - weights[i], weights[i] - s.upper, 0.) for s in row]
+            if not errors or min(errors) > problem.rules.audit_tolerance:
+                record["status"] = "no_matching_state"
+                return None, record
+            fixed[i] = int(np.argmin(errors))
+        record["fixed_states"] = sorted(fixed.items())
+        model = build_model(problem, formulation, fixed_states=fixed)
+        remaining = deadline - perf_counter()
+        if remaining <= 0:
+            return None, record
+        record.update(attempted=True, native_time_limit_s=remaining)
+        # solve_qp has no end-to-end deadline: this single refinement deliberately
+        # uses its same CLARABEL tolerances with the remaining Exact time limit.
+        model.optimisation.solve(
+            solver="CLARABEL", tol_gap_abs=1e-10, tol_gap_rel=1e-10,
+            tol_feas=1e-10, time_limit=remaining,
+        )
+        record["status"] = model.optimisation.status
+        if model.weights.value is None:
+            return None, record
+        refined = np.asarray(model.weights.value).reshape(-1)
+        record["max_weight_change"] = float(np.max(np.abs(refined - weights)))
+        return refined, record
+    except Exception as error:
+        record.update(status="solver_error", error=repr(error))
+        return None, record
+
+
 def wrapper_exact_execution(
     problem: ExecutionProblem,
     formulation: str,
@@ -162,15 +206,17 @@ def wrapper_exact_execution(
 ) -> ExecutionResult:
     """Solve FULL or CORRIDOR and externally retain the same audited common incumbent.
 
-    The time limit includes graph construction and start lifting, with unavoidable
-    in-progress canonicalisation recorded. Native bound certification is separate
-    from incumbent delivery. A failed solve never becomes an infeasibility claim.
+    The time limit includes graph construction, start lifting and at most one
+    fixed-state refinement of a group-rejected native candidate. Refinement is
+    separately audited and attributed; raw native statuses are preserved. Native
+    bound certification is separate from delivery. In-progress work can overrun.
     """
     if not np.isfinite(time_limit_s) or time_limit_s <= 0 or threads < 1 or gap_rel < 0:
         raise ValueError("Invalid Exact budget or solver controls")
     started = perf_counter()
     deadline = started + time_limit_s
     best, best_value = None, np.inf
+    best_source, rejected_group = None, None
     diagnostics = dict(
         formulation=formulation,
         perspective=perspective,
@@ -184,11 +230,12 @@ def wrapper_exact_execution(
         incumbent_events=[],
         bound=None,
         initial_start=dict(requested=False, supplied=False, received=None),
+        boundary_refinement=dict(requested=False, attempted=False, status="not_needed"),
     )
 
     def retain(weights, source):
         """Retain only audited incumbents, including externally supplied witnesses."""
-        nonlocal best, best_value
+        nonlocal best, best_value, best_source, rejected_group
         audit = audit_execution(problem, weights, formulation)
         diagnostics["incumbent_events"].append(
             dict(source=source, audit=audit, seconds=perf_counter() - started)
@@ -204,6 +251,11 @@ def wrapper_exact_execution(
             value = variance(problem, weights)
             if value < best_value:
                 best, best_value = np.asarray(weights).copy(), value
+                best_source = source
+        elif source.startswith("native") and audit["violations"] == ["groups"]:
+            value = variance(problem, weights)
+            if rejected_group is None or value < rejected_group[0]:
+                rejected_group = (value, np.asarray(weights).copy(), source, audit)
 
     retain(problem.base, "common_prepared_incumbent")
     if mip_start is not None:
@@ -248,6 +300,19 @@ def wrapper_exact_execution(
                     retain(np.asarray(model.weights.value), "native_return")
         except Exception as error:
             diagnostics.update(native_status="solver_error", error=repr(error))
+    if rejected_group is not None:
+        value, weights, source, audit = rejected_group
+        detail = dict(requested=True, attempted=False, status="incumbent_dominates",
+                      source=source, input_variance=value, input_audit=audit)
+        if value < best_value:
+            tick = perf_counter()
+            refined, refinement = _refine_group_candidate(problem, weights, formulation, deadline)
+            detail.update(refinement, seconds=perf_counter() - tick)
+            if refined is not None:
+                retain(refined, "boundary_refinement")
+                detail["output_audit"] = diagnostics["incumbent_events"][-1]["audit"]
+        diagnostics["boundary_refinement"] = detail
+    diagnostics["delivered_source"] = best_source
     diagnostics["total_seconds"] = perf_counter() - started
     return result(
         problem,

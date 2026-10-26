@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optimalportfolios"
-version = "8.0.0"
+version = "9.1.2"
 description = "Production multi-asset portfolio construction and rolling backtesting in Python"
 readme = "README.md"
 license = "MIT"
@@ -54,7 +54,7 @@ dependencies = [
     "PyYAML>=6.0",
     "cvxpy>=1.5.2",
     "scs>=3.2.4.post3,!=3.3.0",
-    "qis>=5.38.1",
+    "qis>=5.44.3",
 ]
 
 [project.optional-dependencies]

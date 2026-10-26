@@ -22,6 +22,9 @@ class PaperPolicyTests(unittest.TestCase):
         source = Path(__file__).resolve().parents[2]
         self.write(".gitignore", (source / ".gitignore").read_text(encoding="utf-8"))
         self.write("papers/AGENTS.md", "Paper contract\n")
+        self.write("papers/ranked_execution_2026/.gitignore",
+                   (source / "papers/ranked_execution_2026/.gitignore")
+                   .read_text(encoding="utf-8"))
         self.write("papers/smart_diversification_joim_2026/.gitignore",
                    (source / "papers/smart_diversification_joim_2026/.gitignore")
                    .read_text(encoding="utf-8"))
@@ -39,6 +42,29 @@ class PaperPolicyTests(unittest.TestCase):
     def test_approved_bundle_passes(self) -> None:
         """Exact approved manuscript files and replication code are publishable."""
         self.assertEqual(check_repository(self.root), [])
+
+    def test_ranked_public_article_keeps_internal_research_private(self) -> None:
+        """Only the new article's exact files are exposed, never old research or mappings."""
+        base = "papers/ranked_execution_2026/"
+        allowed = ["README.md", "paper/main.tex", "paper/main.pdf", "paper/results.tex",
+                   "replication/benchmark.py", "replication/run_benchmark.py",
+                   "replication/summarize.py", "replication/protocol.json",
+                   "replication/expected_summary.json", "replication/tests/benchmark_test.py"]
+        blocked = [base + "agents/private_asset_mapping.json",
+                   base + "replication/data/inputs.npz",
+                   base + "replication/export_private_inputs.py",
+                   "papers/execution_portfolio_2026/paper/ranked_execution_cor.tex"]
+        for name in [base + suffix for suffix in allowed] + blocked:
+            self.write(name, "fixture\n")
+        git(self.root, "add", ".")
+        indexed = set(git(self.root, "ls-files", "-z").decode().split("\0"))
+        self.assertTrue(all(base + suffix in indexed for suffix in allowed))
+        self.assertFalse(indexed.intersection(blocked))
+        self.assertEqual(check_repository(self.root), [])
+        for name in blocked:
+            git(self.root, "add", "-f", name)
+        self.assertTrue(all(any(name in error for error in check_repository(self.root))
+                            for name in blocked))
 
     def test_cma_data_remains_local(self) -> None:
         """Normal staging ignores shared CMA inputs; force-adding them fails policy."""

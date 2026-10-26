@@ -10,11 +10,13 @@ myst:
 
 # Tactical allocation: alpha over tracking error and yield targets
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-27](https://github.com/ArturSepp/OptimalPortfolios/commit/b999af639fe154f4afde4977e4f47d22e29b3827)*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 Tactical allocation against a benchmark is implemented in
 [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 Ex-ante tracking error is measured with [qis](https://github.com/ArturSepp/QuantInvestStrats);
 see its [software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).
 

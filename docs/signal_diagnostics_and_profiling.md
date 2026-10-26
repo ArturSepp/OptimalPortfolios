@@ -11,11 +11,13 @@ myst:
 
 # Signal diagnostics and alpha-rank portfolios
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-27](https://github.com/ArturSepp/OptimalPortfolios/commit/b999af639fe154f4afde4977e4f47d22e29b3827)*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 Signal diagnostics and alpha-rank portfolios are implemented in
 [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 ## Overview
 

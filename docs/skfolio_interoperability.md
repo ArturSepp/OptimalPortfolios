@@ -8,10 +8,12 @@ myst:
 
 # Evaluate skfolio targets with QIS
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-10-18](https://github.com/ArturSepp/OptimalPortfolios/commit/4b851495f5371b7b4dbefaab272a4f6e80220a79)*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 Maintained in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 Accounting uses [QIS](https://github.com/ArturSepp/QuantInvestStrats)
 ([citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff));
 allocation estimation uses [skfolio](https://skfolio.org/).

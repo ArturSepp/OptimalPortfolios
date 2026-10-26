@@ -215,7 +215,8 @@ def main() -> None:
                                  index=stocks),
     )
     date = pd.Timestamp("2025-12-31")  # Synthetic snapshot label.
-    risk_model = fm.build_risk_model({date: snapshot}, residual_type='orthogonal')
+    risk_model = fm.build_risk_model(
+        fm.snapshots_from_factorlasso({date: snapshot}, residual_type='orthogonal'))
 
     # The block's inputs are the module constants: factor volatilities of 16%, 7% and 25%, and
     # residual volatilities of 20%, 15% and 25%.

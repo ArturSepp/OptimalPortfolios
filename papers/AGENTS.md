@@ -26,20 +26,27 @@ Replication imports the package; production modules must not import `papers.*`.
 Use repository-root module entry points and `replication/tests/*_test.py`. Do not
 rename a published module or change a numerical baseline as incidental cleanup.
 
-`papers/cma_data/` is an entirely local shared data module, not a paper. Keep only
-`2026_matf_cma_current_20260930`, pinned by the current MATF-CMA and FAJ replications.
-Preserve that snapshot's bytes, hashes and consumers. Do not copy it into each paper.
+`cma_data` and the MATF-CMA and FAJ workspaces now reside privately under the
+sibling FactorModels/papers. Their ignored YAML CMA_DATA_PATH settings select
+that shared layer. The former OP copy was retired after a hash-verified backup
+and relocation; do not recreate it here. Preserve immutable numerical vintages
+and do not copy the shared inputs into individual papers.
 `equity_factors/` is an existing local study, not a public paper release.
 
 ## Publication and preservation
 
 - New paper workspaces are entirely ignored by default. The approved public roots
   are `crypto_allocation_risk_2023/`, `robust_optimisation_jpm_2026/`,
-  and the limited JOIM companion described below.
+  and the limited JOIM and Ranked Execution bundles described below.
   Adding another requires an explicit publication decision, an exact root exception
   in `.gitignore`, and an update to `PUBLIC_WORKSPACES` in the policy checker.
 - Preserve existing full-workspace exclusions, including MATF-CMA.
   Moving folders does not authorise release of any manuscript or replication code.
+- `ranked_execution_2026/` permits only the exact manuscript, portable replication
+  and reference-summary files in `LIMITED_PUBLIC_FILES`. Its numerical input archive
+  is prepared for a separate deposit; private extraction code, identity mappings,
+  vendor prices and internal execution research remain excluded. The existing
+  `execution_portfolio_2026/` workspace stays entirely local and is preserved.
 - `smart_diversification_joim_2026/` permits only its README, .gitignore,
   `run_overlay_example.py` and
   `replication/tests/overlay_example_test.py`. These introduce the paper and run a

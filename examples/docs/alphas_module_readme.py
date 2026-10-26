@@ -507,14 +507,16 @@ def main() -> None:
         },
         assets=prices.columns,
         time_period=qis.TimePeriod("2022-12-31", "2024-12-31"),
-    ).data
+    )
     taa_covar_data = rolling_data
     asset_prices = prices.loc["2022-11-30":]
 
     # Three year-end fits with dated loadings and clusters; the manager panel keeps the
     # November 2022 endpoint before the first loading date.
     year_ends = list(pd.to_datetime(["2022-12-31", "2023-12-31", "2024-12-31"]))
-    assert list(rolling_data.dates) == year_ends and list(rolling_data.get_y_betas()) == year_ends
+    assert (list(rolling_data.snapshots) == year_ends
+            and list({date: snapshot.loadings
+                      for date, snapshot in rolling_data.snapshots.items()}) == year_ends)
     assert asset_prices.index[0] == pd.Timestamp("2022-11-30") and len(asset_prices) == 26
 
     from optimalportfolios.alphas import compute_managers_alpha
@@ -522,7 +524,8 @@ def main() -> None:
     score, raw_alpha = compute_managers_alpha(
         prices=asset_prices,
         risk_factor_prices=factor_prices,
-        estimated_betas=rolling_data.get_y_betas(),
+        estimated_betas={
+            date: snapshot.loadings for date, snapshot in rolling_data.snapshots.items()},
         returns_freq='ME',
         alpha_span=12,
     )
@@ -530,7 +533,7 @@ def main() -> None:
 
     # Residuals use the latest loadings dated at or before the preceding return date and the
     # factor returns over the asset's own periods; manager returns begin in January 2023.
-    beta_history = rolling_data.get_y_betas()
+    beta_history = {date: snapshot.loadings for date, snapshot in rolling_data.snapshots.items()}
     manager_returns = np.log(asset_prices / asset_prices.shift())
     factor_returns = np.log(factor_prices / factor_prices.shift())
     residuals = {}
@@ -577,8 +580,9 @@ def main() -> None:
     # The labels are the ones each HCGL fit stored, one date per fit, with a cadence prefix.
     assert list(rolling_clusters) == year_ends
     for date, labels in rolling_clusters.items():
-        pd.testing.assert_series_equal(labels, rolling_data[date].clusters.reindex(prices.columns),
-                                       check_names=False)
+        pd.testing.assert_series_equal(
+            labels, rolling_data.snapshots[date].clusters.reindex(prices.columns),
+            check_names=False)
         assert labels.astype(str).str.startswith("ME:").all()
 
     from optimalportfolios.alphas.signals.utils import score_within_clusters

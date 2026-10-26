@@ -9,6 +9,7 @@ Compatible CVXPY solvers factor covariance once per solve by default through
 and an ``OptimizationOutcome`` with report-ready ``ConstraintResidual`` records.
 
 Submodule structure:
+    opportunity.py - constrained opportunity solves from supplied covariance and alpha
     general/    - objective solvers, including minimum tracking error
     risk_allocation/ - risk budgeting, group budgets, and hierarchical risk parity
     saa/        - strategic solvers with CMA inputs and return/volatility targets

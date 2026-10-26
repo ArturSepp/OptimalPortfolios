@@ -14,6 +14,9 @@ myst:
 
 *Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-08-09](https://github.com/ArturSepp/OptimalPortfolios/commit/254505981ed43e0dbc12a19c98c034d351b8d059)*
 
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
+
 [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios) is a Python library for
 multi-asset portfolio construction and rolling backtesting. At each rebalancing date it turns
 dated risk estimates, expected returns and constraints into target weights under a chosen
@@ -24,7 +27,6 @@ transaction costs and reporting belong to
 [FactorModels](supplied_risk_inputs.md#factormodels-availability), using FactorLasso upstream; optimalportfolios is the reference
 implementation of the ROSAA framework of Sepp, Ossa and Kastenholz (2026).
 
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 ## Versions and compatibility
 

@@ -186,6 +186,7 @@ dmypy.json
 !/papers/crypto_allocation_risk_2023/
 !/papers/robust_optimisation_jpm_2026/
 !/papers/smart_diversification_joim_2026/
+!/papers/ranked_execution_2026/
 
 # Paper publication defaults; exact approved exceptions live beside each paper.
 # Keep these parents traversable so a per-paper .gitignore can approve specific files.

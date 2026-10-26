@@ -352,15 +352,15 @@ factor_data = factor_estimator.fit_current(
     },
     assets=prices.columns,
     cutoff=cutoff,
-).data
-annual_covar = factor_data.y_covar
+)
+annual_covar = factor_data.asset_covariance
 rolling_data = factor_estimator.fit_rolling(
     risk_factor_prices=factor_prices,
     asset_returns_dict=returns_by_frequency,
     assets=prices.columns,
     time_period=qis.TimePeriod("2023-06-30", "2023-12-31"),
-).data
-rolling_covars = rolling_data.get_y_covars()
+)
+rolling_covars = rolling_data.covariances
 ```
 
 The current covariance has three assets in the original order. The rolling result has

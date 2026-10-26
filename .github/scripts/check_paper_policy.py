@@ -11,13 +11,19 @@ import zipfile
 
 
 PUBLIC_WORKSPACES = {"crypto_allocation_risk_2023", "robust_optimisation_jpm_2026",
-                     "smart_diversification_joim_2026"}
+                     "smart_diversification_joim_2026", "ranked_execution_2026"}
 
-# This workspace's public scope is the companion, never the empirical replication tree.
+# These workspaces expose only their individually approved public files.
 LIMITED_PUBLIC_FILES = {
     "smart_diversification_joim_2026": {
         ".gitignore", "README.md", "run_overlay_example.py",
         "replication/tests/overlay_example_test.py",
+    },
+    "ranked_execution_2026": {
+        ".gitignore", "README.md", "paper/main.tex", "paper/results.tex", "paper/main.pdf",
+        "replication/benchmark.py", "replication/run_benchmark.py", "replication/summarize.py",
+        "replication/tests/benchmark_test.py", "replication/protocol.json",
+        "replication/expected_summary.json",
     },
 }
 

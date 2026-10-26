@@ -10,8 +10,10 @@ myst:
 
 *Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-14](https://github.com/ArturSepp/OptimalPortfolios/commit/19cae02086d4fbfcf4377796bfef2c576d989134)*
 
-Examples from [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
+
+Examples from [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 
 The gallery has six previews and 26 teaching exhibits. The previews connect
 portfolio construction to risk and performance analytics on one synthetic portfolio:
@@ -231,8 +233,9 @@ price; no simulation. **Producer:** the `exhibit` function of
 A teaching exhibit of the [universe data and unsmoothing](universe_data_and_unsmoothing.md) page.
 Appraisal smoothing with a weight of 0.6 on the previous reported return halves the reported
 volatility of private equity and makes its returns autocorrelated. Unsmoothing lowers the lag-1
-autocorrelation from 0.61 to -0.04, against -0.02 for the true returns, and raises the annualised
-volatility from 10.2% to 20.5%, against 20.4%.
+autocorrelation from 0.61 to 0.08, against -0.02 for the true returns, and raises the annualised
+volatility from 10.2% to 16.7%, against 20.4%. The estimated correction recovers part of the
+suppressed volatility.
 
 ![Left: cumulative log returns of reported, unsmoothed and simulated true private equity. Middle:
 their lag-1 autocorrelations. Right: their annualised volatilities.](images/unsmoothing_autocorrelation.png)

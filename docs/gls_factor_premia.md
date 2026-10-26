@@ -6,11 +6,13 @@ myst:
 
 # GLS inference of factor risk premia
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-10-16](https://github.com/ArturSepp/OptimalPortfolios/commit/ccb486a6a1ab1d3949d2b6408ee85dcf9dc687a8)*
+
+Documented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 Implemented upstream in [FactorModels](supplied_risk_inputs.md#factormodels-availability),
 consumed by [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 Upstream citation: `CITATION.cff` in an authorised FactorModels checkout.
 
 GLS projection, premium inference, factor-mimicking portfolios and conditional uncertainty belong to FactorModels. OP consumes the prepared expected returns and covariance for constrained optimisation.

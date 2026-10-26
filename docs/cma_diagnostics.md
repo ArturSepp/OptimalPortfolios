@@ -6,11 +6,13 @@ myst:
 
 # CMA diagnostics and reports
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-10-13](https://github.com/ArturSepp/OptimalPortfolios/commit/00eadd14a0687486efba43ae9f8f575bf491e6ce)*
+
+Documented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 Implemented upstream in [FactorModels](supplied_risk_inputs.md#factormodels-availability),
 consumed by [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 Upstream citation: `CITATION.cff` in an authorised FactorModels checkout.
 
 CMA accounting, identification, sensitivity and method-specific reports belong to FactorModels. General portfolio risk and stress reporting belongs to QIS; OP solves the supplied portfolio problem.

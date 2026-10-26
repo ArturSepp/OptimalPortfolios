@@ -28,7 +28,7 @@ documents the detailed solver interfaces and limitations.
 | Responsibility | Owning layer | Integration in OptimalPortfolios |
 |---|---|---|
 | Sparse factor fitting, clustering and factor-covariance containers | [FactorLasso](https://github.com/ArturSepp/FactorLasso), orchestrated by FactorModels | `factormodels.FactorCovarEstimator`: prepare financial inputs, cutoffs, return frequencies and annualization; supply completed models to consumers. |
-| Provider-implied factor premia and conditional inference | FactorModels | [`factormodels.premia`](gls_factor_premia.md): fixed historical loadings and residual risk, explicit cash and admitted alpha, GLS geometry, intervals and forecast-box sensitivities. |
+| Provider-implied factor premia and conditional inference | FactorModels | [`factormodels.gls_diagnostic`](gls_factor_premia.md): fixed historical loadings and residual risk, explicit cash and admitted alpha, GLS geometry, intervals and forecast-box sensitivities. |
 | CMA accounting, identification and diagnostic PDFs | FactorModels, using QIS rendering primitives | [CMA diagnostics and reports](cma_diagnostics.md): complete numerical results before rendering; application adapters own provider mappings, scenarios and persistence. |
 | Return transformations and EWMA covariance primitives | QIS | [EWMA estimator](../src/optimalportfolios/covar_estimation/ewma_covar_estimator.py): select the sample and schedule, then expose dated covariance matrices. |
 | Objectives, constraints, asset eligibility and construction state | OptimalPortfolios | [Rolling dispatcher](../src/optimalportfolios/optimization/wrapper_rolling_portfolios.py) and [constraints facade](../src/optimalportfolios/optimization/constraints/__init__.py). |
@@ -100,10 +100,10 @@ flowchart LR
             result["portfolio_result"] ~~~ dispatcher["wrapper_rolling_portfolios"]
             dispatcher --> solvers["general, risk_allocation,<br/>saa, taa"] --> constraints["constraints"]
             result --> constraints
+            opportunity["opportunity<br/>supplied-array solvers"] --> constraints
         end
         alphas["alphas"]
         covar["covar_estimation"]
-        matf["matf<br/>supplied-array opportunity solvers"]
         universe["universe"]
         utils["utils"]
     end
@@ -113,7 +113,6 @@ flowchart LR
     quadprog(["quadprog"])
     reports --> optimization
     reports --> alphas & covar
-    matf --> cvxpy & optimization
     optimization --> alphas & covar & utils
     optimization --> cvxpy & scipy & quadprog
     alphas --> scipy
@@ -122,7 +121,7 @@ flowchart LR
 ```
 
 Inside `optimization`, the rolling dispatcher imports the solver families, which, like
-`portfolio_result`, import `constraints`. The `matf` opportunity solvers consume
+`portfolio_result`, import `constraints`. The `optimization.opportunity` solvers consume
 prepared covariance, alpha and optional factor/uncertainty arrays. Pure GLS, CMA
 and Sharpe accounting live in FM. QIS supplies shared analytics and risk primitives.
 
@@ -145,7 +144,7 @@ which no other package module imports, so `import optimalportfolios` does not ne
 
 Historical index and factor prices determine estimated loadings, residual means and
 residual risk through FactorLasso and the application's estimation configuration.
-Provider forecasts enter only the subsequent `factormodels.premia`
+Provider forecasts enter only the subsequent `factormodels.gls_diagnostic`
 calculation. FactorModels owns this risk-premia application of GLS, including
 its conditional confidence intervals; FactorLasso owns historical estimation.
 

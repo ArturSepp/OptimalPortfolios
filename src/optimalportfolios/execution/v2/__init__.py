@@ -1,4 +1,4 @@
-"""Prepared-input execution v2, isolated from the production v1 dispatch."""
+"""Prepared-input V2 execution with an explicit production policy adapter."""
 
 from optimalportfolios.execution.v2.types import (
     ExecutionProblem,
@@ -11,3 +11,9 @@ from optimalportfolios.execution.v2.ranked import wrapper_ranked_execution
 from optimalportfolios.execution.v2.exact import wrapper_exact_execution
 from optimalportfolios.execution.v2.bounds import compute_perspective_lower_bound
 from optimalportfolios.execution.v2.adapter import from_resolved_problem
+from optimalportfolios.execution.v2.preparation import prepare_common_execution
+from optimalportfolios.execution.v2.production import (
+    V2ExecutionPolicyConfig,
+    resolve_production_problem,
+    solve_v2_execution_portfolio,
+)

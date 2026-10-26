@@ -1,0 +1,19 @@
+# Public article and portable replication only. Inputs are distributed separately.
+/*
+!/.gitignore
+!/README.md
+!/paper/
+/paper/*
+!/paper/main.tex
+!/paper/results.tex
+!/paper/main.pdf
+!/replication/
+/replication/*
+!/replication/benchmark.py
+!/replication/run_benchmark.py
+!/replication/summarize.py
+!/replication/protocol.json
+!/replication/expected_summary.json
+!/replication/tests/
+/replication/tests/*
+!/replication/tests/benchmark_test.py

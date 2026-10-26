@@ -1,0 +1,43 @@
+All 219 decisions were attempted. Common preparation succeeded on 219; all five arms supplied independently audited portfolios on 219 decisions. The archive retains every attempted case, including any failed preparation. Comparisons use paired audited outputs.
+
+Table~\ref{tab:results} uses the common audited subset. Tracking error is annual basis points; computation is elapsed seconds. The prepared base has mean tracking error 32.892 basis points. Median common preparation takes 0.086 seconds.
+
+\begin{table}[htbp]\centering\small\setlength{\tabcolsep}{4pt}
+\caption{Conditional execution quality and measured computation. End-to-end (E2E) includes common preparation and, for ExactRanked, Ranked start generation.}\label{tab:results}
+\begin{tabular}{lrrrrr}\toprule
+Arm & Mean TE & Median TE & Median s & 95th pct. s & Median E2E s\\\midrule
+Ranked & 16.825 & 4.607 & 0.095 & 1.203 & 0.416\\
+Greedy & 17.077 & 4.712 & 0.081 & 0.736 & 0.303\\
+OneAnchor & 16.825 & 4.607 & 0.092 & 0.894 & 0.414\\
+ExactBase & 16.825 & 4.607 & 0.064 & 0.145 & 0.164\\
+ExactRanked & 16.825 & 4.607 & 0.061 & 0.189 & 0.479\\
+\bottomrule\end{tabular}
+\end{table}
+
+Pairwise differences use a descriptive equality band of $10^{-4}$ basis points, distinct from the portfolio feasibility tolerance. Negative differences favour Ranked. No independence-based significance test is applied to these serially related decisions.
+\begin{table}[htbp]\centering\small\setlength{\tabcolsep}{4pt}
+\caption{Ranked relative to each comparator on paired audited decisions. The last column is mean Ranked minus comparator TE, in basis points.}\label{tab:pairs}
+\begin{tabular}{lrrrrr}\toprule
+Comparator & Pairs & Ranked lower & Equal & Ranked higher & Mean difference\\\midrule
+Greedy & 219 & 9 & 210 & 0 & -0.25135\\
+OneAnchor & 219 & 0 & 219 & 0 & 0.00000\\
+ExactBase & 219 & 9 & 208 & 2 & -0.00004\\
+ExactRanked & 219 & 0 & 219 & 0 & 0.00000\\
+\bottomrule\end{tabular}
+\end{table}
+
+Optional candidate counts range from 0 to 5 (median 1); 107 prepared cases have no optional candidate. Mandatory reservations range from 8 to 71 (median 30). These are the effective search dimensions, not the nominal 302-asset universe.
+
+Preparation retains 65 already audited bases, repairs 79 within the ordinary corridor, and uses FULL preparation on 75 decisions. The resulting pins and corridor exceptions are shared by every arm.
+
+The optional ten-ticket allowance never binds in this sample: every prepared case has at most five optional candidates. Mandatory interventions dominate the ticket count. Thus these data do not test scarce-ticket selection among a large optional candidate set.
+
+Ranked improves on Greedy in 9 cases and is equal in 210. OneAnchor and the full search have equal delivered objectives on 219 paired cases. ExactBase median call time is 0.064 seconds versus Ranked's 0.095. The measured computation does not support a general heuristic speed advantage.
+
+ExactBase delivered-source attribution is \emph{boundary refinement}: 1, \emph{common prepared incumbent}: 72, \emph{native callback}: 132, \emph{native return}: 14. It recorded a native audited candidate on 219 of 219 prepared cases. A callback or native return may reproduce a submitted start; this count alone is not evidence of an independently discovered improvement.
+
+ExactRanked delivered-source attribution is \emph{common prepared incumbent}: 72, \emph{native callback}: 55, \emph{native return}: 7, \emph{requested mip start}: 85. It recorded a native audited candidate on 219 of 219 prepared cases. A callback or native return may reproduce a submitted start; this count alone is not evidence of an independently discovered improvement.
+
+The largest delivered TE disadvantage of Ranked against ExactRanked is 0.00004 basis points (case 0046). Delivered differences compare feasible incumbents, not certified global gaps. Full weights, numerical audits, native statuses and timing are retained per decision.
+
+This frozen benchmark tests a distinct public-input cohort, but its low effective candidate counts limit conclusions about dense optional search. The comparison establishes the reported conditional outcomes; it does not establish universal superiority or realised investment gains.

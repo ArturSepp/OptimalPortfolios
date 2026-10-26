@@ -140,7 +140,8 @@ def run_local(local: Locals):
         score, raw_alpha = compute_managers_alpha(
             prices=asset_prices,
             risk_factor_prices=risk_factor_prices,
-            estimated_betas=rolling_data.data.get_y_betas(),
+            estimated_betas={
+                date: snapshot.loadings for date, snapshot in rolling_data.snapshots.items()},
             returns_freq='ME', alpha_span=12)
 
         print("── Managers Alpha (monthly, span=12) ──")

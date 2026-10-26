@@ -6,11 +6,13 @@ myst:
 
 # Factor covariance with HCGL
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-27](https://github.com/ArturSepp/OptimalPortfolios/commit/93d3cf3af014880afeb50a6ca8a57abe0fb23099)*
+
+Documented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 Implemented upstream in [FactorModels](supplied_risk_inputs.md#factormodels-availability),
 consumed by [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 Upstream citation: `CITATION.cff` in an authorised FactorModels checkout.
 
 Factor covariance construction, loadings, annualisation, residual policy and completed factor models belong to FactorModels. OP consumes the selected dated covariance and supplied expected returns.

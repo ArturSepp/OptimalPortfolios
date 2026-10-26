@@ -7,9 +7,9 @@ myst:
 
 # Contributing to OptimalPortfolios
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-07-21](https://github.com/ArturSepp/OptimalPortfolios/commit/574ba518a801501dd73a515d28672dc72ca1b43f)*
 
-Project: [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 Thanks for your interest in `optimalportfolios`. `optimalportfolios` is the reference implementation of the ROSAA framework published in *The Journal of Portfolio Management*, so published results constrain what can change.

@@ -10,11 +10,13 @@ myst:
 
 # Strategic and tactical allocation with HCGL covariance (ROSAA)
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-27](https://github.com/ArturSepp/OptimalPortfolios/commit/76f517fb295b51a69ce1a767fc080c987c08d896)*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 A case study of the framework that
 [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios) implements.
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 ## Overview
 

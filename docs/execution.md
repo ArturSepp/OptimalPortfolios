@@ -8,25 +8,73 @@ myst:
 
 # Ranked execution integration
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-10-05](https://github.com/ArturSepp/OptimalPortfolios/commit/13ae5d43aa4d44f61787adfa59b18f4204e851ac)*
 
-This guide describes [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 ## Scope
 
-`optimalportfolios.execution` ranks and sizes one execution decision whose product
-policy has already been resolved by the caller. It keeps the current portfolio,
-raw model, effective target and funded post-mandatory base distinct. The main
-entry point, `solve_ranked_execution`, accepts a `ResolvedExecutionProblem` and
-returns an `ExecutionOptimizationResult`.
+Execution has three explicit algorithm namespaces:
 
-The caller owns lifecycle rules, desk instructions, cadence calendars, cash
-bootstrap and construction of the resolved table. This interface does not parse
-workbooks, infer a named production preset or switch a live execution engine.
-Parity of this numerical stage does not establish parity of the complete
-production decision pipeline. Exact execution and target-band risk-budget
-execution are outside this interface.
+| Namespace | Contract |
+|---|---|
+| `optimalportfolios.execution.v1` | Production ranked preparation, scoring, corridor sizing, rescue and audited retry; optional guarded/branched searches remain separate entry points. |
+| `optimalportfolios.execution.v2` | Ranked method with shared preparation, an opt-in production adapter, strict actual-ticket caps/minima and matched Exact formulations. See [V2](execution_v2.md). |
+| `optimalportfolios.execution.MIQP` | Operational Exact joint ticket/position solver, with alpha, repair-on-touch and separate live/history/inception domains. |
+
+Unnumbered execution imports forward to V1 and retain the previous export surface.
+Ordinary V1 imports do not import either Exact engine or a native solver backend.
+Use the explicit namespace in new production and replication callers.
+
+`solve_ranked_execution` still consumes a copied `ResolvedExecutionProblem`.
+For unresolved numerical inputs, V1 also provides `build_execution_target`,
+`MandatoryTrades`, `merge_mandatory_trades`, and `solve_with_group_retry`.
+The consumer supplies class labels, cutoff/coefficient maps, cadence, settlement
+cash, instruction intervals and product/group bounds. Workbook parsing, taxonomy,
+policy presets, date selection and output formatting remain consumer responsibilities.
+`ExecutionOptimizationResult` retains the audited weights, trade table and solver outcome.
+The retry accepts target-builder and solver callbacks; it retries the same date and
+holdings with the target group mechanism disabled while preserving hard constraints.
+
+Model support is classified at an absolute weight of 1e-6 (0.01 bp), independently
+of the 1e-8 holding/trade/bound tolerance. Raw current and previous model vectors are
+retained for diagnostics and objectives. This classifier is shared by preparation,
+target-band ranking, cash-start recovery and Operational Exact. V2's actual-ticket
+zero tolerance has a different meaning and is unchanged.
+
+V1's ordinary corridor solver has a separate group-bound rounding contract:
+a positive group interval gap of at most 0.5 bp may move the effective bound to
+the executable endpoint on a copied constraint object. The original bound,
+effective endpoint and gap are logged. Rescue admission and final sizing use
+the same effective intervals, so a rescue leaving only such a gap still reaches
+the audited sizing solve. This does not relax settlement-cash bounds, mandatory
+pins, target-band policies or an explicitly requested original-group-bound scope.
+Gaps above 0.5 bp remain infeasible. This existing normalization is distinct from
+model-support classification and from the final solver's residual validation.
+
+Instruction audit flags `allow_current_pin` and `model_max_repair` are explicit
+consumer inputs. The former enables the audited current-holding pin exception; the
+latter requests model-or-cap targeting for a maximum-weight repair. Provenance text
+alone does not enable either behavior. Both flags survive in the prepared table.
+
+## Documentation and method ownership
+
+This page is the release-specific implementation reference. Scientific claims
+belong to the corresponding method's publication; consumer workbooks and operating
+instructions belong to the integrating application. A deployment must identify its
+actual namespace and effective policy, rather than infer them from a paper title.
+
+Operational Ranked (V1), Operational Exact (MIQP), and [prepared V2](execution_v2.md)
+have different contracts. V2's matched Exact formulation uses its own common domain;
+it is not Operational Exact. In a controlled comparison, report a V1 proposal under
+its own rules separately from admission through a stricter common audit. A rejected
+proposal can still have been valid under its operational policy.
+
+Optional guarded, branched and risk-budget rankers are separately selected methods.
+Their existence in this API does not mean they are enabled by a production preset.
+Keep current settings in the consumer's resolved run record. Historical research
+qualification, production parity and a new comparative experiment are distinct evidence.
 
 ## Resolved inputs
 
@@ -49,6 +97,7 @@ configuration with the decision record when comparing engines.
 | `expand_for_feasibility` | Allow the solver to admit additional eligible trades after the requested solve fails. |
 | `sign_directed_rescue` | Enable the legacy signed-residual rescue filter where no numeric interval bridge is available. |
 | `allow_corridor_relaxation` | Allow an explicitly flagged retry using wider selected-trade bounds. |
+| `preserve_model_directions` | Keep original desired-move signs in relaxed rescue; production adapters explicitly enable this. The default retains the earlier OP relaxed-domain behavior. |
 | `context` | Decision label passed to diagnostics. |
 
 The required numeric table columns are `current_weight`, `raw_model_weight`,
@@ -548,3 +597,31 @@ strict minimum-ticket sizing guarantee is introduced.
 - [API reference](api.rst)
 - [Execution source](https://github.com/ArturSepp/OptimalPortfolios/tree/main/src/optimalportfolios/execution)
 - [qis software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff)
+
+
+## Production preparation and Operational Exact controls
+
+`ExecutionPolicyConfig` combines target preparation with ranking settings. Its
+`tre_weight_by_asset_class` must be supplied explicitly; there is no built-in
+mandate taxonomy. Class cutoff overrides default to an empty map. Other defaults
+retain the legacy numerical policy. `RankedExecutionPolicyConfig` adds the consumer
+constraint selector. `RiskBudgetRankedExecutionPolicyConfig` adds a TRE budget and
+per-class tight/wide bands; its prepared projection is a separate ranked variant.
+
+`optimalportfolios.execution.MIQP.solve_exact_execution_portfolio` consumes a
+prepared trade table, OP constraints and covariance. `ExactExecutionConfig` controls
+its objective and mixed-integer solve. Install the `exact` extra and supply a valid
+MOSEK runtime for native solves. Successful incumbent auditing is distinct from a
+certified gap termination; inspect the returned termination, bounds and gap fields.
+The maximum-position cap and repair-on-touch semantics belong to this operational
+formulation. V2 Exact is not a substitute for it.
+
+`MandatoryTrades` fields: `hard_sell`, `hard_buy_min`, `hard_max`, `hard_target`.
+
+`ExecutionPolicyConfig` fields: `small_trade_cutoff`, `small_trade_cutoff_by_asset_class`, `sell_down_dust_threshold`, `material_trade_threshold`, `max_trades`, `expand_for_feasibility`, `minimum_trade_score`, `sequential_greedy_selection`, `sign_directed_rescue`, `allow_corridor_relaxation`, `tre_weight_by_asset_class`, `use_weight_drift`, `mandatory_trades`, `output_by_ticker`, `instruction_correction_tolerance`, `exact_execution`, `add_mandatory_trades_to_max_trades`.
+
+`RankedExecutionPolicyConfig` fields: `small_trade_cutoff`, `small_trade_cutoff_by_asset_class`, `sell_down_dust_threshold`, `material_trade_threshold`, `max_trades`, `expand_for_feasibility`, `minimum_trade_score`, `sequential_greedy_selection`, `sign_directed_rescue`, `allow_corridor_relaxation`, `tre_weight_by_asset_class`, `use_weight_drift`, `mandatory_trades`, `output_by_ticker`, `instruction_correction_tolerance`, `exact_execution`, `add_mandatory_trades_to_max_trades`, `constraint_set`.
+
+`RiskBudgetRankedExecutionPolicyConfig` fields: `small_trade_cutoff`, `small_trade_cutoff_by_asset_class`, `sell_down_dust_threshold`, `material_trade_threshold`, `max_trades`, `expand_for_feasibility`, `minimum_trade_score`, `sequential_greedy_selection`, `sign_directed_rescue`, `allow_corridor_relaxation`, `tre_weight_by_asset_class`, `use_weight_drift`, `mandatory_trades`, `output_by_ticker`, `instruction_correction_tolerance`, `exact_execution`, `add_mandatory_trades_to_max_trades`, `execution_tre_budget`, `target_band_tight_by_asset_class`, `target_band_wide_by_asset_class`, `constraint_set`.
+
+`ExactExecutionConfig` fields: `max_positions`, `repair_on_touch`, `alpha_tradeoff`, `solver`, `relative_gap_tolerance`, `absolute_gap_tolerance`, `max_branches`, `max_solve_seconds`, `accept_audited_incumbent`, `seed`, `sub_asset_class_penalty`, `constraint_set`.

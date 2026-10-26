@@ -1,0 +1,612 @@
+\documentclass[preprint,12pt,authoryear]{elsarticle}
+\usepackage{amsmath,amssymb,booktabs,tabularx,array,graphicx}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[hypertexnames=false,colorlinks=true,linkcolor=MidnightBlue,citecolor=MidnightBlue,urlcolor=MidnightBlue]{hyperref}
+\emergencystretch=3em
+\journal{Computers \& Operations Research}
+\newcommand{\TE}{\operatorname{TE}}
+\newcommand{\ind}{\mathbf{1}}
+\newcommand{\R}{\mathbb{R}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newtheorem{proposition}{Proposition}
+\newproof{proof}{Proof}
+\begin{document}
+\begin{frontmatter}
+\title{Ranked Execution: Cash-Funded Search for Sparse Portfolio Rebalancing}
+\author{Artur Sepp}
+\begin{abstract}
+Implementing a target portfolio requires choosing trades and sizing positions
+under funding, exposure and minimum-trade constraints. We present Ranked
+Execution, a bounded heuristic combining cash-funded marginal priorities,
+joint convex sizing and coordinated changes of executable instrument states.
+Mandatory interventions are declared before risk search and count towards
+the trade limit. An incumbent is returned only after an audit in original
+portfolio units. A matched mixed-integer formulation provides independently
+started reference solutions under the same objective, prepared domain and
+acceptance rules. A portable benchmark is constructed from supplied model
+weights and covariance estimates for a retrospective universe of 302 publicly
+traded exchange-traded funds. It contains 219 monthly conditional decisions
+with opaque asset identifiers and requires neither an upstream allocation
+model nor private portfolio data. Search ablations and separate incumbent
+controls distinguish algorithmic improvement from external incumbent
+retention. The numerical study evaluates execution quality and computation
+conditional on the supplied inputs; it does not estimate investment
+performance or establish global optimality of the heuristic. All 219 cases
+deliver audited portfolios. Ranked matches Ranked-started Exact in all 219
+cases within $10^{-4}$ annual basis points. Exact is faster on this cohort, whose zero to five
+optional candidates leave the ten-ticket allowance nonbinding.
+\end{abstract}
+\begin{keyword}
+portfolio rebalancing \sep trade cardinality \sep minimum trade \sep
+tracking error \sep mixed-integer quadratic optimization
+\end{keyword}
+\end{frontmatter}
+
+\section{Introduction}
+A model portfolio describes desired exposures. Implementing every change can
+require many small orders, while selecting only the largest weight changes
+can overlook their joint risk consequences. The implementation problem is
+therefore a discrete choice of trades followed by a continuous choice of
+sizes. Funding, group exposures, minimum trade sizes and minimum held
+positions couple these choices.
+
+We study a conditional execution problem. Current holdings, target weights,
+a covariance estimate and execution constraints are supplied inputs. The
+task is to reduce tracking variance to the target using a limited number of
+actual noncash trades. A trade limit counts movements from the current book;
+it is distinct from a limit on terminal holdings. Cash is the settlement
+coordinate and need not be riskless. Required interventions, such as an exit
+or an upper-bound correction, consume tickets even when explicitly exempted
+from a minimum order size.
+
+Ranked Execution evaluates cash-funded marginal directions and then jointly
+sizes selected executable states. Single-name improvements are supplemented
+by a bounded shortlist of coordinated state changes. These can admit a
+funding pair whose isolated trades are unhelpful, or expose another
+instrument after an earlier useful pair. Every accepted improvement passes
+the same original-unit audit. A native solver status alone does not establish
+portfolio acceptance.
+
+The contribution has three parts. First, the formulation keeps original
+holdings, a prepared feasible base and raw model targets distinct. This
+separation makes mandatory accounting and minimum-ticket semantics explicit.
+Second, the search combines inexpensive covariance-aware priorities with
+joint sizing under the complete coupled constraints. Third, a portable
+benchmark and independent checks expose failures, search limits, timing
+and dependence on supplied incumbents.
+
+The empirical input universe comprises 302 publicly traded ETFs. Model
+weights and covariances are frozen before execution comparisons. Numerical
+instances have opaque asset identifiers and contain no private fund
+observations. Readers do not need proprietary signals or a risk-model
+refit to reproduce execution. Each decision begins from the drifted previous
+model allocation, so every method receives identical current holdings.
+This experiment measures conditional implementation decisions, not
+strategies recursively evolving their own holdings.
+
+A matched mixed-integer reference fixes the objective, admissible states and
+return audit. A separate call receives the heuristic's incumbent and charges
+its generation time explicitly. Two search ablations quantify incremental
+algorithmic effects. A historical production policy with different
+constraints is outside this comparison.
+
+\section{Related work}
+Cardinality-constrained portfolio selection and index tracking have a
+substantial optimization literature. \citet{mutunge2018} analyse covariance
+tracking with a restricted number of holdings and study greedy construction
+and exchange improvement. This is a close methodological reference.
+Here cardinality applies to movements from an existing portfolio, with a
+distinguished funding coordinate and executable trade/holding intervals.
+
+Restricted-support search is also established. \citet{kernel2012} develop
+Kernel Search for mixed-integer index-tracking formulations by exploring
+restricted portions of the feasible region. Ranked Execution shares the
+principle of prioritising small subproblems. Its priority comes from
+one- and two-coordinate cash-funded quadratics; the subsequent subproblem
+sizes the entire selected support under coupled constraints.
+
+\citet{strub2018} formulate an index-tracking rebalancing problem that
+explicitly balances transaction costs and tracking accuracy. Our objective
+is ex-ante tracking variance with hard operating rules. Transaction-cost
+minimisation, market impact and execution scheduling are outside the model.
+A ticket cap is an operating constraint, not a calibrated replacement for
+every source of trading cost.
+
+\citet{bertsimas2022} develop scalable outer approximation for sparse
+portfolio selection using ridge regularisation and a convex binary
+reformulation. This demonstrates the value of strong formulations and
+carefully designed computation. We do not claim that bounded local search
+supersedes those methods. Greedy selection, convex sizing and support
+exchange are established ideas; the present contribution combines them
+with conditional trade states, funding and audited delivery.
+
+The empirical question is how well this specific combination approximates
+a matched mixed-integer solution under declared computational controls.
+Direct comparisons with additional established methods on the same trade
+domain remain an extension. Differences in objectives and constraints
+must be resolved before algorithms from other portfolio formulations can
+serve as matched controls.
+
+\section{Conditional execution problem}\label{sec:problem}
+\subsection{Inputs and objective}
+Let $c,m,w\in\R^N$ denote current, model and delivered weights, measured as
+fractions of net asset value. Index $k$ identifies settlement cash and
+$\Sigma\succeq0$ is the supplied annual covariance matrix. The objective and
+reported tracking error are
+\begin{equation}\label{eq:objective}
+ f(w)=(w-m)^\top\Sigma(w-m),\qquad \TE(w)=\sqrt{f(w)}.
+\end{equation}
+Annual basis points equal $10^4\TE(w)$. No alpha term, turnover penalty or
+class-specific risk price enters this execution objective.
+
+The long-only hard domain includes
+\begin{equation}\label{eq:linear}
+ \mathbf{1}^\top w=1,\quad L\le w\le U,\quad a\le Aw\le b.
+\end{equation}
+Group rows may be fractional: a mixed-asset instrument need not belong
+wholly to one group. Bounds and eligibility can encode calendar restrictions
+and instructions. Cash bounds are real constraints; funding through cash
+does not imply unlimited borrowing or unrestricted cash deployment.
+
+A terminal noncash holding is zero or at least its declared floor:
+\begin{equation}\label{eq:floor}
+ w_i=0\quad\text{or}\quad w_i\ge\theta_i,\qquad i\ne k.
+\end{equation}
+An ordinary discretionary movement satisfies
+\begin{equation}\label{eq:ticket}
+ w_i=c_i\quad\text{or}\quad |w_i-c_i|\ge\delta_i.
+\end{equation}
+The minimum applies to the delivered order, not merely to the desired
+model-current difference. Joint sizing can otherwise reduce an eligible
+desired trade to a much smaller actual movement.
+
+Let $\tau_i(w)=\ind\{w_i\ne c_i\}$ be the mathematical trade indicator.
+The total noncash count satisfies
+\begin{equation}\label{eq:cap}
+ \sum_{i\ne k}\tau_i(w)\le K.
+\end{equation}
+Numerical delivery uses a separately declared trade-zero threshold.
+The model does not impose a terminal position-count limit.
+
+\subsection{Mandatory declarations and corridors}
+The consumer resolves lifecycle transitions, instructions and ordinary
+product bounds before risk search. Let $q^0$ be the resulting funded base.
+Every noncash base-current movement receives a mandatory category.
+A required correction can have a fixed endpoint or a one-sided interval
+allowing further movement in the permitted direction. A minimum-ticket
+exemption removes only the minimum-size condition: it does not remove the
+trade from the count or waive a holding floor.
+
+For optional instrument $i$, an ordinary corridor lies between its base and
+target, intersected with eligible hard bounds:
+\begin{equation}\label{eq:corridor}
+ [\ell_i,h_i]=[\min(q_i^0,m_i),\max(q_i^0,m_i)]\cap[L_i,U_i].
+\end{equation}
+The actual supplied intervals also retain lifecycle decisions, pins and
+declared preparation exceptions. Mandatory instruments keep their own
+resolved intervals. Cash retains its hard funding interval instead of a
+model-current corridor.
+
+The eligible hard domain permits movement within full resolved product and
+instruction bounds. We call the two domains CORRIDOR and FULL. They answer
+different optimization questions. Every algorithm in the main comparison
+uses CORRIDOR. FULL is used by common preparation only when the ordinary
+corridor cannot supply a valid base.
+
+If the policy declares a discretionary allowance $B$, the total cap is
+$K=M+B$, with $M$ unique active mandatory names after preparation. This is an
+explicit convention. An input declaring a fixed total cap must retain it;
+preparation cannot silently enlarge that cap when declaring another repair.
+
+\subsection{Common feasibility preparation}
+Individual lifecycle decisions can produce a base that violates funding,
+group bands or holding floors. Separately repairing each algorithm's
+base would conflate preparation and risk-search effects. We prepare one
+shared instance before running any comparison arm.
+
+An already audited base is retained exactly. Otherwise, preparation searches
+CORRIDOR and then, if needed, eligible FULL bounds. Its objectives are
+risk-neutral. In FULL, corridor excursion is minimised before gross noncash
+intervention and the number of additional repair instruments. Within the
+selected discrete pattern, a strictly convex squared-intervention objective
+breaks continuous ties. Target risk and alpha do not choose among repairs.
+
+Additional noncash interventions are pinned, declared and counted before
+risk search. Endpoints outside an original corridor are recorded as
+preparation exceptions, while full hard bounds and eligibility remain
+unchanged. All arms receive the same final base $q$, intervals, mandatory
+flags, exemptions and resolved cap.
+
+Sequential optimization stages use an explicit numerical objective guard;
+they are not exact symbolic lexicographic arithmetic. A shared 30-second
+allowance includes preparation stages. Failed preparation remains in the
+experiment denominator. A numerical failure or exhausted budget alone does
+not establish mathematical infeasibility. Conditional solver comparisons
+state how many inputs successfully prepared.
+
+\section{Executable states and matched formulation}\label{sec:states}
+\subsection{Finite unions of intervals}
+For each noncash instrument, compile executable alternatives
+$\mathcal J_i=\{[\ell_{ij},h_{ij}]:j\in J_i\}$.
+For an ordinary optional instrument these include the no-trade point when
+valid, a sell interval ending at $c_i-\delta_i$, and a buy interval starting
+at $c_i+\delta_i$. Intersect the alternatives with the permitted corridor and
+with $\{0\}\cup[\theta_i,\infty)$, and remove empty intervals. Mandatory
+exemptions and fixed pins are applied before compiling the states.
+
+Each state carries a ticket flag $t_{ij}\in\{0,1\}$ measured from original
+holdings. An optional no-trade point has flag zero; an exempt mandatory
+movement keeps flag one. Once states are fixed, remaining sizing is a
+continuous convex problem.
+
+For example, let $c_i=0.02$, the corridor be $[0,0.04]$,
+$\delta_i=0.005$ and $\theta_i=0.01$. The alternatives are a no-trade point
+at $0.02$, a full exit at zero, a sell interval $[0.01,0.015]$, and a buy
+interval $[0.025,0.04]$. Selecting a sale does not prescribe its unique size.
+Funding and group constraints determine final size jointly with other names.
+Several states never create several tickets for one instrument.
+
+\subsection{Mixed-integer reference}
+Introduce binary selectors $z_{ij}$ and continuous contributions $v_{ij}$:
+\begin{align}
+ \sum_{j\in J_i}z_{ij}&=1,&
+ \ell_{ij}z_{ij}\le v_{ij}&\le h_{ij}z_{ij},\\
+ w_i&=\sum_{j\in J_i}v_{ij},&
+ \sum_{i\ne k}\sum_{j\in J_i}t_{ij}z_{ij}&\le K.
+\end{align}
+Together with \eqref{eq:linear} and \eqref{eq:objective}, these form a convex
+mixed-integer quadratic problem. A declared optional allowance adds its
+corresponding sum over optional names. Cash has no trade selector.
+
+Every method uses the same prepared state domain. The name Matched Exact
+identifies this mathematical problem, not a certificate for every
+time-limited returned vector. The implementation solves an equivalent
+conic canonical representation. Native status, native incumbents and
+externally retained weights remain separately attributed.
+
+Fixing one state per instrument yields a convex quadratic program. Fixed
+coordinates and cash can be eliminated algebraically. Heuristic supports use
+the same joint-sizing formulation. A conditional fixed-state refinement of
+an integer incumbent preserves its declared state choices and is audited
+separately; native outputs are never rounded into acceptance.
+
+\section{Ranked Execution}\label{sec:algorithm}
+\subsection{Cash-funded marginal gains}
+A change in noncash instrument $i$ is funded through $u_i=e_i-e_k$.
+At working point $w$, define
+\begin{equation}
+ g_i=u_i^\top\Sigma(w-m),\qquad s_i=u_i^\top\Sigma u_i\ge0.
+\end{equation}
+A displacement $x$ changes risk by
+\begin{equation}\label{eq:gain}
+ f(w+xu_i)-f(w)=2g_i x+s_i x^2.
+\end{equation}
+For state displacement interval $D_i=[d_i^-,d_i^+]$, minimise this scalar
+quadratic. When $s_i>0$, the minimiser is the projection of $-g_i/s_i$
+onto $D_i$; when $s_i=0$, an endpoint minimises the linear expression.
+Ties are resolved deterministically.
+
+The priority is the negative objective change at that minimiser. Greedy
+selection admits positive-gain optional names within the allowance and
+updates covariance products after each virtual move:
+\begin{equation}
+ \Sigma(w-m)\leftarrow\Sigma(w-m)+x_i(\Sigma_{:i}-\Sigma_{:k}).
+\end{equation}
+A selected name cannot consume another ticket by choosing a second state.
+Instrument identifiers and state indices break score ties.
+
+Virtual working points are support proposals. They need not satisfy
+coupled cash or group bounds. Those constraints enter joint sizing, and only
+an audited jointly sized vector can replace the incumbent. A marginal
+priority guides computation without becoming an acceptance rule.
+
+\subsection{Joint sizing and mandatory coordinates}
+The search starts from the shared audited incumbent $q$. A mandatory-only
+QP first explores movable mandatory coordinates and their bounded holding
+alternatives. A feasible base can still be improved along these coordinates;
+an empty optional support must not suppress their optimization.
+
+For a proposed optional support, selected states are free within their
+intervals; unselected optionals remain at base. Movable mandatory
+coordinates and cash are jointly sized with them. Funding, instrument
+bounds and original group rows are included. Every candidate is audited
+before retention.
+
+The default explores at most 32 mandatory state combinations per support.
+Truncation is reported. Failure of one assignment does not prove that every
+assignment for those instrument names is infeasible. A feasible candidate
+with more risk than the incumbent leaves the incumbent unchanged.
+
+If initial greedy sizing supplies no audited candidate, a bounded rescue
+list tries constraint-directed admissions, removals and replacements.
+Its separate allowance is at most 24 support trials. Rescue respects the
+same cap and states; it cannot introduce a new exemption or broaden a
+corridor.
+
+\subsection{Coordinated state changes}
+Isolated priorities can miss a useful combination. Funding and group
+restrictions may make a buy and sale jointly attractive even when their
+isolated proposals are unsuitable. The method supplements one drop and one
+exchange pass with a bounded coordinated neighbourhood.
+
+At incumbent $\bar w$, let $C_{ij}=u_i^\top\Sigma u_j$. For proposed
+state-displacement intervals $D_i,D_j$, the two-coordinate priority is
+\begin{equation}\label{eq:pair}
+ -\min_{x\in D_i,\,y\in D_j}
+ \{2g_i x+2g_j y+C_{ii}x^2+2C_{ij}xy+C_{jj}y^2\}.
+\end{equation}
+The positive-semidefinite box quadratic is evaluated through boundary minima
+and any admissible interior stationary point. This priority is inexpensive
+relative to complete joint sizing.
+
+The neighbourhood changes one or two optional states: admissions, removals,
+replacements within available slots, or holding alternatives. Priorities do
+not include all coupled rows or reoptimisation of the other selected
+coordinates. Consequently, even a negative isolated priority need not
+exclude a support from the shortlist.
+
+The best unvisited candidates form a bounded shortlist. Joint sizing evaluates
+them under all constraints. If the incumbent improves and trials remain,
+the search restarts from the new incumbent. At most three anchors share a
+total coordinated budget of 24 support trials. A pass without improvement
+stops the stage. These are support trials; mandatory alternatives and
+numerical retries can require more than 24 native QP calls.
+
+A two-state neighbourhood cannot simultaneously replace two selected names
+with two different new names: that requires four changes. A truncated
+shortlist can also omit the best feasible pair. Restarts expose additional
+moves after earlier improvements but establish neither local nor global
+optimality.
+
+\begin{table}[htbp]\centering\small
+\caption{Ranked Execution with audited incumbent retention.}
+\begin{tabularx}{\linewidth}{rY}\toprule
+Step & Operation\\\midrule
+1 & Validate inputs, compile states and audit the shared prepared base.\\
+2 & Size movable mandatory states without optional trades.\\
+3 & Construct cash-funded greedy priorities and jointly size selected states.\\
+4 & If needed, attempt the bounded feasibility-rescue shortlist.\\
+5 & Attempt one drop and one exchange pass over the initial accepted support.\\
+6 & Jointly size coordinated changes; restart after improvement while the shared
+trial and anchor allowances permit.\\
+7 & Return the best audited incumbent with timing and failure diagnostics.\\
+\bottomrule\end{tabularx}
+\end{table}
+
+\subsection{Properties and computational cost}
+\begin{proposition}[Conditional incumbent retention]
+For fixed arrays and acceptance rules, if the initial incumbent passes the
+return audit and replacement requires an audited strict objective improvement,
+the returned objective is no worse than that of the initial incumbent.
+\end{proposition}
+\begin{proof}
+The initial incumbent is stored. Each replacement passes the same audit and
+has smaller objective. Failure to find a replacement leaves it unchanged.
+\end{proof}
+This delivery property is equally available to the mixed-integer reference.
+It is not an approximation ratio or an optimality certificate and says
+nothing about future risk after rolling holdings diverge.
+
+For dense covariance, the initial covariance-vector product costs $O(N^2)$.
+With bounded states per instrument, each greedy score and column update
+costs $O(N)$, giving $O(N^2+BN)$ arithmetic for that stage and $O(N^2)$ input
+storage. These counts exclude validation, convex sizing, mandatory
+enumeration and improvement search.
+
+With $s$ available state changes, coordinated enumeration can inspect
+$O(s^2)$ pairs per anchor. A bounded shortlist does not make its generation
+constant work in universe size. Support-key construction and ordering add
+overhead. At most three anchors share the same sizing budget, while
+mandatory enumeration multiplies QP counts. A support cap is therefore not
+a wall-clock guarantee.
+
+The library accepts exact factor-plus-diagonal covariance representations
+when available. The empirical comparison retains its supplied dense
+matrices, including residual correlations. Substituting a diagonal residual
+approximation would change the experiment and is not done here.
+
+\section{Numerical acceptance and comparison protocol}\label{sec:audit}
+\subsection{Original-unit audit}
+Every final vector is checked in NAV fractions against unchanged supplied
+arrays. Feasibility tolerance is $10^{-7}$ and actual-trade zero is $10^{-8}$.
+Holding floors and minimum tickets retain their declared values. The
+independent benchmark audit checks funding, instrument intervals, group
+exposures, floors, nonexempt ticket sizes and both ticket allowances. It calls
+neither the implementation's state compiler nor its audit evaluator.
+Returned vectors are not renormalised or rounded.
+
+Numerical QPs express movable weights in basis points, eliminating fixed
+coordinates and cash algebraically. In fixed-state sizing, a bound or group
+row is removed only when every remaining variable coefficient is exactly
+zero and its constant value satisfies both unchanged endpoints.
+Nonzero coefficients, however small, and constant contradictions are retained.
+This algebraic reduction avoids degenerate constant rows without enlarging
+the feasible set. Native integer hulls and their relaxations retain their
+original graph. Group rows use the same bounded residual
+envelope as the original-unit audit. Original limits remain authoritative at
+return. CLARABEL uses absolute/relative gap and feasibility controls of
+$10^{-10}$. A numerical solver exception permits one fresh attempt with
+equilibration disabled, retaining the graph, objective, rows and tolerances.
+An infeasible status does not trigger that retry.
+
+This aligns numerical construction and acceptance. It does not prove literal
+feasibility beyond the declared tolerance, or convert a native lower bound
+into a certified optimality gap. The benchmark records raw statuses and
+candidate rejection alongside delivered portfolios.
+
+\subsection{Five comparison arms}
+Table~\ref{tab:arms} specifies the experiment. Common preparation is performed
+once and fixed across arms. ExactBase starts from the prepared incumbent.
+ExactRanked is an independent call supplied with Ranked's incumbent.
+Neither call receives a pooled best result across algorithms.
+
+\begin{table}[htbp]\centering\small
+\caption{Arms under the same prepared CORRIDOR domain.}\label{tab:arms}
+\begin{tabularx}{\linewidth}{lY}\toprule
+Arm & Definition\\\midrule
+Ranked & Full default search, with up to three coordinated anchors sharing
+24 support trials.\\
+Greedy & Greedy and mandatory/selected-state sizing; no rescue, drop, exchange
+or coordinated search. The same incumbent is retained.\\
+OneAnchor & Default search with at most one coordinated anchor.\\
+ExactBase & Matched mixed-integer solve started from the prepared base.\\
+ExactRanked & Separate matched solve started from Ranked's audited incumbent.\\
+\bottomrule\end{tabularx}
+\end{table}
+
+Both Exact calls use a 10-second wrapper allowance, one native thread, seed
+zero and relative MIP-gap setting $10^{-4}$. Graph construction, start
+lifting and conditional fixed-state refinement consume this allowance.
+Native operations can overrun it; measured wall times are reported.
+
+Native audited incumbents, retained external starts and refined candidates
+have distinct attribution. An ExactRanked delivery equal to Ranked does
+not establish independent native discovery. An ExactBase delivery worse
+than Ranked under a time limit does not mean its mathematical optimum is worse.
+
+Arms run serially on one host. Algorithm-call times exclude imports and
+input loading. Preparation is reported separately and included in
+end-to-end time. ExactRanked additionally includes its Ranked start-generation
+cost. These are declared computational controls, not equal elapsed budgets.
+The recorded host runs Windows 11 on an Intel Core Ultra 7 265 processor.
+The cohort uses Python 3.12.14, OP 9.1.0.dev1, QIS 5.44.3, CVXPY 1.9.2,
+MOSEK 11.2.3 and CLARABEL 0.11.1; the replication protocol records the full
+numerical package versions and execution-source hashes.
+
+\section{The 302-ETF benchmark}\label{sec:benchmark}
+\subsection{Frozen supplied inputs}
+The source universe contains 302 publicly traded ETFs, retrospectively
+selected in October 2026. Frozen model allocations span June 2008 through
+September 2026. We construct 219 monthly decisions from July 2008 onward.
+Eligible covariance support expands with available observations. The supplied
+universe is not a point-in-time investable-universe reconstruction.
+
+Each case begins from the previous supplied model portfolio, normalised once
+to unit investment and drifted through the intervening month with the
+canonical portfolio helper. This removes the previous model's small
+investment residual when defining the hypothetical current book.
+The current raw target remains unchanged in the risk objective.
+No competing execution strategy's historical holdings define these cases.
+
+The experiment is conditional on supplied targets and risk estimates.
+It does not validate upstream model selection, estimate the economic value
+of signals or establish out-of-sample investment performance. Monthly cases
+share assets and market history and are not treated as independent samples.
+
+Every instrument has a 10\% upper bound, including settlement cash;
+unavailable instruments have zero upper bound. Exposure bands are 0--10\%
+liquidity, 25--45\% fixed income, 35--65\% equity and 5--15\% alternatives.
+A mixed-allocation instrument has fractional equity/fixed-income loadings.
+Monthly eligibility and lifecycle declarations precede common preparation.
+
+Ordinary actual tickets are at least 25 basis points of NAV. Equity and
+alternative holdings have a 50-basis-point floor; fixed income and liquidity
+have no positive floor. The optional allowance is ten tickets plus the
+frozen mandatory reservation. Compulsory interventions retain their
+minimum-ticket exemption and remain counted. There is no separate
+position-count cap.
+
+\subsection{Public replication boundary}
+The inputs contain current and target weights, the pre-preparation base,
+annual covariance, corridor and full bounds, group rows, eligibility and
+fixed-coordinate flags, mandatory categories, exemptions and ticket rules.
+Stable identifiers such as \texttt{Asset001} replace instrument labels;
+\texttt{Cash} identifies funding.
+
+There are no raw vendor price histories, private portfolio observations,
+factor-estimation inputs, local filesystem paths or private identifier
+mapping in the replication dataset. The supplied arrays reproduce common
+preparation and all execution arms. Model targets alone would not suffice.
+
+Opaque identifiers provide de-identification, not a guarantee that numerical
+histories cannot be recognised. The benchmark concerns publicly traded
+instruments and makes no claim to conceal their market characteristics.
+Stable labels and unchanged coordinate order avoid conflating renaming with
+algorithm changes.
+
+Every data file is hashed before loading. Arrays contain no Python pickle
+objects. Reference outputs are used only for verification and reporting,
+never to select a support or improve an incumbent. Replication calls
+reusable OP execution and QIS risk analytics without a private application
+or an upstream research repository.
+
+\subsection{Results and interpretation}
+\input{results.tex}
+
+An independent sizing check uses case 0027, with 17 mandatory reservations
+and no optional candidates. The admissible mandatory state has one movable
+noncash coordinate. Intersecting its instrument, cash and group intervals
+and projecting the scalar quadratic's stationary point gives tracking error
+79.64086 basis points. Ranked agrees with that independently reconstructed
+solution to $2.4\times10^{-14}$ in maximum absolute weight difference.
+The alternative fixed state remains infeasible. The check verifies
+conditional sizing, not global performance on other support patterns.
+
+\section{Limitations and conclusion}
+Ranked Execution separates cash-funded prioritisation from the joint sizing
+needed for coupled constraints. Executable states encode minimum trades and
+holding alternatives; mandatory declarations make counting and exemptions
+explicit. Coordinated search broadens the combinations considered under a
+fixed domain, and original-unit audits control delivery.
+
+A better objective than a time-limited mixed-integer call is not a global
+certificate. An Exact improvement identifies a search or numerical limit that must
+remain visible. Retained starts, native discoveries and numerical
+refinements are different sources of delivered portfolios.
+
+The empirical limits include the retrospective universe, supplied rather
+than refitted estimates, dependent monthly cases and the number of genuinely
+optional states after preparation. A large nominal universe does not by
+itself establish difficult sparse search. The retained candidate counts
+measure the scale actually tested.
+Numerical corrections were informed by these instances; the sample is not
+an untouched validation cohort.
+
+This benchmark does not simulate every algorithm's recursively evolving
+holdings. Such a study requires asset returns and a separate implementation
+convention; its outcomes combine local decisions with path dependence.
+No realised return, Sharpe ratio or trading-cost advantage follows from the
+conditional comparison.
+
+The portable instance contract makes these limits testable. Subsequent
+studies can vary ticket budgets, floors, group tightness and candidate
+density under frozen protocols, and compare established methods on the same
+trade domain. The present contribution is a concrete, auditable execution
+heuristic with explicit controls and a reproducible matched benchmark.
+
+\section*{Data and code availability}
+The accompanying package contains de-identified numerical decision inputs,
+checksums, the five-arm runner, independent audits and table-generation code.
+The reusable solver is in
+\href{https://github.com/ArturSepp/OptimalPortfolios}{OptimalPortfolios}.
+Tracking-error reporting uses
+\href{https://github.com/ArturSepp/QuantInvestStrats}{QIS}.
+This public-facing draft is prepared for release; a persistent dataset
+identifier and public release URL have not yet been assigned. Execution
+conditional on supplied estimates is reproduced; upstream allocation-model
+estimation and raw market-data histories are outside the release.
+
+\section*{Author declarations}
+Affiliation, competing-interest and final authorship statements require
+author completion before submission. AI assistance was used in implementation,
+analysis and drafting; the author must review and approve the final disclosure.
+
+\begin{thebibliography}{9}
+\bibitem[Bertsimas and Cory-Wright(2022)]{bertsimas2022}
+Bertsimas, D., Cory-Wright, R., 2022. A scalable algorithm for sparse portfolio
+selection. INFORMS Journal on Computing 34(3), 1489--1511.
+\href{https://doi.org/10.1287/ijoc.2021.1127}{doi:10.1287/ijoc.2021.1127}.
+\bibitem[Guastaroba and Speranza(2012)]{kernel2012}
+Guastaroba, G., Speranza, M.G., 2012. Kernel Search: An application to the
+index tracking problem. European Journal of Operational Research 217(1), 54--68.
+\href{https://doi.org/10.1016/j.ejor.2011.09.004}{doi:10.1016/j.ejor.2011.09.004}.
+\bibitem[Mutunge and Haugland(2018)]{mutunge2018}
+Mutunge, P., Haugland, D., 2018. Minimizing the tracking error of cardinality
+constrained portfolios. Computers \& Operations Research 90, 33--41.
+\href{https://doi.org/10.1016/j.cor.2017.09.002}{doi:10.1016/j.cor.2017.09.002}.
+\bibitem[Strub and Baumann(2018)]{strub2018}
+Strub, O., Baumann, P., 2018. Optimal construction and rebalancing of
+index-tracking portfolios. European Journal of Operational Research 264(1), 370--387.
+\href{https://doi.org/10.1016/j.ejor.2017.06.055}{doi:10.1016/j.ejor.2017.06.055}.
+\end{thebibliography}
+\end{document}

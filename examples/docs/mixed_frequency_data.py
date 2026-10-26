@@ -199,15 +199,15 @@ def main() -> None:
         },
         assets=prices.columns,
         cutoff=cutoff,
-    ).data
-    annual_covar = factor_data.y_covar
+    )
+    annual_covar = factor_data.asset_covariance
     rolling_data = factor_estimator.fit_rolling(
         risk_factor_prices=factor_prices,
         asset_returns_dict=returns_by_frequency,
         assets=prices.columns,
         time_period=qis.TimePeriod("2023-06-30", "2023-12-31"),
-    ).data
-    rolling_covars = rolling_data.get_y_covars()
+    )
+    rolling_covars = rolling_data.covariances
 
     from factorlasso import VarianceColumns
 
@@ -218,17 +218,17 @@ def main() -> None:
         model = fl.LassoModel(model_type=fl.LassoModelType.LASSO, reg_lambda=1e-5, span=span,
                                warmup_period=8, demean=True, solver="CLARABEL")
         model.fit(x=factor_returns, y=bucket)
-        np.testing.assert_allclose(factor_data.y_betas.loc[bucket.columns],
+        np.testing.assert_allclose(factor_data.loadings.loc[bucket.columns],
                                    model.estimated_betas, rtol=1e-7, atol=1e-9)
         np.testing.assert_allclose(
-            factor_data.y_variances.loc[bucket.columns, VarianceColumns.RESIDUAL_VARS.value],
+            factor_data.fit_statistics.loc[bucket.columns, VarianceColumns.RESIDUAL_VARS.value],
             annualisation * model.estimation_result_.ss_res, rtol=1e-7, atol=1e-12)
     # The factor covariance uses the monthly span 24, annualised by 12, and assembles with the
     # full residual diagonal; the three assets keep their order.
     factor_covar = ewma_factor_covariance(factor_prices.loc[:cutoff], span=24)
-    np.testing.assert_allclose(factor_data.x_covar, factor_covar, rtol=1e-10, atol=1e-14)
-    betas = factor_data.y_betas.to_numpy()
-    residual = factor_data.y_variances[VarianceColumns.RESIDUAL_VARS.value].to_numpy()
+    np.testing.assert_allclose(factor_data.factor_covariance, factor_covar, rtol=1e-10, atol=1e-14)
+    betas = factor_data.loadings.to_numpy()
+    residual = factor_data.fit_statistics[VarianceColumns.RESIDUAL_VARS.value].to_numpy()
     np.testing.assert_allclose(annual_covar, betas @ factor_covar @ betas.T + np.diag(residual),
                                rtol=1e-10, atol=1e-14)
     assert list(annual_covar.columns) == ASSETS
@@ -246,7 +246,7 @@ def main() -> None:
     monthly_covars = fresh_estimator(rebalancing_freq="ME").fit_rolling(
         risk_factor_prices=factor_prices, asset_returns_dict=returns_by_frequency,
         assets=prices.columns, time_period=qis.TimePeriod("2023-06-30", "2023-12-31"),
-    ).data.get_y_covars()
+    ).covariances
     assert len(monthly_covars) == 7
     for date in quarter_ends:
         np.testing.assert_allclose(monthly_covars[date], rolling_covars[date], atol=1e-12)
@@ -273,7 +273,7 @@ def main() -> None:
         risk_factor_prices=perturbed_after(factor_prices, cutoff, 1.2, 2.5),
         asset_returns_dict=later_buckets, assets=prices.columns,
         time_period=qis.TimePeriod("2023-06-30", "2023-12-31"),
-    ).data.get_y_covars()
+    ).covariances
     for date, covar in rolling_covars.items():
         pd.testing.assert_frame_equal(changed_covars[date], covar)
 

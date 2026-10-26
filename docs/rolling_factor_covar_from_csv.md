@@ -6,11 +6,13 @@ myst:
 
 # Rolling factor risk model from CSV
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-06](https://github.com/ArturSepp/OptimalPortfolios/commit/d8628f883d87bcb7e7006319bab8a804d899d949)*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 Implemented upstream in [FactorModels](supplied_risk_inputs.md#factormodels-availability),
 consumed by [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 Upstream citation: `CITATION.cff` in an authorised FactorModels checkout.
 
 The versioned six-file bundle loader, financial preparation and rolling factor-model fit belong to the installed FactorModels API. Loading, fitting in memory and explicit persistence are separate operations.

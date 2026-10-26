@@ -6,7 +6,7 @@ myst:
 
 # Supplied risk inputs and completed optimisation results
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-10-18](https://github.com/ArturSepp/OptimalPortfolios/commit/42c248224d9acc31d03ff45ca1d7e96a3e88e118)*
 
 Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
@@ -39,8 +39,9 @@ remain inspectable; there is no new universal serialisation schema.
 ## FactorModels availability
 
 The [FactorModels distribution](https://pypi.org/project/factormodels/) is published
-separately as `factormodels`; install it with `pip install factormodels` for composed
-factor workflows. Composed CI verifies `factormodels==0.1.0`. Its source repository
+separately as `factormodels`. The current development examples and integration tests
+require the **unreleased FM 0.3.0 candidate**, installed from its reviewed wheel;
+an older indexed release does not provide their completed-result contract. Its source repository
 and method guides retain their existing access requirements. The base OP installation
 and EWMA quickstart do not require FM or FactorLasso.
 
@@ -71,8 +72,8 @@ portfolio variance and tracking error. For correlated residuals, a requested
 `diagonal_reference=True` view labels approximate component rows with `reference`;
 those components need not sum to total risk.
 
-`factormodels.analytics.FactorOpportunityModel.optimisation_inputs()` returns
-labelled arrays for `optimalportfolios.matf.OpportunityModel`. Constrained solving
+`factormodels.gls_diagnostic.FactorOpportunityModel.optimisation_inputs()` returns
+labelled arrays for `optimalportfolios.optimization.opportunity.OpportunityModel`. Constrained solving
 stays in OP. GLS decomposition, uncertainty estimation and universe diagnostics
 stay in FM/FL; any projected alpha covariance is prepared before optimisation.
 Cluster mappings and optional pooled signal panels are likewise prepared upstream.
@@ -85,6 +86,13 @@ legacy `covar_data` result constructor. Import statistical objects from their ow
 package and supply completed inputs. The FM migration guide at `docs/migration.md`
 in an authorised FM checkout lists canonical owners. Existing research snapshots
 retain their original environment.
+
+The development version moves `OpportunityModel`, `OpportunitySolution`,
+`solve_opportunity` and `portfolio_opportunity_metrics` from
+`optimalportfolios.matf.opportunity` to `optimalportfolios.optimization.opportunity`.
+Update imports directly; the `matf` package is removed without forwarding modules.
+Inputs, solver defaults, tolerances and numerical results are unchanged. Historical
+environments retain the original import path for their recorded runs.
 
 ## Verification
 
