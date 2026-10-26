@@ -22,7 +22,7 @@ produces performance, allocation, turnover and tracking-error factsheets.
 ## Run
 
 Run from the OP checkout in a separate environment containing `optimalportfolios[data]>=9.1.1` and
-`factormodels>=0.3.0`, `factorlasso>=1.0.6` and `qis>=5.44.3`.
+`factormodels>=0.3.0`, `factorlasso>=1.0.6` and `qis>=5.44.5`.
 The example is excluded from the OP wheel. Production fitting uses MOSEK and requires its
 Python package and a valid license. The public alternative explicitly selects CLARABEL,
 which is supplied with CVXPY; there is no automatic solver fallback.

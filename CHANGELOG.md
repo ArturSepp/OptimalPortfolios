@@ -7,6 +7,10 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+- Require QIS 5.44.5 or later for composed source/wheel qualification and the
+  public pipeline's attribution study. Its deterministic zero-effect HAC fix
+  resolves the QIS 5.44.4 limitation recorded below; keep base installs unchanged.
+
 ## [9.1.5] - 2026-10-26
 
 ### Changed

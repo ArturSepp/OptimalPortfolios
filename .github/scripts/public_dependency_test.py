@@ -50,6 +50,8 @@ class PublicDependencyWorkflowTests(unittest.TestCase):
         self.assertIn('uv venv "$RUNNER_TEMP/composed-source"', block)
         self.assertIn('uv venv "$RUNNER_TEMP/composed-wheel"', block)
         self.assertEqual(block.count('"factormodels==0.3.0"'), 2)
+        self.assertIn('".[riskbudget,data]"', block)
+        self.assertEqual(block.count('"qis>=5.44.5"'), 2)
         self.assertIn('cd "$RUNNER_TEMP"', block)
         self.assertIn('--pyargs optimalportfolios.tests.factor_integration_test', block)
 
