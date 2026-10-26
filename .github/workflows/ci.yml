@@ -358,7 +358,7 @@ jobs:
           uv build --out-dir "$RUNNER_TEMP/op-dist"
           uv venv "$RUNNER_TEMP/composed-source"
           uv pip install --python "$RUNNER_TEMP/composed-source/bin/python" -e ".[riskbudget]" \
-            "factormodels==0.1.0" pytest
+            "factormodels==0.3.0" pytest
 
       - name: Run composed source contracts
         env:
@@ -373,7 +373,7 @@ jobs:
         run: |
           uv venv "$RUNNER_TEMP/composed-wheel"
           uv pip install --python "$RUNNER_TEMP/composed-wheel/bin/python" \
-            "$(ls "$RUNNER_TEMP"/op-dist/*.whl)[riskbudget]" "factormodels==0.1.0" pytest
+            "$(ls "$RUNNER_TEMP"/op-dist/*.whl)[riskbudget]" "factormodels==0.3.0" pytest
 
       - name: Enforce nonempty installed handoff tests without skips
         env:
