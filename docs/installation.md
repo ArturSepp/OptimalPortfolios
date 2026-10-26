@@ -111,7 +111,7 @@ Composed factor workflows use
 [FactorModels](supplied_risk_inputs.md#factormodels-availability) to construct
 factor models and covariances, then supply those estimates to OptimalPortfolios.
 Install the separately published [factormodels distribution](https://pypi.org/project/factormodels/)
-with `pip install factormodels`; composed CI verifies `factormodels==0.1.0`.
+with `pip install factormodels`; composed CI verifies `factormodels==0.3.0`.
 Its source repository and method guides retain their existing access requirements.
 It includes
 [FactorLasso](https://github.com/ArturSepp/FactorLasso) for estimation and

@@ -40,7 +40,7 @@ remain inspectable; there is no new universal serialisation schema.
 
 The [FactorModels distribution](https://pypi.org/project/factormodels/) is published
 separately as `factormodels`; install it with `pip install factormodels` for composed
-factor workflows. Composed CI verifies `factormodels==0.1.0`. Its source repository
+factor workflows. Composed CI verifies `factormodels==0.3.0`. Its source repository
 and method guides retain their existing access requirements. The base OP installation
 and EWMA quickstart do not require FM or FactorLasso.
 
