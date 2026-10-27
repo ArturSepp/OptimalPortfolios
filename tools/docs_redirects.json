@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "site": "https://optimalportfolios.readthedocs.io",
+  "policy": "Read the Docs Page Redirects, permanent HTTP 301, enabled, not forced. Existing archived pages remain accessible. These documentation mappings do not restore retired Python APIs.",
+  "redirects": [
+    {
+      "from_url": "/alpha_profiling.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/signal_diagnostics_and_profiling.html",
+      "description": "Renamed guide; preserve the previously published alpha_profiling.html URL.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/alphas.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/alphas_module_readme.html",
+      "description": "Renamed guide; preserve the previously published alphas.html URL.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/covariance.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/covariance_estimators.html",
+      "description": "Renamed guide; preserve the previously published covariance.html URL.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/examples.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/examples_readme.html",
+      "description": "Renamed guide; preserve the previously published examples.html URL.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.CurrentFactorCovarData.html",
+      "to_url": "https://factorlasso.readthedocs.io/en/latest/api.html#factorlasso.CurrentFactorCovarData",
+      "description": "Retired OP re-export; the canonical CurrentFactorCovarData API belongs to factorlasso.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.DependenceMeasure.html",
+      "to_url": "https://factorlasso.readthedocs.io/en/latest/api.html#factorlasso.DependenceMeasure",
+      "description": "Retired OP re-export; the canonical DependenceMeasure API belongs to factorlasso.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.DistanceTransform.html",
+      "to_url": "https://factorlasso.readthedocs.io/en/latest/api.html#factorlasso.DistanceTransform",
+      "description": "Retired OP re-export; the canonical DistanceTransform API belongs to factorlasso.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.FactorCovarEstimator.html",
+      "to_url": "https://factormodels.readthedocs.io/en/latest/api.html#factormodels-estimation",
+      "description": "Factor-model estimation belongs to FactorModels.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.LassoModel.html",
+      "to_url": "https://factorlasso.readthedocs.io/en/latest/api.html#factorlasso.LassoModel",
+      "description": "Retired OP re-export; the canonical LassoModel API belongs to factorlasso.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.LassoModelType.html",
+      "to_url": "https://factorlasso.readthedocs.io/en/latest/api.html#factorlasso.LassoModelType",
+      "description": "Retired OP re-export; the canonical LassoModelType API belongs to factorlasso.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.RollingFactorCovarData.html",
+      "to_url": "https://factorlasso.readthedocs.io/en/latest/api.html#factorlasso.RollingFactorCovarData",
+      "description": "Retired OP re-export; the canonical RollingFactorCovarData API belongs to factorlasso.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.VarianceColumns.html",
+      "to_url": "https://factorlasso.readthedocs.io/en/latest/api.html#factorlasso.VarianceColumns",
+      "description": "Retired OP re-export; the canonical VarianceColumns API belongs to factorlasso.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.build_risk_model.html",
+      "to_url": "https://factormodels.readthedocs.io/en/latest/api.html#factormodels-analytics-risk",
+      "description": "Export the fitted FactorModels risk view for supplied-input consumers.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.compute_dependence_matrix.html",
+      "to_url": "https://factorlasso.readthedocs.io/en/latest/api.html#factorlasso.compute_dependence_matrix",
+      "description": "Retired OP re-export; the canonical compute_dependence_matrix API belongs to factorlasso.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.compute_gerber_matrix.html",
+      "to_url": "https://factorlasso.readthedocs.io/en/latest/api.html#factorlasso.compute_gerber_matrix",
+      "description": "Retired OP re-export; the canonical compute_gerber_matrix API belongs to factorlasso.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.compute_risk_contributions.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/portfolio_risk_analytics.html#volatility-and-euler-contributions",
+      "description": "The retired helper is covered by the current QIS-based Euler risk-contribution workflow.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.estimate_lasso_factor_covar_data.html",
+      "to_url": "https://factormodels.readthedocs.io/en/latest/api.html#completed-model-contract",
+      "description": "The retired estimator helper is replaced by the completed FactorModels contract.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.extract_rolling_clusters.html",
+      "to_url": "https://factormodels.readthedocs.io/en/latest/api.html#factormodels-estimation-cluster-scores",
+      "description": "Cluster score extraction belongs to FactorModels.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.filter_covar_and_vectors.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/generated/optimalportfolios.filter_covar_and_vectors_for_nans.html",
+      "description": "Renamed NaN-filtering helper; preserve the earlier generated API URL.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.plot_current_covar_data.html",
+      "to_url": "https://factormodels.readthedocs.io/en/latest/api.html#method-reports",
+      "description": "Covariance reports consume fitted FactorModels and explicitly prepared diagnostics.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.plot_hcgl_covar_data.html",
+      "to_url": "https://factormodels.readthedocs.io/en/latest/api.html#method-reports",
+      "description": "Covariance report preparation and rendering belong to FactorModels.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.run_rolling_covar_report.html",
+      "to_url": "https://factormodels.readthedocs.io/en/latest/api.html#method-reports",
+      "description": "Rolling covariance reports now consume fitted FactorModels and prepared diagnostics.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/optimisers.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/optimization_module_readme.html",
+      "description": "Renamed guide; preserve the previously published optimisers.html URL.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    }
+  ]
+}

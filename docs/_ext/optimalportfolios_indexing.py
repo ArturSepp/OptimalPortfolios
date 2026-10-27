@@ -208,6 +208,83 @@ def write_llms(app, exception) -> None:
     (out / 'llms-api.txt').write_text('\n'.join(api) + '\n', encoding='utf-8')
 
 
+def read_redirect_manifest(path: Optional[Path] = None) -> dict:
+    """Read the reviewed Read the Docs rules without changing hosting settings.
+
+    Args:
+        path: Optional manifest path; defaults to this repository's redirect inventory.
+
+    Returns:
+        Manifest containing unique page redirects and their replacement URLs.
+    """
+    import json
+
+    path = path or Path(__file__).resolve().parents[2] / "tools" / "docs_redirects.json"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    if manifest.get("schema_version") != 1 or not manifest.get("redirects"):
+        raise ValueError("Expected a nonempty version-1 redirect manifest")
+    site = manifest.get("site", "")
+    if site != "https://optimalportfolios.readthedocs.io":
+        raise ValueError("Redirect inventory must belong to OptimalPortfolios")
+    sources = set()
+    for rule in manifest["redirects"]:
+        source, target = rule["from_url"], urlsplit(rule["to_url"])
+        if (not source.startswith("/") or source.startswith(("//", "/en/"))
+                or not source.endswith(".html") or ".." in source.split("/")
+                or any(char in source for char in "*?#") or source in sources):
+            raise ValueError(f"Invalid or duplicate legacy page URL: {source}")
+        if (target.scheme != "https" or not target.hostname or target.username
+                or target.password or target.query or ".." in target.path.split("/")):
+            raise ValueError(f"Invalid replacement URL: {rule['to_url']}")
+        if (rule.get("redirect_type") != "page" or rule.get("http_status") != 301
+                or rule.get("force") is not False or rule.get("enabled") is not True):
+            raise ValueError("Legacy rules must be enabled, non-forced permanent page redirects")
+        if rule["to_url"].split("#")[0] == site + "/en/latest" + source:
+            raise ValueError(f"Self-redirect: {source}")
+        sources.add(source)
+    return manifest
+
+
+def validate_redirect_targets(app: Any, exception: Optional[Exception]) -> None:
+    """Fail a successful HTML build if a local redirect destination has disappeared.
+
+    Args:
+        app: Sphinx application with the finished HTML output.
+        exception: Earlier build failure; failed and non-HTML builds are ignored.
+    """
+    from html.parser import HTMLParser
+
+    if exception is not None or app.builder.name != "html":
+        return
+    manifest = read_redirect_manifest()
+
+    class Anchors(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.ids = set()
+
+        def handle_starttag(self, tag, attrs):
+            value = dict(attrs).get("id")
+            if value:
+                self.ids.add(value)
+
+    for rule in manifest["redirects"]:
+        url = urlsplit(rule["to_url"])
+        if url.netloc != urlsplit(manifest["site"]).netloc:
+            continue  # External destinations are checked by the shared live HTTP verifier.
+        parts = url.path.strip("/").split("/", 2)
+        if len(parts) != 3 or parts[0] != "en":
+            raise ValueError(f"Unexpected local documentation path: {rule['to_url']}")
+        target = Path(app.outdir) / parts[2]
+        if not target.is_file():
+            raise ValueError(f"Missing redirect destination: {rule['to_url']}")
+        if url.fragment:
+            anchors = Anchors()
+            anchors.feed(target.read_text(encoding="utf-8"))
+            if url.fragment not in anchors.ids:
+                raise ValueError(f"Missing redirect destination anchor: {rule['to_url']}")
+
+
 def setup(app: Any) -> dict:
     """Register the page-metadata and end-of-build sitemap callbacks.
 
@@ -221,4 +298,5 @@ def setup(app: Any) -> dict:
     app.connect("build-finished", write_sitemap)
     app.connect('html-page-context', set_release_navigation)
     app.connect('build-finished', write_llms)
+    app.connect("build-finished", validate_redirect_targets)
     return {"version": "1", "parallel_read_safe": True, "parallel_write_safe": True}
