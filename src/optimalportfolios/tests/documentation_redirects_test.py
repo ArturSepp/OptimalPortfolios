@@ -15,7 +15,7 @@ SEO = runpy.run_path(str(EXTENSION))
 
 
 def test_manifest_keeps_all_confirmed_historical_404_urls():
-    """Keep the five renamed guides and eighteen removed generated API entry points."""
+    """Keep all reviewed renamed guides and retired generated API entry points."""
     manifest = SEO["read_redirect_manifest"]()
     sources = {r["from_url"] for r in manifest["redirects"]}
     guides = {"alpha_profiling", "alphas", "covariance", "examples", "optimisers"}
@@ -27,6 +27,56 @@ def test_manifest_keeps_all_confirmed_historical_404_urls():
         "extract_rolling_clusters",
         "filter_covar_and_vectors", "plot_current_covar_data", "plot_hcgl_covar_data",
         "run_rolling_covar_report",
+        "AdmissionPolicy",
+        "ClusterSmootherType",
+        "CmaConditionalGlsResult",
+        "CmaDiagnosticInputs",
+        "CmaDiagnosticResult",
+        "CmaDiagnosticSpec",
+        "CmaIdentificationResult",
+        "CompletionResult",
+        "CompletionStatus",
+        "GlsGeometry",
+        "GlsLoadingStabilityResult",
+        "GlsPremiaResult",
+        "GlsResolutionResult",
+        "GlsUncertaintyScenario",
+        "ResidualOpportunity",
+        "RollingClusterData",
+        "achievable_sharpe2",
+        "apply_partition_distance_bonus",
+        "ceiling_premium_correlation_split",
+        "completion_sharpe2",
+        "compute_cma_diagnostics",
+        "compute_cma_identification",
+        "compute_conditional_gls_intervals",
+        "compute_gls_adviser_disagreement",
+        "compute_gls_geometry",
+        "compute_gls_loading_stability",
+        "compute_gls_loading_stability_contrast",
+        "compute_gls_provider_contrast",
+        "compute_gls_reference_uncertainty",
+        "compute_gls_resolution",
+        "compute_gls_uncertainty",
+        "compute_group_risk_contributions",
+        "compute_residual_opportunity",
+        "compute_rolling_smoothed_clusters",
+        "factor_ceiling",
+        "factor_mimicking_portfolios",
+        "fixed_exposure_fpir",
+        "fpir",
+        "gls_projector",
+        "gls_split",
+        "holdings_decomposition",
+        "hurdle_premia",
+        "infer_factor_premia",
+        "ir_bound",
+        "overlay_value",
+        "partial_overlay_value",
+        "smooth_similarity_ewma",
+        "summarize_gls_loading_stability",
+        "tangency_access_split",
+        "without_admitted_alpha",
     }
     assert sources == {f"/{name}.html" for name in guides} | {
         f"/generated/optimalportfolios.{name}.html" for name in names
