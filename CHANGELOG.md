@@ -7,6 +7,14 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+- Repair the universe/unsmoothing example for the current QIS AR(1) default while
+  retaining explicit regression checks for the supported earlier AR(2) profile.
+  Refresh the article and registered teaching exhibit together; OP transformation
+  defaults, algorithms and simulation inputs remain unchanged.
+- Keep the licence-free native-adapter test double independent of newer CVXPY
+  internal classes, so the same protocol checks execute at the declared dependency
+  floor. The production native-version guard remains unchanged.
+
 ## [9.2.0] - 2026-10-29
 
 - Add an explicit matched CORRIDOR MIQP primary policy with lazy, independently

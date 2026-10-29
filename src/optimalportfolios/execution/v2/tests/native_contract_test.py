@@ -4,6 +4,7 @@ The native task double checks starts, callbacks, budget accounting and canonical
 inversion. Real MOSEK formulation tests remain separate numerical qualification.
 """
 
+from collections import UserDict
 from dataclasses import replace
 from types import SimpleNamespace
 import sys
@@ -23,7 +24,19 @@ def native(monkeypatch):
     """Provide an explicit native protocol double with independently chosen vectors."""
     from cvxpy.reductions.cone2cone.affine2direct import FREE
     from cvxpy.reductions.solvers.conic_solvers.mosek_conif import MOSEK
-    from cvxpy.reductions.solvers.solver_inverse_data import SolverInverseData
+
+    class CanonicalInverseData(UserDict):
+        """Model the qualified inverse-map protocol on every supported CVXPY version."""
+
+        @property
+        def inverse_data(self):
+            """Expose the mapping used by the qualified native adapter."""
+            return self.data
+
+        @inverse_data.setter
+        def inverse_data(self, value):
+            """Replace a copied map without mutating the original objective offset."""
+            self.data = value
 
     p = example()
     state = SimpleNamespace(clock=0.0, tasks=[], receipt=True, bad_callback=False,
@@ -52,7 +65,7 @@ def native(monkeypatch):
         return SimpleNamespace(status=cp.OPTIMAL, primal_vars={7: vector[:4]})
 
     chain = SimpleNamespace(invert=invert)
-    inverse = [SolverInverseData({"K_dir": {FREE: 4}, cp.settings.OBJ_OFFSET: 17.})]
+    inverse = [CanonicalInverseData({"K_dir": {FREE: 4}, cp.settings.OBJ_OFFSET: 17.})]
     model = SimpleNamespace(
         reference=p.base, direction=direction, constant=0.0123, selectors={0: object()},
         displacement_bp=SimpleNamespace(id=7), initial_values=initial_values,
