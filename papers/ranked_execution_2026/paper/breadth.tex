@@ -1,0 +1,137 @@
+\section{Broader domains: correction and fresh holdout}\label{sec:breadth}
+
+A broader factorial uses 24/72 nominal optional instruments, 2/4 discretionary tickets, disjoint sector rows or those rows plus three overlapping fractional baskets, and tight/wide funding-exposure bands. Holdings are heterogeneous, targets are lognormal relative tilts, and dense annual covariances combine market, sector and random factor loadings with positive residual variance. Two mandatory exits are shared. Tight group half-widths are 0.1 NAV percentage points and cash half-widths are 0.05 points. Wider group half-widths are 1 percentage point, with cash between 0.5 and 50 percent. All arms retain the original objective, 0.5 percent minimum ticket, 0.25 percent holding floor and original audit/zero tolerances.
+
+Three earlier 32-case grids, using seed pairs 71001 and 71002, 81001 and 81002, and 91001 and 91002, are now one 96-case development cohort. The first exposed four shared search misses, recovered by conditional guidance. The second exposed five further misses, including disjoint groups and an empty discretionary incumbent. Unchanged fixed-state sizing reproduced their better recorded Exact portfolios. An interval-screened search spends up to 576 pair trials across three anchors, allowing retained trades to resize. Low slice priorities cannot reject those supports. Earlier outcomes and source hashes remain in the deposit. The third grid retained one 0.549 annual bp miss: its better reference replaced three positions and passed unchanged fixed-state sizing. The present correction restarts from at most 24 cached audited alternatives, then completes the first improving branch with one more bounded pair phase. The reference support is never supplied to this search.
+
+After freezing the correction, a fresh 32-case grid uses seeds 101001 and 101002. The code is not retuned on its outcomes. Twelve eight-optional, two-ticket controls accompany development, using seeds 72001, 72002, 82001, 82002, 92001 and 92002; four fresh controls use seeds 102001 and 102002. Cells sharing size and seed share risk arrays and holdings, so factorial cells are dependent. This is a same-generator holdout, not independent external validation.
+
+Full Ranked and OneAnchor differ only in the improvement-pass count. ExactBase10/60 are independent common-base calls with 10/60-second allowances. ExactFull60 and ExactOne60 receive only their named heuristic incumbent. Each start generation cost is charged to its own call; starts are never pooled. All Exact calls retain the same seed, one thread and relative gap setting. Calls are serial and the heuristic, independent and started arm orders each alternate deterministically. Timing on one host remains descriptive. Equality below uses the unchanged $10^{-4}$ annual bp descriptive band.
+
+On identical inputs, corrected Ranked records 1/95/0 lower, equal and higher TE outcomes in 96/96 audited pairs. Median paired runtime ratio:~1.394.
+
+On identical inputs, corrected OneAnchor records 1/95/0 lower, equal and higher TE outcomes in 96/96 audited pairs. Median paired runtime ratio:~1.434.
+
+\begin{table}[htbp]\centering\small
+
+\caption{Recovery of the archived three-position miss. Annual TE minus the archived independent-Exact reference, in bp.}
+
+\begin{tabular}{lrrr}\toprule
+
+Case & Earlier Ranked & Corrected Ranked & Corrected OneAnchor\\\midrule
+
+91001/028 & 0.54901 & 0.00000 & 0.00000\\
+
+\bottomrule\end{tabular}\end{table}
+
+In the archived seed-91001 example, the old optional support was Asset004/022/039/063. The recovered reference retains Asset022 and admits Asset029/032/049 in place of the other three names. An audited cached alternative supplies a different search path; the first improving branch and subsequent pair completion reach this support without a reference start. The seed has TE 172.310523~bp, above the retained 171.989658~bp incumbent. Its branch reaches 171.518364~bp and pair completion reaches 171.440647~bp. These are search states; only the best audited final portfolio is delivered. Mandatory exits, the four-ticket discretionary allowance and every sizing constraint remain unchanged. A three-name endpoint difference does not imply that all intermediate portfolios are infeasible.
+
+\begin{table}[htbp]\centering\small\setlength{\tabcolsep}{4pt}
+
+\caption{Development broad grid: annual TE in bp and times in seconds. E2E charges preparation and the supplied start.}
+
+\begin{tabular}{lrrrrr}\toprule
+
+Arm & Audited & Mean TE & Median s & 95th pct. s & Median E2E s\\\midrule
+
+Ranked & 96/96 & 182.050 & 9.785 & 37.568 & 9.785\\
+
+OneAnchor & 96/96 & 182.112 & 9.270 & 36.411 & 9.270\\
+
+ExactBase10 & 96/96 & 182.105 & 0.406 & 1.302 & 0.406\\
+
+ExactBase60 & 96/96 & 182.105 & 0.397 & 1.245 & 0.397\\
+
+ExactFull60 & 96/96 & 182.050 & 0.342 & 1.138 & 10.267\\
+
+ExactOne60 & 96/96 & 182.061 & 0.354 & 1.117 & 9.852\\
+
+\bottomrule\end{tabular}\end{table}
+
+Development search work: Ranked, 96/96 recorded cases, median uncached sizing attempts 973.0, median cached-alternative restarts 24.0, cases improved by those restarts 1; OneAnchor, 96/96 recorded cases, median uncached sizing attempts 973.0, median cached-alternative restarts 24.0, cases improved by those restarts 1. Sizing counts exclude continuous guidance, include failed attempts, and can differ from native solve counts because of internal retries.
+
+Development: OneAnchor has lower/equal/higher TE in 0/95/1 of 96 paired cases. The paired median runtime ratio is 0.973. The relative simplification gate fails; it can identify a research candidate only and never authorizes production adoption.
+
+\begin{table}[htbp]\centering\small
+
+\caption{Development left-minus-right TE outcomes; annual bp, with the same descriptive band.}
+
+\begin{tabular}{llrrrr}\toprule
+
+Left & Right & Lower & Equal & Higher & Max loss bp\\\midrule
+
+OneAnchor & Ranked & 0 & 95 & 1 & 5.98265\\
+
+Ranked & ExactBase60 & 7 & 89 & 0 & 0.00000\\
+
+OneAnchor & ExactBase60 & 6 & 89 & 1 & 4.91779\\
+
+Ranked & ExactFull60 & 0 & 96 & 0 & 0.00000\\
+
+OneAnchor & ExactOne60 & 0 & 95 & 1 & 4.91779\\
+
+ExactBase60 & ExactBase10 & 0 & 96 & 0 & 0.00000\\
+
+\bottomrule\end{tabular}\end{table}
+
+Development: conservative bound gaps close within the descriptive band on 0/96 cases; median/maximum gaps are 5.842/45.839 bp. There are 0 upper/lower inconsistencies.
+
+Development delivery attribution: ExactBase10: native callback 89, boundary refinement 5, common prepared incumbent 2 (native start received 96/96); ExactBase60: native callback 89, boundary refinement 5, common prepared incumbent 2 (native start received 96/96); ExactFull60: native callback 30, requested mip start 64, common prepared incumbent 2 (native start received 96/96); ExactOne60: native callback 31, requested mip start 63, common prepared incumbent 2 (native start received 96/96).
+
+\begin{table}[htbp]\centering\small\setlength{\tabcolsep}{4pt}
+
+\caption{Holdout broad grid: annual TE in bp and times in seconds. E2E charges preparation and the supplied start.}
+
+\begin{tabular}{lrrrrr}\toprule
+
+Arm & Audited & Mean TE & Median s & 95th pct. s & Median E2E s\\\midrule
+
+Ranked & 32/32 & 240.142 & 9.499 & 44.055 & 9.499\\
+
+OneAnchor & 32/32 & 240.142 & 9.108 & 43.463 & 9.108\\
+
+ExactBase10 & 32/32 & 240.353 & 0.441 & 1.857 & 0.441\\
+
+ExactBase60 & 32/32 & 240.353 & 0.499 & 2.048 & 0.499\\
+
+ExactFull60 & 32/32 & 240.142 & 0.419 & 1.394 & 9.941\\
+
+ExactOne60 & 32/32 & 240.142 & 0.453 & 1.317 & 9.486\\
+
+\bottomrule\end{tabular}\end{table}
+
+Holdout search work: Ranked, 32/32 recorded cases, median uncached sizing attempts 975.5, median cached-alternative restarts 24.0, cases improved by those restarts 1; OneAnchor, 32/32 recorded cases, median uncached sizing attempts 962.0, median cached-alternative restarts 24.0, cases improved by those restarts 1. Sizing counts exclude continuous guidance, include failed attempts, and can differ from native solve counts because of internal retries.
+
+Holdout: OneAnchor has lower/equal/higher TE in 0/32/0 of 32 paired cases. The paired median runtime ratio is 0.972. The relative simplification gate passes; it can identify a research candidate only and never authorizes production adoption.
+
+\begin{table}[htbp]\centering\small
+
+\caption{Holdout left-minus-right TE outcomes; annual bp, with the same descriptive band.}
+
+\begin{tabular}{llrrrr}\toprule
+
+Left & Right & Lower & Equal & Higher & Max loss bp\\\midrule
+
+OneAnchor & Ranked & 0 & 32 & 0 & 0.00000\\
+
+Ranked & ExactBase60 & 2 & 30 & 0 & 0.00000\\
+
+OneAnchor & ExactBase60 & 2 & 30 & 0 & 0.00000\\
+
+Ranked & ExactFull60 & 0 & 32 & 0 & 0.00000\\
+
+OneAnchor & ExactOne60 & 0 & 32 & 0 & 0.00000\\
+
+ExactBase60 & ExactBase10 & 0 & 32 & 0 & 0.00000\\
+
+\bottomrule\end{tabular}\end{table}
+
+Holdout: conservative bound gaps close within the descriptive band on 0/32 cases; median/maximum gaps are 4.423/16.168 bp. There are 0 upper/lower inconsistencies.
+
+Holdout delivery attribution: ExactBase10: native callback 29, boundary refinement 3 (native start received 32/32); ExactBase60: native callback 29, boundary refinement 3 (native start received 32/32); ExactFull60: requested mip start 23, native callback 9 (native start received 32/32); ExactOne60: requested mip start 23, native callback 9 (native start received 32/32).
+
+Across both cohorts, the relative simplification gate fails; a pass on one cohort cannot erase a disadvantage on the other. This gate concerns the ablation only, not optimality or production qualification.
+
+The two rerun grids deliver 864/864 independently audited arm outputs. Independent full-weight QPs enumerate 528 tiny-case supports, with 0 unresolved solves and 16/16 complete enumerations. Maximum absolute arm/reference TE difference is 8.10e-08 bp. The reference constructs original full-weight rows independently of the OP state compiler and sizing builder; unresolved or unaudited solves preclude completeness.
+
+Native optimal status, native bounds and retained-start equality remain diagnostics, not independently validated global certificates. Reported conservative bounds use the existing plain/perspective supporting-plane LP dual with box residual correction and floating-point guard; relaxation primal values are never substituted. The pooled best feasible value is used for reporting only. These experiments do not change production or establish realised performance or universal dominance.

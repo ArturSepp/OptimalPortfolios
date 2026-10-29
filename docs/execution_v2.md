@@ -204,12 +204,89 @@ consume the new shortlist. `improvement_passes` permits up to three anchors by
 default, sharing that total trial allowance. If a pass improves the incumbent
 and trials remain, the next pass rebuilds priorities around the new sized weights.
 A pass without improvement stops search; this does not certify local optimality.
-Replacing two old names with two new ones requires four
-state changes and is outside this neighbourhood. `mandatory_state_trials` bounds
+When available optional candidates exceed the positive allowance, an additional
+scarcity stage retains the completed original search and tries an alternative
+support rounded from the existing continuous perspective model. Fractional
+occupancies rank names and states; fractional weights are never delivered. The
+rounded support must pass the unchanged fixed-state sizing and original-unit audit.
+An audited but initially inferior seed may be searched independently, with the
+original incumbent restored unless the completed branch strictly improves it.
+
+At each of up to `improvement_passes` scarcity anchors, all one-for-one optional
+replacements are jointly sized. This matters when retained trades must resize:
+a score that freezes them can miss the useful replacement. The extended shortlist
+also permits two admissions coupled to one or two removals, so a funded pair can
+replace another pair at a full ticket budget. Cash/group-constrained two-coordinate
+priorities use polygon edge and interior minima. If that slice is empty, the box
+priority is retained because other selected coordinates can still move in joint sizing.
+This is search guidance, never a constraint or acceptance change. The scarcity stage
+has a separate `rescue_trials` allowance for its rounded seed and shortlisted supports;
+complete replacement sweeps are counted separately in `qp_counts.exchange_sweep`.
+An improvement can trigger an early restart in that stage. Failure or exhaustion
+cannot certify optimality. `mandatory_state_trials` bounds
 compulsory holding alternatives. `objective_tolerance` controls strictly improving acceptance.
 `qp_solver` defaults to CLARABEL. `compute_bound` optionally requests separately
 timed relaxation certificates. State truncation and exhausted search are reported
 explicitly. They never establish infeasibility or authorise a wider corridor.
+
+The scarcity stage then runs complete replacement sweeps from its completed
+incumbent and unrestricted guided seed. It also tries up to `rescue_trials`
+selected names in identifier order, pinning one name at its no-ticket state only
+in a temporary continuous guidance model. Each distinct rounded support gets up
+to `improvement_passes` sweeps. If the seed cannot be sized, the first sweep still
+tries its one-for-one neighbours. Every executable candidate uses the original
+problem; the excluded name can re-enter. No Exact incumbent guides this search.
+Each branch retains the earlier completed incumbent unless it strictly improves
+it. A per-call support cache reuses only original-domain sizing outcomes over
+the unchanged mandatory assignments. Separate branch visitation permits cached
+audited supports as intermediate points. Failed guidance or sizing cannot erase
+an audited incumbent. `restarts`, `qp_counts.restart`, `qp_counts.restart_guidance`
+and `sizing_cache_hits` expose this work and its failure paths.
+
+An additional bounded phase conditions on both inclusion and exclusion of ticket
+states in the union of the completed incumbent and unrestricted relaxed seed.
+This supplies alternatives even when no optional incumbent exists and the rounded
+seed is infeasible. Decisions use stable instrument/state order, inclusion before
+exclusion, with at most `rescue_trials` additional continuous solves. A decision
+adds a selector equality only to that guidance graph; its objective, original
+rows and numerical tolerances remain unchanged. Rounding respects the decision.
+The temporary condition does not pass to executable sizing or its audit.
+
+Each distinct seed receives the existing replacement restart, with at most
+`improvement_passes` sweeps. A final restart revisits the completed incumbent.
+Earlier audited results remain retained, and the same per-call sizing cache
+avoids repeated QPs. `conditional_guidance`, `conditional_restarts` and
+`qp_counts.conditional_guidance` report every attempt and its outcome. This is a
+finite heuristic neighbourhood, not recursive branch-and-bound or an optimality
+certificate. Its extra work must be included in comparative timings.
+
+A subsequent scarce-ticket phase examines up to `rescue_trials ** 2` additional
+coordinated supports (576 by default), shared across at most `improvement_passes`
+anchors. It retains the complete single-replacement sweep at each anchor and
+skips all cached supports. A conservative interval screen rejects only supports
+that cannot satisfy funding or a group row. Selected coordinates and cash span
+their original intervals; mandatory coordinates span all their possible states.
+Signed group coefficients use the appropriate lower or upper endpoint. Existing
+coordinate and row audit allowances make this an outer screen; survivors still
+require the unchanged sizing model and audit. No executable constraint is widened.
+
+This wider search addresses a limitation of slice priorities: they hold retained
+positions fixed, while joint sizing can resize them. A low priority therefore
+cannot prove that a pair replacement is unhelpful. `completion_passes`,
+`completion_screened` and `completion_trial_limit` expose the additional work.
+The finite budget can still truncate the neighbourhood; it does not certify
+global optimality. The one-anchor ablation can also stop before a useful sequence
+of pair admissions and replacements is completed.
+
+Search then revisits up to `rescue_trials` audited alternatives already in the
+sizing cache, ordered by objective and instrument/state identifiers. Each seeds
+a separate bounded replacement branch, allowing an inferior intermediate support
+without discarding the incumbent. At the first strict improvement, one additional
+pair-completion phase uses the same squared trial budget and anchor limit, then
+search stops. `bridge_restarts` records seed, incumbent and completed objective
+values; `bridge_completion_passes` records the extra completion work. No reference
+portfolio enters this search. This can reach a three-position replacement missed
+by improving-only descent, but remains a finite heuristic.
 
 In a fixed-state sizing QP, substitute the fixed coordinates and funding first,
 then omit a bound/group interval only if all remaining coefficients are exactly
@@ -237,8 +314,22 @@ computation are separate work and appear in diagnostic counts and timings.
 With s alternative state changes, coordinated scoring enumerates O(s squared)
 pairs and retains only the configured number of best priorities. Dense pair
 curvatures use constant work; exact factor inputs use factor products. The
-shortlist bounds QP calls, not total scoring work. Diagnostics separately report
-coordinated candidates, truncation and QP counts.
+shortlist bounds its QP calls, not total scoring work. With B selected names, the
+scarcity extension can enumerate O(B squared s squared) pair replacements per anchor,
+and each complete single-replacement sweep tries at most B s supports. It also solves
+one unrestricted and at most min(B, `rescue_trials`) restricted continuous
+perspective models. Up to 2 + min(B, `rescue_trials`) distinct starting branches
+each add at most `improvement_passes` sweeps of B s supports; cached supports
+avoid repeated sizing. These costs are additional to the original search;
+the two shortlists each have their own 24-support default allowance. Diagnostics
+also report the screened completion phase, whose coordinated budget is 576 supports
+by default plus at most three complete single-replacement sweeps. Diagnostics
+also retain up to 24 cached-alternative restart branches, each with at most three
+replacement sweeps, and at most one further completion phase after improvement.
+Every restart and completion call contributes to the reported total runtime.
+Diagnostics separately report `coordinated_passes`, `scarce_passes`, seed trials, guidance status,
+candidate counts, truncation and all sizing counts. No such extension runs when
+the optional candidate count does not exceed the allowance.
 
 `ExecutionResult` contains immutable accepted `weights`, delivery `status` and
 `diagnostics`. Diagnostics record audits, unique mandatory/discretionary tickets,
@@ -252,6 +343,24 @@ The Exact wrapper accepts `formulation`, `perspective`, `mip_start`,
 `time_limit_s`, `threads`, `solver` and `gap_rel`. The default backend is MOSEK.
 The optional `optimalportfolios[exact]` extra supplies its Python interface.
 Running MOSEK also requires an appropriate solver licence.
+
+The qualified native adapter sets integer feasibility to `1e-9`. The earlier
+`1e-4` setting could terminate with a false optimal status and a bound above a
+known feasible portfolio on an overlapping-group instance. This tighter internal
+setting changes neither the compiled mathematical constraints nor the original-
+unit audit. That change alone left smaller inconsistencies. Integer models now
+write the quadratic cone in percentage-point displacement coordinates, an
+algebraically identical quadratic with better scaling. Linear rows and native
+start mapping still use basis points. Fixed-state sizing and continuous
+relaxation graphs are unchanged. Integer distance, relative/absolute MIP gap and
+conic controls remain unchanged. The full-weight fixed-support regression
+verifies the feasible witness independently of the funded-coordinate graph.
+
+`native_bound_check` records consistency with the delivered incumbent using the
+existing default objective comparison scale (`1e-12` variance). It preserves the
+raw native bound and status; it never clips a bound to an incumbent or promotes
+a consistent diagnostic to an optimality certificate. Cross-arm comparisons
+also check native bounds against every independently audited delivered witness.
 Missing optional solvers are reported while retaining the audited common incumbent.
 The qualified native start adapter is specific to CVXPY 1.9.2. It fixes original
 weights and selectors in a continuous conic lift, supplies every native variable,
@@ -322,3 +431,27 @@ tracking-error improvement. Native-bound certification remains separate work.
 Importing this namespace does not replace production entry points or defaults.
 Frozen paper bundles retain their own source and wheel, so replication does not
 depend on the current checkout or a sibling development worktree.
+
+## Matched MIQP primary and audited V2 fallback
+
+`MatchedExecutionPolicyConfig`, `wrapper_matched_execution` and
+`solve_matched_execution_portfolio` provide an explicit `matched_miqp_v2` policy.
+The production adapter resolves workbook inputs and prepares the common domain
+once. Matched CORRIDOR MIQP uses that domain first; V2 is invoked lazily on the
+same prepared problem when the primary cannot supply an acceptable native
+candidate. This policy never invokes V1. Existing standalone V2 and operational
+MIQP APIs retain their separate behavior.
+
+The controls `primary_time_limit_s`, `primary_threads` and `primary_gap_rel`
+default to 10 seconds, one thread and 1e-4 respectively. The relative gap is
+measured in original tracking variance, including the canonical objective
+constant. A time limit does not by itself reject a valid audited native
+incumbent or certify optimality. Missing native witnesses, solver and callback
+errors, inconsistent bounds and independently invalid weights trigger fallback.
+A V2 fallback that fails the unchanged audit is rejected; genuine compulsory
+repairs and infeasible mandates remain visible. `allow_v1_fallback` must be false.
+
+Diagnostics retain the primary status, native gap and bound, independent audits,
+search time, delivered engine and fallback reason. A successful primary delivery
+has no fallback attribution. Both the compiled-domain and original hard
+constraint audits must pass before a production portfolio is returned.

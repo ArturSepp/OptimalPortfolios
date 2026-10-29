@@ -1,0 +1,452 @@
+{
+  "specification": {
+    "schema": "ranked-joint-miqp-1",
+    "grid": {
+      "optional_assets": [
+        24,
+        72,
+        144
+      ],
+      "budget": [
+        2,
+        6
+      ],
+      "groups": [
+        "disjoint",
+        "overlap"
+      ],
+      "regime": [
+        "tight",
+        "wide"
+      ],
+      "seed": [
+        111001
+      ]
+    },
+    "tiny": {
+      "optional_assets": 8,
+      "budget": 2,
+      "groups": [
+        "disjoint",
+        "overlap"
+      ],
+      "regime": "tight",
+      "seed": [
+        112001
+      ]
+    },
+    "regimes": {
+      "tight": {
+        "group_half_width": 0.001,
+        "cash_half_width": 0.0005
+      },
+      "wide": {
+        "group_half_width": 0.01,
+        "cash_lower": 0.005,
+        "cash_upper": 0.5
+      }
+    },
+    "minimum_ticket": 0.005,
+    "current_minimum": 0.006,
+    "holding_floor": 0.0025,
+    "audit_tolerance": 1e-07,
+    "zero_tolerance": 1e-08,
+    "objective_tolerance": 1e-12,
+    "descriptive_te_equality_bp": 0.0001,
+    "preparation_seconds": 30.0,
+    "exact_seconds": [
+      10.0,
+      60.0,
+      600.0
+    ],
+    "exact_threads": 1,
+    "exact_gap_rel": 0.0001,
+    "domain": "Identical prepared CORRIDOR states; full joint refers to simultaneous state and size optimization, not an expanded FULL domain.",
+    "generator": "Unchanged public breadth generator: heterogeneous positive holdings, two forced exits, correlated factor covariance with positive residuals, sector and optional overlapping fractional groups. The larger dimension retains the same minimum trade and holding thresholds. No private data.",
+    "timing": "Serial calls with one native thread. V2 runs once. Reverse budget order on odd cases and alternate common-base/V2-started order within budgets. Each call is fresh; no incumbent passes between budgets. Preparation is included in every E2E cost; V2 generation is charged to each V2-started call. Native work may overrun an allowance.",
+    "certificates": "Native statuses and MIP bounds are diagnostics. Existing plain/perspective supporting-plane LP dual bounds with residual correction supply separate conservative numerical bounds. Independent exhaustive full-weight QPs on two tiny cases retain unresolved supports. No primal relaxation is reported as a bound.",
+    "decision_rule": "Report every outcome with no search, policy or tolerance tuning. This prospective synthetic grid is not independent external market validation or an own-holdings return study. No speed advantage is assumed."
+  },
+  "cases": [
+    {
+      "optional_assets": 24,
+      "budget": 2,
+      "groups": "disjoint",
+      "regime": "tight",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_000",
+      "input_sha256": "c70ee4432b50f3463c84cfe94d05e2741492b0799134491277874004f8ffa600",
+      "fingerprint": "bfcc526ce7881fa86e446036f761571f651f17c7abffbd903ac3a77ce8d183f9"
+    },
+    {
+      "optional_assets": 24,
+      "budget": 2,
+      "groups": "disjoint",
+      "regime": "wide",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_001",
+      "input_sha256": "b686518678e0d97862488f6239d220efb33bc1eabd1639219ace11b2fa6c5a86",
+      "fingerprint": "3b171f6af71f6454d386c6052846f4838cd4c453f67d80181d919ed50831b67a"
+    },
+    {
+      "optional_assets": 24,
+      "budget": 2,
+      "groups": "overlap",
+      "regime": "tight",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_002",
+      "input_sha256": "61f468c0295c480e57b9b97ebb7a0024721aa6b102b03ff728aa60cf5474a372",
+      "fingerprint": "a52875ccb60f82314a61f68d0f610643da236e334868547f2657c032dbfd231d"
+    },
+    {
+      "optional_assets": 24,
+      "budget": 2,
+      "groups": "overlap",
+      "regime": "wide",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_003",
+      "input_sha256": "b53c9db59d8d7d99be08e78c0d7963a0d1796f4becaac02f8423f94e75ac80e5",
+      "fingerprint": "8b6a3c0c7a49154a65e62667c305076a07958ed253d88715b5d68f984257bebe"
+    },
+    {
+      "optional_assets": 24,
+      "budget": 6,
+      "groups": "disjoint",
+      "regime": "tight",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_004",
+      "input_sha256": "c70ee4432b50f3463c84cfe94d05e2741492b0799134491277874004f8ffa600",
+      "fingerprint": "fe67ad2d8970efcdd24554775b608f40054ff8c78a6e4150b4e2a78b84d06747"
+    },
+    {
+      "optional_assets": 24,
+      "budget": 6,
+      "groups": "disjoint",
+      "regime": "wide",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_005",
+      "input_sha256": "b686518678e0d97862488f6239d220efb33bc1eabd1639219ace11b2fa6c5a86",
+      "fingerprint": "ef5ef8b42370b56c4b53a620c7cb1fce9c717f2a315f1483a957fb15dd2e5527"
+    },
+    {
+      "optional_assets": 24,
+      "budget": 6,
+      "groups": "overlap",
+      "regime": "tight",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_006",
+      "input_sha256": "61f468c0295c480e57b9b97ebb7a0024721aa6b102b03ff728aa60cf5474a372",
+      "fingerprint": "282ed12a6625ec4fe2d3278ecfa4f31175561d3abcc3b439fd3f82d6ff11f672"
+    },
+    {
+      "optional_assets": 24,
+      "budget": 6,
+      "groups": "overlap",
+      "regime": "wide",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_007",
+      "input_sha256": "b53c9db59d8d7d99be08e78c0d7963a0d1796f4becaac02f8423f94e75ac80e5",
+      "fingerprint": "881a3f290d016adb24a6b2829c82426489567dc2e8943d485c36ca2360d59f39"
+    },
+    {
+      "optional_assets": 72,
+      "budget": 2,
+      "groups": "disjoint",
+      "regime": "tight",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_008",
+      "input_sha256": "5ecfd42a6b6c879332beefb9ade33ffa02b556c534050623978582839fac1c31",
+      "fingerprint": "4783460077e8d9cd07eacdea73b8b64516454ff2474c58e62176101d884e78b0"
+    },
+    {
+      "optional_assets": 72,
+      "budget": 2,
+      "groups": "disjoint",
+      "regime": "wide",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_009",
+      "input_sha256": "dd054d5627dd2de6c0911b8bd836ce3868990340867a774edbbaecade5ce91c0",
+      "fingerprint": "b9f79e45719f90ed46ced1a06da5ca0cbc0fd8e51b2a9f847a507837945b4d08"
+    },
+    {
+      "optional_assets": 72,
+      "budget": 2,
+      "groups": "overlap",
+      "regime": "tight",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_010",
+      "input_sha256": "199e40af65deedc62cced7143231dcc7d1cd020310e2a9ccba711a9ee60bc157",
+      "fingerprint": "6e9850f474b58a9d9bf1925c49340f897998415dba55bda640e665ac3c05e0b8"
+    },
+    {
+      "optional_assets": 72,
+      "budget": 2,
+      "groups": "overlap",
+      "regime": "wide",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_011",
+      "input_sha256": "7e876330407c27b953acd79fef6cb592ac9b998c034807bffb221c1ff44928c2",
+      "fingerprint": "58999dae7bedf66c60a3eb226b6d09e136aaf284089607c1ddaf8d42dad75b65"
+    },
+    {
+      "optional_assets": 72,
+      "budget": 6,
+      "groups": "disjoint",
+      "regime": "tight",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_012",
+      "input_sha256": "5ecfd42a6b6c879332beefb9ade33ffa02b556c534050623978582839fac1c31",
+      "fingerprint": "ff49283db2d5e937c9d94b7c2487885f14303bd49c1fc2b985bbdf9b97d36fb5"
+    },
+    {
+      "optional_assets": 72,
+      "budget": 6,
+      "groups": "disjoint",
+      "regime": "wide",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_013",
+      "input_sha256": "dd054d5627dd2de6c0911b8bd836ce3868990340867a774edbbaecade5ce91c0",
+      "fingerprint": "569a873f1ab9c6f194a2aa92b793578ac52917a8e15b479623583e4e5ec423e1"
+    },
+    {
+      "optional_assets": 72,
+      "budget": 6,
+      "groups": "overlap",
+      "regime": "tight",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_014",
+      "input_sha256": "199e40af65deedc62cced7143231dcc7d1cd020310e2a9ccba711a9ee60bc157",
+      "fingerprint": "ffb466300a7e1e3d90d0a367165fed8ce9e4c34f31aaa871aaa8a6f4482361f5"
+    },
+    {
+      "optional_assets": 72,
+      "budget": 6,
+      "groups": "overlap",
+      "regime": "wide",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_015",
+      "input_sha256": "7e876330407c27b953acd79fef6cb592ac9b998c034807bffb221c1ff44928c2",
+      "fingerprint": "fe9090df72c7b2790308fcbf39c06a1c60b41b458b508f8dd5e40cc634ee8c8a"
+    },
+    {
+      "optional_assets": 144,
+      "budget": 2,
+      "groups": "disjoint",
+      "regime": "tight",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_016",
+      "input_sha256": "81004540a9e85ca99be43c8a4c5b2b1bb87cabc73eb4a210bd7645d60c715661",
+      "fingerprint": "02bcbd68985c604478de541750f46e8d2180d7105aa6757bc7759a6a0d2bbed3"
+    },
+    {
+      "optional_assets": 144,
+      "budget": 2,
+      "groups": "disjoint",
+      "regime": "wide",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_017",
+      "input_sha256": "0e609867db2625d0c60b68c31f49770bdde9922dee2e44315c8773674031bb68",
+      "fingerprint": "13ab63a89241a9ae1a58093610582337de2c937c459b0d2c712a1bd080f40746"
+    },
+    {
+      "optional_assets": 144,
+      "budget": 2,
+      "groups": "overlap",
+      "regime": "tight",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_018",
+      "input_sha256": "9ea0eeb760d7a66d7230537377bbf98784d4055de7a70a19ab57c6e631f1ab41",
+      "fingerprint": "cb8c191cb18a0a63d9708c11409a932f3b2e2117de45b1e435e4f2267621766c"
+    },
+    {
+      "optional_assets": 144,
+      "budget": 2,
+      "groups": "overlap",
+      "regime": "wide",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_019",
+      "input_sha256": "8b1406fd76dd4c4c132bb0b41d50c381d10d63239a4e79c54275ebae535255f0",
+      "fingerprint": "191d69a150ab859be7e7f8a34510e2dff9773f1e7fde602350d7c6ffde8268c6"
+    },
+    {
+      "optional_assets": 144,
+      "budget": 6,
+      "groups": "disjoint",
+      "regime": "tight",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_020",
+      "input_sha256": "81004540a9e85ca99be43c8a4c5b2b1bb87cabc73eb4a210bd7645d60c715661",
+      "fingerprint": "b3456a6403e05a7ec95d763cebb9f9b6393fa10d29f5baac8ccd8ce8a67e3aee"
+    },
+    {
+      "optional_assets": 144,
+      "budget": 6,
+      "groups": "disjoint",
+      "regime": "wide",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_021",
+      "input_sha256": "0e609867db2625d0c60b68c31f49770bdde9922dee2e44315c8773674031bb68",
+      "fingerprint": "6c713b41373e17b770101ca4f730d29bffc144dbabe98f1e13262c436f809735"
+    },
+    {
+      "optional_assets": 144,
+      "budget": 6,
+      "groups": "overlap",
+      "regime": "tight",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_022",
+      "input_sha256": "9ea0eeb760d7a66d7230537377bbf98784d4055de7a70a19ab57c6e631f1ab41",
+      "fingerprint": "6958bb5fbf4488faeded5ffd7cc0281a9b801707243c631b53c372bc4eb983f8"
+    },
+    {
+      "optional_assets": 144,
+      "budget": 6,
+      "groups": "overlap",
+      "regime": "wide",
+      "seed": 111001,
+      "sample": "broad",
+      "id": "joint_023",
+      "input_sha256": "8b1406fd76dd4c4c132bb0b41d50c381d10d63239a4e79c54275ebae535255f0",
+      "fingerprint": "463b61527697709e31730e5b7ad0d9fb5c5896f8e6610351a02106f4e464f74e"
+    },
+    {
+      "optional_assets": 8,
+      "budget": 2,
+      "groups": "disjoint",
+      "regime": "tight",
+      "seed": 112001,
+      "sample": "tiny",
+      "id": "joint_024",
+      "input_sha256": "68fa62d9ccb12971dee3b91f10a9eff0e219aa6c32762066651b5be68354512d",
+      "fingerprint": "0f9aa5b2fff669e43930ef4dab771ea033857f76ba84fed75aafbcc1c1e9a482"
+    },
+    {
+      "optional_assets": 8,
+      "budget": 2,
+      "groups": "overlap",
+      "regime": "tight",
+      "seed": 112001,
+      "sample": "tiny",
+      "id": "joint_025",
+      "input_sha256": "850f24e4ea49eebfb781a4d60328e40a9fd81841f22e49000af4b455a81358e4",
+      "fingerprint": "506d6c6fcfc97326b12964f071aa5d3ab255f763c65ecc9c22d411d0e534f298"
+    }
+  ],
+  "methods": [
+    "Ranked",
+    "JointBase10",
+    "JointRanked10",
+    "JointBase60",
+    "JointRanked60",
+    "JointBase600",
+    "JointRanked600"
+  ],
+  "frozen_utc": "2026-10-28T19:40:38.402302+00:00",
+  "specification_sha256": "1ff657c0e45dbc52b41aea83d197ef9592d96b351a97ee3ac3f2c5a325945c38",
+  "ranked_config": {
+    "drop": true,
+    "exchange": true,
+    "compute_bound": false,
+    "rescue_trials": 24,
+    "mandatory_state_trials": 32,
+    "objective_tolerance": 1e-12,
+    "qp_solver": "CLARABEL",
+    "improvement_passes": 3
+  },
+  "python": "3.12.14",
+  "versions": {
+    "optimalportfolios": "9.1.5",
+    "qis": "5.44.4",
+    "numpy": "2.5.2",
+    "pandas": "3.0.5",
+    "scipy": "1.18.1",
+    "cvxpy": "1.9.2",
+    "Mosek": "11.2.3",
+    "clarabel": "0.11.1"
+  },
+  "source_sha256": {
+    "execution/__init__.py": "af704f08e70642c3bc4956a4b93643270b86e654a2533ecb954797102e104a87",
+    "execution/_audited_cutoff_repair.py": "63ddaf5e0aaa5f987d68c3ad10dbc990a8bbbf4f095c94acd22ef1394fb2530a",
+    "execution/_budget.py": "9ae82c0e03581e5118ae8a534e1f8db2963353f6547b1211adc414391ec1f2b0",
+    "execution/_common/__init__.py": "99ea992810985dd9ea34a362804c0e29cbab98e9c8b7008974be7017d21fe902",
+    "execution/_common/config.py": "859dd7262200b16c52141219d0070512c419ad6988b6f13a1adeb496287b176d",
+    "execution/_common/model.py": "4d1bee2444d233d41508a37eef88d18b279467df2864e3a9791c044e73b0293c",
+    "execution/_constraint_scope.py": "b0f28e5e7735d109967b0bef59ecb096fd78af9b6cc30f0b3b75416fc397f098",
+    "execution/_cutoff_repair.py": "9287f8ab34550e59200354e298b187bdf844fac99b45fbb5dc7f38d97da44352",
+    "execution/_monthly_target.py": "fde018f07c2ad92fccb7fc9c474f7cd252078f57d5b00a44ef130878c08d4283",
+    "execution/_projection_cache.py": "b04df4cb95fc0f0329c580db9c7a87415a7c8db9244b0a9697f8b5eaa23d7814",
+    "execution/_return_gate.py": "fdb464646988ebd76f7aef554eb17506797499bb274121b0f5324ee3ea388361",
+    "execution/_swaps.py": "c4402492a424c5c68b292b3f38f5d91094a5db99dd58ab640a904f4f45084b6f",
+    "execution/api.py": "c10369346b12c1faa42b17ebab62cb9ea814f92cc08da0b73e016986b8785e13",
+    "execution/branches.py": "7fd615746bbcc4581b15641421978c288740454ed9ea6eeee475f98b114ee6b2",
+    "execution/feasibility.py": "8008ee98749e1ac14f082f72eda15b81cde4909f6b5478cfac2f19cdebdfce47",
+    "execution/guarded.py": "413d68eb95f48879d30f2f4dd40e7928b7debeaba20c37349803dc0c39568859",
+    "execution/improvement.py": "e07855788cc836fbdc739ae0e1bddbb7026726bc979233eaea819e685ca9fd80",
+    "execution/MIQP/__init__.py": "b92352312b347d16a96dfb0f0672eb08025663902e3b24d54e39fd490f22adb1",
+    "execution/MIQP/solver.py": "4b14834661188502c89fc6137e466867bfc6ba3275b8d09c803eabcd650eb666",
+    "execution/ranking.py": "137277c05ac5f3de225935e792c2aefd1ec3924f7ca855e71bc63787e67e1d7c",
+    "execution/schema.py": "f9a8c0ef0ff4584a3385ef9301af84d2b73f0b9cde8ac5c8ac4aa63a8f0bb0fe",
+    "execution/solver.py": "89d7b9b69279d6da2b08603c873593751302adecf51088f234d3ae7b1acbd4bc",
+    "execution/types.py": "8061a106e88ca9afffab6192d6b604eb9277c1791b9994d9f5e3110e06b766ed",
+    "execution/v1/__init__.py": "5f6e3d0d1a5d61920e8f8f026e1811808cfba522b193c006790fef35f0b61b72",
+    "execution/v1/_audited_cutoff_repair.py": "f7e7b615727ced73f53a863def4304fe628ccc3d78a138351666315fb629ef4f",
+    "execution/v1/_budget.py": "7b90273653cfe961f5e645b835724d8b02bb31d42b0e393e3d1dae9cc821cbed",
+    "execution/v1/_constraint_scope.py": "2489f93b0a990cd18ea99c5fa146429d7f59b700faffbf5e4dfea40fed8e1497",
+    "execution/v1/_cutoff_repair.py": "be1f339660fe8a18173f8ed541e9b01efc02ea3ce2a02f017a57eeae020ddfad",
+    "execution/v1/_monthly_target.py": "a9cec842945abb4fb1dbcf3d58243db9aa567c070ea72b59b161d056ac0e35fd",
+    "execution/v1/_projection_cache.py": "ebc346f1886e6eccf1eb5ed2a894f7c98fecbba2a8643991096ec3de37c22531",
+    "execution/v1/_return_gate.py": "a409a391f10de703ca30e5eb4578b9207f2ec69ac90f5fd7fd74338a560f9614",
+    "execution/v1/_swaps.py": "4f7075a5aa3496e06fa77459ad19faea9aee8b4ad4d87a5dd0db59fb39e6f7d8",
+    "execution/v1/api.py": "cfff0e335e7f10806be0a26af4c5e5e5d5e777c2183c736b563787f73cd3424d",
+    "execution/v1/branches.py": "436cdb55d6953c081b090e61fa6ce38993de5fc8307d317f4eeeaba2c40713b6",
+    "execution/v1/feasibility.py": "530aa59e1172804e7ea6fb25722233e586caff1dee3fb843f5fd5e621bc9989d",
+    "execution/v1/guarded.py": "8a1e560c8a1175afe8198b4de271d365c0e208e676793af6ad7bd2e0815f14a4",
+    "execution/v1/improvement.py": "4ea9a84cbd81ff0438d8dbdc09fdaafb505dffb5b0f1fa204a67aeb371b4c653",
+    "execution/v1/orchestration.py": "eb6e1873cde8c23d596bb2484061d3171458df917f7b1bce10894419d73418dc",
+    "execution/v1/policy.py": "c85619cfc5db1721640649644c4fa23ff4fd95811b2802470b42caaaa8967e83",
+    "execution/v1/ranking.py": "35f451f2afc954af79f87478fbb2c2263a897e84313578ed9a25141ee30e976f",
+    "execution/v1/risk_budget_ranker.py": "75e2c09995aa35ce288bdd407087209e0a6454a65026d64184fef7be6a363f55",
+    "execution/v1/schema.py": "b8eb426dbb19de0c17081d92c3394f0026b3a07064ea7ed21873316fed87a301",
+    "execution/v1/solver.py": "e7216bd1933f1f5058a40acf5ef71a03e0684ea0077674f23eec4f0c8b3d3a63",
+    "execution/v1/types.py": "ecf4166bf5d90a57aac6e338d175ebf80840946f98fe7fdd84c5f42a6b361a12",
+    "execution/v2/__init__.py": "0f1a45905310ea75737eab9e09e1f83c36da095e454695abbd720bf977240b6d",
+    "execution/v2/_sizing.py": "60f2509082cec9e0f08dd8b2bb1b2908afa2bee651e9e78b22193a0a062e0d9c",
+    "execution/v2/adapter.py": "8a9b080b445283a657076b43a049d1d138ab6b8b30f5e8b0d7c1232d9425a571",
+    "execution/v2/bounds.py": "e51cec9d40c758acb6729a4ddace9fb783573f7319a9c8e2c232389df085ac95",
+    "execution/v2/domain.py": "75c914c1a926e36aa2f8d2963fdd21a1b52383989c42c149a64bdcce70b27f71",
+    "execution/v2/exact.py": "009bf47a39ba4a99720e12afef3d568fe6c09f33d8f324d984594246376d8580",
+    "execution/v2/model.py": "00662a60a3855667eab0eb0d50a5305802c219951a9d93fd7fcde0c2f98750c9",
+    "execution/v2/preparation.py": "e95271ca0356b84b0c0e34b428571e388b320a20aac9b26e061f2488edb2a02d",
+    "execution/v2/production.py": "c763a17df61553522423574f2d903f48c632185de7a4c426dfcf6c0cd9919a4f",
+    "execution/v2/ranked.py": "50027ccf9c6a495926c69815f9d3f5bb1d2cfa65a7ba7ea4ac4ec3f4e060528d",
+    "execution/v2/types.py": "9db80c60429acac2c50f4e240a87d42119413f8e98f78af172066b78a4ea97c9"
+  },
+  "replication_sha256": {
+    "joint.py": "37b7e9807818960e65338cd6accd2b67d4df33f612bfafa2f248a486c5bc835a",
+    "breadth.py": "a7db6f527823d58a7b6f326d12fd98c749e7e636445ba1e11b3d8c9de60f1c1a",
+    "benchmark.py": "90c97a45edc4cdfa09f90e6d585cefa4504c20115333218dc736612c8e4c005b"
+  }
+}

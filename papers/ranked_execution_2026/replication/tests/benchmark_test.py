@@ -120,10 +120,14 @@ def test_reporting_retains_failures_and_pair_denominators():
             te_bp=1. if m == 'Ranked' else 2.,
             audit=dict(passed=True, tickets=2, turnover=.2), diagnostics={}) for m in METHODS})
     failed = dict(id='case_0002', preparation={}, preparation_wall_seconds=.3, methods={})
+    # This bound is below Exact's own 2-bp delivery but above Ranked's 1-bp witness.
+    valid['methods']['ExactBase']['diagnostics'].update(native_bound=2e-8, native_status='optimal')
     summary = aggregate([valid, failed])
     assert (summary['cases'], summary['prepared'], summary['common']) == (2, 1, 1)
     assert summary['preparation_failures'] == ['case_0002']
     assert summary['comparisons']['Greedy']['ranked_lower'] == 1
+    assert len(summary['arms']['ExactBase']['native_bound_above_best']) == 1
+    assert summary['arms']['ExactBase']['native_bound_above_best'][0]['best_delivered_variance'] == 1e-8
     assert 'All 2 decisions were attempted' in manuscript_results(summary)
 
 

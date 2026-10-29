@@ -1,0 +1,29 @@
+{
+  "schema": "ranked-breadth-1",
+  "grid": {
+    "optional_assets": [24, 72],
+    "budget": [2, 4],
+    "groups": ["disjoint", "overlap"],
+    "regime": ["tight", "wide"],
+    "seed": [101001, 101002]
+  },
+  "tiny": {"optional_assets": 8, "budget": 2, "groups": ["disjoint", "overlap"], "regime": "tight", "seed": [102001, 102002]},
+  "regimes": {"tight": {"group_half_width": 0.001, "cash_half_width": 0.0005}, "wide": {"group_half_width": 0.01, "cash_lower": 0.005, "cash_upper": 0.5}},
+  "minimum_ticket": 0.005,
+  "current_minimum": 0.006,
+  "holding_floor": 0.0025,
+  "audit_tolerance": 1e-7,
+  "zero_tolerance": 1e-8,
+  "objective_tolerance": 1e-12,
+  "descriptive_te_equality_bp": 0.0001,
+  "preparation_seconds": 30.0,
+  "exact_seconds": [10.0, 60.0],
+  "exact_threads": 1,
+  "exact_gap_rel": 0.0001,
+  "methods": ["Ranked", "OneAnchor", "ExactBase10", "ExactBase60", "ExactFull60", "ExactOne60"],
+  "generator": "Heterogeneous positive current holdings, lognormal relative target tilts, two forced exits, correlated market/sector/factor covariance with positive residuals, three sector rows and optionally three overlapping fractional rows. Bands centred on the feasible base. No private inputs.",
+  "decision_rule": "Keep current full-search defaults unless OneAnchor has no disadvantage above the existing descriptive band, no extra audit/solver failures, and lower paired median time on the new broad cases. Passing this sample is only a candidate for separate production qualification, not permission to switch production.",
+  "failure_policy": "Record every case and arm, including failures. Freeze source and design before the first primary solve. Do not retune on these new outcomes.",
+  "timing": "Serial calls; reverse heuristic and independent Exact orders on odd case indices; reverse started Exact order too. Preparation and start generation charged separately. Native work may overrun requested limits. No equal-wall-time claim.",
+  "certificates": "Use existing plain/perspective supporting-plane LP dual bounds with box residual correction and floating-point guard. Native MIP bounds remain diagnostic. Exhaustive tiny-case full-weight QPs are numerical reference solutions, not exact-arithmetic certificates."
+}

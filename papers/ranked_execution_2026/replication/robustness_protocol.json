@@ -1,0 +1,36 @@
+{
+  "schema": "ranked-robustness-1",
+  "seed": 41001,
+  "sensitivity": {
+    "case_count": 24,
+    "selection": "Evenly spaced integer positions, including both endpoints, in the verified 219-case public manifest",
+    "target_half_l1": [0.001, 0.005],
+    "log_volatility_shock": [0.01, 0.05],
+    "variants": ["target", "covariance", "joint"],
+    "domains": ["fixed", "rebuilt_corridor"],
+    "target_rule": "Positive noncash target holdings tilted by a seeded bounded vector, renormalised to unchanged noncash mass, then interpolated to the requested half-L1 change. Zeros and cash unchanged.",
+    "covariance_rule": "D Sigma D, D_ii=exp(amplitude*seeded uniform[-1,1]); no clipping or PSD repair",
+    "domain_rule": "Fixed uses baseline common preparation. Rebuilt retains raw full bounds, mandatory lifecycle declarations, cash bounds and group limits, but rebuilds optional corridors between base and perturbed target, intersects the unchanged full bounds, then repeats common preparation.",
+    "scope": "Conditional supplied-input sensitivity; no upstream re-estimation, changed eligibility, target zero crossing or own-book returns. Mandatory counts are observed, not reclassified from missing lifecycle inputs."
+  },
+  "scarcity": {
+    "optional_assets": [12, 36],
+    "discretionary_allowance": [3, 6],
+    "group_half_width": [0.005, 0.08],
+    "cash_band": ["narrow", "wide"],
+    "seeds": [41001, 41002, 51001, 51002],
+    "mandatory_exits": 2,
+    "minimum_ticket": 0.005,
+    "holding_floor": 0.0025,
+    "methods": ["Ranked", "Greedy", "OneAnchor", "ExactBase", "ExactRanked"]
+  },
+  "preparation_seconds": 30.0,
+  "exact_seconds": 10.0,
+  "exact_threads": 1,
+  "exact_gap_rel": 0.0001,
+  "audit_tolerance": 1e-7,
+  "zero_tolerance": 1e-8,
+  "descriptive_te_equality_bp": 0.0001,
+  "failure_policy": "Retain every preparation, solver and independent-audit failure; do not tune the grid, tolerances or algorithm after observing the experiment.",
+  "timing": "Serial calls; common preparation separately measured; ExactRanked end-to-end includes Ranked start generation."
+}

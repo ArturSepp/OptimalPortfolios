@@ -1,0 +1,1572 @@
+{
+  "protocol_sha256": "443ffcd805b26cef471d0d129ca3c2cd03080d7268dc133c65e24b5119b9593b",
+  "record_sha256": {
+    "complete.json": "5aa86fd4eb55d753103367076eed04aae215493b63a4365fc49152585e8447d2",
+    "protocol.json": "443ffcd805b26cef471d0d129ca3c2cd03080d7268dc133c65e24b5119b9593b",
+    "scarcity_000.json": "cd62d20b4844972495b82ce69d78fd1d5fc0d72304b7130941ff0b4e25b95839",
+    "scarcity_001.json": "86e01711c9bf2c07d067e16e651f00f49d6b4ea39adc61cd469437dcbdea714e",
+    "scarcity_002.json": "d955480222a279c9634cffc56f49056846ea3feaa24cbb5efa78f27d52fac518",
+    "scarcity_003.json": "dd47e375c25404cf8d96e30a4bb767b59b27208ab0b447f858b59f5b02fce296",
+    "scarcity_004.json": "0bdd4cd0a78b0dc030f744d09e42271e67c8368bca31eaebacac1ea1b8549cfa",
+    "scarcity_005.json": "0513defc6448e9cc4b75b76adbe93326f7a28422ced7fb78a5d23e21e2c492e8",
+    "scarcity_006.json": "d6268269fe7c5298e0d588578ec6a835e989a140350ccb6ed35fd4205cb758d5",
+    "scarcity_007.json": "2898e7e5f1473dd4e9a1ecbba30df8c350c640f74ecd7fbe929fcdfa74a6d0cf",
+    "scarcity_008.json": "6e3941d1fa7fa2409289439d8f08c66019fd077e2a30bc0311d29c945778eeb6",
+    "scarcity_009.json": "db706fbeb065111e5fb417a18fe34e1fcbc997e49bb5f1f7f57e3acf8073d331",
+    "scarcity_010.json": "e66092169921a5906cbe000d3637381d0b2490e7c8a4f09f8a4abe2064f283b8",
+    "scarcity_011.json": "5534459e86cfbd44fb807c0ee035816cfa05beaaf5528056892ce8776a5e10a7",
+    "scarcity_012.json": "d5028f7bd6ebb68b92b48f7d9113abec7fbbb0880029c2a8ab083eb9315ae646",
+    "scarcity_013.json": "1e4e72a2390ad0b3ec32fc8a6cdff3df90018d1a9b56beff5a94a7b4171efe7f",
+    "scarcity_014.json": "738d62aa5ac096b4dd0b28637d29936674ee610cba6286a0e5b68c8b8bb0fb8d",
+    "scarcity_015.json": "7819879d9ade1703796f5ba00f364c14164062c80b68bec779b51b195a9531b8",
+    "scarcity_016.json": "f6d167ae8b6c94b7720faa726e39fd59f5e102a88ce2509ccb3f81a02f56e1f2",
+    "scarcity_017.json": "2fd03d6ada8b9c23f404e643577a5f314b94c288fe91d772e85c396b10fc70fc",
+    "scarcity_018.json": "92656d55ac1163e481d8d2f003ef21830b851a3b48bfd5e27385dfa74293f79b",
+    "scarcity_019.json": "621ac36490740a146d0597417643d9d657e4cdab2731bac9b54857fa2321cc42",
+    "scarcity_020.json": "0382092f613dc3fb57290d2aaa66d61d16c1413a2cea493f0acfca5f97ad33f2",
+    "scarcity_021.json": "1ffa639d09a19908c11f5e4e721a5a22299bd04fdf696725c88e9783178cb114",
+    "scarcity_022.json": "e17ad62c4c83f434c8f117054bbd87e956ea4e9a9bb265be75f53a4c8473f666",
+    "scarcity_023.json": "89fd69104d017071d0a3d3539ea7c664716e878c9a27c7f20241ae3e1b550d4b",
+    "scarcity_024.json": "669af174b279abdf0937e5ae881853cc1436afd39def8a52c1200733414d6709",
+    "scarcity_025.json": "349aaf149c05b087579017c039cbb122422cda620d2ff3d7d641f87c2824368b",
+    "scarcity_026.json": "e26d0904def94fbec0fd1216bea454a014f1742dc7e232347f41c1eba533e432",
+    "scarcity_027.json": "387bf7ec2688b5fd085c4a32e7f283f7241f7389299f0c2a77a64f58968cb989",
+    "scarcity_028.json": "b6c91eb49edb66309b7f9b1abd3a771876b3b8e14e09961031272d72eade4ab9",
+    "scarcity_029.json": "82030cb5431ec8979c8f25f7de8d761256d89eae07b38112c50e1ad26af65702",
+    "scarcity_030.json": "1533bbc1aa8512f80669a551b91761310121ae82bcc9dc9bbfbe682d44af7f29",
+    "scarcity_031.json": "e8c052f4845e7875bb4d022adadedd7ca46260d59d5eb3fab86ea1e00ec84425",
+    "scarcity_032.json": "bc4d5918600403682bf1daf3f6163af7d9e2bc9c5502357369422def035c7a69",
+    "scarcity_033.json": "b15ebfcf99a8c0e65bd34a06e4f68b0101a06d79177f3561fb766a6600606978",
+    "scarcity_034.json": "641db27041017e8b96e630cdd165bd56246a1a3c62407e573dfab14d7431f118",
+    "scarcity_035.json": "2da95747dcfcd2beffc55a9d13e5b2421d90b37caee3372a4aa600ebd91eb010",
+    "scarcity_036.json": "e811dae735d199c724fb19fd3f5a05366eb5edf2b25cfb1af608c7b32ba728ed",
+    "scarcity_037.json": "2c061d482be87420668d31548ca801766688685d3388055b96c2863c0ac88f70",
+    "scarcity_038.json": "c36eb20ef3d678f8b1188fdedd2de2e2b8fc8579aa9ce4c54fcd1c4cd2ff8df1",
+    "scarcity_039.json": "72de2d798394838abaec43c73cc3d63a12054a7b7fdce1981ce57b2798e7e5a7",
+    "scarcity_040.json": "d4d368205202677882bbdaa2eba5f9b73a3670a9aa2e5f4f5ad98ba40419d67f",
+    "scarcity_041.json": "83f08292d35b29200930b7356f455444dda40039f2b43ecc1af361bb3d5c032d",
+    "scarcity_042.json": "eb1dcd0d8a57e0d29506e00b4781c2dbf80a1cbccb5922d94a86d44134764235",
+    "scarcity_043.json": "0cbb2fa1064a16337fad302ac22d083e7c5fabe73c0db33fbcb8bedb229ec46d",
+    "scarcity_044.json": "47e1fa1972413a8f0492c488a1c1f9530282531e00d855aa8476de4d6844d7b9",
+    "scarcity_045.json": "2e64f47c1d23e136971cdfbb651e9f93956f96aeaa74ed15ee53dd55d507675e",
+    "scarcity_046.json": "1b757d4c8b961682fa8ce5df36efeb923260630d8d07d7e7e2536831b87edb04",
+    "scarcity_047.json": "659b3af088343af12847bbcd0545fe4897910416629684f35da317bbe366c723",
+    "scarcity_048.json": "12a3878a17042d13b380277f41fafffde9be3836d68fdec383ad13def3273dad",
+    "scarcity_049.json": "8e322e9cf1a5ff027283b7b9f9c17bf1a79c3f61529d054df9c987dade8787b7",
+    "scarcity_050.json": "53990ba51aabc5a1f7146093813c280a4786851de99213c80b852ee21c4553ee",
+    "scarcity_051.json": "ecd6112cd2110961bf97d9327f5d6e994e8a390fd68001d8d81aa6c94ad03b6b",
+    "scarcity_052.json": "0773932edbe02afe169d0fdcbf8e2ea10297a4c03d0938183394e09e9bddfe68",
+    "scarcity_053.json": "498947b302209fef19db89d0a6fa517a25b1d16089ebbba344815459c6e4e812",
+    "scarcity_054.json": "0c9fbe6506c25ae0d91e5c5654e2e4fbcd2612603c4fa1531014015bae337010",
+    "scarcity_055.json": "ac4a23853dac5810dd796f2d2ce805e393985801d4a5a6ea2fe25549acfc6d76",
+    "scarcity_056.json": "4a21429fabb84217bb74ef4eaa3ab6f90019e889add9d1229c094c5ef935674c",
+    "scarcity_057.json": "2e2e07fdf8ed84a804f39e07617193bef68175fa450af73ff348ea217e996c7a",
+    "scarcity_058.json": "fdd2b36064fe80ae4ca7565366aac733853598f83376dc64d536418770cfbf24",
+    "scarcity_059.json": "a53d1af73652441f863707d65e4db3393354baf9c779bc6e07b60521579e1862",
+    "scarcity_060.json": "e42d9be81937e674a547d5d5bd17c578cbd3c88082b16f9a4d2b9cc3529e1852",
+    "scarcity_061.json": "775da6b4fcccaed31e46d9310c7dabb254b74f1e152bf5d7aa175b5c9aaeea2d",
+    "scarcity_062.json": "c29e8facc0b4d024bc577309a5806971ae905759aa10dcb2d2f93c9f32e7be05",
+    "scarcity_063.json": "07bcf34efcd86cacfd4d49946c45fd6198ef7b11edabc01002630821aecd2eb8",
+    "sensitivity_case_0001.json": "492c525d91c33cc7373e6563a51d41352f09f9a4702f5ca47cb28a9a88b83494",
+    "sensitivity_case_0010.json": "cdffc990b4d468639872977792ea8ec3724610df654ba684b6fad128597cef28",
+    "sensitivity_case_0019.json": "baf7a30419403740c23e48fe9f1dade39a19e2e9ee4938dd0797202fb9bf8a58",
+    "sensitivity_case_0029.json": "66d06ee01f9b5d748bf718108076678d7317824e0f83a199883f1ceff01f68ea",
+    "sensitivity_case_0038.json": "c94e7aa0a2b99919738b400f82b3119b73446b108f197f41b4f54cce298b43d0",
+    "sensitivity_case_0048.json": "d065da2fde54a0ca4c2f321b3838838c20048e38ae2ccafe82e1fd1759f65a61",
+    "sensitivity_case_0057.json": "309eebc48793cb93dc9217e6e5f85b60f0fa8da92afa613d724cf8bbc2325bb2",
+    "sensitivity_case_0067.json": "020cd72b5c4e8045705c50851eff265e1397b774894d962a3e35987a54161a49",
+    "sensitivity_case_0076.json": "c1bfe3b9d80cd369407f91d390dd5c3a8271b5610123cccfe103c0c01fb4bdce",
+    "sensitivity_case_0086.json": "fcd2467c1f499e5185e7ed3828de16459d380b069460e38474c0a57f4cc9570d",
+    "sensitivity_case_0095.json": "4b3922d451184d45bebdc20112eb9105a14cdbabbccf0a173d2309279708c660",
+    "sensitivity_case_0105.json": "9fc409a30c3e29a2db58ae0a20c337b8eda1d048a6135a37163452469f018ad2",
+    "sensitivity_case_0114.json": "9411d2dd805601a2c8c6f4a65d72be8965e84ce951eade0ba4a406748981f403",
+    "sensitivity_case_0124.json": "bc30b211735dfa3e24fc27b60bee0afff77339cf3ff1f1bb61547db73ab0b24c",
+    "sensitivity_case_0133.json": "578919b26b231d38408293e50c6442fe3b9ca86deb289643957cdf26e2991fc9",
+    "sensitivity_case_0143.json": "6306dd9e18828267665a67ad6bb074c55575a0be2946cbd80c52369baf6befb5",
+    "sensitivity_case_0152.json": "cdac43826ac59f9f874f9410637add41b330eefc97d9a17e6ba98a58713d4171",
+    "sensitivity_case_0162.json": "378fb5081efb2ae80ac2f2eef3185ed94e26f4ab420e8ec5db5f10bde6adac6d",
+    "sensitivity_case_0171.json": "418b8714424df828e5f1e92242cc29fef9f3c1b0f5a37c9ed5f5e30dbe8728ec",
+    "sensitivity_case_0181.json": "e18cb80c1574fd1988945679c0f2cf09f0575402d0cf08a02532c1abb9ad437b",
+    "sensitivity_case_0190.json": "fe3f9b1092cbc13c0a6e2c2eca88741e1ce40356c2ee1f70c4bb0ff9a615fc05",
+    "sensitivity_case_0200.json": "6766b761dfa8bf6fe1425222784e64f3411e64a811ca6d669b07f79789af70f3",
+    "sensitivity_case_0209.json": "afce5684e765540d5f5fb0ce0105feb2775deaa78e104189a0b364e396abb0df",
+    "sensitivity_case_0219.json": "24ba13c09a8133a254136aa239aae853b4de419bb42e09651a419aeecf3f4d1d"
+  },
+  "versions": {
+    "optimalportfolios": "9.1.5",
+    "qis": "5.44.4",
+    "numpy": "2.5.2",
+    "pandas": "3.0.5",
+    "scipy": "1.18.1",
+    "cvxpy": "1.9.2",
+    "Mosek": "11.2.3",
+    "clarabel": "0.11.1"
+  },
+  "specification": {
+    "schema": "ranked-robustness-1",
+    "seed": 41001,
+    "sensitivity": {
+      "case_count": 24,
+      "selection": "Evenly spaced integer positions, including both endpoints, in the verified 219-case public manifest",
+      "target_half_l1": [
+        0.001,
+        0.005
+      ],
+      "log_volatility_shock": [
+        0.01,
+        0.05
+      ],
+      "variants": [
+        "target",
+        "covariance",
+        "joint"
+      ],
+      "domains": [
+        "fixed",
+        "rebuilt_corridor"
+      ],
+      "target_rule": "Positive noncash target holdings tilted by a seeded bounded vector, renormalised to unchanged noncash mass, then interpolated to the requested half-L1 change. Zeros and cash unchanged.",
+      "covariance_rule": "D Sigma D, D_ii=exp(amplitude*seeded uniform[-1,1]); no clipping or PSD repair",
+      "domain_rule": "Fixed uses baseline common preparation. Rebuilt retains raw full bounds, mandatory lifecycle declarations, cash bounds and group limits, but rebuilds optional corridors between base and perturbed target, intersects the unchanged full bounds, then repeats common preparation.",
+      "scope": "Conditional supplied-input sensitivity; no upstream re-estimation, changed eligibility, target zero crossing or own-book returns. Mandatory counts are observed, not reclassified from missing lifecycle inputs."
+    },
+    "scarcity": {
+      "optional_assets": [
+        12,
+        36
+      ],
+      "discretionary_allowance": [
+        3,
+        6
+      ],
+      "group_half_width": [
+        0.005,
+        0.08
+      ],
+      "cash_band": [
+        "narrow",
+        "wide"
+      ],
+      "seeds": [
+        41001,
+        41002,
+        51001,
+        51002
+      ],
+      "mandatory_exits": 2,
+      "minimum_ticket": 0.005,
+      "holding_floor": 0.0025,
+      "methods": [
+        "Ranked",
+        "Greedy",
+        "OneAnchor",
+        "ExactBase",
+        "ExactRanked"
+      ]
+    },
+    "preparation_seconds": 30.0,
+    "exact_seconds": 10.0,
+    "exact_threads": 1,
+    "exact_gap_rel": 0.0001,
+    "audit_tolerance": 1e-07,
+    "zero_tolerance": 1e-08,
+    "descriptive_te_equality_bp": 0.0001,
+    "failure_policy": "Retain every preparation, solver and independent-audit failure; do not tune the grid, tolerances or algorithm after observing the experiment.",
+    "timing": "Serial calls; common preparation separately measured; ExactRanked end-to-end includes Ranked start generation."
+  },
+  "sensitivity": {
+    "cases": 24,
+    "baseline_audit_passed": 24,
+    "expected_variants": 288,
+    "recorded_variants": 288,
+    "audited_variants": 288,
+    "cells": [
+      {
+        "domain": "fixed",
+        "variant": "covariance",
+        "level": 0,
+        "expected": 24,
+        "completed": 24,
+        "audited": 24,
+        "paired": 24,
+        "target_half_l1": {
+          "n": 24,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "half_l1": {
+          "n": 24,
+          "mean": 3.0439967021041924e-05,
+          "minimum": 0.0,
+          "median": 2.8470986419143474e-14,
+          "p95": 0.0001772302113301634,
+          "maximum": 0.000418044642904989
+        },
+        "support_changed": 0,
+        "support_difference": {
+          "n": 24,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "mandatory_added": 0,
+        "mandatory_removed": 0,
+        "common_reference_te_change_bp": {
+          "n": 24,
+          "mean": 1.8655070151291548e-05,
+          "minimum": -1.7375367811212072e-09,
+          "median": 0.0,
+          "p95": 4.366187759865521e-05,
+          "maximum": 0.00036741481081037364
+        },
+        "gross_noncash_turnover_change": {
+          "n": 24,
+          "mean": -2.0378692609546976e-05,
+          "minimum": -0.00041804464287525933,
+          "median": 0.0,
+          "p95": 3.95221943682438e-07,
+          "maximum": 0.00011805862600879069
+        }
+      },
+      {
+        "domain": "fixed",
+        "variant": "covariance",
+        "level": 1,
+        "expected": 24,
+        "completed": 24,
+        "audited": 24,
+        "paired": 24,
+        "target_half_l1": {
+          "n": 24,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "half_l1": {
+          "n": 24,
+          "mean": 0.00015234508070043726,
+          "minimum": 0.0,
+          "median": 1.7671525050569348e-13,
+          "p95": 0.0009098007271799331,
+          "maximum": 0.0020562470155219524
+        },
+        "support_changed": 0,
+        "support_difference": {
+          "n": 24,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "mandatory_added": 0,
+        "mandatory_removed": 0,
+        "common_reference_te_change_bp": {
+          "n": 24,
+          "mean": 0.0004736500696341471,
+          "minimum": -8.10916800375594e-09,
+          "median": 0.0,
+          "p95": 0.0011377779261639621,
+          "maximum": 0.009277555916483493
+        },
+        "gross_noncash_turnover_change": {
+          "n": 24,
+          "mean": -0.00010108338412433311,
+          "minimum": -0.0020562470154103507,
+          "median": 0.0,
+          "p95": 1.772107350272996e-06,
+          "maximum": 0.0006019250023874406
+        }
+      },
+      {
+        "domain": "fixed",
+        "variant": "joint",
+        "level": 0,
+        "expected": 24,
+        "completed": 24,
+        "audited": 24,
+        "paired": 24,
+        "target_half_l1": {
+          "n": 24,
+          "mean": 0.0010000000000000002,
+          "minimum": 0.0009999999999999874,
+          "median": 0.0010000000000000005,
+          "p95": 0.001000000000000011,
+          "maximum": 0.0010000000000000122
+        },
+        "half_l1": {
+          "n": 24,
+          "mean": 0.00020543569070372708,
+          "minimum": 0.0,
+          "median": 3.6320927277073978e-12,
+          "p95": 0.0013194285899903232,
+          "maximum": 0.0018446570073912252
+        },
+        "support_changed": 0,
+        "support_difference": {
+          "n": 24,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "mandatory_added": 0,
+        "mandatory_removed": 0,
+        "common_reference_te_change_bp": {
+          "n": 24,
+          "mean": 0.0680044904847581,
+          "minimum": -2.2353487505455405e-08,
+          "median": 0.0,
+          "p95": 0.13829115841447218,
+          "maximum": 1.4008656954008698
+        },
+        "gross_noncash_turnover_change": {
+          "n": 24,
+          "mean": 0.00020285351283145996,
+          "minimum": -1.8711859145481569e-10,
+          "median": 2.8449465006019636e-15,
+          "p95": 0.0013194242727747317,
+          "maximum": 0.001844656898564223
+        }
+      },
+      {
+        "domain": "fixed",
+        "variant": "joint",
+        "level": 1,
+        "expected": 24,
+        "completed": 24,
+        "audited": 24,
+        "paired": 24,
+        "target_half_l1": {
+          "n": 24,
+          "mean": 0.005,
+          "minimum": 0.004999999999999987,
+          "median": 0.005000000000000001,
+          "p95": 0.0050000000000000105,
+          "maximum": 0.005000000000000011
+        },
+        "half_l1": {
+          "n": 24,
+          "mean": 0.0011767232945980699,
+          "minimum": 0.0,
+          "median": 3.4605474573141254e-11,
+          "p95": 0.006694489688676355,
+          "maximum": 0.009316033027371787
+        },
+        "support_changed": 0,
+        "support_difference": {
+          "n": 24,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "mandatory_added": 0,
+        "mandatory_removed": 0,
+        "common_reference_te_change_bp": {
+          "n": 24,
+          "mean": 0.5708360432545939,
+          "minimum": -1.9223665326251194e-08,
+          "median": 0.0,
+          "p95": 2.0963072734623167,
+          "maximum": 7.255728448266001
+        },
+        "gross_noncash_turnover_change": {
+          "n": 24,
+          "mean": 0.0011917007775873831,
+          "minimum": -1.933723181579694e-10,
+          "median": 2.894212647319705e-14,
+          "p95": 0.006694486896064129,
+          "maximum": 0.009316032815493355
+        }
+      },
+      {
+        "domain": "fixed",
+        "variant": "target",
+        "level": 0,
+        "expected": 24,
+        "completed": 24,
+        "audited": 24,
+        "paired": 24,
+        "target_half_l1": {
+          "n": 24,
+          "mean": 0.0010000000000000002,
+          "minimum": 0.0009999999999999874,
+          "median": 0.0010000000000000005,
+          "p95": 0.001000000000000011,
+          "maximum": 0.0010000000000000122
+        },
+        "half_l1": {
+          "n": 24,
+          "mean": 0.00022497907208964213,
+          "minimum": 0.0,
+          "median": 3.667074348172317e-12,
+          "p95": 0.001473086586723607,
+          "maximum": 0.0017225516539405494
+        },
+        "support_changed": 0,
+        "support_difference": {
+          "n": 24,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "mandatory_added": 0,
+        "mandatory_removed": 0,
+        "common_reference_te_change_bp": {
+          "n": 24,
+          "mean": 0.06796752561597835,
+          "minimum": -2.2344897043780065e-08,
+          "median": 0.0,
+          "p95": 0.13758228261983296,
+          "maximum": 1.4019404915150202
+        },
+        "gross_noncash_turnover_change": {
+          "n": 24,
+          "mean": 0.00022280543723945815,
+          "minimum": -1.8681780428186912e-10,
+          "median": 9.992007221626409e-16,
+          "p95": 0.0014730838247994048,
+          "maximum": 0.0017225515483606374
+        }
+      },
+      {
+        "domain": "fixed",
+        "variant": "target",
+        "level": 1,
+        "expected": 24,
+        "completed": 24,
+        "audited": 24,
+        "paired": 24,
+        "target_half_l1": {
+          "n": 24,
+          "mean": 0.005,
+          "minimum": 0.004999999999999987,
+          "median": 0.005000000000000001,
+          "p95": 0.0050000000000000105,
+          "maximum": 0.005000000000000011
+        },
+        "half_l1": {
+          "n": 24,
+          "mean": 0.0012608388018201448,
+          "minimum": 0.0,
+          "median": 4.031736565695415e-11,
+          "p95": 0.007364896568439501,
+          "maximum": 0.008612758111292376
+        },
+        "support_changed": 0,
+        "support_difference": {
+          "n": 24,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "mandatory_added": 0,
+        "mandatory_removed": 0,
+        "common_reference_te_change_bp": {
+          "n": 24,
+          "mean": 0.5665456948552549,
+          "minimum": -1.953768613560669e-08,
+          "median": 0.0,
+          "p95": 2.015678590249309,
+          "maximum": 7.282990342623246
+        },
+        "gross_noncash_turnover_change": {
+          "n": 24,
+          "mean": 0.0012781448217056607,
+          "minimum": -1.9073161106053504e-10,
+          "median": 1.174060848541103e-14,
+          "p95": 0.007364896520920799,
+          "maximum": 0.008612757901200627
+        }
+      },
+      {
+        "domain": "rebuilt_corridor",
+        "variant": "covariance",
+        "level": 0,
+        "expected": 24,
+        "completed": 24,
+        "audited": 24,
+        "paired": 24,
+        "target_half_l1": {
+          "n": 24,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "half_l1": {
+          "n": 24,
+          "mean": 3.0439967471780946e-05,
+          "minimum": 0.0,
+          "median": 2.8470986419143474e-14,
+          "p95": 0.00017723021921409995,
+          "maximum": 0.000418044642904989
+        },
+        "support_changed": 0,
+        "support_difference": {
+          "n": 24,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "mandatory_added": 0,
+        "mandatory_removed": 0,
+        "common_reference_te_change_bp": {
+          "n": 24,
+          "mean": 1.8655032552478596e-05,
+          "minimum": -1.7377659311534899e-09,
+          "median": 0.0,
+          "p95": 4.3661738885081254e-05,
+          "maximum": 0.00036741481081037364
+        },
+        "gross_noncash_turnover_change": {
+          "n": 24,
+          "mean": -2.0378692840770148e-05,
+          "minimum": -0.00041804464287525933,
+          "median": 0.0,
+          "p95": 3.9522194335214666e-07,
+          "maximum": 0.00011805862600879069
+        }
+      },
+      {
+        "domain": "rebuilt_corridor",
+        "variant": "covariance",
+        "level": 1,
+        "expected": 24,
+        "completed": 24,
+        "audited": 24,
+        "paired": 24,
+        "target_half_l1": {
+          "n": 24,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "half_l1": {
+          "n": 24,
+          "mean": 0.00015234508115760884,
+          "minimum": 0.0,
+          "median": 1.7671525050569348e-13,
+          "p95": 0.0009098007351971275,
+          "maximum": 0.0020562470155219524
+        },
+        "support_changed": 0,
+        "support_difference": {
+          "n": 24,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "mandatory_added": 0,
+        "mandatory_removed": 0,
+        "common_reference_te_change_bp": {
+          "n": 24,
+          "mean": 0.00047365003204700995,
+          "minimum": -8.109412252821357e-09,
+          "median": 0.0,
+          "p95": 0.0011377777874930206,
+          "maximum": 0.009277555916483493
+        },
+        "gross_noncash_turnover_change": {
+          "n": 24,
+          "mean": -0.00010108338436209214,
+          "minimum": -0.0020562470154103507,
+          "median": 0.0,
+          "p95": 1.7721073488102771e-06,
+          "maximum": 0.0006019250023874406
+        }
+      },
+      {
+        "domain": "rebuilt_corridor",
+        "variant": "joint",
+        "level": 0,
+        "expected": 24,
+        "completed": 24,
+        "audited": 24,
+        "paired": 24,
+        "target_half_l1": {
+          "n": 24,
+          "mean": 0.0010000000000000002,
+          "minimum": 0.0009999999999999874,
+          "median": 0.0010000000000000005,
+          "p95": 0.001000000000000011,
+          "maximum": 0.0010000000000000122
+        },
+        "half_l1": {
+          "n": 24,
+          "mean": 0.00035365259229579415,
+          "minimum": 0.0,
+          "median": 8.055085008062669e-05,
+          "p95": 0.0017886720762850987,
+          "maximum": 0.002178344416656575
+        },
+        "support_changed": 3,
+        "support_difference": {
+          "n": 24,
+          "mean": 0.5416666666666666,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 3.5499999999999936,
+          "maximum": 8.0
+        },
+        "mandatory_added": 1,
+        "mandatory_removed": 12,
+        "common_reference_te_change_bp": {
+          "n": 24,
+          "mean": 0.08450375502394653,
+          "minimum": -0.03713728352368939,
+          "median": 0.0,
+          "p95": 0.27216342080412076,
+          "maximum": 1.4035923538802375
+        },
+        "gross_noncash_turnover_change": {
+          "n": 24,
+          "mean": 0.0001758348386912865,
+          "minimum": -0.0004244128891385812,
+          "median": 0.0,
+          "p95": 0.0011524477085477864,
+          "maximum": 0.0018446569051206035
+        }
+      },
+      {
+        "domain": "rebuilt_corridor",
+        "variant": "joint",
+        "level": 1,
+        "expected": 24,
+        "completed": 24,
+        "audited": 24,
+        "paired": 24,
+        "target_half_l1": {
+          "n": 24,
+          "mean": 0.005,
+          "minimum": 0.004999999999999987,
+          "median": 0.005000000000000001,
+          "p95": 0.0050000000000000105,
+          "maximum": 0.005000000000000011
+        },
+        "half_l1": {
+          "n": 24,
+          "mean": 0.001775137335101688,
+          "minimum": 0.0,
+          "median": 0.0007410770915078216,
+          "p95": 0.0073593966125576615,
+          "maximum": 0.009316033047490426
+        },
+        "support_changed": 5,
+        "support_difference": {
+          "n": 24,
+          "mean": 0.6666666666666666,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 3.6999999999999957,
+          "maximum": 8.0
+        },
+        "mandatory_added": 1,
+        "mandatory_removed": 12,
+        "common_reference_te_change_bp": {
+          "n": 24,
+          "mean": 0.8262261715854998,
+          "minimum": -0.03222092512060337,
+          "median": 0.032133031903295084,
+          "p95": 4.8296783773253855,
+          "maximum": 7.266095447291514
+        },
+        "gross_noncash_turnover_change": {
+          "n": 24,
+          "mean": 0.0009249376646353632,
+          "minimum": -0.0067342709747408094,
+          "median": 2.0399855138464318e-09,
+          "p95": 0.006228594761117157,
+          "maximum": 0.009316032822309653
+        }
+      },
+      {
+        "domain": "rebuilt_corridor",
+        "variant": "target",
+        "level": 0,
+        "expected": 24,
+        "completed": 24,
+        "audited": 24,
+        "paired": 24,
+        "target_half_l1": {
+          "n": 24,
+          "mean": 0.0010000000000000002,
+          "minimum": 0.0009999999999999874,
+          "median": 0.0010000000000000005,
+          "p95": 0.001000000000000011,
+          "maximum": 0.0010000000000000122
+        },
+        "half_l1": {
+          "n": 24,
+          "mean": 0.0003732447358856977,
+          "minimum": 0.0,
+          "median": 8.724882578424437e-05,
+          "p95": 0.0017120169927389822,
+          "maximum": 0.002178344416656575
+        },
+        "support_changed": 3,
+        "support_difference": {
+          "n": 24,
+          "mean": 0.5416666666666666,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 3.5499999999999936,
+          "maximum": 8.0
+        },
+        "mandatory_added": 1,
+        "mandatory_removed": 12,
+        "common_reference_te_change_bp": {
+          "n": 24,
+          "mean": 0.08453910717593878,
+          "minimum": -0.03713728358970059,
+          "median": 0.0,
+          "p95": 0.27202548916405017,
+          "maximum": 1.4065942817963872
+        },
+        "gross_noncash_turnover_change": {
+          "n": 24,
+          "mean": 0.00019583110826420732,
+          "minimum": -0.0004244128891277149,
+          "median": 0.0,
+          "p95": 0.001306440342831692,
+          "maximum": 0.0017225515548528192
+        }
+      },
+      {
+        "domain": "rebuilt_corridor",
+        "variant": "target",
+        "level": 1,
+        "expected": 24,
+        "completed": 24,
+        "audited": 24,
+        "paired": 24,
+        "target_half_l1": {
+          "n": 24,
+          "mean": 0.005,
+          "minimum": 0.004999999999999987,
+          "median": 0.005000000000000001,
+          "p95": 0.0050000000000000105,
+          "maximum": 0.005000000000000011
+        },
+        "half_l1": {
+          "n": 24,
+          "mean": 0.001863192173633961,
+          "minimum": 0.0,
+          "median": 0.001067242279478529,
+          "p95": 0.00803239823018449,
+          "maximum": 0.008612758131086959
+        },
+        "support_changed": 5,
+        "support_difference": {
+          "n": 24,
+          "mean": 0.6666666666666666,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 3.6999999999999957,
+          "maximum": 8.0
+        },
+        "mandatory_added": 1,
+        "mandatory_removed": 12,
+        "common_reference_te_change_bp": {
+          "n": 24,
+          "mean": 0.8260315727175769,
+          "minimum": -0.03222092554855838,
+          "median": 0.03213303201063056,
+          "p95": 4.8222881869068255,
+          "maximum": 7.3338016116091325
+        },
+        "gross_noncash_turnover_change": {
+          "n": 24,
+          "mean": 0.0010148398224713322,
+          "minimum": -0.006734270974320659,
+          "median": 2.0399804206983063e-09,
+          "p95": 0.006906818781270267,
+          "maximum": 0.00861275790769285
+        }
+      }
+    ]
+  },
+  "scarcity": {
+    "cases": 64,
+    "prepared": 64,
+    "base_audit_passed": 64,
+    "optional_candidates": {
+      "n": 64,
+      "mean": 20.625,
+      "minimum": 10.0,
+      "median": 20.0,
+      "p95": 32.0,
+      "maximum": 32.0
+    },
+    "methods": {
+      "Ranked": {
+        "expected": 64,
+        "returned": 64,
+        "audited": 64,
+        "te_bp": {
+          "n": 64,
+          "mean": 155.31828742853,
+          "minimum": 33.25688719032598,
+          "median": 142.65855351226026,
+          "p95": 288.0703887113006,
+          "maximum": 344.8803141842874
+        },
+        "seconds": {
+          "n": 64,
+          "mean": 10.656738400004542,
+          "minimum": 1.1186328999465331,
+          "median": 6.4823630500468425,
+          "p95": 30.328386569966096,
+          "maximum": 33.11601820006035
+        },
+        "end_to_end_seconds": {
+          "n": 64,
+          "mean": 10.656830957823331,
+          "minimum": 1.1187210000352934,
+          "median": 6.48243455006741,
+          "p95": 30.328474664950043,
+          "maximum": 33.11611190007534
+        },
+        "allowance_binding": 64,
+        "delivered_sources": {
+          "ranked_search": 64
+        },
+        "statuses": {
+          "audited_incumbent": 64
+        }
+      },
+      "Greedy": {
+        "expected": 64,
+        "returned": 64,
+        "audited": 64,
+        "te_bp": {
+          "n": 64,
+          "mean": 205.75662810978537,
+          "minimum": 33.25688719032598,
+          "median": 183.75998936983615,
+          "p95": 336.97950124891616,
+          "maximum": 503.19133705404744
+        },
+        "seconds": {
+          "n": 64,
+          "mean": 0.007727457805231097,
+          "minimum": 0.0047076999908313155,
+          "median": 0.007462100067641586,
+          "p95": 0.011366090038791295,
+          "maximum": 0.014260099967941642
+        },
+        "end_to_end_seconds": {
+          "n": 64,
+          "mean": 0.007820015624020016,
+          "minimum": 0.004773500026203692,
+          "median": 0.0075530000613071024,
+          "p95": 0.0114699900499545,
+          "maximum": 0.014344199909828603
+        },
+        "allowance_binding": 38,
+        "delivered_sources": {
+          "ranked_search": 64
+        },
+        "statuses": {
+          "audited_incumbent": 64
+        }
+      },
+      "OneAnchor": {
+        "expected": 64,
+        "returned": 64,
+        "audited": 64,
+        "te_bp": {
+          "n": 64,
+          "mean": 155.31828742853,
+          "minimum": 33.25688719032598,
+          "median": 142.65855351226026,
+          "p95": 288.0703887113006,
+          "maximum": 344.8803141842874
+        },
+        "seconds": {
+          "n": 64,
+          "mean": 10.185180726557519,
+          "minimum": 1.0488447999814525,
+          "median": 6.393933199928142,
+          "p95": 27.52005210496136,
+          "maximum": 30.133880899986252
+        },
+        "end_to_end_seconds": {
+          "n": 64,
+          "mean": 10.185273284376308,
+          "minimum": 1.0489571000216529,
+          "median": 6.394028549955692,
+          "p95": 27.52012710503186,
+          "maximum": 30.13395439996384
+        },
+        "allowance_binding": 64,
+        "delivered_sources": {
+          "ranked_search": 64
+        },
+        "statuses": {
+          "audited_incumbent": 64
+        }
+      },
+      "ExactBase": {
+        "expected": 64,
+        "returned": 64,
+        "audited": 64,
+        "te_bp": {
+          "n": 64,
+          "mean": 158.1628028452651,
+          "minimum": 33.2568871902075,
+          "median": 143.70255779648954,
+          "p95": 288.07044627791913,
+          "maximum": 344.8803141812623
+        },
+        "seconds": {
+          "n": 64,
+          "mean": 0.9256026906241459,
+          "minimum": 0.09061489999294281,
+          "median": 0.2706077499897219,
+          "p95": 4.075985925045091,
+          "maximum": 10.003921700059436
+        },
+        "end_to_end_seconds": {
+          "n": 64,
+          "mean": 0.9256952484429348,
+          "minimum": 0.09068250004202127,
+          "median": 0.27069124998524785,
+          "p95": 4.076056930003682,
+          "maximum": 10.003993700025603
+        },
+        "allowance_binding": 63,
+        "delivered_sources": {
+          "native_callback": 63,
+          "boundary_refinement": 1
+        },
+        "statuses": {
+          "audited_incumbent": 64
+        }
+      },
+      "ExactRanked": {
+        "expected": 64,
+        "returned": 64,
+        "audited": 64,
+        "te_bp": {
+          "n": 64,
+          "mean": 155.31828742828262,
+          "minimum": 33.25688719032598,
+          "median": 142.65855351226026,
+          "p95": 288.0703887113006,
+          "maximum": 344.8803141842874
+        },
+        "seconds": {
+          "n": 64,
+          "mean": 0.812938129696704,
+          "minimum": 0.07130409998353571,
+          "median": 0.259420600021258,
+          "p95": 3.804590100003403,
+          "maximum": 10.004273700062186
+        },
+        "end_to_end_seconds": {
+          "n": 64,
+          "mean": 11.469769087520035,
+          "minimum": 1.2416216999990866,
+          "median": 6.7399902500910684,
+          "p95": 33.546538729901656,
+          "maximum": 38.91483480005991
+        },
+        "allowance_binding": 64,
+        "delivered_sources": {
+          "requested_mip_start": 48,
+          "native_callback": 16
+        },
+        "statuses": {
+          "audited_incumbent": 64
+        }
+      }
+    },
+    "ranked_comparisons": {
+      "Greedy": {
+        "expected": 64,
+        "pairs": 64,
+        "lower": 55,
+        "equal": 9,
+        "higher": 0,
+        "gap_bp": {
+          "n": 64,
+          "mean": -50.438340681255355,
+          "minimum": -187.1056547678216,
+          "median": -37.93980492021244,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "worst_case": "scarcity_002"
+      },
+      "OneAnchor": {
+        "expected": 64,
+        "pairs": 64,
+        "lower": 0,
+        "equal": 64,
+        "higher": 0,
+        "gap_bp": {
+          "n": 64,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "worst_case": "scarcity_000"
+      },
+      "ExactBase": {
+        "expected": 64,
+        "pairs": 64,
+        "lower": 23,
+        "equal": 41,
+        "higher": 0,
+        "gap_bp": {
+          "n": 64,
+          "mean": -2.8445154167350966,
+          "minimum": -42.91493259090677,
+          "median": -2.471106995471928e-06,
+          "p95": 1.8533029333411798e-09,
+          "maximum": 6.821267106715823e-09
+        },
+        "worst_case": "scarcity_020"
+      },
+      "ExactRanked": {
+        "expected": 64,
+        "pairs": 64,
+        "lower": 0,
+        "equal": 64,
+        "higher": 0,
+        "gap_bp": {
+          "n": 64,
+          "mean": 2.4737878412395276e-10,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 7.824034753411978e-10,
+          "maximum": 6.821267106715823e-09
+        },
+        "worst_case": "scarcity_020"
+      }
+    },
+    "worst_support_diagnosis": {
+      "case": "scarcity_020",
+      "purpose": "Post-hoc support diagnosis, not benchmark tuning",
+      "support": [
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          8,
+          0
+        ],
+        [
+          11,
+          0
+        ],
+        [
+          12,
+          0
+        ]
+      ],
+      "visited_by_ranked": true,
+      "status": "optimal",
+      "audit": {
+        "passed": true,
+        "violations": [],
+        "residuals": {
+          "funding": 0.0,
+          "lower": 0.0,
+          "upper": 0.0,
+          "groups": 9.999946948280325e-08
+        },
+        "tickets": 8,
+        "optional_tickets": 6,
+        "turnover": 0.3876349722792265
+      },
+      "conditional_te_bp": 274.13259822494086,
+      "exact_ranked_te_bp": 274.1325982181196,
+      "ranked_te_bp": 274.13259822494086
+    }
+  },
+  "holdout": {
+    "protocol_sha256": "8f7da0f2a12248932fd009b76a2e18c9f83cbbb23cd5da2d779e4fd7e02d451c",
+    "record_sha256": {
+      "complete.json": "14c3b3510c85b789540aa1f3f0d97b12ec587434e78641e4a34e7ad5238eff23",
+      "protocol.json": "8f7da0f2a12248932fd009b76a2e18c9f83cbbb23cd5da2d779e4fd7e02d451c",
+      "scarcity_000.json": "2a828ca6ef179e394389d514afe2ff523f425ac0c818341186499c5445fff78f",
+      "scarcity_001.json": "ed69d6a83436456339a6d865eab6df54300eb29a6b30ff946709b75953398cfd",
+      "scarcity_002.json": "d7136e5f46cdaf897255e384163ad4fb4abcca671b9963c30ef1260364176462",
+      "scarcity_003.json": "92bf5bd7b658df920ba95edc77890c5bc55348da892838068de86aa07e3adc27",
+      "scarcity_004.json": "0f92613f7f6281531fa6051e3a4e51a596a5f6c486a9efc12f2ed98ddff6f36d",
+      "scarcity_005.json": "46b375fd18886da2825406b8f1f9b0299de8db41f839c38db64e35a89adc7f0e",
+      "scarcity_006.json": "756134383175e16d01de96e9a9f6a28659638dca8bdc47c32baa466ee7229054",
+      "scarcity_007.json": "5c6f12e5e2938b0a0d2ee5f6afa60d29fd05fac2728e6a6aa102db665c6c17ed",
+      "scarcity_008.json": "e0b9df09a8ce90c8d67ca34294b51af3449545c5d329895de8d14325ad1a0b07",
+      "scarcity_009.json": "0c45ebd4f920afffb74406a0d4308dab2d1fe0c70840995871946a6e17aad366",
+      "scarcity_010.json": "9bf3154061ec1426bf0bc879135249f8721dbb8a50ced0dc9499e80dafacd51c",
+      "scarcity_011.json": "d9ce2b0e03334472d37924b7e30ca8b62497d710265f3df3edec4551dbf0e589",
+      "scarcity_012.json": "185bcfaf563f169f3b5490e446d23f4c36737699cc3fd32860694fea96733341",
+      "scarcity_013.json": "1d9d5afedc2a1b474712c3a2fd8c72bf2a8ac27e9403111b4a8cdb8a8a323ea9",
+      "scarcity_014.json": "3438edfe7bb3630556e732c29c905cf9a456b7fc3fcc68d94c660826d1be4af1",
+      "scarcity_015.json": "678c22440dbd3a7f28d816de897c9e287325be81e1bd01922704524ee72fa436",
+      "scarcity_016.json": "6c0537fdeb9ff849e5c4f1892e78697dbbcf77b75aa03fc82c5ef877fb11dcf5",
+      "scarcity_017.json": "893366a30ab6dc6601f0646c77f055f68889a9a7b89543dc35ee1ebcaec55f1d",
+      "scarcity_018.json": "a587c4cb0be124e8507ac8b813e4c35b130bdfbaac4643d0ae6320e9fd61b264",
+      "scarcity_019.json": "2ccb0f07a28d85d8325a4632bc4139033687cbcbf4dbde5647eb0fa401c8b279",
+      "scarcity_020.json": "399ba109f6a5f56be5e85e515e04808625bffb47430a1a86d5faddc054a41cd6",
+      "scarcity_021.json": "155e5dbd5614d99215275213fb1831e4cd64b30125548b490f2d003fa9ecee6a",
+      "scarcity_022.json": "fa449fc663ea5e4ecd388cedd5e8ae84bbc23f06bdc2ced750b796f0cadbc45a",
+      "scarcity_023.json": "7cdf8ad724486a6b48af4313e379442ae04b02f12c18af756780b1031fb3c66b",
+      "scarcity_024.json": "26a17ea702353dcc340f2f88f953e56699a4a0a704970ea97c7efcba5e10d07b",
+      "scarcity_025.json": "60f2096b3e89bd160050cf36bdc05cf96f91ceb5f2d3f209c7de174b13050ce9",
+      "scarcity_026.json": "64dd21c1334eda27dbc15d114c98e943b1f9e3eb2b416c064ff0bc96ae80beae",
+      "scarcity_027.json": "cb2f63350d49eeaee94750bad28f4d1505de07a71a54bf7f83b602aa47db72a7",
+      "scarcity_028.json": "b92d10552797080186d0f4a970b731ebc4fae3eb88de8f4316c4c99e9211a684",
+      "scarcity_029.json": "c9db65df0e9960293bf5c1b56ea0d37505d85fdd07b017312f0a8fe05402d64b",
+      "scarcity_030.json": "d61078cbca16503c7fce42de8fe82df58f629379131042e6c6c4e1c75e5665df",
+      "scarcity_031.json": "dd98e7930d5e13e5a7b7b76e1982de0aa29f086407006e344bcca47c3f04ddc7"
+    },
+    "versions": {
+      "optimalportfolios": "9.1.5",
+      "qis": "5.44.4",
+      "numpy": "2.5.2",
+      "pandas": "3.0.5",
+      "scipy": "1.18.1",
+      "cvxpy": "1.9.2",
+      "Mosek": "11.2.3",
+      "clarabel": "0.11.1"
+    },
+    "specification": {
+      "schema": "ranked-scarcity-holdout-1",
+      "seed": 41001,
+      "sensitivity": {
+        "case_count": 24,
+        "selection": "Evenly spaced integer positions, including both endpoints, in the verified 219-case public manifest",
+        "target_half_l1": [
+          0.001,
+          0.005
+        ],
+        "log_volatility_shock": [
+          0.01,
+          0.05
+        ],
+        "variants": [
+          "target",
+          "covariance",
+          "joint"
+        ],
+        "domains": [
+          "fixed",
+          "rebuilt_corridor"
+        ],
+        "target_rule": "Positive noncash target holdings tilted by a seeded bounded vector, renormalised to unchanged noncash mass, then interpolated to the requested half-L1 change. Zeros and cash unchanged.",
+        "covariance_rule": "D Sigma D, D_ii=exp(amplitude*seeded uniform[-1,1]); no clipping or PSD repair",
+        "domain_rule": "Fixed uses baseline common preparation. Rebuilt retains raw full bounds, mandatory lifecycle declarations, cash bounds and group limits, but rebuilds optional corridors between base and perturbed target, intersects the unchanged full bounds, then repeats common preparation.",
+        "scope": "Conditional supplied-input sensitivity; no upstream re-estimation, changed eligibility, target zero crossing or own-book returns. Mandatory counts are observed, not reclassified from missing lifecycle inputs."
+      },
+      "scarcity": {
+        "optional_assets": [
+          12,
+          36
+        ],
+        "discretionary_allowance": [
+          3,
+          6
+        ],
+        "group_half_width": [
+          0.005,
+          0.08
+        ],
+        "cash_band": [
+          "narrow",
+          "wide"
+        ],
+        "seeds": [
+          61001,
+          61002
+        ],
+        "mandatory_exits": 2,
+        "minimum_ticket": 0.005,
+        "holding_floor": 0.0025,
+        "methods": [
+          "Ranked",
+          "Greedy",
+          "OneAnchor",
+          "ExactBase",
+          "ExactRanked"
+        ]
+      },
+      "preparation_seconds": 30.0,
+      "exact_seconds": 10.0,
+      "exact_threads": 1,
+      "exact_gap_rel": 0.0001,
+      "audit_tolerance": 1e-07,
+      "zero_tolerance": 1e-08,
+      "descriptive_te_equality_bp": 0.0001,
+      "failure_policy": "The 41001/41002 and former 51001/51002 holdout grids are now development data. Freeze the corrected execution source before running these new 61001/61002 seeds. Retain all failures and gaps; no retuning on this holdout.",
+      "timing": "Serial calls; common preparation separately measured; ExactRanked end-to-end includes Ranked start generation."
+    },
+    "sensitivity": {
+      "cases": 0,
+      "baseline_audit_passed": 0,
+      "expected_variants": 0,
+      "recorded_variants": 0,
+      "audited_variants": 0,
+      "cells": []
+    },
+    "scarcity": {
+      "cases": 32,
+      "prepared": 32,
+      "base_audit_passed": 32,
+      "optional_candidates": {
+        "n": 32,
+        "mean": 21.25,
+        "minimum": 11.0,
+        "median": 19.5,
+        "p95": 35.0,
+        "maximum": 35.0
+      },
+      "methods": {
+        "Ranked": {
+          "expected": 32,
+          "returned": 32,
+          "audited": 32,
+          "te_bp": {
+            "n": 32,
+            "mean": 176.38190808823413,
+            "minimum": 68.25818315235172,
+            "median": 136.11952783707835,
+            "p95": 369.2035261332509,
+            "maximum": 369.2035261332951
+          },
+          "seconds": {
+            "n": 32,
+            "mean": 10.621552803127997,
+            "minimum": 1.164419399923645,
+            "median": 5.022252700000536,
+            "p95": 33.902967694972176,
+            "maximum": 37.55170409998391
+          },
+          "end_to_end_seconds": {
+            "n": 32,
+            "mean": 10.621661899993342,
+            "minimum": 1.1644897998776287,
+            "median": 5.022325399972033,
+            "p95": 33.903138274920636,
+            "maximum": 37.55181840003934
+          },
+          "allowance_binding": 30,
+          "delivered_sources": {
+            "ranked_search": 32
+          },
+          "statuses": {
+            "audited_incumbent": 32
+          }
+        },
+        "Greedy": {
+          "expected": 32,
+          "returned": 32,
+          "audited": 32,
+          "te_bp": {
+            "n": 32,
+            "mean": 237.42921882529498,
+            "minimum": 78.59961760536152,
+            "median": 178.8666627436107,
+            "p95": 483.446400172839,
+            "maximum": 483.446400172839
+          },
+          "seconds": {
+            "n": 32,
+            "mean": 0.006864115639473312,
+            "minimum": 0.004672399954870343,
+            "median": 0.006856449996121228,
+            "p95": 0.009446315001696348,
+            "maximum": 0.010936600039713085
+          },
+          "end_to_end_seconds": {
+            "n": 32,
+            "mean": 0.0069732125048176385,
+            "minimum": 0.004873999976553023,
+            "median": 0.006951000017579645,
+            "p95": 0.009517654962837695,
+            "maximum": 0.01101000013295561
+          },
+          "allowance_binding": 16,
+          "delivered_sources": {
+            "ranked_search": 32
+          },
+          "statuses": {
+            "audited_incumbent": 32
+          }
+        },
+        "OneAnchor": {
+          "expected": 32,
+          "returned": 32,
+          "audited": 32,
+          "te_bp": {
+            "n": 32,
+            "mean": 176.38190808823413,
+            "minimum": 68.25818315235172,
+            "median": 136.11952783707835,
+            "p95": 369.2035261332509,
+            "maximum": 369.2035261332951
+          },
+          "seconds": {
+            "n": 32,
+            "mean": 10.176720884377573,
+            "minimum": 1.2186904000118375,
+            "median": 5.25047035003081,
+            "p95": 32.086344979994465,
+            "maximum": 33.11093930003699
+          },
+          "end_to_end_seconds": {
+            "n": 32,
+            "mean": 10.176829981242918,
+            "minimum": 1.2187607999658212,
+            "median": 5.250575000012759,
+            "p95": 32.08643590499996,
+            "maximum": 33.11119069997221
+          },
+          "allowance_binding": 30,
+          "delivered_sources": {
+            "ranked_search": 32
+          },
+          "statuses": {
+            "audited_incumbent": 32
+          }
+        },
+        "ExactBase": {
+          "expected": 32,
+          "returned": 32,
+          "audited": 32,
+          "te_bp": {
+            "n": 32,
+            "mean": 178.67237252619367,
+            "minimum": 69.15234638869393,
+            "median": 136.11952783687136,
+            "p95": 369.2035261334038,
+            "maximum": 369.20356793944774
+          },
+          "seconds": {
+            "n": 32,
+            "mean": 0.7343707156323944,
+            "minimum": 0.08125670009758323,
+            "median": 0.31307519995607436,
+            "p95": 1.2741978600388393,
+            "maximum": 10.003242400009185
+          },
+          "end_to_end_seconds": {
+            "n": 32,
+            "mean": 0.7344798124977387,
+            "minimum": 0.08178650005720556,
+            "median": 0.31314545002533123,
+            "p95": 1.2743875650281553,
+            "maximum": 10.003535900032148
+          },
+          "allowance_binding": 30,
+          "delivered_sources": {
+            "native_callback": 32
+          },
+          "statuses": {
+            "audited_incumbent": 32
+          }
+        },
+        "ExactRanked": {
+          "expected": 32,
+          "returned": 32,
+          "audited": 32,
+          "te_bp": {
+            "n": 32,
+            "mean": 176.38190808809648,
+            "minimum": 68.25818315235172,
+            "median": 136.11952783692664,
+            "p95": 369.2035261332509,
+            "maximum": 369.2035261332951
+          },
+          "seconds": {
+            "n": 32,
+            "mean": 0.6037981218723871,
+            "minimum": 0.07476300001144409,
+            "median": 0.19350799993844703,
+            "p95": 0.7486725750088226,
+            "maximum": 10.00367040000856
+          },
+          "end_to_end_seconds": {
+            "n": 32,
+            "mean": 11.225460021865729,
+            "minimum": 1.2686671998817474,
+            "median": 5.4254563500289805,
+            "p95": 34.60919528998202,
+            "maximum": 38.25646770000458
+          },
+          "allowance_binding": 30,
+          "delivered_sources": {
+            "requested_mip_start": 26,
+            "native_callback": 6
+          },
+          "statuses": {
+            "audited_incumbent": 32
+          }
+        }
+      },
+      "ranked_comparisons": {
+        "Greedy": {
+          "expected": 32,
+          "pairs": 32,
+          "lower": 32,
+          "equal": 0,
+          "higher": 0,
+          "gap_bp": {
+            "n": 32,
+            "mean": -61.047310737060876,
+            "minimum": -120.2760095828267,
+            "median": -63.520883110099874,
+            "p95": -9.500305531921677,
+            "maximum": -1.9615761767046536
+          },
+          "worst_case": "scarcity_022"
+        },
+        "OneAnchor": {
+          "expected": 32,
+          "pairs": 32,
+          "lower": 0,
+          "equal": 32,
+          "higher": 0,
+          "gap_bp": {
+            "n": 32,
+            "mean": 0.0,
+            "minimum": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "maximum": 0.0
+          },
+          "worst_case": "scarcity_000"
+        },
+        "ExactBase": {
+          "expected": 32,
+          "pairs": 32,
+          "lower": 11,
+          "equal": 21,
+          "higher": 0,
+          "gap_bp": {
+            "n": 32,
+            "mean": -2.2904644379595385,
+            "minimum": -23.491198172809277,
+            "median": -2.2497457230485907e-05,
+            "p95": 9.342663531697325e-10,
+            "maximum": 3.3153781942019123e-09
+          },
+          "worst_case": "scarcity_014"
+        },
+        "ExactRanked": {
+          "expected": 32,
+          "pairs": 32,
+          "lower": 0,
+          "equal": 32,
+          "higher": 0,
+          "gap_bp": {
+            "n": 32,
+            "mean": 1.3763523654120036e-10,
+            "minimum": 0.0,
+            "median": 0.0,
+            "p95": 4.534868480732253e-10,
+            "maximum": 3.3153781942019123e-09
+          },
+          "worst_case": "scarcity_014"
+        }
+      },
+      "worst_support_diagnosis": {
+        "case": "scarcity_014",
+        "purpose": "Post-hoc support diagnosis, not benchmark tuning",
+        "support": [
+          [
+            6,
+            1
+          ],
+          [
+            7,
+            0
+          ],
+          [
+            10,
+            1
+          ],
+          [
+            11,
+            0
+          ],
+          [
+            12,
+            0
+          ],
+          [
+            13,
+            0
+          ]
+        ],
+        "visited_by_ranked": true,
+        "status": "optimal",
+        "audit": {
+          "passed": true,
+          "violations": [],
+          "residuals": {
+            "funding": 0.0,
+            "lower": 0.0,
+            "upper": 0.0,
+            "groups": 9.999724837062018e-08
+          },
+          "tickets": 8,
+          "optional_tickets": 6,
+          "turnover": 0.5892298144915383
+        },
+        "conditional_te_bp": 89.77146091089386,
+        "exact_ranked_te_bp": 89.77146090757849,
+        "ranked_te_bp": 89.77146091089386
+      }
+    }
+  },
+  "previous_comparison": {
+    "previous_protocol_sha256": [
+      "35256dbf78af0efbdacc8d0297bb430c2dbec429996f1bcb7c73a37ff93ef927",
+      "12f263afc11477cb46e7dbe459218e6f21cfa8dd832d5c2fe13b46c47281150c"
+    ],
+    "pairs": 64,
+    "improved": 6,
+    "equal": 58,
+    "worsened": 0,
+    "mean_reduction_bp": 0.259866958188141,
+    "maximum_reduction_bp": 5.6596513324032,
+    "old_misses": 5,
+    "old_misses_recovered": 5
+  }
+}

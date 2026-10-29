@@ -88,6 +88,7 @@ def test_true_infeasibility_does_not_retry(monkeypatch, breach):
 
 def test_retry_output_still_requires_original_space_audit(monkeypatch):
     """A bad retry vector cannot bypass the wrapper's mandatory return gate."""
+    from optimalportfolios.execution.v2._sizing import _CachedSizingModel
     p = example()
     calls = {}
 
@@ -96,12 +97,18 @@ def test_retry_output_still_requires_original_space_audit(monkeypatch):
         calls[self] = calls.get(self, 0) + 1
         if calls[self] == 1:
             raise cp.SolverError("numerical failure")
-        for variable in self.variables():
+        graph = self.template[0].optimisation if isinstance(self, _CachedSizingModel) else self
+        for variable in graph.variables():
             variable.value = np.full(variable.shape, 1e6)
-        self._status = cp.OPTIMAL
+        graph._status = cp.OPTIMAL
 
     monkeypatch.setattr(cp.Problem, "solve", unaudited)
+    monkeypatch.setattr(_CachedSizingModel, "solve", unaudited)
     out = wrapper_ranked_execution(p)
     assert np.array_equal(out.weights, p.base)
-    assert all(not t["audit"]["passed"] for t in out.diagnostics["trials"])
+    # The restart can also size the empty support: its weights are constants,
+    # so corrupting solver variables cannot alter that legitimate baseline.
+    corrupt = [t for t in out.diagnostics["trials"] if t["support"]]
+    assert corrupt and all(not t["audit"]["passed"] for t in corrupt)
+    assert all(not t["support"] for t in out.diagnostics["trials"] if t["audit"]["passed"])
     assert all(t["sizing_solver"]["attempts"] == 2 for t in out.diagnostics["trials"])

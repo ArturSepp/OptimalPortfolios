@@ -23,6 +23,7 @@ def native(monkeypatch):
     """Provide an explicit native protocol double with independently chosen vectors."""
     from cvxpy.reductions.cone2cone.affine2direct import FREE
     from cvxpy.reductions.solvers.conic_solvers.mosek_conif import MOSEK
+    from cvxpy.reductions.solvers.solver_inverse_data import SolverInverseData
 
     p = example()
     state = SimpleNamespace(clock=0.0, tasks=[], receipt=True, bad_callback=False,
@@ -45,11 +46,13 @@ def native(monkeypatch):
             raw = payload["sol"]
             assert np.array_equal(raw.primal_vars[FREE], vector[:4])
             return SimpleNamespace(primal_vars={7: raw.primal_vars[FREE]},
-                                   opt_val=raw.opt_val + 17.)
+                                   opt_val=raw.opt_val + inverse[-1][cp.settings.OBJ_OFFSET])
+        state.final_objective = (23. + payload['task'].cfix
+                                 + inverse[-1][cp.settings.OBJ_OFFSET])
         return SimpleNamespace(status=cp.OPTIMAL, primal_vars={7: vector[:4]})
 
     chain = SimpleNamespace(invert=invert)
-    inverse = [{"K_dir": {FREE: 4}}]
+    inverse = [SolverInverseData({"K_dir": {FREE: 4}, cp.settings.OBJ_OFFSET: 17.})]
     model = SimpleNamespace(
         reference=p.base, direction=direction, constant=0.0123, selectors={0: object()},
         displacement_bp=SimpleNamespace(id=7), initial_values=initial_values,
@@ -62,6 +65,7 @@ def native(monkeypatch):
         def __init__(self, original=None):
             """Distinguish a fixed-start lift from the main task."""
             self.original, self.fixed, self.timers = original, {}, {}
+            self.cfix = 0. if original is None else original.cfix
             self.callback, self.supplied, self.converted = None, None, None
             state.tasks.append(self)
 
@@ -86,12 +90,17 @@ def native(monkeypatch):
             """Record remaining native time limits."""
             self.timers[key] = value
 
+        def putcfix(self, value):
+            """Represent the native objective constant, including copied start tasks."""
+            self.cfix = value
+
         def optimize(self):
             """Emit one incumbent event, or consume the lift budget on request."""
             if self.original is not None and state.lift_exhausts_budget:
                 state.clock = 20.
             if self.callback is not None:
-                state.callback_return = self.callback("new_integer", {"objective": 23.}, [], [])
+                state.callback_return = self.callback(
+                    "new_integer", {"objective": 23. + self.cfix}, [], [])
             return "terminated"
 
         def getsolsta(self, kind):
@@ -124,7 +133,9 @@ def native(monkeypatch):
 
         def getdouinf(self, name):
             """Return diagnostic native bounds, not certified lower bounds."""
-            return 12. if name == "bound" else .01
+            if name == "bound":
+                return 12. + self.cfix
+            return 23. + self.cfix if name == "objective" else .01
 
     api = SimpleNamespace(
         Task=Task, Env=SimpleNamespace(getversion=lambda: (11, 2, 3)),
@@ -143,12 +154,33 @@ def native(monkeypatch):
     monkeypatch.setattr(cp, "__version__", "1.9.2")
     monkeypatch.setattr(cp, "installed_solvers", lambda: ["MOSEK"])
     monkeypatch.setattr(exact, "perf_counter", lambda: state.clock)
-    monkeypatch.setattr(MOSEK, "handle_options",
-                        staticmethod(lambda task, verbose, options: options))
+    def options(task, verbose, supplied):
+        """Retain actual solver settings so numerical controls are independently checked."""
+        state.options = supplied
+        return supplied
+
+    monkeypatch.setattr(MOSEK, "handle_options", staticmethod(options))
     monkeypatch.setattr(MOSEK, "_build_slack_task", staticmethod(lambda task, data: None))
     state.problem, state.model, state.api = p, model, api
     state.chain, state.inverse, state.vector, state.data = chain, inverse, vector, data
     return state
+
+
+def test_native_stopping_objective_restores_exact_canonical_offset(native, monkeypatch):
+    """Restore the actual inverse-map constant once, without changing gap tolerances."""
+    monkeypatch.setattr(exact, "build_model", lambda *args: native.model)
+    solved = wrapper_exact_execution(native.problem, "CORRIDOR")
+    task, lift = native.tasks
+    assert task.cfix == lift.cfix == 17.
+    assert native.inverse[-1][cp.settings.OBJ_OFFSET] == 17.
+    assert native.final_objective == 40.
+    assert solved.diagnostics['native_objective_offset'] == 17./SCALE
+    assert solved.diagnostics['native_objective_origin'] == 'original_variance'
+    assert solved.diagnostics['native_bound'] == 29./SCALE
+    assert solved.diagnostics['native_bound_canonical'] == 12./SCALE
+    assert solved.diagnostics['native_incumbent'] == 40./SCALE
+    assert native.options['mosek_params']['MSK_DPAR_MIO_TOL_REL_GAP'] == 1e-4
+    assert native.options['mosek_params']['MSK_DPAR_MIO_TOL_ABS_GAP'] == 1e-8
 
 
 @pytest.mark.parametrize("receipt", [True, False])
@@ -167,12 +199,27 @@ def test_native_start_receipt_and_callback_mapping_without_licence(native, monke
     assert audit_execution(native.problem, result.weights)["passed"]
     sources = {row["source"] for row in result.diagnostics["incumbent_events"]}
     assert {"native_callback", "native_return"} <= sources
-    assert result.diagnostics["native_bound"] == pytest.approx(.0123 + 12. / SCALE)
+    assert result.diagnostics["native_bound"] == pytest.approx(29. / SCALE)
     assert result.diagnostics["bound"] is None
+    assert native.options["mosek_params"]["MSK_DPAR_MIO_TOL_FEAS"] == 1e-9
+    assert native.options["mosek_params"]["MSK_DPAR_MIO_TOL_ABS_RELAX_INT"] == 1e-9
+    assert native.options["mosek_params"]["MSK_DPAR_MIO_TOL_REL_GAP"] == 1e-4
+    assert result.diagnostics["native_bound_check"]["consistent_with_delivery"] is False
+    assert result.diagnostics["native_bound_check"]["objective_tolerance"] == 1e-12
     weights, objective = exact.invert_native(
         native.model, native.chain, native.inverse, native.vector, 23.)
     assert np.allclose(weights, native.problem.base + np.array([.005, 0., 0., 0., -.005]))
     assert objective == 40. / SCALE
+
+
+def test_consistent_native_bound_remains_a_diagnostic(native, monkeypatch):
+    """A consistent floating-point native bound still does not become a certificate."""
+    native.model.constant = 0.
+    monkeypatch.setattr(native.api.Task, "getdouinf", lambda self, name: 0.)
+    monkeypatch.setattr(exact, "build_model", lambda *args: native.model)
+    result = wrapper_exact_execution(native.problem, "CORRIDOR")
+    assert result.diagnostics["native_bound_check"]["consistent_with_delivery"] is True
+    assert result.diagnostics["bound"] is None
 
 
 def test_native_callback_failure_is_reported_and_final_return_is_audited(native, monkeypatch):

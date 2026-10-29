@@ -1,0 +1,28 @@
+{
+  "schema": "ranked-joint-miqp-1",
+  "grid": {
+    "optional_assets": [24, 72, 144],
+    "budget": [2, 6],
+    "groups": ["disjoint", "overlap"],
+    "regime": ["tight", "wide"],
+    "seed": [111001]
+  },
+  "tiny": {"optional_assets": 8, "budget": 2, "groups": ["disjoint", "overlap"], "regime": "tight", "seed": [112001]},
+  "regimes": {"tight": {"group_half_width": 0.001, "cash_half_width": 0.0005}, "wide": {"group_half_width": 0.01, "cash_lower": 0.005, "cash_upper": 0.5}},
+  "minimum_ticket": 0.005,
+  "current_minimum": 0.006,
+  "holding_floor": 0.0025,
+  "audit_tolerance": 1e-7,
+  "zero_tolerance": 1e-8,
+  "objective_tolerance": 1e-12,
+  "descriptive_te_equality_bp": 0.0001,
+  "preparation_seconds": 30.0,
+  "exact_seconds": [10.0, 60.0, 600.0],
+  "exact_threads": 1,
+  "exact_gap_rel": 0.0001,
+  "domain": "Identical prepared CORRIDOR states; full joint refers to simultaneous state and size optimization, not an expanded FULL domain.",
+  "generator": "Unchanged public breadth generator: heterogeneous positive holdings, two forced exits, correlated factor covariance with positive residuals, sector and optional overlapping fractional groups. The larger dimension retains the same minimum trade and holding thresholds. No private data.",
+  "timing": "Serial calls with one native thread. V2 runs once. Reverse budget order on odd cases and alternate common-base/V2-started order within budgets. Each call is fresh; no incumbent passes between budgets. Preparation is included in every E2E cost; V2 generation is charged to each V2-started call. Native work may overrun an allowance.",
+  "certificates": "Native statuses and MIP bounds are diagnostics. Existing plain/perspective supporting-plane LP dual bounds with residual correction supply separate conservative numerical bounds. Independent exhaustive full-weight QPs on two tiny cases retain unresolved supports. No primal relaxation is reported as a bound.",
+  "decision_rule": "Report every outcome with no search, policy or tolerance tuning. This prospective synthetic grid is not independent external market validation or an own-holdings return study. No speed advantage is assumed."
+}

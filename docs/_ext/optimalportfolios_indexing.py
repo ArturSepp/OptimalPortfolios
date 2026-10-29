@@ -259,11 +259,15 @@ def validate_redirect_targets(app: Any, exception: Optional[Exception]) -> None:
     manifest = read_redirect_manifest()
 
     class Anchors(HTMLParser):
+        """Collect HTML identifiers used by local redirect fragments."""
+
         def __init__(self):
+            """Initialize the parser and its collected identifier set."""
             super().__init__()
             self.ids = set()
 
         def handle_starttag(self, tag, attrs):
+            """Record the identifier of an opening HTML tag when present."""
             value = dict(attrs).get("id")
             if value:
                 self.ids.add(value)

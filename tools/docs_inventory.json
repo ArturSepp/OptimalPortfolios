@@ -17,7 +17,10 @@
         "prepare_common_execution",
         "V2ExecutionPolicyConfig",
         "resolve_production_problem",
-        "solve_v2_execution_portfolio"
+        "solve_v2_execution_portfolio",
+        "MatchedExecutionPolicyConfig",
+        "wrapper_matched_execution",
+        "solve_matched_execution_portfolio"
       ],
       "parameters": {
         "ExecutionProblem": [
@@ -95,6 +98,33 @@
           "preparation_time_limit_s",
           "preparation_solver",
           "allow_v1_fallback"
+        ],
+        "MatchedExecutionPolicyConfig": [
+          "small_trade_cutoff",
+          "small_trade_cutoff_by_asset_class",
+          "sell_down_dust_threshold",
+          "material_trade_threshold",
+          "max_trades",
+          "expand_for_feasibility",
+          "minimum_trade_score",
+          "sequential_greedy_selection",
+          "sign_directed_rescue",
+          "allow_corridor_relaxation",
+          "tre_weight_by_asset_class",
+          "use_weight_drift",
+          "mandatory_trades",
+          "output_by_ticker",
+          "instruction_correction_tolerance",
+          "exact_execution",
+          "add_mandatory_trades_to_max_trades",
+          "constraint_set",
+          "ranked_config",
+          "preparation_time_limit_s",
+          "preparation_solver",
+          "allow_v1_fallback",
+          "primary_time_limit_s",
+          "primary_threads",
+          "primary_gap_rel"
         ]
       }
     },

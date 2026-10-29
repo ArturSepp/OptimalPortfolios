@@ -17,3 +17,8 @@ from optimalportfolios.execution.v2.production import (
     resolve_production_problem,
     solve_v2_execution_portfolio,
 )
+from optimalportfolios.execution.v2.primary import (
+    MatchedExecutionPolicyConfig,
+    wrapper_matched_execution,
+    solve_matched_execution_portfolio,
+)

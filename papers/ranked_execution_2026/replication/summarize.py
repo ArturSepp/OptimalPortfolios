@@ -31,6 +31,8 @@ def aggregate(records):
         r['methods'][m]['audit']['passed'] for m in METHODS)]
     if not complete:
         raise ValueError('No common audited cases')
+    best_variance = {r['id']:min(((a['te_bp']/1e4)**2 for a in r['methods'].values()
+        if a['audit']['passed']), default=float('inf')) for r in prepared}
     summary = dict(cases=len(records), prepared=len(prepared), common=len(complete),
         preparation_failures=[r['id'] for r in records if not r['methods']],
         comparison_tolerance_bp=COMPARISON_BP,
@@ -61,7 +63,12 @@ def aggregate(records):
             native_audited=sum(r['diagnostics'].get('first_native_audited_feasible_seconds')
                                is not None for r in all_items),
             native_statuses=dict(Counter(r['diagnostics'].get('native_status', 'none')
-                                         for r in all_items)))
+                                         for r in all_items)),
+            native_bound_above_best=[dict(case=r['id'],
+                native_bound=r['methods'][method]['diagnostics']['native_bound'],
+                best_delivered_variance=best_variance[r['id']]) for r in prepared
+                if r['methods'][method]['diagnostics'].get('native_bound') is not None
+                and r['methods'][method]['diagnostics']['native_bound'] > best_variance[r['id']]+1e-12])
     for other in METHODS[1:]:
         pairs = [(r['id'], r['methods']['Ranked']['te_bp']-r['methods'][other]['te_bp'])
                  for r in prepared if r['methods']['Ranked']['audit']['passed']
@@ -106,7 +113,7 @@ def manuscript_results(summary):
         r"\begin{tabular}{lrrrrr}\toprule",
         r"Arm & Mean TE & Median TE & Median s & 95th pct. s & Median E2E s\\\midrule",
     ]
-    for method in METHODS:
+    for method in ('Ranked', 'ExactBase', 'ExactRanked'):
         a = s['arms'][method]
         lines.append(f"{method} & {a['mean_te_bp']:.3f} & {a['median_te_bp']:.3f} & "
                      f"{a['median_seconds']:.3f} & {a['p95_seconds']:.3f} & "
@@ -122,7 +129,8 @@ def manuscript_results(summary):
         r"\label{tab:pairs}",
         r"\begin{tabular}{lrrrrr}\toprule",
         r"Comparator & Pairs & Ranked lower & Equal & Ranked higher & Mean difference\\\midrule"]
-    for other, c in s['comparisons'].items():
+    for other in ('ExactBase', 'ExactRanked'):
+        c = s['comparisons'][other]
         lines.append(f"{other} & {c['n']} & {c['ranked_lower']} & {c['tied']} & "
                      f"{c['ranked_higher']} & {c['mean_ranked_minus_other_bp']:.5f}"+r"\\")
     lines += [r"\bottomrule\end{tabular}", r"\end{table}", ""]
@@ -175,6 +183,17 @@ def manuscript_results(summary):
         "audits, native statuses and timing are retained per decision.",
         "",
     ]
+    independent = s['comparisons']['ExactBase']
+    contradictions = sum(len(s['arms'][m]['native_bound_above_best'])
+                         for m in ('ExactBase','ExactRanked'))
+    lines.append(f"Across both MIQP arms, {contradictions} native bounds exceed the best "
+        r"audited cross-arm objective by more than the unchanged $10^{-12}$ variance "
+        "comparison scale. Native bounds remain diagnostics, not independently certified bounds.")
+    lines.append(
+        f"Independent ExactBase is lower on {independent['ranked_higher']} decisions; "
+        f"its maximum delivered advantage is {max(0., independent['maximum_ranked_loss_bp']):.6f} "
+        "basis points. These separately started outcomes remain visible even when "
+        "ExactRanked stays within the descriptive equality band.")
     if c['maximum_ranked_loss_bp'] > COMPARISON_BP:
         w = s['worst_ranked_disadvantage']
         statuses = ', '.join(str(x).replace('_', ' ') for x in w['ranked_sizing_statuses'])

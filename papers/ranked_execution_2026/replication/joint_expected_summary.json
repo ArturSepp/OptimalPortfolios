@@ -1,0 +1,1401 @@
+{
+  "protocol_sha256": "72a633f1b8ef3b23a5b3f4b1aa3e5e55cffb49047fdd86884241574a84ca0b87",
+  "specification": {
+    "schema": "ranked-joint-miqp-1",
+    "grid": {
+      "optional_assets": [
+        24,
+        72,
+        144
+      ],
+      "budget": [
+        2,
+        6
+      ],
+      "groups": [
+        "disjoint",
+        "overlap"
+      ],
+      "regime": [
+        "tight",
+        "wide"
+      ],
+      "seed": [
+        111001
+      ]
+    },
+    "tiny": {
+      "optional_assets": 8,
+      "budget": 2,
+      "groups": [
+        "disjoint",
+        "overlap"
+      ],
+      "regime": "tight",
+      "seed": [
+        112001
+      ]
+    },
+    "regimes": {
+      "tight": {
+        "group_half_width": 0.001,
+        "cash_half_width": 0.0005
+      },
+      "wide": {
+        "group_half_width": 0.01,
+        "cash_lower": 0.005,
+        "cash_upper": 0.5
+      }
+    },
+    "minimum_ticket": 0.005,
+    "current_minimum": 0.006,
+    "holding_floor": 0.0025,
+    "audit_tolerance": 1e-07,
+    "zero_tolerance": 1e-08,
+    "objective_tolerance": 1e-12,
+    "descriptive_te_equality_bp": 0.0001,
+    "preparation_seconds": 30.0,
+    "exact_seconds": [
+      10.0,
+      60.0,
+      600.0
+    ],
+    "exact_threads": 1,
+    "exact_gap_rel": 0.0001,
+    "domain": "Identical prepared CORRIDOR states; full joint refers to simultaneous state and size optimization, not an expanded FULL domain.",
+    "generator": "Unchanged public breadth generator: heterogeneous positive holdings, two forced exits, correlated factor covariance with positive residuals, sector and optional overlapping fractional groups. The larger dimension retains the same minimum trade and holding thresholds. No private data.",
+    "timing": "Serial calls with one native thread. V2 runs once. Reverse budget order on odd cases and alternate common-base/V2-started order within budgets. Each call is fresh; no incumbent passes between budgets. Preparation is included in every E2E cost; V2 generation is charged to each V2-started call. Native work may overrun an allowance.",
+    "certificates": "Native statuses and MIP bounds are diagnostics. Existing plain/perspective supporting-plane LP dual bounds with residual correction supply separate conservative numerical bounds. Independent exhaustive full-weight QPs on two tiny cases retain unresolved supports. No primal relaxation is reported as a bound.",
+    "decision_rule": "Report every outcome with no search, policy or tolerance tuning. This prospective synthetic grid is not independent external market validation or an own-holdings return study. No speed advantage is assumed."
+  },
+  "records_sha256": {
+    "joint_000.json": "f9fc61feea4ff8826875375416169987d88bba7fc90f7bbf1567f2be435fd6b8",
+    "joint_001.json": "4f91aa2cc1b2ff0ef6be086f3597a767c4f6dbf20f902b25e8d7ca0f6159c6e6",
+    "joint_002.json": "082518decf070b2c065d133a4445a0341d2c12920568014db02adcf94f928b4f",
+    "joint_003.json": "3e38a528cab8e360651aedf556e6b440417efb167bae21961fb1ccfa3d4de2fe",
+    "joint_004.json": "ba0a4a4ddf6a85faf9b06b3fcbef3abb267679c401a156e9b321b0b36189b4db",
+    "joint_005.json": "0e0477f0c674b765f4f0c91237433036e498c4f1881f8767d865d05bab182a90",
+    "joint_006.json": "38d65ba0a76a32f847dc91e08d7a844b5373c743ed5a3d3b7733ef3908d252b5",
+    "joint_007.json": "7e83c585f2c6089796edf22466425c270a42d9ddc252119a3d29df2ed80afdd7",
+    "joint_008.json": "a81d961ef8a3365fa3c1301bc39e21a07e53fc8b74b3236bd9507460eb2fba7f",
+    "joint_009.json": "95277a8c1493a2a4400b1de8accaf0422275cf4d62b1163865cd261ac9df068a",
+    "joint_010.json": "f37ef14db8c710b82c295e5622b36ef07d708d05a39ccc12830cb265b5b15c11",
+    "joint_011.json": "6dc7d0669dc402e3af8a44b9d7b1d761c3747a035a7048d30a6be7357f00391f",
+    "joint_012.json": "4e4ee854dceac2236928b752a80b20b5963e581749c8ec0d9a2e064976fc7715",
+    "joint_013.json": "b89a82a2190d2a3f5b34806e2da03c6bfe07329bfef45be591ab98ed5efadedd",
+    "joint_014.json": "45d6d2e5f860a6bf1cadd8c7362f624b53cd41663da6c638b46e67b5bdcfe869",
+    "joint_015.json": "e9ba5e054690445bc77f02646e30d879d6be8e6fa87c20c6fc23e4f60b397d70",
+    "joint_016.json": "3bccc1d59a69b323f73b604ff5d4d34cd3bf58b0bd2edd9c4a2e323ab2923f35",
+    "joint_017.json": "6f1322998f60a148a94a6b4554bfa71d871a613795f045edb7b648d593779518",
+    "joint_018.json": "cef0db0b9e13088c7d086870acca0f151b9d10a7f4d224155e77cb500874c182",
+    "joint_019.json": "a88d9452e891f76f21d49f47fa6ab23c9f624a8f0c79fde74482a237c228f3db",
+    "joint_020.json": "848efb4e4554da02180fecc11528e7e8a9a676c0c81828eb0675f0b62beef354",
+    "joint_021.json": "799396a05829539ac3577808192767c060c4b21e3ea1a84c0582d07ebc37a462",
+    "joint_022.json": "820abf71c92d635a3bec907472278959e8d97a2a8e6b648855768e318ede509d",
+    "joint_023.json": "50feaaa445723a851262fa8d6d1385b1b7f6ef47d177f8e57e58070b926dfffc",
+    "joint_024.json": "2761f19713227e426820f51145feae126b0350254676e2ea8e69c0d31bf128b8",
+    "joint_025.json": "8137c6888c2cabda21d2412838eb67d37b47f4a535ce47d26972e5cdb9ddab18"
+  },
+  "broad": {
+    "expected": 24,
+    "prepared": 24,
+    "methods": {
+      "Ranked": {
+        "expected": 24,
+        "attempted": 24,
+        "audited": 24,
+        "te_bp": {
+          "n": 24,
+          "mean": 132.95952303467826,
+          "minimum": 84.76428997320158,
+          "median": 135.78632453896506,
+          "p95": 171.2372672560718,
+          "maximum": 190.27958319810335
+        },
+        "gap_to_best_bp": {
+          "n": 24,
+          "mean": 1.5108743885624185e-10,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 9.563635217091348e-10,
+          "maximum": 1.1608562999754213e-09
+        },
+        "seconds": {
+          "n": 24,
+          "mean": 2.3899176666600397,
+          "minimum": 0.5442446999950334,
+          "median": 1.55937835003715,
+          "p95": 6.848842244950353,
+          "maximum": 7.251983499969356
+        },
+        "end_to_end_seconds": {
+          "n": 24,
+          "mean": 2.390019350001239,
+          "minimum": 0.5443348999833688,
+          "median": 1.5594703000388108,
+          "p95": 6.848924104875183,
+          "maximum": 7.252067100023851
+        },
+        "first_native_feasible_seconds": {
+          "n": 0,
+          "mean": null,
+          "minimum": null,
+          "median": null,
+          "p95": null,
+          "maximum": null
+        },
+        "allowance_overruns": 0,
+        "ticket_binding": 18,
+        "statuses": {
+          "audited_incumbent": 24
+        },
+        "native_statuses": {
+          "none": 24
+        },
+        "delivered_sources": {
+          "heuristic": 24
+        },
+        "native_bound_above_best": []
+      },
+      "JointBase10": {
+        "expected": 24,
+        "attempted": 24,
+        "audited": 24,
+        "te_bp": {
+          "n": 24,
+          "mean": 132.95952303737639,
+          "minimum": 84.76428997311727,
+          "median": 135.78632453873246,
+          "p95": 171.23726726082128,
+          "maximum": 190.27958319836392
+        },
+        "gap_to_best_bp": {
+          "n": 24,
+          "mean": 2.849224856049659e-09,
+          "minimum": 0.0,
+          "median": 9.674039347373764e-11,
+          "p95": 1.1184170034539409e-08,
+          "maximum": 2.9147315672162222e-08
+        },
+        "seconds": {
+          "n": 24,
+          "mean": 0.2360426041559549,
+          "minimum": 0.07070470007602125,
+          "median": 0.17109715001424775,
+          "p95": 0.5507924299687147,
+          "maximum": 0.7948267000028864
+        },
+        "end_to_end_seconds": {
+          "n": 24,
+          "mean": 0.23614428749715444,
+          "minimum": 0.07078850013203919,
+          "median": 0.17117350007174537,
+          "p95": 0.5508706499822437,
+          "maximum": 0.7949088999303058
+        },
+        "first_native_feasible_seconds": {
+          "n": 24,
+          "mean": 0.08872086666330385,
+          "minimum": 0.05771329998970032,
+          "median": 0.07129194994922727,
+          "p95": 0.1636890050314832,
+          "maximum": 0.21552530000917614
+        },
+        "allowance_overruns": 0,
+        "ticket_binding": 18,
+        "statuses": {
+          "audited_incumbent": 24
+        },
+        "native_statuses": {
+          "solsta.integer_optimal": 24
+        },
+        "delivered_sources": {
+          "native_callback": 20,
+          "common_prepared_incumbent": 4
+        },
+        "native_bound_above_best": []
+      },
+      "JointRanked10": {
+        "expected": 24,
+        "attempted": 24,
+        "audited": 24,
+        "te_bp": {
+          "n": 24,
+          "mean": 132.95952303462144,
+          "minimum": 84.76428997320158,
+          "median": 135.7863245384455,
+          "p95": 171.2372672560718,
+          "maximum": 190.27958319810335
+        },
+        "gap_to_best_bp": {
+          "n": 24,
+          "mean": 9.428428408379356e-11,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 4.722963353742669e-10,
+          "maximum": 1.1608278782659909e-09
+        },
+        "seconds": {
+          "n": 24,
+          "mean": 0.23557101666907934,
+          "minimum": 0.07139769999776036,
+          "median": 0.15454620000673458,
+          "p95": 0.643016760033788,
+          "maximum": 0.6672721999930218
+        },
+        "end_to_end_seconds": {
+          "n": 24,
+          "mean": 2.6255903666703184,
+          "minimum": 0.6665059000952169,
+          "median": 1.892050550028216,
+          "p95": 7.202362019824793,
+          "maximum": 7.848568800021894
+        },
+        "first_native_feasible_seconds": {
+          "n": 24,
+          "mean": 0.09938322915695608,
+          "minimum": 0.05470380000770092,
+          "median": 0.07323664997238666,
+          "p95": 0.19768967495765535,
+          "maximum": 0.204447100055404
+        },
+        "allowance_overruns": 0,
+        "ticket_binding": 18,
+        "statuses": {
+          "audited_incumbent": 24
+        },
+        "native_statuses": {
+          "solsta.integer_optimal": 24
+        },
+        "delivered_sources": {
+          "requested_mip_start": 12,
+          "native_callback": 8,
+          "common_prepared_incumbent": 4
+        },
+        "native_bound_above_best": []
+      },
+      "JointBase60": {
+        "expected": 24,
+        "attempted": 24,
+        "audited": 24,
+        "te_bp": {
+          "n": 24,
+          "mean": 132.95952303737639,
+          "minimum": 84.76428997311727,
+          "median": 135.78632453873246,
+          "p95": 171.23726726082128,
+          "maximum": 190.27958319836392
+        },
+        "gap_to_best_bp": {
+          "n": 24,
+          "mean": 2.849224856049659e-09,
+          "minimum": 0.0,
+          "median": 9.674039347373764e-11,
+          "p95": 1.1184170034539409e-08,
+          "maximum": 2.9147315672162222e-08
+        },
+        "seconds": {
+          "n": 24,
+          "mean": 0.22952942083550928,
+          "minimum": 0.06903240003157407,
+          "median": 0.16621395002584904,
+          "p95": 0.5512303899158723,
+          "maximum": 0.766760699916631
+        },
+        "end_to_end_seconds": {
+          "n": 24,
+          "mean": 0.22963110417670882,
+          "minimum": 0.069116200087592,
+          "median": 0.16629030008334666,
+          "p95": 0.5513086099294013,
+          "maximum": 0.7668428998440504
+        },
+        "first_native_feasible_seconds": {
+          "n": 24,
+          "mean": 0.0825707124992429,
+          "minimum": 0.05632169998716563,
+          "median": 0.0729657500050962,
+          "p95": 0.14948206995031785,
+          "maximum": 0.1787707000039518
+        },
+        "allowance_overruns": 0,
+        "ticket_binding": 18,
+        "statuses": {
+          "audited_incumbent": 24
+        },
+        "native_statuses": {
+          "solsta.integer_optimal": 24
+        },
+        "delivered_sources": {
+          "native_callback": 20,
+          "common_prepared_incumbent": 4
+        },
+        "native_bound_above_best": []
+      },
+      "JointRanked60": {
+        "expected": 24,
+        "attempted": 24,
+        "audited": 24,
+        "te_bp": {
+          "n": 24,
+          "mean": 132.95952303462144,
+          "minimum": 84.76428997320158,
+          "median": 135.7863245384455,
+          "p95": 171.2372672560718,
+          "maximum": 190.27958319810335
+        },
+        "gap_to_best_bp": {
+          "n": 24,
+          "mean": 9.428428408379356e-11,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 4.722963353742669e-10,
+          "maximum": 1.1608278782659909e-09
+        },
+        "seconds": {
+          "n": 24,
+          "mean": 0.2325572083257915,
+          "minimum": 0.07050920010078698,
+          "median": 0.17405490000965074,
+          "p95": 0.5752120599208864,
+          "maximum": 0.7261289999587461
+        },
+        "end_to_end_seconds": {
+          "n": 24,
+          "mean": 2.622576558327031,
+          "minimum": 0.6225367999868467,
+          "median": 1.894984599959571,
+          "p95": 7.183575369865864,
+          "maximum": 7.978196099982597
+        },
+        "first_native_feasible_seconds": {
+          "n": 24,
+          "mean": 0.09575700831677143,
+          "minimum": 0.05455230001825839,
+          "median": 0.07758365001063794,
+          "p95": 0.18398954495787617,
+          "maximum": 0.22305959998629987
+        },
+        "allowance_overruns": 0,
+        "ticket_binding": 18,
+        "statuses": {
+          "audited_incumbent": 24
+        },
+        "native_statuses": {
+          "solsta.integer_optimal": 24
+        },
+        "delivered_sources": {
+          "requested_mip_start": 12,
+          "native_callback": 8,
+          "common_prepared_incumbent": 4
+        },
+        "native_bound_above_best": []
+      },
+      "JointBase600": {
+        "expected": 24,
+        "attempted": 24,
+        "audited": 24,
+        "te_bp": {
+          "n": 24,
+          "mean": 132.95952303737639,
+          "minimum": 84.76428997311727,
+          "median": 135.78632453873246,
+          "p95": 171.23726726082128,
+          "maximum": 190.27958319836392
+        },
+        "gap_to_best_bp": {
+          "n": 24,
+          "mean": 2.849224856049659e-09,
+          "minimum": 0.0,
+          "median": 9.674039347373764e-11,
+          "p95": 1.1184170034539409e-08,
+          "maximum": 2.9147315672162222e-08
+        },
+        "seconds": {
+          "n": 24,
+          "mean": 0.24449942500602143,
+          "minimum": 0.0712510000448674,
+          "median": 0.1653075500507839,
+          "p95": 0.5545456950378137,
+          "maximum": 0.7723448999458924
+        },
+        "end_to_end_seconds": {
+          "n": 24,
+          "mean": 0.24460110834722096,
+          "minimum": 0.07134550006594509,
+          "median": 0.16539950005244464,
+          "p95": 0.5546239150513428,
+          "maximum": 0.7724270998733118
+        },
+        "first_native_feasible_seconds": {
+          "n": 24,
+          "mean": 0.09849572083718765,
+          "minimum": 0.05692590004764497,
+          "median": 0.08227590000024065,
+          "p95": 0.18254211501334794,
+          "maximum": 0.1999366000527516
+        },
+        "allowance_overruns": 0,
+        "ticket_binding": 18,
+        "statuses": {
+          "audited_incumbent": 24
+        },
+        "native_statuses": {
+          "solsta.integer_optimal": 24
+        },
+        "delivered_sources": {
+          "native_callback": 20,
+          "common_prepared_incumbent": 4
+        },
+        "native_bound_above_best": []
+      },
+      "JointRanked600": {
+        "expected": 24,
+        "attempted": 24,
+        "audited": 24,
+        "te_bp": {
+          "n": 24,
+          "mean": 132.95952303462144,
+          "minimum": 84.76428997320158,
+          "median": 135.7863245384455,
+          "p95": 171.2372672560718,
+          "maximum": 190.27958319810335
+        },
+        "gap_to_best_bp": {
+          "n": 24,
+          "mean": 9.428428408379356e-11,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 4.722963353742669e-10,
+          "maximum": 1.1608278782659909e-09
+        },
+        "seconds": {
+          "n": 24,
+          "mean": 0.23459445416422872,
+          "minimum": 0.07216640003025532,
+          "median": 0.1651379499817267,
+          "p95": 0.6162010349682531,
+          "maximum": 0.663680600002408
+        },
+        "end_to_end_seconds": {
+          "n": 24,
+          "mean": 2.624613804165468,
+          "minimum": 0.6252956999232993,
+          "median": 1.8888256500358693,
+          "p95": 7.218935534876071,
+          "maximum": 7.82753180002328
+        },
+        "first_native_feasible_seconds": {
+          "n": 24,
+          "mean": 0.09994160000254244,
+          "minimum": 0.057638099999167025,
+          "median": 0.07684485003119335,
+          "p95": 0.18229694502661004,
+          "maximum": 0.20303239999338984
+        },
+        "allowance_overruns": 0,
+        "ticket_binding": 18,
+        "statuses": {
+          "audited_incumbent": 24
+        },
+        "native_statuses": {
+          "solsta.integer_optimal": 24
+        },
+        "delivered_sources": {
+          "requested_mip_start": 12,
+          "native_callback": 8,
+          "common_prepared_incumbent": 4
+        },
+        "native_bound_above_best": []
+      }
+    },
+    "comparisons": {
+      "JointBase10": {
+        "pairs": 24,
+        "v2_lower": 0,
+        "equal": 24,
+        "v2_higher": 0,
+        "v2_minus_mip_bp": {
+          "n": 24,
+          "mean": -2.698137417193417e-09,
+          "minimum": -2.9147315672162222e-08,
+          "median": -9.652723065300961e-11,
+          "p95": 9.560011449138972e-10,
+          "maximum": 1.1608562999754213e-09
+        },
+        "worse_cases": []
+      },
+      "JointRanked10": {
+        "pairs": 24,
+        "v2_lower": 0,
+        "equal": 24,
+        "v2_higher": 0,
+        "v2_minus_mip_bp": {
+          "n": 24,
+          "mean": 5.6803154772448274e-11,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 2.2175754565978386e-10,
+          "maximum": 1.039126118485001e-09
+        },
+        "worse_cases": []
+      },
+      "JointBase60": {
+        "pairs": 24,
+        "v2_lower": 0,
+        "equal": 24,
+        "v2_higher": 0,
+        "v2_minus_mip_bp": {
+          "n": 24,
+          "mean": -2.698137417193417e-09,
+          "minimum": -2.9147315672162222e-08,
+          "median": -9.652723065300961e-11,
+          "p95": 9.560011449138972e-10,
+          "maximum": 1.1608562999754213e-09
+        },
+        "worse_cases": []
+      },
+      "JointRanked60": {
+        "pairs": 24,
+        "v2_lower": 0,
+        "equal": 24,
+        "v2_higher": 0,
+        "v2_minus_mip_bp": {
+          "n": 24,
+          "mean": 5.6803154772448274e-11,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 2.2175754565978386e-10,
+          "maximum": 1.039126118485001e-09
+        },
+        "worse_cases": []
+      },
+      "JointBase600": {
+        "pairs": 24,
+        "v2_lower": 0,
+        "equal": 24,
+        "v2_higher": 0,
+        "v2_minus_mip_bp": {
+          "n": 24,
+          "mean": -2.698137417193417e-09,
+          "minimum": -2.9147315672162222e-08,
+          "median": -9.652723065300961e-11,
+          "p95": 9.560011449138972e-10,
+          "maximum": 1.1608562999754213e-09
+        },
+        "worse_cases": []
+      },
+      "JointRanked600": {
+        "pairs": 24,
+        "v2_lower": 0,
+        "equal": 24,
+        "v2_higher": 0,
+        "v2_minus_mip_bp": {
+          "n": 24,
+          "mean": 5.6803154772448274e-11,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 2.2175754565978386e-10,
+          "maximum": 1.039126118485001e-09
+        },
+        "worse_cases": []
+      }
+    },
+    "certificates": [
+      {
+        "case": "joint_000",
+        "lower_variance": 0.00027553607893008523,
+        "consistent": true,
+        "best_delivered_te_bp": 171.4843162587209,
+        "gap_bp": 5.491521556635945
+      },
+      {
+        "case": "joint_001",
+        "lower_variance": 0.00020514890500427437,
+        "consistent": true,
+        "best_delivered_te_bp": 156.66734322426805,
+        "gap_bp": 13.437142147723307
+      },
+      {
+        "case": "joint_002",
+        "lower_variance": 0.00029979529348964876,
+        "consistent": true,
+        "best_delivered_te_bp": 190.27958319810335,
+        "gap_bp": 17.13360620480188
+      },
+      {
+        "case": "joint_003",
+        "lower_variance": 0.00023148769797202902,
+        "consistent": true,
+        "best_delivered_te_bp": 166.35607585288673,
+        "gap_bp": 14.208878056795527
+      },
+      {
+        "case": "joint_004",
+        "lower_variance": 0.0002082893427328528,
+        "consistent": true,
+        "best_delivered_te_bp": 148.45750762993092,
+        "gap_bp": 4.135179928063252
+      },
+      {
+        "case": "joint_005",
+        "lower_variance": 0.00014502265898600777,
+        "consistent": true,
+        "best_delivered_te_bp": 126.91974865533095,
+        "gap_bp": 6.494394603118266
+      },
+      {
+        "case": "joint_006",
+        "lower_variance": 0.00022443583380956278,
+        "consistent": true,
+        "best_delivered_te_bp": 169.83732290772687,
+        "gap_bp": 20.025496335335475
+      },
+      {
+        "case": "joint_007",
+        "lower_variance": 0.000162415025416932,
+        "consistent": true,
+        "best_delivered_te_bp": 132.99925041906673,
+        "gap_bp": 5.55709671122483
+      },
+      {
+        "case": "joint_008",
+        "lower_variance": 0.00023757746999551158,
+        "consistent": true,
+        "best_delivered_te_bp": 158.2091157616833,
+        "gap_bp": 4.073633151250078
+      },
+      {
+        "case": "joint_009",
+        "lower_variance": 0.00018183283636001175,
+        "consistent": true,
+        "best_delivered_te_bp": 143.7322801651048,
+        "gap_bp": 8.88687373240063
+      },
+      {
+        "case": "joint_010",
+        "lower_variance": 0.0002537274305467736,
+        "consistent": true,
+        "best_delivered_te_bp": 168.56747689836394,
+        "gap_bp": 9.279237989531254
+      },
+      {
+        "case": "joint_011",
+        "lower_variance": 0.0002074316168498171,
+        "consistent": true,
+        "best_delivered_te_bp": 149.024613140585,
+        "gap_bp": 4.999748325575666
+      },
+      {
+        "case": "joint_012",
+        "lower_variance": 0.00018254448776544897,
+        "consistent": true,
+        "best_delivered_te_bp": 138.5733986578243,
+        "gap_bp": 3.4643731393753114
+      },
+      {
+        "case": "joint_013",
+        "lower_variance": 0.0001331933000041877,
+        "consistent": true,
+        "best_delivered_te_bp": 119.58043833966984,
+        "gap_bp": 4.171036641113361
+      },
+      {
+        "case": "joint_014",
+        "lower_variance": 0.00020320428220144918,
+        "consistent": true,
+        "best_delivered_te_bp": 149.07739957481576,
+        "gap_bp": 6.52766011470689
+      },
+      {
+        "case": "joint_015",
+        "lower_variance": 0.0001571554106536652,
+        "consistent": true,
+        "best_delivered_te_bp": 128.4394869180119,
+        "gap_bp": 3.077845793756836
+      },
+      {
+        "case": "joint_016",
+        "lower_variance": 0.00011130612314907534,
+        "consistent": true,
+        "best_delivered_te_bp": 106.15448760877737,
+        "gap_bp": 0.6527704904880949
+      },
+      {
+        "case": "joint_017",
+        "lower_variance": 7.201478071616459e-05,
+        "consistent": true,
+        "best_delivered_te_bp": 87.83713666549731,
+        "gap_bp": 2.975613749534631
+      },
+      {
+        "case": "joint_018",
+        "lower_variance": 0.00011130859659262847,
+        "consistent": true,
+        "best_delivered_te_bp": 106.15448760877737,
+        "gap_bp": 0.651598267950078
+      },
+      {
+        "case": "joint_019",
+        "lower_variance": 7.488151054792398e-05,
+        "consistent": true,
+        "best_delivered_te_bp": 88.9212503242082,
+        "gap_bp": 2.387146903693136
+      },
+      {
+        "case": "joint_020",
+        "lower_variance": 0.00011130612314907535,
+        "consistent": true,
+        "best_delivered_te_bp": 106.15448760877737,
+        "gap_bp": 0.6527704904880949
+      },
+      {
+        "case": "joint_021",
+        "lower_variance": 7.18045275567232e-05,
+        "consistent": true,
+        "best_delivered_te_bp": 84.76428997311727,
+        "gap_bp": 0.02673775645054377
+      },
+      {
+        "case": "joint_022",
+        "lower_variance": 0.00011130859973109126,
+        "consistent": true,
+        "best_delivered_te_bp": 106.15448760877737,
+        "gap_bp": 0.651596780567715
+      },
+      {
+        "case": "joint_023",
+        "lower_variance": 7.475210622893962e-05,
+        "consistent": true,
+        "best_delivered_te_bp": 86.68256782862632,
+        "gap_bp": 0.22326744460771408
+      }
+    ],
+    "tiny": [],
+    "conservative_gap_bp": {
+      "n": 24,
+      "mean": 5.799384429799521,
+      "minimum": 0.02673775645054377,
+      "median": 4.153108284588306,
+      "p95": 16.69489698260092,
+      "maximum": 20.025496335335475
+    },
+    "bound_inconsistencies": 0,
+    "bound_closed_at_band": 0,
+    "optional_candidates": {
+      "n": 24,
+      "mean": 27.666666666666668,
+      "minimum": 20.0,
+      "median": 22.0,
+      "p95": 41.0,
+      "maximum": 41.0
+    },
+    "ranked_gap_cases": [],
+    "budget_quality_changes": {
+      "Base": 0,
+      "Ranked": 0
+    }
+  },
+  "tiny": {
+    "expected": 2,
+    "prepared": 2,
+    "methods": {
+      "Ranked": {
+        "expected": 2,
+        "attempted": 2,
+        "audited": 2,
+        "te_bp": {
+          "n": 2,
+          "mean": 568.6355526298662,
+          "minimum": 526.8093487608708,
+          "median": 568.6355526298662,
+          "p95": 606.2791361119621,
+          "maximum": 610.4617564988616
+        },
+        "gap_to_best_bp": {
+          "n": 2,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "seconds": {
+          "n": 2,
+          "mean": 0.22263924998696893,
+          "minimum": 0.15374720003455877,
+          "median": 0.22263924998696893,
+          "p95": 0.28464209494413806,
+          "maximum": 0.2915312999393791
+        },
+        "end_to_end_seconds": {
+          "n": 2,
+          "mean": 0.22271924995584413,
+          "minimum": 0.15381709998473525,
+          "median": 0.22271924995584413,
+          "p95": 0.2847311849298421,
+          "maximum": 0.291621399926953
+        },
+        "first_native_feasible_seconds": {
+          "n": 0,
+          "mean": null,
+          "minimum": null,
+          "median": null,
+          "p95": null,
+          "maximum": null
+        },
+        "allowance_overruns": 0,
+        "ticket_binding": 1,
+        "statuses": {
+          "audited_incumbent": 2
+        },
+        "native_statuses": {
+          "none": 2
+        },
+        "delivered_sources": {
+          "heuristic": 2
+        },
+        "native_bound_above_best": []
+      },
+      "JointBase10": {
+        "expected": 2,
+        "attempted": 2,
+        "audited": 2,
+        "te_bp": {
+          "n": 2,
+          "mean": 568.6355526314358,
+          "minimum": 526.8093487640099,
+          "median": 568.6355526314358,
+          "p95": 606.2791361121191,
+          "maximum": 610.4617564988616
+        },
+        "gap_to_best_bp": {
+          "n": 2,
+          "mean": 1.569560481584631e-09,
+          "minimum": 0.0,
+          "median": 1.569560481584631e-09,
+          "p95": 2.9821649150107985e-09,
+          "maximum": 3.139120963169262e-09
+        },
+        "seconds": {
+          "n": 2,
+          "mean": 0.04536950006149709,
+          "minimum": 0.04250590002629906,
+          "median": 0.04536950006149709,
+          "p95": 0.04794674009317532,
+          "maximum": 0.048233100096695125
+        },
+        "end_to_end_seconds": {
+          "n": 2,
+          "mean": 0.04544950003037229,
+          "minimum": 0.04257579997647554,
+          "median": 0.04544950003037229,
+          "p95": 0.04803583007887937,
+          "maximum": 0.04832320008426905
+        },
+        "first_native_feasible_seconds": {
+          "n": 2,
+          "mean": 0.04145079996669665,
+          "minimum": 0.040259999921545386,
+          "median": 0.04145079996669665,
+          "p95": 0.04252252000733279,
+          "maximum": 0.04264160001184791
+        },
+        "allowance_overruns": 0,
+        "ticket_binding": 1,
+        "statuses": {
+          "audited_incumbent": 2
+        },
+        "native_statuses": {
+          "solsta.integer_optimal": 2
+        },
+        "delivered_sources": {
+          "native_callback": 1,
+          "common_prepared_incumbent": 1
+        },
+        "native_bound_above_best": []
+      },
+      "JointRanked10": {
+        "expected": 2,
+        "attempted": 2,
+        "audited": 2,
+        "te_bp": {
+          "n": 2,
+          "mean": 568.6355526298662,
+          "minimum": 526.8093487608708,
+          "median": 568.6355526298662,
+          "p95": 606.2791361119621,
+          "maximum": 610.4617564988616
+        },
+        "gap_to_best_bp": {
+          "n": 2,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "seconds": {
+          "n": 2,
+          "mean": 0.04311064997455105,
+          "minimum": 0.042481199954636395,
+          "median": 0.04311064997455105,
+          "p95": 0.043677154992474244,
+          "maximum": 0.04374009999446571
+        },
+        "end_to_end_seconds": {
+          "n": 2,
+          "mean": 0.2658298999303952,
+          "minimum": 0.19755719997920096,
+          "median": 0.2658298999303952,
+          "p95": 0.32727532988646996,
+          "maximum": 0.3341025998815894
+        },
+        "first_native_feasible_seconds": {
+          "n": 2,
+          "mean": 0.040449999971315265,
+          "minimum": 0.039833499933592975,
+          "median": 0.040449999971315265,
+          "p95": 0.041004850005265325,
+          "maximum": 0.041066500009037554
+        },
+        "allowance_overruns": 0,
+        "ticket_binding": 1,
+        "statuses": {
+          "audited_incumbent": 2
+        },
+        "native_statuses": {
+          "solsta.integer_optimal": 2
+        },
+        "delivered_sources": {
+          "requested_mip_start": 1,
+          "common_prepared_incumbent": 1
+        },
+        "native_bound_above_best": []
+      },
+      "JointBase60": {
+        "expected": 2,
+        "attempted": 2,
+        "audited": 2,
+        "te_bp": {
+          "n": 2,
+          "mean": 568.6355526314358,
+          "minimum": 526.8093487640099,
+          "median": 568.6355526314358,
+          "p95": 606.2791361121191,
+          "maximum": 610.4617564988616
+        },
+        "gap_to_best_bp": {
+          "n": 2,
+          "mean": 1.569560481584631e-09,
+          "minimum": 0.0,
+          "median": 1.569560481584631e-09,
+          "p95": 2.9821649150107985e-09,
+          "maximum": 3.139120963169262e-09
+        },
+        "seconds": {
+          "n": 2,
+          "mean": 0.0428480000118725,
+          "minimum": 0.041192500037141144,
+          "median": 0.0428480000118725,
+          "p95": 0.04433794998913072,
+          "maximum": 0.044503499986603856
+        },
+        "end_to_end_seconds": {
+          "n": 2,
+          "mean": 0.0429279999807477,
+          "minimum": 0.04126239998731762,
+          "median": 0.0429279999807477,
+          "p95": 0.04442703997483477,
+          "maximum": 0.04459359997417778
+        },
+        "first_native_feasible_seconds": {
+          "n": 2,
+          "mean": 0.0391581499716267,
+          "minimum": 0.03895479999482632,
+          "median": 0.0391581499716267,
+          "p95": 0.03934116495074704,
+          "maximum": 0.03936149994842708
+        },
+        "allowance_overruns": 0,
+        "ticket_binding": 1,
+        "statuses": {
+          "audited_incumbent": 2
+        },
+        "native_statuses": {
+          "solsta.integer_optimal": 2
+        },
+        "delivered_sources": {
+          "native_callback": 1,
+          "common_prepared_incumbent": 1
+        },
+        "native_bound_above_best": []
+      },
+      "JointRanked60": {
+        "expected": 2,
+        "attempted": 2,
+        "audited": 2,
+        "te_bp": {
+          "n": 2,
+          "mean": 568.6355526298662,
+          "minimum": 526.8093487608708,
+          "median": 568.6355526298662,
+          "p95": 606.2791361119621,
+          "maximum": 610.4617564988616
+        },
+        "gap_to_best_bp": {
+          "n": 2,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "seconds": {
+          "n": 2,
+          "mean": 0.04702730005374178,
+          "minimum": 0.04664010007400066,
+          "median": 0.04702730005374178,
+          "p95": 0.0473757800355088,
+          "maximum": 0.04741450003348291
+        },
+        "end_to_end_seconds": {
+          "n": 2,
+          "mean": 0.2697465500095859,
+          "minimum": 0.20123160001821816,
+          "median": 0.2697465500095859,
+          "p95": 0.3314100050018169,
+          "maximum": 0.3382615000009537
+        },
+        "first_native_feasible_seconds": {
+          "n": 2,
+          "mean": 0.04435884993290529,
+          "minimum": 0.04318709997460246,
+          "median": 0.04435884993290529,
+          "p95": 0.04541342489537783,
+          "maximum": 0.04553059989120811
+        },
+        "allowance_overruns": 0,
+        "ticket_binding": 1,
+        "statuses": {
+          "audited_incumbent": 2
+        },
+        "native_statuses": {
+          "solsta.integer_optimal": 2
+        },
+        "delivered_sources": {
+          "requested_mip_start": 1,
+          "common_prepared_incumbent": 1
+        },
+        "native_bound_above_best": []
+      },
+      "JointBase600": {
+        "expected": 2,
+        "attempted": 2,
+        "audited": 2,
+        "te_bp": {
+          "n": 2,
+          "mean": 568.6355526314358,
+          "minimum": 526.8093487640099,
+          "median": 568.6355526314358,
+          "p95": 606.2791361121191,
+          "maximum": 610.4617564988616
+        },
+        "gap_to_best_bp": {
+          "n": 2,
+          "mean": 1.569560481584631e-09,
+          "minimum": 0.0,
+          "median": 1.569560481584631e-09,
+          "p95": 2.9821649150107985e-09,
+          "maximum": 3.139120963169262e-09
+        },
+        "seconds": {
+          "n": 2,
+          "mean": 0.045353349938523024,
+          "minimum": 0.04443279991392046,
+          "median": 0.045353349938523024,
+          "p95": 0.04618184496066533,
+          "maximum": 0.046273899963125587
+        },
+        "end_to_end_seconds": {
+          "n": 2,
+          "mean": 0.045433349907398224,
+          "minimum": 0.04450269986409694,
+          "median": 0.045433349907398224,
+          "p95": 0.04627093494636938,
+          "maximum": 0.04636399995069951
+        },
+        "first_native_feasible_seconds": {
+          "n": 2,
+          "mean": 0.041658250032924116,
+          "minimum": 0.04059320001397282,
+          "median": 0.041658250032924116,
+          "p95": 0.04261679504998028,
+          "maximum": 0.04272330005187541
+        },
+        "allowance_overruns": 0,
+        "ticket_binding": 1,
+        "statuses": {
+          "audited_incumbent": 2
+        },
+        "native_statuses": {
+          "solsta.integer_optimal": 2
+        },
+        "delivered_sources": {
+          "native_callback": 1,
+          "common_prepared_incumbent": 1
+        },
+        "native_bound_above_best": []
+      },
+      "JointRanked600": {
+        "expected": 2,
+        "attempted": 2,
+        "audited": 2,
+        "te_bp": {
+          "n": 2,
+          "mean": 568.6355526298662,
+          "minimum": 526.8093487608708,
+          "median": 568.6355526298662,
+          "p95": 606.2791361119621,
+          "maximum": 610.4617564988616
+        },
+        "gap_to_best_bp": {
+          "n": 2,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "seconds": {
+          "n": 2,
+          "mean": 0.04266040003858507,
+          "minimum": 0.04217839997727424,
+          "median": 0.04266040003858507,
+          "p95": 0.043094200093764815,
+          "maximum": 0.043142400099895895
+        },
+        "end_to_end_seconds": {
+          "n": 2,
+          "mean": 0.2653796499944292,
+          "minimum": 0.1959954999620095,
+          "median": 0.2653796499944292,
+          "p95": 0.3278253850236069,
+          "maximum": 0.3347638000268489
+        },
+        "first_native_feasible_seconds": {
+          "n": 2,
+          "mean": 0.040076399978715926,
+          "minimum": 0.03992190002463758,
+          "median": 0.040076399978715926,
+          "p95": 0.04021544993738644,
+          "maximum": 0.04023089993279427
+        },
+        "allowance_overruns": 0,
+        "ticket_binding": 1,
+        "statuses": {
+          "audited_incumbent": 2
+        },
+        "native_statuses": {
+          "solsta.integer_optimal": 2
+        },
+        "delivered_sources": {
+          "requested_mip_start": 1,
+          "common_prepared_incumbent": 1
+        },
+        "native_bound_above_best": []
+      }
+    },
+    "comparisons": {
+      "JointBase10": {
+        "pairs": 2,
+        "v2_lower": 0,
+        "equal": 2,
+        "v2_higher": 0,
+        "v2_minus_mip_bp": {
+          "n": 2,
+          "mean": -1.569560481584631e-09,
+          "minimum": -3.139120963169262e-09,
+          "median": -1.569560481584631e-09,
+          "p95": -1.5695604815846324e-10,
+          "maximum": 0.0
+        },
+        "worse_cases": []
+      },
+      "JointRanked10": {
+        "pairs": 2,
+        "v2_lower": 0,
+        "equal": 2,
+        "v2_higher": 0,
+        "v2_minus_mip_bp": {
+          "n": 2,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "worse_cases": []
+      },
+      "JointBase60": {
+        "pairs": 2,
+        "v2_lower": 0,
+        "equal": 2,
+        "v2_higher": 0,
+        "v2_minus_mip_bp": {
+          "n": 2,
+          "mean": -1.569560481584631e-09,
+          "minimum": -3.139120963169262e-09,
+          "median": -1.569560481584631e-09,
+          "p95": -1.5695604815846324e-10,
+          "maximum": 0.0
+        },
+        "worse_cases": []
+      },
+      "JointRanked60": {
+        "pairs": 2,
+        "v2_lower": 0,
+        "equal": 2,
+        "v2_higher": 0,
+        "v2_minus_mip_bp": {
+          "n": 2,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "worse_cases": []
+      },
+      "JointBase600": {
+        "pairs": 2,
+        "v2_lower": 0,
+        "equal": 2,
+        "v2_higher": 0,
+        "v2_minus_mip_bp": {
+          "n": 2,
+          "mean": -1.569560481584631e-09,
+          "minimum": -3.139120963169262e-09,
+          "median": -1.569560481584631e-09,
+          "p95": -1.5695604815846324e-10,
+          "maximum": 0.0
+        },
+        "worse_cases": []
+      },
+      "JointRanked600": {
+        "pairs": 2,
+        "v2_lower": 0,
+        "equal": 2,
+        "v2_higher": 0,
+        "v2_minus_mip_bp": {
+          "n": 2,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "worse_cases": []
+      }
+    },
+    "certificates": [
+      {
+        "case": "joint_024",
+        "lower_variance": 0.0025728334653179596,
+        "consistent": true,
+        "best_delivered_te_bp": 526.8093487608708,
+        "gap_bp": 19.578290433607094
+      },
+      {
+        "case": "joint_025",
+        "lower_variance": 0.003647160975175577,
+        "consistent": true,
+        "best_delivered_te_bp": 610.4617564988616,
+        "gap_bp": 6.544462891899457
+      }
+    ],
+    "tiny": [
+      {
+        "case": "joint_024",
+        "complete": true,
+        "unresolved": 0,
+        "supports": 37,
+        "audit": {
+          "passed": true,
+          "violations": [],
+          "residuals": {
+            "funding": 0.0,
+            "lower": 4.1008652822483075e-13,
+            "upper": 0.0,
+            "groups": 0.0
+          },
+          "tickets": 4,
+          "optional_tickets": 2,
+          "turnover": 0.33303841782193266
+        },
+        "te_bp": 526.8093487604608,
+        "differences_bp": {
+          "Ranked": 4.099547368241474e-10,
+          "JointBase10": 3.5490756999934092e-09,
+          "JointRanked10": 4.099547368241474e-10,
+          "JointRanked60": 4.099547368241474e-10,
+          "JointBase60": 3.5490756999934092e-09,
+          "JointBase600": 3.5490756999934092e-09,
+          "JointRanked600": 4.099547368241474e-10
+        }
+      },
+      {
+        "case": "joint_025",
+        "complete": true,
+        "unresolved": 0,
+        "supports": 37,
+        "audit": {
+          "passed": true,
+          "violations": [],
+          "residuals": {
+            "funding": 2.220446049250313e-16,
+            "lower": 5.603152135773089e-13,
+            "upper": 6.953604358983512e-13,
+            "groups": 0.0
+          },
+          "tickets": 2,
+          "optional_tickets": 0,
+          "turnover": 0.15983614542713845
+        },
+        "te_bp": 610.4617564956726,
+        "differences_bp": {
+          "Ranked": 3.1890294849290513e-09,
+          "JointRanked600": 3.1890294849290513e-09,
+          "JointBase600": 3.1890294849290513e-09,
+          "JointBase60": 3.1890294849290513e-09,
+          "JointRanked60": 3.1890294849290513e-09,
+          "JointRanked10": 3.1890294849290513e-09,
+          "JointBase10": 3.1890294849290513e-09
+        }
+      }
+    ],
+    "conservative_gap_bp": {
+      "n": 2,
+      "mean": 13.061376662753275,
+      "minimum": 6.544462891899457,
+      "median": 13.061376662753275,
+      "p95": 18.926599056521713,
+      "maximum": 19.578290433607094
+    },
+    "bound_inconsistencies": 0,
+    "bound_closed_at_band": 0,
+    "optional_candidates": {
+      "n": 2,
+      "mean": 8.0,
+      "minimum": 8.0,
+      "median": 8.0,
+      "p95": 8.0,
+      "maximum": 8.0
+    },
+    "ranked_gap_cases": [],
+    "budget_quality_changes": {
+      "Base": 0,
+      "Ranked": 0
+    }
+  }
+}

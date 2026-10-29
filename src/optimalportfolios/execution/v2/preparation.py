@@ -3,8 +3,9 @@
 Preparation preserves the supplied original book and hard domain. It first
 repairs inside the corridor; a hard-domain attempt explicitly minimises corridor
 excursion before turnover and additional repair tickets. Tied repair supports
-are ordered by instrument identity before fixed-state sizing. New endpoints are
-pinned, counted and declared before any tracking-risk search.
+are ordered by instrument identity before fixed-state sizing. Genuine new repairs
+are pinned, counted and declared before any tracking-risk search. Numerical base
+anchors inside the supplied corridor retain its discretionary trade intervals.
 """
 from dataclasses import replace
 from time import perf_counter
@@ -16,6 +17,18 @@ from .domain import audit_execution, domain_bounds, floor_intervals
 
 _SCALE = 1e4
 _OBJECTIVE_GUARD_BP = 1e-7
+
+
+def _holding_intervals(problem, i, lower, upper, floor):
+    """Retain an audit-zero incoming hold inside a strictly positive corridor."""
+    intervals = floor_intervals(lower, upper, floor)
+    base = problem.base[i]
+    # The audit's zero convention does not require a floor-sized purchase for
+    # positive numerical dust. Keep its exact hold; never lower the supplied bound.
+    if (not problem.mandatory[i] and 0 < lower <= base <= upper
+            and base <= problem.rules.zero_tolerance and base < floor):
+        intervals.insert(0, (base, base))
+    return intervals
 
 
 def _no_repair_bounds(problem, lo, hi):
@@ -37,7 +50,7 @@ def _no_repair_bounds(problem, lo, hi):
         domains = ((max(lo[i], problem.lower[i]), min(hi[i], problem.upper[i])),
                    (lo[i], hi[i]))
         for lower, upper in domains:
-            intervals = floor_intervals(lower, upper, floor[i])
+            intervals = _holding_intervals(problem, i, lower, upper, floor[i])
             if not intervals:
                 continue
             candidates = [min(max(anchors[i], low), high) for low, high in intervals]
@@ -66,20 +79,22 @@ def _graph(problem, mode, choices=None):
     no_lower, no_upper = _no_repair_bounds(problem, lo, hi)
     optional = noncash[~problem.mandatory[noncash] & (lo[noncash] != hi[noncash])]
     disjunctive = []
+    unheld = np.zeros(n)
     for i in noncash:
-        intervals = floor_intervals(lo[i], hi[i], floor[i])
+        intervals = _holding_intervals(problem, i, lo[i], hi[i], floor[i])
         if not intervals:
             raise ValueError(f'No holding state for {problem.names[i]}')
         if len(intervals) == 1:
             lo[i], hi[i] = intervals[0]
         else:
             disjunctive.append(i)
+            unheld[i] = intervals[0][0]
     if choices is not None:
         for i, held in zip(disjunctive, choices['held']):
             if held:
                 lo[i] = max(lo[i], floor[i])
             else:
-                lo[i] = hi[i] = 0.
+                lo[i] = hi[i] = unheld[i]
         for i, moved in zip(optional, choices['repair']):
             if not moved:
                 lo[i], hi[i] = no_lower[i], no_upper[i]
@@ -113,8 +128,11 @@ def _graph(problem, mode, choices=None):
     if choices is None and disjunctive:
         held = cp.Variable(len(disjunctive), boolean=True)
         variables['held'] = (held, disjunctive)
-        rows += [weights[disjunctive] >= cp.multiply(floor[disjunctive]*_SCALE, held),
-                 weights[disjunctive] <= cp.multiply(hi[disjunctive]*_SCALE, held)]
+        anchors = unheld[disjunctive]*_SCALE
+        rows += [weights[disjunctive] >= anchors
+                 + cp.multiply(floor[disjunctive]*_SCALE-anchors, held),
+                 weights[disjunctive] <= anchors
+                 + cp.multiply(hi[disjunctive]*_SCALE-anchors, held)]
     if choices is None and len(optional):
         repair = cp.Variable(len(optional), boolean=True)
         variables['repair'] = (repair, optional)
@@ -250,13 +268,16 @@ def _canonical_choices(problem, variables, rows, count, solver, deadline, log, m
     if 'held' in variables:
         held, indices = variables['held']
         no_lower, _ = _no_repair_bounds(problem, *domain_bounds(problem, mode))
+        floor = np.broadcast_to(problem.rules.holding_floor, problem.base.shape)
         for j in sorted(range(len(indices)), key=lambda j: problem.names[indices[j]]):
             i = indices[j]
             if not problem.mandatory[i] and i not in selected:
-                choice = int(no_lower[i] != 0.)
+                choice = int(no_lower[i] >= floor[i])
             else:
                 label = f'{mode}:holding_identity:{problem.names[i]}'
-                objective = -held[j] if problem.base[i] != 0. else held[j]
+                retained = (problem.base[i] > problem.rules.zero_tolerance
+                            or problem.base[i] >= floor[i])
+                objective = -held[j] if retained else held[j]
                 if not _solve(objective, rows, solver, deadline, log, label):
                     return None
                 value = _binary_values(held, log, label)
@@ -331,12 +352,10 @@ def _repair(problem, mode, solver, deadline, log):
         domain_lo, domain_hi = domain_bounds(problem, mode)
         floor = np.broadcast_to(problem.rules.holding_floor, candidate.shape)
         for i in movable:
-            valid = (domain_lo[i] <= candidate[i] <= domain_hi[i]
-                     and (candidate[i] == 0. or candidate[i] >= floor[i]))
+            intervals = _holding_intervals(problem, i, domain_lo[i], domain_hi[i], floor[i])
+            valid = any(low <= candidate[i] <= high for low, high in intervals)
             if not valid:
-                endpoints = [domain_lo[i], domain_hi[i]]
-                if domain_lo[i] <= floor[i] <= domain_hi[i]:
-                    endpoints.append(floor[i])
+                endpoints = [x for interval in intervals for x in interval]
                 endpoint = min(endpoints, key=lambda x: abs(x-candidate[i]))
                 if abs(endpoint-candidate[i]) > problem.rules.zero_tolerance:
                     return None
@@ -351,7 +370,7 @@ def _repair(problem, mode, solver, deadline, log):
 
 
 def _declare(problem, weights, mode):
-    """Pin new interventions and count actual original-book mandatory moves."""
+    """Pin genuine interventions while retaining legal numerical-anchor intervals."""
     lo, hi = problem.lower.copy(), problem.upper.copy()
     full_lo, full_hi = problem.full_lower.copy(), problem.full_upper.copy()
     categories = list(problem.categories)
@@ -371,16 +390,23 @@ def _declare(problem, weights, mode):
                                  f'{problem.names[i]} {endpoint} [{full_lo[i]}, {full_hi[i]}]')
             row = dict(index=i, name=problem.names[i], before=float(base[i]),
                        endpoint=float(endpoint))
-            if endpoint < lo[i] or endpoint > hi[i]:
+            outside_corridor = endpoint < lo[i] or endpoint > hi[i]
+            if outside_corridor:
                 exceptions.append(dict(row, original_lower=float(lo[i]),
                                        original_upper=float(hi[i])))
-            base[i] = lo[i] = hi[i] = full_lo[i] = full_hi[i] = endpoint
-            if abs(endpoint-problem.current[i]) > problem.rules.zero_tolerance:
+            material = abs(endpoint-problem.current[i]) > problem.rules.zero_tolerance
+            base[i] = endpoint
+            # A numerical anchor is a valid hold state, not a compulsory trade.
+            # Retain its supplied buy/sell capacity. An out-of-corridor anchor
+            # still needs the existing fixed, explicitly declared exception.
+            if material or outside_corridor:
+                lo[i] = hi[i] = full_lo[i] = full_hi[i] = endpoint
+            if material:
                 mandatory[i] = exempt[i] = True
                 categories[i] = 'compulsory_saa_funding_repair'
                 repairs.append(row)
             else:
-                numerical.append(row)
+                numerical.append(dict(row, bounds_preserved=not outside_corridor))
     rules = problem.rules
     if rules.discretionary_allowance is not None:
         rules = replace(rules, ticket_cap=int(mandatory.sum())+rules.discretionary_allowance)

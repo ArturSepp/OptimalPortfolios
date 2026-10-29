@@ -1,0 +1,156 @@
+{
+  "specification": {
+    "schema": "ranked-robustness-1",
+    "seed": 41001,
+    "sensitivity": {
+      "case_count": 24,
+      "selection": "Evenly spaced integer positions, including both endpoints, in the verified 219-case public manifest",
+      "target_half_l1": [
+        0.001,
+        0.005
+      ],
+      "log_volatility_shock": [
+        0.01,
+        0.05
+      ],
+      "variants": [
+        "target",
+        "covariance",
+        "joint"
+      ],
+      "domains": [
+        "fixed",
+        "rebuilt_corridor"
+      ],
+      "target_rule": "Positive noncash target holdings tilted by a seeded bounded vector, renormalised to unchanged noncash mass, then interpolated to the requested half-L1 change. Zeros and cash unchanged.",
+      "covariance_rule": "D Sigma D, D_ii=exp(amplitude*seeded uniform[-1,1]); no clipping or PSD repair",
+      "domain_rule": "Fixed uses baseline common preparation. Rebuilt retains raw full bounds, mandatory lifecycle declarations, cash bounds and group limits, but rebuilds optional corridors between base and perturbed target, intersects the unchanged full bounds, then repeats common preparation.",
+      "scope": "Conditional supplied-input sensitivity; no upstream re-estimation, changed eligibility, target zero crossing or own-book returns. Mandatory counts are observed, not reclassified from missing lifecycle inputs."
+    },
+    "scarcity": {
+      "optional_assets": [
+        12,
+        36
+      ],
+      "discretionary_allowance": [
+        3,
+        6
+      ],
+      "group_half_width": [
+        0.005,
+        0.08
+      ],
+      "cash_band": [
+        "narrow",
+        "wide"
+      ],
+      "seeds": [
+        41001,
+        41002,
+        51001,
+        51002
+      ],
+      "mandatory_exits": 2,
+      "minimum_ticket": 0.005,
+      "holding_floor": 0.0025,
+      "methods": [
+        "Ranked",
+        "Greedy",
+        "OneAnchor",
+        "ExactBase",
+        "ExactRanked"
+      ]
+    },
+    "preparation_seconds": 30.0,
+    "exact_seconds": 10.0,
+    "exact_threads": 1,
+    "exact_gap_rel": 0.0001,
+    "audit_tolerance": 1e-07,
+    "zero_tolerance": 1e-08,
+    "descriptive_te_equality_bp": 0.0001,
+    "failure_policy": "Retain every preparation, solver and independent-audit failure; do not tune the grid, tolerances or algorithm after observing the experiment.",
+    "timing": "Serial calls; common preparation separately measured; ExactRanked end-to-end includes Ranked start generation."
+  },
+  "specification_sha256": "3b06170fa4c2d5afcdeb9942ad4950df4e6fdf6efd6dc7cae09eb380e95a9589",
+  "benchmark_sha256": "f3435f511c7b0051297e1190b9cf1ffeed1bdca82352ea58aa53bb22545f0886",
+  "study": "all",
+  "limit": null,
+  "ranked_config": {
+    "drop": true,
+    "exchange": true,
+    "compute_bound": false,
+    "rescue_trials": 24,
+    "mandatory_state_trials": 32,
+    "objective_tolerance": 1e-12,
+    "qp_solver": "CLARABEL",
+    "improvement_passes": 3
+  },
+  "python": "3.12.14",
+  "versions": {
+    "optimalportfolios": "9.1.5",
+    "qis": "5.44.4",
+    "numpy": "2.5.2",
+    "pandas": "3.0.5",
+    "scipy": "1.18.1",
+    "cvxpy": "1.9.2",
+    "Mosek": "11.2.3",
+    "clarabel": "0.11.1"
+  },
+  "source_sha256": {
+    "execution/__init__.py": "af704f08e70642c3bc4956a4b93643270b86e654a2533ecb954797102e104a87",
+    "execution/_audited_cutoff_repair.py": "63ddaf5e0aaa5f987d68c3ad10dbc990a8bbbf4f095c94acd22ef1394fb2530a",
+    "execution/_budget.py": "9ae82c0e03581e5118ae8a534e1f8db2963353f6547b1211adc414391ec1f2b0",
+    "execution/_common/__init__.py": "99ea992810985dd9ea34a362804c0e29cbab98e9c8b7008974be7017d21fe902",
+    "execution/_common/config.py": "859dd7262200b16c52141219d0070512c419ad6988b6f13a1adeb496287b176d",
+    "execution/_common/model.py": "4d1bee2444d233d41508a37eef88d18b279467df2864e3a9791c044e73b0293c",
+    "execution/_constraint_scope.py": "b0f28e5e7735d109967b0bef59ecb096fd78af9b6cc30f0b3b75416fc397f098",
+    "execution/_cutoff_repair.py": "9287f8ab34550e59200354e298b187bdf844fac99b45fbb5dc7f38d97da44352",
+    "execution/_monthly_target.py": "fde018f07c2ad92fccb7fc9c474f7cd252078f57d5b00a44ef130878c08d4283",
+    "execution/_projection_cache.py": "b04df4cb95fc0f0329c580db9c7a87415a7c8db9244b0a9697f8b5eaa23d7814",
+    "execution/_return_gate.py": "fdb464646988ebd76f7aef554eb17506797499bb274121b0f5324ee3ea388361",
+    "execution/_swaps.py": "c4402492a424c5c68b292b3f38f5d91094a5db99dd58ab640a904f4f45084b6f",
+    "execution/api.py": "c10369346b12c1faa42b17ebab62cb9ea814f92cc08da0b73e016986b8785e13",
+    "execution/branches.py": "7fd615746bbcc4581b15641421978c288740454ed9ea6eeee475f98b114ee6b2",
+    "execution/feasibility.py": "8008ee98749e1ac14f082f72eda15b81cde4909f6b5478cfac2f19cdebdfce47",
+    "execution/guarded.py": "413d68eb95f48879d30f2f4dd40e7928b7debeaba20c37349803dc0c39568859",
+    "execution/improvement.py": "e07855788cc836fbdc739ae0e1bddbb7026726bc979233eaea819e685ca9fd80",
+    "execution/MIQP/__init__.py": "b92352312b347d16a96dfb0f0672eb08025663902e3b24d54e39fd490f22adb1",
+    "execution/MIQP/solver.py": "4b14834661188502c89fc6137e466867bfc6ba3275b8d09c803eabcd650eb666",
+    "execution/ranking.py": "137277c05ac5f3de225935e792c2aefd1ec3924f7ca855e71bc63787e67e1d7c",
+    "execution/schema.py": "f9a8c0ef0ff4584a3385ef9301af84d2b73f0b9cde8ac5c8ac4aa63a8f0bb0fe",
+    "execution/solver.py": "89d7b9b69279d6da2b08603c873593751302adecf51088f234d3ae7b1acbd4bc",
+    "execution/types.py": "8061a106e88ca9afffab6192d6b604eb9277c1791b9994d9f5e3110e06b766ed",
+    "execution/v1/__init__.py": "5f6e3d0d1a5d61920e8f8f026e1811808cfba522b193c006790fef35f0b61b72",
+    "execution/v1/_audited_cutoff_repair.py": "f7e7b615727ced73f53a863def4304fe628ccc3d78a138351666315fb629ef4f",
+    "execution/v1/_budget.py": "7b90273653cfe961f5e645b835724d8b02bb31d42b0e393e3d1dae9cc821cbed",
+    "execution/v1/_constraint_scope.py": "2489f93b0a990cd18ea99c5fa146429d7f59b700faffbf5e4dfea40fed8e1497",
+    "execution/v1/_cutoff_repair.py": "be1f339660fe8a18173f8ed541e9b01efc02ea3ce2a02f017a57eeae020ddfad",
+    "execution/v1/_monthly_target.py": "a9cec842945abb4fb1dbcf3d58243db9aa567c070ea72b59b161d056ac0e35fd",
+    "execution/v1/_projection_cache.py": "ebc346f1886e6eccf1eb5ed2a894f7c98fecbba2a8643991096ec3de37c22531",
+    "execution/v1/_return_gate.py": "a409a391f10de703ca30e5eb4578b9207f2ec69ac90f5fd7fd74338a560f9614",
+    "execution/v1/_swaps.py": "4f7075a5aa3496e06fa77459ad19faea9aee8b4ad4d87a5dd0db59fb39e6f7d8",
+    "execution/v1/api.py": "cfff0e335e7f10806be0a26af4c5e5e5d5e777c2183c736b563787f73cd3424d",
+    "execution/v1/branches.py": "436cdb55d6953c081b090e61fa6ce38993de5fc8307d317f4eeeaba2c40713b6",
+    "execution/v1/feasibility.py": "530aa59e1172804e7ea6fb25722233e586caff1dee3fb843f5fd5e621bc9989d",
+    "execution/v1/guarded.py": "8a1e560c8a1175afe8198b4de271d365c0e208e676793af6ad7bd2e0815f14a4",
+    "execution/v1/improvement.py": "4ea9a84cbd81ff0438d8dbdc09fdaafb505dffb5b0f1fa204a67aeb371b4c653",
+    "execution/v1/orchestration.py": "eb6e1873cde8c23d596bb2484061d3171458df917f7b1bce10894419d73418dc",
+    "execution/v1/policy.py": "c85619cfc5db1721640649644c4fa23ff4fd95811b2802470b42caaaa8967e83",
+    "execution/v1/ranking.py": "35f451f2afc954af79f87478fbb2c2263a897e84313578ed9a25141ee30e976f",
+    "execution/v1/risk_budget_ranker.py": "75e2c09995aa35ce288bdd407087209e0a6454a65026d64184fef7be6a363f55",
+    "execution/v1/schema.py": "b8eb426dbb19de0c17081d92c3394f0026b3a07064ea7ed21873316fed87a301",
+    "execution/v1/solver.py": "e7216bd1933f1f5058a40acf5ef71a03e0684ea0077674f23eec4f0c8b3d3a63",
+    "execution/v1/types.py": "ecf4166bf5d90a57aac6e338d175ebf80840946f98fe7fdd84c5f42a6b361a12",
+    "execution/v2/__init__.py": "0f1a45905310ea75737eab9e09e1f83c36da095e454695abbd720bf977240b6d",
+    "execution/v2/adapter.py": "8a9b080b445283a657076b43a049d1d138ab6b8b30f5e8b0d7c1232d9425a571",
+    "execution/v2/bounds.py": "e51cec9d40c758acb6729a4ddace9fb783573f7319a9c8e2c232389df085ac95",
+    "execution/v2/domain.py": "75c914c1a926e36aa2f8d2963fdd21a1b52383989c42c149a64bdcce70b27f71",
+    "execution/v2/exact.py": "39e1e061ec6063d54ab92bc74fea99b0f0a7b9b9c75169824cf085826983a1de",
+    "execution/v2/model.py": "ffb2cd0431db8d22c831cd2ac265c6d3f7d3a5452e76d826b3301a58f61a4b19",
+    "execution/v2/preparation.py": "e95271ca0356b84b0c0e34b428571e388b320a20aac9b26e061f2488edb2a02d",
+    "execution/v2/production.py": "c763a17df61553522423574f2d903f48c632185de7a4c426dfcf6c0cd9919a4f",
+    "execution/v2/ranked.py": "8aad976fa4e4d80458dd1c743fde98a4a9db6b70139c50e6051e4fe388fe1792",
+    "execution/v2/types.py": "9db80c60429acac2c50f4e240a87d42119413f8e98f78af172066b78a4ea97c9"
+  },
+  "runner_sha256": "6214f559dd8eaa3a73bfed362f45b4dd0a11b4e7e463ccd75d88010e29d6560a"
+}

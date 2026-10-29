@@ -53,7 +53,8 @@ def compile_states(
             continue
         branches = []
         base = problem.base[i]
-        if not problem.mandatory[i] and lo <= base <= hi and (base == 0 or base >= floor[i]):
+        if (not problem.mandatory[i] and lo <= base <= hi
+                and (base <= problem.rules.zero_tolerance or base >= floor[i])):
             branches.append(TradeState(base, base, False))
         if exempt[i]:
             intervals = [(lo, hi)]

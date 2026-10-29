@@ -1,0 +1,437 @@
+{
+  "protocol_sha256": "8f7da0f2a12248932fd009b76a2e18c9f83cbbb23cd5da2d779e4fd7e02d451c",
+  "record_sha256": {
+    "complete.json": "14c3b3510c85b789540aa1f3f0d97b12ec587434e78641e4a34e7ad5238eff23",
+    "protocol.json": "8f7da0f2a12248932fd009b76a2e18c9f83cbbb23cd5da2d779e4fd7e02d451c",
+    "scarcity_000.json": "2a828ca6ef179e394389d514afe2ff523f425ac0c818341186499c5445fff78f",
+    "scarcity_001.json": "ed69d6a83436456339a6d865eab6df54300eb29a6b30ff946709b75953398cfd",
+    "scarcity_002.json": "d7136e5f46cdaf897255e384163ad4fb4abcca671b9963c30ef1260364176462",
+    "scarcity_003.json": "92bf5bd7b658df920ba95edc77890c5bc55348da892838068de86aa07e3adc27",
+    "scarcity_004.json": "0f92613f7f6281531fa6051e3a4e51a596a5f6c486a9efc12f2ed98ddff6f36d",
+    "scarcity_005.json": "46b375fd18886da2825406b8f1f9b0299de8db41f839c38db64e35a89adc7f0e",
+    "scarcity_006.json": "756134383175e16d01de96e9a9f6a28659638dca8bdc47c32baa466ee7229054",
+    "scarcity_007.json": "5c6f12e5e2938b0a0d2ee5f6afa60d29fd05fac2728e6a6aa102db665c6c17ed",
+    "scarcity_008.json": "e0b9df09a8ce90c8d67ca34294b51af3449545c5d329895de8d14325ad1a0b07",
+    "scarcity_009.json": "0c45ebd4f920afffb74406a0d4308dab2d1fe0c70840995871946a6e17aad366",
+    "scarcity_010.json": "9bf3154061ec1426bf0bc879135249f8721dbb8a50ced0dc9499e80dafacd51c",
+    "scarcity_011.json": "d9ce2b0e03334472d37924b7e30ca8b62497d710265f3df3edec4551dbf0e589",
+    "scarcity_012.json": "185bcfaf563f169f3b5490e446d23f4c36737699cc3fd32860694fea96733341",
+    "scarcity_013.json": "1d9d5afedc2a1b474712c3a2fd8c72bf2a8ac27e9403111b4a8cdb8a8a323ea9",
+    "scarcity_014.json": "3438edfe7bb3630556e732c29c905cf9a456b7fc3fcc68d94c660826d1be4af1",
+    "scarcity_015.json": "678c22440dbd3a7f28d816de897c9e287325be81e1bd01922704524ee72fa436",
+    "scarcity_016.json": "6c0537fdeb9ff849e5c4f1892e78697dbbcf77b75aa03fc82c5ef877fb11dcf5",
+    "scarcity_017.json": "893366a30ab6dc6601f0646c77f055f68889a9a7b89543dc35ee1ebcaec55f1d",
+    "scarcity_018.json": "a587c4cb0be124e8507ac8b813e4c35b130bdfbaac4643d0ae6320e9fd61b264",
+    "scarcity_019.json": "2ccb0f07a28d85d8325a4632bc4139033687cbcbf4dbde5647eb0fa401c8b279",
+    "scarcity_020.json": "399ba109f6a5f56be5e85e515e04808625bffb47430a1a86d5faddc054a41cd6",
+    "scarcity_021.json": "155e5dbd5614d99215275213fb1831e4cd64b30125548b490f2d003fa9ecee6a",
+    "scarcity_022.json": "fa449fc663ea5e4ecd388cedd5e8ae84bbc23f06bdc2ced750b796f0cadbc45a",
+    "scarcity_023.json": "7cdf8ad724486a6b48af4313e379442ae04b02f12c18af756780b1031fb3c66b",
+    "scarcity_024.json": "26a17ea702353dcc340f2f88f953e56699a4a0a704970ea97c7efcba5e10d07b",
+    "scarcity_025.json": "60f2096b3e89bd160050cf36bdc05cf96f91ceb5f2d3f209c7de174b13050ce9",
+    "scarcity_026.json": "64dd21c1334eda27dbc15d114c98e943b1f9e3eb2b416c064ff0bc96ae80beae",
+    "scarcity_027.json": "cb2f63350d49eeaee94750bad28f4d1505de07a71a54bf7f83b602aa47db72a7",
+    "scarcity_028.json": "b92d10552797080186d0f4a970b731ebc4fae3eb88de8f4316c4c99e9211a684",
+    "scarcity_029.json": "c9db65df0e9960293bf5c1b56ea0d37505d85fdd07b017312f0a8fe05402d64b",
+    "scarcity_030.json": "d61078cbca16503c7fce42de8fe82df58f629379131042e6c6c4e1c75e5665df",
+    "scarcity_031.json": "dd98e7930d5e13e5a7b7b76e1982de0aa29f086407006e344bcca47c3f04ddc7"
+  },
+  "versions": {
+    "optimalportfolios": "9.1.5",
+    "qis": "5.44.4",
+    "numpy": "2.5.2",
+    "pandas": "3.0.5",
+    "scipy": "1.18.1",
+    "cvxpy": "1.9.2",
+    "Mosek": "11.2.3",
+    "clarabel": "0.11.1"
+  },
+  "specification": {
+    "schema": "ranked-scarcity-holdout-1",
+    "seed": 41001,
+    "sensitivity": {
+      "case_count": 24,
+      "selection": "Evenly spaced integer positions, including both endpoints, in the verified 219-case public manifest",
+      "target_half_l1": [
+        0.001,
+        0.005
+      ],
+      "log_volatility_shock": [
+        0.01,
+        0.05
+      ],
+      "variants": [
+        "target",
+        "covariance",
+        "joint"
+      ],
+      "domains": [
+        "fixed",
+        "rebuilt_corridor"
+      ],
+      "target_rule": "Positive noncash target holdings tilted by a seeded bounded vector, renormalised to unchanged noncash mass, then interpolated to the requested half-L1 change. Zeros and cash unchanged.",
+      "covariance_rule": "D Sigma D, D_ii=exp(amplitude*seeded uniform[-1,1]); no clipping or PSD repair",
+      "domain_rule": "Fixed uses baseline common preparation. Rebuilt retains raw full bounds, mandatory lifecycle declarations, cash bounds and group limits, but rebuilds optional corridors between base and perturbed target, intersects the unchanged full bounds, then repeats common preparation.",
+      "scope": "Conditional supplied-input sensitivity; no upstream re-estimation, changed eligibility, target zero crossing or own-book returns. Mandatory counts are observed, not reclassified from missing lifecycle inputs."
+    },
+    "scarcity": {
+      "optional_assets": [
+        12,
+        36
+      ],
+      "discretionary_allowance": [
+        3,
+        6
+      ],
+      "group_half_width": [
+        0.005,
+        0.08
+      ],
+      "cash_band": [
+        "narrow",
+        "wide"
+      ],
+      "seeds": [
+        61001,
+        61002
+      ],
+      "mandatory_exits": 2,
+      "minimum_ticket": 0.005,
+      "holding_floor": 0.0025,
+      "methods": [
+        "Ranked",
+        "Greedy",
+        "OneAnchor",
+        "ExactBase",
+        "ExactRanked"
+      ]
+    },
+    "preparation_seconds": 30.0,
+    "exact_seconds": 10.0,
+    "exact_threads": 1,
+    "exact_gap_rel": 0.0001,
+    "audit_tolerance": 1e-07,
+    "zero_tolerance": 1e-08,
+    "descriptive_te_equality_bp": 0.0001,
+    "failure_policy": "The 41001/41002 and former 51001/51002 holdout grids are now development data. Freeze the corrected execution source before running these new 61001/61002 seeds. Retain all failures and gaps; no retuning on this holdout.",
+    "timing": "Serial calls; common preparation separately measured; ExactRanked end-to-end includes Ranked start generation."
+  },
+  "sensitivity": {
+    "cases": 0,
+    "baseline_audit_passed": 0,
+    "expected_variants": 0,
+    "recorded_variants": 0,
+    "audited_variants": 0,
+    "cells": []
+  },
+  "scarcity": {
+    "cases": 32,
+    "prepared": 32,
+    "base_audit_passed": 32,
+    "optional_candidates": {
+      "n": 32,
+      "mean": 21.25,
+      "minimum": 11.0,
+      "median": 19.5,
+      "p95": 35.0,
+      "maximum": 35.0
+    },
+    "methods": {
+      "Ranked": {
+        "expected": 32,
+        "returned": 32,
+        "audited": 32,
+        "te_bp": {
+          "n": 32,
+          "mean": 176.38190808823413,
+          "minimum": 68.25818315235172,
+          "median": 136.11952783707835,
+          "p95": 369.2035261332509,
+          "maximum": 369.2035261332951
+        },
+        "seconds": {
+          "n": 32,
+          "mean": 10.621552803127997,
+          "minimum": 1.164419399923645,
+          "median": 5.022252700000536,
+          "p95": 33.902967694972176,
+          "maximum": 37.55170409998391
+        },
+        "end_to_end_seconds": {
+          "n": 32,
+          "mean": 10.621661899993342,
+          "minimum": 1.1644897998776287,
+          "median": 5.022325399972033,
+          "p95": 33.903138274920636,
+          "maximum": 37.55181840003934
+        },
+        "allowance_binding": 30,
+        "delivered_sources": {
+          "ranked_search": 32
+        },
+        "statuses": {
+          "audited_incumbent": 32
+        }
+      },
+      "Greedy": {
+        "expected": 32,
+        "returned": 32,
+        "audited": 32,
+        "te_bp": {
+          "n": 32,
+          "mean": 237.42921882529498,
+          "minimum": 78.59961760536152,
+          "median": 178.8666627436107,
+          "p95": 483.446400172839,
+          "maximum": 483.446400172839
+        },
+        "seconds": {
+          "n": 32,
+          "mean": 0.006864115639473312,
+          "minimum": 0.004672399954870343,
+          "median": 0.006856449996121228,
+          "p95": 0.009446315001696348,
+          "maximum": 0.010936600039713085
+        },
+        "end_to_end_seconds": {
+          "n": 32,
+          "mean": 0.0069732125048176385,
+          "minimum": 0.004873999976553023,
+          "median": 0.006951000017579645,
+          "p95": 0.009517654962837695,
+          "maximum": 0.01101000013295561
+        },
+        "allowance_binding": 16,
+        "delivered_sources": {
+          "ranked_search": 32
+        },
+        "statuses": {
+          "audited_incumbent": 32
+        }
+      },
+      "OneAnchor": {
+        "expected": 32,
+        "returned": 32,
+        "audited": 32,
+        "te_bp": {
+          "n": 32,
+          "mean": 176.38190808823413,
+          "minimum": 68.25818315235172,
+          "median": 136.11952783707835,
+          "p95": 369.2035261332509,
+          "maximum": 369.2035261332951
+        },
+        "seconds": {
+          "n": 32,
+          "mean": 10.176720884377573,
+          "minimum": 1.2186904000118375,
+          "median": 5.25047035003081,
+          "p95": 32.086344979994465,
+          "maximum": 33.11093930003699
+        },
+        "end_to_end_seconds": {
+          "n": 32,
+          "mean": 10.176829981242918,
+          "minimum": 1.2187607999658212,
+          "median": 5.250575000012759,
+          "p95": 32.08643590499996,
+          "maximum": 33.11119069997221
+        },
+        "allowance_binding": 30,
+        "delivered_sources": {
+          "ranked_search": 32
+        },
+        "statuses": {
+          "audited_incumbent": 32
+        }
+      },
+      "ExactBase": {
+        "expected": 32,
+        "returned": 32,
+        "audited": 32,
+        "te_bp": {
+          "n": 32,
+          "mean": 178.67237252619367,
+          "minimum": 69.15234638869393,
+          "median": 136.11952783687136,
+          "p95": 369.2035261334038,
+          "maximum": 369.20356793944774
+        },
+        "seconds": {
+          "n": 32,
+          "mean": 0.7343707156323944,
+          "minimum": 0.08125670009758323,
+          "median": 0.31307519995607436,
+          "p95": 1.2741978600388393,
+          "maximum": 10.003242400009185
+        },
+        "end_to_end_seconds": {
+          "n": 32,
+          "mean": 0.7344798124977387,
+          "minimum": 0.08178650005720556,
+          "median": 0.31314545002533123,
+          "p95": 1.2743875650281553,
+          "maximum": 10.003535900032148
+        },
+        "allowance_binding": 30,
+        "delivered_sources": {
+          "native_callback": 32
+        },
+        "statuses": {
+          "audited_incumbent": 32
+        }
+      },
+      "ExactRanked": {
+        "expected": 32,
+        "returned": 32,
+        "audited": 32,
+        "te_bp": {
+          "n": 32,
+          "mean": 176.38190808809648,
+          "minimum": 68.25818315235172,
+          "median": 136.11952783692664,
+          "p95": 369.2035261332509,
+          "maximum": 369.2035261332951
+        },
+        "seconds": {
+          "n": 32,
+          "mean": 0.6037981218723871,
+          "minimum": 0.07476300001144409,
+          "median": 0.19350799993844703,
+          "p95": 0.7486725750088226,
+          "maximum": 10.00367040000856
+        },
+        "end_to_end_seconds": {
+          "n": 32,
+          "mean": 11.225460021865729,
+          "minimum": 1.2686671998817474,
+          "median": 5.4254563500289805,
+          "p95": 34.60919528998202,
+          "maximum": 38.25646770000458
+        },
+        "allowance_binding": 30,
+        "delivered_sources": {
+          "requested_mip_start": 26,
+          "native_callback": 6
+        },
+        "statuses": {
+          "audited_incumbent": 32
+        }
+      }
+    },
+    "ranked_comparisons": {
+      "Greedy": {
+        "expected": 32,
+        "pairs": 32,
+        "lower": 32,
+        "equal": 0,
+        "higher": 0,
+        "gap_bp": {
+          "n": 32,
+          "mean": -61.047310737060876,
+          "minimum": -120.2760095828267,
+          "median": -63.520883110099874,
+          "p95": -9.500305531921677,
+          "maximum": -1.9615761767046536
+        },
+        "worst_case": "scarcity_022"
+      },
+      "OneAnchor": {
+        "expected": 32,
+        "pairs": 32,
+        "lower": 0,
+        "equal": 32,
+        "higher": 0,
+        "gap_bp": {
+          "n": 32,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "worst_case": "scarcity_000"
+      },
+      "ExactBase": {
+        "expected": 32,
+        "pairs": 32,
+        "lower": 11,
+        "equal": 21,
+        "higher": 0,
+        "gap_bp": {
+          "n": 32,
+          "mean": -2.2904644379595385,
+          "minimum": -23.491198172809277,
+          "median": -2.2497457230485907e-05,
+          "p95": 9.342663531697325e-10,
+          "maximum": 3.3153781942019123e-09
+        },
+        "worst_case": "scarcity_014"
+      },
+      "ExactRanked": {
+        "expected": 32,
+        "pairs": 32,
+        "lower": 0,
+        "equal": 32,
+        "higher": 0,
+        "gap_bp": {
+          "n": 32,
+          "mean": 1.3763523654120036e-10,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 4.534868480732253e-10,
+          "maximum": 3.3153781942019123e-09
+        },
+        "worst_case": "scarcity_014"
+      }
+    },
+    "worst_support_diagnosis": {
+      "case": "scarcity_014",
+      "purpose": "Post-hoc support diagnosis, not benchmark tuning",
+      "support": [
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          0
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          0
+        ],
+        [
+          12,
+          0
+        ],
+        [
+          13,
+          0
+        ]
+      ],
+      "visited_by_ranked": true,
+      "status": "optimal",
+      "audit": {
+        "passed": true,
+        "violations": [],
+        "residuals": {
+          "funding": 0.0,
+          "lower": 0.0,
+          "upper": 0.0,
+          "groups": 9.999724837062018e-08
+        },
+        "tickets": 8,
+        "optional_tickets": 6,
+        "turnover": 0.5892298144915383
+      },
+      "conditional_te_bp": 89.77146091089386,
+      "exact_ranked_te_bp": 89.77146090757849,
+      "ranked_te_bp": 89.77146091089386
+    }
+  }
+}

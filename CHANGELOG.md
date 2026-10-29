@@ -7,6 +7,69 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [9.2.0] - 2026-10-29
+
+- Add an explicit matched CORRIDOR MIQP primary policy with lazy, independently
+  audited V2 fallback on the same prepared domain. Default native controls are
+  10 seconds, one thread and a 1e-4 original-variance relative gap. Native errors,
+  absent audited native witnesses, invalid deliveries and inconsistent bounds
+  trigger fallback; valid time-limited audited incumbents remain eligible.
+  Preserve all portfolio constraints and audit tolerances. This opt-in policy
+  does not change existing V2/V1 fallback or operational MIQP selections.
+
+- Restore the matched Exact native objective constant before optimisation so its
+  relative stopping gap is measured against original tracking variance. Avoid
+  adding that constant again during inversion, and report native incumbents and
+  bounds in original units. Preserve the objective, constraints, all tolerance
+  values, operational MIQP and Rosaa production; qualify the corrected matched
+  MIQP primary with audited V2 fallback on six independently rolling portfolios.
+- Preserve supplied discretionary trade intervals when common V2/Exact preparation
+  anchors a holding inside its corridor within the existing zero tolerance.
+  Retain exact positive numerical-zero holds inside their original bounds instead
+  of imposing a spurious holding-floor purchase during preparation.
+  Continue to pin and count genuine compulsory repairs, and retain explicitly
+  declared fixed corridor exceptions. Preserve objectives, constraints, audit
+  tolerances and Rosaa production; qualify matched MIQP with audited V2 fallback
+  on independently rolling holdings.
+- Tighten the matched V2 Exact adapter's native integer feasibility setting from
+  1e-4 to 1e-9 and balance its quadratic cone without changing the quadratic,
+  correcting false optimal termination on public overlapping-group cases.
+  Preserve fixed-state QP and continuous relaxation graphs. Retain raw native bounds and flag contradictions with
+  delivered incumbents at the existing objective comparison scale. Preserve the
+  objective, compiled constraints, audit tolerances, V2 heuristic, operational
+  MIQP and Rosaa production; rerun matched public comparisons.
+- Reuse verified CVXPY layouts for V2 conditional sizing, avoiding repeated graph
+  compilation while retaining every search trial, fresh native solves, numerical
+  retry rules and independent audits. Fall back to the original compiler for
+  incompatible layouts or other solvers; preserve V1, Exact and MIQP.
+- Restore complete documentation coverage for the redirect-target checker by
+  documenting its HTML anchor parser; preserve executable behavior.
+- Recover a V2 three-position replacement missed by improving-only search using
+  bounded restarts from cached audited alternatives. Stop at the first improving
+  branch and complete its pair neighbourhood under the existing trial controls.
+  Preserve earlier incumbents, the objective, executable constraints, acceptance
+  tolerances, V1, MIQP and Rosaa production; report fresh-holdout outcomes and cost.
+- Complete V2's scarce-ticket search with a final interval-screened pair phase,
+  bounded by the square of the existing rescue allowance across the existing
+  anchor limit. Retain joint resizing of selected trades and all earlier audited
+  incumbents. Preserve the objective, sizing constraints, audit tolerances, public
+  defaults, V1, MIQP and Rosaa production; report the additional search cost.
+- Extend V2 combination search with bounded include/exclude guidance around both
+  the completed incumbent and tentative relaxed support, including empty optional
+  incumbents. Audit every proposed combination through unchanged original-domain
+  sizing, retain earlier incumbents, and finish with a replacement sweep. Preserve
+  numerical tolerances, public configuration defaults, V1, MIQP and Rosaa production.
+- Diversify V2 scarce-ticket search with bounded continuous guidance that
+  temporarily excludes incumbent names, replacement rescue around infeasible
+  rounded seeds, and final replacement sweeps. Cache original-domain audited
+  sizing results across branches and retain the completed incumbent. Recover
+  the five public development counterexamples without changing the objective,
+  constraints, audit tolerances, Rosaa production or its installed packages.
+- Extend V2 scarce-ticket search with an independently sized perspective-guided
+  support, complete single-replacement sweeps and capacity-neutral pair replacements.
+  Retain the completed original search whenever the extension fails to improve it.
+  Preserve the objective, prepared domains, acceptance tolerances and public defaults;
+  record the additional bounded search cost. No Rosaa runtime or lock is changed.
 - Require QIS 5.44.5 or later for composed source/wheel qualification and the
   public pipeline's attribution study. Its deterministic zero-effect HAC fix
   resolves the QIS 5.44.4 limitation recorded below; keep base installs unchanged.

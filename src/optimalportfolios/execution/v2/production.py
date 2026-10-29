@@ -158,7 +158,7 @@ def _production_result(problem, weights, table, constraints, engine, diagnostics
     accepted = audit['passed'] and all(x.passed for x in residuals if x.hard)
     outcome = OptimizationOutcome(
         weights.to_numpy(), accepted, 'OP V2 / '+engine, 'audited_incumbent', context,
-        fallback_source=engine if engine != 'v2' else None,
+        fallback_source=engine if engine.endswith('_fallback') else None,
         constraint_residuals=residuals+(gate,), constraints=constraints,
     )
     result = table.copy()

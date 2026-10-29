@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+from copy import copy
 from time import perf_counter
 import cvxpy as cp
 import numpy as np
 
 from .domain import audit_execution, compile_states, result, variance
 from .model import SCALE, build_model
-from .types import ExecutionProblem, ExecutionResult
+from .types import ExecutionProblem, ExecutionResult, RankedConfig
+
+_NATIVE_FEASIBILITY_TOLERANCE = 1e-9
 
 
 def invert_native(model, chain, inverse, native_x, native_objective):
@@ -67,11 +70,21 @@ def native_mosek(problem, model, initial, deadline, threads, gap_rel, retain):
         raise RuntimeError("Native start adapter requires the MOSEK 11.2 API")
     tick = perf_counter()
     data, chain, inverse = model.optimisation.get_problem_data("MOSEK")
+    # CVXPY omits this constant from the native task and adds it on inversion.
+    # Restore it before solving so the relative stopping gap uses the original
+    # variance. The copied inverse map must then avoid adding it a second time.
+    offset = float(inverse[-1][cp.settings.OBJ_OFFSET])
+    native_last = copy(inverse[-1])
+    native_last.inverse_data = {**inverse[-1].inverse_data, cp.settings.OBJ_OFFSET: 0.}
+    native_inverse = [*inverse[:-1], native_last]
     record = dict(
         native_status="not_run",
         initial_start=dict(requested=initial is not None, supplied=False, received=None),
         canonicalisation_seconds=perf_counter() - tick,
         native_bound=None,
+        native_objective_offset=offset / SCALE,
+        native_objective_origin="original_variance",
+        native_mip_feasibility_tolerance=_NATIVE_FEASIBILITY_TOLERANCE,
         bound=None,
         bound_reason="Native global bound retained as diagnostic, certificate not validated",
     )
@@ -87,7 +100,10 @@ def native_mosek(problem, model, initial, deadline, threads, gap_rel, retain):
                 mosek_params={
                     "MSK_IPAR_NUM_THREADS": threads,
                     "MSK_IPAR_MIO_SEED": 0,
-                    "MSK_DPAR_MIO_TOL_FEAS": 0.0001,
+                    # The old 1e-4 permits false optimal termination on the
+                    # public overlapping-group case. Tighten native numerics;
+                    # the mathematical graph and original-unit audit stay fixed.
+                    "MSK_DPAR_MIO_TOL_FEAS": _NATIVE_FEASIBILITY_TOLERANCE,
                     "MSK_DPAR_MIO_TOL_ABS_RELAX_INT": 1e-9,
                     "MSK_DPAR_INTPNT_CO_TOL_PFEAS": 1e-10,
                     "MSK_DPAR_INTPNT_CO_TOL_DFEAS": 1e-10,
@@ -98,6 +114,7 @@ def native_mosek(problem, model, initial, deadline, threads, gap_rel, retain):
             ),
         )
         MOSEK._build_slack_task(task, data)
+        task.putcfix(offset)
         if initial is not None:
             record["initial_start"] = lift_start(task, data, model, initial, deadline)
         callback_errors = []
@@ -108,7 +125,7 @@ def native_mosek(problem, model, initial, deadline, threads, gap_rel, retain):
                 if code == mosek.callbackcode.new_int_mio:
                     x = task.getxx(mosek.soltype.itg)
                     w, _ = invert_native(
-                        model, chain, inverse, x, doubles[mosek.dinfitem.mio_obj_int]
+                        model, chain, native_inverse, x, doubles[mosek.dinfitem.mio_obj_int]
                     )
                     retain(w, "native_callback")
             except Exception as error:
@@ -136,10 +153,12 @@ def native_mosek(problem, model, initial, deadline, threads, gap_rel, retain):
             task.getintinf(mosek.iinfitem.mio_initial_feasible_solution)
         )
         if task.getintinf(mosek.iinfitem.mio_obj_bound_defined):
-            record["native_bound_canonical"] = task.getdouinf(mosek.dinfitem.mio_obj_bound) / SCALE
-            record["native_bound"] = record["native_bound_canonical"] + model.constant
+            bound = task.getdouinf(mosek.dinfitem.mio_obj_bound)
+            record["native_bound_canonical"] = (bound - offset) / SCALE
+            record["native_bound"] = bound / SCALE
+            record["native_incumbent"] = task.getdouinf(mosek.dinfitem.mio_obj_int) / SCALE
             record["native_gap_relative"] = task.getdouinf(mosek.dinfitem.mio_obj_rel_gap)
-        solution = chain.invert({"task": task, "solver_options": options}, inverse)
+        solution = chain.invert({"task": task, "solver_options": options}, native_inverse)
         record["canonical_status"] = solution.status
         if solution.primal_vars and model.displacement_bp.id in solution.primal_vars:
             w = (
@@ -313,6 +332,20 @@ def wrapper_exact_execution(
                 detail["output_audit"] = diagnostics["incumbent_events"][-1]["audit"]
         diagnostics["boundary_refinement"] = detail
     diagnostics["delivered_source"] = best_source
+    native_bound = diagnostics.get("native_bound")
+    diagnostics["native_bound_check"] = None
+    if native_bound is not None and best is not None:
+        # This uses the existing default objective comparison scale, never the
+        # portfolio feasibility tolerance. Preserve the raw bound and status;
+        # consistency with one witness cannot certify a global lower bound.
+        tolerance = RankedConfig().objective_tolerance
+        diagnostics["native_bound_check"] = dict(
+            consistent_with_delivery=bool(
+                np.isfinite(native_bound) and native_bound <= best_value + tolerance
+            ),
+            objective_tolerance=tolerance,
+            excess_over_delivery=float(native_bound - best_value),
+        )
     diagnostics["total_seconds"] = perf_counter() - started
     return result(
         problem,

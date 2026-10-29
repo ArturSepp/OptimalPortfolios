@@ -249,9 +249,41 @@ class RankedConfig:
     """Explicit bounded state search, sizing and improvement controls.
 
     ``rescue_trials`` separately caps initial feasibility rescue and the coordinated
-    improvement trials across at most ``improvement_passes`` incumbent anchors.
-    ``exchange`` enables these after the single-exchange pass. Each support retains
-    the same ``mandatory_state_trials`` branch limit.
+    original coordinated improvement and scarce-ticket extension support trials,
+    each across at most ``improvement_passes`` incumbent anchors. The extension
+    includes one perspective-guided seed and, per anchor, a complete one-for-one
+    replacement sweep (at most B times the available ticket states additional
+    supports). ``exchange`` enables these after the single-exchange pass. Each
+    support retains the same ``mandatory_state_trials`` branch limit.
+
+    Scarce-ticket diversification revisits the completed incumbent and the
+    unrestricted guided seed, then excludes each of at most ``rescue_trials``
+    incumbent names from a separate guidance solve. Each unique seed permits at
+    most ``improvement_passes`` complete replacement sweeps. Sizing always uses
+    the original problem; audited support results are cached within a call.
+
+    A subsequent conditional phase includes/excludes the ticket states in the
+    union of the completed incumbent and unrestricted guided seed. At most
+    ``rescue_trials`` additional continuous guidance calls are made, in stable
+    instrument/state order, inclusion before exclusion. Each unique proposal
+    receives the same bounded replacement restart, followed by one final restart
+    of the completed incumbent. These guidance decisions never restrict sizing
+    or change the original acceptance domain. They also work from an empty
+    discretionary incumbent whose tentative guided support is infeasible.
+
+    A final scarce-ticket phase shares ``rescue_trials ** 2`` coordinated trials
+    across at most ``improvement_passes`` anchors, with the same complete
+    one-for-one sweeps. It skips cached supports and rejects only interval
+    envelopes that cannot satisfy funding or a group row. All retained positions
+    remain movable during unchanged joint sizing. This finite completion budget
+    does not certify an exhaustive search or global optimality.
+
+    Finally, at most ``rescue_trials`` cached audited alternatives, ordered by
+    objective then instrument/state identifiers, seed separate bounded replacement
+    restarts. The first branch improving the retained incumbent receives one more
+    completion phase with the same squared trial budget, then search stops. An
+    inferior intermediate seed may connect otherwise missed combinations; failed
+    branches cannot displace the incumbent. No Exact support is supplied.
     """
 
     drop: bool = True

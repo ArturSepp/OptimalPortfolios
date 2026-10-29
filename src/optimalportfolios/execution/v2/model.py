@@ -96,7 +96,8 @@ def build_model(
     Group rows admit only the existing original-space audit tolerance. Original
     limits remain immutable and every delivered vector still requires that audit.
     Fixed-state QPs omit satisfied constant bound/group rows; contradictory rows
-    remain. Integer hulls and their continuous relaxations keep their original graph.
+    remain. Integer hulls balance only the quadratic cone's coordinates; their
+    linear rows, fixed-state sizing and continuous relaxation graphs stay unchanged.
     """
     states = compile_states(problem, formulation)
     lower, upper = domain_bounds(problem, formulation)
@@ -189,7 +190,13 @@ def build_model(
     objective = cp.Constant(SCALE * constant)
     if x is not None:
         objective += 2 * gradient @ x
-        objective += cp.quad_form(x, cp.psd_wrap(funded - np.diag(split))) / SCALE
+        if selectors and not continuous:
+            # Algebraically identical to quad_form(x, Q)/SCALE. Balancing the
+            # integer model's conic epigraph avoids false native MIP bounds;
+            # basis-point hard rows and the incumbent/audit mapping are unchanged.
+            objective += cp.quad_form(x / 100.0, cp.psd_wrap(funded - np.diag(split)))
+        else:
+            objective += cp.quad_form(x, cp.psd_wrap(funded - np.diag(split))) / SCALE
         if np.any(split):
             epigraph = cp.Variable(len(indices), name="perspective_epigraph")
             for j, i in enumerate(indices):

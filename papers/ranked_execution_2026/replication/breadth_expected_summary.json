@@ -1,0 +1,4527 @@
+{
+  "protocol_sha256": "f49e985731be3c033e1d689064207e61652564f3126eef4881b316af0bc9fcd7",
+  "records_sha256": {
+    "breadth_000.json": "903ad67d44cd3ad53bf0561499fb29e63ebbeffcdc995fcf9f6004ec09f2e588",
+    "breadth_001.json": "5b963054f2240aee2be24057cb893ae1c4cdaa22f2d19e40cf921071beb3dc93",
+    "breadth_002.json": "65e81acef8f2d9403c7b77eda7da72df1d737712b620a63bf907bdb011b36cdf",
+    "breadth_003.json": "9af88cae1046bd5d70aa45e9c9ea93ababe0b64a48b4e85739224c346627b791",
+    "breadth_004.json": "15530c08eb71389abd584be46d6aed87154db1b42488684ac286e10b5b2d01ff",
+    "breadth_005.json": "e7c327ebc3683ae57adb103101c67871b8fd56076b96c12533ee544e54db732f",
+    "breadth_006.json": "8272bb4428200042b75905ab8d20849bd5c6e1ab54749d75e6fa738583c93eb8",
+    "breadth_007.json": "7173756eb866d3df85485ce8646b47ac0428db86a3c970d5389abeb9064b7062",
+    "breadth_008.json": "44a922d3f5ca734c15cf49c6b63a1c3f863f46462cb816e3740128d1416980b3",
+    "breadth_009.json": "82cfe94c3ec6501618ac7a33222ae631116651e1aa2f130d8ae0b8df91217264",
+    "breadth_010.json": "ce8b46a773cc7bc2665382c15a49ae549001c09f31b6c7ffd7c39297617805e3",
+    "breadth_011.json": "fa4848804aee4979a7d1e2c1b3aa809cc933c43f1c38dafc502ad3696690c73b",
+    "breadth_012.json": "cfd640fa558bac4d279ed25e67e31ac432feaa477e13192df8687e9baa5a7c17",
+    "breadth_013.json": "ab9197cbd0f84269288ad60ec27772fe087eb27eb886717ad66ab6c478180a4a",
+    "breadth_014.json": "c35f1dc8aab804b4c6cd39333f3c542fb9159130074da5aceca3607a80eef4a3",
+    "breadth_015.json": "e346b9cd5eb25474b4a719732887b88826c389b41f272aaf0a9a6ac6d0f787a3",
+    "breadth_016.json": "d638fd456124c8a02464c4c9152662c7d7b381ceb6f19e15992b1138aeb237c1",
+    "breadth_017.json": "f86d7f0ea502ac95cd0f9ceb0b2860291617881540f66ac7672f07b33b48709a",
+    "breadth_018.json": "c04186e019f4ee92353601b85bf56b088cb1c4b727b7a90c53f36f7469412ae5",
+    "breadth_019.json": "dd3735624b882711f7b5c8c6b8aa0711f05e863ee0b1339a34eed776bcd1c2b6",
+    "breadth_020.json": "e0807b94f651d33e5e724b920534c56270cfaf53fb92bd5d4333eff024233d4f",
+    "breadth_021.json": "4be31d2f5e8e44c6b45ef1e12236e73ceb61fe393a0a65af9f6d4dea79c168f5",
+    "breadth_022.json": "f582d95a868db2addc31ee81f02ede0880ca04a4b1251b0ea019c9bf8915be0a",
+    "breadth_023.json": "c84b87c6d8fd314960e8076c6670c8d1e4bde11d4452d2d3f58d505cd6ed2d05",
+    "breadth_024.json": "2a2b2cb0a921d0e1a86450f00d16e298fbaa0fc2ef7cbaac8e1d01b9c352d09e",
+    "breadth_025.json": "66c26f32c27d3b56dbe4997f10d84ea490e335f13fc43551ff8348717d7860a3",
+    "breadth_026.json": "a8ff224b3515ee0e53da8ebf5917e84ed95e96090489bd3d898ee7118af9a9fe",
+    "breadth_027.json": "c96258a82d40b9446ed5c13214e503a05454027ebd3e689a35ae5f0ae67165d6",
+    "breadth_028.json": "1d77c73b0ca76b17e3fa72d74c698ec1ff35a4869f2c6cd5657149b95af095a7",
+    "breadth_029.json": "30fc9278c012aec52c1556bcd2f4e43b6e23d10f2b08f5da9cd7f49542809553",
+    "breadth_030.json": "18458e01f3592c77e18bd75bec5d3faa70ebfa5fde5dce12ecaeeeaaa89af846",
+    "breadth_031.json": "43e4db4d51411b793554082aedd18961241b72e1213a851e4a7a0e2f75d4bc10",
+    "breadth_032.json": "372590bd2c355260202020be92f0a5d263f6035fbf4e8734c100290495533ecd",
+    "breadth_033.json": "9e003855942a35dc53e4cc9a1416407fc879e678cf17f7a468d5c05e6429053f",
+    "breadth_034.json": "ec8b7babf7baca46bafd8af3d81b9c46cb9d37dbde3e69e89da253db523ddacc",
+    "breadth_035.json": "5d3ea87fc4d2c72e77c03d4d131cf3fc354c6490e22f6375e809ecfa9d6689a0",
+    "breadth_036.json": "c2de457a7feb04b07908242a8247d2219e303131baa32379bc36d1d1e89dfd3f",
+    "breadth_037.json": "3ff70b9cd09f8f533f3402f61e83522953fcf48a93f3f76f23fc77e98d218fe1",
+    "breadth_038.json": "e7292f373a83eb8a3d33567d4f0df13aa0a782862f99013fa6b7d3ee3423beec",
+    "breadth_039.json": "5a7d3785df9cede55aee075d917a9c24f553cd87bb4a556138fb8ac2cba757e5",
+    "breadth_040.json": "e5ed87a6ad422f6b9be85515b96ea60548992c2db280edecd3b570af1b018e98",
+    "breadth_041.json": "d0f00cb0ab10870e8ce0659fcffefe01ee9073af21e26201ccfdb2142e6535f7",
+    "breadth_042.json": "5c515b02a5e348808c4caa4949ccfeab3664cd5cc8b03cd226e81ff2ffb0b57c",
+    "breadth_043.json": "02ed17cb4d849ad40972109debccd04c9293551aed692dec268801ab54899b74",
+    "breadth_044.json": "0e03b46264e0db6bf3160e5662f5ce2303a8c115e218fa5a1454504c2c8a8cd4",
+    "breadth_045.json": "af53da58b6ee5cc334c289621efd4cbef02ec26098bc0eb69789ec27cd0b7995",
+    "breadth_046.json": "dbca0fabf0d5045cfe87c70027feb7cd6f591af937fe1096e0d8b083dd16ce16",
+    "breadth_047.json": "deef2a285157d891fe35a8d3ebfef4c5621a3624969387b04cff309105c4d67e",
+    "breadth_048.json": "8c01692ce269bcc9c06fc62bd569a97f015b0a46a18fafab04083694a6e3ae51",
+    "breadth_049.json": "fbc5fd6b59bfdc4661b8d6da69e710a560359f753443d71abdc1078758b91ead",
+    "breadth_050.json": "9b0f0c607062818e131be5f041af5335b235764e52d688f368511357b603a6ec",
+    "breadth_051.json": "00564cda68aa1faed1dc3418bbd21206abd352af276748ad7af1fbac6e670680",
+    "breadth_052.json": "40f4c56f025410600954247a53aec855af2e052df42fdbecff77f739e5081559",
+    "breadth_053.json": "19951ec206f01492e0454fe1a1ccf87466add243f23928105af6a1c1fdbc9d94",
+    "breadth_054.json": "1e955ced21a6c99346aaed26efbd46dfe989ee01b6bc78e81db1224977878d58",
+    "breadth_055.json": "acb9f9ee255da14012fb9f8cab16d6a7199f4ef25bf3eedb5c3666e0bc8c0ef8",
+    "breadth_056.json": "e5797ef0dcbab3ee56db5af0b4fa2814b8b466adeb0d8209855214a2115eb91f",
+    "breadth_057.json": "ae874385ded3830a41cfc58c560a219ac26b8b4f035a2cbb6c4ac677cb7d6830",
+    "breadth_058.json": "7028ba21a1146fb71874ae7c0fde8529b4ca162c30991d0314405683efc1550f",
+    "breadth_059.json": "df59407efbc3aa216e2aa8992875424faeb75e64d02a25b96c1a22bc1add7294",
+    "breadth_060.json": "3be0898419e64fb41c1971f7d5e15164164fe269aacd97ea25b9033ed2778440",
+    "breadth_061.json": "17367d6e91b81358f889b87057311e7e843a451c0a8269e809be78942a31dbcf",
+    "breadth_062.json": "a777b9f57ad6957dbbbda5647ef09d9c9631cca5be2b80a0500a642fbf7556f3",
+    "breadth_063.json": "3e2aa47f89d66c0db8414793833e91f8648db862fbf1c2c7a77ac4e71814b75a",
+    "breadth_064.json": "24a670813c1ebaf8c4975c28fa7d2639602179af0868980f17a714cf2c42165f",
+    "breadth_065.json": "c66a8e63e0ea0fc27be7864322fb1152793f659838ae15793d9c7956e64c807e",
+    "breadth_066.json": "518c70075327b86c4776392a08bcddbe30a20ab502e2089bdebd72fffbfee4fa",
+    "breadth_067.json": "96b30d0a4c4fe753dccdcdc259ed5712ae46ace3d30e3f5699d0cc5e4ee01725",
+    "breadth_068.json": "25796cde227d50aaa1b89240d831d30843eac0ec9646558148822eab35a85855",
+    "breadth_069.json": "b07666467621a8786903da6a3c5bbbe0cc91cc8105e414d3444233839ae91d2f",
+    "breadth_070.json": "a4a481572f8e0b9c09a2f8271ccabef72c14de6bd75de81468ac1a0f207bbe9d",
+    "breadth_071.json": "ebdc7acabbba9ec6491e39b7c729fa629ec26e0acda470baeaacdca4a93cc5c8",
+    "breadth_072.json": "f39b1d9fae366a4b03f9736046bd88a107687a033dd6934d1c87847c7d49ba0c",
+    "breadth_073.json": "d142e14e420e173e297c8461fb12b95f80d23761294f8627f603cd95af8e09fc",
+    "breadth_074.json": "3969205dbea39c766485f0922167b34d5521add144744f2bbbf20dfcc225b166",
+    "breadth_075.json": "cea0eaa555fc3c83f7453202d780de9cf9addc67096daa14be8f87f4cd728310",
+    "breadth_076.json": "5861cfe25d40e7dada68784d0ddbf409f377cb178cc19ec2960a08b7f4c26ca4",
+    "breadth_077.json": "568d5a59be7174a01f4a0eabc789a1df3ae9b6917564756b7af2f97092de7ced",
+    "breadth_078.json": "b3bb0791832f3b482757849a893029270b0e472135ba591fae8dfc530842827a",
+    "breadth_079.json": "93c46fb866558fced4a48c852e539526a760d936f1479c42e36b0f337a88aa7e",
+    "breadth_080.json": "0955725cdf76a1d7b0df69824e2c3db2d86ca16da38f5e9c3b4f92f284a359c2",
+    "breadth_081.json": "0f45e4d15652fa90651eccc38a14408f88aeeabb2580f4099225060a2912f947",
+    "breadth_082.json": "9c89498369b3ab25ebf3c64e30e9688d33a2538f49488b12d424bda309167969",
+    "breadth_083.json": "68f45d738d4d6824ccb39cfc8c9b8d8cba173910f3f8581756c35869c4ce9f1c",
+    "breadth_084.json": "873cf4413448679ca1d0bfd26861ded36451816632f5db362ee15572e817100e",
+    "breadth_085.json": "9e3220bacdb3eeceae754a345fae03676ed3efe1593ea232740e3183478382cd",
+    "breadth_086.json": "688abed55298b7af57b12f59c86bc8f5915d1a3a7f0666c0c92fe8596a9c2f42",
+    "breadth_087.json": "b64aa61554a1b4f82a74a18a902d54e671f81ddf1c4d32701a10e57466750121",
+    "breadth_088.json": "2c24aa21c78fdc263c7ba1f013a9d549424f35592ebce2bae7332c8bbc67fdf9",
+    "breadth_089.json": "c05b0d8239d9b805d442c988112823bfdee14f6ef5f4b6ee3a8a07fca24c4306",
+    "breadth_090.json": "04227224d06eae854e94f6101a2e987a8741ed4333189e5c46a027626d523af1",
+    "breadth_091.json": "e00aaf513226d8de8cd52f157f29794280b9eaead4d0c0c0ff3f258f2d2ce639",
+    "breadth_092.json": "ca09519941af0285dab97b2e26b87a0a28023571f380be59f2184ddc3f95e5a9",
+    "breadth_093.json": "a68c58dc5ef11d0102884f60483012b4f4c77ca84ac8bb7d32818c5851f2cd7a",
+    "breadth_094.json": "ac74c68a8c434e770ee00d9d034181c3e44015df22d262fe4bcd4e57c0dbe331",
+    "breadth_095.json": "0f34bff54cf9da76c8eaf18dc02fac85bfce57af409b738a33e1f207d52b5c76",
+    "breadth_096.json": "3bc83ceeb7f1ef1c51a374da52da88fcd7c4b6d30133d07407e693743aa1b1d6",
+    "breadth_097.json": "46a2108cc320263ba5350ad4e9d9e8ac0a0be0ea00c3272849fbba3f6b6cae0f",
+    "breadth_098.json": "696a40b991f3d63dc8d835827b020700499e3e5089d75ebc20a9102f913e521d",
+    "breadth_099.json": "8545c04a2a67ac088447ec3c2a5d0058ccec307698db54c23a04ae09534d538e",
+    "breadth_100.json": "437fc1d71249982355c2f0beb78e39007556786aa108ba5a9a8ba04b2a16894f",
+    "breadth_101.json": "5449abdd911fc025093d5f038f574f9f42dcc3da9cf277557dfa4575bbf6d7cd",
+    "breadth_102.json": "ce45aabb7422d06a0534384430a74ca7075e3ccd80fe07313174978505a2b75b",
+    "breadth_103.json": "20b184398d896767d67af36849ba986a098ad9693e29a2e28dc01fe078fbfae4",
+    "breadth_104.json": "2c1b63b45c0c6fd8148d3b3d3f0cfc3917114431d4e3b65727c5b71a3eeb35ae",
+    "breadth_105.json": "35236930ef7434e7c411ff814775283f355f9a186235439c275e9244404c2bc1",
+    "breadth_106.json": "8a2d9a6fcaa68d0766a1e0f17ef060556343e86cffbacba0fa38c87f43ba4923",
+    "breadth_107.json": "2c8fbd178761c356d4c0e1650e2f668b757a561f0a6c3d45c1e573539ea1b72f"
+  },
+  "specification": {
+    "schema": "ranked-breadth-1",
+    "grid": {
+      "optional_assets": [
+        24,
+        72
+      ],
+      "budget": [
+        2,
+        4
+      ],
+      "groups": [
+        "disjoint",
+        "overlap"
+      ],
+      "regime": [
+        "tight",
+        "wide"
+      ],
+      "seed": [
+        71001,
+        71002,
+        81001,
+        81002,
+        91001,
+        91002
+      ]
+    },
+    "tiny": {
+      "optional_assets": 8,
+      "budget": 2,
+      "groups": [
+        "disjoint",
+        "overlap"
+      ],
+      "regime": "tight",
+      "seed": [
+        72001,
+        72002,
+        82001,
+        82002,
+        92001,
+        92002
+      ]
+    },
+    "regimes": {
+      "tight": {
+        "group_half_width": 0.001,
+        "cash_half_width": 0.0005
+      },
+      "wide": {
+        "group_half_width": 0.01,
+        "cash_lower": 0.005,
+        "cash_upper": 0.5
+      }
+    },
+    "minimum_ticket": 0.005,
+    "current_minimum": 0.006,
+    "holding_floor": 0.0025,
+    "audit_tolerance": 1e-07,
+    "zero_tolerance": 1e-08,
+    "objective_tolerance": 1e-12,
+    "descriptive_te_equality_bp": 0.0001,
+    "preparation_seconds": 30.0,
+    "exact_seconds": [
+      10.0,
+      60.0
+    ],
+    "exact_threads": 1,
+    "exact_gap_rel": 0.0001,
+    "methods": [
+      "Ranked",
+      "OneAnchor",
+      "ExactBase10",
+      "ExactBase60",
+      "ExactFull60",
+      "ExactOne60"
+    ],
+    "generator": "Heterogeneous positive current holdings, lognormal relative target tilts, two forced exits, correlated market/sector/factor covariance with positive residuals, three sector rows and optionally three overlapping fractional rows. Bands centred on the feasible base. No private inputs.",
+    "decision_rule": "Keep current full-search defaults unless OneAnchor has no disadvantage above the existing descriptive band, no extra audit/solver failures, and lower paired median time on the new broad cases. Passing this sample is only a candidate for separate production qualification, not permission to switch production.",
+    "failure_policy": "Record every case and arm, including failures. Freeze source and design before the first primary solve. Do not retune on these new outcomes.",
+    "timing": "Serial calls; reverse heuristic and independent Exact orders on odd case indices; reverse started Exact order too. Preparation and start generation charged separately. Native work may overrun requested limits. No equal-wall-time claim.",
+    "certificates": "Use existing plain/perspective supporting-plane LP dual bounds with box residual correction and floating-point guard. Native MIP bounds remain diagnostic. Exhaustive tiny-case full-weight QPs are numerical reference solutions, not exact-arithmetic certificates."
+  },
+  "versions": {
+    "optimalportfolios": "9.1.5",
+    "qis": "5.44.4",
+    "numpy": "2.5.2",
+    "pandas": "3.0.5",
+    "scipy": "1.18.1",
+    "cvxpy": "1.9.2",
+    "Mosek": "11.2.3",
+    "clarabel": "0.11.1"
+  },
+  "broad": {
+    "cases": 96,
+    "prepared": 96,
+    "optional_candidates": {
+      "n": 96,
+      "mean": 34.0,
+      "minimum": 19.0,
+      "median": 32.5,
+      "p95": 49.0,
+      "maximum": 49.0
+    },
+    "methods": {
+      "Ranked": {
+        "expected": 96,
+        "returned": 96,
+        "audited": 96,
+        "te_bp": {
+          "n": 96,
+          "mean": 182.04969613729838,
+          "minimum": 67.64579512509762,
+          "median": 169.3096153041052,
+          "p95": 367.4145844293637,
+          "maximum": 412.77987830847565
+        },
+        "seconds": {
+          "n": 96,
+          "mean": 14.01243523541416,
+          "minimum": 1.264607400051318,
+          "median": 9.78535684995586,
+          "p95": 37.56771249996382,
+          "maximum": 42.226104000001214
+        },
+        "end_to_end_seconds": {
+          "n": 96,
+          "mean": 14.012531085413988,
+          "minimum": 1.2646882000844926,
+          "median": 9.78543644992169,
+          "p95": 37.56779124998138,
+          "maximum": 42.22623240004759
+        },
+        "statuses": {
+          "audited_incumbent": 96
+        },
+        "sources": {
+          "heuristic": 96
+        },
+        "native_status": {
+          "not_applicable": 96
+        },
+        "start_received": 0
+      },
+      "OneAnchor": {
+        "expected": 96,
+        "returned": 96,
+        "audited": 96,
+        "te_bp": {
+          "n": 96,
+          "mean": 182.11201538034842,
+          "minimum": 67.64579512509762,
+          "median": 169.3096153041052,
+          "p95": 367.4145844293637,
+          "maximum": 412.77987830847565
+        },
+        "seconds": {
+          "n": 96,
+          "mean": 13.284199883328256,
+          "minimum": 1.3097031000070274,
+          "median": 9.270382300019264,
+          "p95": 36.411476099921856,
+          "maximum": 41.49595569993835
+        },
+        "end_to_end_seconds": {
+          "n": 96,
+          "mean": 13.284295733328085,
+          "minimum": 1.3097839000402018,
+          "median": 9.270494600001257,
+          "p95": 36.41155409993371,
+          "maximum": 41.49603679997381
+        },
+        "statuses": {
+          "audited_incumbent": 96
+        },
+        "sources": {
+          "heuristic": 96
+        },
+        "native_status": {
+          "not_applicable": 96
+        },
+        "start_received": 0
+      },
+      "ExactBase10": {
+        "expected": 96,
+        "returned": 96,
+        "audited": 96,
+        "te_bp": {
+          "n": 96,
+          "mean": 182.10527047041262,
+          "minimum": 67.64579512509762,
+          "median": 169.45453604309978,
+          "p95": 367.41458442900296,
+          "maximum": 412.77987830832836
+        },
+        "seconds": {
+          "n": 96,
+          "mean": 0.509054288543363,
+          "minimum": 0.08424180001020432,
+          "median": 0.40612424997380003,
+          "p95": 1.301977499970235,
+          "maximum": 2.7335128999548033
+        },
+        "end_to_end_seconds": {
+          "n": 96,
+          "mean": 0.5091501385431911,
+          "minimum": 0.08432949997950345,
+          "median": 0.40623745002085343,
+          "p95": 1.3020946250180714,
+          "maximum": 2.733600099920295
+        },
+        "statuses": {
+          "audited_incumbent": 96
+        },
+        "sources": {
+          "native_callback": 89,
+          "boundary_refinement": 5,
+          "common_prepared_incumbent": 2
+        },
+        "native_status": {
+          "solsta.integer_optimal": 96
+        },
+        "start_received": 96
+      },
+      "ExactBase60": {
+        "expected": 96,
+        "returned": 96,
+        "audited": 96,
+        "te_bp": {
+          "n": 96,
+          "mean": 182.10527047041262,
+          "minimum": 67.64579512509762,
+          "median": 169.45453604309978,
+          "p95": 367.41458442900296,
+          "maximum": 412.77987830832836
+        },
+        "seconds": {
+          "n": 96,
+          "mean": 0.5005447447826251,
+          "minimum": 0.08158409991301596,
+          "median": 0.39671234996058047,
+          "p95": 1.2446125749556813,
+          "maximum": 2.8513895999640226
+        },
+        "end_to_end_seconds": {
+          "n": 96,
+          "mean": 0.5006405947824533,
+          "minimum": 0.08166029991116375,
+          "median": 0.3967905999161303,
+          "p95": 1.2446932999009732,
+          "maximum": 2.8514767999295145
+        },
+        "statuses": {
+          "audited_incumbent": 96
+        },
+        "sources": {
+          "native_callback": 89,
+          "boundary_refinement": 5,
+          "common_prepared_incumbent": 2
+        },
+        "native_status": {
+          "solsta.integer_optimal": 96
+        },
+        "start_received": 96
+      },
+      "ExactFull60": {
+        "expected": 96,
+        "returned": 96,
+        "audited": 96,
+        "te_bp": {
+          "n": 96,
+          "mean": 182.04969613722164,
+          "minimum": 67.64579512509762,
+          "median": 169.3096153041052,
+          "p95": 367.414584429007,
+          "maximum": 412.77987830832836
+        },
+        "seconds": {
+          "n": 96,
+          "mean": 0.4436410739532827,
+          "minimum": 0.09161390003282577,
+          "median": 0.34158789995126426,
+          "p95": 1.1376977499749046,
+          "maximum": 1.8091490999795496
+        },
+        "end_to_end_seconds": {
+          "n": 96,
+          "mean": 14.45617215936727,
+          "minimum": 1.5319876001449302,
+          "median": 10.267141999967862,
+          "p95": 38.55621979996795,
+          "maximum": 42.67881860001944
+        },
+        "statuses": {
+          "audited_incumbent": 96
+        },
+        "sources": {
+          "native_callback": 30,
+          "requested_mip_start": 64,
+          "common_prepared_incumbent": 2
+        },
+        "native_status": {
+          "solsta.integer_optimal": 96
+        },
+        "start_received": 96
+      },
+      "ExactOne60": {
+        "expected": 96,
+        "returned": 96,
+        "audited": 96,
+        "te_bp": {
+          "n": 96,
+          "mean": 182.06078841867034,
+          "minimum": 67.64579512509762,
+          "median": 169.3096153041052,
+          "p95": 367.414584429007,
+          "maximum": 412.77987830832836
+        },
+        "seconds": {
+          "n": 96,
+          "mean": 0.44760824270997546,
+          "minimum": 0.0852047000080347,
+          "median": 0.35357829998247325,
+          "p95": 1.116757574985968,
+          "maximum": 2.6033431999385357
+        },
+        "end_to_end_seconds": {
+          "n": 96,
+          "mean": 13.73190397603806,
+          "minimum": 1.5538078000536188,
+          "median": 9.852418650116306,
+          "p95": 37.006267399934586,
+          "maximum": 42.27692830003798
+        },
+        "statuses": {
+          "audited_incumbent": 96
+        },
+        "sources": {
+          "native_callback": 31,
+          "requested_mip_start": 63,
+          "common_prepared_incumbent": 2
+        },
+        "native_status": {
+          "solsta.integer_optimal": 96
+        },
+        "start_received": 96
+      }
+    },
+    "comparisons": {
+      "OneAnchor_Ranked": {
+        "expected": 96,
+        "pairs": 96,
+        "lower": 0,
+        "equal": 95,
+        "higher": 1,
+        "gap_bp": {
+          "n": 96,
+          "mean": 0.062319243050012275,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 5.982647332801179
+        },
+        "worse_cases": [
+          {
+            "case": "breadth_087",
+            "gap_bp": 5.982647332801179
+          }
+        ],
+        "seconds_ratio": {
+          "n": 96,
+          "mean": 0.9695709368045383,
+          "minimum": 0.2967346944720799,
+          "median": 0.9734224437199965,
+          "p95": 1.0903128793771601,
+          "maximum": 1.1625573719847766
+        }
+      },
+      "Ranked_ExactBase60": {
+        "expected": 96,
+        "pairs": 96,
+        "lower": 7,
+        "equal": 89,
+        "higher": 0,
+        "gap_bp": {
+          "n": 96,
+          "mean": -0.055574333114249974,
+          "minimum": -2.0454148421767684,
+          "median": -1.7077184111258248e-10,
+          "p95": 5.501092914528272e-10,
+          "maximum": 1.0782059689518064e-09
+        },
+        "worse_cases": [],
+        "seconds_ratio": {
+          "n": 96,
+          "mean": 29.33075981870591,
+          "minimum": 4.530189433104191,
+          "median": 25.07848546579956,
+          "p95": 71.43189987309601,
+          "maximum": 101.68638210524163
+        }
+      },
+      "OneAnchor_ExactBase60": {
+        "expected": 96,
+        "pairs": 96,
+        "lower": 6,
+        "equal": 89,
+        "higher": 1,
+        "gap_bp": {
+          "n": 96,
+          "mean": 0.006744909935762304,
+          "minimum": -2.0454148421767684,
+          "median": -1.3798739928461146e-10,
+          "p95": 6.002167651786294e-10,
+          "maximum": 4.917788313723889
+        },
+        "worse_cases": [
+          {
+            "case": "breadth_087",
+            "gap_bp": 4.917788313723889
+          }
+        ],
+        "seconds_ratio": {
+          "n": 96,
+          "mean": 28.32825641237963,
+          "minimum": 4.070981987226802,
+          "median": 23.506479041826104,
+          "p95": 69.65834820149843,
+          "maximum": 99.0221666846395
+        }
+      },
+      "Ranked_ExactFull60": {
+        "expected": 96,
+        "pairs": 96,
+        "lower": 0,
+        "equal": 96,
+        "higher": 0,
+        "gap_bp": {
+          "n": 96,
+          "mean": 7.673151003473322e-11,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 4.911413498120965e-10,
+          "maximum": 1.0781491255329456e-09
+        },
+        "worse_cases": [],
+        "seconds_ratio": {
+          "n": 96,
+          "mean": 31.67506342318445,
+          "minimum": 4.550502792274803,
+          "median": 28.05752928930326,
+          "p95": 72.75678644720071,
+          "maximum": 93.29958359894282
+        }
+      },
+      "OneAnchor_ExactOne60": {
+        "expected": 96,
+        "pairs": 96,
+        "lower": 0,
+        "equal": 95,
+        "higher": 1,
+        "gap_bp": {
+          "n": 96,
+          "mean": 0.05122696167802202,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 5.503224542735552e-10,
+          "maximum": 4.917788313723889
+        },
+        "worse_cases": [
+          {
+            "case": "breadth_087",
+            "gap_bp": 4.917788313723889
+          }
+        ],
+        "seconds_ratio": {
+          "n": 96,
+          "mean": 31.17894651159118,
+          "minimum": 4.458864931943447,
+          "median": 24.96195362853748,
+          "p95": 74.05320189129894,
+          "maximum": 97.2945402932128
+        }
+      },
+      "ExactBase60_ExactBase10": {
+        "expected": 96,
+        "pairs": 96,
+        "lower": 0,
+        "equal": 96,
+        "higher": 0,
+        "gap_bp": {
+          "n": 96,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "worse_cases": [],
+        "seconds_ratio": {
+          "n": 96,
+          "mean": 0.9923890711483772,
+          "minimum": 0.43670597374128306,
+          "median": 0.9986013052635836,
+          "p95": 1.323212385826182,
+          "maximum": 1.4849949637802113
+        }
+      }
+    },
+    "certificates": [
+      {
+        "case": "breadth_000",
+        "lower_variance": 0.0014277734402576333,
+        "consistent": true,
+        "best_delivered_te_bp": 389.9122788847696,
+        "lower_te_bp": 377.8588943319494,
+        "best_gap_bp": 12.053384552820205,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_001",
+        "lower_variance": 0.0006825712670784534,
+        "consistent": true,
+        "best_delivered_te_bp": 264.4205401759338,
+        "lower_te_bp": 261.2606489845827,
+        "best_gap_bp": 3.1598911913511074,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_002",
+        "lower_variance": 0.0004204012109821468,
+        "consistent": true,
+        "best_delivered_te_bp": 216.40609697851605,
+        "lower_te_bp": 205.03687741041776,
+        "best_gap_bp": 11.369219568098288,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_003",
+        "lower_variance": 0.0003215227963700624,
+        "consistent": true,
+        "best_delivered_te_bp": 183.19788190517286,
+        "lower_te_bp": 179.31056755530682,
+        "best_gap_bp": 3.8873143498660454,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_004",
+        "lower_variance": 0.00023936262119667555,
+        "consistent": true,
+        "best_delivered_te_bp": 162.51914869248884,
+        "lower_te_bp": 154.71348396202433,
+        "best_gap_bp": 7.805664730464514,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_005",
+        "lower_variance": 0.00039067849548844513,
+        "consistent": true,
+        "best_delivered_te_bp": 205.1927574864395,
+        "lower_te_bp": 197.65588670425302,
+        "best_gap_bp": 7.536870782186469,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_006",
+        "lower_variance": 0.0013529575199809473,
+        "consistent": true,
+        "best_delivered_te_bp": 379.6340757801382,
+        "lower_te_bp": 367.8257087237034,
+        "best_gap_bp": 11.808367056434747,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_007",
+        "lower_variance": 0.0006240341509587421,
+        "consistent": true,
+        "best_delivered_te_bp": 262.7508412371103,
+        "lower_te_bp": 249.80675550487865,
+        "best_gap_bp": 12.944085732231656,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_008",
+        "lower_variance": 0.00037611659337631484,
+        "consistent": true,
+        "best_delivered_te_bp": 208.71007182142165,
+        "lower_te_bp": 193.93725618774616,
+        "best_gap_bp": 14.772815633675492,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_009",
+        "lower_variance": 0.00027104067745190534,
+        "consistent": true,
+        "best_delivered_te_bp": 173.09812062957977,
+        "lower_te_bp": 164.6331307641039,
+        "best_gap_bp": 8.464989865475872,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_010",
+        "lower_variance": 0.0001843583357853615,
+        "consistent": true,
+        "best_delivered_te_bp": 148.3791002115725,
+        "lower_te_bp": 135.7786197401349,
+        "best_gap_bp": 12.600480471437606,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_011",
+        "lower_variance": 0.0002902786673679031,
+        "consistent": true,
+        "best_delivered_te_bp": 192.5465431065219,
+        "lower_te_bp": 170.37566356962577,
+        "best_gap_bp": 22.170879536896138,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_012",
+        "lower_variance": 0.0015872273098598022,
+        "consistent": true,
+        "best_delivered_te_bp": 412.77987830832836,
+        "lower_te_bp": 398.4002145907808,
+        "best_gap_bp": 14.379663717547544,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_013",
+        "lower_variance": 0.0007135833051845409,
+        "consistent": true,
+        "best_delivered_te_bp": 275.7632746339589,
+        "lower_te_bp": 267.1298008804972,
+        "best_gap_bp": 8.633473753461658,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_014",
+        "lower_variance": 0.000574952793100304,
+        "consistent": true,
+        "best_delivered_te_bp": 249.3506611959737,
+        "lower_te_bp": 239.78173264456657,
+        "best_gap_bp": 9.568928551407112,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_015",
+        "lower_variance": 0.00035547873235061873,
+        "consistent": true,
+        "best_delivered_te_bp": 191.08197028821255,
+        "lower_te_bp": 188.54143638750043,
+        "best_gap_bp": 2.54053390071212,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_016",
+        "lower_variance": 0.00028357495964766063,
+        "consistent": true,
+        "best_delivered_te_bp": 192.1059707564808,
+        "lower_te_bp": 168.39684072085814,
+        "best_gap_bp": 23.70913003562265,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_017",
+        "lower_variance": 0.0004704758574442736,
+        "consistent": true,
+        "best_delivered_te_bp": 242.21369971531158,
+        "lower_te_bp": 216.90455445754787,
+        "best_gap_bp": 25.309145257763703,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_018",
+        "lower_variance": 0.0013696281812457583,
+        "consistent": true,
+        "best_delivered_te_bp": 398.83618029010603,
+        "lower_te_bp": 370.08487962165634,
+        "best_gap_bp": 28.751300668449687,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_019",
+        "lower_variance": 0.0006253185103646541,
+        "consistent": true,
+        "best_delivered_te_bp": 262.9013744615317,
+        "lower_te_bp": 250.06369395908996,
+        "best_gap_bp": 12.837680502441742,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_020",
+        "lower_variance": 0.00047126811607307737,
+        "consistent": true,
+        "best_delivered_te_bp": 229.5291163883315,
+        "lower_te_bp": 217.08710603651184,
+        "best_gap_bp": 12.442010351819647,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_021",
+        "lower_variance": 0.0002857380961991209,
+        "consistent": true,
+        "best_delivered_te_bp": 177.71569394691778,
+        "lower_te_bp": 169.03789403536737,
+        "best_gap_bp": 8.677799911550409,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_022",
+        "lower_variance": 0.00022749985505680098,
+        "consistent": true,
+        "best_delivered_te_bp": 171.78513313232835,
+        "lower_te_bp": 150.8309832417733,
+        "best_gap_bp": 20.954149890555044,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_023",
+        "lower_variance": 0.0003188746447632328,
+        "consistent": true,
+        "best_delivered_te_bp": 214.31526422285228,
+        "lower_te_bp": 178.5706148175653,
+        "best_gap_bp": 35.744649405286964,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_024",
+        "lower_variance": 0.001298489808170902,
+        "consistent": true,
+        "best_delivered_te_bp": 363.34142064529124,
+        "lower_te_bp": 360.345640763268,
+        "best_gap_bp": 2.995779882023214,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_025",
+        "lower_variance": 0.0006423177762006636,
+        "consistent": true,
+        "best_delivered_te_bp": 258.70081290219343,
+        "lower_te_bp": 253.43988955976593,
+        "best_gap_bp": 5.260923342427503,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_026",
+        "lower_variance": 0.0003279054319468107,
+        "consistent": true,
+        "best_delivered_te_bp": 185.17026750558077,
+        "lower_te_bp": 181.08159264453434,
+        "best_gap_bp": 4.088674861046428,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_027",
+        "lower_variance": 0.0003007406864155432,
+        "consistent": true,
+        "best_delivered_te_bp": 175.3254157538961,
+        "lower_te_bp": 173.41876669367224,
+        "best_gap_bp": 1.906649060223856,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_028",
+        "lower_variance": 0.0001907965665588473,
+        "consistent": true,
+        "best_delivered_te_bp": 142.6380744286179,
+        "lower_te_bp": 138.12913036678663,
+        "best_gap_bp": 4.508944061831272,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_029",
+        "lower_variance": 0.0002989061980933384,
+        "consistent": true,
+        "best_delivered_te_bp": 185.46409198414213,
+        "lower_te_bp": 172.88903900864807,
+        "best_gap_bp": 12.57505297549406,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_030",
+        "lower_variance": 0.0012047880962028732,
+        "consistent": true,
+        "best_delivered_te_bp": 353.1162629394243,
+        "lower_te_bp": 347.10057565536727,
+        "best_gap_bp": 6.015687284057037,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_031",
+        "lower_variance": 0.0005859650687079819,
+        "consistent": true,
+        "best_delivered_te_bp": 249.01388872010602,
+        "lower_te_bp": 242.06715363881608,
+        "best_gap_bp": 6.946735081289944,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_032",
+        "lower_variance": 0.0002804161357922118,
+        "consistent": true,
+        "best_delivered_te_bp": 178.30406592403318,
+        "lower_te_bp": 167.45630349204887,
+        "best_gap_bp": 10.847762431984307,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_033",
+        "lower_variance": 0.00024546238718303867,
+        "consistent": true,
+        "best_delivered_te_bp": 160.47176687047588,
+        "lower_te_bp": 156.6723929679504,
+        "best_gap_bp": 3.799373902525474,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_034",
+        "lower_variance": 0.00013493910211977587,
+        "consistent": true,
+        "best_delivered_te_bp": 128.2204217526654,
+        "lower_te_bp": 116.1632911550701,
+        "best_gap_bp": 12.057130597595304,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_035",
+        "lower_variance": 0.00021079243921541622,
+        "consistent": true,
+        "best_delivered_te_bp": 165.0634087058341,
+        "lower_te_bp": 145.18692751601853,
+        "best_gap_bp": 19.876481189815564,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_036",
+        "lower_variance": 0.0015337778578851224,
+        "consistent": true,
+        "best_delivered_te_bp": 400.5778979878953,
+        "lower_te_bp": 391.6347606999566,
+        "best_gap_bp": 8.943137287938725,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_037",
+        "lower_variance": 0.0006769103370996801,
+        "consistent": true,
+        "best_delivered_te_bp": 270.4664230955147,
+        "lower_te_bp": 260.1750059286403,
+        "best_gap_bp": 10.291417166874396,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_038",
+        "lower_variance": 0.0005461293840796938,
+        "consistent": true,
+        "best_delivered_te_bp": 241.52612884161903,
+        "lower_te_bp": 233.69411290824036,
+        "best_gap_bp": 7.8320159333786705,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_039",
+        "lower_variance": 0.00035138284231101647,
+        "consistent": true,
+        "best_delivered_te_bp": 189.65750159069557,
+        "lower_te_bp": 187.45208516071952,
+        "best_gap_bp": 2.2054164299760544,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_040",
+        "lower_variance": 0.00023311063674312684,
+        "consistent": true,
+        "best_delivered_te_bp": 178.73251949156028,
+        "lower_te_bp": 152.67961119387448,
+        "best_gap_bp": 26.052908297685804,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_041",
+        "lower_variance": 0.00038042787606914634,
+        "consistent": true,
+        "best_delivered_te_bp": 240.88428703665704,
+        "lower_te_bp": 195.04560391589098,
+        "best_gap_bp": 45.83868312076606,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_042",
+        "lower_variance": 0.001240095137348377,
+        "consistent": true,
+        "best_delivered_te_bp": 361.89855753844927,
+        "lower_te_bp": 352.1498455698053,
+        "best_gap_bp": 9.748711968643988,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_043",
+        "lower_variance": 0.0005935705735653017,
+        "consistent": true,
+        "best_delivered_te_bp": 251.0365875291773,
+        "lower_te_bp": 243.63303831075572,
+        "best_gap_bp": 7.403549218421574,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_044",
+        "lower_variance": 0.00044601704798680864,
+        "consistent": true,
+        "best_delivered_te_bp": 216.85868522898502,
+        "lower_te_bp": 211.19115700871774,
+        "best_gap_bp": 5.667528220267286,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_045",
+        "lower_variance": 0.0002799948044320998,
+        "consistent": true,
+        "best_delivered_te_bp": 168.81063161901747,
+        "lower_te_bp": 167.33045282676426,
+        "best_gap_bp": 1.4801787922532128,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_046",
+        "lower_variance": 0.00017049172743153435,
+        "consistent": true,
+        "best_delivered_te_bp": 143.53196431290567,
+        "lower_te_bp": 130.57248080339684,
+        "best_gap_bp": 12.959483509508829,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_047",
+        "lower_variance": 0.00023761297965726246,
+        "consistent": true,
+        "best_delivered_te_bp": 185.23925042048617,
+        "lower_te_bp": 154.1470011570976,
+        "best_gap_bp": 31.092249263388567,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_048",
+        "lower_variance": 6.490867733950558e-05,
+        "consistent": true,
+        "best_delivered_te_bp": 83.02032718611268,
+        "lower_te_bp": 80.56592166636312,
+        "best_gap_bp": 2.4544055197495567,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_049",
+        "lower_variance": 0.00013573326547028784,
+        "consistent": true,
+        "best_delivered_te_bp": 120.45386861139498,
+        "lower_te_bp": 116.50462028189605,
+        "best_gap_bp": 3.9492483294989285,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_050",
+        "lower_variance": 0.0003244974993807189,
+        "consistent": true,
+        "best_delivered_te_bp": 181.998041709114,
+        "lower_te_bp": 180.13814126406402,
+        "best_gap_bp": 1.8599004450499876,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_051",
+        "lower_variance": 0.00019815227692031052,
+        "consistent": true,
+        "best_delivered_te_bp": 143.57255315151275,
+        "lower_te_bp": 140.76657164267036,
+        "best_gap_bp": 2.805981508842393,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_052",
+        "lower_variance": 0.0002867581538661036,
+        "consistent": true,
+        "best_delivered_te_bp": 171.8329313816861,
+        "lower_te_bp": 169.3393497879638,
+        "best_gap_bp": 2.493581593722297,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_053",
+        "lower_variance": 0.0001616513042241806,
+        "consistent": true,
+        "best_delivered_te_bp": 129.82550226225243,
+        "lower_te_bp": 127.14216618580187,
+        "best_gap_bp": 2.6833360764505585,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_054",
+        "lower_variance": 4.63904351243795e-05,
+        "consistent": true,
+        "best_delivered_te_bp": 74.41728415162956,
+        "lower_te_bp": 68.11052424139716,
+        "best_gap_bp": 6.306759910232401,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_055",
+        "lower_variance": 9.54762526940828e-05,
+        "consistent": true,
+        "best_delivered_te_bp": 108.74362323395931,
+        "lower_te_bp": 97.71195049433963,
+        "best_gap_bp": 11.03167273961968,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_056",
+        "lower_variance": 0.00027052102384289496,
+        "consistent": true,
+        "best_delivered_te_bp": 169.02738240952348,
+        "lower_te_bp": 164.47523334620777,
+        "best_gap_bp": 4.55214906331571,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_057",
+        "lower_variance": 0.00016468510390030562,
+        "consistent": true,
+        "best_delivered_te_bp": 134.39781670299564,
+        "lower_te_bp": 128.32969410869242,
+        "best_gap_bp": 6.068122594303219,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_058",
+        "lower_variance": 0.0002470278267158964,
+        "consistent": true,
+        "best_delivered_te_bp": 160.75266219830252,
+        "lower_te_bp": 157.17118906335742,
+        "best_gap_bp": 3.5814731349450994,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_059",
+        "lower_variance": 0.00012122773733564311,
+        "consistent": true,
+        "best_delivered_te_bp": 118.50168113341802,
+        "lower_te_bp": 110.10346830851566,
+        "best_gap_bp": 8.398212824902359,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_060",
+        "lower_variance": 6.660111023415252e-05,
+        "consistent": true,
+        "best_delivered_te_bp": 85.93428996433326,
+        "lower_te_bp": 81.60950326656358,
+        "best_gap_bp": 4.324786697769682,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_061",
+        "lower_variance": 0.00014456003710640837,
+        "consistent": true,
+        "best_delivered_te_bp": 129.77317370456873,
+        "lower_te_bp": 120.23312235253992,
+        "best_gap_bp": 9.540051352028811,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_062",
+        "lower_variance": 0.0003247169752467542,
+        "consistent": true,
+        "best_delivered_te_bp": 182.31719624478143,
+        "lower_te_bp": 180.19904973299782,
+        "best_gap_bp": 2.118146511783607,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_063",
+        "lower_variance": 0.00020200785023013177,
+        "consistent": true,
+        "best_delivered_te_bp": 148.1912744923786,
+        "lower_te_bp": 142.12946571001095,
+        "best_gap_bp": 6.061808782367649,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_064",
+        "lower_variance": 0.0002910843660439021,
+        "consistent": true,
+        "best_delivered_te_bp": 174.53010491258186,
+        "lower_te_bp": 170.61194742570115,
+        "best_gap_bp": 3.918157486880716,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_065",
+        "lower_variance": 0.00016218306022844513,
+        "consistent": true,
+        "best_delivered_te_bp": 131.79801634371114,
+        "lower_te_bp": 127.35111315903175,
+        "best_gap_bp": 4.446903184679385,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_066",
+        "lower_variance": 4.8179340476240545e-05,
+        "consistent": true,
+        "best_delivered_te_bp": 76.60699056483958,
+        "lower_te_bp": 69.41133947435429,
+        "best_gap_bp": 7.195651090485285,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_067",
+        "lower_variance": 0.0001021281973280052,
+        "consistent": true,
+        "best_delivered_te_bp": 108.74362323395937,
+        "lower_te_bp": 101.05849658885946,
+        "best_gap_bp": 7.685126645099913,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_068",
+        "lower_variance": 0.0002705214389447307,
+        "consistent": true,
+        "best_delivered_te_bp": 169.5918481986818,
+        "lower_te_bp": 164.47535953592887,
+        "best_gap_bp": 5.116488662752914,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_069",
+        "lower_variance": 0.00016474993890392355,
+        "consistent": true,
+        "best_delivered_te_bp": 134.39781670299553,
+        "lower_te_bp": 128.35495273027976,
+        "best_gap_bp": 6.0428639727157645,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_070",
+        "lower_variance": 0.00024845887506998263,
+        "consistent": true,
+        "best_delivered_te_bp": 161.14808359698415,
+        "lower_te_bp": 157.6257831288976,
+        "best_gap_bp": 3.5223004680865415,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_071",
+        "lower_variance": 0.00012788814393639662,
+        "consistent": true,
+        "best_delivered_te_bp": 119.97166089616402,
+        "lower_te_bp": 113.08764032218403,
+        "best_gap_bp": 6.884020573979996,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_072",
+        "lower_variance": 5.7109131431235204e-05,
+        "consistent": true,
+        "best_delivered_te_bp": 79.01987759037863,
+        "lower_te_bp": 75.57058384797301,
+        "best_gap_bp": 3.449293742405615,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_073",
+        "lower_variance": 0.00010955507529557784,
+        "consistent": true,
+        "best_delivered_te_bp": 109.68645540877424,
+        "lower_te_bp": 104.66856036822989,
+        "best_gap_bp": 5.017895040544346,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_074",
+        "lower_variance": 0.0003176998480163537,
+        "consistent": true,
+        "best_delivered_te_bp": 180.08882779820553,
+        "lower_te_bp": 178.2413666959367,
+        "best_gap_bp": 1.8474611022688237,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_075",
+        "lower_variance": 0.00018401737592827337,
+        "consistent": true,
+        "best_delivered_te_bp": 137.74615754135561,
+        "lower_te_bp": 135.65300436343952,
+        "best_gap_bp": 2.0931531779160935,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_076",
+        "lower_variance": 0.000275435199732865,
+        "consistent": true,
+        "best_delivered_te_bp": 168.03698636083647,
+        "lower_te_bp": 165.9624053009792,
+        "best_gap_bp": 2.074581059857252,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_077",
+        "lower_variance": 0.00014713647133536513,
+        "consistent": true,
+        "best_delivered_te_bp": 124.9554856243171,
+        "lower_te_bp": 121.29982330381405,
+        "best_gap_bp": 3.6556623205030547,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_078",
+        "lower_variance": 4.046610262943724e-05,
+        "consistent": true,
+        "best_delivered_te_bp": 67.64579512509762,
+        "lower_te_bp": 63.61297244229139,
+        "best_gap_bp": 4.032822682806234,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_079",
+        "lower_variance": 7.24095424950898e-05,
+        "consistent": true,
+        "best_delivered_te_bp": 93.09826919073281,
+        "lower_te_bp": 85.09379677455333,
+        "best_gap_bp": 8.004472416179482,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_080",
+        "lower_variance": 0.0002634167717850716,
+        "consistent": true,
+        "best_delivered_te_bp": 163.24975528414487,
+        "lower_te_bp": 162.3011927821455,
+        "best_gap_bp": 0.948562501999362,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_081",
+        "lower_variance": 0.000151492181344107,
+        "consistent": true,
+        "best_delivered_te_bp": 127.01134410518155,
+        "lower_te_bp": 123.0821600980853,
+        "best_gap_bp": 3.9291840070962536,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_082",
+        "lower_variance": 0.00023650098446947103,
+        "consistent": true,
+        "best_delivered_te_bp": 156.17448651218672,
+        "lower_te_bp": 153.78588507059777,
+        "best_gap_bp": 2.3886014415889463,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_083",
+        "lower_variance": 0.00011008293984266683,
+        "consistent": true,
+        "best_delivered_te_bp": 108.15073085263697,
+        "lower_te_bp": 104.92041738511472,
+        "best_gap_bp": 3.230313467522251,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_084",
+        "lower_variance": 6.012704150655865e-05,
+        "consistent": true,
+        "best_delivered_te_bp": 81.96769698127703,
+        "lower_te_bp": 77.54162850144343,
+        "best_gap_bp": 4.426068479833603,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_085",
+        "lower_variance": 0.00011931464561842878,
+        "consistent": true,
+        "best_delivered_te_bp": 118.86966749289164,
+        "lower_te_bp": 109.23124352419904,
+        "best_gap_bp": 9.638423968692592,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_086",
+        "lower_variance": 0.0003181256265315288,
+        "consistent": true,
+        "best_delivered_te_bp": 180.94561275374505,
+        "lower_te_bp": 178.36076545348442,
+        "best_gap_bp": 2.584847300260634,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_087",
+        "lower_variance": 0.00018748726470011124,
+        "consistent": true,
+        "best_delivered_te_bp": 142.20862715981383,
+        "lower_te_bp": 136.9259890233082,
+        "best_gap_bp": 5.282638136505625,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_088",
+        "lower_variance": 0.00028128720520645634,
+        "consistent": true,
+        "best_delivered_te_bp": 171.4406467738497,
+        "lower_te_bp": 167.7161903951006,
+        "best_gap_bp": 3.724456378749096,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_089",
+        "lower_variance": 0.00014931884275544186,
+        "consistent": true,
+        "best_delivered_te_bp": 125.90597304163076,
+        "lower_te_bp": 122.19608944456523,
+        "best_gap_bp": 3.7098835970655273,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_090",
+        "lower_variance": 4.155246157943037e-05,
+        "consistent": true,
+        "best_delivered_te_bp": 68.6655753399652,
+        "lower_te_bp": 64.46119885592447,
+        "best_gap_bp": 4.204376484040736,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_091",
+        "lower_variance": 7.726997944179485e-05,
+        "consistent": true,
+        "best_delivered_te_bp": 93.09826919073366,
+        "lower_te_bp": 87.90334432875397,
+        "best_gap_bp": 5.194924861979686,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_092",
+        "lower_variance": 0.00026341677178523217,
+        "consistent": true,
+        "best_delivered_te_bp": 163.2497552846027,
+        "lower_te_bp": 162.30119278219496,
+        "best_gap_bp": 0.9485625024077535,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_093",
+        "lower_variance": 0.00015149218142241613,
+        "consistent": true,
+        "best_delivered_te_bp": 127.01134410516113,
+        "lower_te_bp": 123.08216012989703,
+        "best_gap_bp": 3.9291839752640954,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_094",
+        "lower_variance": 0.0002392979264764216,
+        "consistent": true,
+        "best_delivered_te_bp": 156.95168916892501,
+        "lower_te_bp": 154.69257463641284,
+        "best_gap_bp": 2.2591145325121715,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_095",
+        "lower_variance": 0.00011583221082471286,
+        "consistent": true,
+        "best_delivered_te_bp": 112.84804042222967,
+        "lower_te_bp": 107.62537378551252,
+        "best_gap_bp": 5.22266663671715,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      }
+    ],
+    "bound_gap_bp": {
+      "n": 96,
+      "mean": 8.40995002375992,
+      "minimum": 0.948562501999362,
+      "median": 5.841607752162162,
+      "p95": 25.495086017744228,
+      "maximum": 45.83868312076606
+    },
+    "bound_closed_at_band": 0,
+    "bound_inconsistencies": 0,
+    "enumeration": []
+  },
+  "tiny": {
+    "cases": 12,
+    "prepared": 12,
+    "optional_candidates": {
+      "n": 12,
+      "mean": 7.333333333333333,
+      "minimum": 7.0,
+      "median": 7.0,
+      "p95": 8.0,
+      "maximum": 8.0
+    },
+    "methods": {
+      "Ranked": {
+        "expected": 12,
+        "returned": 12,
+        "audited": 12,
+        "te_bp": {
+          "n": 12,
+          "mean": 425.9622841319608,
+          "minimum": 223.69669085429982,
+          "median": 441.9668622043408,
+          "p95": 568.3499967470513,
+          "maximum": 578.3085963304391
+        },
+        "seconds": {
+          "n": 12,
+          "mean": 0.27958273332721245,
+          "minimum": 0.22923870000522584,
+          "median": 0.2592036000569351,
+          "p95": 0.3685003799386322,
+          "maximum": 0.3847464999416843
+        },
+        "end_to_end_seconds": {
+          "n": 12,
+          "mean": 0.27966280832576257,
+          "minimum": 0.22931680001784116,
+          "median": 0.2592819000710733,
+          "p95": 0.36857996991020625,
+          "maximum": 0.3848316998919472
+        },
+        "statuses": {
+          "audited_incumbent": 12
+        },
+        "sources": {
+          "heuristic": 12
+        },
+        "native_status": {
+          "not_applicable": 12
+        },
+        "start_received": 0
+      },
+      "OneAnchor": {
+        "expected": 12,
+        "returned": 12,
+        "audited": 12,
+        "te_bp": {
+          "n": 12,
+          "mean": 425.9622841319608,
+          "minimum": 223.69669085429982,
+          "median": 441.9668622043408,
+          "p95": 568.3499967470513,
+          "maximum": 578.3085963304391
+        },
+        "seconds": {
+          "n": 12,
+          "mean": 0.2776591000147164,
+          "minimum": 0.22856449999380857,
+          "median": 0.27361410000594333,
+          "p95": 0.3315908200282138,
+          "maximum": 0.3321021000156179
+        },
+        "end_to_end_seconds": {
+          "n": 12,
+          "mean": 0.2777391750132665,
+          "minimum": 0.2286318999249488,
+          "median": 0.2737162500852719,
+          "p95": 0.3316630699962843,
+          "maximum": 0.3321748999878764
+        },
+        "statuses": {
+          "audited_incumbent": 12
+        },
+        "sources": {
+          "heuristic": 12
+        },
+        "native_status": {
+          "not_applicable": 12
+        },
+        "start_received": 0
+      },
+      "ExactBase10": {
+        "expected": 12,
+        "returned": 12,
+        "audited": 12,
+        "te_bp": {
+          "n": 12,
+          "mean": 425.9622841318813,
+          "minimum": 223.69669085377012,
+          "median": 441.96686220431195,
+          "p95": 568.3499967470052,
+          "maximum": 578.3085963304391
+        },
+        "seconds": {
+          "n": 12,
+          "mean": 0.047097433339028306,
+          "minimum": 0.03798230004031211,
+          "median": 0.041514649987220764,
+          "p95": 0.06364822001778521,
+          "maximum": 0.06625829997938126
+        },
+        "end_to_end_seconds": {
+          "n": 12,
+          "mean": 0.047177508337578423,
+          "minimum": 0.038060400052927434,
+          "median": 0.04161755001405254,
+          "p95": 0.06372989000519737,
+          "maximum": 0.06634359993040562
+        },
+        "statuses": {
+          "audited_incumbent": 12
+        },
+        "sources": {
+          "native_callback": 5,
+          "common_prepared_incumbent": 7
+        },
+        "native_status": {
+          "solsta.integer_optimal": 12
+        },
+        "start_received": 12
+      },
+      "ExactBase60": {
+        "expected": 12,
+        "returned": 12,
+        "audited": 12,
+        "te_bp": {
+          "n": 12,
+          "mean": 425.9622841318813,
+          "minimum": 223.69669085377012,
+          "median": 441.96686220431195,
+          "p95": 568.3499967470052,
+          "maximum": 578.3085963304391
+        },
+        "seconds": {
+          "n": 12,
+          "mean": 0.045968958331892885,
+          "minimum": 0.036409399937838316,
+          "median": 0.040776849957183,
+          "p95": 0.06383915501646698,
+          "maximum": 0.06619199994020164
+        },
+        "end_to_end_seconds": {
+          "n": 12,
+          "mean": 0.046049033330443,
+          "minimum": 0.03647679986897856,
+          "median": 0.04084574995795265,
+          "p95": 0.06392148499726318,
+          "maximum": 0.06627069995738566
+        },
+        "statuses": {
+          "audited_incumbent": 12
+        },
+        "sources": {
+          "native_callback": 5,
+          "common_prepared_incumbent": 7
+        },
+        "native_status": {
+          "solsta.integer_optimal": 12
+        },
+        "start_received": 12
+      },
+      "ExactFull60": {
+        "expected": 12,
+        "returned": 12,
+        "audited": 12,
+        "te_bp": {
+          "n": 12,
+          "mean": 425.9622841319255,
+          "minimum": 223.69669085429982,
+          "median": 441.96686220431195,
+          "p95": 568.3499967470052,
+          "maximum": 578.3085963304391
+        },
+        "seconds": {
+          "n": 12,
+          "mean": 0.054659791669109836,
+          "minimum": 0.037252599955536425,
+          "median": 0.042083650012500584,
+          "p95": 0.10165883999434293,
+          "maximum": 0.15415590000338852
+        },
+        "end_to_end_seconds": {
+          "n": 12,
+          "mean": 0.3343225999948724,
+          "minimum": 0.2671603999333456,
+          "median": 0.3081234000856057,
+          "p95": 0.42311086991103364,
+          "maximum": 0.43495709996204823
+        },
+        "statuses": {
+          "audited_incumbent": 12
+        },
+        "sources": {
+          "native_callback": 4,
+          "common_prepared_incumbent": 7,
+          "requested_mip_start": 1
+        },
+        "native_status": {
+          "solsta.integer_optimal": 12
+        },
+        "start_received": 12
+      },
+      "ExactOne60": {
+        "expected": 12,
+        "returned": 12,
+        "audited": 12,
+        "te_bp": {
+          "n": 12,
+          "mean": 425.9622841319255,
+          "minimum": 223.69669085429982,
+          "median": 441.96686220431195,
+          "p95": 568.3499967470052,
+          "maximum": 578.3085963304391
+        },
+        "seconds": {
+          "n": 12,
+          "mean": 0.047533333369453125,
+          "minimum": 0.03693479998037219,
+          "median": 0.04061195004032925,
+          "p95": 0.06390474502113648,
+          "maximum": 0.0663038999773562
+        },
+        "end_to_end_seconds": {
+          "n": 12,
+          "mean": 0.32527250838271965,
+          "minimum": 0.2664657999994233,
+          "median": 0.3201709999702871,
+          "p95": 0.3786343000247143,
+          "maximum": 0.3867886000080034
+        },
+        "statuses": {
+          "audited_incumbent": 12
+        },
+        "sources": {
+          "native_callback": 4,
+          "common_prepared_incumbent": 7,
+          "requested_mip_start": 1
+        },
+        "native_status": {
+          "solsta.integer_optimal": 12
+        },
+        "start_received": 12
+      }
+    },
+    "comparisons": {
+      "OneAnchor_Ranked": {
+        "expected": 12,
+        "pairs": 12,
+        "lower": 0,
+        "equal": 12,
+        "higher": 0,
+        "gap_bp": {
+          "n": 12,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "worse_cases": [],
+        "seconds_ratio": {
+          "n": 12,
+          "mean": 1.015776140808853,
+          "minimum": 0.7157342415417886,
+          "median": 0.9937263410496154,
+          "p95": 1.3579399569595172,
+          "maximum": 1.3786880505361638
+        }
+      },
+      "Ranked_ExactBase60": {
+        "expected": 12,
+        "pairs": 12,
+        "lower": 0,
+        "equal": 12,
+        "higher": 0,
+        "gap_bp": {
+          "n": 12,
+          "mean": 7.946946804319548e-11,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 3.706716711349143e-10,
+          "maximum": 5.296953986544395e-10
+        },
+        "worse_cases": [],
+        "seconds_ratio": {
+          "n": 12,
+          "mean": 6.216539524224814,
+          "minimum": 4.1362274460720725,
+          "median": 6.24899630509803,
+          "p95": 7.662591267626849,
+          "maximum": 8.073733424403567
+        }
+      },
+      "OneAnchor_ExactBase60": {
+        "expected": 12,
+        "pairs": 12,
+        "lower": 0,
+        "equal": 12,
+        "higher": 0,
+        "gap_bp": {
+          "n": 12,
+          "mean": 7.946946804319548e-11,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 3.706716711349143e-10,
+          "maximum": 5.296953986544395e-10
+        },
+        "worse_cases": [],
+        "seconds_ratio": {
+          "n": 12,
+          "mean": 6.271508622732341,
+          "minimum": 4.196599799634502,
+          "median": 6.323317321429956,
+          "p95": 8.173782162194266,
+          "maximum": 8.294301122952062
+        }
+      },
+      "Ranked_ExactFull60": {
+        "expected": 12,
+        "pairs": 12,
+        "lower": 0,
+        "equal": 12,
+        "higher": 0,
+        "gap_bp": {
+          "n": 12,
+          "mean": 3.530923701570524e-11,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 1.542332483950303e-10,
+          "maximum": 2.403339749434963e-10
+        },
+        "worse_cases": [],
+        "seconds_ratio": {
+          "n": 12,
+          "mean": 5.819045983269718,
+          "minimum": 1.6612455315653112,
+          "median": 6.038425206067405,
+          "p95": 7.262044172329459,
+          "maximum": 7.6756793841767115
+        }
+      },
+      "OneAnchor_ExactOne60": {
+        "expected": 12,
+        "pairs": 12,
+        "lower": 0,
+        "equal": 12,
+        "higher": 0,
+        "gap_bp": {
+          "n": 12,
+          "mean": 3.530923701570524e-11,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 1.542332483950303e-10,
+          "maximum": 2.403339749434963e-10
+        },
+        "worse_cases": [],
+        "seconds_ratio": {
+          "n": 12,
+          "mean": 6.06075811179398,
+          "minimum": 3.918754403198825,
+          "median": 5.982510261982307,
+          "p95": 7.940707248362218,
+          "maximum": 8.346853414347008
+        }
+      },
+      "ExactBase60_ExactBase10": {
+        "expected": 12,
+        "pairs": 12,
+        "lower": 0,
+        "equal": 12,
+        "higher": 0,
+        "gap_bp": {
+          "n": 12,
+          "mean": 0.0,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 0.0
+        },
+        "worse_cases": [],
+        "seconds_ratio": {
+          "n": 12,
+          "mean": 0.9739319328466679,
+          "minimum": 0.8981358805919075,
+          "median": 0.9734156249054812,
+          "p95": 1.0351952411882124,
+          "maximum": 1.0760704681675792
+        }
+      }
+    },
+    "certificates": [
+      {
+        "case": "breadth_096",
+        "lower_variance": 0.002352919388298802,
+        "consistent": true,
+        "best_delivered_te_bp": 486.96779053082184,
+        "lower_te_bp": 485.06900419412517,
+        "best_gap_bp": 1.8987863366966735,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_097",
+        "lower_variance": 0.0030416098761122693,
+        "consistent": true,
+        "best_delivered_te_bp": 560.2020516332866,
+        "lower_te_bp": 551.507921621464,
+        "best_gap_bp": 8.694130011822608,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_098",
+        "lower_variance": 0.0029657041086472965,
+        "consistent": true,
+        "best_delivered_te_bp": 546.7436958337651,
+        "lower_te_bp": 544.5827860525244,
+        "best_gap_bp": 2.1609097812406617,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_099",
+        "lower_variance": 0.0013685188268966482,
+        "consistent": true,
+        "best_delivered_te_bp": 370.70325767247357,
+        "lower_te_bp": 369.9349708930812,
+        "best_gap_bp": 0.7682867793923833,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_100",
+        "lower_variance": 0.0008942488562946834,
+        "consistent": true,
+        "best_delivered_te_bp": 310.58178916036456,
+        "lower_te_bp": 299.03993985664914,
+        "best_gap_bp": 11.541849303715424,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_101",
+        "lower_variance": 0.0004799776473107301,
+        "consistent": true,
+        "best_delivered_te_bp": 223.69669085377012,
+        "lower_te_bp": 219.08392166261999,
+        "best_gap_bp": 4.612769191150136,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_102",
+        "lower_variance": 0.0023963445142486882,
+        "consistent": true,
+        "best_delivered_te_bp": 491.87977279798946,
+        "lower_te_bp": 489.52471993237367,
+        "best_gap_bp": 2.3550528656157894,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_103",
+        "lower_variance": 0.0033031344642366627,
+        "consistent": true,
+        "best_delivered_te_bp": 578.3085963304391,
+        "lower_te_bp": 574.7290199943503,
+        "best_gap_bp": 3.579576336088735,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_104",
+        "lower_variance": 0.0029657041086472965,
+        "consistent": true,
+        "best_delivered_te_bp": 546.7436958337651,
+        "lower_te_bp": 544.5827860525244,
+        "best_gap_bp": 2.1609097812406617,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_105",
+        "lower_variance": 0.0015572066083177783,
+        "consistent": true,
+        "best_delivered_te_bp": 396.9659338778021,
+        "lower_te_bp": 394.61457250306637,
+        "best_gap_bp": 2.3513613747357454,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_106",
+        "lower_variance": 0.001251858425708186,
+        "consistent": true,
+        "best_delivered_te_bp": 356.6792834773306,
+        "lower_te_bp": 353.8161140632498,
+        "best_gap_bp": 2.863169414080801,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      },
+      {
+        "case": "breadth_107",
+        "lower_variance": 0.0005671762300848775,
+        "consistent": true,
+        "best_delivered_te_bp": 242.07485158076807,
+        "lower_te_bp": 238.15461996041094,
+        "best_gap_bp": 3.9202316203571286,
+        "reasons": {
+          "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+          "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+        },
+        "failures": {}
+      }
+    ],
+    "bound_gap_bp": {
+      "n": 12,
+      "mean": 3.9089193996780622,
+      "minimum": 0.7682867793923833,
+      "median": 2.609111139848295,
+      "p95": 9.975603693174373,
+      "maximum": 11.541849303715424
+    },
+    "bound_closed_at_band": 0,
+    "bound_inconsistencies": 0,
+    "enumeration": [
+      {
+        "case": "breadth_096",
+        "complete": true,
+        "unresolved": 0,
+        "trials": 37,
+        "te_bp": 486.9677905310537,
+        "audit": {
+          "passed": true,
+          "violations": [],
+          "residuals": {
+            "funding": 0.0,
+            "lower": 4.947431353485854e-14,
+            "upper": 2.1398267526127933e-14,
+            "groups": 0.0
+          },
+          "tickets": 4,
+          "optional_tickets": 2,
+          "turnover": 0.2980027089629802
+        },
+        "arm_minus_reference_bp": {
+          "Ranked": -1.7416823538951576e-10,
+          "OneAnchor": -1.7416823538951576e-10,
+          "ExactBase10": -2.318643055332359e-10,
+          "ExactBase60": -2.318643055332359e-10,
+          "ExactFull60": -2.318643055332359e-10,
+          "ExactOne60": -2.318643055332359e-10
+        }
+      },
+      {
+        "case": "breadth_097",
+        "complete": true,
+        "unresolved": 0,
+        "trials": 37,
+        "te_bp": 560.2020516333992,
+        "audit": {
+          "passed": true,
+          "violations": [],
+          "residuals": {
+            "funding": 0.0,
+            "lower": 2.045587454379759e-14,
+            "upper": 0.0,
+            "groups": 0.0
+          },
+          "tickets": 4,
+          "optional_tickets": 2,
+          "turnover": 0.30612092063813673
+        },
+        "arm_minus_reference_bp": {
+          "OneAnchor": -2.8762769943568856e-11,
+          "Ranked": -2.8762769943568856e-11,
+          "ExactBase60": -1.1254996934439987e-10,
+          "ExactBase10": -1.1254996934439987e-10,
+          "ExactOne60": -1.1254996934439987e-10,
+          "ExactFull60": -1.1254996934439987e-10
+        }
+      },
+      {
+        "case": "breadth_098",
+        "complete": true,
+        "unresolved": 0,
+        "trials": 29,
+        "te_bp": 546.7436958257726,
+        "audit": {
+          "passed": true,
+          "violations": [],
+          "residuals": {
+            "funding": 2.220446049250313e-16,
+            "lower": 0.0,
+            "upper": 8.860074909658483e-13,
+            "groups": 0.0
+          },
+          "tickets": 2,
+          "optional_tickets": 0,
+          "turnover": 0.16682564722765789
+        },
+        "arm_minus_reference_bp": {
+          "Ranked": 7.99241206550505e-09,
+          "OneAnchor": 7.99241206550505e-09,
+          "ExactBase10": 7.99241206550505e-09,
+          "ExactBase60": 7.99241206550505e-09,
+          "ExactFull60": 7.99241206550505e-09,
+          "ExactOne60": 7.99241206550505e-09
+        }
+      },
+      {
+        "case": "breadth_099",
+        "complete": true,
+        "unresolved": 0,
+        "trials": 29,
+        "te_bp": 370.70325767250887,
+        "audit": {
+          "passed": true,
+          "violations": [],
+          "residuals": {
+            "funding": 0.0,
+            "lower": 6.938893903907228e-17,
+            "upper": 2.7755575615628914e-17,
+            "groups": 0.0
+          },
+          "tickets": 4,
+          "optional_tickets": 2,
+          "turnover": 0.42526553610842244
+        },
+        "arm_minus_reference_bp": {
+          "OneAnchor": 2.0526158550637774e-10,
+          "Ranked": 2.0526158550637774e-10,
+          "ExactBase60": -3.529976311256178e-11,
+          "ExactBase10": -3.529976311256178e-11,
+          "ExactOne60": -3.5072389437118545e-11,
+          "ExactFull60": -3.5072389437118545e-11
+        }
+      },
+      {
+        "case": "breadth_100",
+        "complete": true,
+        "unresolved": 0,
+        "trials": 29,
+        "te_bp": 310.5817891604118,
+        "audit": {
+          "passed": true,
+          "violations": [],
+          "residuals": {
+            "funding": 2.220446049250313e-16,
+            "lower": 1.8735013540549517e-15,
+            "upper": 0.0,
+            "groups": 0.0
+          },
+          "tickets": 4,
+          "optional_tickets": 2,
+          "turnover": 0.2779490080026269
+        },
+        "arm_minus_reference_bp": {
+          "Ranked": -5.343281372915953e-12,
+          "OneAnchor": -5.343281372915953e-12,
+          "ExactBase10": -4.723688107333146e-11,
+          "ExactBase60": -4.723688107333146e-11,
+          "ExactFull60": -4.723688107333146e-11,
+          "ExactOne60": -4.723688107333146e-11
+        }
+      },
+      {
+        "case": "breadth_101",
+        "complete": true,
+        "unresolved": 0,
+        "trials": 29,
+        "te_bp": 223.69669085391774,
+        "audit": {
+          "passed": true,
+          "violations": [],
+          "residuals": {
+            "funding": 0.0,
+            "lower": 4.163336342344337e-17,
+            "upper": 2.7755575615628914e-17,
+            "groups": 0.0
+          },
+          "tickets": 4,
+          "optional_tickets": 2,
+          "turnover": 0.24394999191783376
+        },
+        "arm_minus_reference_bp": {
+          "OneAnchor": 3.8207303987292107e-10,
+          "Ranked": 3.8207303987292107e-10,
+          "ExactBase60": -1.4762235878151841e-10,
+          "ExactBase10": -1.4762235878151841e-10,
+          "ExactOne60": 3.8207303987292107e-10,
+          "ExactFull60": 3.8207303987292107e-10
+        }
+      },
+      {
+        "case": "breadth_102",
+        "complete": true,
+        "unresolved": 0,
+        "trials": 37,
+        "te_bp": 491.8797727883349,
+        "audit": {
+          "passed": true,
+          "violations": [],
+          "residuals": {
+            "funding": 2.220446049250313e-16,
+            "lower": 1.8359064268835823e-12,
+            "upper": 1.918327452391131e-12,
+            "groups": 0.0
+          },
+          "tickets": 2,
+          "optional_tickets": 0,
+          "turnover": 0.2240912909530887
+        },
+        "arm_minus_reference_bp": {
+          "Ranked": 9.654570476413937e-09,
+          "OneAnchor": 9.654570476413937e-09,
+          "ExactBase10": 9.654570476413937e-09,
+          "ExactBase60": 9.654570476413937e-09,
+          "ExactFull60": 9.654570476413937e-09,
+          "ExactOne60": 9.654570476413937e-09
+        }
+      },
+      {
+        "case": "breadth_103",
+        "complete": true,
+        "unresolved": 0,
+        "trials": 37,
+        "te_bp": 578.308596326406,
+        "audit": {
+          "passed": true,
+          "violations": [],
+          "residuals": {
+            "funding": 2.220446049250313e-16,
+            "lower": 2.550743458162224e-13,
+            "upper": 7.852573232713892e-13,
+            "groups": 0.0
+          },
+          "tickets": 2,
+          "optional_tickets": 0,
+          "turnover": 0.23198943271122996
+        },
+        "arm_minus_reference_bp": {
+          "OneAnchor": 4.033040568174329e-09,
+          "Ranked": 4.033040568174329e-09,
+          "ExactBase60": 4.033040568174329e-09,
+          "ExactBase10": 4.033040568174329e-09,
+          "ExactOne60": 4.033040568174329e-09,
+          "ExactFull60": 4.033040568174329e-09
+        }
+      },
+      {
+        "case": "breadth_104",
+        "complete": true,
+        "unresolved": 0,
+        "trials": 29,
+        "te_bp": 546.7436957527881,
+        "audit": {
+          "passed": true,
+          "violations": [],
+          "residuals": {
+            "funding": 3.3306690738754696e-16,
+            "lower": 0.0,
+            "upper": 8.566048763609302e-12,
+            "groups": 0.0
+          },
+          "tickets": 2,
+          "optional_tickets": 0,
+          "turnover": 0.1668256473029404
+        },
+        "arm_minus_reference_bp": {
+          "Ranked": 8.097697445919039e-08,
+          "OneAnchor": 8.097697445919039e-08,
+          "ExactBase10": 8.097697445919039e-08,
+          "ExactBase60": 8.097697445919039e-08,
+          "ExactFull60": 8.097697445919039e-08,
+          "ExactOne60": 8.097697445919039e-08
+        }
+      },
+      {
+        "case": "breadth_105",
+        "complete": true,
+        "unresolved": 0,
+        "trials": 29,
+        "te_bp": 396.9659338743536,
+        "audit": {
+          "passed": true,
+          "violations": [],
+          "residuals": {
+            "funding": 2.220446049250313e-16,
+            "lower": 6.799586379963373e-13,
+            "upper": 8.229846174133462e-13,
+            "groups": 0.0
+          },
+          "tickets": 2,
+          "optional_tickets": 0,
+          "turnover": 0.16085366424584552
+        },
+        "arm_minus_reference_bp": {
+          "OneAnchor": 3.44851969202864e-09,
+          "Ranked": 3.44851969202864e-09,
+          "ExactBase60": 3.44851969202864e-09,
+          "ExactBase10": 3.44851969202864e-09,
+          "ExactOne60": 3.44851969202864e-09,
+          "ExactFull60": 3.44851969202864e-09
+        }
+      },
+      {
+        "case": "breadth_106",
+        "complete": true,
+        "unresolved": 0,
+        "trials": 29,
+        "te_bp": 356.67928342612754,
+        "audit": {
+          "passed": true,
+          "violations": [],
+          "residuals": {
+            "funding": 2.220446049250313e-16,
+            "lower": 0.0,
+            "upper": 7.053357897746082e-12,
+            "groups": 0.0
+          },
+          "tickets": 2,
+          "optional_tickets": 0,
+          "turnover": 0.12663488548304097
+        },
+        "arm_minus_reference_bp": {
+          "Ranked": 5.120307378092548e-08,
+          "OneAnchor": 5.120307378092548e-08,
+          "ExactBase10": 5.120307378092548e-08,
+          "ExactBase60": 5.120307378092548e-08,
+          "ExactFull60": 5.120307378092548e-08,
+          "ExactOne60": 5.120307378092548e-08
+        }
+      },
+      {
+        "case": "breadth_107",
+        "complete": true,
+        "unresolved": 0,
+        "trials": 29,
+        "te_bp": 242.07485155258985,
+        "audit": {
+          "passed": true,
+          "violations": [],
+          "residuals": {
+            "funding": 2.220446049250313e-16,
+            "lower": 0.0,
+            "upper": 4.619913583656896e-12,
+            "groups": 0.0
+          },
+          "tickets": 2,
+          "optional_tickets": 0,
+          "turnover": 0.14064595620423703
+        },
+        "arm_minus_reference_bp": {
+          "OneAnchor": 2.8178220645713736e-08,
+          "Ranked": 2.8178220645713736e-08,
+          "ExactBase60": 2.8178220645713736e-08,
+          "ExactBase10": 2.8178220645713736e-08,
+          "ExactOne60": 2.8178220645713736e-08,
+          "ExactFull60": 2.8178220645713736e-08
+        }
+      }
+    ]
+  },
+  "simplification_gate": {
+    "all_paired": true,
+    "no_quality_loss": false,
+    "no_extra_failures": true,
+    "paired_median_faster": true,
+    "candidate_only": true,
+    "passed": false
+  },
+  "miss_diagnosis": [],
+  "search_work": {
+    "Ranked": {
+      "expected": 96,
+      "recorded": 96,
+      "sizing_attempts": {
+        "n": 96,
+        "mean": 1491.4791666666667,
+        "minimum": 149.0,
+        "median": 973.0,
+        "p95": 4092.25,
+        "maximum": 4490.0
+      },
+      "bridge_restarts": {
+        "n": 96,
+        "mean": 20.895833333333332,
+        "minimum": 0.0,
+        "median": 24.0,
+        "p95": 24.0,
+        "maximum": 24.0
+      },
+      "bridge_improved_cases": 1,
+      "bridge_pair_trials": {
+        "n": 96,
+        "mean": 3.9375,
+        "minimum": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "maximum": 378.0
+      }
+    },
+    "OneAnchor": {
+      "expected": 96,
+      "recorded": 96,
+      "sizing_attempts": {
+        "n": 96,
+        "mean": 1409.1354166666667,
+        "minimum": 138.0,
+        "median": 973.0,
+        "p95": 3792.5,
+        "maximum": 4197.0
+      },
+      "bridge_restarts": {
+        "n": 96,
+        "mean": 20.739583333333332,
+        "minimum": 0.0,
+        "median": 24.0,
+        "p95": 24.0,
+        "maximum": 24.0
+      },
+      "bridge_improved_cases": 1,
+      "bridge_pair_trials": {
+        "n": 96,
+        "mean": 2.3854166666666665,
+        "minimum": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "maximum": 229.0
+      }
+    }
+  },
+  "before_after": {
+    "Ranked": {
+      "expected": 96,
+      "pairs": 96,
+      "lower": 1,
+      "equal": 95,
+      "higher": 0,
+      "gap_bp": {
+        "n": 96,
+        "mean": -0.005718867276195638,
+        "minimum": -0.5490112585147813,
+        "median": 0.0,
+        "p95": 0.0,
+        "maximum": 0.0
+      },
+      "worse_cases": [],
+      "seconds_ratio": {
+        "n": 96,
+        "mean": 1.4796325251402809,
+        "minimum": 0.8376328865512438,
+        "median": 1.393986563957129,
+        "p95": 2.1890792751844694,
+        "maximum": 2.692279185878934
+      }
+    },
+    "OneAnchor": {
+      "expected": 96,
+      "pairs": 96,
+      "lower": 1,
+      "equal": 95,
+      "higher": 0,
+      "gap_bp": {
+        "n": 96,
+        "mean": -0.005718867276195638,
+        "minimum": -0.5490112585147813,
+        "median": 0.0,
+        "p95": 0.0,
+        "maximum": 0.0
+      },
+      "worse_cases": [],
+      "seconds_ratio": {
+        "n": 96,
+        "mean": 1.5474844009734376,
+        "minimum": 0.7183758759521751,
+        "median": 1.4340117671921173,
+        "p95": 2.3622634459513048,
+        "maximum": 2.70964542074729
+      }
+    }
+  },
+  "prior_misses": [
+    {
+      "case": "breadth_028",
+      "current_case": "breadth_088",
+      "cohort": 1,
+      "seed": 91001,
+      "prior_gap_bp": 0.5490109948771362,
+      "archived_reference_te_bp": 171.44064703748734,
+      "new_gap_bp": {
+        "Ranked": -2.636376450482203e-07,
+        "OneAnchor": -2.636376450482203e-07
+      }
+    }
+  ],
+  "baseline_protocol_sha256": [
+    "5bd7b2009d7b75435d09a7f2c79327fb6d8cfd54784e83eb8527d44af2b829cf",
+    "64cb791e0cf2e91dceb56472e64d0b07cc16d04319c0d07d40e900fe7cae4436"
+  ],
+  "holdout": {
+    "protocol_sha256": "2c78839a09efacb76e167445e860410ac1c5c2e259bc56a336ddccd9fc127af0",
+    "records_sha256": {
+      "breadth_000.json": "3de7d4bfd68e5f9744bfa84ba6b81fac82b768cd43dbf8b6168c5e82efe031ca",
+      "breadth_001.json": "2fdd57a9484fcb5c841267f570afabae01195460f24ce011ee2068e87d0e25b0",
+      "breadth_002.json": "3bc4e08d56f1764fe6a58ac14653ba9095e3ca058494e25c4dec7ec14bb027a2",
+      "breadth_003.json": "4f5ec4b701e0bf2bc770992e0c4e99482e127839021d5c0dbb3c5fdb75343268",
+      "breadth_004.json": "23a650ada7cbf950b7510c959337fe870712cb6d3e81b511b5b52db6b52a9334",
+      "breadth_005.json": "04f2efe6554cfc7f4e15986fe9933474c61b27447edf53d7d6ec18eed39505a5",
+      "breadth_006.json": "8015fbe9b17eff3dc42e6da41dc4c996651d660df565a33afaafc0416c868642",
+      "breadth_007.json": "dc7ad1de763e447bee6e1005e76453bbb753f8250a007ae5e6dde6b407aed51d",
+      "breadth_008.json": "8d6a0a01fa596d4702683c715cfff1aaa7acc0b777bc22645cdaa66bfa08089b",
+      "breadth_009.json": "8ec342bdc567d8ec9ba8e1529f8242a841f29263d2ad39c91bc22558d3bda9bd",
+      "breadth_010.json": "bf51c5bfcf51937f9b184cc40fac7c1c8a0fd29a684ca8c250d7c2be489d29e6",
+      "breadth_011.json": "60d420a5d4603f3ffd50f720bfbe2eb2e16a156b4e7931e377fdafd687d073ca",
+      "breadth_012.json": "27f9763a02e8cf32fb630fa18e2070bca2c756cb44473c9086d3580e9055935f",
+      "breadth_013.json": "ddf6e878c4abd3a145a5d050a3ef16f0be4393936fa3ad660aa7d59cdd56111e",
+      "breadth_014.json": "d170c011f03fc2bd30472d9dc56aa2fa712eb7d2599c9d3d7a0865d095ad4e15",
+      "breadth_015.json": "28c0b8022455ece44c8bade8384b10a44797c018160319d99aaad2fd5c9729c8",
+      "breadth_016.json": "d479847b104d2ff17e7fda721f9372a8184e4883781666a54ba4971094b5d03d",
+      "breadth_017.json": "e489ad89881e7ba37bfaf23ad2579e127f191edb264487c3f00a1b29c2b0fa6c",
+      "breadth_018.json": "9cad842d5d376462b6c24a03f2fcd6744ef2806ee2e4ae2ffdd2288d1562edf2",
+      "breadth_019.json": "a4438416bfa615b27d8f884b7b54bbbfb891593b164a3abaa58d00cdd2d16914",
+      "breadth_020.json": "80ef92dc76c9e0a72ba34333322a1ec322a50ac7bd1c9e85d3c0b1f71740b2db",
+      "breadth_021.json": "da1745dd140193ac965ef151cf7c8dbdc62a67cd76afe5ca82efafd7ca097bcb",
+      "breadth_022.json": "6b59f98ca8a0d5b5866635522f028d42cd516e73a9cc8d6fd8e511a8163e970a",
+      "breadth_023.json": "b49eecdb51613cca5ac78a043594a0492db7d908fb262c1d197b56e2150a9bc2",
+      "breadth_024.json": "2211de255f0bf2b1256f397753b0cba0e806e9cf4296c93c9260d546b4aefd97",
+      "breadth_025.json": "b8dfb8957e289ef2be25d8d6ea6e1d1e0dc6f41c59190077b6542a73e7b321bd",
+      "breadth_026.json": "21135b5d522adb259c2171645c16a01d25391aab6d846fd6a3db7f458d1c5eb4",
+      "breadth_027.json": "8a71a5ace62d82aff6641c7df497867154ff25c41ad22b54027609b7e3707a88",
+      "breadth_028.json": "9b3096b680fe1436f45a538d13fe39502166fb83506614e0f8d244cd9580cf72",
+      "breadth_029.json": "36597a950d00409754bdeda8f52e77f4517bc07749d7db6053f976a37d8b4be7",
+      "breadth_030.json": "e778c6f2e04bdee6fb5cec7dfa341e4dd5ea98af2fac6a78068907ec391989e7",
+      "breadth_031.json": "37322277ac91408c7fa24714d99c90625b19a245eda9d3a4d49bce783dc31aa1",
+      "breadth_032.json": "e484d9828e93b85634af94892975e4014434f0be49de2f3a474c83aa86cc8d26",
+      "breadth_033.json": "3449bcd88348028f0808b96848258b21f0eb52175c86dbf525f0e1a441454650",
+      "breadth_034.json": "feba12087410e216a03f157310a5646234dd11ff3f6d6e92af62b1d6ae91ba0f",
+      "breadth_035.json": "cc4c119d75d056414013d7ad309e291d0fca0dc9bd473c741ddf79abac5d1367"
+    },
+    "specification": {
+      "schema": "ranked-breadth-1",
+      "grid": {
+        "optional_assets": [
+          24,
+          72
+        ],
+        "budget": [
+          2,
+          4
+        ],
+        "groups": [
+          "disjoint",
+          "overlap"
+        ],
+        "regime": [
+          "tight",
+          "wide"
+        ],
+        "seed": [
+          101001,
+          101002
+        ]
+      },
+      "tiny": {
+        "optional_assets": 8,
+        "budget": 2,
+        "groups": [
+          "disjoint",
+          "overlap"
+        ],
+        "regime": "tight",
+        "seed": [
+          102001,
+          102002
+        ]
+      },
+      "regimes": {
+        "tight": {
+          "group_half_width": 0.001,
+          "cash_half_width": 0.0005
+        },
+        "wide": {
+          "group_half_width": 0.01,
+          "cash_lower": 0.005,
+          "cash_upper": 0.5
+        }
+      },
+      "minimum_ticket": 0.005,
+      "current_minimum": 0.006,
+      "holding_floor": 0.0025,
+      "audit_tolerance": 1e-07,
+      "zero_tolerance": 1e-08,
+      "objective_tolerance": 1e-12,
+      "descriptive_te_equality_bp": 0.0001,
+      "preparation_seconds": 30.0,
+      "exact_seconds": [
+        10.0,
+        60.0
+      ],
+      "exact_threads": 1,
+      "exact_gap_rel": 0.0001,
+      "methods": [
+        "Ranked",
+        "OneAnchor",
+        "ExactBase10",
+        "ExactBase60",
+        "ExactFull60",
+        "ExactOne60"
+      ],
+      "generator": "Heterogeneous positive current holdings, lognormal relative target tilts, two forced exits, correlated market/sector/factor covariance with positive residuals, three sector rows and optionally three overlapping fractional rows. Bands centred on the feasible base. No private inputs.",
+      "decision_rule": "Keep current full-search defaults unless OneAnchor has no disadvantage above the existing descriptive band, no extra audit/solver failures, and lower paired median time on the new broad cases. Passing this sample is only a candidate for separate production qualification, not permission to switch production.",
+      "failure_policy": "Record every case and arm, including failures. Freeze source and design before the first primary solve. Do not retune on these new outcomes.",
+      "timing": "Serial calls; reverse heuristic and independent Exact orders on odd case indices; reverse started Exact order too. Preparation and start generation charged separately. Native work may overrun requested limits. No equal-wall-time claim.",
+      "certificates": "Use existing plain/perspective supporting-plane LP dual bounds with box residual correction and floating-point guard. Native MIP bounds remain diagnostic. Exhaustive tiny-case full-weight QPs are numerical reference solutions, not exact-arithmetic certificates."
+    },
+    "versions": {
+      "optimalportfolios": "9.1.5",
+      "qis": "5.44.4",
+      "numpy": "2.5.2",
+      "pandas": "3.0.5",
+      "scipy": "1.18.1",
+      "cvxpy": "1.9.2",
+      "Mosek": "11.2.3",
+      "clarabel": "0.11.1"
+    },
+    "broad": {
+      "cases": 32,
+      "prepared": 32,
+      "optional_candidates": {
+        "n": 32,
+        "mean": 35.0,
+        "minimum": 19.0,
+        "median": 35.5,
+        "p95": 50.0,
+        "maximum": 50.0
+      },
+      "methods": {
+        "Ranked": {
+          "expected": 32,
+          "returned": 32,
+          "audited": 32,
+          "te_bp": {
+            "n": 32,
+            "mean": 240.14210333436958,
+            "minimum": 90.36234221335678,
+            "median": 218.8287114724796,
+            "p95": 415.2033955194546,
+            "maximum": 419.9026001104111
+          },
+          "seconds": {
+            "n": 32,
+            "mean": 15.117816768753983,
+            "minimum": 1.309721100027673,
+            "median": 9.498555400059558,
+            "p95": 44.0545673399989,
+            "maximum": 58.12336740002502
+          },
+          "end_to_end_seconds": {
+            "n": 32,
+            "mean": 15.117907281244698,
+            "minimum": 1.3097965000197291,
+            "median": 9.498634049959946,
+            "p95": 44.05467406001989,
+            "maximum": 58.12350699992385
+          },
+          "statuses": {
+            "audited_incumbent": 32
+          },
+          "sources": {
+            "heuristic": 32
+          },
+          "native_status": {
+            "not_applicable": 32
+          },
+          "start_received": 0
+        },
+        "OneAnchor": {
+          "expected": 32,
+          "returned": 32,
+          "audited": 32,
+          "te_bp": {
+            "n": 32,
+            "mean": 240.14210333436958,
+            "minimum": 90.36234221335678,
+            "median": 218.8287114724796,
+            "p95": 415.2033955194546,
+            "maximum": 419.9026001104111
+          },
+          "seconds": {
+            "n": 32,
+            "mean": 14.234231734360947,
+            "minimum": 1.215633799904026,
+            "median": 9.108032150019426,
+            "p95": 43.46305969499517,
+            "maximum": 53.04862469993532
+          },
+          "end_to_end_seconds": {
+            "n": 32,
+            "mean": 14.234322246851661,
+            "minimum": 1.2157091998960823,
+            "median": 9.108115250011906,
+            "p95": 43.46316641501616,
+            "maximum": 53.04876429983415
+          },
+          "statuses": {
+            "audited_incumbent": 32
+          },
+          "sources": {
+            "heuristic": 32
+          },
+          "native_status": {
+            "not_applicable": 32
+          },
+          "start_received": 0
+        },
+        "ExactBase10": {
+          "expected": 32,
+          "returned": 32,
+          "audited": 32,
+          "te_bp": {
+            "n": 32,
+            "mean": 240.35257065766754,
+            "minimum": 90.36234674798098,
+            "median": 218.82872992401553,
+            "p95": 415.2033955196371,
+            "maximum": 419.90260011116584
+          },
+          "seconds": {
+            "n": 32,
+            "mean": 0.5675573656262713,
+            "minimum": 0.12895360006950796,
+            "median": 0.4410737999714911,
+            "p95": 1.857119640044402,
+            "maximum": 2.2347527000820264
+          },
+          "end_to_end_seconds": {
+            "n": 32,
+            "mean": 0.5676478781169862,
+            "minimum": 0.12903140007983893,
+            "median": 0.4411926999455318,
+            "p95": 1.8572310500545424,
+            "maximum": 2.2348922999808565
+          },
+          "statuses": {
+            "audited_incumbent": 32
+          },
+          "sources": {
+            "native_callback": 29,
+            "boundary_refinement": 3
+          },
+          "native_status": {
+            "solsta.integer_optimal": 32
+          },
+          "start_received": 32
+        },
+        "ExactBase60": {
+          "expected": 32,
+          "returned": 32,
+          "audited": 32,
+          "te_bp": {
+            "n": 32,
+            "mean": 240.35257065766754,
+            "minimum": 90.36234674798098,
+            "median": 218.82872992401553,
+            "p95": 415.2033955196371,
+            "maximum": 419.90260011116584
+          },
+          "seconds": {
+            "n": 32,
+            "mean": 0.6065190843728487,
+            "minimum": 0.10065470007248223,
+            "median": 0.49902114999713376,
+            "p95": 2.0484994200523943,
+            "maximum": 2.2935870999936014
+          },
+          "end_to_end_seconds": {
+            "n": 32,
+            "mean": 0.6066095968635636,
+            "minimum": 0.10074440005701035,
+            "median": 0.49910674995044246,
+            "p95": 2.048605810070876,
+            "maximum": 2.2937266998924315
+          },
+          "statuses": {
+            "audited_incumbent": 32
+          },
+          "sources": {
+            "native_callback": 29,
+            "boundary_refinement": 3
+          },
+          "native_status": {
+            "solsta.integer_optimal": 32
+          },
+          "start_received": 32
+        },
+        "ExactFull60": {
+          "expected": 32,
+          "returned": 32,
+          "audited": 32,
+          "te_bp": {
+            "n": 32,
+            "mean": 240.14210333434966,
+            "minimum": 90.36234221335678,
+            "median": 218.8287114724676,
+            "p95": 415.2033955194546,
+            "maximum": 419.9026001104111
+          },
+          "seconds": {
+            "n": 32,
+            "mean": 0.5050256687463843,
+            "minimum": 0.09203169995453209,
+            "median": 0.41886674996931106,
+            "p95": 1.3936411899281667,
+            "maximum": 2.2157322000712156
+          },
+          "end_to_end_seconds": {
+            "n": 32,
+            "mean": 15.622932949991082,
+            "minimum": 1.5291364999720827,
+            "median": 9.94051970000146,
+            "p95": 45.194433575001305,
+            "maximum": 59.52120729989838
+          },
+          "statuses": {
+            "audited_incumbent": 32
+          },
+          "sources": {
+            "requested_mip_start": 23,
+            "native_callback": 9
+          },
+          "native_status": {
+            "solsta.integer_optimal": 32
+          },
+          "start_received": 32
+        },
+        "ExactOne60": {
+          "expected": 32,
+          "returned": 32,
+          "audited": 32,
+          "te_bp": {
+            "n": 32,
+            "mean": 240.14210333434966,
+            "minimum": 90.36234221335678,
+            "median": 218.8287114724676,
+            "p95": 415.2033955194546,
+            "maximum": 419.9026001104111
+          },
+          "seconds": {
+            "n": 32,
+            "mean": 0.5218266156261961,
+            "minimum": 0.0942047000862658,
+            "median": 0.45280980004463345,
+            "p95": 1.3171838350128382,
+            "maximum": 2.4420331000583246
+          },
+          "end_to_end_seconds": {
+            "n": 32,
+            "mean": 14.756148862477858,
+            "minimum": 1.4348698001122102,
+            "median": 9.486296400020365,
+            "p95": 44.588738630031,
+            "maximum": 54.43678499979433
+          },
+          "statuses": {
+            "audited_incumbent": 32
+          },
+          "sources": {
+            "requested_mip_start": 23,
+            "native_callback": 9
+          },
+          "native_status": {
+            "solsta.integer_optimal": 32
+          },
+          "start_received": 32
+        }
+      },
+      "comparisons": {
+        "OneAnchor_Ranked": {
+          "expected": 32,
+          "pairs": 32,
+          "lower": 0,
+          "equal": 32,
+          "higher": 0,
+          "gap_bp": {
+            "n": 32,
+            "mean": 0.0,
+            "minimum": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "maximum": 0.0
+          },
+          "worse_cases": [],
+          "seconds_ratio": {
+            "n": 32,
+            "mean": 0.962498343301424,
+            "minimum": 0.7610515216253696,
+            "median": 0.9723894074965882,
+            "p95": 1.0688822465733496,
+            "maximum": 1.0878811045721364
+          }
+        },
+        "Ranked_ExactBase60": {
+          "expected": 32,
+          "pairs": 32,
+          "lower": 2,
+          "equal": 30,
+          "higher": 0,
+          "gap_bp": {
+            "n": 32,
+            "mean": -0.2104673232979719,
+            "minimum": -6.120646595366367,
+            "median": -2.3539499238722783e-09,
+            "p95": 7.921840960989353e-11,
+            "maximum": 5.206857167650014e-10
+          },
+          "worse_cases": [],
+          "seconds_ratio": {
+            "n": 32,
+            "mean": 23.736921367376507,
+            "minimum": 5.466366985832738,
+            "median": 19.978383011750196,
+            "p95": 57.33430813396866,
+            "maximum": 72.73807604845881
+          }
+        },
+        "OneAnchor_ExactBase60": {
+          "expected": 32,
+          "pairs": 32,
+          "lower": 2,
+          "equal": 30,
+          "higher": 0,
+          "gap_bp": {
+            "n": 32,
+            "mean": -0.2104673232979719,
+            "minimum": -6.120646595366367,
+            "median": -2.3539499238722783e-09,
+            "p95": 7.921840960989353e-11,
+            "maximum": 5.206857167650014e-10
+          },
+          "worse_cases": [],
+          "seconds_ratio": {
+            "n": 32,
+            "mean": 22.586207390111586,
+            "minimum": 5.946757354544378,
+            "median": 19.02225425229905,
+            "p95": 53.29562546071408,
+            "maximum": 66.64451266278573
+          }
+        },
+        "Ranked_ExactFull60": {
+          "expected": 32,
+          "pairs": 32,
+          "lower": 0,
+          "equal": 32,
+          "higher": 0,
+          "gap_bp": {
+            "n": 32,
+            "mean": 1.993516463016931e-11,
+            "minimum": 0.0,
+            "median": 0.0,
+            "p95": 3.6502001421467846e-11,
+            "maximum": 5.206857167650014e-10
+          },
+          "worse_cases": [],
+          "seconds_ratio": {
+            "n": 32,
+            "mean": 28.72804023434447,
+            "minimum": 5.971191302599522,
+            "median": 21.930110871670188,
+            "p95": 62.51094739705078,
+            "maximum": 88.86600322678706
+          }
+        },
+        "OneAnchor_ExactOne60": {
+          "expected": 32,
+          "pairs": 32,
+          "lower": 0,
+          "equal": 32,
+          "higher": 0,
+          "gap_bp": {
+            "n": 32,
+            "mean": 1.993516463016931e-11,
+            "minimum": 0.0,
+            "median": 0.0,
+            "p95": 3.6502001421467846e-11,
+            "maximum": 5.206857167650014e-10
+          },
+          "worse_cases": [],
+          "seconds_ratio": {
+            "n": 32,
+            "mean": 27.38793792951683,
+            "minimum": 4.211005118836386,
+            "median": 20.198805922523523,
+            "p95": 69.28710763761224,
+            "maximum": 89.48661055101863
+          }
+        },
+        "ExactBase60_ExactBase10": {
+          "expected": 32,
+          "pairs": 32,
+          "lower": 0,
+          "equal": 32,
+          "higher": 0,
+          "gap_bp": {
+            "n": 32,
+            "mean": 0.0,
+            "minimum": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "maximum": 0.0
+          },
+          "worse_cases": [],
+          "seconds_ratio": {
+            "n": 32,
+            "mean": 1.0991927461462037,
+            "minimum": 0.5525656736382397,
+            "median": 1.0135872521122122,
+            "p95": 1.5333735903476848,
+            "maximum": 1.60515861380329
+          }
+        }
+      },
+      "certificates": [
+        {
+          "case": "breadth_000",
+          "lower_variance": 0.001702100146692123,
+          "consistent": true,
+          "best_delivered_te_bp": 414.7035131590524,
+          "lower_te_bp": 412.5651641489043,
+          "best_gap_bp": 2.138349010148147,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_001",
+          "lower_variance": 0.000658200175422868,
+          "consistent": true,
+          "best_delivered_te_bp": 264.50530743060654,
+          "lower_te_bp": 256.55412205280743,
+          "best_gap_bp": 7.951185377799106,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_002",
+          "lower_variance": 0.0016044952728772035,
+          "consistent": true,
+          "best_delivered_te_bp": 404.8764367752345,
+          "lower_te_bp": 400.56151498580135,
+          "best_gap_bp": 4.314921789433129,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_003",
+          "lower_variance": 0.0005690446242305346,
+          "consistent": true,
+          "best_delivered_te_bp": 254.71465918060963,
+          "lower_te_bp": 238.5465623794513,
+          "best_gap_bp": 16.168096801158327,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_004",
+          "lower_variance": 0.0017214572868315223,
+          "consistent": true,
+          "best_delivered_te_bp": 419.9026001104111,
+          "lower_te_bp": 414.90448139680564,
+          "best_gap_bp": 4.998118713605436,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_005",
+          "lower_variance": 0.0007218007716236513,
+          "consistent": true,
+          "best_delivered_te_bp": 278.3729751876582,
+          "lower_te_bp": 268.66350173100386,
+          "best_gap_bp": 9.709473456654337,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_006",
+          "lower_variance": 0.0016052142746217249,
+          "consistent": true,
+          "best_delivered_te_bp": 404.876436775233,
+          "lower_te_bp": 400.65125416273503,
+          "best_gap_bp": 4.225182612497974,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_007",
+          "lower_variance": 0.000596021421711214,
+          "consistent": true,
+          "best_delivered_te_bp": 259.8771359954156,
+          "lower_te_bp": 244.1354996126565,
+          "best_gap_bp": 15.741636382759083,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_008",
+          "lower_variance": 0.0016509166180342656,
+          "consistent": true,
+          "best_delivered_te_bp": 409.1913018885498,
+          "lower_te_bp": 406.3147324469377,
+          "best_gap_bp": 2.876569441612105,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_009",
+          "lower_variance": 0.000572183874407486,
+          "consistent": true,
+          "best_delivered_te_bp": 245.6720216655622,
+          "lower_te_bp": 239.20365264926158,
+          "best_gap_bp": 6.468369016300613,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_010",
+          "lower_variance": 0.0015477662896861252,
+          "consistent": true,
+          "best_delivered_te_bp": 396.673869146317,
+          "lower_te_bp": 393.41660992974425,
+          "best_gap_bp": 3.25725921657272,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_011",
+          "lower_variance": 0.0004913467964626833,
+          "consistent": true,
+          "best_delivered_te_bp": 231.33723022400432,
+          "lower_te_bp": 221.66343777508354,
+          "best_gap_bp": 9.673792448920778,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_012",
+          "lower_variance": 0.0016853528000114087,
+          "consistent": true,
+          "best_delivered_te_bp": 415.8143628488177,
+          "lower_te_bp": 410.5304860800729,
+          "best_gap_bp": 5.283876768744847,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_013",
+          "lower_variance": 0.0006791318825100358,
+          "consistent": true,
+          "best_delivered_te_bp": 272.36193120344825,
+          "lower_te_bp": 260.601589118339,
+          "best_gap_bp": 11.760342085109244,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_014",
+          "lower_variance": 0.0015495541509847387,
+          "consistent": true,
+          "best_delivered_te_bp": 398.9080125219422,
+          "lower_te_bp": 393.6437667466283,
+          "best_gap_bp": 5.264245775313952,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_015",
+          "lower_variance": 0.0005504935266677736,
+          "consistent": true,
+          "best_delivered_te_bp": 245.05722160979315,
+          "lower_te_bp": 234.62598463677753,
+          "best_gap_bp": 10.431236973015615,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_016",
+          "lower_variance": 0.00011056593852888854,
+          "consistent": true,
+          "best_delivered_te_bp": 108.39373000666389,
+          "lower_te_bp": 105.15033929041243,
+          "best_gap_bp": 3.2433907162514544,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_017",
+          "lower_variance": 0.0004023808904109596,
+          "consistent": true,
+          "best_delivered_te_bp": 204.6220128037533,
+          "lower_te_bp": 200.5943395041245,
+          "best_gap_bp": 4.027673299628816,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_018",
+          "lower_variance": 8.882054746729412e-05,
+          "consistent": true,
+          "best_delivered_te_bp": 99.78201779789723,
+          "lower_te_bp": 94.24465367716842,
+          "best_gap_bp": 5.53736412072881,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_019",
+          "lower_variance": 0.0003463625708931226,
+          "consistent": true,
+          "best_delivered_te_bp": 192.900103788167,
+          "lower_te_bp": 186.10818651878876,
+          "best_gap_bp": 6.791917269378246,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_020",
+          "lower_variance": 0.00011376846811868494,
+          "consistent": true,
+          "best_delivered_te_bp": 110.19185135558544,
+          "lower_te_bp": 106.66230267469615,
+          "best_gap_bp": 3.5295486808892917,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_021",
+          "lower_variance": 0.0004071883989800654,
+          "consistent": true,
+          "best_delivered_te_bp": 206.32019272093086,
+          "lower_te_bp": 201.78909756973133,
+          "best_gap_bp": 4.531095151199537,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_022",
+          "lower_variance": 9.211366699173694e-05,
+          "consistent": true,
+          "best_delivered_te_bp": 100.1854466688807,
+          "lower_te_bp": 95.9758651910661,
+          "best_gap_bp": 4.209581477814595,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_023",
+          "lower_variance": 0.000350758670865552,
+          "consistent": true,
+          "best_delivered_te_bp": 193.24570101378953,
+          "lower_te_bp": 187.28552289633924,
+          "best_gap_bp": 5.960178117450283,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_024",
+          "lower_variance": 9.723577359748517e-05,
+          "consistent": true,
+          "best_delivered_te_bp": 99.86745370432679,
+          "lower_te_bp": 98.60820128036266,
+          "best_gap_bp": 1.2592524239641278,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_025",
+          "lower_variance": 0.0003704969478155742,
+          "consistent": true,
+          "best_delivered_te_bp": 195.9328035140322,
+          "lower_te_bp": 192.482972705529,
+          "best_gap_bp": 3.449830808503208,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_026",
+          "lower_variance": 7.613524416855635e-05,
+          "consistent": true,
+          "best_delivered_te_bp": 90.36234221335678,
+          "lower_te_bp": 87.25551224338572,
+          "best_gap_bp": 3.1068299699710593,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_027",
+          "lower_variance": 0.00032010479101336856,
+          "consistent": true,
+          "best_delivered_te_bp": 182.12308294409655,
+          "lower_te_bp": 178.91472578112976,
+          "best_gap_bp": 3.2083571629667915,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_028",
+          "lower_variance": 0.0001019403756792397,
+          "consistent": true,
+          "best_delivered_te_bp": 105.02417013401933,
+          "lower_te_bp": 100.96552663124167,
+          "best_gap_bp": 4.058643502777656,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_029",
+          "lower_variance": 0.0003796964651320116,
+          "consistent": true,
+          "best_delivered_te_bp": 201.11760058429545,
+          "lower_te_bp": 194.8580162918661,
+          "best_gap_bp": 6.259584292429338,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_030",
+          "lower_variance": 7.979608532569928e-05,
+          "consistent": true,
+          "best_delivered_te_bp": 92.86037084997704,
+          "lower_te_bp": 89.32865459957364,
+          "best_gap_bp": 3.531716250403406,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_031",
+          "lower_variance": 0.0003258902436262117,
+          "consistent": true,
+          "best_delivered_te_bp": 184.773410876634,
+          "lower_te_bp": 180.5243040773767,
+          "best_gap_bp": 4.249106799257277,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        }
+      ],
+      "bound_gap_bp": {
+        "n": 32,
+        "mean": 5.850522684789354,
+        "minimum": 1.2592524239641278,
+        "median": 4.423008470316333,
+        "p95": 13.551924519051669,
+        "maximum": 16.168096801158327
+      },
+      "bound_closed_at_band": 0,
+      "bound_inconsistencies": 0,
+      "enumeration": []
+    },
+    "tiny": {
+      "cases": 4,
+      "prepared": 4,
+      "optional_candidates": {
+        "n": 4,
+        "mean": 8.0,
+        "minimum": 8.0,
+        "median": 8.0,
+        "p95": 8.0,
+        "maximum": 8.0
+      },
+      "methods": {
+        "Ranked": {
+          "expected": 4,
+          "returned": 4,
+          "audited": 4,
+          "te_bp": {
+            "n": 4,
+            "mean": 385.7401066774685,
+            "minimum": 302.06054334438176,
+            "median": 392.2600334521867,
+            "p95": 454.2103781332053,
+            "maximum": 456.37981646111893
+          },
+          "seconds": {
+            "n": 4,
+            "mean": 0.3237971250200644,
+            "minimum": 0.2889009000500664,
+            "median": 0.30142570001771674,
+            "p95": 0.38906953000114297,
+            "maximum": 0.40343619999475777
+          },
+          "end_to_end_seconds": {
+            "n": 4,
+            "mean": 0.3238988750381395,
+            "minimum": 0.2889781000558287,
+            "median": 0.30153115006396547,
+            "p95": 0.3891895999840926,
+            "maximum": 0.40355509996879846
+          },
+          "statuses": {
+            "audited_incumbent": 4
+          },
+          "sources": {
+            "heuristic": 4
+          },
+          "native_status": {
+            "not_applicable": 4
+          },
+          "start_received": 0
+        },
+        "OneAnchor": {
+          "expected": 4,
+          "returned": 4,
+          "audited": 4,
+          "te_bp": {
+            "n": 4,
+            "mean": 385.7401066774685,
+            "minimum": 302.06054334438176,
+            "median": 392.2600334521867,
+            "p95": 454.2103781332053,
+            "maximum": 456.37981646111893
+          },
+          "seconds": {
+            "n": 4,
+            "mean": 0.3481167749851011,
+            "minimum": 0.29133259993977845,
+            "median": 0.3524860499892384,
+            "p95": 0.3949186900164932,
+            "maximum": 0.3961624000221491
+          },
+          "end_to_end_seconds": {
+            "n": 4,
+            "mean": 0.3482185250031762,
+            "minimum": 0.2914167999988422,
+            "median": 0.35258409997913986,
+            "p95": 0.3950379650457762,
+            "maximum": 0.3962891000555828
+          },
+          "statuses": {
+            "audited_incumbent": 4
+          },
+          "sources": {
+            "heuristic": 4
+          },
+          "native_status": {
+            "not_applicable": 4
+          },
+          "start_received": 0
+        },
+        "ExactBase10": {
+          "expected": 4,
+          "returned": 4,
+          "audited": 4,
+          "te_bp": {
+            "n": 4,
+            "mean": 385.7401066774529,
+            "minimum": 302.060543344321,
+            "median": 392.2600334521859,
+            "p95": 454.2103781332051,
+            "maximum": 456.37981646111893
+          },
+          "seconds": {
+            "n": 4,
+            "mean": 0.0530413749802392,
+            "minimum": 0.039880799944512546,
+            "median": 0.049922749982215464,
+            "p95": 0.07042948500602506,
+            "maximum": 0.07243920001201332
+          },
+          "end_to_end_seconds": {
+            "n": 4,
+            "mean": 0.053143124998314306,
+            "minimum": 0.03996500000357628,
+            "median": 0.05002470000181347,
+            "p95": 0.0705495549889747,
+            "maximum": 0.072558099986054
+          },
+          "statuses": {
+            "audited_incumbent": 4
+          },
+          "sources": {
+            "native_callback": 2,
+            "common_prepared_incumbent": 2
+          },
+          "native_status": {
+            "solsta.integer_optimal": 4
+          },
+          "start_received": 4
+        },
+        "ExactBase60": {
+          "expected": 4,
+          "returned": 4,
+          "audited": 4,
+          "te_bp": {
+            "n": 4,
+            "mean": 385.7401066774529,
+            "minimum": 302.060543344321,
+            "median": 392.2600334521859,
+            "p95": 454.2103781332051,
+            "maximum": 456.37981646111893
+          },
+          "seconds": {
+            "n": 4,
+            "mean": 0.07933997505460866,
+            "minimum": 0.0462436000816524,
+            "median": 0.06732135004131123,
+            "p95": 0.12694191004848104,
+            "maximum": 0.13647360005415976
+          },
+          "end_to_end_seconds": {
+            "n": 4,
+            "mean": 0.07944172507268377,
+            "minimum": 0.04632080008741468,
+            "median": 0.06744415004504845,
+            "p95": 0.12703131509479132,
+            "maximum": 0.1365578001132235
+          },
+          "statuses": {
+            "audited_incumbent": 4
+          },
+          "sources": {
+            "native_callback": 2,
+            "common_prepared_incumbent": 2
+          },
+          "native_status": {
+            "solsta.integer_optimal": 4
+          },
+          "start_received": 4
+        },
+        "ExactFull60": {
+          "expected": 4,
+          "returned": 4,
+          "audited": 4,
+          "te_bp": {
+            "n": 4,
+            "mean": 385.74010667746813,
+            "minimum": 302.06054334438176,
+            "median": 392.2600334521859,
+            "p95": 454.2103781332051,
+            "maximum": 456.37981646111893
+          },
+          "seconds": {
+            "n": 4,
+            "mean": 0.05581159997382201,
+            "minimum": 0.0435231999726966,
+            "median": 0.05007559998193756,
+            "p95": 0.07591828495496883,
+            "maximum": 0.07957199995871633
+          },
+          "end_to_end_seconds": {
+            "n": 4,
+            "mean": 0.37971047501196153,
+            "minimum": 0.3325013000285253,
+            "median": 0.351606750045903,
+            "p95": 0.4651078849390614,
+            "maximum": 0.4831270999275148
+          },
+          "statuses": {
+            "audited_incumbent": 4
+          },
+          "sources": {
+            "native_callback": 2,
+            "common_prepared_incumbent": 2
+          },
+          "native_status": {
+            "solsta.integer_optimal": 4
+          },
+          "start_received": 4
+        },
+        "ExactOne60": {
+          "expected": 4,
+          "returned": 4,
+          "audited": 4,
+          "te_bp": {
+            "n": 4,
+            "mean": 385.74010667746813,
+            "minimum": 302.06054334438176,
+            "median": 392.2600334521859,
+            "p95": 454.2103781332051,
+            "maximum": 456.37981646111893
+          },
+          "seconds": {
+            "n": 4,
+            "mean": 0.05636750001576729,
+            "minimum": 0.043169100070372224,
+            "median": 0.050913300015963614,
+            "p95": 0.0767300299659837,
+            "maximum": 0.08047429996076971
+          },
+          "end_to_end_seconds": {
+            "n": 4,
+            "mean": 0.4045860250189435,
+            "minimum": 0.3345859000692144,
+            "median": 0.4159782999777235,
+            "p95": 0.44917070504743606,
+            "maximum": 0.4518016000511125
+          },
+          "statuses": {
+            "audited_incumbent": 4
+          },
+          "sources": {
+            "native_callback": 2,
+            "common_prepared_incumbent": 2
+          },
+          "native_status": {
+            "solsta.integer_optimal": 4
+          },
+          "start_received": 4
+        }
+      },
+      "comparisons": {
+        "OneAnchor_Ranked": {
+          "expected": 4,
+          "pairs": 4,
+          "lower": 0,
+          "equal": 4,
+          "higher": 0,
+          "gap_bp": {
+            "n": 4,
+            "mean": 0.0,
+            "minimum": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "maximum": 0.0
+          },
+          "worse_cases": [],
+          "seconds_ratio": {
+            "n": 4,
+            "mean": 1.1007918327480253,
+            "minimum": 0.7860006117402305,
+            "median": 1.137296077521198,
+            "p95": 1.3343388347455805,
+            "maximum": 1.3425745642094755
+          }
+        },
+        "Ranked_ExactBase60": {
+          "expected": 4,
+          "pairs": 4,
+          "lower": 0,
+          "equal": 4,
+          "higher": 0,
+          "gap_bp": {
+            "n": 4,
+            "mean": 1.5589307622576598e-11,
+            "minimum": 0.0,
+            "median": 7.958078640513122e-13,
+            "p95": 5.188951490708858e-11,
+            "maximum": 6.076561476220377e-11
+          },
+          "worse_cases": [],
+          "seconds_ratio": {
+            "n": 4,
+            "mean": 4.73188283788909,
+            "minimum": 2.163004419030199,
+            "median": 5.258578247768483,
+            "p95": 6.1400504160895375,
+            "maximum": 6.247370436989196
+          }
+        },
+        "OneAnchor_ExactBase60": {
+          "expected": 4,
+          "pairs": 4,
+          "lower": 0,
+          "equal": 4,
+          "higher": 0,
+          "gap_bp": {
+            "n": 4,
+            "mean": 1.5589307622576598e-11,
+            "minimum": 0.0,
+            "median": 7.958078640513122e-13,
+            "p95": 5.188951490708858e-11,
+            "maximum": 6.076561476220377e-11
+          },
+          "worse_cases": [],
+          "seconds_ratio": {
+            "n": 4,
+            "mean": 5.3224292437763765,
+            "minimum": 2.1347176290811016,
+            "median": 5.383719352064235,
+            "p95": 8.092330405523716,
+            "maximum": 8.387560641895933
+          }
+        },
+        "Ranked_ExactFull60": {
+          "expected": 4,
+          "pairs": 4,
+          "lower": 0,
+          "equal": 4,
+          "higher": 0,
+          "gap_bp": {
+            "n": 4,
+            "mean": 3.979039320256561e-13,
+            "minimum": 0.0,
+            "median": 0.0,
+            "p95": 1.3528733688872302e-12,
+            "maximum": 1.5916157281026244e-12
+          },
+          "worse_cases": [],
+          "seconds_ratio": {
+            "n": 4,
+            "mean": 5.96226327384925,
+            "minimum": 5.070077416730372,
+            "median": 6.070557932624909,
+            "p95": 6.627530427828388,
+            "maximum": 6.637859813416811
+          }
+        },
+        "OneAnchor_ExactOne60": {
+          "expected": 4,
+          "pairs": 4,
+          "lower": 0,
+          "equal": 4,
+          "higher": 0,
+          "gap_bp": {
+            "n": 4,
+            "mean": 3.979039320256561e-13,
+            "minimum": 0.0,
+            "median": 0.0,
+            "p95": 1.3528733688872302e-12,
+            "maximum": 1.5916157281026244e-12
+          },
+          "worse_cases": [],
+          "seconds_ratio": {
+            "n": 4,
+            "mean": 6.550071587882773,
+            "minimum": 3.940402092949136,
+            "median": 6.9425456379457815,
+            "p95": 8.189042128204783,
+            "maximum": 8.37479298269039
+          }
+        },
+        "ExactBase60_ExactBase10": {
+          "expected": 4,
+          "pairs": 4,
+          "lower": 0,
+          "equal": 4,
+          "higher": 0,
+          "gap_bp": {
+            "n": 4,
+            "mean": 0.0,
+            "minimum": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "maximum": 0.0
+          },
+          "worse_cases": [],
+          "seconds_ratio": {
+            "n": 4,
+            "mean": 1.6518413341407758,
+            "minimum": 1.006761532488036,
+            "median": 1.0892830628462447,
+            "p95": 3.0787269294677797,
+            "maximum": 3.422037678382578
+          }
+        }
+      },
+      "certificates": [
+        {
+          "case": "breadth_032",
+          "lower_variance": 0.001936048413054558,
+          "consistent": true,
+          "best_delivered_te_bp": 441.9168942750267,
+          "lower_te_bp": 440.0055014490794,
+          "best_gap_bp": 1.9113928259473028,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_033",
+          "lower_variance": 0.0008711534468518735,
+          "consistent": true,
+          "best_delivered_te_bp": 302.060543344321,
+          "lower_te_bp": 295.15308686372794,
+          "best_gap_bp": 6.907456480593055,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_034",
+          "lower_variance": 0.002040670429088657,
+          "consistent": true,
+          "best_delivered_te_bp": 456.37981646111893,
+          "lower_te_bp": 451.7378032762652,
+          "best_gap_bp": 4.642013184853738,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        },
+        {
+          "case": "breadth_035",
+          "lower_variance": 0.0011580252779299386,
+          "consistent": true,
+          "best_delivered_te_bp": 342.60317262934507,
+          "lower_te_bp": 340.2977046543127,
+          "best_gap_bp": 2.305467975032343,
+          "reasons": {
+            "plain": "supporting-plane LP dual, box correction, scaled 1e-12 guard",
+            "perspective": "supporting-plane LP dual, box correction, scaled 1e-12 guard"
+          },
+          "failures": {}
+        }
+      ],
+      "bound_gap_bp": {
+        "n": 4,
+        "mean": 3.9415826166066097,
+        "minimum": 1.9113928259473028,
+        "median": 3.4737405799430405,
+        "p95": 6.567639986232157,
+        "maximum": 6.907456480593055
+      },
+      "bound_closed_at_band": 0,
+      "bound_inconsistencies": 0,
+      "enumeration": [
+        {
+          "case": "breadth_032",
+          "complete": true,
+          "unresolved": 0,
+          "trials": 37,
+          "te_bp": 441.9168942756416,
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 3.735900477863652e-14,
+              "upper": 1.4210854715202004e-14,
+              "groups": 0.0
+            },
+            "tickets": 4,
+            "optional_tickets": 2,
+            "turnover": 0.3138608421882542
+          },
+          "arm_minus_reference_bp": {
+            "Ranked": -6.132836460892577e-10,
+            "OneAnchor": -6.132836460892577e-10,
+            "ExactBase10": -6.148752618173603e-10,
+            "ExactBase60": -6.148752618173603e-10,
+            "ExactFull60": -6.148752618173603e-10,
+            "ExactOne60": -6.148752618173603e-10
+          }
+        },
+        {
+          "case": "breadth_033",
+          "complete": true,
+          "unresolved": 0,
+          "trials": 37,
+          "te_bp": 302.06054334467444,
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 3.1042975585656367e-15,
+              "upper": 0.0,
+              "groups": 0.0
+            },
+            "tickets": 4,
+            "optional_tickets": 2,
+            "turnover": 0.339195905024612
+          },
+          "arm_minus_reference_bp": {
+            "OneAnchor": -2.9268676371430047e-10,
+            "Ranked": -2.9268676371430047e-10,
+            "ExactBase60": -3.5345237847650424e-10,
+            "ExactBase10": -3.5345237847650424e-10,
+            "ExactOne60": -2.9268676371430047e-10,
+            "ExactFull60": -2.9268676371430047e-10
+          }
+        },
+        {
+          "case": "breadth_034",
+          "complete": true,
+          "unresolved": 0,
+          "trials": 37,
+          "te_bp": 456.3798164229577,
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 8.843481502651684e-12,
+              "upper": 9.239886633594097e-12,
+              "groups": 0.0
+            },
+            "tickets": 2,
+            "optional_tickets": 0,
+            "turnover": 0.18365668187785927
+          },
+          "arm_minus_reference_bp": {
+            "Ranked": 3.816126081801485e-08,
+            "OneAnchor": 3.816126081801485e-08,
+            "ExactBase10": 3.816126081801485e-08,
+            "ExactBase60": 3.816126081801485e-08,
+            "ExactFull60": 3.816126081801485e-08,
+            "ExactOne60": 3.816126081801485e-08
+          }
+        },
+        {
+          "case": "breadth_035",
+          "complete": true,
+          "unresolved": 0,
+          "trials": 37,
+          "te_bp": 342.60317262653456,
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 3.355957404795037e-13,
+              "upper": 7.798351439700912e-13,
+              "groups": 0.0
+            },
+            "tickets": 2,
+            "optional_tickets": 0,
+            "turnover": 0.1639255532235765
+          },
+          "arm_minus_reference_bp": {
+            "OneAnchor": 2.8105091587349307e-09,
+            "Ranked": 2.8105091587349307e-09,
+            "ExactBase60": 2.8105091587349307e-09,
+            "ExactBase10": 2.8105091587349307e-09,
+            "ExactOne60": 2.8105091587349307e-09,
+            "ExactFull60": 2.8105091587349307e-09
+          }
+        }
+      ]
+    },
+    "simplification_gate": {
+      "all_paired": true,
+      "no_quality_loss": true,
+      "no_extra_failures": true,
+      "paired_median_faster": true,
+      "candidate_only": true,
+      "passed": true
+    },
+    "miss_diagnosis": [],
+    "search_work": {
+      "Ranked": {
+        "expected": 32,
+        "recorded": 32,
+        "sizing_attempts": {
+          "n": 32,
+          "mean": 1530.0,
+          "minimum": 120.0,
+          "median": 975.5,
+          "p95": 4704.05,
+          "maximum": 4887.0
+        },
+        "bridge_restarts": {
+          "n": 32,
+          "mean": 20.96875,
+          "minimum": 2.0,
+          "median": 24.0,
+          "p95": 24.0,
+          "maximum": 24.0
+        },
+        "bridge_improved_cases": 1,
+        "bridge_pair_trials": {
+          "n": 32,
+          "mean": 10.1875,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 326.0
+        }
+      },
+      "OneAnchor": {
+        "expected": 32,
+        "recorded": 32,
+        "sizing_attempts": {
+          "n": 32,
+          "mean": 1440.5625,
+          "minimum": 120.0,
+          "median": 962.0,
+          "p95": 4205.35,
+          "maximum": 4417.0
+        },
+        "bridge_restarts": {
+          "n": 32,
+          "mean": 20.78125,
+          "minimum": 2.0,
+          "median": 24.0,
+          "p95": 24.0,
+          "maximum": 24.0
+        },
+        "bridge_improved_cases": 1,
+        "bridge_pair_trials": {
+          "n": 32,
+          "mean": 10.65625,
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "maximum": 341.0
+        }
+      }
+    }
+  }
+}

@@ -15,26 +15,29 @@
 \title{Ranked Execution: Cash-Funded Search for Sparse Portfolio Rebalancing}
 \author{Artur Sepp}
 \begin{abstract}
-Implementing a target portfolio requires choosing trades and sizing positions
-under funding, exposure and minimum-trade constraints. We present Ranked
-Execution, a bounded heuristic combining cash-funded marginal priorities,
-joint convex sizing and coordinated changes of executable instrument states.
-Mandatory interventions are declared before risk search and count towards
-the trade limit. An incumbent is returned only after an audit in original
-portfolio units. A matched mixed-integer formulation provides independently
-started reference solutions under the same objective, prepared domain and
-acceptance rules. A portable benchmark is constructed from supplied model
-weights and covariance estimates for a retrospective universe of 302 publicly
-traded exchange-traded funds. It contains 219 monthly conditional decisions
-with opaque asset identifiers and requires neither an upstream allocation
-model nor private portfolio data. Search ablations and separate incumbent
-controls distinguish algorithmic improvement from external incumbent
-retention. The numerical study evaluates execution quality and computation
-conditional on the supplied inputs; it does not estimate investment
-performance or establish global optimality of the heuristic. All 219 cases
-deliver audited portfolios. Ranked matches Ranked-started Exact in all 219
-cases within $10^{-4}$ annual basis points. Exact is faster on this cohort, whose zero to five
-optional candidates leave the ten-ticket allowance nonbinding.
+Implementing a target portfolio requires selecting and sizing trades under
+funding, exposure and minimum-trade constraints. Ranked Execution combines
+cash-funded marginal priorities, joint convex sizing and bounded search over
+executable states, including screened trade replacements and restarts from
+audited alternatives.
+Mandatory interventions count towards the trade limit; only portfolios passing
+an original-unit audit can replace the retained incumbent. A matched
+mixed-integer formulation supplies reference solutions under identical inputs
+and acceptance rules, with independent and heuristic-started calls reported
+separately. A portable 302-ETF benchmark supplies 219 monthly decisions with
+opaque identifiers. Ranked matches heuristic-started MIQP within $10^{-4}$ annual
+basis points on all decisions, but the ticket allowance is nonbinding. A
+frozen 24-case synthetic grid compares separate common-base and heuristic-started
+joint MIQP calls at 10, 60 and 600 seconds. After correcting the reference's
+numerical scaling and internal feasibility setting, Ranked ties all 24 independent
+deliveries within the same band at every allowance. Independent MIQP is faster
+at the median; additional time changes no delivered solution above the band.
+No reported native bound contradicts an audited witness at the unchanged
+comparison tolerance. All 182 synthetic arm outputs, including two tiny
+controls, pass the original audit. Independent enumeration and conservative
+relaxation bounds supply separate numerical controls. Neither conditional
+comparisons nor retained-incumbent ties establish global optimality or realised
+investment performance.
 \end{abstract}
 \begin{keyword}
 portfolio rebalancing \sep trade cardinality \sep minimum trade \sep
@@ -84,11 +87,12 @@ model allocation, so every method receives identical current holdings.
 This experiment measures conditional implementation decisions, not
 strategies recursively evolving their own holdings.
 
-A matched mixed-integer reference fixes the objective, admissible states and
+A full joint mixed-integer reference fixes the objective, admissible states and
 return audit. A separate call receives the heuristic's incumbent and charges
-its generation time explicitly. Two search ablations quantify incremental
-algorithmic effects. A historical production policy with different
-constraints is outside this comparison.
+its generation time explicitly. Three time allowances distinguish additional
+search opportunity from the effect of that start. Development ablations remain
+in the replication archive. The separate operational MIQP policy has different
+objective and constraint options and is outside this matched comparison.
 
 \section{Related work}
 Cardinality-constrained portfolio selection and index tracking have a
@@ -187,6 +191,19 @@ declared preparation exceptions. Mandatory instruments keep their own
 resolved intervals. Cash retains its hard funding interval instead of a
 model-current corridor.
 
+Before solving, declarations must be reconciled with compiled rows. Each
+enabled group requires an unambiguous label, a finite membership vector
+and its original lower and upper limits. A missing membership column is an
+input error, not a zero vector. An intentionally empty group is redundant
+only if $a_j\le0\le b_j$; emptiness must be explicitly acknowledged. A
+positive lower bound on an empty group is contradictory. Reconciliation
+records the source declaration, compiled identifier, coefficients and
+bounds, including distinct identifiers for homonymous groups. The final
+exposure and residual are reported against those rows. This pre-solve
+check closes a gap that a return audit alone cannot detect: an omitted
+constraint is absent from the audit as well. Reconciliation changes no
+objective coefficient, endpoint or numerical tolerance.
+
 The eligible hard domain permits movement within full resolved product and
 instruction bounds. We call the two domains CORRIDOR and FULL. They answer
 different optimization questions. Every algorithm in the main comparison
@@ -226,7 +243,7 @@ state how many inputs successfully prepared.
 
 \section{Executable states and matched formulation}\label{sec:states}
 \subsection{Finite unions of intervals}
-For each noncash instrument, compile executable alternatives
+For each noncash instrument $i$, compile a finite family of executable alternatives,
 $\mathcal J_i=\{[\ell_{ij},h_{ij}]:j\in J_i\}$.
 For an ordinary optional instrument these include the no-trade point when
 valid, a sell interval ending at $c_i-\delta_i$, and a buy interval starting
@@ -246,23 +263,35 @@ interval $[0.025,0.04]$. Selecting a sale does not prescribe its unique size.
 Funding and group constraints determine final size jointly with other names.
 Several states never create several tickets for one instrument.
 
-\subsection{Mixed-integer reference}
-Introduce binary selectors $z_{ij}$ and continuous contributions $v_{ij}$:
-\begin{align}
+\subsection{Full joint MIQP reference}\label{sec:miqp}
+Introduce binary selectors $z_{ij}\in\{0,1\}$ and continuous contributions
+$v_{ij}$. The full joint model chooses every state and trade size together:
+\begin{align}\label{eq:joint-miqp}
+ \min_{w,v,z}\quad &(w-m)^\top\Sigma(w-m)\\
+ \text{subject to}\quad
  \sum_{j\in J_i}z_{ij}&=1,&
  \ell_{ij}z_{ij}\le v_{ij}&\le h_{ij}z_{ij},\\
  w_i&=\sum_{j\in J_i}v_{ij},&
  \sum_{i\ne k}\sum_{j\in J_i}t_{ij}z_{ij}&\le K.
 \end{align}
-Together with \eqref{eq:linear} and \eqref{eq:objective}, these form a convex
-mixed-integer quadratic problem. A declared optional allowance adds its
-corresponding sum over optional names. Cash has no trade selector.
+and all funding, instrument and group rows in \eqref{eq:linear}. This is a
+convex mixed-integer quadratic problem (MIQP). A declared optional allowance
+adds its corresponding sum over optional names. Cash has no trade selector.
 
-Every method uses the same prepared state domain. The name Matched Exact
-identifies this mathematical problem, not a certificate for every
-time-limited returned vector. The implementation solves an equivalent
+Every method uses the same prepared state domain. ``Full joint'' means all
+choices are optimised together; it does not mean replacing the prepared
+CORRIDOR domain with the wider FULL preparation domain. The model's optimum
+cannot be worse than a feasible heuristic vector in this domain. The historical
+replication identifier \texttt{Exact} names the formulation, not a certificate
+for every returned vector. The implementation solves an equivalent
 conic canonical representation. Native status, native incumbents and
 externally retained weights remain separately attributed.
+
+The operational \texttt{execution/MIQP} implementation is a separate policy:
+it permits an alpha trade-off, a terminal position cap and repair-on-touch
+rules. Those options are absent from this tracking-variance benchmark.
+Its outputs would confound policy and algorithm effects, so they are not
+included as an additional matched arm.
 
 Fixing one state per instrument yields a convex quadratic program. Fixed
 coordinates and cash can be eliminated algebraically. Heuristic supports use
@@ -352,13 +381,123 @@ total coordinated budget of 24 support trials. A pass without improvement
 stops the stage. These are support trials; mandatory alternatives and
 numerical retries can require more than 24 native QP calls.
 
-A two-state neighbourhood cannot simultaneously replace two selected names
-with two different new names: that requires four changes. A truncated
-shortlist can also omit the best feasible pair. Restarts expose additional
-moves after earlier improvements but establish neither local nor global
-optimality.
+\subsection{Scarce-ticket extension}
+When the optional candidate count exceeds a positive allowance, the completed
+search above is retained and a separate branch explores scarce-ticket combinations.
+First, solve the continuous perspective model of the same state formulation.
+In funded coordinates $w=r+Ux$, write $H=U^\top\Sigma U$ and choose
+$D=\operatorname{diag}(d)$ with $d\ge0$ and $H-D\succeq0$.
+The implementation uses half the nonnegative minimum eigenvalue of the
+diagonally normalised active block of $H$, multiplied by its diagonal,
+and verifies the residual matrix. Retain the constant and affine terms of
+$f(r+Ux)$ and replace its quadratic part by
+\[
+ x^\top(H-D)x+\sum_i d_i x_i^2/z_i,
+\]
+where $z_i$ is the sum of optional ticket-state selectors and equals one
+for mandatory coordinates. The closed perspective uses zero at $(x_i,z_i)=(0,0)$
+and excludes $x_i\ne0$ when $z_i=0$. Relax selectors to their continuous hull
+only for this guidance solve. At executable integer states the objective is
+the original quadratic; the integer reference remains the matched formulation above.
+Rank optional names by fractional ticket occupancy, choose each name's highest
+occupancy ticket state, and round the first $B$ names into a support. Identifiers
+and state indices resolve ties. Fractional weights are never returned: the rounded
+support must pass the unchanged joint-sizing QP and original-unit audit.
+An audited seed may initially be inferior; its search branch is kept separate
+and the original incumbent is restored unless the completed branch strictly improves it.
 
-\begin{table}[htbp]\centering\small
+At each scarcity anchor, jointly size every one-for-one optional replacement.
+This sweep allows all retained coordinates to resize. Merely scoring the removed
+and admitted coordinates can miss an improvement that requires that recourse.
+The expanded neighbourhood also admits two new names coupled to one or two
+removals, making a two-for-two replacement reachable at a full ticket budget.
+Its two-coordinate priority includes cash and group rows through polygon clipping
+and quadratic minimisation on edges and the interior. If that fixed-coordinate
+slice is empty, retain the box priority in \eqref{eq:pair}: other selected names
+can move during joint sizing, so an empty slice is not a support infeasibility proof.
+For a coupled removal, include its exact cash-funded quadratic change in the score.
+
+The rounded seed and expanded shortlist share a separate 24-support allowance.
+Up to three anchors each have a complete single-replacement sweep; these sweeps
+are additional work, not part of the 24-support count. After a shortlisted
+improvement, restart early when another anchor is available. Stop after an
+unimproved pass. Search is bounded but neither local nor global optimality follows.
+The extension uses no integer solve and no reference-arm incumbent. Its continuous
+model supplies priorities only; it does not change the delivered objective,
+constraints, mandatory declarations or acceptance tolerances.
+
+The final pair replacement can expose a useful single replacement after the last
+sweep. Also, an inferior or infeasible rounded seed can lead to a better support
+through joint resizing. We therefore run a final replacement branch from the
+completed incumbent and from the unrestricted rounded seed. To diversify beyond
+pair replacements, pin one selected name at its no-ticket state in a temporary
+continuous guidance model, round the resulting occupancies and search that seed.
+At most $\min(B,24)$ incumbent names are tried, in identifier order; duplicate
+seeds are skipped. The pin affects guidance only: every candidate is sized and
+audited on the original problem, and the excluded name may re-enter a branch.
+
+Each distinct seed receives at most three complete single-replacement sweeps.
+If its initial sizing fails, the first sweep still tries replacements around
+the proposed support. Subsequent sweeps use the best audited branch support and
+stop without improvement. Each branch is compared to the separately retained
+completed incumbent. A per-call cache stores the best audited original-domain
+sizing result, or failure, for each support over the same bounded mandatory
+assignments. Separate branch visitation allows a cached support to serve as an
+intermediate point without another QP. This bounded diversification can cross
+more than two replacements in total; it is not exhaustive multi-name enumeration.
+
+An empty optional incumbent has no names to exclude. Moreover, a promising
+combination can require retaining a particular trade, rather than removing one.
+A further bounded phase therefore takes the union of the completed incumbent's
+ticket states and the unrestricted rounded seed's ticket states. In stable
+instrument/state order, it conditions on inclusion and then exclusion of each
+state, stopping after at most 24 additional continuous solves. Inclusion fixes
+that state selector to one; exclusion fixes it to zero. All other objective terms,
+rows and numerical tolerances remain unchanged. The rounding step respects the
+decision, prioritising a forced admission over unconstrained choices.
+
+Each distinct proposal receives the same replacement restart, including rescue
+around infeasible seeds. A final restart revisits the completed incumbent.
+These temporary selector conditions guide proposals only: executable sizing uses
+the original problem, and every branch competes with the retained audited
+incumbent. This phase is a finite conditional neighbourhood, not recursive
+branch-and-bound. Its continuous objective values are not optimality certificates.
+
+\paragraph{Screened pair completion}
+Slice priorities hold retained positions fixed, whereas joint sizing can resize
+them. Consequently a low-priority pair can still improve the portfolio. An additional
+phase shares at most $R^2$ additional coordinated trials across the same anchor
+limit, where $R=24$ is the rescue allowance: 576 trials and at most three anchors
+by default. Each anchor retains the complete single-replacement sweep. All
+previously sized supports are skipped; strict audited improvements re-anchor
+the search while passes remain. The earlier incumbent is always retained.
+
+An inexpensive necessary-feasibility screen precedes the shortlist. Selected
+coordinates and cash span their original intervals, unselected coordinates stay
+at the base, and mandatory coordinates span the union envelope of their states.
+For each funding or group row, interval arithmetic gives its smallest and largest
+possible value, using the coefficient sign to select each endpoint. Existing
+coordinate and row audit allowances yield a conservative outer envelope. A
+support is rejected only if this envelope cannot intersect a required row interval.
+Surviving supports still pass unchanged original-domain joint sizing and audit;
+the screen neither relaxes an executable constraint nor proves joint feasibility.
+It removes obvious dead ends without suppressing recourse in retained positions.
+The finite trial and anchor budgets can still miss improving combinations.
+
+\paragraph{Cached alternative restarts}
+Improving-only descent can stop before a feasible three-position replacement.
+The sizing cache already contains audited alternatives that were not retained.
+Order these by objective and then instrument/state identifiers, exclude the
+current support, and restart from at most $R$ alternatives. Each branch uses the
+same bounded complete single-replacement sweeps and separately retains the
+incumbent. A worse seed may therefore connect a useful sequence of supports.
+At the first branch improving the incumbent, complete its pair neighbourhood
+once using another $R^2$ trial allowance and the same anchor limit, then stop.
+The support list is selected before these restarts; it uses no reference-arm
+portfolio. Failed branches cannot worsen delivery. This finite search broadens
+coverage without establishing exhaustive three-position optimality.
+
+\begin{table}[!ht]\centering\small
 \caption{Ranked Execution with audited incumbent retention.}
 \begin{tabularx}{\linewidth}{rY}\toprule
 Step & Operation\\\midrule
@@ -369,12 +508,22 @@ Step & Operation\\\midrule
 5 & Attempt one drop and one exchange pass over the initial accepted support.\\
 6 & Jointly size coordinated changes; restart after improvement while the shared
 trial and anchor allowances permit.\\
-7 & Return the best audited incumbent with timing and failure diagnostics.\\
+7 & Under ticket scarcity, retain this incumbent; jointly size a perspective-guided
+seed, complete single replacements and shortlisted pair replacements.\\
+8 & Search final replacement sweeps and distinct seeds from temporarily excluded
+incumbent names; size every candidate on the original problem.\\
+9 & Include/exclude states from the incumbent and tentative relaxed seed in bounded
+guidance calls; search distinct proposals and revisit the completed incumbent.\\
+10 & Revisit the completed incumbent with the interval-screened pair allowance;
+jointly size each shortlisted support on the original domain.\\
+11 & Restart from bounded cached audited alternatives; after the first improving
+branch, complete its pair neighbourhood once.\\
+12 & Return the best audited branch, with all search work and failures recorded.\\
 \bottomrule\end{tabularx}
 \end{table}
 
 \subsection{Properties and computational cost}
-\begin{proposition}[Conditional incumbent retention]
+\begin{proposition}[Conditional incumbent retention]\leavevmode\par
 For fixed arrays and acceptance rules, if the initial incumbent passes the
 return audit and replacement requires an audited strict objective improvement,
 the returned objective is no worse than that of the initial incumbent.
@@ -396,9 +545,26 @@ enumeration and improvement search.
 With $s$ available state changes, coordinated enumeration can inspect
 $O(s^2)$ pairs per anchor. A bounded shortlist does not make its generation
 constant work in universe size. Support-key construction and ordering add
-overhead. At most three anchors share the same sizing budget, while
-mandatory enumeration multiplies QP counts. A support cap is therefore not
-a wall-clock guarantee.
+overhead. The scarcity extension can enumerate $O(B^2s^2)$ pair replacements
+per anchor, plus at most $Bs$ jointly sized single replacements. It also solves
+one unrestricted and up to $\min(B,24)$ restricted continuous perspective problems.
+The final incumbent, unrestricted seed and distinct restricted seeds add at most
+$2+\min(B,24)$ branches, each with at most three sweeps of $Bs$ supports.
+If the conditional phase considers $C\le24$ decisions, it adds $C$ continuous
+solves and at most $C+1$ replacement branches. Each branch sizes its seed and
+at most three sweeps of $Bs$ supports. Caching removes duplicate sizing work
+within a call. Each earlier stage has
+at most three anchors and its own shortlist allowance; mandatory enumeration
+multiplies sizing counts.
+The screened completion phase adds at most $R^2$ coordinated supports and three
+single-replacement sweeps. Its interval screen costs $O(mn)$ per candidate for
+$m$ group rows and $n$ instruments, in addition to pair-priority generation.
+Cached alternatives add at most $R$ branches of three $Bs$ replacement sweeps.
+The first improving branch permits at most one further completion phase with
+the same bounds. Cached results avoid duplicate QPs, but scoring and revisiting
+supports still incur work.
+These additional costs are measured rather than hidden inside the initial
+greedy complexity. A support cap is not a wall-clock guarantee.
 
 The library accepts exact factor-plus-diagonal covariance representations
 when available. The empirical comparison retains its supplied dense
@@ -421,43 +587,76 @@ row is removed only when every remaining variable coefficient is exactly
 zero and its constant value satisfies both unchanged endpoints.
 Nonzero coefficients, however small, and constant contradictions are retained.
 This algebraic reduction avoids degenerate constant rows without enlarging
-the feasible set. Native integer hulls and their relaxations retain their
-original graph. Group rows use the same bounded residual
+the feasible set. Integer hulls retain every linear row; their quadratic cone
+is balanced as described below. Continuous relaxation graphs are unchanged.
+Group rows use the same bounded residual
 envelope as the original-unit audit. Original limits remain authoritative at
 return. CLARABEL uses absolute/relative gap and feasibility controls of
 $10^{-10}$. A numerical solver exception permits one fresh attempt with
 equilibration disabled, retaining the graph, objective, rows and tolerances.
 An infeasible status does not trigger that retry.
 
+The qualified implementation reuses compiled sizing graphs only when canonical
+sparse coefficients agree exactly with a fresh construction. Each trial still
+receives a fresh numerical solve and the same audit; no trials or constraints
+are dropped. A failed equivalence check uses the ordinary construction. This
+reduces compilation overhead without changing the search or measured weights.
+
 This aligns numerical construction and acceptance. It does not prove literal
 feasibility beyond the declared tolerance, or convert a native lower bound
 into a certified optimality gap. The benchmark records raw statuses and
 candidate rejection alongside delivered portfolios.
 
-\subsection{Five comparison arms}
-Table~\ref{tab:arms} specifies the experiment. Common preparation is performed
-once and fixed across arms. ExactBase starts from the prepared incumbent.
-ExactRanked is an independent call supplied with Ranked's incumbent.
+\subsection{Three principal comparisons}
+Table~\ref{tab:arms} specifies the principal comparisons. Common preparation is
+performed once and fixed across arms. Common-base MIQP starts from the prepared
+incumbent. V2-started MIQP is a separate call supplied with Ranked's incumbent.
 Neither call receives a pooled best result across algorithms.
 
 \begin{table}[htbp]\centering\small
 \caption{Arms under the same prepared CORRIDOR domain.}\label{tab:arms}
 \begin{tabularx}{\linewidth}{lY}\toprule
 Arm & Definition\\\midrule
-Ranked & Full default search, with up to three coordinated anchors sharing
-24 support trials.\\
-Greedy & Greedy and mandatory/selected-state sizing; no rescue, drop, exchange
-or coordinated search. The same incumbent is retained.\\
-OneAnchor & Default search with at most one coordinated anchor.\\
-ExactBase & Matched mixed-integer solve started from the prepared base.\\
-ExactRanked & Separate matched solve started from Ranked's audited incumbent.\\
+Ranked (V2) & Full default search, including all scarcity extensions;
+up to three anchors per stage and separately recorded sweeps.\\
+MIP-B & Full joint model started from the prepared base (\texttt{ExactBase}).\\
+MIP-V & Separate full joint solve started from V2 (\texttt{ExactRanked}).\\
 \bottomrule\end{tabularx}
 \end{table}
 
-Both Exact calls use a 10-second wrapper allowance, one native thread, seed
+The ETF comparison uses a 10-second wrapper allowance; the synthetic study
+uses separately started 10/60/600-second calls. All use one native thread, seed
 zero and relative MIP-gap setting $10^{-4}$. Graph construction, start
 lifting and conditional fixed-state refinement consume this allowance.
 Native operations can overrun it; measured wall times are reported.
+
+An earlier native integer feasibility setting of $10^{-4}$ produced a false
+optimal termination on the overlapping-group instance \texttt{joint\_007}.
+The native lift of a better feasible portfolio reproduced its objective, and
+an independently formulated full-weight fixed-support QP confirmed the witness.
+Tightening only native integer feasibility to $10^{-9}$ recovered the better
+solution without supplying it as a start. Disabling presolve also recovered it;
+additional time alone did not. Tightening that setting alone left smaller
+bound inconsistencies. For integer hulls we therefore also replace
+$x^\top Qx/10^4$ by $(x/100)^\top Q(x/100)$ in the conic graph, where $x$
+is funded displacement in basis points. This balances the quadratic epigraph
+without changing its value, any linear row or the native start mapping.
+Fixed-state sizing and continuous relaxation graphs are unchanged.
+The correction changes internal numerical
+accuracy, not the objective, state constraints, original-unit audit or other
+solver tolerances. The ETF and full joint tables use both corrections; earlier
+search-development records retain their original source hashes.
+
+Raw native statuses and bounds remain visible. A consistency check compares a
+native bound with the delivered incumbent, and the benchmark separately checks
+it against every audited cross-arm witness at the existing $10^{-12}$ variance
+comparison scale. Bounds are never clipped to an incumbent. Passing these
+checks is not an independent global certificate.
+
+The ETF replication also retains Greedy (without support rescue or improvement)
+and OneAnchor (one coordinated anchor per stage and one replacement sweep per
+diversification branch). Their results and the earlier search-development
+studies remain available as ablations rather than additional headline methods.
 
 Native audited incumbents, retained external starts and refined candidates
 have distinct attribution. An ExactRanked delivery equal to Ranked does
@@ -469,9 +668,20 @@ input loading. Preparation is reported separately and included in
 end-to-end time. ExactRanked additionally includes its Ranked start-generation
 cost. These are declared computational controls, not equal elapsed budgets.
 The recorded host runs Windows 11 on an Intel Core Ultra 7 265 processor.
-The cohort uses Python 3.12.14, OP 9.1.0.dev1, QIS 5.44.3, CVXPY 1.9.2,
-MOSEK 11.2.3 and CLARABEL 0.11.1; the replication protocol records the full
+The rerun uses Python 3.12.14, unreleased corrected OP source with 9.1.5
+metadata, QIS 5.44.4, CVXPY 1.9.2, MOSEK 11.2.3 and CLARABEL 0.11.1.
+The public PyPI 9.1.5 wheel does not contain this correction; accompanying
+source hashes identify the implementation. The replication protocol records the full
 numerical package versions and execution-source hashes.
+
+An earlier archived ETF run used a different preparation implementation and
+dependency cohort; its allocation changes cannot be attributed to this search
+extension alone. A separate regression control repeats all 219 decisions with
+published OP 9.1.5 under the current dependencies. Its Ranked weights and TE
+values are exactly identical to the corrected source on every decision.
+The scarce-ticket extension is inactive in these cases. Control timings are
+excluded because verification ran concurrently; the five-arm timings below
+come from the serial primary run.
 
 \section{The 302-ETF benchmark}\label{sec:benchmark}
 \subsection{Frozen supplied inputs}
@@ -542,6 +752,9 @@ solution to $2.4\times10^{-14}$ in maximum absolute weight difference.
 The alternative fixed state remains infeasible. The check verifies
 conditional sizing, not global performance on other support patterns.
 
+\input{robustness}
+\input{joint_results}
+
 \section{Limitations and conclusion}
 Ranked Execution separates cash-funded prioritisation from the joint sizing
 needed for coupled constraints. Executable states encode minimum trades and
@@ -568,15 +781,38 @@ convention; its outcomes combine local decisions with path dependence.
 No realised return, Sharpe ratio or trading-cost advantage follows from the
 conditional comparison.
 
-The portable instance contract makes these limits testable. Subsequent
-studies can vary ticket budgets, floors, group tightness and candidate
-density under frozen protocols, and compare established methods on the same
-trade domain. The present contribution is a concrete, auditable execution
-heuristic with explicit controls and a reproducible matched benchmark.
+The earlier synthetic studies informed search corrections and remain in the
+replication archive. The paired rerun preserves V2 and its acceptance rules;
+the corrected reference was informed by these cases. The grid has 20--41
+effective optional candidates, despite nominal sizes up to 144. V2 ties all
+24 independent joint-MIQP deliveries within the descriptive band at every
+allowance. The previously reported 3.645 bp advantage disappears. Independent
+MIQP has lower median E2E cost (0.165 versus 1.559 seconds at the 600-second
+allowance). Heuristic-started
+MIQP matches V2 but must also pay its generation cost. None of these calls
+uses the full allowance; longer allowances provide no measured improvement.
+
+The corrected ETF and synthetic comparisons have no native bound contradicting
+an audited cross-arm witness by more than $10^{-12}$ variance. Raw bounds remain
+visible; this consistency check is not an independent optimality certificate.
+Conservative relaxation bounds remain valid but do not close the broader
+cases. The tiny enumerations agree with all arms within the descriptive band.
+Together these controls support neither universal dominance nor a heuristic
+speed advantage, and they do not certify global optimality on the larger cases.
+
+The controlled sensitivity study also shows that changing input estimates and
+changing the execution domain are distinct effects. All studies remain conditional
+on supplied inputs and finite search budgets. External validation, broader lifecycle
+changes, rolling own-book simulations and matched established alternatives remain
+needed. Further algorithm changes would require fresh qualification; the present
+results do not authorize a production change.
+The contribution is an auditable execution heuristic with explicit
+controls and reproducible evidence of both improvements and limits.
 
 \section*{Data and code availability}
 The accompanying package contains de-identified numerical decision inputs,
-checksums, the five-arm runner, independent audits and table-generation code.
+checksums, the ETF and synthetic runners, independent audits, reference enumeration
+and table-generation code.
 The reusable solver is in
 \href{https://github.com/ArturSepp/OptimalPortfolios}{OptimalPortfolios}.
 Tracking-error reporting uses
