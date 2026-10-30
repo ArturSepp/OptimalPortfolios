@@ -1,28 +1,26 @@
-"""Cash-funded ranked execution over consumer-resolved portfolio inputs."""
-from optimalportfolios.execution.v1.types import ExecutionRankingConfig, ResolvedExecutionProblem
-from optimalportfolios.execution.v1.ranking import (
-    score_execution_trades, resolve_effective_max_trades,
+"""Execution-constrained rebalancing with matched Exact and Ranked engines."""
+from optimalportfolios.execution.types import (
+    ExecutionProblem, ExecutionRules, RankedConfig, ExecutionResult,
 )
-from optimalportfolios.execution.v1.feasibility import compute_group_bound_bridges
-from optimalportfolios.execution.v1.solver import (
-    ExecutionOptimizationResult,
-    ExecutionSolverInfeasibility,
-    build_selected_execution_constraints,
-    solve_selected_execution_portfolio,
-    solve_feasible_execution_portfolio,
+from optimalportfolios.execution.domain import audit_execution, compile_states
+from optimalportfolios.execution.ranked_execution import wrapper_ranked_execution
+from optimalportfolios.execution.exact_execution import wrapper_exact_execution
+from optimalportfolios.execution.bounds import compute_perspective_lower_bound
+from optimalportfolios.execution.adapter import from_resolved_problem
+from optimalportfolios.execution.preparation import prepare_common_execution
+from optimalportfolios.execution.production import (
+    RankedExecutionPolicyConfig, resolve_production_problem, solve_ranked_execution_portfolio,
 )
-from optimalportfolios.execution.v1.api import solve_ranked_execution
-from optimalportfolios.execution.v1.improvement import (
-    ExecutionScoreMethod,
-    ExecutionSearchConfig,
-    ExecutionSearchResult,
-    ExecutionCorridorDiagnostic,
-    score_execution_candidates,
-    improve_ranked_execution,
-    diagnose_execution_corridors,
+from optimalportfolios.execution.policy import (
+    MatchedExecutionPolicyConfig, wrapper_execution_policy, solve_execution_portfolio,
 )
-from optimalportfolios.execution.v1.guarded import ExecutionGuardConfig, solve_guarded_execution
-
-from optimalportfolios.execution.v1.branches import (
-    ExecutionBranchConfig, ExecutionBranchSearchResult, solve_branched_execution,
+from optimalportfolios.execution.lifecycle import (
+    ExecutionPolicyConfig, ExecutionLifecycleConfig, MandatoryTrades,
+    merge_mandatory_trades, build_execution_target,
 )
+from optimalportfolios.execution.instrument_bounds import (
+    ExecutionOptimizationResult, ExecutionSolverInfeasibility,
+)
+from optimalportfolios.execution.diagnostics import score_execution_trades, resolve_effective_max_trades
+from optimalportfolios.execution.resolved import ExecutionRankingConfig, ResolvedExecutionProblem
+from optimalportfolios.execution.feasibility import compute_group_bound_bridges

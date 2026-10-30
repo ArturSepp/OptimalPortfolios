@@ -196,31 +196,35 @@ def test_prepared_opportunity_matches_manual_arrays_and_constraint_audit(objecti
     assert left.metrics['residual_te'] ** 2 == pytest.approx(delta @ residual @ delta)
 
 
-def test_tf_covariance_preserves_execution_scoring_branches_and_feasibility(fitted_snapshot):
-    """The execution engine produces the same selected branch and audited holdings."""
+def test_tf_covariance_preserves_execution_selection_and_feasibility(fitted_snapshot):
+    """Prepared upstream and manual risk give identical audited execution holdings."""
     from dataclasses import replace
     from factormodels import prepare_portfolio_context
-    from optimalportfolios.execution.branches import ExecutionBranchConfig, solve_branched_execution
-    from optimalportfolios.execution.improvement import score_execution_candidates
-    from optimalportfolios.execution.v1.tests.ranking_contract_test import make_problem
+    from optimalportfolios.execution import (
+        ExecutionProblem, ExecutionRules, RankedConfig, audit_execution, wrapper_ranked_execution,
+    )
 
     snapshot = fitted_snapshot
     risk, _ = _manual_risk_inputs(snapshot)
     prepared = prepare_portfolio_context(snapshot)['risk_model'].covar[snapshot.cutoff]
-    manual = make_problem(covariance=risk.covar[snapshot.cutoff])
-    adapted = replace(manual, covariance=prepared)
-    pd.testing.assert_frame_equal(score_execution_candidates(adapted),
-                                   score_execution_candidates(manual), check_exact=False,
-                                   rtol=1e-11, atol=1e-13)
-    policy = ExecutionBranchConfig(max_projection_calls=3, max_removal_trials=1)
-    left = solve_branched_execution(adapted, policy)
-    right = solve_branched_execution(manual, policy)
-    assert left.summary['selected_method'] == right.summary['selected_method']
-    assert left.summary['selected_checkpoint'] == right.summary['selected_checkpoint']
-    assert left.result.accepted and left.result.compliant
-    assert left.result.outcome.status == right.result.outcome.status
-    pd.testing.assert_series_equal(left.result.weights, right.result.weights,
-                                    check_exact=False, atol=1e-8, rtol=1e-8)
-    assert left.result.weights.sum() == pytest.approx(1., abs=1e-8)
-    residuals = left.result.outcome.residuals_frame()
-    assert residuals.loc[residuals.hard, 'passed'].all()
+    current = np.array([.30, .25, .25, .20])
+    target = np.array([.40, .15, .30, .15])
+    lower, upper = np.minimum(current, target), np.maximum(current, target)
+    lower[-1], upper[-1] = 0., 1.
+    manual = ExecutionProblem(
+        names=('A', 'B', 'C', 'Cash'), cash=3, current=current, base=current,
+        target=target, lower=lower, upper=upper, full_lower=np.zeros(4),
+        full_upper=np.ones(4), groups=np.zeros((0, 4)), group_lower=np.zeros(0),
+        group_upper=np.zeros(0), mandatory=np.zeros(4, bool), categories=('',) * 4,
+        eligible=np.ones(4, bool), frozen=np.zeros(4, bool),
+        rules=ExecutionRules(ticket_cap=2), covariance=risk.covar[snapshot.cutoff].to_numpy())
+    adapted = replace(manual, covariance=prepared.loc[list(manual.names), list(manual.names)])
+    config = RankedConfig(qp_solver='CLARABEL')
+    left, right = wrapper_ranked_execution(adapted, config), wrapper_ranked_execution(manual, config)
+    assert audit_execution(adapted, left.weights)['passed']
+    assert audit_execution(manual, right.weights)['passed']
+    assert left.status == right.status
+    np.testing.assert_allclose(left.weights, right.weights, atol=1e-8, rtol=0.)
+    np.testing.assert_array_equal(abs(left.weights-current) > 1e-8,
+                                  abs(right.weights-current) > 1e-8)
+    assert left.weights.sum() == pytest.approx(1., abs=1e-8)

@@ -36,15 +36,19 @@ results are not quoted before publication.
 
 ### Ranked execution
 
-Sepp, A. (2026). *Ranked Execution: Cash-Funded Search for Sparse Portfolio
-Rebalancing*. Working draft intended for Computers & Operations Research.
+Sepp, A. (2026). *Execution-Constrained Portfolio Rebalancing:
+Policy Domains, Search and Numerical Reliability*. Working draft intended for
+Computers & Operations Research.
 
 The [separate manuscript and replication guide](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/ranked_execution_2026)
 describe the method in [prepared execution optimisation](execution_v2.md).
-The study compares Ranked Execution, matched Exact and search ablations on
-219 supplied-input decisions from a retrospective 302-ETF universe. It reports
-conditional execution outcomes, including the small effective candidate sets;
-it does not establish realised performance or universal heuristic superiority.
+The study compares Exact Execution, Ranked Execution and a documented Kernel
+Search adaptation. It retains the 313-case ETF/synthetic cohort and adds 23
+prospective difficulty and public-risk cases, including all missing deliveries
+and unresolved gaps. The separate Exact-first policy with audited Ranked fallback
+is evaluated in the retained cohort. Conditional quality, computation, policy
+costs and numerical reliability are reported. The evidence does not establish
+realised performance, independent external validation or universal dominance.
 The de-identified numerical archive is prepared locally for a separate public
 deposit. No acceptance, submission or completed deposit is claimed.
 

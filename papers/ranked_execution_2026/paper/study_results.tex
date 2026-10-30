@@ -1,0 +1,20 @@
+\begin{table}[htbp]\centering\small
+\caption{Delivery and process cost in the prospective study. Exact and Kernel have 60-second internal allowances; Ranked retains released defaults with a 180-second process ceiling. Process time includes imports and reporting. Memory is the largest observed worker peak, with its observation count in parentheses; killed workers have no peak measurement.}\label{tab:scalingtime}
+\begin{tabular}{llrrrr}\toprule
+Sample & Method & Audited & Median s & 95th pct. s & Observed MiB\\\midrule
+Scaling & Exact & 18/18 & 66.312 & 67.411 & 746.137 (18)\\
+Scaling & Ranked & 2/18 & 180.019 & 180.026 & 497.750 (2)\\
+Scaling & Kernel & 18/18 & 66.647 & 67.823 & 762.730 (18)\\
+External risk & Exact & 4/4 & 35.760 & 65.471 & 321.340 (4)\\
+External risk & Ranked & 2/4 & 99.137 & 180.021 & 271.801 (2)\\
+External risk & Kernel & 4/4 & 35.840 & 66.089 & 348.336 (4)\\
+\bottomrule\end{tabular}\end{table}
+\begin{table}[htbp]\centering\small
+\caption{Paired audited TE differences, left method minus Exact60, in annual bp. Negative differences favour the left method. Open Exact gaps mean these are incumbent comparisons. The equality band is $10^{-4}$ bp.}\label{tab:scalingquality}
+\begin{tabular}{llrrrrrr}\toprule
+Sample & Left & Paired & Lower & Ties & Higher & Min bp & Max bp\\\midrule
+Scaling & Ranked & 2/18 & 1 & 1 & 0 & -2.402 & 0.000\\
+Scaling & Kernel & 18/18 & 11 & 4 & 3 & -55.719 & 23.386\\
+External risk & Ranked & 2/4 & 0 & 2 & 0 & 0.000 & 0.000\\
+External risk & Kernel & 4/4 & 0 & 2 & 2 & 0.000 & 0.361\\
+\bottomrule\end{tabular}\end{table}

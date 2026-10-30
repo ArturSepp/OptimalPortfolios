@@ -1,4 +1,6 @@
-# Ranked Execution: Cash-Funded Search for Sparse Portfolio Rebalancing
+# Execution-Constrained Portfolio Rebalancing
+
+*Policy Domains, Search and Numerical Reliability*
 
 *Author: [Artur Sepp](https://github.com/ArturSepp)*
 
@@ -7,314 +9,226 @@ Citation: [CITATION.cff](../../CITATION.cff).
 
 ## Article and scope
 
-The [article](paper/main.pdf) and [TeX source](paper/main.tex) describe Ranked
-Execution, implemented in `optimalportfolios.execution.v2`. The full joint MIQP
-formulation (historical replication identifier `Exact`) and search ablations use the same objective, prepared constraints,
-ticket rules and return audit. This is a draft intended for *Computers &
-Operations Research*, not an accepted publication.
+The [article](paper/main.pdf) and [TeX source](paper/main.tex) present one
+conditional execution formulation, corridor-policy costs and numerical reliability,
+with matched comparisons of Exact, Ranked and a Kernel Search adaptation.
+The method names are **Exact Execution** (matched MIQP) and **Ranked Execution**
+(historically V2). Historical protocols and results retain their original labels.
+The primary policy attempts Exact first and invokes Ranked when it cannot deliver an
+acceptable native result. Both use the same prepared domain and original-unit
+audit. This is a working draft intended for *Computers & Operations Research*;
+no submission, acceptance or permanent dataset deposit is claimed.
 
-The empirical benchmark uses 219 monthly execution decisions derived from the
-existing retrospective 302-ETF study. Every decision starts from the drifted
-previous supplied model portfolio. All arms receive the same current holdings,
-raw model target and covariance. The benchmark does not simulate strategies
-recursively following their own holdings and supports no realised-performance
-claim.
+The public study uses released **OP 9.2.0**, not the earlier research builds that
+shared 9.1.5 metadata. It contains:
 
-The manuscript, portable runner, audit tests and frozen reference summaries are
-the approved public source scope. The accompanying numerical input archive is
-prepared locally; its persistent public deposit and DOI remain pending.
-Private research, identifier mappings, extraction code, raw vendor histories and
-production observations are excluded. No missing input is silently replaced with
-live or synthetic data.
+- 219 monthly supplied-input decisions from the retrospective 302-ETF universe.
+- The unchanged 24-case synthetic grid and two tiny enumeration controls.
+- A fresh 64-case synthetic holdout and four further tiny controls.
+- Nine separately labelled injected-primary-failure controls after preparation.
 
-## Numerical inputs
+The [completed difficulty supplement](paper/supplement.pdf) adds 23 prospective
+cases and 82 declared method attempts, with [frozen design/run identity](replication/study_run_protocol.json)
+and [complete reference results](replication/study_expected_summary.json).
+The main article integrates both cohorts, retaining failed deliveries, unresolved
+gaps and results against each method. The supplement gives the full algorithms,
+proofs and replication mechanics. No API migration is implied by display names.
 
-The accompanying archive contains `inputs/manifest.json` and 219 compressed NumPy
-files. Stable `AssetNNN` identifiers and `Cash` replace original labels. Supplied
-arrays retain:
+The retained cohort's main arms are independent Exact, standalone Ranked and the
+actual Exact-first policy with audited Ranked fallback. Secondary arms use explicit Ranked
+starts; the existing synthetic grid also retains separate 60/600-second calls.
+No comparator receives another method's result unless its name declares that
+start, and all generation costs are included.
 
-- Current holdings, the initial funded base and raw target weights.
-- Annual covariance, eligible coordinates and frozen coordinates.
-- Corridor and full bounds, group loadings and group limits.
-- Mandatory categories, holding floors, minimum-ticket exemptions and ticket caps.
+The public evidence measures conditional execution quality, timing and failure
+handling. It does not establish realised returns, own-holdings rolling performance,
+independent external validation or universal solver dominance. Private fund
+observations, identifier mappings and raw vendor histories are excluded.
 
-These numerical decision inputs, rather than model weights alone, reproduce
-common preparation and execution. The manifest records dates, source vintage,
-accounting conventions and file checksums. Opaque identifiers are
-pseudonymisation: the numerical histories may still permit recognition of
-publicly traded instruments. No claim of irreversible anonymity is made.
+## Formulation and acceptance
+
+The objective is full-covariance tracking variance to the supplied raw target.
+Actual noncash movements consume tickets. Mandatory actions retain explicit
+categories, intervals and any minimum-size exemption. Holding floors, cash and
+group constraints remain hard rules. Common feasibility preparation is shared
+and charged to each arm. A compiled constraint must correspond to an explicit
+source declaration; an omitted membership vector is not a zero exposure.
+
+The audit tolerance remains `1e-7` NAV and the numerical-zero threshold `1e-8`.
+The descriptive equality band is `0.0001` annual tracking-error bp; it is not a
+feasibility tolerance. The MIQP primary uses ten seconds, one thread and a
+`1e-4` relative variance-gap target. The canonical objective offset is restored
+before solving, so relative stopping uses the original variance origin.
+
+The policy requires audited weights, an audited native/refined witness, no
+native/callback failure and no detected bound contradiction. An acceptable
+time-limited incumbent can be delivered. V2 is invoked lazily on rejection,
+then audited against the same domain. It is not a best-of-two selection.
+A native optimal label is not an independently verified global certificate.
+Common preparation itself uses MOSEK; the fallback does not provide an entirely
+MOSEK-independent pipeline. Injected faults occur after successful preparation.
+
+## Frozen public inputs and holdout
+
+The ETF archive supplies current, base and target weights, annual covariance,
+corridor/full bounds, group rows, eligibility, mandatory categories, exemptions
+and ticket rules. Stable `AssetNNN` identifiers and `Cash` replace instrument
+labels. These are de-identified numerical inputs, not an assurance that public
+instrument histories cannot be recognised. Model weights alone do not reproduce
+the execution decisions. Readers need no private application or upstream refit.
+
+Each ETF decision starts from the drifted previous supplied model allocation.
+The three methods do not arrive with recursively different holdings.
+The new holdout uses two fresh seeds, 72/144 optional instruments, 2/6 tickets,
+disjoint/overlapping groups, tight/wide bands and diffuse/exit-rich targets.
+Exit-rich variants set half the optional targets to zero and redistribute the
+same target mass. Only target corridors change within each pair; hard limits,
+current holdings, covariance, mandatory declarations and thresholds do not.
+The four tiny controls retain positive targets for independent enumeration.
+Factorial variants share random draws and are not independent market samples.
+
+[matched_protocol.json](replication/matched_protocol.json) declares the design.
+[matched_run_protocol.json](replication/matched_run_protocol.json) records the
+pre-solve freeze, inputs, dependency versions and numerical source identities.
+[matched_expected_summary.json](replication/matched_expected_summary.json)
+contains the complete current summary, including failed-case denominators,
+paired differences, timing tails and native-bound checks.
 
 ## Reproduction
 
-Use the exact accompanying OP wheel in `software/current/`, or the matching source identified by
-[protocol.json](replication/protocol.json). The protocol records dependency
-versions and SHA-256 hashes of execution source files. The tested OP development
-cohort is not assumed to be available from PyPI. A compatible licensed MOSEK
-installation is needed for common mixed-integer preparation and both Exact arms.
-The package version label alone does not identify this unreleased research build;
-verify the accompanying artifact hash and source hashes.
-CLARABEL supplies continuous sizing. QIS owns tracking-error reporting.
+Create a separate environment outside synced storage. On this Windows host use
+`C:\Python\OPPublic920312`; do not create a virtual environment under OneDrive.
+Install `optimalportfolios[exact]==9.2.0` and the numerical versions recorded in
+the run protocol. The wheel's SHA-256 must be
+`b26229b4a3e6772f741da3b03fbc6d5885e1f504175616b13da7063bf9a073d5`.
+The runner checks both the wheel and every installed OP Python file against it.
+A licensed MOSEK installation is required for the numerical comparisons.
 
-Create the environment outside synced storage. On Windows, use the repository's
-prescribed external environment under `C:\Python`; never create a virtual
-environment under OneDrive. Install the accompanying wheel and the versions
-recorded in the protocol into a separate environment if preserving an existing
-research environment. From the repository root, set native numerical libraries
-to one thread and run:
+From the repository root, with the separate numerical archive available:
 
 ```powershell
-$env:OPENBLAS_NUM_THREADS = "1"
-$env:OMP_NUM_THREADS = "1"
-$env:MKL_NUM_THREADS = "1"
-& C:\Python\RankedReplication312\Scripts\python.exe -m papers.ranked_execution_2026.replication.run_benchmark --bundle C:\Research\ranked-replication\inputs --output C:\Research\ranked-run
-& C:\Python\RankedReplication312\Scripts\python.exe -m papers.ranked_execution_2026.replication.summarize --run C:\Research\ranked-run --output C:\Research\ranked-summary
+$env:OPENBLAS_NUM_THREADS = '1'
+$env:OMP_NUM_THREADS = '1'
+$env:MKL_NUM_THREADS = '1'
+& C:\Python\OPPublic920312\Scripts\python.exe -m papers.ranked_execution_2026.replication.matched freeze --bundle C:\Research\execution\inputs\etf --wheel C:\Research\execution\software\optimalportfolios-9.2.0-py3-none-any.whl --output C:\Research\execution-run
+& C:\Python\OPPublic920312\Scripts\python.exe -m papers.ranked_execution_2026.replication.matched solve --output C:\Research\execution-run
+& C:\Python\OPPublic920312\Scripts\python.exe -m papers.ranked_execution_2026.replication.matched faults --output C:\Research\execution-run
+& C:\Python\OPPublic920312\Scripts\python.exe -m papers.ranked_execution_2026.replication.summarize_matched --run C:\Research\execution-run --output C:\Research\execution-summary
 ```
 
-The paths are examples. `--output` must be fresh and outside OneDrive.
-For a quick smoke check, add `--limit 3` to the runner and use another output
-directory. The summariser refuses to use a smoke run for manuscript tables.
-The offline contract tests need neither benchmark data nor a MOSEK licence:
+`freeze` requires a fresh output directory. All raw inputs and source hashes are
+written before the first preparation or solve. `solve` can resume completed
+cases only against the same frozen sources and input bytes. It retains failed
+preparation and failed arms. The summariser refuses incomplete experiments.
+Run serially without other computational jobs when comparing timings. Requested
+native allowances are not hard wall-clock deadlines.
+
+The replication contract tests use public synthetic fixtures:
 
 ```powershell
-& C:\Python\RankedReplication312\Scripts\python.exe -m pytest papers/ranked_execution_2026/replication/tests
+& C:\Python\OPPublic920312\Scripts\python.exe -m pytest papers/ranked_execution_2026/replication/tests
 ```
 
-Run the complete sample serially without simultaneous computational workloads
-when comparing timings. The five arms are full Ranked, Greedy, OneAnchor,
-ExactBase and ExactRanked. Common preparation has a 30-second allowance;
-each Exact call has a separate 10-second allowance and one native thread.
-ExactRanked end-to-end cost includes Ranked incumbent generation. Defaults,
-units, tolerances and timing boundaries are specified in the manuscript and
-recorded before solving. Native wall times can exceed their requested allowance.
+## Prospective difficulty study
 
-The output retains every attempted decision, failed preparation, full delivered
-weights, independent audits, native status, incumbent attribution and elapsed
-time. `complete.json` distinguishes a full run from a smoke sample.
-Compare the regenerated `summary.json` with
-[expected_summary.json](replication/expected_summary.json).
-Solver timings and boundary choices can vary by machine and numerical build;
-every returned portfolio must still satisfy the declared original-unit audit.
-The descriptive TE equality band is 0.0001 annual basis points and is not a
-portfolio feasibility tolerance or a global optimality certificate.
-An additional published-9.1.5 control using the same dependency cohort produces
-exactly identical Ranked weights and TE on all 219 non-scarce decisions. The
-older archived ETF study used a different preparation implementation; changes
-against that historical cohort must not be attributed to the new search alone.
-The deposit includes the control records; its concurrent-run timings are excluded.
+[study_protocol.json](replication/study_protocol.json) specifies a separate
+23-case, 82-arm comparison: 18 sparse-book scaling cells, four OR-Library risk
+adaptations and one analytic corridor counterexample. The eligible noncash
+universes contain 300, 1,000 or 3,000 names; current holdings remain sparse.
+The manifest reports effective executable candidates separately. Two bundled
+synthetic profiles have one seed each, so their differences do not identify
+individual causal effects or establish population-level superiority.
 
-## Full joint MIQP comparison
+Main arms are independent Exact with a 60-second internal allowance, released
+Ranked with a 180-second process ceiling, and a documented 60-second
+[Kernel Search adaptation](replication/study_kernel.py). The three tight,
+30-ticket cells additionally compare Exact10/600, the identical dense covariance
+representation at ten seconds, and the full hard domain at 60 seconds. Full
+versus Corridor is a policy-domain comparison; unfinished incumbents do not
+establish its optimal restriction cost. No new primary/fallback policy arm is
+inferred from these standalone calls.
 
-The main article compares V2, a common-base joint MIQP, and a separate V2-started
-joint MIQP. “Full joint” means simultaneous state selection and sizing in the
-same prepared CORRIDOR domain; it does not widen the feasible domain. The
-operational `execution/MIQP` policy permits different alpha, terminal-position
-and repair-on-touch rules and is deliberately excluded from this matched test.
+Download `indtrack1.txt` and `indtrack6.txt` from the
+[OR-Library owner](https://people.brunel.ac.uk/~mastjjb/jeb/orlib/indtrackinfo.html)
+into the local references directory. The loader checks the frozen checksums.
+It uses point-in-time QIS log-return EWMA risk, span 52, with explicitly assumed
+weekly labels and 52-period annualisation. The source has no calendar labels.
+All current weights, targets, cash and execution constraints are synthetic.
+Raw owner files and derivative covariance arrays are excluded from the public
+archive pending established reuse terms; the loader regenerates them locally.
 
-[joint_protocol.json](replication/joint_protocol.json) freezes 24 synthetic
-cases: 24/72/144 nominal optional assets, 2/6 tickets, disjoint/overlapping groups,
-tight/wide funding and exposure bands, and seed 111001. Two eight-asset controls
-use seed 112001. The unchanged generator, qualified V2 source and all inputs were
-frozen before solving. These cases then informed the MIQP numerical correction;
-the current paired rerun is a regression study for that reference. V2 remains
-unchanged. Each case receives
-six independently started joint calls: common-base and V2 starts at 10, 60 and
-600 seconds. Native calls use one thread; budget and start orders alternate.
-No incumbent passes between budgets. Preparation is charged to every arm, and
-V2 generation to each V2-started arm. These are upper allowances, not forced
-run durations or equal total budgets.
+After configuring the separate research environment and single-thread settings:
 
 ```powershell
-& C:\Python\RankedReplication312\Scripts\python.exe -m papers.ranked_execution_2026.replication.joint --output C:\Research\ranked-joint
-& C:\Python\RankedReplication312\Scripts\python.exe -m papers.ranked_execution_2026.replication.summarize_joint --run C:\Research\ranked-joint --output C:\Research\ranked-joint-summary
+& C:\Python\OPPublic920312\Scripts\python.exe -m papers.ranked_execution_2026.replication.study_protocol --references C:\Research\execution\references --wheel C:\Research\execution\software\optimalportfolios-9.2.0-py3-none-any.whl --output C:\Research\difficulty-run
+& C:\Python\OPPublic920312\Scripts\python.exe -m papers.ranked_execution_2026.replication.study_run run --root C:\Research\difficulty-run
+& C:\Python\OPPublic920312\Scripts\python.exe -m papers.ranked_execution_2026.replication.summarize_study --root C:\Research\difficulty-run
 ```
 
-[joint_run_protocol.json](replication/joint_run_protocol.json) identifies the
-exact input and source hashes; [joint_expected_summary.json](replication/joint_expected_summary.json)
-retains all denominators, timings, sources and bound checks. All 182 delivered
-portfolios pass the unchanged audit. V2 ties all 24 independent broad deliveries
-at every allowance within the 0.0001 bp descriptive band. The previous 3.645443 bp
-advantage disappears after correcting the reference's native integer feasibility
-setting and balancing its quadratic cone. The quadratic, linear constraints and
-audit are unchanged. Independent MIQP is faster: median E2E at the 600-second
-allowance is 0.165 seconds versus V2's 1.559 seconds. There are no native bounds
-above an audited cross-arm objective by more than the existing 1e-12 variance
-comparison scale. Raw diagnostics remain visible and are not independent
-optimality certificates.
-V2-started calls retain V2 on 12 broad cases and match its quality on all 24.
-Increasing the allowance changes no delivered TE above the descriptive band.
-The two tiny enumerations cover 74 supports with none unresolved; all arm
-differences are below the band. Conservative relaxation bounds do not close
-the larger cases. Effective optional dimensions are 20–41, not 144.
+Freeze requires a new output directory and writes every input and source hash
+before solving. Run serially without concurrent computational jobs. Timeouts
+remain failed deliveries; the summary refuses an incomplete sample, reaudits
+all returned weights and checks native bounds against every available witness
+in the same domain. A smaller native gap may concern a rejected native vector;
+the delivered-portfolio gap is recorded separately.
 
-The refreshed ETF results use the same numerical correction. Both MIQP arms and
-all three heuristic arms return audited portfolios on all 219 cases, with no
-native-bound contradictions. V2 ties V2-started MIQP on all 219 decisions; against
-common-base MIQP it ties 207 and improves 12 above the descriptive band. V2 weights
-and TE remain exactly identical to the prior candidate on all 219 ETF and 26
-synthetic cases. Fixed-state QPs and continuous relaxation graphs are unchanged.
-The ETF and new joint tables report current serial timings; older development
-timings below describe the archived implementation and are not pooled with them.
-The accompanying qualified wheel has SHA-256
-`7b3b1c9b0ebafd79019b610da280eee33ef9e67d727b3e944d7595a400117515`.
-The shared 9.1.5 metadata does not identify the published PyPI artifact.
-In the updated deposit, `reference/current/etf` and `reference/current/joint`
-contain the refreshed records. `reference/before_miqp_bound_fix/` preserves the
-previous manuscript, software and complete research records with their own
-hashes. Its earlier timings must not be interpreted as current measurements.
+The hashes identify the evaluated inputs and implementation. They do not promise
+identical time-limited search paths on different hardware or repeat runs: a
+wall-clock cutoff can stop at a different incumbent. Reproduction must retain
+the declared limits, all unsuccessful attempts and the original-input audits.
+Historical protocol labels stay unchanged even when current tables use Exact
+Execution and Ranked Execution.
 
-## Controlled sensitivity and scarce tickets
-
-The additional study uses the same public input bundle and a standalone seeded
-generator. It contains 24 fixed public dates, 288 target/covariance perturbations
-and 64 synthetic scarce-ticket development problems, followed by a 32-case
-earlier holdout now replayed as regression data. No private mandate, holding, identifier mapping or production
-replay is used. The 219-case study is rerun with the same corrected source.
-
-[robustness_protocol.json](replication/robustness_protocol.json) fixes the grid,
-seeds, perturbation definitions and unchanged tolerances. The original scarcity
-results and the first holdout informed the search corrections, so all 64
-previously examined cases are now development data.
-[robustness_run_protocol.json](replication/robustness_run_protocol.json) records
-the QIS 5.44.4 runtime and exact execution-source hashes. The corrected OP source
-is unreleased: its 9.1.5 package metadata does **not** mean the PyPI 9.1.5 wheel
-contains this fix. Use the accompanying source or local build identified by the
-hashes in a separate external environment. The target perturbation
-preserves zero targets and cash; rebuilding changes optional corridors only,
-not lifecycle declarations or upstream estimates. These are conditional
-experiments, not simulated investment performance.
+[The supplement source](paper/supplement.tex) specifies the interval formulation,
+Ranked search order, comparator and accounting. Separate historical numerical
+controls illustrate objective-origin preservation, equivalent conic scaling
+and removal of satisfied constant rows. They are not additional holdout cases:
 
 ```powershell
-& C:\Python\RankedReplication312\Scripts\python.exe -m papers.ranked_execution_2026.replication.robustness --bundle C:\Research\ranked-replication\inputs --output C:\Research\ranked-robustness
-& C:\Python\RankedReplication312\Scripts\python.exe -m papers.ranked_execution_2026.replication.robustness --bundle C:\Research\ranked-replication\inputs --output C:\Research\ranked-holdout --study scarcity --protocol papers/ranked_execution_2026/replication/holdout_protocol.json
-& C:\Python\RankedReplication312\Scripts\python.exe -m papers.ranked_execution_2026.replication.summarize_robustness --run C:\Research\ranked-robustness --holdout C:\Research\ranked-holdout --output C:\Research\ranked-robustness-summary --compact
+& C:\Python\OPPublic920312\Scripts\python.exe -m papers.ranked_execution_2026.replication.study_numerics --output C:\Research\numerical-mechanisms
+& C:\Python\OPPublic920312\Scripts\python.exe -m papers.ranked_execution_2026.replication.summarize_study --root C:\Research\difficulty-run --numerics C:\Research\numerical-mechanisms
 ```
 
-The summariser writes paired CSVs, `summary.json`, the manuscript extension
-`robustness.tex` and `sensitivity.pdf`. `--compact` keeps only sensitivity in the
-main article; omit it to regenerate the historical development appendix.
-It rejects partial/smoke studies. Compare
-with [robustness_expected_summary.json](replication/robustness_expected_summary.json).
-The archived pre-fix outcomes remain in the numerical deposit; supply both old
-run directories with repeated `--previous` arguments to regenerate the before/after
-paragraph. Matching uses generator inputs, not ordinal case filenames. The earlier
-correction addressed one remaining development miss and four first-holdout misses.
-Fresh comparisons keep
-independent ExactBase calls and Ranked-started Exact separate. The post-hoc
-fixed-support check cannot change a benchmark output.
+The completed scaling comparison returns audited portfolios in 18/18 calls for
+Exact60 and Kernel60, and 2/18 for Ranked under its 180-second process ceiling.
+Kernel has lower TE than Exact60 in 11 cases, ties in four and higher TE in three.
+On the four external-risk cases, Exact and Kernel both deliver; Exact improves
+the two larger cases and ties the two smaller ones. Ranked delivers only in the
+two smaller cases. These are incumbent comparisons under the declared controls,
+not a claim about globally optimal solutions or the best possible implementation
+of each algorithm family. The supplement retains all missing deliveries and
+unresolved longer-budget results.
 
-[holdout_protocol.json](replication/holdout_protocol.json) records seeds 61001
-and 61002 from the earlier holdout. Subsequent algorithm development makes this
-rerun a regression replay, not a new holdout.
-[holdout_run_protocol.json](replication/holdout_run_protocol.json) and
-[holdout_expected_summary.json](replication/holdout_expected_summary.json) retain
-source hashes, every failure denominator, timings and delivered-source attribution.
-The earlier correction recovered the remaining 0.114 bp miss and four first-holdout
-misses. Those reference records remain in the deposit. Updated summaries report
-the current algorithm on all 96 earlier cases and distinguish independent Exact
-from Ranked-started Exact. Retained-start equality does not certify global optimality.
-Complete replacement sweeps and diversified perspective guidance add work beyond the original
-shortlist; the manuscript reports that cost. All runs are serial; uncontrolled
-workstation activity remains a timing limitation.
+The [separate numerical controls](replication/numerical_mechanisms_summary.json)
+show small native-bound contradictions in the deliberately unbalanced cone
+representation, but none above the comparison scale in the balanced one.
+The historical constant-row sizing failure does not reproduce in this runtime:
+both equivalent graphs solve the within-tolerance examples and preserve the
+genuine infeasibility of all outside-tolerance examples.
 
-## Broader ablation and stronger reference controls
+## Retained research and publication boundary
 
-[breadth_protocol.json](replication/breadth_protocol.json) defines 96 broader
-cases with 24/72 nominal optional instruments, 2/4 tickets, disjoint/overlapping
-fractional groups, tight/wider funding-exposure bands and seeds 71001/71002,
-81001/81002 and 91001/91002. All three earlier grids are now development data.
-Current holdings are heterogeneous; two forced exits exceed the unchanged
-minimum ticket without exemptions. Twelve additional eight-optional cases use
-seeds 72001/72002, 82001/82002 and 92001/92002 for independent full-weight QP enumeration.
+Earlier ETF, sensitivity, scarce-ticket, breadth and search-ablation runners and
+summaries remain as historical replication records. Their `protocol.json`,
+`expected_summary.json` and associated version/hash records identify those older
+cohorts; they are not relabelled as OP 9.2.0. The preceding 26-page manuscript and
+its dependencies are preserved locally in the dated draft archive and in the
+public replication history. The original internal research workspace is separate.
 
-Full Ranked and OneAnchor are fixed before solving. Independent Exact calls
-receive 10 or 60 seconds; separate 60-second calls receive only the full-search
-or OneAnchor incumbent. Each start's own generation time is charged. Arm order
-alternates deterministically. Conservative supporting-plane LP dual bounds are
-reported separately from native MIP diagnostics and relaxation primal values.
-The runner freezes all generated inputs and hashes before the first solve.
-
-The first run exposed four shared combination misses, up to 7.762 annual bp,
-under tight overlapping rows. All four better supports were absent from the
-heuristics' trial logs but passed unchanged conditional sizing and audit. Those
-cases are now development data. V2 adds bounded include/exclude guidance around
-both incumbent states and the tentative relaxed support, including empty optional
-incumbents. Proposals receive the existing replacement sweeps and original-domain
-sizing. No Exact support is supplied to V2.
-
-The second grid exposed five further misses. The new correction adds a final
-interval-screened pair search with up to 576 coordinated trials across three
-anchors. The screen allows every retained trade to resize and rejects only
-supports whose interval envelope cannot satisfy funding or a group row. Surviving
-supports use unchanged joint sizing and audit. Both earlier grids and their
-previous outcomes are retained for controlled before/after comparisons.
-
-The third grid retained a 0.549 bp miss involving three replaced positions.
-The present correction restarts from up to 24 audited alternatives already in
-the sizing cache. Each branch can traverse an inferior seed while separately
-retaining the incumbent. The first improving branch receives one further bounded
-pair-completion phase, then search stops. All constraints and acceptance rules
-remain unchanged; no Exact support is supplied to V2.
-
-[breadth_holdout_protocol.json](replication/breadth_holdout_protocol.json) predeclares
-new broad seeds 101001/101002 and tiny seeds 102001/102002. Controls otherwise remain
-identical. The implementation is frozen before this holdout and is not retuned
-on its outcomes. This remains a same-generator holdout, not external validation.
-
-```powershell
-& C:\Python\RankedReplication312\Scripts\python.exe -m papers.ranked_execution_2026.replication.breadth --output C:\Research\ranked-breadth
-& C:\Python\RankedReplication312\Scripts\python.exe -m papers.ranked_execution_2026.replication.breadth --output C:\Research\ranked-breadth-holdout --protocol papers/ranked_execution_2026/replication/breadth_holdout_protocol.json
-& C:\Python\RankedReplication312\Scripts\python.exe -m papers.ranked_execution_2026.replication.summarize_combinations --run C:\Research\ranked-breadth --holdout C:\Research\ranked-breadth-holdout --previous C:\Research\ranked-replication\reference\before_triple_search\current\breadth-development --previous C:\Research\ranked-replication\reference\before_triple_search\current\breadth-holdout --output C:\Research\ranked-breadth-summary
-```
-
-Use a fresh output directory. The independent enumeration constructs full-weight
-QP rows directly, without OP's state compiler or sizing builder; an invertible
-basis-point scaling preserves the objective and constraints. It retains rejected
-vectors and unresolved supports, which prevent a completeness claim. The return
-audit and solver tolerances remain unchanged. Native optimal status is not
-presented as a separately validated global bound. The correction changes V2
-search only; objective, constraints, tolerances, configuration defaults, V1,
-MIQP, production lock and installed production package remain unchanged.
-
-[breadth_run_protocol.json](replication/breadth_run_protocol.json) records the frozen
-input and source hashes; [breadth_expected_summary.json](replication/breadth_expected_summary.json)
-retains every arm, timing, bound and controlled before/after comparison.
-[breadth_holdout_run_protocol.json](replication/breadth_holdout_run_protocol.json)
-and [breadth_holdout_expected_summary.json](replication/breadth_holdout_expected_summary.json)
-record the fresh cohort. The comparison rejects changed development inputs,
-changed algorithm/runtime controls across the holdout, duplicated or omitted
-archived cases, or reused seeds. Cases are matched by their generating parameters,
-not ordinal filenames. Cells sharing size and seed share inputs; factorial cells are not
-independent replications. Tiny-case numerical references do not certify larger problems.
-
-Both variants recover the archived 0.549 bp three-position miss, reducing annual
-tracking error from 171.989658 to 171.440647 bp without a reference start.
-Default Ranked has seven lower-TE outcomes, 89 ties and no losses against rerun
-independent Exact on the 96 development cases. OneAnchor still trails full search
-by 5.983 bp in one earlier case and ties it in the other 95.
-
-On the fresh grid, full Ranked has two lower-TE outcomes, 30 ties and no losses
-against independent Exact within the unchanged descriptive band. OneAnchor ties
-full search on all 32 fresh cases. No holdout outcome informed further tuning.
-The development loss prevents simplifying the current default to one pass.
-All 864 arm outputs across the two cohorts and their tiny controls pass the
-original audit. These finite tests do not certify global optimality.
-Full Ranked/OneAnchor/independent Exact median call times on holdout are
-9.499/9.108/0.499 seconds. The wider search improves coverage at added cost;
-these results establish neither universal superiority nor a speed advantage
-over Exact, and do not qualify a production update.
-
-## Building and release status
-
+The current main article uses `historical_results.tex`, `study_results.tex` and
+`study_controls.tex`, generated from immutable summaries by `summarize_study`,
+and the difficulty figure. The supplement also uses `numerical_results.tex`.
+Earlier `results.tex`, `joint_results.tex`, `robustness.tex`, `breadth.tex` and
+figures remain preserved but are not included in the current main article.
 Build `paper/main.tex` twice with pdfLaTeX and the standard Elsevier `elsarticle`
-class. `paper/results.tex` is regenerated from the refreshed ETF study;
-`paper/robustness.tex` uses the extension summariser's compact sensitivity mode.
-`paper/joint_results.tex` and `paper/figures/joint_comparison.pdf` come from
-`summarize_joint`. `paper/breadth.tex` and complete development summaries remain
-in the replication archive but are no longer included in the main article.
-Build outside OneDrive; copy only the reviewed PDF back.
+class in a C-local source copy. Build `paper/supplement.tex` twice in the same
+copy. Its four generated table files and difficulty figure come from
+`summarize_study`, using the completed mechanism directory for the numerical
+table. [build_manifest.json](paper/build_manifest.json) records exact source,
+result and PDF identities. Copy only reviewed durable deliverables back.
 
-The exact Git allowlist exposes only the files listed above. The input and
-reference-output archive is a separate deposit, not an automatic Git addition.
-This workspace does not activate production policies or publish a package.
-Author declarations, the permanent dataset identifier and final submission
-metadata remain to be completed before journal submission.
+The exact Git allowlist exposes approved manuscript, public runners, tests and
+reference summaries. Numerical inputs and complete outputs are supplied as a
+separate archive. Its persistent identifier remains pending. This work changes
+neither production behaviour nor a dependency lock and publishes no package.
+Author declarations and final submission metadata remain to be completed.

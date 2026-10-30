@@ -16,16 +16,16 @@ Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios
 ## Purpose
 
 The [scientific manuscript and portable benchmark](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/ranked_execution_2026)
-focus on Ranked Execution and matched comparisons using supplied, de-identified
-302-ETF decision inputs. The manuscript is a public-facing draft; the input
+examine execution modelling, corridor-policy costs, search and numerical reliability
+using retained ETF decisions and frozen synthetic/external-risk studies. The manuscript is a public-facing draft; the input
 archive's persistent deposit remains pending. Production policy qualification
 and internal research records remain separate.
 
-The namespace `optimalportfolios.execution.v2` consumes a final prepared
+The namespace `optimalportfolios.execution` consumes a final prepared
 portfolio decision. `wrapper_ranked_execution` selects actual executable states
 and jointly sizes them. `wrapper_exact_execution` solves the matching CORRIDOR or
 FULL conic integer formulation. Both retain an independently audited common
-incumbent. The existing [production interface](execution.md) remains unchanged.
+incumbent. The [production interface and migration guide](execution.md) use the same domain.
 
 The caller owns lifecycle policy. `prepare_common_execution` supplies the reusable
 compulsory preparation shared by production adapters and comparative experiments.
@@ -35,32 +35,31 @@ an intrinsic feasibility advantage over Exact.
 
 ## Relationship to operational execution
 
-Use the names **Ranked Execution (V2)** and **Matched Exact (V2)** for this domain.
-The [operational reference](execution.md) owns **Operational Ranked (V1)** and
-**Operational Exact (MIQP)**. Sharing cash-funded covariance algebra does not make
-the policies interchangeable: V2 enforces actual-ticket minima and caps and terminal
-holding floors, while V1's initial selection allowance and lifecycle rules differ.
-Operational Exact also has its own alpha, position-cap and repair-on-touch semantics.
+Use **Ranked Execution** and **Exact Execution** for the matched methods.
+The [operational reference](execution.md) distinguishes the separate legacy
+operational MIQP, which has its own alpha, position-cap and repair-on-touch
+semantics. The old V1 projection and its fallback are retired from the current API.
+Historical V1 comparisons remain reproducible in their original software cohort.
 
 A scientific comparison must fix the same objective, prepared domain, exemptions,
-incumbent and audit. If V1 supplies a proposal to that comparison, record its own-policy
-validity, strict common admission and final delivery separately. A rolling operational
-comparison instead includes policy differences and path-dependent holdings.
+incumbent and audit. Record a supplied proposal's own-policy validity, common-domain
+admission and final delivery separately. Rolling comparisons instead include
+policy differences and each strategy's path-dependent holdings.
 
-The model-support classifier used by operational preparation is separate from V2's
-actual-ticket zero threshold. Likewise, V1's effective group-endpoint normalization
-is not permission to alter a prepared V2 domain. Preserve frozen experiment arrays
-and identify any changed preparation as a new instance. Software qualification alone
-does not establish speed, certified optimality gaps or investment-performance advantage.
+The model-support classifier used by lifecycle preparation is separate from the
+actual-ticket zero threshold. Historical group-endpoint normalization is not
+permission to alter a prepared domain. Preserve frozen experiment arrays and
+identify changed preparation as a new instance. Software qualification alone does
+not establish speed, certified optimality or investment-performance advantage.
 
 ## Inputs and units
 
 ### Production preparation and dispatch
 
-`V2ExecutionPolicyConfig` is an explicit opt-in policy. `resolve_production_problem`
+`RankedExecutionPolicyConfig` is an explicit opt-in policy. `resolve_production_problem`
 converts a lifecycle-resolved trade table, annual covariance and execution constraints
 to the immutable domain below. It reuses OP's instrument-bound compiler and preserves
-the original group rows. `solve_v2_execution_portfolio` then calls common preparation,
+the original group rows. `solve_ranked_execution_portfolio` then calls common preparation,
 the same `wrapper_ranked_execution` used by the manuscript, and independent acceptance.
 It returns the standard production weights, constraint residuals and trade audit table.
 Rosaa supplies workbook rules and histories; QIS supplies drift, backtesting and reporting.
@@ -101,28 +100,26 @@ remains additional to the final mandatory reservation. The audit tolerance stays
 Native boundary rounding can trigger one constrained endpoint re-solve, never clipping of
 delivered free weights. Genuine hard conflicts return a recorded preparation failure.
 
-| Policy fields | Meaning in V2 |
+| Policy fields | Meaning in Ranked Execution |
 |---|---|
 | `small_trade_cutoff`, `small_trade_cutoff_by_asset_class` | Resolved nonzero holding floors, with cash excluded. |
 | `material_trade_threshold` | Actual non-exempt ticket minimum measured from the original current book. |
 | `max_trades`, `add_mandatory_trades_to_max_trades` | Hard total cap, or discretionary allowance plus mandatory reservation. |
 | `ranked_config` | OP-owned bounded state-search and QP controls. |
 | `preparation_time_limit_s`, `preparation_solver` | One shared preparation deadline and integer backend. |
-| `allow_v1_fallback` | Permit a supplied lazy V1 fallback after V2 abstention, subject to the unchanged V2 audit. |
 | `constraint_set` | Consumer selection of workbook execution group bands. |
 | `mandatory_trades`, `instruction_correction_tolerance` | Consumer-resolved instructions and their pre-existing correction convention. |
 | `sell_down_dust_threshold` | Retained lifecycle setting; it cannot weaken the terminal holding floor. |
 | `use_weight_drift`, `output_by_ticker` | Consumer replay and display settings. |
 | `expand_for_feasibility` | Must be enabled for common preparation. |
 | `minimum_trade_score`, `sequential_greedy_selection`, `sign_directed_rescue`, `allow_corridor_relaxation` | Incompatible V1 search controls are rejected. |
-| `tre_weight_by_asset_class` | Must be neutral: V2 minimises full-covariance risk to the raw model. |
+| `tre_weight_by_asset_class` | Must be neutral: Ranked minimises full-covariance risk to the raw model. |
 | `exact_execution` | Must be absent; operational MIQP remains a distinct method. |
 
 The existing ranked execution scope excludes inherited model turnover and tracking-error
 controls. Other hard rules outside the supported long-only funding, instrument and group
-domain raise an error; they are not discarded. A V1 fallback that violates an actual-ticket
-minimum, cap, floor, repair pin or any other V2 audit rule is rejected. The result records
-the engine used. An audited retained common base is a feasible incumbent, not a certificate
+domain raise an error; they are not discarded. Standalone Ranked has no V1 fallback;
+an absent audited delivery remains an explicit failure. The result records the engine used. An audited retained common base is a feasible incumbent, not a certificate
 of optimality or proof that additional discretionary trading was impossible.
 
 ### Prepared arrays
@@ -179,7 +176,7 @@ For example, a group pinned at 0.05 minus 6e-10 can be sized under an original
 infeasible and fails the audit. This numerical execution domain differs from the
 literal mathematical domain; retain both interpretations in experiment records.
 
-`from_resolved_problem` adapts saved v1 inputs with an explicit `prepared`
+`from_resolved_problem` adapts resolved numerical inputs with an explicit `prepared`
 declaration and containing full bounds. It never rebuilds lifecycle decisions.
 Unsupported extra hard constraints cause rejection. The caller must retain all
 original group bands and eligibility restrictions in its qualified declaration.
@@ -392,10 +389,10 @@ as native integer incumbents or first native audited feasibility. Comparisons
 must report refinement, native success and retained starts separately.
 
 An audited supplied start is retained externally even if native lifting or
-receipt fails. Equality between V2 and V2-started Exact can therefore reflect the
+receipt fails. Equality between Ranked and Ranked-started Exact can therefore reflect the
 same fallback, not successful optimisation. Comparative studies should report
-native outcomes separately and include independently audited V1, best-of-V1/V2
-and common-base starts under equal native budgets. Charge the generation costs
+native outcomes separately and declare all independent, pooled and common-base
+starts under equal native budgets. Historical V1 starts retain their original cohort. Charge the generation costs
 of every algorithm used to choose a start; do not label pooled incumbents as a
 single native run or infer global optimality from their delivery.
 
@@ -428,19 +425,20 @@ assembled constraint checks, prefix replay checks and independent fixed-state
 QP references. A bounded heuristic can still miss an improving support; neither
 these checks nor an accepted portfolio establish global optimality or universal
 tracking-error improvement. Native-bound certification remains separate work.
-Importing this namespace does not replace production entry points or defaults.
+The current public namespace uses the descriptive APIs in the migration guide;
+consumers choose an explicit engine or execution policy.
 Frozen paper bundles retain their own source and wheel, so replication does not
 depend on the current checkout or a sibling development worktree.
 
-## Matched MIQP primary and audited V2 fallback
+## Exact primary and audited Ranked fallback
 
-`MatchedExecutionPolicyConfig`, `wrapper_matched_execution` and
-`solve_matched_execution_portfolio` provide an explicit `matched_miqp_v2` policy.
+`MatchedExecutionPolicyConfig`, `wrapper_execution_policy` and
+`solve_execution_portfolio` provide an explicit `exact_primary_ranked_fallback` policy.
 The production adapter resolves workbook inputs and prepares the common domain
-once. Matched CORRIDOR MIQP uses that domain first; V2 is invoked lazily on the
+once. Exact Execution uses that Corridor domain first; Ranked is invoked lazily on the
 same prepared problem when the primary cannot supply an acceptable native
-candidate. This policy never invokes V1. Existing standalone V2 and operational
-MIQP APIs retain their separate behavior.
+candidate. This policy never invokes V1. Standalone Ranked and legacy operational
+MIQP retain their separate interfaces and acceptance behavior.
 
 The controls `primary_time_limit_s`, `primary_threads` and `primary_gap_rel`
 default to 10 seconds, one thread and 1e-4 respectively. The relative gap is
@@ -448,8 +446,9 @@ measured in original tracking variance, including the canonical objective
 constant. A time limit does not by itself reject a valid audited native
 incumbent or certify optimality. Missing native witnesses, solver and callback
 errors, inconsistent bounds and independently invalid weights trigger fallback.
-A V2 fallback that fails the unchanged audit is rejected; genuine compulsory
-repairs and infeasible mandates remain visible. `allow_v1_fallback` must be false.
+A Ranked fallback that fails the unchanged audit is rejected; genuine compulsory
+repairs and infeasible mandates remain visible. The retired `allow_v1_fallback`
+keyword is not accepted by either new policy configuration.
 
 Diagnostics retain the primary status, native gap and bound, independent audits,
 search time, delivered engine and fallback reason. A successful primary delivery

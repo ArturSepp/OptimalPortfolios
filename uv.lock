@@ -1699,7 +1699,7 @@ wheels = [
 
 [[package]]
 name = "optimalportfolios"
-version = "9.2.0"
+version = "10.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "cvxpy" },

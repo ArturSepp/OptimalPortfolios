@@ -1,0 +1,33 @@
+{
+  "schema": "matched-public-920-1",
+  "package_version": "9.2.0",
+  "wheel_sha256": "b26229b4a3e6772f741da3b03fbc6d5885e1f504175616b13da7063bf9a073d5",
+  "etf_manifest_sha256": "f3435f511c7b0051297e1190b9cf1ffeed1bdca82352ea58aa53bb22545f0886",
+  "preparation_seconds": 30.0,
+  "primary_seconds": 10.0,
+  "threads": 1,
+  "gap_rel": 0.0001,
+  "audit_tolerance": 1e-7,
+  "zero_tolerance": 1e-8,
+  "objective_tolerance": 1e-12,
+  "descriptive_te_equality_bp": 0.0001,
+  "methods": ["V2", "MIQP", "Policy", "MIQPStartV2"],
+  "legacy_extra_seconds": [60.0, 600.0],
+  "holdout": {
+    "grid": {
+      "optional_assets": [72, 144],
+      "budget": [2, 6],
+      "groups": ["disjoint", "overlap"],
+      "regime": ["tight", "wide"],
+      "seed": [2026102901, 2026102902]
+    },
+    "target_patterns": ["diffuse", "exit_rich"],
+    "tiny": {"optional_assets": 8, "budget": 2, "groups": ["disjoint", "overlap"], "regime": "tight", "seed": [2026102911, 2026102912]},
+    "exit_rich_rule": "Choose half the optional coordinates using SeedSequence([seed, optional_assets, 920]); set those targets to zero and rescale the remaining optional targets to their original total mass. Recompute only their target corridors. Current holdings, hard bounds, group rows, cash bounds, mandatory declarations, tickets and tolerances remain unchanged. Tiny controls retain positive targets."
+  },
+  "faults": ["native_error", "invalid_weights", "inconsistent_bound"],
+  "fault_case_rule": "First declared case in each of ETF, legacy synthetic and fresh holdout. Inject only after all timed comparisons, restore the primary callable immediately, and run the genuine V2 fallback. Do not pool injected outcomes with natural fallback rates or timing.",
+  "timing": "Serial single-thread numerical libraries. Rotate V2, MIQP and Policy order by case. V2-started calls follow and include V2 generation cost. Legacy 60/600-second budget calls alternate budget order. Every MIQP call is fresh; no cross-arm incumbent is supplied except the explicitly named V2 start. Preparation is charged to each arm. Native and wrapper allowances are not hard wall-clock guarantees.",
+  "freeze": "Verify released wheel and all ETF checksums, serialize every synthetic input and record all numerical source hashes before the first solve. Resume only with matching frozen source and input hashes. No algorithm, grid, objective, constraint or tolerance tuning after observing results.",
+  "scope": "Public supplied-input ETF decisions and generated numerical portfolios only. Same-model conditional decisions, not own-book rolling returns, independent external validation or a global optimality proof. Factorial variants share random draws. Failed preparation and failed arms remain in denominators."
+}

@@ -1,37 +1,77 @@
-\section{Full joint mixed-integer benchmark}\label{sec:joint}
-\label{sec:breadth}
-A frozen public synthetic grid crosses 24/72/144 nominal optional instruments, 2/6 discretionary tickets, disjoint/overlapping groups and tight/wide cash and group bands. Seed 111001 supplies 24 paired instances; seed 112001 supplies two eight-instrument controls. The generator retains two forced exits, a 50 NAV bp minimum ticket and a 25 NAV bp holding floor. The V2 heuristic and rules remain frozen. This paired rerun corrects the MIQP reference's native feasibility setting and quadratic-cone scaling after this grid exposed a false optimal termination. It is a numerical regression comparison, not an untouched validation of the corrected reference. Factorial variants share random draws and are not independent market replications.
+\paragraph{Coverage and scale}\label{sec:joint}\label{sec:breadth}
+All 313 cases prepare successfully, and all 1,356 arm deliveries pass the
+independent original-unit audit. The primary/fallback policy uses matched
+MIQP on all 313 cases and reproduces the independently run MIQP weights
+exactly; no natural fallback occurs. The ETF cases have 0--5 effective
+optional candidates against an allowance of ten. Their ticket cap is
+therefore nonbinding for optional search. The existing broad synthetic
+cases have 20--41 candidates; the fresh broad holdout has 22--104.
 
-Each joint MIQP optimises all admissible states and sizes simultaneously in the same prepared CORRIDOR domain. MIP-B starts from the common prepared incumbent; MIP-V receives only V2's audited proposal. Suffixes denote 10/60/600-second wrapper allowances. Every call starts afresh: incumbents never pass between budgets. Native calls use one thread, seed zero and the same $10^{-4}$ relative-gap setting; native integer feasibility is $10^{-9}$. Budget and start orders alternate deterministically. The mathematical MIQP is solved in an algebraically equivalent, balanced conic representation.
+\paragraph{Quality}
+On the ETF sample, V2 ties independent MIQP on 207 cases and has lower TE
+on 12 beyond the descriptive band. The largest V2 advantage is only
+0.000941 bp; these differences do not establish an economic advantage.
+All 26 existing synthetic cases tie, and increasing the independent
+MIQP allowance from ten to 60 or 600 seconds changes no delivered TE.
 
-All 24 broad cases were attempted; 24 prepared. Effective optional candidates range from 20 to 41. Table~\ref{tab:joint} reports audited outputs over the full expected denominator. Tracking-error means use audited outputs; time summaries include every attempted arm. End-to-end (E2E) adds preparation to every arm and V2 generation to each MIP-V call.
+On the fresh holdout, independent MIQP ties V2 on 64 of 68 cases and has
+lower TE on four, by up to 2.457878 bp. All four are broad cases with six
+optional tickets, overlapping groups and tight funding/exposure bands
+(Table~\ref{tab:misses}). Three have exit-rich targets. Both outputs are
+feasible; these are differences in search quality, not waived constraints.
+The holdout outcomes did not trigger a search correction or parameter change.
+Separate V2-started MIQP calls also recover the lower-TE solutions, but
+charge the cost of generating V2's incumbent.
 
-\begin{table}[htbp]\centering\small\setlength{\tabcolsep}{4pt}
-\caption{Full joint optimisation versus V2. TE is annual bp; E2E time is seconds.}\label{tab:joint}
-\begin{tabular}{lrrrrr}\toprule
-Arm & Audited & Mean TE & Median E2E & 95th pct. & V2 worse\\\midrule
-V2 & 24/24 & 132.960 & 1.559 & 6.849 & --\\
-MIP-B10 & 24/24 & 132.960 & 0.171 & 0.551 & 0\\
-MIP-V10 & 24/24 & 132.960 & 1.892 & 7.202 & 0\\
-MIP-B60 & 24/24 & 132.960 & 0.166 & 0.551 & 0\\
-MIP-V60 & 24/24 & 132.960 & 1.895 & 7.184 & 0\\
-MIP-B600 & 24/24 & 132.960 & 0.165 & 0.555 & 0\\
-MIP-V600 & 24/24 & 132.960 & 1.889 & 7.219 & 0\\
+\begin{table}[htbp]\centering\small
+\caption{Fresh holdout cases where independent MIQP improves on V2. Every case passes the original audit; all have six optional tickets and tight overlapping groups.}\label{tab:misses}
+\begin{tabular}{lrrlr}\toprule
+Case & Nominal & Effective & Target & V2 excess TE bp\\\midrule
+024 & 72 & 48 & Diffuse & 0.288791\\
+025 & 72 & 60 & Exit-rich & 1.926327\\
+027 & 72 & 64 & Exit-rich & 2.457878\\
+059 & 144 & 102 & Exit-rich & 0.505803\\
 \bottomrule\end{tabular}\end{table}
+
+\paragraph{Computation}
+Independent MIQP has lower median E2E time in each cohort. In the fresh
+holdout its median is 0.616 seconds versus 4.591 for V2; the 95th percentiles
+are 1.935 and 25.609 seconds. The corresponding maxima are 2.929 and
+35.024 seconds. The actual policy's holdout median is 0.651 seconds.
+The measured primary calls do not exhaust their ten-second allowances.
+These are serial measurements on one host, not universal speed guarantees.
 
 \begin{figure}[htbp]\centering
 \includegraphics[width=\linewidth]{figures/joint_comparison.pdf}
-\caption{Left: median E2E computation at the 600-second wrapper allowance, including preparation and V2 start generation. Right: each audited outcome above the best delivered TE on that case; this pooled reporting reference is never supplied as a start. Points identify nominal optional-universe size; the dashed line is the unchanged descriptive equality band.}\label{fig:joint}
+\caption{Left: median E2E time including preparation, on a logarithmic scale.
+Right: every fresh broad-case V2-minus-MIQP TE difference against the effective
+optional candidate count. Positive differences favour MIQP. No regression is
+fitted; paired factorial cases are not independent market observations.}\label{fig:joint}
 \end{figure}
 
-V2 exceeds the best audited delivery by more than the $10^{-4}$ bp descriptive band on 0/24 cases; its largest delivered gap is 0.000000 bp. A worse time-limited MIP delivery does not imply a worse mathematical optimum. A tie with MIP-V may simply retain V2's supplied incumbent. All native/retained/refined sources, first native audited feasibility times, failed outputs and allowance overruns are preserved in the numerical summary.
+\paragraph{Numerical controls and stopping diagnostics}
+No native bound contradicts a better audited cross-arm witness at the
+unchanged $10^{-12}$ variance comparison scale. All six independent tiny
+enumerations finish: 206 supports, none unresolved. Their maximum absolute
+delivery difference is $3.55\times10^{-9}$ annual bp. These controls do not
+independently certify the larger instances.
 
-Changing the allowance changes delivered TE above the descriptive band on 0 common-base and 0 V2-started cases. These allowances are upper limits, not enforced run durations. At 600 seconds, V2 has lower TE than the common-base delivery on 0/24 cases and ties on 24/24; its largest advantage is 0.000000 bp. MIP-V600 retains the supplied V2 start on 12 cases.
+Relative-gap settings must be interpreted together with absolute stopping.
+Two near-zero-risk ETF cases have reported native relative gaps above
+$10^{-4}$; the maximum is 0.009671. In that case the native objective is
+$5.784\times10^{-12}$ variance and the absolute native gap is only
+$5.594\times10^{-14}$. The unchanged native absolute-gap allowance is
+$10^{-8}$ in the scaled objective, equivalent to $10^{-12}$ variance.
+Thus a relative-gap target is not an unconditional delivery guarantee,
+even with the correct objective origin. The raw values remain in the
+replication records, and neither the policy nor the paper upgrades them
+into an independent optimality claim.
 
-Across all six MIQP arms, 0 native bounds exceed a better audited cross-arm objective at the unchanged $10^{-12}$ variance comparison scale. Raw bounds and statuses are retained, not clipped to the incumbent. Consistency with delivered witnesses is necessary but does not independently certify the native branch-and-bound result.
-
-Separate conservative relaxation bounds close within the descriptive band on 0/24 cases. Their median/maximum best-delivery gaps are 4.153/20.025 bp; there are 0 upper/lower inconsistencies. Native optimal status and solver-reported MIP gaps remain diagnostics, not independent global certificates.
-
-Independent full-weight QP enumeration covers 74 supports across 2 tiny cases; 2 enumerations are complete and 0 supports remain unresolved. The maximum absolute delivered difference across all tiny arms is 3.55e-09 bp. These are floating-point numerical references, not exact-arithmetic proofs.
-
-The earlier development, holdout and search-ablation records remain in the replication package. This rerun changes only the reference's internal numerical setting, conic scaling and diagnostic checks, preserving the heuristic and production policy. Computational cost is measured rather than assumed: the experiment establishes neither a universal speed advantage nor realised investment performance.
+\paragraph{Fallback controls}
+All nine injected primary failures produce independently audited V2
+fallback. The three exception cases record \texttt{primary\_exception},
+the three invalid-vector cases \texttt{primary\_independent\_audit\_failed},
+and the three inconsistent-bound cases \texttt{native\_bound\_inconsistent}.
+These outcomes are separate from the zero natural fallback count. They
+establish handling of these post-preparation faults, not a guarantee of
+availability or of V2 matching MIQP's objective when fallback is needed.

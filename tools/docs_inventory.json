@@ -1,26 +1,38 @@
 {
   "schema_version": 2,
   "namespace_api": {
-    "optimalportfolios.execution.v2": {
-      "owner": "docs/execution_v2.md",
+    "optimalportfolios.execution": {
+      "owner": "docs/execution.md",
       "symbols": [
         "ExecutionProblem",
         "ExecutionRules",
         "RankedConfig",
         "ExecutionResult",
-        "compile_states",
         "audit_execution",
+        "compile_states",
         "wrapper_ranked_execution",
         "wrapper_exact_execution",
         "compute_perspective_lower_bound",
         "from_resolved_problem",
         "prepare_common_execution",
-        "V2ExecutionPolicyConfig",
+        "RankedExecutionPolicyConfig",
         "resolve_production_problem",
-        "solve_v2_execution_portfolio",
+        "solve_ranked_execution_portfolio",
         "MatchedExecutionPolicyConfig",
-        "wrapper_matched_execution",
-        "solve_matched_execution_portfolio"
+        "wrapper_execution_policy",
+        "solve_execution_portfolio",
+        "ExecutionPolicyConfig",
+        "ExecutionLifecycleConfig",
+        "MandatoryTrades",
+        "merge_mandatory_trades",
+        "build_execution_target",
+        "ExecutionOptimizationResult",
+        "ExecutionSolverInfeasibility",
+        "score_execution_trades",
+        "resolve_effective_max_trades",
+        "ExecutionRankingConfig",
+        "ResolvedExecutionProblem",
+        "compute_group_bound_bridges"
       ],
       "parameters": {
         "ExecutionProblem": [
@@ -66,16 +78,16 @@
           "compute_bound",
           "rescue_trials",
           "mandatory_state_trials",
-          "improvement_passes",
           "objective_tolerance",
-          "qp_solver"
+          "qp_solver",
+          "improvement_passes"
         ],
         "ExecutionResult": [
           "weights",
           "status",
           "diagnostics"
         ],
-        "V2ExecutionPolicyConfig": [
+        "RankedExecutionPolicyConfig": [
           "small_trade_cutoff",
           "small_trade_cutoff_by_asset_class",
           "sell_down_dust_threshold",
@@ -96,8 +108,7 @@
           "constraint_set",
           "ranked_config",
           "preparation_time_limit_s",
-          "preparation_solver",
-          "allow_v1_fallback"
+          "preparation_solver"
         ],
         "MatchedExecutionPolicyConfig": [
           "small_trade_cutoff",
@@ -121,48 +132,60 @@
           "ranked_config",
           "preparation_time_limit_s",
           "preparation_solver",
-          "allow_v1_fallback",
           "primary_time_limit_s",
           "primary_threads",
           "primary_gap_rel"
-        ]
-      }
-    },
-    "optimalportfolios.execution.v1": {
-      "owner": "docs/execution.md",
-      "symbols": [
-        "ExecutionRankingConfig",
-        "ResolvedExecutionProblem",
-        "score_execution_trades",
-        "resolve_effective_max_trades",
-        "compute_group_bound_bridges",
-        "ExecutionOptimizationResult",
-        "ExecutionSolverInfeasibility",
-        "build_selected_execution_constraints",
-        "solve_selected_execution_portfolio",
-        "solve_feasible_execution_portfolio",
-        "solve_ranked_execution",
-        "ExecutionScoreMethod",
-        "ExecutionSearchConfig",
-        "ExecutionSearchResult",
-        "ExecutionCorridorDiagnostic",
-        "score_execution_candidates",
-        "improve_ranked_execution",
-        "diagnose_execution_corridors",
-        "ExecutionGuardConfig",
-        "solve_guarded_execution",
-        "ExecutionBranchConfig",
-        "ExecutionBranchSearchResult",
-        "solve_branched_execution",
-        "ExecutionPolicyConfig",
-        "RankedExecutionPolicyConfig",
-        "RiskBudgetRankedExecutionPolicyConfig",
-        "MandatoryTrades",
-        "merge_mandatory_trades",
-        "build_execution_target",
-        "solve_with_group_retry"
-      ],
-      "parameters": {
+        ],
+        "ExecutionPolicyConfig": [
+          "small_trade_cutoff",
+          "small_trade_cutoff_by_asset_class",
+          "sell_down_dust_threshold",
+          "material_trade_threshold",
+          "max_trades",
+          "expand_for_feasibility",
+          "minimum_trade_score",
+          "sequential_greedy_selection",
+          "sign_directed_rescue",
+          "allow_corridor_relaxation",
+          "tre_weight_by_asset_class",
+          "use_weight_drift",
+          "mandatory_trades",
+          "output_by_ticker",
+          "instruction_correction_tolerance",
+          "exact_execution",
+          "add_mandatory_trades_to_max_trades"
+        ],
+        "ExecutionLifecycleConfig": [
+          "small_trade_cutoff",
+          "small_trade_cutoff_by_asset_class",
+          "sell_down_dust_threshold",
+          "material_trade_threshold",
+          "max_trades",
+          "expand_for_feasibility",
+          "minimum_trade_score",
+          "sequential_greedy_selection",
+          "sign_directed_rescue",
+          "allow_corridor_relaxation",
+          "tre_weight_by_asset_class",
+          "use_weight_drift",
+          "mandatory_trades",
+          "output_by_ticker",
+          "instruction_correction_tolerance",
+          "exact_execution",
+          "add_mandatory_trades_to_max_trades",
+          "constraint_set"
+        ],
+        "MandatoryTrades": [
+          "hard_sell",
+          "hard_buy_min",
+          "hard_max",
+          "hard_target"
+        ],
+        "ExecutionOptimizationResult": [
+          "weights",
+          "trade_table",
+          "outcome"
+        ],
         "ExecutionRankingConfig": [
           "tre_weight_by_asset_class",
           "max_trades",
@@ -185,144 +208,14 @@
           "allow_corridor_relaxation",
           "preserve_model_directions",
           "context"
-        ],
-        "ExecutionOptimizationResult": [
-          "weights",
-          "trade_table",
-          "outcome"
-        ],
-        "ExecutionSearchConfig": [
-          "max_removal_trials",
-          "max_exchange_trials",
-          "te_allowance_bp",
-          "min_exchange_improvement_bp",
-          "exchange_candidate_limit"
-        ],
-        "ExecutionSearchResult": [
-          "result",
-          "attempts",
-          "summary"
-        ],
-        "ExecutionCorridorDiagnostic": [
-          "status",
-          "bridges",
-          "result",
-          "reason"
-        ],
-        "ExecutionGuardConfig": [
-          "methods",
-          "canonical_ties",
-          "te_allowance_bp",
-          "min_te_improvement_bp",
-          "ticket_size_bp",
-          "max_sized_ticket_increase",
-          "max_turnover_increase_bp",
-          "max_removal_trials",
-          "max_search_seconds",
-          "max_projection_calls"
-        ],
-        "ExecutionBranchConfig": [
-          "methods",
-          "canonical_ties",
-          "te_allowance_bp",
-          "min_te_improvement_bp",
-          "ticket_size_bp",
-          "max_sized_ticket_increase",
-          "max_turnover_increase_bp",
-          "max_removal_trials",
-          "max_search_seconds",
-          "max_projection_calls",
-          "allow_support_plateaus",
-          "preserve_guarded_path",
-          "reuse_projection_solves",
-          "reuse_projection_programs",
-          "max_swap_trials",
-          "swap_candidate_limit",
-          "swap_depth",
-          "swap_beam_width",
-          "reserve_swap_budget"
-        ],
-        "ExecutionBranchSearchResult": [
-          "result",
-          "attempts",
-          "summary",
-          "checkpoints"
-        ],
-        "ExecutionPolicyConfig": [
-          "small_trade_cutoff",
-          "small_trade_cutoff_by_asset_class",
-          "sell_down_dust_threshold",
-          "material_trade_threshold",
-          "max_trades",
-          "expand_for_feasibility",
-          "minimum_trade_score",
-          "sequential_greedy_selection",
-          "sign_directed_rescue",
-          "allow_corridor_relaxation",
-          "tre_weight_by_asset_class",
-          "use_weight_drift",
-          "mandatory_trades",
-          "output_by_ticker",
-          "instruction_correction_tolerance",
-          "exact_execution",
-          "add_mandatory_trades_to_max_trades"
-        ],
-        "RankedExecutionPolicyConfig": [
-          "small_trade_cutoff",
-          "small_trade_cutoff_by_asset_class",
-          "sell_down_dust_threshold",
-          "material_trade_threshold",
-          "max_trades",
-          "expand_for_feasibility",
-          "minimum_trade_score",
-          "sequential_greedy_selection",
-          "sign_directed_rescue",
-          "allow_corridor_relaxation",
-          "tre_weight_by_asset_class",
-          "use_weight_drift",
-          "mandatory_trades",
-          "output_by_ticker",
-          "instruction_correction_tolerance",
-          "exact_execution",
-          "add_mandatory_trades_to_max_trades",
-          "constraint_set"
-        ],
-        "RiskBudgetRankedExecutionPolicyConfig": [
-          "small_trade_cutoff",
-          "small_trade_cutoff_by_asset_class",
-          "sell_down_dust_threshold",
-          "material_trade_threshold",
-          "max_trades",
-          "expand_for_feasibility",
-          "minimum_trade_score",
-          "sequential_greedy_selection",
-          "sign_directed_rescue",
-          "allow_corridor_relaxation",
-          "tre_weight_by_asset_class",
-          "use_weight_drift",
-          "mandatory_trades",
-          "output_by_ticker",
-          "instruction_correction_tolerance",
-          "exact_execution",
-          "add_mandatory_trades_to_max_trades",
-          "execution_tre_budget",
-          "target_band_tight_by_asset_class",
-          "target_band_wide_by_asset_class",
-          "constraint_set"
-        ],
-        "MandatoryTrades": [
-          "hard_sell",
-          "hard_buy_min",
-          "hard_max",
-          "hard_target"
         ]
       }
     },
-    "optimalportfolios.execution.MIQP": {
+    "optimalportfolios.execution.legacy_miqp": {
       "owner": "docs/execution.md",
       "symbols": [
         "ExactExecutionConfig",
-        "solve_exact_execution_portfolio"
+        "solve_legacy_miqp_portfolio"
       ],
       "parameters": {
         "ExactExecutionConfig": [
@@ -352,7 +245,7 @@
     "docs/execution_v2.md": {
       "form": "utility",
       "status": "adopted",
-      "review": "EX1a isolated research namespace. Numerical and source qualification are recorded in the private execution-paper agents folder. External viewer review remains pending. Namespace ownership is separate from the production root export surface."
+      "review": "Descriptive execution API migration: shared lifecycle preserved; obsolete numbered solver interfaces retired. Public ownership and documentation-source checks pass. Full source, wheel and rendered-site qualification is recorded in the paper S4/S5 execution log; release and production activation are separate gates."
     },
     "docs/factor_diagnostics_workflow.md": {
       "form": "utility",
@@ -436,7 +329,8 @@
     "docs/execution.md": {
       "form": "utility",
       "status": "adopted",
-      "review": "2026-10-05: resolved execution, opt-in scoring, guarded proposals and independent branch compression with original-incumbent TE/operational caps, shared projection ceilings and retained checkpoints. Source/API ownership, 244 execution tests in source and installed wheel, 379 API/metadata/layout/docstring checks and strict C-local Sphinx build pass. Execution line coverage is 100% (1486 statements). Visual viewer review is pending because browser policy blocks file URLs; external-link checks remain pending. Captured CONF numerical validation is separate from production adoption."
+      "review": "Descriptive execution API migration: shared lifecycle preserved; obsolete numbered solver interfaces retired. Public ownership and documentation-source checks pass. Full source, wheel and rendered-site qualification is recorded in the paper S4/S5 execution log; release and production activation are separate gates.",
+      "title": "Execution integration"
     },
     "docs/constraints.md": {
       "form": "methodology",
@@ -642,29 +536,35 @@
   "planned": {},
   "symbols": {
     "docs/execution.md": [
-      "ExecutionRankingConfig",
-      "ResolvedExecutionProblem",
+      "ExecutionLifecycleConfig",
       "ExecutionOptimizationResult",
+      "ExecutionPolicyConfig",
+      "ExecutionProblem",
+      "ExecutionRankingConfig",
+      "ExecutionResult",
+      "ExecutionRules",
       "ExecutionSolverInfeasibility",
-      "score_execution_trades",
-      "resolve_effective_max_trades",
-      "solve_ranked_execution",
+      "MandatoryTrades",
+      "MatchedExecutionPolicyConfig",
+      "RankedConfig",
+      "RankedExecutionPolicyConfig",
+      "ResolvedExecutionProblem",
+      "audit_execution",
+      "build_execution_target",
+      "compile_states",
       "compute_group_bound_bridges",
-      "build_selected_execution_constraints",
-      "solve_selected_execution_portfolio",
-      "solve_feasible_execution_portfolio",
-      "ExecutionScoreMethod",
-      "ExecutionSearchConfig",
-      "ExecutionSearchResult",
-      "ExecutionCorridorDiagnostic",
-      "score_execution_candidates",
-      "improve_ranked_execution",
-      "diagnose_execution_corridors",
-      "ExecutionGuardConfig",
-      "solve_guarded_execution",
-      "ExecutionBranchConfig",
-      "ExecutionBranchSearchResult",
-      "solve_branched_execution"
+      "compute_perspective_lower_bound",
+      "from_resolved_problem",
+      "merge_mandatory_trades",
+      "prepare_common_execution",
+      "resolve_effective_max_trades",
+      "resolve_production_problem",
+      "score_execution_trades",
+      "solve_execution_portfolio",
+      "solve_ranked_execution_portfolio",
+      "wrapper_exact_execution",
+      "wrapper_execution_policy",
+      "wrapper_ranked_execution"
     ],
     "docs/universe_data_and_unsmoothing.md": [
       "UniverseData",
@@ -889,8 +789,8 @@
         "expand_for_feasibility",
         "sign_directed_rescue",
         "allow_corridor_relaxation",
-        "context",
-        "preserve_model_directions"
+        "preserve_model_directions",
+        "context"
       ]
     },
     "ExecutionOptimizationResult": {
@@ -898,75 +798,6 @@
         "weights",
         "trade_table",
         "outcome"
-      ]
-    },
-    "ExecutionSearchConfig": {
-      "docs/execution.md": [
-        "max_removal_trials",
-        "max_exchange_trials",
-        "te_allowance_bp",
-        "min_exchange_improvement_bp",
-        "exchange_candidate_limit"
-      ]
-    },
-    "ExecutionGuardConfig": {
-      "docs/execution.md": [
-        "methods",
-        "canonical_ties",
-        "te_allowance_bp",
-        "min_te_improvement_bp",
-        "ticket_size_bp",
-        "max_sized_ticket_increase",
-        "max_turnover_increase_bp",
-        "max_removal_trials",
-        "max_search_seconds",
-        "max_projection_calls"
-      ]
-    },
-    "ExecutionBranchConfig": {
-      "docs/execution.md": [
-        "methods",
-        "canonical_ties",
-        "te_allowance_bp",
-        "min_te_improvement_bp",
-        "ticket_size_bp",
-        "max_sized_ticket_increase",
-        "max_turnover_increase_bp",
-        "max_removal_trials",
-        "max_search_seconds",
-        "max_projection_calls",
-        "allow_support_plateaus",
-        "preserve_guarded_path",
-        "reuse_projection_solves",
-        "reuse_projection_programs",
-        "max_swap_trials",
-        "swap_candidate_limit",
-        "swap_depth",
-        "swap_beam_width",
-        "reserve_swap_budget"
-      ]
-    },
-    "ExecutionBranchSearchResult": {
-      "docs/execution.md": [
-        "result",
-        "attempts",
-        "summary",
-        "checkpoints"
-      ]
-    },
-    "ExecutionSearchResult": {
-      "docs/execution.md": [
-        "result",
-        "attempts",
-        "summary"
-      ]
-    },
-    "ExecutionCorridorDiagnostic": {
-      "docs/execution.md": [
-        "status",
-        "bridges",
-        "result",
-        "reason"
       ]
     },
     "LinearConstraints": {
@@ -1041,18 +872,184 @@
         "pe_asset_id",
         "validate_on_init"
       ]
+    },
+    "ExecutionProblem": {
+      "docs/execution.md": [
+        "names",
+        "cash",
+        "current",
+        "base",
+        "target",
+        "lower",
+        "upper",
+        "full_lower",
+        "full_upper",
+        "groups",
+        "group_lower",
+        "group_upper",
+        "mandatory",
+        "categories",
+        "eligible",
+        "frozen",
+        "rules",
+        "covariance",
+        "factor_loadings",
+        "factor_covariance",
+        "residual_variance",
+        "investment",
+        "annualisation",
+        "provenance",
+        "preparation_seconds"
+      ]
+    },
+    "ExecutionRules": {
+      "docs/execution.md": [
+        "minimum_ticket",
+        "holding_floor",
+        "ticket_cap",
+        "mandatory_count_in_cap",
+        "exemption_mask",
+        "discretionary_allowance",
+        "zero_tolerance",
+        "audit_tolerance"
+      ]
+    },
+    "RankedConfig": {
+      "docs/execution.md": [
+        "drop",
+        "exchange",
+        "compute_bound",
+        "rescue_trials",
+        "mandatory_state_trials",
+        "objective_tolerance",
+        "qp_solver",
+        "improvement_passes"
+      ]
+    },
+    "ExecutionResult": {
+      "docs/execution.md": [
+        "weights",
+        "status",
+        "diagnostics"
+      ]
+    },
+    "RankedExecutionPolicyConfig": {
+      "docs/execution.md": [
+        "small_trade_cutoff",
+        "small_trade_cutoff_by_asset_class",
+        "sell_down_dust_threshold",
+        "material_trade_threshold",
+        "max_trades",
+        "expand_for_feasibility",
+        "minimum_trade_score",
+        "sequential_greedy_selection",
+        "sign_directed_rescue",
+        "allow_corridor_relaxation",
+        "tre_weight_by_asset_class",
+        "use_weight_drift",
+        "mandatory_trades",
+        "output_by_ticker",
+        "instruction_correction_tolerance",
+        "exact_execution",
+        "add_mandatory_trades_to_max_trades",
+        "constraint_set",
+        "ranked_config",
+        "preparation_time_limit_s",
+        "preparation_solver"
+      ]
+    },
+    "MatchedExecutionPolicyConfig": {
+      "docs/execution.md": [
+        "small_trade_cutoff",
+        "small_trade_cutoff_by_asset_class",
+        "sell_down_dust_threshold",
+        "material_trade_threshold",
+        "max_trades",
+        "expand_for_feasibility",
+        "minimum_trade_score",
+        "sequential_greedy_selection",
+        "sign_directed_rescue",
+        "allow_corridor_relaxation",
+        "tre_weight_by_asset_class",
+        "use_weight_drift",
+        "mandatory_trades",
+        "output_by_ticker",
+        "instruction_correction_tolerance",
+        "exact_execution",
+        "add_mandatory_trades_to_max_trades",
+        "constraint_set",
+        "ranked_config",
+        "preparation_time_limit_s",
+        "preparation_solver",
+        "primary_time_limit_s",
+        "primary_threads",
+        "primary_gap_rel"
+      ]
+    },
+    "ExecutionPolicyConfig": {
+      "docs/execution.md": [
+        "small_trade_cutoff",
+        "small_trade_cutoff_by_asset_class",
+        "sell_down_dust_threshold",
+        "material_trade_threshold",
+        "max_trades",
+        "expand_for_feasibility",
+        "minimum_trade_score",
+        "sequential_greedy_selection",
+        "sign_directed_rescue",
+        "allow_corridor_relaxation",
+        "tre_weight_by_asset_class",
+        "use_weight_drift",
+        "mandatory_trades",
+        "output_by_ticker",
+        "instruction_correction_tolerance",
+        "exact_execution",
+        "add_mandatory_trades_to_max_trades"
+      ]
+    },
+    "ExecutionLifecycleConfig": {
+      "docs/execution.md": [
+        "small_trade_cutoff",
+        "small_trade_cutoff_by_asset_class",
+        "sell_down_dust_threshold",
+        "material_trade_threshold",
+        "max_trades",
+        "expand_for_feasibility",
+        "minimum_trade_score",
+        "sequential_greedy_selection",
+        "sign_directed_rescue",
+        "allow_corridor_relaxation",
+        "tre_weight_by_asset_class",
+        "use_weight_drift",
+        "mandatory_trades",
+        "output_by_ticker",
+        "instruction_correction_tolerance",
+        "exact_execution",
+        "add_mandatory_trades_to_max_trades",
+        "constraint_set"
+      ]
+    },
+    "MandatoryTrades": {
+      "docs/execution.md": [
+        "hard_sell",
+        "hard_buy_min",
+        "hard_max",
+        "hard_target"
+      ]
     }
   },
   "papers": {
     "ranked_execution": {
-      "title": "Ranked Execution: Cash-Funded Search for Sparse Portfolio Rebalancing",
+      "title": "Execution-Constrained Portfolio Rebalancing: Policy Domains, Search and Numerical Reliability",
       "authors": "Sepp, A.",
       "status": "Public-facing draft intended for Computers & Operations Research; no submission or acceptance claimed",
-      "citation": "Sepp, A. (2026). Ranked Execution: Cash-Funded Search for Sparse Portfolio Rebalancing. Working draft.",
+      "citation": "Sepp, A. (2026). Execution-Constrained Portfolio Rebalancing: Policy Domains, Search and Numerical Reliability. Working draft.",
       "repository": "papers/ranked_execution_2026",
       "public_readme": "papers/ranked_execution_2026/README.md",
       "public_scope": "Exact manuscript, portable replication code and frozen summaries. De-identified numerical inputs prepared for separate deposit; internal research, mappings and vendor histories excluded.",
-      "retired_titles": []
+      "retired_titles": [
+        "Sparse Portfolio Rebalancing under Execution Constraints: Mixed-Integer Optimisation and Audited Search"
+      ]
     },
     "smart_diversification": {
       "title": "The Convexity Premium of Portfolio Overlays",

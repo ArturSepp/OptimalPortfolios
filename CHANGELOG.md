@@ -1,5 +1,16 @@
 # Changelog
 
+
+## [10.0.0] - 2026-10-30
+
+- Breaking execution API naming: `execution.ranked_execution`,
+  `execution.exact_execution`, and `execution.policy` replace the V2 namespace.
+  Exact and Ranked retain the released objective, domain and audit tolerances.
+- Retire the V1 ranked projection and its optional fallback. Ranked abstention
+  remains a failure; Exact primary retains independently audited Ranked fallback.
+- Keep the older operational model separate as `execution.legacy_miqp`.
+  Historical 9.2.0 replication remains pinned to its original package and names.
+
 All notable changes to optimalportfolios are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),

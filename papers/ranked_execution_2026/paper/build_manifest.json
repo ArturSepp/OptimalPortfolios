@@ -1,0 +1,78 @@
+{
+  "schema": "execution-paper-build-1",
+  "built_at_utc": "2026-10-29T21:48:42.500836+00:00",
+  "software": "optimalportfolios 9.2.0 released wheel",
+  "author": "Artur Sepp",
+  "main_scope": "Author-approved evidence-led article: execution modelling, corridor-policy costs, numerical reliability; retained 313 cases and prospective 23 cases / 82 attempts",
+  "supplement_scope": "Formulation, 23-case prospective difficulty study, 82 attempts, isolated numerical mechanisms",
+  "source_files": {
+    "main.tex": "305e72f4f5b3703e31f6057e46beec0eb214058c4aa5a3d9d9f5374be34e784c",
+    "results.tex": "711b1d1540934aa661e884e24f84c7712e7f0b4c7a8e1fccf995511e5a3312db",
+    "joint_results.tex": "0b6bf5fbcb10d5a60451c22f1bb488eaf488e52d93326b78e97f752e46f92cd9",
+    "supplement.tex": "c8d5e2d9dd53aace09f02fe05fd0c485a17f13d184f04b439e1ea2f015930585",
+    "study_results.tex": "10a6f36aa42ac278c5dbc77f8fb2f061cb4845c78483b4e2ba3d8ba521278473",
+    "study_controls.tex": "1a613b69fc32678120a913ec260c4ea51a7eacd284a1924799d7f3c6eef83c4e",
+    "historical_results.tex": "4cc8d916b5c8ded2b8a5b8f63d226fdccaa2089f8c3e5be4a2a0f45d97c32b7c",
+    "numerical_results.tex": "dc605cce73055975c0d7cb5a0c05d93fcfa4d6f082388144989d02d29bc83c30",
+    "figures/joint_comparison.pdf": "c5779204339f30437d7163eb434102a411f7d294c6ef6744a5d14234968e9f50",
+    "figures/difficulty_comparison.pdf": "851cf979622a9a5e0c8c183f9ddfaa8f7833f2abb500251292e29e724edfb11a"
+  },
+  "documents": {
+    "main.pdf": {
+      "sha256": "3a94a43ddbf930dafb9414e7236417c5d5cabee000c3d1a0d86fdc5435fa6ec1",
+      "pages": 19
+    },
+    "supplement.pdf": {
+      "sha256": "9299b677340a8dd6ff75cdd363e899672284599bad083f113776a399bcc51c1e",
+      "pages": 12
+    }
+  },
+  "reference_files": {
+    "matched_run_protocol.json": "a0979571201e98542700e4dda37dd411552d0761db93f6981ec7a6d7e5288b50",
+    "matched_expected_summary.json": "810425d7c6504a78d041227bc59f2effa1749c947d78fcd070c822b4d49ef3a4",
+    "study_run_protocol.json": "5ff957121406436fbb31a25f3c447cafbeedbfc6e05c3f7f60a9c6c894cde621",
+    "study_expected_summary.json": "742c196a20b4a8344c4288aa1ebbcaf948e64234f4106fb3902b7d2030ec9747",
+    "numerical_mechanisms_summary.json": "b60a5eeb938b7fff9ed34c619d4a86ff32f6f913df4d1e1bdb1a933d02331de8"
+  },
+  "replication_archive": {
+    "filename": "execution-difficulty-op920-20261029-reviewed.zip",
+    "sha256": "e14dd034f6f8820daacc0524e1685125cde0f94c1467b56656f7971b212e13f3",
+    "bytes": 6888789,
+    "members": 225,
+    "deposited": false,
+    "excluded": "OR-Library owner prices and derived external covariance arrays; private data; agent records"
+  },
+  "verification": {
+    "replication_and_paper_policy_tests": 122,
+    "isolated_negative_controls": 4,
+    "final_summary_tests": 8,
+    "docs_selected_pages": 2,
+    "paper_policy": "passed worktree",
+    "visual_review": "All 19 main and 12 supplement pages rendered and visually inspected; revised notation pages re-rendered and inspected; no undefined references, LaTeX warnings or overfull boxes; after affiliation/declaration update, all 18 changed main pages and supplement page 1 were re-rendered and inspected; pagination remains 19/12"
+  },
+  "main_dependencies": [
+    "main.tex",
+    "historical_results.tex",
+    "study_results.tex",
+    "study_controls.tex",
+    "figures/difficulty_comparison.pdf"
+  ],
+  "supplement_dependencies": [
+    "supplement.tex",
+    "historical_results.tex",
+    "study_results.tex",
+    "study_controls.tex",
+    "numerical_results.tex",
+    "figures/difficulty_comparison.pdf"
+  ],
+  "preserved_unused_assets": [
+    "results.tex",
+    "joint_results.tex",
+    "figures/joint_comparison.pdf"
+  ],
+  "contribution_framing_approved": "2026-10-29; evidence-led framing, not final submission approval",
+  "author_affiliation": "LGT",
+  "funding": "No funding was received for this research.",
+  "competing_interests": "The author declares no competing interests.",
+  "author_declarations_confirmed": "Direct author replies; 2026-10-29"
+}

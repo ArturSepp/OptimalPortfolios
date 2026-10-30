@@ -1,0 +1,2432 @@
+{
+  "specification": {
+    "schema": "matched-public-920-1",
+    "package_version": "9.2.0",
+    "wheel_sha256": "b26229b4a3e6772f741da3b03fbc6d5885e1f504175616b13da7063bf9a073d5",
+    "etf_manifest_sha256": "f3435f511c7b0051297e1190b9cf1ffeed1bdca82352ea58aa53bb22545f0886",
+    "preparation_seconds": 30.0,
+    "primary_seconds": 10.0,
+    "threads": 1,
+    "gap_rel": 0.0001,
+    "audit_tolerance": 1e-07,
+    "zero_tolerance": 1e-08,
+    "objective_tolerance": 1e-12,
+    "descriptive_te_equality_bp": 0.0001,
+    "methods": [
+      "V2",
+      "MIQP",
+      "Policy",
+      "MIQPStartV2"
+    ],
+    "legacy_extra_seconds": [
+      60.0,
+      600.0
+    ],
+    "holdout": {
+      "grid": {
+        "optional_assets": [
+          72,
+          144
+        ],
+        "budget": [
+          2,
+          6
+        ],
+        "groups": [
+          "disjoint",
+          "overlap"
+        ],
+        "regime": [
+          "tight",
+          "wide"
+        ],
+        "seed": [
+          2026102901,
+          2026102902
+        ]
+      },
+      "target_patterns": [
+        "diffuse",
+        "exit_rich"
+      ],
+      "tiny": {
+        "optional_assets": 8,
+        "budget": 2,
+        "groups": [
+          "disjoint",
+          "overlap"
+        ],
+        "regime": "tight",
+        "seed": [
+          2026102911,
+          2026102912
+        ]
+      },
+      "exit_rich_rule": "Choose half the optional coordinates using SeedSequence([seed, optional_assets, 920]); set those targets to zero and rescale the remaining optional targets to their original total mass. Recompute only their target corridors. Current holdings, hard bounds, group rows, cash bounds, mandatory declarations, tickets and tolerances remain unchanged. Tiny controls retain positive targets."
+    },
+    "faults": [
+      "native_error",
+      "invalid_weights",
+      "inconsistent_bound"
+    ],
+    "fault_case_rule": "First declared case in each of ETF, legacy synthetic and fresh holdout. Inject only after all timed comparisons, restore the primary callable immediately, and run the genuine V2 fallback. Do not pool injected outcomes with natural fallback rates or timing.",
+    "timing": "Serial single-thread numerical libraries. Rotate V2, MIQP and Policy order by case. V2-started calls follow and include V2 generation cost. Legacy 60/600-second budget calls alternate budget order. Every MIQP call is fresh; no cross-arm incumbent is supplied except the explicitly named V2 start. Preparation is charged to each arm. Native and wrapper allowances are not hard wall-clock guarantees.",
+    "freeze": "Verify released wheel and all ETF checksums, serialize every synthetic input and record all numerical source hashes before the first solve. Resume only with matching frozen source and input hashes. No algorithm, grid, objective, constraint or tolerance tuning after observing results.",
+    "scope": "Public supplied-input ETF decisions and generated numerical portfolios only. Same-model conditional decisions, not own-book rolling returns, independent external validation or a global optimality proof. Factorial variants share random draws. Failed preparation and failed arms remain in denominators."
+  },
+  "legacy_design": {
+    "schema": "ranked-joint-miqp-1",
+    "grid": {
+      "optional_assets": [
+        24,
+        72,
+        144
+      ],
+      "budget": [
+        2,
+        6
+      ],
+      "groups": [
+        "disjoint",
+        "overlap"
+      ],
+      "regime": [
+        "tight",
+        "wide"
+      ],
+      "seed": [
+        111001
+      ]
+    },
+    "tiny": {
+      "optional_assets": 8,
+      "budget": 2,
+      "groups": [
+        "disjoint",
+        "overlap"
+      ],
+      "regime": "tight",
+      "seed": [
+        112001
+      ]
+    },
+    "regimes": {
+      "tight": {
+        "group_half_width": 0.001,
+        "cash_half_width": 0.0005
+      },
+      "wide": {
+        "group_half_width": 0.01,
+        "cash_lower": 0.005,
+        "cash_upper": 0.5
+      }
+    },
+    "minimum_ticket": 0.005,
+    "current_minimum": 0.006,
+    "holding_floor": 0.0025,
+    "audit_tolerance": 1e-07,
+    "zero_tolerance": 1e-08,
+    "objective_tolerance": 1e-12,
+    "descriptive_te_equality_bp": 0.0001,
+    "preparation_seconds": 30.0,
+    "exact_seconds": [
+      10.0,
+      60.0,
+      600.0
+    ],
+    "exact_threads": 1,
+    "exact_gap_rel": 0.0001,
+    "domain": "Identical prepared CORRIDOR states; full joint refers to simultaneous state and size optimization, not an expanded FULL domain.",
+    "generator": "Unchanged public breadth generator: heterogeneous positive holdings, two forced exits, correlated factor covariance with positive residuals, sector and optional overlapping fractional groups. The larger dimension retains the same minimum trade and holding thresholds. No private data.",
+    "timing": "Serial calls with one native thread. V2 runs once. Reverse budget order on odd cases and alternate common-base/V2-started order within budgets. Each call is fresh; no incumbent passes between budgets. Preparation is included in every E2E cost; V2 generation is charged to each V2-started call. Native work may overrun an allowance.",
+    "certificates": "Native statuses and MIP bounds are diagnostics. Existing plain/perspective supporting-plane LP dual bounds with residual correction supply separate conservative numerical bounds. Independent exhaustive full-weight QPs on two tiny cases retain unresolved supports. No primal relaxation is reported as a bound.",
+    "decision_rule": "Report every outcome with no search, policy or tolerance tuning. This prospective synthetic grid is not independent external market validation or an own-holdings return study. No speed advantage is assumed."
+  },
+  "holdout_design": {
+    "schema": "ranked-joint-miqp-1",
+    "grid": {
+      "optional_assets": [
+        72,
+        144
+      ],
+      "budget": [
+        2,
+        6
+      ],
+      "groups": [
+        "disjoint",
+        "overlap"
+      ],
+      "regime": [
+        "tight",
+        "wide"
+      ],
+      "seed": [
+        2026102901,
+        2026102902
+      ]
+    },
+    "tiny": {
+      "optional_assets": 8,
+      "budget": 2,
+      "groups": [
+        "disjoint",
+        "overlap"
+      ],
+      "regime": "tight",
+      "seed": [
+        2026102911,
+        2026102912
+      ]
+    },
+    "regimes": {
+      "tight": {
+        "group_half_width": 0.001,
+        "cash_half_width": 0.0005
+      },
+      "wide": {
+        "group_half_width": 0.01,
+        "cash_lower": 0.005,
+        "cash_upper": 0.5
+      }
+    },
+    "minimum_ticket": 0.005,
+    "current_minimum": 0.006,
+    "holding_floor": 0.0025,
+    "audit_tolerance": 1e-07,
+    "zero_tolerance": 1e-08,
+    "objective_tolerance": 1e-12,
+    "descriptive_te_equality_bp": 0.0001,
+    "preparation_seconds": 30.0,
+    "exact_seconds": [
+      10.0,
+      60.0,
+      600.0
+    ],
+    "exact_threads": 1,
+    "exact_gap_rel": 0.0001,
+    "domain": "Identical prepared CORRIDOR states; full joint refers to simultaneous state and size optimization, not an expanded FULL domain.",
+    "generator": "Unchanged public breadth generator: heterogeneous positive holdings, two forced exits, correlated factor covariance with positive residuals, sector and optional overlapping fractional groups. The larger dimension retains the same minimum trade and holding thresholds. No private data.",
+    "timing": "Serial calls with one native thread. V2 runs once. Reverse budget order on odd cases and alternate common-base/V2-started order within budgets. Each call is fresh; no incumbent passes between budgets. Preparation is included in every E2E cost; V2 generation is charged to each V2-started call. Native work may overrun an allowance.",
+    "certificates": "Native statuses and MIP bounds are diagnostics. Existing plain/perspective supporting-plane LP dual bounds with residual correction supply separate conservative numerical bounds. Independent exhaustive full-weight QPs on two tiny cases retain unresolved supports. No primal relaxation is reported as a bound.",
+    "decision_rule": "Report every outcome with no search, policy or tolerance tuning. This prospective synthetic grid is not independent external market validation or an own-holdings return study. No speed advantage is assumed."
+  },
+  "cases": [
+    {
+      "id": "case_0001",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "318b73c37fde896b70220f5a960230cc9aa9e514272fd35104b37361e4153015"
+    },
+    {
+      "id": "case_0002",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "f992ced9c81a5b95ce8158fc559d9d09e5347656f89a461665a8074d60c08b6a"
+    },
+    {
+      "id": "case_0003",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "07ef27cad291d074106f5b606deafe51947f6eb67cf90471437ee387b030b93e"
+    },
+    {
+      "id": "case_0004",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "a38312a5e93a74de3eaf285db8a4969185ce67c3be960ac0d4af4fc2fee2fcba"
+    },
+    {
+      "id": "case_0005",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "64562d4bd5b126c1395855af07b38d2bfb4c63fcde20f19371d99734ba5a0a0d"
+    },
+    {
+      "id": "case_0006",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "99d2c51f0c8d938bf4d0b92c0b73d6e3601f2148c4398b66c2be0cfe7d2a66ee"
+    },
+    {
+      "id": "case_0007",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "af7f2f0a14f92d4f9dfc1aeaab3f8da4a7a8cfa1ad5c2256b99a4439896cd97b"
+    },
+    {
+      "id": "case_0008",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "a50eebc7f290e61c80844ee6059ac53fb8ffe83ed0a714197fb64deced3bda95"
+    },
+    {
+      "id": "case_0009",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "1699d9837795efa8813b66b18c4af24f60144b104404a8e2e593c3cdd295d40d"
+    },
+    {
+      "id": "case_0010",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "c0914fd3c423edb42be48e417c81c5db4829d8e2d31783dd8459375f9e25fb7e"
+    },
+    {
+      "id": "case_0011",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "b2c4bca808774e642e18970e01902ea002c105670636bc6adefa2047fab31ba8"
+    },
+    {
+      "id": "case_0012",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "02be8d3a52fd350b0c311c6f42847750edf776137b9a0aad2a6d6cdfdec24104"
+    },
+    {
+      "id": "case_0013",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "125218c85e60070501a7b95d41eb9ea90ca5ffd009206dee6a19fe7ec8d88396"
+    },
+    {
+      "id": "case_0014",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "de231a4ff0c42d7189d5029bf2bf0730bf56a7207e71c29166a0ad6290192120"
+    },
+    {
+      "id": "case_0015",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "3d34f5ae64d71b73fec2de117275ccb36e0f2e20639ba98ac4e978e6e8252980"
+    },
+    {
+      "id": "case_0016",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "7112cb738272879851806ce75896e4789555660d22f2f1fcc52fbcaf56e8b5a1"
+    },
+    {
+      "id": "case_0017",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "0e1e8dfcb8b0f6a59d494a9dbf46b20e0df1b83240e7ad459f9abfd1c6599f39"
+    },
+    {
+      "id": "case_0018",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "03968962d331677775a1638cc128e941987c280c758c5ecf44da174c7be4dc27"
+    },
+    {
+      "id": "case_0019",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "c26ef40dfd6e60c8ca6bffcf98f030f3984919780b6816848a86340e8d026901"
+    },
+    {
+      "id": "case_0020",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "83af5fd28b343bc9905b225875104ac21e31c8320b91eadf956baf2ab65b7d40"
+    },
+    {
+      "id": "case_0021",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "0eed35ba33d24e3d7808bc0ccef47c1766ba8396154db07f858a184d3b89dd8a"
+    },
+    {
+      "id": "case_0022",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "fef09a009325f9988579ea2303e775de1b9cdb5483d6ca08fabfdf9c5cce9380"
+    },
+    {
+      "id": "case_0023",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "2491769bc2db575a3fa82f07573b97adb6c90bd416b1c6d224887beaf6907c32"
+    },
+    {
+      "id": "case_0024",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ebf10de36daef183a5f4c9346a2140a19782d0086893ace263ef5e781e3e3fd8"
+    },
+    {
+      "id": "case_0025",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "12a892b9d9bd62533cf9ea66153d3b6785bdf1342c411e20b12cb92ed65e59a5"
+    },
+    {
+      "id": "case_0026",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "faef0b39d4962c883ac4b11d9f701f02dc15cf6ad7c7c87e4ae106979a74c733"
+    },
+    {
+      "id": "case_0027",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "a82be1e9381f18b95e0d20b42b2a91c04614c6ce7fb70a6f03a667bb03236731"
+    },
+    {
+      "id": "case_0028",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "e09d252f113904ed3eea9fcdd878b96fbeb54b615f7dd6a6d9783942a61b04c1"
+    },
+    {
+      "id": "case_0029",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "063a33b9fe0c123ba379efd2966d00ac72eb858d218197f218fa6c44a4f07d03"
+    },
+    {
+      "id": "case_0030",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "9de6d1929d1e68a4e3348b64542c83d0f59ebf9ea4fc0f8e4bef9b5682678e07"
+    },
+    {
+      "id": "case_0031",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "0b6dcab29a8ddec5e947779d9a48fff3415247e53ff845907cecf203a9810889"
+    },
+    {
+      "id": "case_0032",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "2dd66f4e77c34eb4aedceb3d3bde308b73fdc68a0a5f1abb2ca45540deee0f07"
+    },
+    {
+      "id": "case_0033",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ba1973bfe5581275b5aeac4ced8a4bb8ffafc5d0d1459af18f12b90a45a27414"
+    },
+    {
+      "id": "case_0034",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "a6d02e3c1e7445d197d5b9ba68f83cb9537903f2c4bf6aa6d4fdb3d2a01854b4"
+    },
+    {
+      "id": "case_0035",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "fa52b013989cc61063aca596299ce7938927f2b3671d06a2e2ebad0c691c8187"
+    },
+    {
+      "id": "case_0036",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "6bf0861f9f0cfa3a1293c8fa9cd8fd9329677158112f2e06fd62fa9b2c92b61e"
+    },
+    {
+      "id": "case_0037",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "d17daddf9abd49f0d4b69daacb157676835b28276cefb61ab1e38d3bb650519f"
+    },
+    {
+      "id": "case_0038",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "463f9cb016d26b4a56169975179b1ab4af959797d192efba003d0ebe028f4590"
+    },
+    {
+      "id": "case_0039",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ea422f69f395f6082c15aa093a22af019850849372c7d928c50df55a08989397"
+    },
+    {
+      "id": "case_0040",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "223b41cc86251939726ada865b8ad2bb2594a455048268aaa5dd465658715633"
+    },
+    {
+      "id": "case_0041",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "8a40a6923db3f2b2d2f1c3177c2ae0f5dbd692b63dc1ab6e2d85f95f61b3a9de"
+    },
+    {
+      "id": "case_0042",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "af3ab20504d76e1e7dfd0e06c49e6353ffa0b93a02a7f1a187327a045889278f"
+    },
+    {
+      "id": "case_0043",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "0d82900246418d754fde2282786def33f8c698e9681bf722fb61acfa128e8ab5"
+    },
+    {
+      "id": "case_0044",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "be1f94c2ae7ddec272bd61cba069861a36ca93dbe968deee8f5c2e8d886eec94"
+    },
+    {
+      "id": "case_0045",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "7b5ee5c64048fb2ce1fa71cadf6114faacb235a7711d215257f2dd9300e9f71d"
+    },
+    {
+      "id": "case_0046",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "516b1355fc21d5194b75460e22e675918ac9e155604840191392dce838b25746"
+    },
+    {
+      "id": "case_0047",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "c2c017a48d9836fc8cf71513407c1039f908f0d41bb8a6e140f2a790f24c1757"
+    },
+    {
+      "id": "case_0048",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "45e7d8ebb4b41b8efd2ba3aae692fa844486b15c3593029e04c539237cf460ab"
+    },
+    {
+      "id": "case_0049",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "2f64d2fe7c2c289cb8c5102afb5c3230fe68619ebf8f9d2cf30804d85df82139"
+    },
+    {
+      "id": "case_0050",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ef94637831b7fdbe93f28f32bbb6816531a1493b0de44f568a4273d0f3ab47dd"
+    },
+    {
+      "id": "case_0051",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "2047ce8d43f8c1383595a3229c5b7fa6ca9d6d7d089807b095a01d0a42b1f2b0"
+    },
+    {
+      "id": "case_0052",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "105a346b75ee80777054a25c330fd744f4fdfb46c1bd32efa997bc0724d8b89d"
+    },
+    {
+      "id": "case_0053",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "dc34d63f6b1c21cda4766a60a468cb37659bd01cbda9c37ac0cd4e5e06e27e1b"
+    },
+    {
+      "id": "case_0054",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "af72a6de02e7da2a083009ee09a853504626992dcdb45e905c2bc4a20c53c956"
+    },
+    {
+      "id": "case_0055",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "3ffb9a22c76a3791183097c3b8a073bd93d419bf0909a52903a7fac2bc1f3ee5"
+    },
+    {
+      "id": "case_0056",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "f8f548db88e021239ebcbf9ba5a7190b624df0ac4fe992f2aa411cb4fcc8212d"
+    },
+    {
+      "id": "case_0057",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "0ad907b43661de278f2272764b568d26e31d22d9b262a8db607f8ee9438cdedd"
+    },
+    {
+      "id": "case_0058",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "3926740cc177cc2801374ffeadd582355c2b696725dae32b6092668dbacef64d"
+    },
+    {
+      "id": "case_0059",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "9066b384a7ca6ca5356a2c65bf53663a7adec203c1999e617ef661b356d96a4b"
+    },
+    {
+      "id": "case_0060",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "347bef478897c41b69b8d27d11f46ad0121687a68a15a290bdbbdffb76a36ec7"
+    },
+    {
+      "id": "case_0061",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "6834ca002af0fa80cf93b728b98a633a9320ba4d462aaeb94bf12760be343513"
+    },
+    {
+      "id": "case_0062",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "8298b8ad0704c41cdae76dc947b53ad1237db31d976271f5e3689d922e064899"
+    },
+    {
+      "id": "case_0063",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "4a51eb2355835167af87b573521ef1788b41121a2ec54e099826a459ab2b5ca1"
+    },
+    {
+      "id": "case_0064",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "59e04d4e8ff3517592f09fc5c17a2edba1b8f8ef33f4ede272a53d3e4d2798a1"
+    },
+    {
+      "id": "case_0065",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "8626c4933713be2e6a1e60251e8cbbb57c142671930373321f17ec0b5bb995d0"
+    },
+    {
+      "id": "case_0066",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "e65aa8ccb6cb70299924b0b8fdefe454e9a2556b4a9e4ec1c54e1f2bbbd993d2"
+    },
+    {
+      "id": "case_0067",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "dc99e2a9773bdbd8836d800e3b32bba6cacd589fac2d4813c9d7d491cfab011a"
+    },
+    {
+      "id": "case_0068",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "5199cf148f4e8aba8754f98e25e0465a904e8133d537ed2f66fb169a8d6371d0"
+    },
+    {
+      "id": "case_0069",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "cf13771ff06caaed1574d8b53870cba71662a4859dd8f00cf865804f1a9859f2"
+    },
+    {
+      "id": "case_0070",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "d2ecac20aa01ea64da465887ea4addef8c3c88c669cab614524416702013def4"
+    },
+    {
+      "id": "case_0071",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "477cf446e03283f2def1e362378cffe5e6b4a30d980106d519aff9b2e26fb492"
+    },
+    {
+      "id": "case_0072",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "260788b03505e92eb00313ae1d3121d708379a0faddca8d03fcc00472ac33429"
+    },
+    {
+      "id": "case_0073",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "8be1efc78febeb81418008faba98499e9248c3f171014260342124ab081eaa29"
+    },
+    {
+      "id": "case_0074",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "6ae169d1576691d82226349ce8e8f0184d62043a098f92c3d01c5b92daccac7a"
+    },
+    {
+      "id": "case_0075",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "cefea7eed26ed5696f9263a5883d2bccdfed91aa5757560665487de0e9d31482"
+    },
+    {
+      "id": "case_0076",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ebc078ae450e1162f2adc33191cf6dc26a595337071dc60607a5bd4c6c5aa466"
+    },
+    {
+      "id": "case_0077",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "554ed7d4c5cd5b815adbc778c5617f72d2a3aae586b2ce43d440adec52d82a79"
+    },
+    {
+      "id": "case_0078",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "01b0ebdacc464441b9270e55abfd053d3b8abfaf56d0a3f438dfeb6705f6a85e"
+    },
+    {
+      "id": "case_0079",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "8ffa2152fc00f009c01b2005d3cd2413e85a3e5730956239e0939c7e3c3c1829"
+    },
+    {
+      "id": "case_0080",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "1c7f7bf8dd6509785cb65760d71beda48415878a9954b2469d6db2e444ea40f2"
+    },
+    {
+      "id": "case_0081",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ce244bb4b2cf3119e6b1d00396a37191de8dfa3fcd2bcd4fc246060304069d5c"
+    },
+    {
+      "id": "case_0082",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "1990d9f12a090485ba75c27866fc7ecd7974b432f311e285c71ab740db880c35"
+    },
+    {
+      "id": "case_0083",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "edfacff85a40ecdc39f3ffcbe047400fcc249274e9c53a109e988e909087472b"
+    },
+    {
+      "id": "case_0084",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ceb5c9495d7ebac96e47333acb711518d5d593f11015b5c0be58ccbc8547c5d2"
+    },
+    {
+      "id": "case_0085",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "e351c31486d72ab94bd9395468730034750fb9639f91a710f3b8f678a1062786"
+    },
+    {
+      "id": "case_0086",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "8f727f626a4a6a06a2d9a27c75c25322acd96d44bf87d12e12762f19703f8449"
+    },
+    {
+      "id": "case_0087",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "d6fe0a5ad48042ceff6522219ddc09c0d726ee8750f337ca7d8c5d9a79dca885"
+    },
+    {
+      "id": "case_0088",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "7eb7f0d5626d303e828755821b3e46130281f497326ce350fd517f83b7d1614a"
+    },
+    {
+      "id": "case_0089",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "b2df0934becae6c8f0bdeff74f401ee0fa5497bd5fc9cc6e4ff32565a2725cb5"
+    },
+    {
+      "id": "case_0090",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "2b32f09d4af695db8bee06d730ad0e72736033d30ffca0b06ffd253eb6740dec"
+    },
+    {
+      "id": "case_0091",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "3896ad8128a43027eaf508b5aecb22f8e0e9ff0cdd0a3bfa0a8b1eba4fe51cd9"
+    },
+    {
+      "id": "case_0092",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "d99d1f3d61ca8e1e3b1f9c7466b40222f73fc2a833e4ca1cb467be41dc0d68d8"
+    },
+    {
+      "id": "case_0093",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "99e84a268af2d97ae386462bf044e80987c156f27754126753b9c286fdc6ebee"
+    },
+    {
+      "id": "case_0094",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "006b10fb589d448c327587bcbd3a9f50218f6b8ef5bb7e4a7d6337a78615253f"
+    },
+    {
+      "id": "case_0095",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "3bf2ff353801f9b8f12c952498bfb4686d5ffc95e56a309b5588462f1160f568"
+    },
+    {
+      "id": "case_0096",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "46fe33123f3e7ab29e1d243e3ee1333988857df89c94755eee0e7fe644908a6d"
+    },
+    {
+      "id": "case_0097",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "59c5bc3ba416b3c877d46a910e7251e86e60537fae551e8ee81fac6d8d7364b9"
+    },
+    {
+      "id": "case_0098",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "163543c6239fa6ac4c42a5418c1265dd14dea5d58f4b76e11fb23aed5bd3aa45"
+    },
+    {
+      "id": "case_0099",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "3794bf2346b4d34d500b47b901cabf0821819be9a0984ae1a10bea7ac84e8330"
+    },
+    {
+      "id": "case_0100",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "c2360ee4ee5fe389e8f24840aae83ebe11af2739a94fd5f255ea973b835558b4"
+    },
+    {
+      "id": "case_0101",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "2169e851c8bb45474cdbbe8ae0945b240eb023aeb53ffc62739a409a6cdcf3f4"
+    },
+    {
+      "id": "case_0102",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "be2d1adaf5636f4031331f9018aa7d8bb9569f4f1a895f7242454bb93b0eb9d6"
+    },
+    {
+      "id": "case_0103",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "2fe600fcdd3abd48c50e752aa1c5970ca2bae84fc59b37710513e30d5c77d349"
+    },
+    {
+      "id": "case_0104",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "4f3fbca35d46be08d40ebcfa25c08d060c9b5e3fe37ec0295299575f88cc78fb"
+    },
+    {
+      "id": "case_0105",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "70fca447ef945ce757eb0fafd49df9d617f7fcc19118bcef975baa26befbd34a"
+    },
+    {
+      "id": "case_0106",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "b3704a06d9a1ecd35edc8b4a3bd5c069e7c3a55a48391acf9250033d05da6147"
+    },
+    {
+      "id": "case_0107",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "fdd1a0f5c6944f63ffe6a2e063bf66ba6fc3fdbb4c5ff6242aaa332eb4ca2e16"
+    },
+    {
+      "id": "case_0108",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "5ed17700910f6ed312b92caa0386b17343ad158c518b0895616baf2c494f6bcf"
+    },
+    {
+      "id": "case_0109",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "d3ad6cfe2f965ccba2c6ac236e5e40d576c7fe22419b6cf63425566128354ded"
+    },
+    {
+      "id": "case_0110",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "290f5226cc67ad9cf70423c71305caf0e66a1174bed2b30652df0ee3b26043f5"
+    },
+    {
+      "id": "case_0111",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "50d7e8006316b5e6b5b0a68821b27f2464fbdbbb3273338b44e395bef51b0810"
+    },
+    {
+      "id": "case_0112",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "7b44de7f374af2589aecf34aab76cda2354660afbfd41e86a29871096791e8d4"
+    },
+    {
+      "id": "case_0113",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "d65af80e9b81e7cce690085985e28aabc3fc62fcb131954047dbeee56878f80e"
+    },
+    {
+      "id": "case_0114",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "735e66031b11cc6a10f6d66cdff18ea324b539235192a8c9ce4002d1ff44e2a7"
+    },
+    {
+      "id": "case_0115",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "708c52b495aaa0c8a60c27604462feed5cf2f28b92a44a4bea5ed73069c00351"
+    },
+    {
+      "id": "case_0116",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "79391163d6d13f38551c4a61e26170ea257bc4613081516d00ca25339fee0b14"
+    },
+    {
+      "id": "case_0117",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "47fbc0108604fec6818192c74b1096f0daad9a20225d629a70b6e2266f73ab7b"
+    },
+    {
+      "id": "case_0118",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "bcff8fa84eadc28bfa91fcfe5446cf9091456f52153952b1ad153bb5e0aa2511"
+    },
+    {
+      "id": "case_0119",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "7b10709446fd943167eefd2ff9d564e5b5fef4b3bf4e47ceed34287eadb42352"
+    },
+    {
+      "id": "case_0120",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "cd2472e5892f12cd7b3b0f1cfd59149b8b114df544af00771d6bbf0c8b15e748"
+    },
+    {
+      "id": "case_0121",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "fd4afadfc0e4088958f41d5c121132c7e572c06260c2dcf1a6bdeaeff3763c72"
+    },
+    {
+      "id": "case_0122",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "b80badb91e73f4614e4b9e6704e433b06fc201efd95dfd9cd37f1989b9a13c7d"
+    },
+    {
+      "id": "case_0123",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "98deeffc497d89fd9f980afc08b3cda2d1f891e5186c72da9b039265bf718e01"
+    },
+    {
+      "id": "case_0124",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "d8363d2b924df2f04cfef0d100e248bc86dccc1e1903c3a832a068ebd03123f5"
+    },
+    {
+      "id": "case_0125",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ea3726a9353c6b8eba1cc647325a9a1ea3ac5e852832767598a8914111faffbc"
+    },
+    {
+      "id": "case_0126",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "36683c2490668674986a6f3647b29ca6cf68db15fcf72aca12546001e5fd3c06"
+    },
+    {
+      "id": "case_0127",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "2b4487d250300d211d1999537ba566ad959ca03861c8e831582b4d13ca79c918"
+    },
+    {
+      "id": "case_0128",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "43d539a380163e8b2c123548f73ced9efa77a9a8b6aa55a3be144de9aa00bfb1"
+    },
+    {
+      "id": "case_0129",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ab528e9587786b88c358dc5616746b235c2fc921d552c740592f2ab00662fbd8"
+    },
+    {
+      "id": "case_0130",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "86f9cc5dc8809e4a8494ed8219e86d63012c114f88a64069dda34fd5371b3eee"
+    },
+    {
+      "id": "case_0131",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "54c1ca62e3e9904f1de26cbe7540c0faed6468735dd7c67569f0f045d987f590"
+    },
+    {
+      "id": "case_0132",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "b6e499b3e244d68555960e41cb35e8fd9254c4680cd3c1e9019c876e8e7afcaf"
+    },
+    {
+      "id": "case_0133",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "a9fee3c6b4edf68a536e09657b1504f1dc19250bc259bd04bd4c9d31c06afdf5"
+    },
+    {
+      "id": "case_0134",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "21a41a24d30cd88ca13f0cc45783e5d7e9636cad0241c0799723eb451314c2ab"
+    },
+    {
+      "id": "case_0135",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "99544224f6526ccbe295fbf0dc82179afffea0cbca06e4a1bf902703b371a832"
+    },
+    {
+      "id": "case_0136",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "f25a74ec3853a36417133b2c1e21198833f78ac5482644868d03959250b182ba"
+    },
+    {
+      "id": "case_0137",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ac2ae27d7aab41334d6998c106faea74f175b9bb0ecce44856cf3fe21e4949ca"
+    },
+    {
+      "id": "case_0138",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "a89b942a8b3d98fc8fd6c93376e5c9dce36955a73b79305a713e490f2ac948d6"
+    },
+    {
+      "id": "case_0139",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "1b7bf4b218fb274f911cfcc8557cf3e1b098c6e4b620ec4e604443b0d12eac3f"
+    },
+    {
+      "id": "case_0140",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ae7d63acf927542c56a4f603d229ae2d08f6647f6f7476e394b2e7f8a7eeb00b"
+    },
+    {
+      "id": "case_0141",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "91ed15e555b9b89f959dc3d5ac35418bdbd6340b2d255d6ebd12f2b96e777e7f"
+    },
+    {
+      "id": "case_0142",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "6046c26f7e3c614e1079f585400cd91faa7958d61f9a5b32684e7796600b54b6"
+    },
+    {
+      "id": "case_0143",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "542cdc18e2932b6df32195bb802e6ac7d57efdfeb8a9170b857a178d672204f9"
+    },
+    {
+      "id": "case_0144",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "1229d4b69df577ffc16bc2bb79ae8016c1a8b05d5bc66d5445fc5dc0401047ed"
+    },
+    {
+      "id": "case_0145",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "96f648921027b50ef8ba637964317bc89e84dfb92e78f85bd8d0515fe5e31cf1"
+    },
+    {
+      "id": "case_0146",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ab4433fb44b25b184384c8f6a3be749a3227687a195feb1ee4aea21c44decce3"
+    },
+    {
+      "id": "case_0147",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "e25d2916e8cf01994be641c65ab2d51f2b3730e5b659e4dbdb39893f9147ee31"
+    },
+    {
+      "id": "case_0148",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "0aaa767a7d17d7fb6c7af0f3047e96be11f56fd7baa9fa7faa6858f1b34782f4"
+    },
+    {
+      "id": "case_0149",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "d5ac376daca75739a8f33bcd3a9a9ea2120695483d95cc5fe150fee7f9330f3b"
+    },
+    {
+      "id": "case_0150",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "280404edad5e80c83793b13968941d795390d00bdbd0a9ec010ab0b56978d43c"
+    },
+    {
+      "id": "case_0151",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "2930197ca3fa342e6361c89f4190b01d342f05a7e74991cea6e93fda301a834f"
+    },
+    {
+      "id": "case_0152",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "1ad3b9d0db4a7f02b488b2333280c216ac421f23dcfd745377d6c75a6045cec0"
+    },
+    {
+      "id": "case_0153",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "4a2a06a14b7970c3a05410102ce501e59efb1cca37df8f1e44fdbde9691f1f3e"
+    },
+    {
+      "id": "case_0154",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "fe42c6454510c76d2635df2c665889fb39e714cf3e22287b1479020c5ab3c7f2"
+    },
+    {
+      "id": "case_0155",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "e52d0e8f30aeab7764930504038c3c2859844feaab1b8e8b2f9098898ea0c28a"
+    },
+    {
+      "id": "case_0156",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "1373f874aa1f023fe2fd74b6b235ea31185cbd1836a0550787b2beb8985b23e2"
+    },
+    {
+      "id": "case_0157",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "776639f85c5618e99bfee56157404b6256126aa6a48fb99b843b1966552f356d"
+    },
+    {
+      "id": "case_0158",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "9c881c722e28e2abb04eb3a74d21c0828f27e123520988db054c39e3e664b4d7"
+    },
+    {
+      "id": "case_0159",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "d407ce037d814aec97446c153a2bdc21168024be3c2ba182a9a0aeec01f28cf6"
+    },
+    {
+      "id": "case_0160",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "362056ec2640f8cd6e6da58421701e86d6357a20eb82eba316265eaa8c84ceca"
+    },
+    {
+      "id": "case_0161",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "6270b497fa8eb2f045e2511c92efb7dc13eef3aa7849c89745d70e515ac856de"
+    },
+    {
+      "id": "case_0162",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "cee0829f5395be1e3ef38645f818722737b784ce03722e9a79bb698e0b3895b7"
+    },
+    {
+      "id": "case_0163",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "5d274a0c53b8d42aa5605cbc3576e1a04201c684e0b4f289d5599cc9b66183f8"
+    },
+    {
+      "id": "case_0164",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "45cf4aa7a896f7dc7b21b4dbe30c933b75f8f0eb8e301f8bb2a46fa8bc57332c"
+    },
+    {
+      "id": "case_0165",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "958a133208fe736f4dd8868161fabaa7453d72ac748ba86738b1618806a51847"
+    },
+    {
+      "id": "case_0166",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "c2f0e594ad22cd02a3bc50a95fe4b3f1a41604072cf4cab49eb0f76a230c36b4"
+    },
+    {
+      "id": "case_0167",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "fc31a720a06ed874667c792f5bfb24680cdc9fb2ed9c9ec1028a1bf7b7abb57a"
+    },
+    {
+      "id": "case_0168",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "1943b8c7838eb1263c154564786f73f83bf51c8643894b6f33467b71c9d57ed3"
+    },
+    {
+      "id": "case_0169",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "15b8dc34b1d1bef571d05664b31aa729b4b2029780641c9217e530b16030a9f4"
+    },
+    {
+      "id": "case_0170",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "18c04c7f8047f5cae10a5e4e9d488a994bfb7fdb1e73d3063c4486f6c3bcb50b"
+    },
+    {
+      "id": "case_0171",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "b00a472b77dba47ab13346f2232c666e3e7318af3889c22fa68c897a6cba4f90"
+    },
+    {
+      "id": "case_0172",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "951cfb2509ed2919150e1a2a8d63d580565f5b618583b609db800f9fff16ad89"
+    },
+    {
+      "id": "case_0173",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "cdbfbb493b5c172b684e78a19b501f5871a054497d0733ee61826b1ec829b62a"
+    },
+    {
+      "id": "case_0174",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "f45c2939d810a6b616b4cccdcc85c91c6cd606e8c74a0eb8ae822cb491e07991"
+    },
+    {
+      "id": "case_0175",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "1fb4c319f2f6d06385cc6e8afbb182dc82f27556f3a92ce19b751062a175db93"
+    },
+    {
+      "id": "case_0176",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "fbf693d7b2fe6762e4b922164b43b9c68ff5be4cad2c5eefae5a6cde72b9002d"
+    },
+    {
+      "id": "case_0177",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "d4a8b6c000ec95b2c2d753652906793b1c0cae991d14eb28f9f7a504db987984"
+    },
+    {
+      "id": "case_0178",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "6ad73f6e6bd6c6ecaf1cb6446c31e024bcec2a3b80ea464300c59e06bb7b4e07"
+    },
+    {
+      "id": "case_0179",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "10880be0b1d1c838131313ed4759a8550c27076bf80406db290025aff905054a"
+    },
+    {
+      "id": "case_0180",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ee62e27fb338621104d7383eeb7d392be04481ce584f848ce6c4c064d663cc3d"
+    },
+    {
+      "id": "case_0181",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "b552d02b20ed7210586174df5bf527bbf00311056349d24f3a985ca64fc012fb"
+    },
+    {
+      "id": "case_0182",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "fd600559d208fd14772963b7914b51f73da46afada32dba44ea21788ccef5ab7"
+    },
+    {
+      "id": "case_0183",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "4518fada673b9b3d23ffad1805ecddf86d3e53ed4d43ad95e7f0323eaf0841d4"
+    },
+    {
+      "id": "case_0184",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "e9b93c0045fb3e8433ed277d6702c65dc96301a9ea9197ca7703e5046bfac70a"
+    },
+    {
+      "id": "case_0185",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "466135608658611313a9980847885bfde698be00505839c9b180c407c2260e4b"
+    },
+    {
+      "id": "case_0186",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "29f403acfc1614191bb4e972d7a78716796927046852861360198eafa4ccd7fe"
+    },
+    {
+      "id": "case_0187",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "bd6644d06da9f1b54d2f5428cac3b7ed361316e634d075690b914fc28c1ba12d"
+    },
+    {
+      "id": "case_0188",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "20bebb642d9e5150abf51849c7747b162d4aee8a124dc84de766dc823b3c3524"
+    },
+    {
+      "id": "case_0189",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ef291dd5528679d9bf8cbef0c92a0c28ebe5917837b7dae4dbd21472af15bdf8"
+    },
+    {
+      "id": "case_0190",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "26ed9e831a3a291308cb18ef2b86afeb31d2b1116f9b03f8e3bfae322fcf732f"
+    },
+    {
+      "id": "case_0191",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "f16b0d928fcb4ceeefb39ffb1e7d59736a82ace858306a3a3e3750b887082afe"
+    },
+    {
+      "id": "case_0192",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "4c5c38f5251d6a59d5486966e1c5a69e8e0f35084cd73b4dbe5ff0abe03c38d2"
+    },
+    {
+      "id": "case_0193",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ebae9bf17d0716433c58cf934f66a094d519b3a3d41d9594f1411747158d6f7a"
+    },
+    {
+      "id": "case_0194",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "52cb7efe7e446c66a95fb49e311aaf8c9422f4adba742f5e9268ffd4f3e7c181"
+    },
+    {
+      "id": "case_0195",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "0268c78b29ffd830a9dad0827437fd213d20c7616bd9a914c1d35d36eeb7dae9"
+    },
+    {
+      "id": "case_0196",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "3b061f652ff8a6525bc63ed043df56df18e8f7db13613b5b8547aaaaba4b6969"
+    },
+    {
+      "id": "case_0197",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "85101e561aee024052ddfed9f36f4b7d7276fb329695d76c681d2f9f859f10c2"
+    },
+    {
+      "id": "case_0198",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "dedb565a1757caac276e53e37843d1db32ddd2670b9b3b8c1df4e095e09ae734"
+    },
+    {
+      "id": "case_0199",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "c57d723db781b5abda31ebb4060c7d42e53c6d414ed008f18a3e8a6906f62062"
+    },
+    {
+      "id": "case_0200",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "6c552b0a5553e4cbf4fb5ea52666b96d962bd09dde97377f2063d38d6221f979"
+    },
+    {
+      "id": "case_0201",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "2dd4c02bb34bd3dbe1ebe5f8d50004ff42d83b9f6ff34e19b3046fad57a0df77"
+    },
+    {
+      "id": "case_0202",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "48ef305eb1617218b946065fd82577dcb375fceb28c241132e38c9bb03a963b8"
+    },
+    {
+      "id": "case_0203",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "1f9faf7e8336f22d820bc7f4cdff9c6a0501e27d19441659d39e2a70c003b2eb"
+    },
+    {
+      "id": "case_0204",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ee1291eb3f300c5efbebfdd910bad5864b4258dc9394c8808fa3d05a7e61466b"
+    },
+    {
+      "id": "case_0205",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "5f7794b77850632168d03b964185ed3cbaf59391a6d70ca9f14a27657d959e60"
+    },
+    {
+      "id": "case_0206",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "2e664714bdd25394fc6659e5182c628eda226a3148fa62760d11d38e972d6baa"
+    },
+    {
+      "id": "case_0207",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "9348cca6f5c77b7be19e21701992d2cd29b69c67cf0688637c10269f895d9478"
+    },
+    {
+      "id": "case_0208",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "2c0a425d5481dfd84f24c8857aab8954738b8501d9040951701d519ecfa7219c"
+    },
+    {
+      "id": "case_0209",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "065aa25fe9e55b43d66cbacf13f3de18ec6e7cc991cb035328c9a5ea5fd55bff"
+    },
+    {
+      "id": "case_0210",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "be2a15473a956597dc7f99a2acfda2f6b83588eb24f4dcadca0d666e54911cff"
+    },
+    {
+      "id": "case_0211",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "ba21f5e96ea612d6ad083eb2dbe000e48e71015a9cad6eefbae6148c534e292b"
+    },
+    {
+      "id": "case_0212",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "1e23eeda2ced65d27f1f41b0baeaf4ace3f3007e343a120eabbae7eee3ab43b4"
+    },
+    {
+      "id": "case_0213",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "b1c67bb4c1dd348e8a563f2b43b1eab828f8076263564bb1edbd37f5d64cbc1e"
+    },
+    {
+      "id": "case_0214",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "389e74bc2b820ccac03dac1aae2dfa1d5f9390f422946ba09e79c9d736b67c5b"
+    },
+    {
+      "id": "case_0215",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "26d09fe5c61b38aa1a4df8458a4edb9764c5da30500b04e08ef168fbece48c7d"
+    },
+    {
+      "id": "case_0216",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "8f40de816db55ee23ba9f4fdee85324238e7ce05ecb27b21054ff03c8520500e"
+    },
+    {
+      "id": "case_0217",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "5c08cace8a3ade3c104f9eec8c73510ad0daa16522de9aea626024431ecc6172"
+    },
+    {
+      "id": "case_0218",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "35f08ac86962db572a4b272e2faddc45d29e64bd43d9b654913468694994bc9d"
+    },
+    {
+      "id": "case_0219",
+      "cohort": "ETF",
+      "sample": "empirical",
+      "fingerprint": "cee177feb9ef52f4370aad0ac28a04f9d9d491330fd2ee09e58170012bb8fee0"
+    },
+    {
+      "id": "legacy_000",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "bfcc526ce7881fa86e446036f761571f651f17c7abffbd903ac3a77ce8d183f9"
+    },
+    {
+      "id": "legacy_001",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "3b171f6af71f6454d386c6052846f4838cd4c453f67d80181d919ed50831b67a"
+    },
+    {
+      "id": "legacy_002",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "a52875ccb60f82314a61f68d0f610643da236e334868547f2657c032dbfd231d"
+    },
+    {
+      "id": "legacy_003",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "8b6a3c0c7a49154a65e62667c305076a07958ed253d88715b5d68f984257bebe"
+    },
+    {
+      "id": "legacy_004",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "fe67ad2d8970efcdd24554775b608f40054ff8c78a6e4150b4e2a78b84d06747"
+    },
+    {
+      "id": "legacy_005",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "ef5ef8b42370b56c4b53a620c7cb1fce9c717f2a315f1483a957fb15dd2e5527"
+    },
+    {
+      "id": "legacy_006",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "282ed12a6625ec4fe2d3278ecfa4f31175561d3abcc3b439fd3f82d6ff11f672"
+    },
+    {
+      "id": "legacy_007",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "881a3f290d016adb24a6b2829c82426489567dc2e8943d485c36ca2360d59f39"
+    },
+    {
+      "id": "legacy_008",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "4783460077e8d9cd07eacdea73b8b64516454ff2474c58e62176101d884e78b0"
+    },
+    {
+      "id": "legacy_009",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "b9f79e45719f90ed46ced1a06da5ca0cbc0fd8e51b2a9f847a507837945b4d08"
+    },
+    {
+      "id": "legacy_010",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "6e9850f474b58a9d9bf1925c49340f897998415dba55bda640e665ac3c05e0b8"
+    },
+    {
+      "id": "legacy_011",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "58999dae7bedf66c60a3eb226b6d09e136aaf284089607c1ddaf8d42dad75b65"
+    },
+    {
+      "id": "legacy_012",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "ff49283db2d5e937c9d94b7c2487885f14303bd49c1fc2b985bbdf9b97d36fb5"
+    },
+    {
+      "id": "legacy_013",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "569a873f1ab9c6f194a2aa92b793578ac52917a8e15b479623583e4e5ec423e1"
+    },
+    {
+      "id": "legacy_014",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "ffb466300a7e1e3d90d0a367165fed8ce9e4c34f31aaa871aaa8a6f4482361f5"
+    },
+    {
+      "id": "legacy_015",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "fe9090df72c7b2790308fcbf39c06a1c60b41b458b508f8dd5e40cc634ee8c8a"
+    },
+    {
+      "id": "legacy_016",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "02bcbd68985c604478de541750f46e8d2180d7105aa6757bc7759a6a0d2bbed3"
+    },
+    {
+      "id": "legacy_017",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "13ab63a89241a9ae1a58093610582337de2c937c459b0d2c712a1bd080f40746"
+    },
+    {
+      "id": "legacy_018",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "cb8c191cb18a0a63d9708c11409a932f3b2e2117de45b1e435e4f2267621766c"
+    },
+    {
+      "id": "legacy_019",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "191d69a150ab859be7e7f8a34510e2dff9773f1e7fde602350d7c6ffde8268c6"
+    },
+    {
+      "id": "legacy_020",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "b3456a6403e05a7ec95d763cebb9f9b6393fa10d29f5baac8ccd8ce8a67e3aee"
+    },
+    {
+      "id": "legacy_021",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "6c713b41373e17b770101ca4f730d29bffc144dbabe98f1e13262c436f809735"
+    },
+    {
+      "id": "legacy_022",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "6958bb5fbf4488faeded5ffd7cc0281a9b801707243c631b53c372bc4eb983f8"
+    },
+    {
+      "id": "legacy_023",
+      "cohort": "Legacy",
+      "sample": "broad",
+      "fingerprint": "463b61527697709e31730e5b7ad0d9fb5c5896f8e6610351a02106f4e464f74e"
+    },
+    {
+      "id": "legacy_024",
+      "cohort": "Legacy",
+      "sample": "tiny",
+      "fingerprint": "0f9aa5b2fff669e43930ef4dab771ea033857f76ba84fed75aafbcc1c1e9a482"
+    },
+    {
+      "id": "legacy_025",
+      "cohort": "Legacy",
+      "sample": "tiny",
+      "fingerprint": "506d6c6fcfc97326b12964f071aa5d3ab255f763c65ecc9c22d411d0e534f298"
+    },
+    {
+      "id": "holdout_000",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "9f6bff38e1ec70347f063791c711bb1f39ec09892b9ee5986dd89f24894d9d52"
+    },
+    {
+      "id": "holdout_001",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "75b049ba3ce4ab8c72cc9a80fa4969388297532828737325ef899f6256bf32c0"
+    },
+    {
+      "id": "holdout_002",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "ddc98297f21306e92e8d2ef1313a9e9bde18f836e7d2bb66b913b22697edd940"
+    },
+    {
+      "id": "holdout_003",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "b6ba715a5401ba26e9a3bd10e6b7d0a619560395685924463d0af1bd3f8de298"
+    },
+    {
+      "id": "holdout_004",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "dc605777da11749a1caae04b0e74d5eaa1d24855fecbcf0239f2120c1c055ece"
+    },
+    {
+      "id": "holdout_005",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "ef44fdd3df2364c80d53bcd11db9aa229ecd13627b2c28d361d9dfbf2c175d18"
+    },
+    {
+      "id": "holdout_006",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "60ded0f6ed7acfbe65701075617f31b249e33e6f7be4cabd7508ecaed5ae0651"
+    },
+    {
+      "id": "holdout_007",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "65821362c56329f8d1f4d9ec66d507f513e811f5bea4875040f66b5cb30a7c1a"
+    },
+    {
+      "id": "holdout_008",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "67b93968d7e3f1aa256025528a1223ec18c287ca498a2fc2884965968e3bcfaa"
+    },
+    {
+      "id": "holdout_009",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "ed41ae77f836d373302c738155bb1e7de0f16bc7b066bbbb9f198a5c13180d7d"
+    },
+    {
+      "id": "holdout_010",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "951073234cf8cf78522d7ecb40cf8c00fd10f13d341b2c026197e4922411210c"
+    },
+    {
+      "id": "holdout_011",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "e47dc9e16e839c5bc55ec9f51b5d6c9b5c818eec512b39dea894caaa6ac48e87"
+    },
+    {
+      "id": "holdout_012",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "518ed02a5ad78fd214e7917144093eaca94e007d68cafbf37f7e01a8a48282f1"
+    },
+    {
+      "id": "holdout_013",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "81771623d8ec35add79c0da43163a2713d658a1527be1eee2e4d501dc84ee350"
+    },
+    {
+      "id": "holdout_014",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "b01962af5a4cdb3026a97555cbe3489606b8eb6131a58bbf492e09671548fba0"
+    },
+    {
+      "id": "holdout_015",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "e68089bdea15481582ac555717b64ce15dbafb704d0e92301cb9fdd9cbc037cf"
+    },
+    {
+      "id": "holdout_016",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "61ad5fa72a48b1407ea60ea7155754e47f843e980e8607a88526730c2a9471f3"
+    },
+    {
+      "id": "holdout_017",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "cf91bc189f8f031711fb921fe1e58aa965996863fc735a42af119ce50570d788"
+    },
+    {
+      "id": "holdout_018",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "4a42e33f53dbaba3d63a85acc9b8f45f189d84faba55506c52e278462745a43d"
+    },
+    {
+      "id": "holdout_019",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "7dfdede5cf4762126b4d24e2248c2b47431709972de8dff1ebf2697f8aee593e"
+    },
+    {
+      "id": "holdout_020",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "1137310a2f7cccad34ac1998054074f738b46b5eb2cdbf4ff2ce0cdd703ca24b"
+    },
+    {
+      "id": "holdout_021",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "f24ea308216bc6bbf97fb533326b90f3cd39bb96659eb67b92b2ccb85874d15b"
+    },
+    {
+      "id": "holdout_022",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "10afefca449198d1d84440082b75d27af56a3c662a57a806ec4364d1fcfa6ec7"
+    },
+    {
+      "id": "holdout_023",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "8f0e9703d4fb68cf894f37df49b7f8552c887fa576bd03dbe6a430bf84afaff9"
+    },
+    {
+      "id": "holdout_024",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "eedc5d5a652568f5ee71b4e190e96efdf5e432362f060f78a4d2692a2e63cc6c"
+    },
+    {
+      "id": "holdout_025",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "b153db0c9d0f5b5f744764f606e9684e8405c3d3909e40b2e9480c004bd7de5c"
+    },
+    {
+      "id": "holdout_026",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "903d46b306c9f5b05613fda5034f48bf297395c5f8a78999b320b4f40a316d5f"
+    },
+    {
+      "id": "holdout_027",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "83fb687daff167d86645a01dfe2bc320ad00a61890338e3b913ff5c0b85670c3"
+    },
+    {
+      "id": "holdout_028",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "20ff35cf71be0e421379ddd94b43768403e0a108030c481a06b874300f19d1b7"
+    },
+    {
+      "id": "holdout_029",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "ce7fec462ddc6aeecbc9a25052c28b23858d0166a1d23e924ecf1a8e4a0d3afc"
+    },
+    {
+      "id": "holdout_030",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "7b893a1c3e8fa306097006f6c024c0150cf649b4bdad47f83a884a686f7a9593"
+    },
+    {
+      "id": "holdout_031",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "df7f913c76d1557e994dbe4f1e8be485ea08ad473d681d67ab1f3b85a6fe63e9"
+    },
+    {
+      "id": "holdout_032",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "5269fc9950015e2df1f6c6c109653fdb60fac9824966c1e1621a4b7d72657759"
+    },
+    {
+      "id": "holdout_033",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "92f2199e7e8d2c763208d3d7e2f8fddec2fa4171949c05fccf0106b519b94e34"
+    },
+    {
+      "id": "holdout_034",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "dfa1b9f56e37d436b081a732eda1165d2e83c8eb3bc83ea38493886c8c8ed532"
+    },
+    {
+      "id": "holdout_035",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "c3b9d87789627e073ed79ad424af003e930384c42c7bc9359424f0999ef4e02b"
+    },
+    {
+      "id": "holdout_036",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "fe66fd542b1946812c9854a542b53b038d686e1d03803c98dc49ebe6c9362703"
+    },
+    {
+      "id": "holdout_037",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "6fe730ed3adae89a341b63a49261bb499f50af1ccc90d2d65fa1430ca7d85603"
+    },
+    {
+      "id": "holdout_038",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "9b75f3353d68bce76f30ea37650198bc7a99046fcc3030809e765db58630130a"
+    },
+    {
+      "id": "holdout_039",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "da31b7fe01ca5384d3cca1878eefc43c3d2a216fcdd2917da7281532af9d9b99"
+    },
+    {
+      "id": "holdout_040",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "a02a11469906db664144370a8338cf0e5f636a55b9d0af32c1f651f734ddd081"
+    },
+    {
+      "id": "holdout_041",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "264eaae50bb0cb0379457baafc6c1e19028d1e5516d62dcd2edf546b5b56bb8d"
+    },
+    {
+      "id": "holdout_042",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "0120000da806082c2b7b45d974a80a04fc88417026202f1dc6e10cbd8fb1d67b"
+    },
+    {
+      "id": "holdout_043",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "b8102b171f48a49f2217782b1b9f97d8112bb84705847b56ca6848b0907c378f"
+    },
+    {
+      "id": "holdout_044",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "b7132279f6b83852e0e78b4801c59ef16f10ba15d5b91b3cbffab45c3a8314f7"
+    },
+    {
+      "id": "holdout_045",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "734a3e4b746b367a6c9fcbe632a6e10a1a8734f3b22b044fb816097a05a6056e"
+    },
+    {
+      "id": "holdout_046",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "868d68c96767e615a92e6237dbe726bdc2c57bbe8e0899a8eb29db93990e68e3"
+    },
+    {
+      "id": "holdout_047",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "126287036c0c3fab28ea7ec7538809ca7eb593b5cd1a2209e49df3fd8fce904c"
+    },
+    {
+      "id": "holdout_048",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "c0da703848dd899820c6a58fef3d003cebde1e5e2e24772bb7f1f72c6e024a9a"
+    },
+    {
+      "id": "holdout_049",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "57254a002808e91129c3164a4910e503a7ea8a4b4779f5725e585773545102ca"
+    },
+    {
+      "id": "holdout_050",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "a7326ae474ca5671304f6402010316bf783f8405b96683f8acbae93f767c7507"
+    },
+    {
+      "id": "holdout_051",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "57dbdc8eefc62c9d2c19a722892c27f872676bad31bb9ccae4ffff926cb0b2e0"
+    },
+    {
+      "id": "holdout_052",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "052ec2765ef579adf7afdd0076ba17d9f2d54e2761c4b5281388d75048af20b0"
+    },
+    {
+      "id": "holdout_053",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "87978f9ce2bcbcffb718d76ab982a6ae1607f1d4a9f77729ee9901d3dc840813"
+    },
+    {
+      "id": "holdout_054",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "7634ccebf5d7557a35c55d8ff9dda7841db727e6f09393e58a1af6d82e0c6368"
+    },
+    {
+      "id": "holdout_055",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "1b82bc21a72eebed72080580c85e0d1c7befc72b4e933af2e4c04fe287dd2ad7"
+    },
+    {
+      "id": "holdout_056",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "be56542b5a2c287092a0fa8e46b2c463c5d5cab573f7127be0758d5d2684efc5"
+    },
+    {
+      "id": "holdout_057",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "286642427e2a45e717e1fac896561e2d09e3773200e58a5d87d824a75a62a517"
+    },
+    {
+      "id": "holdout_058",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "6d1878b7f02d1c2461193a3525e1e2b31a907c7c48bd286d53a24117c46b1839"
+    },
+    {
+      "id": "holdout_059",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "0f0c86983464b8faddff0699a80a8a6f02aa8f484d9112dcefaf2479e8567b58"
+    },
+    {
+      "id": "holdout_060",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "fbf131b15d6dc770b3e128b5f80ff9c4f2f4a581395421a6bb7418f6a3578a23"
+    },
+    {
+      "id": "holdout_061",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "edc8aad1fa0524684a7d4e36d3d81d9466557b2f3bb0ad4b9380ea43a73f5d9d"
+    },
+    {
+      "id": "holdout_062",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "99807a30579bf301f275951fc058b2c8b2e72ec32ac485f67655b47d4754e735"
+    },
+    {
+      "id": "holdout_063",
+      "cohort": "Holdout",
+      "sample": "broad",
+      "fingerprint": "1ddae7abee36940ff29e3fb1e4daf61e48e787e68111605a7feda22cd486749e"
+    },
+    {
+      "id": "holdout_064",
+      "cohort": "Holdout",
+      "sample": "tiny",
+      "fingerprint": "14b2c786086af899441b7da89a90dd7e9d293280bd712378085bbd52ddf75b5e"
+    },
+    {
+      "id": "holdout_065",
+      "cohort": "Holdout",
+      "sample": "tiny",
+      "fingerprint": "9d16623a1e84bb3be27b1f670e581ff518e211b3c28735eb4354e186f6554f0c"
+    },
+    {
+      "id": "holdout_066",
+      "cohort": "Holdout",
+      "sample": "tiny",
+      "fingerprint": "11dba844492d9ce7c813b1c71fe6946696a9af1d7da785baee9c70fe05006982"
+    },
+    {
+      "id": "holdout_067",
+      "cohort": "Holdout",
+      "sample": "tiny",
+      "fingerprint": "bfb94385ae62afd4ab9e3745fa58efed153375aee74cd14eb410f4f2537ac85d"
+    }
+  ],
+  "input_manifest_sha256": "b9713740fc9497430daddfb7f508ea30230f225ce3d721472761025b6c2d0ed4",
+  "specification_sha256": "3f8bc83eb203927d9ce1bb2339b511a6bfe19b760d61c05a32295418ccb15324",
+  "sources": {
+    "execution": {
+      "execution/__init__.py": "af704f08e70642c3bc4956a4b93643270b86e654a2533ecb954797102e104a87",
+      "execution/_audited_cutoff_repair.py": "63ddaf5e0aaa5f987d68c3ad10dbc990a8bbbf4f095c94acd22ef1394fb2530a",
+      "execution/_budget.py": "9ae82c0e03581e5118ae8a534e1f8db2963353f6547b1211adc414391ec1f2b0",
+      "execution/_common/__init__.py": "99ea992810985dd9ea34a362804c0e29cbab98e9c8b7008974be7017d21fe902",
+      "execution/_common/config.py": "859dd7262200b16c52141219d0070512c419ad6988b6f13a1adeb496287b176d",
+      "execution/_common/model.py": "4d1bee2444d233d41508a37eef88d18b279467df2864e3a9791c044e73b0293c",
+      "execution/_constraint_scope.py": "b0f28e5e7735d109967b0bef59ecb096fd78af9b6cc30f0b3b75416fc397f098",
+      "execution/_cutoff_repair.py": "9287f8ab34550e59200354e298b187bdf844fac99b45fbb5dc7f38d97da44352",
+      "execution/_monthly_target.py": "fde018f07c2ad92fccb7fc9c474f7cd252078f57d5b00a44ef130878c08d4283",
+      "execution/_projection_cache.py": "b04df4cb95fc0f0329c580db9c7a87415a7c8db9244b0a9697f8b5eaa23d7814",
+      "execution/_return_gate.py": "fdb464646988ebd76f7aef554eb17506797499bb274121b0f5324ee3ea388361",
+      "execution/_swaps.py": "c4402492a424c5c68b292b3f38f5d91094a5db99dd58ab640a904f4f45084b6f",
+      "execution/api.py": "c10369346b12c1faa42b17ebab62cb9ea814f92cc08da0b73e016986b8785e13",
+      "execution/branches.py": "7fd615746bbcc4581b15641421978c288740454ed9ea6eeee475f98b114ee6b2",
+      "execution/feasibility.py": "8008ee98749e1ac14f082f72eda15b81cde4909f6b5478cfac2f19cdebdfce47",
+      "execution/guarded.py": "413d68eb95f48879d30f2f4dd40e7928b7debeaba20c37349803dc0c39568859",
+      "execution/improvement.py": "e07855788cc836fbdc739ae0e1bddbb7026726bc979233eaea819e685ca9fd80",
+      "execution/MIQP/__init__.py": "b92352312b347d16a96dfb0f0672eb08025663902e3b24d54e39fd490f22adb1",
+      "execution/MIQP/solver.py": "7a042e492b2439115b7bc77f82966b3dd7486227317ab79ef4ef431cece03f02",
+      "execution/ranking.py": "137277c05ac5f3de225935e792c2aefd1ec3924f7ca855e71bc63787e67e1d7c",
+      "execution/schema.py": "f9a8c0ef0ff4584a3385ef9301af84d2b73f0b9cde8ac5c8ac4aa63a8f0bb0fe",
+      "execution/solver.py": "89d7b9b69279d6da2b08603c873593751302adecf51088f234d3ae7b1acbd4bc",
+      "execution/types.py": "8061a106e88ca9afffab6192d6b604eb9277c1791b9994d9f5e3110e06b766ed",
+      "execution/v1/__init__.py": "5f6e3d0d1a5d61920e8f8f026e1811808cfba522b193c006790fef35f0b61b72",
+      "execution/v1/_audited_cutoff_repair.py": "f7e7b615727ced73f53a863def4304fe628ccc3d78a138351666315fb629ef4f",
+      "execution/v1/_budget.py": "7b90273653cfe961f5e645b835724d8b02bb31d42b0e393e3d1dae9cc821cbed",
+      "execution/v1/_constraint_scope.py": "2489f93b0a990cd18ea99c5fa146429d7f59b700faffbf5e4dfea40fed8e1497",
+      "execution/v1/_cutoff_repair.py": "be1f339660fe8a18173f8ed541e9b01efc02ea3ce2a02f017a57eeae020ddfad",
+      "execution/v1/_monthly_target.py": "a9cec842945abb4fb1dbcf3d58243db9aa567c070ea72b59b161d056ac0e35fd",
+      "execution/v1/_projection_cache.py": "ebc346f1886e6eccf1eb5ed2a894f7c98fecbba2a8643991096ec3de37c22531",
+      "execution/v1/_return_gate.py": "a409a391f10de703ca30e5eb4578b9207f2ec69ac90f5fd7fd74338a560f9614",
+      "execution/v1/_swaps.py": "4f7075a5aa3496e06fa77459ad19faea9aee8b4ad4d87a5dd0db59fb39e6f7d8",
+      "execution/v1/api.py": "cfff0e335e7f10806be0a26af4c5e5e5d5e777c2183c736b563787f73cd3424d",
+      "execution/v1/branches.py": "436cdb55d6953c081b090e61fa6ce38993de5fc8307d317f4eeeaba2c40713b6",
+      "execution/v1/feasibility.py": "530aa59e1172804e7ea6fb25722233e586caff1dee3fb843f5fd5e621bc9989d",
+      "execution/v1/guarded.py": "8a1e560c8a1175afe8198b4de271d365c0e208e676793af6ad7bd2e0815f14a4",
+      "execution/v1/improvement.py": "4ea9a84cbd81ff0438d8dbdc09fdaafb505dffb5b0f1fa204a67aeb371b4c653",
+      "execution/v1/orchestration.py": "eb6e1873cde8c23d596bb2484061d3171458df917f7b1bce10894419d73418dc",
+      "execution/v1/policy.py": "c85619cfc5db1721640649644c4fa23ff4fd95811b2802470b42caaaa8967e83",
+      "execution/v1/ranking.py": "35f451f2afc954af79f87478fbb2c2263a897e84313578ed9a25141ee30e976f",
+      "execution/v1/risk_budget_ranker.py": "e31fb3e66b45c59c06f63d7f0b89f127409b91b74a0716b630255c526c65311b",
+      "execution/v1/schema.py": "b8eb426dbb19de0c17081d92c3394f0026b3a07064ea7ed21873316fed87a301",
+      "execution/v1/solver.py": "e655664ea68a9ef73506834df8429e540f56ebcdf4b2a60a1fffe0bef42dee68",
+      "execution/v1/types.py": "ecf4166bf5d90a57aac6e338d175ebf80840946f98fe7fdd84c5f42a6b361a12",
+      "execution/v2/__init__.py": "49707522d93c17a985a6d0817740f9ed4fdb13766bd8ab7d5e5873f23da97206",
+      "execution/v2/_sizing.py": "60f2509082cec9e0f08dd8b2bb1b2908afa2bee651e9e78b22193a0a062e0d9c",
+      "execution/v2/adapter.py": "8a9b080b445283a657076b43a049d1d138ab6b8b30f5e8b0d7c1232d9425a571",
+      "execution/v2/bounds.py": "e51cec9d40c758acb6729a4ddace9fb783573f7319a9c8e2c232389df085ac95",
+      "execution/v2/domain.py": "38d3b62d7760f0d270286481d34b585090de8b8c45c6ee86d832f1b6352ef27f",
+      "execution/v2/exact.py": "52ceced52897cc3ab9f0605e7c1c5973e3caeac1be16200e0547df69b295ee77",
+      "execution/v2/model.py": "00662a60a3855667eab0eb0d50a5305802c219951a9d93fd7fcde0c2f98750c9",
+      "execution/v2/preparation.py": "62225648bffeffb37353362f04fee8b2941b8069e120626754d06a2900a185fc",
+      "execution/v2/primary.py": "2107109e0904481f53dbe7aaf9f215220d1a35ca19d703a7b43a332eeb5ad073",
+      "execution/v2/production.py": "6f201157faa15ab69723de15d1fef94b473eff39a6bf4f955e72f703d0947d92",
+      "execution/v2/ranked.py": "50027ccf9c6a495926c69815f9d3f5bb1d2cfa65a7ba7ea4ac4ec3f4e060528d",
+      "execution/v2/types.py": "9db80c60429acac2c50f4e240a87d42119413f8e98f78af172066b78a4ea97c9"
+    },
+    "replication": {
+      "matched.py": "6fb4d738d30d6d17288d19670863c04b985ef47c56ea021becdc2cb6d49852c8",
+      "benchmark.py": "90c97a45edc4cdfa09f90e6d585cefa4504c20115333218dc736612c8e4c005b",
+      "breadth.py": "a7db6f527823d58a7b6f326d12fd98c749e7e636445ba1e11b3d8c9de60f1c1a",
+      "run_benchmark.py": "89fdc09adfab4c467b08228a47ee521261f9631acdb652483584f44b0618cb80"
+    }
+  },
+  "frozen_utc": "2026-10-29T13:03:12.506444+00:00",
+  "python": "3.12.14",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "versions": {
+    "optimalportfolios": "9.2.0",
+    "qis": "5.44.4",
+    "numpy": "2.5.2",
+    "pandas": "3.0.5",
+    "scipy": "1.18.1",
+    "cvxpy": "1.9.2",
+    "Mosek": "11.2.3",
+    "clarabel": "0.11.1"
+  },
+  "thread_environment": {
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "installed_distributions": [
+    [
+      "Jinja2",
+      "3.1.6"
+    ],
+    [
+      "MarkupSafe",
+      "3.0.4"
+    ],
+    [
+      "Mosek",
+      "11.2.3"
+    ],
+    [
+      "PyYAML",
+      "6.0.3"
+    ],
+    [
+      "Pygments",
+      "2.21.0"
+    ],
+    [
+      "cffi",
+      "2.1.1"
+    ],
+    [
+      "clarabel",
+      "0.11.1"
+    ],
+    [
+      "cloudpickle",
+      "3.1.2"
+    ],
+    [
+      "colorama",
+      "0.4.6"
+    ],
+    [
+      "contourpy",
+      "1.4.0"
+    ],
+    [
+      "cvxpy",
+      "1.9.2"
+    ],
+    [
+      "cycler",
+      "0.12.1"
+    ],
+    [
+      "et_xmlfile",
+      "2.0.0"
+    ],
+    [
+      "flatbuffers",
+      "25.12.19"
+    ],
+    [
+      "fonttools",
+      "4.68.0"
+    ],
+    [
+      "formulaic",
+      "1.2.2"
+    ],
+    [
+      "highspy",
+      "1.15.1"
+    ],
+    [
+      "iniconfig",
+      "2.3.1"
+    ],
+    [
+      "interface_meta",
+      "2.0.1"
+    ],
+    [
+      "joblib",
+      "1.6.0"
+    ],
+    [
+      "kiwisolver",
+      "1.5.1"
+    ],
+    [
+      "llvmlite",
+      "0.50.0"
+    ],
+    [
+      "matplotlib",
+      "3.11.2"
+    ],
+    [
+      "narwhals",
+      "2.28.0"
+    ],
+    [
+      "networkx",
+      "3.7"
+    ],
+    [
+      "numba",
+      "0.68.1"
+    ],
+    [
+      "numpy",
+      "2.5.2"
+    ],
+    [
+      "onnxruntime",
+      "1.31.1"
+    ],
+    [
+      "openpyxl",
+      "3.1.5"
+    ],
+    [
+      "optimalportfolios",
+      "9.2.0"
+    ],
+    [
+      "osqp",
+      "1.1.3"
+    ],
+    [
+      "packaging",
+      "26.3"
+    ],
+    [
+      "pandas",
+      "3.0.5"
+    ],
+    [
+      "patsy",
+      "1.0.3"
+    ],
+    [
+      "pillow",
+      "13.0.0"
+    ],
+    [
+      "pip",
+      "25.0.1"
+    ],
+    [
+      "pluggy",
+      "1.7.0"
+    ],
+    [
+      "protobuf",
+      "7.36.2"
+    ],
+    [
+      "psutil",
+      "7.2.2"
+    ],
+    [
+      "pycparser",
+      "3.12"
+    ],
+    [
+      "pymupdf",
+      "2.0"
+    ],
+    [
+      "pymupdf4llm",
+      "2.0"
+    ],
+    [
+      "pymupdf_layout",
+      "2.0"
+    ],
+    [
+      "pyparsing",
+      "3.3.3"
+    ],
+    [
+      "pypdf",
+      "6.21.4"
+    ],
+    [
+      "pytest",
+      "8.4.2"
+    ],
+    [
+      "python-dateutil",
+      "3.0.0"
+    ],
+    [
+      "qdldl",
+      "0.1.9.post1"
+    ],
+    [
+      "qis",
+      "5.44.4"
+    ],
+    [
+      "scipy",
+      "1.18.1"
+    ],
+    [
+      "scs",
+      "3.3.1"
+    ],
+    [
+      "seaborn",
+      "0.13.2"
+    ],
+    [
+      "setuptools",
+      "84.2.1"
+    ],
+    [
+      "six",
+      "1.17.0"
+    ],
+    [
+      "sparsediffpy",
+      "0.3.0"
+    ],
+    [
+      "statsmodels",
+      "0.15.0"
+    ],
+    [
+      "tabulate",
+      "0.10.0"
+    ],
+    [
+      "typing_extensions",
+      "4.16.0"
+    ],
+    [
+      "tzdata",
+      "2026.6"
+    ],
+    [
+      "wrapt",
+      "2.5.1"
+    ]
+  ],
+  "ranked_config": {
+    "drop": true,
+    "exchange": true,
+    "compute_bound": false,
+    "rescue_trials": 24,
+    "mandatory_state_trials": 32,
+    "objective_tolerance": 1e-12,
+    "qp_solver": "CLARABEL",
+    "improvement_passes": 3
+  }
+}

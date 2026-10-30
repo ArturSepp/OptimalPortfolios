@@ -1,0 +1,1426 @@
+{
+  "protocol": {
+    "schema": "execution-numerical-mechanisms-1",
+    "package": "9.2.0",
+    "interpretation": "Historical public defect controls, not untouched evaluation",
+    "cone_optional_counts": [
+      24,
+      72
+    ],
+    "cone_allowance_seconds": 10.0,
+    "cone_representations": [
+      "unbalanced",
+      "balanced"
+    ],
+    "fixed_sides": [
+      "lower",
+      "upper"
+    ],
+    "fixed_fractions": [
+      0.99999999,
+      1.01
+    ],
+    "fixed_reduction": [
+      false,
+      true
+    ],
+    "origin": {
+      "kind": "analytical_bound_pair_not_solver_output",
+      "incumbent": 1e-10,
+      "bound": 9e-11,
+      "removed_constant": 0.001,
+      "absolute_gap": 1.0000000000000004e-11,
+      "original_relative_gap": 0.10000000000000003,
+      "translated_relative_gap": 1.0000001000000105e-08,
+      "absolute_target": 1e-12,
+      "relative_target": 0.0001,
+      "original_stops": false,
+      "translated_stops": true
+    },
+    "sources": {
+      "execution": {
+        "execution/__init__.py": "af704f08e70642c3bc4956a4b93643270b86e654a2533ecb954797102e104a87",
+        "execution/_audited_cutoff_repair.py": "63ddaf5e0aaa5f987d68c3ad10dbc990a8bbbf4f095c94acd22ef1394fb2530a",
+        "execution/_budget.py": "9ae82c0e03581e5118ae8a534e1f8db2963353f6547b1211adc414391ec1f2b0",
+        "execution/_common/__init__.py": "99ea992810985dd9ea34a362804c0e29cbab98e9c8b7008974be7017d21fe902",
+        "execution/_common/config.py": "859dd7262200b16c52141219d0070512c419ad6988b6f13a1adeb496287b176d",
+        "execution/_common/model.py": "4d1bee2444d233d41508a37eef88d18b279467df2864e3a9791c044e73b0293c",
+        "execution/_constraint_scope.py": "b0f28e5e7735d109967b0bef59ecb096fd78af9b6cc30f0b3b75416fc397f098",
+        "execution/_cutoff_repair.py": "9287f8ab34550e59200354e298b187bdf844fac99b45fbb5dc7f38d97da44352",
+        "execution/_monthly_target.py": "fde018f07c2ad92fccb7fc9c474f7cd252078f57d5b00a44ef130878c08d4283",
+        "execution/_projection_cache.py": "b04df4cb95fc0f0329c580db9c7a87415a7c8db9244b0a9697f8b5eaa23d7814",
+        "execution/_return_gate.py": "fdb464646988ebd76f7aef554eb17506797499bb274121b0f5324ee3ea388361",
+        "execution/_swaps.py": "c4402492a424c5c68b292b3f38f5d91094a5db99dd58ab640a904f4f45084b6f",
+        "execution/api.py": "c10369346b12c1faa42b17ebab62cb9ea814f92cc08da0b73e016986b8785e13",
+        "execution/branches.py": "7fd615746bbcc4581b15641421978c288740454ed9ea6eeee475f98b114ee6b2",
+        "execution/feasibility.py": "8008ee98749e1ac14f082f72eda15b81cde4909f6b5478cfac2f19cdebdfce47",
+        "execution/guarded.py": "413d68eb95f48879d30f2f4dd40e7928b7debeaba20c37349803dc0c39568859",
+        "execution/improvement.py": "e07855788cc836fbdc739ae0e1bddbb7026726bc979233eaea819e685ca9fd80",
+        "execution/MIQP/__init__.py": "b92352312b347d16a96dfb0f0672eb08025663902e3b24d54e39fd490f22adb1",
+        "execution/MIQP/solver.py": "7a042e492b2439115b7bc77f82966b3dd7486227317ab79ef4ef431cece03f02",
+        "execution/ranking.py": "137277c05ac5f3de225935e792c2aefd1ec3924f7ca855e71bc63787e67e1d7c",
+        "execution/schema.py": "f9a8c0ef0ff4584a3385ef9301af84d2b73f0b9cde8ac5c8ac4aa63a8f0bb0fe",
+        "execution/solver.py": "89d7b9b69279d6da2b08603c873593751302adecf51088f234d3ae7b1acbd4bc",
+        "execution/types.py": "8061a106e88ca9afffab6192d6b604eb9277c1791b9994d9f5e3110e06b766ed",
+        "execution/v1/__init__.py": "5f6e3d0d1a5d61920e8f8f026e1811808cfba522b193c006790fef35f0b61b72",
+        "execution/v1/_audited_cutoff_repair.py": "f7e7b615727ced73f53a863def4304fe628ccc3d78a138351666315fb629ef4f",
+        "execution/v1/_budget.py": "7b90273653cfe961f5e645b835724d8b02bb31d42b0e393e3d1dae9cc821cbed",
+        "execution/v1/_constraint_scope.py": "2489f93b0a990cd18ea99c5fa146429d7f59b700faffbf5e4dfea40fed8e1497",
+        "execution/v1/_cutoff_repair.py": "be1f339660fe8a18173f8ed541e9b01efc02ea3ce2a02f017a57eeae020ddfad",
+        "execution/v1/_monthly_target.py": "a9cec842945abb4fb1dbcf3d58243db9aa567c070ea72b59b161d056ac0e35fd",
+        "execution/v1/_projection_cache.py": "ebc346f1886e6eccf1eb5ed2a894f7c98fecbba2a8643991096ec3de37c22531",
+        "execution/v1/_return_gate.py": "a409a391f10de703ca30e5eb4578b9207f2ec69ac90f5fd7fd74338a560f9614",
+        "execution/v1/_swaps.py": "4f7075a5aa3496e06fa77459ad19faea9aee8b4ad4d87a5dd0db59fb39e6f7d8",
+        "execution/v1/api.py": "cfff0e335e7f10806be0a26af4c5e5e5d5e777c2183c736b563787f73cd3424d",
+        "execution/v1/branches.py": "436cdb55d6953c081b090e61fa6ce38993de5fc8307d317f4eeeaba2c40713b6",
+        "execution/v1/feasibility.py": "530aa59e1172804e7ea6fb25722233e586caff1dee3fb843f5fd5e621bc9989d",
+        "execution/v1/guarded.py": "8a1e560c8a1175afe8198b4de271d365c0e208e676793af6ad7bd2e0815f14a4",
+        "execution/v1/improvement.py": "4ea9a84cbd81ff0438d8dbdc09fdaafb505dffb5b0f1fa204a67aeb371b4c653",
+        "execution/v1/orchestration.py": "eb6e1873cde8c23d596bb2484061d3171458df917f7b1bce10894419d73418dc",
+        "execution/v1/policy.py": "c85619cfc5db1721640649644c4fa23ff4fd95811b2802470b42caaaa8967e83",
+        "execution/v1/ranking.py": "35f451f2afc954af79f87478fbb2c2263a897e84313578ed9a25141ee30e976f",
+        "execution/v1/risk_budget_ranker.py": "e31fb3e66b45c59c06f63d7f0b89f127409b91b74a0716b630255c526c65311b",
+        "execution/v1/schema.py": "b8eb426dbb19de0c17081d92c3394f0026b3a07064ea7ed21873316fed87a301",
+        "execution/v1/solver.py": "e655664ea68a9ef73506834df8429e540f56ebcdf4b2a60a1fffe0bef42dee68",
+        "execution/v1/types.py": "ecf4166bf5d90a57aac6e338d175ebf80840946f98fe7fdd84c5f42a6b361a12",
+        "execution/v2/__init__.py": "49707522d93c17a985a6d0817740f9ed4fdb13766bd8ab7d5e5873f23da97206",
+        "execution/v2/_sizing.py": "60f2509082cec9e0f08dd8b2bb1b2908afa2bee651e9e78b22193a0a062e0d9c",
+        "execution/v2/adapter.py": "8a9b080b445283a657076b43a049d1d138ab6b8b30f5e8b0d7c1232d9425a571",
+        "execution/v2/bounds.py": "e51cec9d40c758acb6729a4ddace9fb783573f7319a9c8e2c232389df085ac95",
+        "execution/v2/domain.py": "38d3b62d7760f0d270286481d34b585090de8b8c45c6ee86d832f1b6352ef27f",
+        "execution/v2/exact.py": "52ceced52897cc3ab9f0605e7c1c5973e3caeac1be16200e0547df69b295ee77",
+        "execution/v2/model.py": "00662a60a3855667eab0eb0d50a5305802c219951a9d93fd7fcde0c2f98750c9",
+        "execution/v2/preparation.py": "62225648bffeffb37353362f04fee8b2941b8069e120626754d06a2900a185fc",
+        "execution/v2/primary.py": "2107109e0904481f53dbe7aaf9f215220d1a35ca19d703a7b43a332eeb5ad073",
+        "execution/v2/production.py": "6f201157faa15ab69723de15d1fef94b473eff39a6bf4f955e72f703d0947d92",
+        "execution/v2/ranked.py": "50027ccf9c6a495926c69815f9d3f5bb1d2cfa65a7ba7ea4ac4ec3f4e060528d",
+        "execution/v2/types.py": "9db80c60429acac2c50f4e240a87d42119413f8e98f78af172066b78a4ea97c9"
+      },
+      "replication": {
+        "matched.py": "6fb4d738d30d6d17288d19670863c04b985ef47c56ea021becdc2cb6d49852c8",
+        "benchmark.py": "90c97a45edc4cdfa09f90e6d585cefa4504c20115333218dc736612c8e4c005b",
+        "breadth.py": "a7db6f527823d58a7b6f326d12fd98c749e7e636445ba1e11b3d8c9de60f1c1a",
+        "run_benchmark.py": "89fdc09adfab4c467b08228a47ee521261f9631acdb652483584f44b0618cb80"
+      }
+    },
+    "runner_sha256": "c4ee3386bddb52136662723865b2247b718a4fdd4d679ad59394692f0689d34a",
+    "fixture_sources": {
+      "optimalportfolios.execution.v2.tests.native_accuracy_test": "607b69b5f03a42855d3926e323de7b88c506e15c0b6a666b27df55951c508cb3",
+      "optimalportfolios.execution.v2.tests.fixed_rows_test": "92fba95845c524f5beff5e9896871ffaeb49d9c3792be66028e6b998a01dc97f",
+      "optimalportfolios.execution.v2.tests.formulation_test": "f0e0e36de23736df80be9f19d066b78394747c9d165bc35c1b08de9a81d129ce",
+      "optimalportfolios.execution.v2.tests.group_audit_test": "0506d1009f447eeae847641c094d808f19aaae0fbbd28dd502a7b427df2b57d9"
+    }
+  },
+  "cones": [
+    {
+      "optional": 24,
+      "balanced": false,
+      "input_fingerprint": "55d7d2263184f06cf2c72b40648ccd415d6b98c8cfa15b96d11e1fa1430c33e3",
+      "seconds": 0.4835705000004964,
+      "allowance_seconds": 10.0,
+      "weights": [
+        0.0,
+        0.0,
+        0.03565459871615471,
+        0.0155477264099012,
+        0.1099170641578509,
+        0.05178163302796514,
+        0.04065870846685548,
+        0.02886528047500117,
+        0.013139152854448211,
+        0.03082462437096467,
+        0.05336152860235895,
+        0.023157219811980906,
+        0.022250044651833542,
+        0.03592631634190595,
+        0.06517572392057161,
+        0.04836089951200081,
+        0.028955352985356404,
+        0.03159656625760447,
+        0.020425733925880173,
+        0.024123767464286308,
+        0.04394830176003659,
+        0.027971813938277995,
+        0.03906873642184223,
+        0.030084180340548924,
+        0.06411153045147856,
+        0.024320891757448698,
+        0.0907726033774463
+      ],
+      "variance": 0.0001768880715277466,
+      "te_bp": 132.99927500845507,
+      "audit": {
+        "passed": true,
+        "violations": [],
+        "residuals": {
+          "funding": 2.220446049250313e-16,
+          "lower": 0.0,
+          "upper": 0.0,
+          "groups": 9.825223135084826e-08
+        },
+        "tickets": 8,
+        "optional_tickets": 6,
+        "turnover": 0.20753274011587614
+      },
+      "delivered_source": "native_callback",
+      "native": {
+        "native_status": "solsta.integer_optimal",
+        "initial_start": {
+          "requested": true,
+          "supplied": true,
+          "received": true,
+          "lift_status": "solsta.optimal",
+          "variable_map": {
+            "1": 0,
+            "23": 21,
+            "24": 23,
+            "57": 25,
+            "58": 27,
+            "91": 29,
+            "92": 31,
+            "125": 33,
+            "126": 35,
+            "159": 37,
+            "160": 39,
+            "193": 41,
+            "194": 43,
+            "227": 45,
+            "228": 47,
+            "261": 49,
+            "262": 51,
+            "295": 53,
+            "296": 55,
+            "329": 57,
+            "330": 59,
+            "363": 61,
+            "364": 63,
+            "397": 65,
+            "398": 67,
+            "431": 69,
+            "432": 71,
+            "465": 73,
+            "466": 75,
+            "499": 77,
+            "500": 79,
+            "533": 81,
+            "534": 83,
+            "567": 85,
+            "568": 87,
+            "601": 89,
+            "602": 91,
+            "635": 93,
+            "636": 95,
+            "669": 97,
+            "670": 99
+          },
+          "variables": 123,
+          "seconds": 0.017334500000288244
+        },
+        "canonicalisation_seconds": 0.17832739999721525,
+        "native_bound": 0.00017688808242093587,
+        "native_objective_offset": 0.00036961163137973224,
+        "native_objective_origin": "original_variance",
+        "native_mip_feasibility_tolerance": 1e-09,
+        "bound": null,
+        "bound_reason": "Native global bound retained as diagnostic, certificate not validated",
+        "termination": "rescode.ok",
+        "native_problem_status": "prosta.prim_feas",
+        "nodes": 33,
+        "integer_solutions": 4,
+        "callback_errors": [],
+        "native_bound_canonical": -0.00019272354895879637,
+        "native_incumbent": 0.00017688808242093587,
+        "native_gap_relative": 0.0,
+        "canonical_status": "optimal"
+      },
+      "events": [
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 0.0
+            },
+            "tickets": 2,
+            "optional_tickets": 0,
+            "turnover": 0.06077286584313458
+          },
+          "variance": 0.00036961163137973224
+        },
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 2.220446049250313e-16,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.99999995032752e-08
+            },
+            "tickets": 8,
+            "optional_tickets": 6,
+            "turnover": 0.17500513972565002
+          },
+          "variance": 0.00023593053791673657
+        },
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 1.1102230246251565e-16,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.999999994736442e-08
+            },
+            "tickets": 8,
+            "optional_tickets": 6,
+            "turnover": 0.19773965730557774
+          },
+          "variance": 0.00018768239672495857
+        },
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 2.220446049250313e-16,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.825223135084826e-08
+            },
+            "tickets": 8,
+            "optional_tickets": 6,
+            "turnover": 0.20753274011587614
+          },
+          "variance": 0.0001768880715277466
+        },
+        {
+          "source": "native_return",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 2.220446049250313e-16,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.825223135084826e-08
+            },
+            "tickets": 8,
+            "optional_tickets": 6,
+            "turnover": 0.20753274011587614
+          },
+          "variance": 0.0001768880715277466
+        }
+      ],
+      "independent_reference_variance": 0.00017688871950380595,
+      "independent_reference_audit": {
+        "passed": true,
+        "violations": [],
+        "residuals": {
+          "funding": 0.0,
+          "lower": 2.0816681711721685e-17,
+          "upper": 1.3877787807814457e-17,
+          "groups": 0.0
+        },
+        "tickets": 8,
+        "optional_tickets": 6,
+        "turnover": 0.20753253238978922
+      }
+    },
+    {
+      "optional": 24,
+      "balanced": true,
+      "input_fingerprint": "55d7d2263184f06cf2c72b40648ccd415d6b98c8cfa15b96d11e1fa1430c33e3",
+      "seconds": 0.22784540000429843,
+      "allowance_seconds": 10.0,
+      "weights": [
+        0.0,
+        0.0,
+        0.03565459871615471,
+        0.0155477264099012,
+        0.10991707324111383,
+        0.05178163302796514,
+        0.04065870846685548,
+        0.028865273139429385,
+        0.013139137815616708,
+        0.03082462437096467,
+        0.05336152860235895,
+        0.023157219811980906,
+        0.02225003965924134,
+        0.03592631634190595,
+        0.06517576709608279,
+        0.04836089951200081,
+        0.028955352985356404,
+        0.03159656625760447,
+        0.020425733925880173,
+        0.024123767464286308,
+        0.04394830176003659,
+        0.027971813938277995,
+        0.03906873642184223,
+        0.030084180340548924,
+        0.06411154309363551,
+        0.024320891757448698,
+        0.09077256584351075
+      ],
+      "variance": 0.00017688800612190587,
+      "te_bp": 132.99925041965685,
+      "audit": {
+        "passed": true,
+        "violations": [],
+        "residuals": {
+          "funding": 1.1102230246251565e-16,
+          "lower": 0.0,
+          "upper": 0.0,
+          "groups": 9.999996047893589e-08
+        },
+        "tickets": 8,
+        "optional_tickets": 6,
+        "turnover": 0.2075328323838027
+      },
+      "delivered_source": "native_callback",
+      "native": {
+        "native_status": "solsta.integer_optimal",
+        "initial_start": {
+          "requested": true,
+          "supplied": true,
+          "received": true,
+          "lift_status": "solsta.optimal",
+          "variable_map": {
+            "1855": 0,
+            "1877": 21,
+            "1878": 23,
+            "1911": 25,
+            "1912": 27,
+            "1945": 29,
+            "1946": 31,
+            "1979": 33,
+            "1980": 35,
+            "2013": 37,
+            "2014": 39,
+            "2047": 41,
+            "2048": 43,
+            "2081": 45,
+            "2082": 47,
+            "2115": 49,
+            "2116": 51,
+            "2149": 53,
+            "2150": 55,
+            "2183": 57,
+            "2184": 59,
+            "2217": 61,
+            "2218": 63,
+            "2251": 65,
+            "2252": 67,
+            "2285": 69,
+            "2286": 71,
+            "2319": 73,
+            "2320": 75,
+            "2353": 77,
+            "2354": 79,
+            "2387": 81,
+            "2388": 83,
+            "2421": 85,
+            "2422": 87,
+            "2455": 89,
+            "2456": 91,
+            "2489": 93,
+            "2490": 95,
+            "2523": 97,
+            "2524": 99
+          },
+          "variables": 123,
+          "seconds": 0.0012530000021797605
+        },
+        "canonicalisation_seconds": 0.034040899998217355,
+        "native_bound": 0.00017688800612195108,
+        "native_objective_offset": 0.00036961163137973224,
+        "native_objective_origin": "original_variance",
+        "native_mip_feasibility_tolerance": 1e-09,
+        "bound": null,
+        "bound_reason": "Native global bound retained as diagnostic, certificate not validated",
+        "termination": "rescode.ok",
+        "native_problem_status": "prosta.prim_feas",
+        "nodes": 33,
+        "integer_solutions": 6,
+        "callback_errors": [],
+        "native_bound_canonical": -0.00019272362525778116,
+        "native_incumbent": 0.00017688800612195108,
+        "native_gap_relative": 0.0,
+        "canonical_status": "optimal"
+      },
+      "events": [
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 0.0
+            },
+            "tickets": 2,
+            "optional_tickets": 0,
+            "turnover": 0.06077286584313458
+          },
+          "variance": 0.00036961163137973224
+        },
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 1.1102230246251565e-16,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.999996508636144e-08
+            },
+            "tickets": 8,
+            "optional_tickets": 6,
+            "turnover": 0.17500513971923176
+          },
+          "variance": 0.0002359305379200615
+        },
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 2.220446049250313e-16,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.999760186563122e-08
+            },
+            "tickets": 8,
+            "optional_tickets": 6,
+            "turnover": 0.19773965722230072
+          },
+          "variance": 0.00018768239678741347
+        },
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.999991840148326e-08
+            },
+            "tickets": 8,
+            "optional_tickets": 6,
+            "turnover": 0.1931772512252166
+          },
+          "variance": 0.0001867175175410092
+        },
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 1.1102230246251565e-16,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.999996047893589e-08
+            },
+            "tickets": 8,
+            "optional_tickets": 6,
+            "turnover": 0.2075328323838027
+          },
+          "variance": 0.00017688800612190587
+        },
+        {
+          "source": "native_return",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 1.1102230246251565e-16,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.999996047893589e-08
+            },
+            "tickets": 8,
+            "optional_tickets": 6,
+            "turnover": 0.2075328323838027
+          },
+          "variance": 0.00017688800612190587
+        }
+      ],
+      "independent_reference_variance": 0.00017688871950380595,
+      "independent_reference_audit": {
+        "passed": true,
+        "violations": [],
+        "residuals": {
+          "funding": 0.0,
+          "lower": 2.0816681711721685e-17,
+          "upper": 1.3877787807814457e-17,
+          "groups": 0.0
+        },
+        "tickets": 8,
+        "optional_tickets": 6,
+        "turnover": 0.20753253238978922
+      }
+    },
+    {
+      "optional": 72,
+      "balanced": false,
+      "input_fingerprint": "627ff9fd54b8a45cc29bf4ba3697768f9fb4b5524fc5ca55c8b391db8ab839a9",
+      "seconds": 1.036157499998808,
+      "allowance_seconds": 10.0,
+      "weights": [
+        0.0,
+        0.0,
+        0.012634563216720168,
+        0.009540739583736853,
+        0.010089181371266291,
+        0.011033909554677892,
+        0.014470581828612042,
+        0.008409084843236225,
+        0.013067750943113913,
+        0.012884578906728294,
+        0.012485982891208013,
+        0.012210709048123002,
+        0.011235163805121004,
+        0.012711980026073424,
+        0.012409026614099459,
+        0.014272618387227638,
+        0.013376382763541684,
+        0.01029741793274937,
+        0.011003793494323923,
+        0.012734777196906029,
+        0.010540733104720278,
+        0.015205963310285703,
+        0.010218461112329392,
+        0.010970235076843169,
+        0.01642406009128642,
+        0.016350720429271045,
+        0.009758244238002737,
+        0.014025152555647772,
+        0.012610862923151354,
+        0.009045318645325958,
+        0.009088860276402622,
+        0.00250001299291446,
+        0.01058505563491327,
+        0.012585656587609618,
+        0.01208114432006564,
+        0.010966286515386345,
+        0.011782540267730356,
+        0.020532775076709385,
+        0.01088277625077359,
+        0.009464783445947044,
+        0.007317114396110163,
+        0.01302072108968463,
+        0.014687187885280027,
+        0.011503154220207267,
+        0.01464402365013788,
+        0.019555142572595212,
+        0.01436493294848103,
+        0.013377012440223272,
+        0.009020556521839758,
+        0.013930973157642693,
+        0.019720844273039346,
+        0.011954296290400401,
+        0.011807541640305019,
+        0.009580769687895618,
+        0.012130041574179577,
+        0.009961052571101671,
+        0.0025000087611678637,
+        0.012518500402769427,
+        0.03103509212886938,
+        0.04253259864317985,
+        0.012372091840959581,
+        0.012180035742475743,
+        0.005231432038364932,
+        0.014337258084603469,
+        0.011378780579937894,
+        0.014184085270491222,
+        0.017855477918113573,
+        0.017043514824068275,
+        0.009534888325787739,
+        0.015160095480192596,
+        0.01464011520825035,
+        0.015356002116465367,
+        0.01599861259278815,
+        0.007911089692453329,
+        0.07116707016715633
+      ],
+      "variance": 0.00016496750499528771,
+      "te_bp": 128.43967650040534,
+      "audit": {
+        "passed": true,
+        "violations": [],
+        "residuals": {
+          "funding": 0.0,
+          "lower": 0.0,
+          "upper": 0.0,
+          "groups": 9.869654665761729e-08
+        },
+        "tickets": 8,
+        "optional_tickets": 6,
+        "turnover": 0.10959751071745238
+      },
+      "delivered_source": "native_callback",
+      "native": {
+        "native_status": "solsta.integer_optimal",
+        "initial_start": {
+          "requested": true,
+          "supplied": true,
+          "received": true,
+          "lift_status": "solsta.optimal",
+          "variable_map": {
+            "3710": 0,
+            "3732": 42,
+            "3733": 44,
+            "3766": 46,
+            "3767": 48,
+            "3800": 50,
+            "3801": 52,
+            "3834": 54,
+            "3835": 56,
+            "3868": 58,
+            "3869": 60,
+            "3902": 62,
+            "3903": 64,
+            "3936": 66,
+            "3937": 68,
+            "3970": 70,
+            "3971": 72,
+            "4004": 74,
+            "4005": 76,
+            "4038": 78,
+            "4039": 80,
+            "4072": 82,
+            "4073": 84,
+            "4106": 86,
+            "4107": 88,
+            "4140": 90,
+            "4141": 92,
+            "4174": 94,
+            "4175": 96,
+            "4208": 98,
+            "4209": 100,
+            "4242": 102,
+            "4243": 104,
+            "4276": 106,
+            "4277": 108,
+            "4310": 110,
+            "4311": 112,
+            "4344": 114,
+            "4345": 116,
+            "4378": 118,
+            "4379": 120,
+            "4412": 122,
+            "4413": 124,
+            "4446": 126,
+            "4447": 128,
+            "4480": 130,
+            "4481": 132,
+            "4514": 134,
+            "4515": 136,
+            "4548": 138,
+            "4549": 140,
+            "4582": 142,
+            "4583": 144,
+            "4616": 146,
+            "4617": 148,
+            "4650": 150,
+            "4651": 152,
+            "4684": 154,
+            "4685": 156,
+            "4718": 158,
+            "4719": 160,
+            "4752": 162,
+            "4753": 164,
+            "4786": 166,
+            "4787": 168,
+            "4820": 170,
+            "4821": 172,
+            "4854": 174,
+            "4855": 176,
+            "4888": 178,
+            "4889": 180,
+            "4922": 182,
+            "4923": 184,
+            "4956": 186,
+            "4957": 188,
+            "4990": 190,
+            "4991": 192,
+            "5024": 194,
+            "5025": 196,
+            "5058": 198,
+            "5059": 200,
+            "5092": 202,
+            "5093": 204
+          },
+          "variables": 249,
+          "seconds": 0.0020820999998250045
+        },
+        "canonicalisation_seconds": 0.06890999999450287,
+        "native_bound": 0.0001649675619160925,
+        "native_objective_offset": 0.00029655500600943595,
+        "native_objective_origin": "original_variance",
+        "native_mip_feasibility_tolerance": 1e-09,
+        "bound": null,
+        "bound_reason": "Native global bound retained as diagnostic, certificate not validated",
+        "termination": "rescode.ok",
+        "native_problem_status": "prosta.prim_feas",
+        "nodes": 87,
+        "integer_solutions": 6,
+        "callback_errors": [],
+        "native_bound_canonical": -0.00013158744409334344,
+        "native_incumbent": 0.0001649675619160925,
+        "native_gap_relative": 0.0,
+        "canonical_status": "optimal"
+      },
+      "events": [
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 0.0
+            },
+            "tickets": 2,
+            "optional_tickets": 0,
+            "turnover": 0.02244368734213676
+          },
+          "variance": 0.00029655500600943595
+        },
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 0.0
+            },
+            "tickets": 2,
+            "optional_tickets": 0,
+            "turnover": 0.02244368734213676
+          },
+          "variance": 0.00029655500600943595
+        },
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.999999994736442e-08
+            },
+            "tickets": 6,
+            "optional_tickets": 4,
+            "turnover": 0.07197670210605277
+          },
+          "variance": 0.0001939207651743233
+        },
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.999999811549642e-08
+            },
+            "tickets": 8,
+            "optional_tickets": 6,
+            "turnover": 0.1001276453026923
+          },
+          "variance": 0.0001741225151852882
+        },
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.99044551530659e-08
+            },
+            "tickets": 8,
+            "optional_tickets": 6,
+            "turnover": 0.10415968563905069
+          },
+          "variance": 0.000173065059152204
+        },
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.869654665761729e-08
+            },
+            "tickets": 8,
+            "optional_tickets": 6,
+            "turnover": 0.10959751071745238
+          },
+          "variance": 0.00016496750499528771
+        },
+        {
+          "source": "native_return",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.869654665761729e-08
+            },
+            "tickets": 8,
+            "optional_tickets": 6,
+            "turnover": 0.10959751071745238
+          },
+          "variance": 0.00016496750499528771
+        }
+      ]
+    },
+    {
+      "optional": 72,
+      "balanced": true,
+      "input_fingerprint": "627ff9fd54b8a45cc29bf4ba3697768f9fb4b5524fc5ca55c8b391db8ab839a9",
+      "seconds": 0.6017468000063673,
+      "allowance_seconds": 10.0,
+      "weights": [
+        0.0,
+        0.0,
+        0.012634563216720168,
+        0.009540739583736853,
+        0.010089181371264603,
+        0.011033909554679935,
+        0.014470581828612042,
+        0.008409084843236225,
+        0.013067750943113913,
+        0.012884578906726308,
+        0.012485982891208013,
+        0.01221070904812561,
+        0.01123516380511553,
+        0.012711980026073424,
+        0.012409026614099459,
+        0.014272618387224947,
+        0.013376382763540456,
+        0.010297417932746595,
+        0.011003793494321658,
+        0.012734777196912015,
+        0.010540733104720278,
+        0.015205963310285703,
+        0.010218461112331632,
+        0.010970235076843169,
+        0.016424060091284585,
+        0.016350720429271045,
+        0.009758244238002737,
+        0.014025152555647772,
+        0.012610862923148825,
+        0.009045318645337811,
+        0.009088860276402622,
+        0.0025000000000011645,
+        0.01058505563491327,
+        0.012585656587609618,
+        0.012081144320067017,
+        0.01096628651538146,
+        0.01178254026772867,
+        0.020532775076704892,
+        0.01088277625077359,
+        0.009464783445947044,
+        0.00731710501035074,
+        0.01302072108968463,
+        0.014687187885288703,
+        0.011503154220205862,
+        0.01464402365013788,
+        0.01955514257258441,
+        0.014364932948476735,
+        0.013377012440220519,
+        0.009020556521839758,
+        0.013930973157640785,
+        0.019720844273037965,
+        0.011954296290400401,
+        0.011807541640305019,
+        0.009580769687895618,
+        0.01213004157417604,
+        0.009961052571101671,
+        0.002500000000000619,
+        0.012518500402767882,
+        0.031034532666456654,
+        0.04253323808159083,
+        0.012372091840959581,
+        0.012180035742475743,
+        0.00523080266456903,
+        0.014337258084603469,
+        0.011378780579937894,
+        0.014184085270491222,
+        0.017855477918113573,
+        0.01704351482406598,
+        0.009534888325787739,
+        0.015160095480192596,
+        0.01464011520825035,
+        0.015356002116465367,
+        0.01599861259279302,
+        0.007911089692453329,
+        0.07116765070481774
+      ],
+      "variance": 0.0001649670179975954,
+      "te_bp": 128.43948691800173,
+      "audit": {
+        "passed": true,
+        "violations": [],
+        "residuals": {
+          "funding": 0.0,
+          "lower": 0.0,
+          "upper": 0.0,
+          "groups": 9.999999944776405e-08
+        },
+        "tickets": 8,
+        "optional_tickets": 6,
+        "turnover": 0.10959825120718962
+      },
+      "delivered_source": "native_callback",
+      "native": {
+        "native_status": "solsta.integer_optimal",
+        "initial_start": {
+          "requested": true,
+          "supplied": true,
+          "received": true,
+          "lift_status": "solsta.optimal",
+          "variable_map": {
+            "7286": 0,
+            "7308": 42,
+            "7309": 44,
+            "7342": 46,
+            "7343": 48,
+            "7376": 50,
+            "7377": 52,
+            "7410": 54,
+            "7411": 56,
+            "7444": 58,
+            "7445": 60,
+            "7478": 62,
+            "7479": 64,
+            "7512": 66,
+            "7513": 68,
+            "7546": 70,
+            "7547": 72,
+            "7580": 74,
+            "7581": 76,
+            "7614": 78,
+            "7615": 80,
+            "7648": 82,
+            "7649": 84,
+            "7682": 86,
+            "7683": 88,
+            "7716": 90,
+            "7717": 92,
+            "7750": 94,
+            "7751": 96,
+            "7784": 98,
+            "7785": 100,
+            "7818": 102,
+            "7819": 104,
+            "7852": 106,
+            "7853": 108,
+            "7886": 110,
+            "7887": 112,
+            "7920": 114,
+            "7921": 116,
+            "7954": 118,
+            "7955": 120,
+            "7988": 122,
+            "7989": 124,
+            "8022": 126,
+            "8023": 128,
+            "8056": 130,
+            "8057": 132,
+            "8090": 134,
+            "8091": 136,
+            "8124": 138,
+            "8125": 140,
+            "8158": 142,
+            "8159": 144,
+            "8192": 146,
+            "8193": 148,
+            "8226": 150,
+            "8227": 152,
+            "8260": 154,
+            "8261": 156,
+            "8294": 158,
+            "8295": 160,
+            "8328": 162,
+            "8329": 164,
+            "8362": 166,
+            "8363": 168,
+            "8396": 170,
+            "8397": 172,
+            "8430": 174,
+            "8431": 176,
+            "8464": 178,
+            "8465": 180,
+            "8498": 182,
+            "8499": 184,
+            "8532": 186,
+            "8533": 188,
+            "8566": 190,
+            "8567": 192,
+            "8600": 194,
+            "8601": 196,
+            "8634": 198,
+            "8635": 200,
+            "8668": 202,
+            "8669": 204
+          },
+          "variables": 249,
+          "seconds": 0.0025249000027542934
+        },
+        "canonicalisation_seconds": 0.08511469999939436,
+        "native_bound": 0.0001649670179975956,
+        "native_objective_offset": 0.00029655500600943595,
+        "native_objective_origin": "original_variance",
+        "native_mip_feasibility_tolerance": 1e-09,
+        "bound": null,
+        "bound_reason": "Native global bound retained as diagnostic, certificate not validated",
+        "termination": "rescode.ok",
+        "native_problem_status": "prosta.prim_feas",
+        "nodes": 55,
+        "integer_solutions": 6,
+        "callback_errors": [],
+        "native_bound_canonical": -0.00013158798801184038,
+        "native_incumbent": 0.0001649670179975956,
+        "native_gap_relative": 0.0,
+        "canonical_status": "optimal"
+      },
+      "events": [
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 0.0
+            },
+            "tickets": 2,
+            "optional_tickets": 0,
+            "turnover": 0.02244368734213676
+          },
+          "variance": 0.00029655500600943595
+        },
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.99997469275371e-08
+            },
+            "tickets": 6,
+            "optional_tickets": 4,
+            "turnover": 0.07197670210515114
+          },
+          "variance": 0.0001939207651779274
+        },
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 2.220446049250313e-16,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.999916605885062e-08
+            },
+            "tickets": 7,
+            "optional_tickets": 5,
+            "turnover": 0.09719286928992796
+          },
+          "variance": 0.00017336770499794103
+        },
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.999989436515477e-08
+            },
+            "tickets": 8,
+            "optional_tickets": 6,
+            "turnover": 0.11378850382155176
+          },
+          "variance": 0.00017323122862522057
+        },
+        {
+          "source": "native_callback",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.999999944776405e-08
+            },
+            "tickets": 8,
+            "optional_tickets": 6,
+            "turnover": 0.10959825120718962
+          },
+          "variance": 0.0001649670179975954
+        },
+        {
+          "source": "native_return",
+          "audit": {
+            "passed": true,
+            "violations": [],
+            "residuals": {
+              "funding": 0.0,
+              "lower": 0.0,
+              "upper": 0.0,
+              "groups": 9.999999944776405e-08
+            },
+            "tickets": 8,
+            "optional_tickets": 6,
+            "turnover": 0.10959825120718962
+          },
+          "variance": 0.0001649670179975954
+        }
+      ]
+    }
+  ],
+  "fixed_rows": [
+    {
+      "side": "lower",
+      "fraction_of_existing_audit_tolerance": 0.99999999,
+      "reduce_satisfied_constant_rows": false,
+      "input_fingerprint": "9fc8cb839cba3a846cc5d2199b24a5bad7387adcb5cbbaa19d9012added3a190",
+      "seconds": 0.0065230000036535785,
+      "status": "optimal",
+      "error": null,
+      "diagnostics": {
+        "attempts": 1,
+        "equilibration_retry": false
+      },
+      "audit": {
+        "passed": true,
+        "violations": [],
+        "residuals": {
+          "funding": 0.0,
+          "lower": 0.0,
+          "upper": 0.0,
+          "groups": 9.99999990002054e-08
+        },
+        "tickets": 1,
+        "optional_tickets": 1,
+        "turnover": 0.007499999999997398
+      },
+      "variance": 0.0013375,
+      "independent_reference_variance": 0.0013375000000000001
+    },
+    {
+      "side": "lower",
+      "fraction_of_existing_audit_tolerance": 0.99999999,
+      "reduce_satisfied_constant_rows": true,
+      "input_fingerprint": "9fc8cb839cba3a846cc5d2199b24a5bad7387adcb5cbbaa19d9012added3a190",
+      "seconds": 0.004499399998167064,
+      "status": "optimal",
+      "error": null,
+      "diagnostics": {
+        "attempts": 1,
+        "equilibration_retry": false
+      },
+      "audit": {
+        "passed": true,
+        "violations": [],
+        "residuals": {
+          "funding": 0.0,
+          "lower": 0.0,
+          "upper": 0.0,
+          "groups": 9.99999990002054e-08
+        },
+        "tickets": 1,
+        "optional_tickets": 1,
+        "turnover": 0.007500000000168094
+      },
+      "variance": 0.0013375000000000001,
+      "independent_reference_variance": 0.0013375000000000001
+    },
+    {
+      "side": "lower",
+      "fraction_of_existing_audit_tolerance": 1.01,
+      "reduce_satisfied_constant_rows": false,
+      "input_fingerprint": "f3918e50c0c43f3ffdee3c7341df0a0650b05f12df9169f433d0c2b87af32e14",
+      "seconds": 0.005319999996572733,
+      "status": "infeasible",
+      "error": null,
+      "diagnostics": {
+        "attempts": 1,
+        "equilibration_retry": false
+      },
+      "audit": {
+        "passed": false,
+        "violations": [
+          "no_weights"
+        ]
+      },
+      "variance": null,
+      "independent_infeasibility_reason": "Pinned group violates unchanged audit envelope"
+    },
+    {
+      "side": "lower",
+      "fraction_of_existing_audit_tolerance": 1.01,
+      "reduce_satisfied_constant_rows": true,
+      "input_fingerprint": "f3918e50c0c43f3ffdee3c7341df0a0650b05f12df9169f433d0c2b87af32e14",
+      "seconds": 0.007400700000289362,
+      "status": "infeasible",
+      "error": null,
+      "diagnostics": {
+        "attempts": 1,
+        "equilibration_retry": false
+      },
+      "audit": {
+        "passed": false,
+        "violations": [
+          "no_weights"
+        ]
+      },
+      "variance": null,
+      "independent_infeasibility_reason": "Pinned group violates unchanged audit envelope"
+    },
+    {
+      "side": "upper",
+      "fraction_of_existing_audit_tolerance": 0.99999999,
+      "reduce_satisfied_constant_rows": false,
+      "input_fingerprint": "d0929ec2e36ac7dabb78f6cb9e35ad8b1ed33db271a5b74989b7f7370b6f9bc9",
+      "seconds": 0.005594499998551328,
+      "status": "optimal",
+      "error": null,
+      "diagnostics": {
+        "attempts": 1,
+        "equilibration_retry": false
+      },
+      "audit": {
+        "passed": true,
+        "violations": [],
+        "residuals": {
+          "funding": 0.0,
+          "lower": 0.0,
+          "upper": 0.0,
+          "groups": 9.99999990002054e-08
+        },
+        "tickets": 1,
+        "optional_tickets": 1,
+        "turnover": 0.007499999999997398
+      },
+      "variance": 0.0013375,
+      "independent_reference_variance": 0.0013375000000000001
+    },
+    {
+      "side": "upper",
+      "fraction_of_existing_audit_tolerance": 0.99999999,
+      "reduce_satisfied_constant_rows": true,
+      "input_fingerprint": "d0929ec2e36ac7dabb78f6cb9e35ad8b1ed33db271a5b74989b7f7370b6f9bc9",
+      "seconds": 0.005096000000776257,
+      "status": "optimal",
+      "error": null,
+      "diagnostics": {
+        "attempts": 1,
+        "equilibration_retry": false
+      },
+      "audit": {
+        "passed": true,
+        "violations": [],
+        "residuals": {
+          "funding": 0.0,
+          "lower": 0.0,
+          "upper": 0.0,
+          "groups": 9.99999990002054e-08
+        },
+        "tickets": 1,
+        "optional_tickets": 1,
+        "turnover": 0.007500000000168094
+      },
+      "variance": 0.0013375000000000001,
+      "independent_reference_variance": 0.0013375000000000001
+    },
+    {
+      "side": "upper",
+      "fraction_of_existing_audit_tolerance": 1.01,
+      "reduce_satisfied_constant_rows": false,
+      "input_fingerprint": "e4695fd2772d38c1ebe31e1c1689139aa314859cd6adfebeef80a33e659806b4",
+      "seconds": 0.004779800001415424,
+      "status": "infeasible",
+      "error": null,
+      "diagnostics": {
+        "attempts": 1,
+        "equilibration_retry": false
+      },
+      "audit": {
+        "passed": false,
+        "violations": [
+          "no_weights"
+        ]
+      },
+      "variance": null,
+      "independent_infeasibility_reason": "Pinned group violates unchanged audit envelope"
+    },
+    {
+      "side": "upper",
+      "fraction_of_existing_audit_tolerance": 1.01,
+      "reduce_satisfied_constant_rows": true,
+      "input_fingerprint": "e4695fd2772d38c1ebe31e1c1689139aa314859cd6adfebeef80a33e659806b4",
+      "seconds": 0.004435400005604606,
+      "status": "infeasible",
+      "error": null,
+      "diagnostics": {
+        "attempts": 1,
+        "equilibration_retry": false
+      },
+      "audit": {
+        "passed": false,
+        "violations": [
+          "no_weights"
+        ]
+      },
+      "variance": null,
+      "independent_infeasibility_reason": "Pinned group violates unchanged audit envelope"
+    }
+  ]
+}

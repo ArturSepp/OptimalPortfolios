@@ -1,41 +1,25 @@
-All 219 decisions were attempted. Common preparation succeeded on 219; all five arms supplied independently audited portfolios on 219 decisions. The archive retains every attempted case, including any failed preparation. Comparisons use paired audited outputs.
-
-Table~\ref{tab:results} uses the common audited subset. Tracking error is annual basis points; computation is elapsed seconds. The prepared base has mean tracking error 32.897 basis points. Median common preparation takes 0.076 seconds.
-
 \begin{table}[htbp]\centering\small\setlength{\tabcolsep}{4pt}
-\caption{Conditional execution quality and measured computation. End-to-end (E2E) includes common preparation and, for ExactRanked, Ranked start generation.}\label{tab:results}
-\begin{tabular}{lrrrrr}\toprule
-Arm & Mean TE & Median TE & Median s & 95th pct. s & Median E2E s\\\midrule
-Ranked & 16.975 & 4.349 & 0.061 & 0.257 & 0.192\\
-ExactBase & 16.975 & 4.349 & 0.056 & 0.143 & 0.140\\
-ExactRanked & 16.975 & 4.349 & 0.055 & 0.081 & 0.277\\
-\bottomrule\end{tabular}
-\end{table}
-
-Pairwise differences use a descriptive equality band of $10^{-4}$ basis points, distinct from the portfolio feasibility tolerance. Negative differences favour Ranked. No independence-based significance test is applied to these serially related decisions.
+\caption{Released OP 9.2.0 on unchanged public inputs and a fresh holdout. Synthetic rows include the tiny controls. TE is annual basis points; E2E time includes common preparation.}\label{tab:matched}\label{tab:joint}
+\begin{tabular}{llrrrr}\toprule
+Sample & Method & Audited & Mean TE & Median s & 95th pct. s\\\midrule
+ETF & MIQP & 219/219 & 16.975 & 0.121 & 1.470\\
+ETF & V2 & 219/219 & 16.975 & 0.223 & 1.518\\
+ETF & Policy & 219/219 & 16.975 & 0.120 & 1.468\\
+\addlinespace
+Existing synthetic & MIQP & 26/26 & 166.473 & 0.140 & 0.615\\
+Existing synthetic & V2 & 26/26 & 166.473 & 1.548 & 6.631\\
+Existing synthetic & Policy & 26/26 & 166.473 & 0.141 & 0.653\\
+\addlinespace
+Fresh holdout & MIQP & 68/68 & 193.089 & 0.616 & 1.935\\
+Fresh holdout & V2 & 68/68 & 193.165 & 4.591 & 25.609\\
+Fresh holdout & Policy & 68/68 & 193.089 & 0.651 & 1.898\\
+\addlinespace
+\bottomrule\end{tabular}\end{table}
 \begin{table}[htbp]\centering\small\setlength{\tabcolsep}{4pt}
-\caption{Ranked relative to each comparator on paired audited decisions. The last column is mean Ranked minus comparator TE, in basis points.}\label{tab:pairs}
+\caption{Paired V2 minus independent MIQP tracking error. Positive gaps favour MIQP. The descriptive equality band is $10^{-4}$ annual bp, not a feasibility tolerance.}\label{tab:paired}
 \begin{tabular}{lrrrrr}\toprule
-Comparator & Pairs & Ranked lower & Equal & Ranked higher & Mean difference\\\midrule
-ExactBase & 219 & 12 & 207 & 0 & -0.00002\\
-ExactRanked & 219 & 0 & 219 & 0 & 0.00000\\
-\bottomrule\end{tabular}
-\end{table}
-
-Optional candidate counts range from 0 to 5 (median 1); 107 prepared cases have no optional candidate. Mandatory reservations range from 8 to 70 (median 30). These are the effective search dimensions, not the nominal 302-asset universe.
-
-Preparation retains 65 already audited bases, repairs 79 within the ordinary corridor, and uses FULL preparation on 75 decisions. The resulting pins and corridor exceptions are shared by every arm.
-
-The optional ten-ticket allowance never binds in this sample: every prepared case has at most five optional candidates. Mandatory interventions dominate the ticket count. Thus these data do not test scarce-ticket selection among a large optional candidate set.
-
-Ranked improves on Greedy in 10 cases and is equal in 209. OneAnchor and the full search have equal delivered objectives on 219 paired cases. ExactBase median call time is 0.056 seconds versus Ranked's 0.061. The measured computation does not support a general heuristic speed advantage.
-
-ExactBase delivered-source attribution is \emph{common prepared incumbent}: 65, \emph{native callback}: 140, \emph{native return}: 14. It recorded a native audited candidate on 219 of 219 prepared cases. A callback or native return may reproduce a submitted start; this count alone is not evidence of an independently discovered improvement.
-
-ExactRanked delivered-source attribution is \emph{common prepared incumbent}: 65, \emph{native callback}: 55, \emph{native return}: 7, \emph{requested mip start}: 92. It recorded a native audited candidate on 219 of 219 prepared cases. A callback or native return may reproduce a submitted start; this count alone is not evidence of an independently discovered improvement.
-
-The largest delivered TE disadvantage of Ranked against ExactRanked is 0.00004 basis points (case 0046). Delivered differences compare feasible incumbents, not certified global gaps. Full weights, numerical audits, native statuses and timing are retained per decision.
-
-Across both MIQP arms, 0 native bounds exceed the best audited cross-arm objective by more than the unchanged $10^{-12}$ variance comparison scale. Native bounds remain diagnostics, not independently certified bounds.
-Independent ExactBase is lower on 0 decisions; its maximum delivered advantage is 0.000043 basis points. These separately started outcomes remain visible even when ExactRanked stays within the descriptive equality band.
-This frozen benchmark tests a distinct public-input cohort, but its low effective candidate counts limit conclusions about dense optional search. The comparison establishes the reported conditional outcomes; it does not establish universal superiority or realised investment gains.
+Sample & Paired & V2 lower & Ties & V2 higher & Max gap bp\\\midrule
+ETF & 219 & 12 & 207 & 0 & 0.000043\\
+Existing synthetic & 26 & 0 & 26 & 0 & 0.000000\\
+Fresh holdout & 68 & 0 & 64 & 4 & 2.457878\\
+\bottomrule\end{tabular}\end{table}

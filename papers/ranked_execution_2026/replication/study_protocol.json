@@ -1,0 +1,60 @@
+{
+  "schema": "execution-research-1",
+  "package_version": "9.2.0",
+  "wheel_sha256": "b26229b4a3e6772f741da3b03fbc6d5885e1f504175616b13da7063bf9a073d5",
+  "preparation_seconds": 30,
+  "preparation_ceiling_seconds": 90,
+  "main_arms": ["Exact60", "Ranked", "Kernel60"],
+  "arms": {
+    "Exact10": {"engine": "Exact", "seconds": 10, "process_ceiling_seconds": 60},
+    "Exact60": {"engine": "Exact", "seconds": 60, "process_ceiling_seconds": 120},
+    "Exact600": {"engine": "Exact", "seconds": 600, "process_ceiling_seconds": 660},
+    "Ranked": {"engine": "Ranked", "process_ceiling_seconds": 180},
+    "Kernel60": {"engine": "Kernel", "seconds": 60, "process_ceiling_seconds": 120},
+    "Dense10": {"engine": "Exact", "seconds": 10, "representation": "dense", "process_ceiling_seconds": 120},
+    "Full60": {"engine": "Exact", "seconds": 60, "domain": "FULL", "process_ceiling_seconds": 120}
+  },
+  "scaling": {
+    "universes": [300, 1000, 3000],
+    "budgets": [10, 30, 100],
+    "held": 96,
+    "additions": 100,
+    "profiles": [
+      {"profile": "wide", "groups": "disjoint", "regime": "wide", "pattern": "diffuse", "mandatory": 2, "seed": 2026102961},
+      {"profile": "tight", "groups": "overlap", "regime": "tight", "pattern": "exit_rich", "mandatory": 6, "seed": 2026102962}
+    ],
+    "additional_arms_at": {"profile": "tight", "budget": 30, "arms": ["Exact10", "Exact600", "Dense10", "Full60"]},
+    "interpretation": "18 illustrative cells, one seed per profile; profile effects are confounded with seed and bundled economic features. No factorial causal or population superiority claim. Universe size is distinct from held positions and effective corridor candidates."
+  },
+  "external": {
+    "observations": [145, 290],
+    "seed": 2026102963,
+    "sources": [
+      {"source_file": "indtrack1.txt", "source_sha256": "258b917e304e21c87ae481b9baba0aefe877b657fa63483255c23162a74aa629", "universe": 31, "held": 15, "additions": 16, "budget": 6},
+      {"source_file": "indtrack6.txt", "source_sha256": "f80a06a0d4ed86c774745d242fd0e0a0eb0576bf901e7934a3324b359debaefc", "universe": 457, "held": 96, "additions": 100, "budget": 30}
+    ],
+    "source_base_url": "https://people.brunel.ac.uk/~mastjjb/jeb/orlib/files/",
+    "transform": "QIS point-in-time demeaned log-return EWMA, span 52, annualisation 52 model periods, artificial weekly labels, no future observations; synthetic cash variance 1e-6. Current holdings, target and every constraint are synthetic.",
+    "redistribution": "Fetch original files from their owner; raw files and derived covariance arrays are excluded from the public archive until reuse terms are established. Public loader, source checksums and transformation suffice to regenerate locally."
+  },
+  "controls": {
+    "minimum_ticket": 0.005,
+    "holding_floor": 0.0025,
+    "audit_tolerance": 1e-7,
+    "zero_tolerance": 1e-8,
+    "variance_comparison_tolerance": 1e-12,
+    "descriptive_te_band_bp": 0.0001,
+    "threads": 1,
+    "native_relative_gap": 0.0001,
+    "native_absolute_gap_variance": 1e-12
+  },
+  "accounting": {
+    "order": "Serial cases in declared order; rotate independent arms by case index. Each arm starts in a fresh process; no incumbent crosses arms.",
+    "cost": "Charge common preparation to each arm, representation conversion separately, and method guidance/search/sizing to its engine time. Retain worker and process time including original-input audit, reporting and imports. Peak resident memory covers the entire worker, including reporting.",
+    "interruption": "Kill only the study worker at its predeclared process ceiling; retain a failed-delivery record and any boundary result separately. Ranked defaults have no newly imposed internal stopping algorithm.",
+    "quality": "Report paired feasible-incumbent TE, native absolute/relative gaps, first native accepted incumbent where available, runtime and failure denominators. An unfinished Exact incumbent is not a proven optimum; Kernel restricted bounds are not global bounds.",
+    "policy_domain": "Full60 changes only the corridor policy domain, retaining hard rows and common mandatory preparation. This is not an algorithm comparison.",
+    "pilot": "Exclude all four seed-2026102951 pilot cases from evaluation and headline statistics.",
+    "historical": "Keep the previous 313-case OP 9.2.0 cohort unchanged and report separately."
+  }
+}

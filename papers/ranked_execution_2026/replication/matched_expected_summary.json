@@ -1,0 +1,1584 @@
+{
+  "schema": "matched-summary-920-1",
+  "protocol_sha256": "a0979571201e98542700e4dda37dd411552d0761db93f6981ec7a6d7e5288b50",
+  "summary_source_sha256": "a2b3e54b9921c728a3fa11b0ecea1b60e57c17a4c6c91ed45dd250236e464726",
+  "expected": 313,
+  "versions": {
+    "optimalportfolios": "9.2.0",
+    "qis": "5.44.4",
+    "numpy": "2.5.2",
+    "pandas": "3.0.5",
+    "scipy": "1.18.1",
+    "cvxpy": "1.9.2",
+    "Mosek": "11.2.3",
+    "clarabel": "0.11.1"
+  },
+  "cohorts": {
+    "ETF": {
+      "expected": 219,
+      "broad": 219,
+      "tiny": 0,
+      "prepared": 219,
+      "optional_candidates": {
+        "n": 219,
+        "mean": 0.7899543378995434,
+        "median": 1.0,
+        "p95": 3.0,
+        "maximum": 5.0,
+        "minimum": 0.0
+      },
+      "preparation_seconds": {
+        "n": 219,
+        "mean": 0.34520291552511995,
+        "median": 0.07744029999958002,
+        "p95": 1.4346280899990234,
+        "maximum": 2.2184912000011536,
+        "minimum": 0.00011799999992945231
+      },
+      "methods": {
+        "V2": {
+          "expected": 219,
+          "attempted": 219,
+          "audited": 219,
+          "te_bp": {
+            "n": 219,
+            "mean": 16.975149721917113,
+            "median": 4.348887846023043,
+            "p95": 100.8203990039976,
+            "maximum": 168.07172381597627,
+            "minimum": 0.00023309976307424196
+          },
+          "end_to_end_seconds": {
+            "n": 219,
+            "mean": 0.43299511187215767,
+            "median": 0.22264189999987138,
+            "p95": 1.51838624999873,
+            "maximum": 2.246989200000826,
+            "minimum": 0.009112399995501619
+          },
+          "seconds": {
+            "n": 219,
+            "mean": 0.08779219634703772,
+            "median": 0.04919449999943026,
+            "p95": 0.2538767699985328,
+            "maximum": 0.3606440000003204,
+            "minimum": 0.00864979999823845
+          },
+          "native_statuses": {
+            "None": 219
+          },
+          "native_gap_relative": {
+            "n": 0,
+            "mean": null,
+            "median": null,
+            "p95": null,
+            "maximum": null,
+            "minimum": null
+          },
+          "delivered_sources": {
+            "None": 219
+          },
+          "native_absolute_gap_variance": {
+            "n": 0,
+            "mean": null,
+            "median": null,
+            "p95": null,
+            "maximum": null,
+            "minimum": null
+          },
+          "native_gap_above_target_cases": [],
+          "engines": {
+            "None": 219
+          },
+          "fallback_reasons": {
+            "None": 219
+          }
+        },
+        "MIQP": {
+          "expected": 219,
+          "attempted": 219,
+          "audited": 219,
+          "te_bp": {
+            "n": 219,
+            "mean": 16.975173992795337,
+            "median": 4.348887846023043,
+            "p95": 100.8203990019406,
+            "maximum": 168.07172382027954,
+            "minimum": 0.00023309976307424196
+          },
+          "end_to_end_seconds": {
+            "n": 219,
+            "mean": 0.38701808812786037,
+            "median": 0.12121110000225599,
+            "p95": 1.4699632499970898,
+            "maximum": 2.2500151000022015,
+            "minimum": 0.011355499998899177
+          },
+          "seconds": {
+            "n": 219,
+            "mean": 0.04181517260274042,
+            "median": 0.03614240000024438,
+            "p95": 0.12908862999865955,
+            "maximum": 0.1645464000030188,
+            "minimum": 0.01119010000184062
+          },
+          "native_statuses": {
+            "solsta.integer_optimal": 188,
+            "optimal": 31
+          },
+          "native_gap_relative": {
+            "n": 188,
+            "mean": 5.262911895241253e-05,
+            "median": 0.0,
+            "p95": 1.2421469762822237e-08,
+            "maximum": 0.00967135420638004,
+            "minimum": 0.0
+          },
+          "delivered_sources": {
+            "native_callback": 140,
+            "common_prepared_incumbent": 65,
+            "native_return": 14
+          },
+          "native_absolute_gap_variance": {
+            "n": 188,
+            "mean": 9.012752103615529e-16,
+            "median": 0.0,
+            "p95": 1.642914819565302e-15,
+            "maximum": 5.593675063256255e-14,
+            "minimum": 0.0
+          },
+          "native_gap_above_target_cases": [
+            "case_0107",
+            "case_0112"
+          ],
+          "engines": {
+            "None": 219
+          },
+          "fallback_reasons": {
+            "None": 219
+          }
+        },
+        "Policy": {
+          "expected": 219,
+          "attempted": 219,
+          "audited": 219,
+          "te_bp": {
+            "n": 219,
+            "mean": 16.975173992795337,
+            "median": 4.348887846023043,
+            "p95": 100.8203990019406,
+            "maximum": 168.07172382027954,
+            "minimum": 0.00023309976307424196
+          },
+          "end_to_end_seconds": {
+            "n": 219,
+            "mean": 0.3839741849313953,
+            "median": 0.11970719999953872,
+            "p95": 1.468335560000196,
+            "maximum": 2.245779400000174,
+            "minimum": 0.01228869999977178
+          },
+          "seconds": {
+            "n": 219,
+            "mean": 0.03877126940627533,
+            "median": 0.03599010000107228,
+            "p95": 0.05538293000063277,
+            "maximum": 0.1490460000022722,
+            "minimum": 0.01146570000128122
+          },
+          "native_statuses": {
+            "solsta.integer_optimal": 188,
+            "optimal": 31
+          },
+          "native_gap_relative": {
+            "n": 188,
+            "mean": 5.262911895241253e-05,
+            "median": 0.0,
+            "p95": 1.2421469762822237e-08,
+            "maximum": 0.00967135420638004,
+            "minimum": 0.0
+          },
+          "delivered_sources": {
+            "native_callback": 140,
+            "common_prepared_incumbent": 65,
+            "native_return": 14
+          },
+          "native_absolute_gap_variance": {
+            "n": 188,
+            "mean": 9.012752103615529e-16,
+            "median": 0.0,
+            "p95": 1.642914819565302e-15,
+            "maximum": 5.593675063256255e-14,
+            "minimum": 0.0
+          },
+          "native_gap_above_target_cases": [
+            "case_0107",
+            "case_0112"
+          ],
+          "engines": {
+            "matched_miqp": 219
+          },
+          "fallback_reasons": {
+            "None": 219
+          }
+        },
+        "MIQPStartV2": {
+          "expected": 219,
+          "attempted": 219,
+          "audited": 219,
+          "te_bp": {
+            "n": 219,
+            "mean": 16.97514950708287,
+            "median": 4.348887846023043,
+            "p95": 100.8203990019406,
+            "maximum": 168.07172381597627,
+            "minimum": 0.00023309976307424196
+          },
+          "end_to_end_seconds": {
+            "n": 219,
+            "mean": 0.4689844853879491,
+            "median": 0.262321799997153,
+            "p95": 1.5541001699995831,
+            "maximum": 2.271407200001704,
+            "minimum": 0.02106909999201889
+          },
+          "seconds": {
+            "n": 219,
+            "mean": 0.03598937351579143,
+            "median": 0.03468539999812492,
+            "p95": 0.04778301000151259,
+            "maximum": 0.17744370000218623,
+            "minimum": 0.011645000002317829
+          },
+          "native_statuses": {
+            "solsta.integer_optimal": 188,
+            "optimal": 31
+          },
+          "native_gap_relative": {
+            "n": 188,
+            "mean": 2.564543271756505e-18,
+            "median": 0.0,
+            "p95": 0.0,
+            "maximum": 4.82134135090223e-16,
+            "minimum": 0.0
+          },
+          "delivered_sources": {
+            "requested_mip_start": 92,
+            "native_callback": 55,
+            "common_prepared_incumbent": 65,
+            "native_return": 7
+          },
+          "native_absolute_gap_variance": {
+            "n": 188,
+            "mean": 1.6895604001083117e-24,
+            "median": 0.0,
+            "p95": 0.0,
+            "maximum": 3.1763735522036263e-22,
+            "minimum": 0.0
+          },
+          "native_gap_above_target_cases": [],
+          "engines": {
+            "None": 219
+          },
+          "fallback_reasons": {
+            "None": 219
+          }
+        }
+      },
+      "paired": {
+        "V2_minus_MIQP": {
+          "n": 219,
+          "left_worse": 0,
+          "ties": 207,
+          "left_better": 12,
+          "gap_bp": {
+            "n": 219,
+            "mean": -2.4270878230069698e-05,
+            "median": 0.0,
+            "p95": 1.2404649230024489e-08,
+            "maximum": 4.299166676757782e-05,
+            "minimum": -0.0009414283278592367
+          },
+          "max_weight_difference": {
+            "n": 219,
+            "mean": 3.1789391310930473e-07,
+            "median": 9.371996234630586e-12,
+            "p95": 1.995859168547885e-06,
+            "maximum": 1.2473822201157553e-05,
+            "minimum": 0.0
+          },
+          "cases": [
+            {
+              "id": "case_0004",
+              "gap_bp": -0.000425292114718315
+            },
+            {
+              "id": "case_0007",
+              "gap_bp": -0.0001844079934317554
+            },
+            {
+              "id": "case_0008",
+              "gap_bp": -0.00018116708149109933
+            },
+            {
+              "id": "case_0015",
+              "gap_bp": -0.00038511171246613995
+            },
+            {
+              "id": "case_0045",
+              "gap_bp": -0.0009414283278592367
+            },
+            {
+              "id": "case_0112",
+              "gap_bp": -0.00013435123004355842
+            },
+            {
+              "id": "case_0116",
+              "gap_bp": -0.0004861013724005317
+            },
+            {
+              "id": "case_0160",
+              "gap_bp": -0.00046730740537771244
+            },
+            {
+              "id": "case_0161",
+              "gap_bp": -0.0008525105098376693
+            },
+            {
+              "id": "case_0215",
+              "gap_bp": -0.0004638843493021041
+            },
+            {
+              "id": "case_0217",
+              "gap_bp": -0.0003673289173955712
+            },
+            {
+              "id": "case_0218",
+              "gap_bp": -0.00036994836143398814
+            }
+          ]
+        },
+        "V2_minus_Policy": {
+          "n": 219,
+          "left_worse": 0,
+          "ties": 207,
+          "left_better": 12,
+          "gap_bp": {
+            "n": 219,
+            "mean": -2.4270878230069698e-05,
+            "median": 0.0,
+            "p95": 1.2404649230024489e-08,
+            "maximum": 4.299166676757782e-05,
+            "minimum": -0.0009414283278592367
+          },
+          "max_weight_difference": {
+            "n": 219,
+            "mean": 3.1789391310930473e-07,
+            "median": 9.371996234630586e-12,
+            "p95": 1.995859168547885e-06,
+            "maximum": 1.2473822201157553e-05,
+            "minimum": 0.0
+          },
+          "cases": [
+            {
+              "id": "case_0004",
+              "gap_bp": -0.000425292114718315
+            },
+            {
+              "id": "case_0007",
+              "gap_bp": -0.0001844079934317554
+            },
+            {
+              "id": "case_0008",
+              "gap_bp": -0.00018116708149109933
+            },
+            {
+              "id": "case_0015",
+              "gap_bp": -0.00038511171246613995
+            },
+            {
+              "id": "case_0045",
+              "gap_bp": -0.0009414283278592367
+            },
+            {
+              "id": "case_0112",
+              "gap_bp": -0.00013435123004355842
+            },
+            {
+              "id": "case_0116",
+              "gap_bp": -0.0004861013724005317
+            },
+            {
+              "id": "case_0160",
+              "gap_bp": -0.00046730740537771244
+            },
+            {
+              "id": "case_0161",
+              "gap_bp": -0.0008525105098376693
+            },
+            {
+              "id": "case_0215",
+              "gap_bp": -0.0004638843493021041
+            },
+            {
+              "id": "case_0217",
+              "gap_bp": -0.0003673289173955712
+            },
+            {
+              "id": "case_0218",
+              "gap_bp": -0.00036994836143398814
+            }
+          ]
+        },
+        "MIQP_minus_Policy": {
+          "n": 219,
+          "left_worse": 0,
+          "ties": 219,
+          "left_better": 0,
+          "gap_bp": {
+            "n": 219,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "maximum": 0.0,
+            "minimum": 0.0
+          },
+          "max_weight_difference": {
+            "n": 219,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "maximum": 0.0,
+            "minimum": 0.0
+          },
+          "cases": []
+        },
+        "V2_minus_MIQPStartV2": {
+          "n": 219,
+          "left_worse": 0,
+          "ties": 219,
+          "left_better": 0,
+          "gap_bp": {
+            "n": 219,
+            "mean": 2.148342356967429e-07,
+            "median": 0.0,
+            "p95": 1.0425885932363588e-09,
+            "maximum": 4.299166676757782e-05,
+            "minimum": 0.0
+          },
+          "max_weight_difference": {
+            "n": 219,
+            "mean": 6.60719561421867e-08,
+            "median": 0.0,
+            "p95": 1.9661043626495407e-12,
+            "maximum": 1.2473822201157553e-05,
+            "minimum": 0.0
+          },
+          "cases": []
+        }
+      },
+      "bound_contradictions": [],
+      "failed_cases": [],
+      "enumerations": []
+    },
+    "Legacy": {
+      "expected": 26,
+      "broad": 24,
+      "tiny": 2,
+      "prepared": 26,
+      "optional_candidates": {
+        "n": 24,
+        "mean": 27.666666666666668,
+        "median": 22.0,
+        "p95": 41.0,
+        "maximum": 41.0,
+        "minimum": 20.0
+      },
+      "preparation_seconds": {
+        "n": 26,
+        "mean": 9.304230815569799e-05,
+        "median": 8.635000085632782e-05,
+        "p95": 0.00012932500067108776,
+        "maximum": 0.0001370999998471234,
+        "minimum": 6.910000229254365e-05
+      },
+      "methods": {
+        "V2": {
+          "expected": 26,
+          "attempted": 26,
+          "audited": 26,
+          "te_bp": {
+            "n": 26,
+            "mean": 166.47306377276962,
+            "median": 141.15283941198413,
+            "p95": 442.6769073701789,
+            "maximum": 610.4617564988616,
+            "minimum": 84.76428997320158
+          },
+          "end_to_end_seconds": {
+            "n": 26,
+            "mean": 2.2467218076928055,
+            "median": 1.5481423500004894,
+            "p95": 6.6305830249984865,
+            "maximum": 7.322457199999917,
+            "minimum": 0.1592318000002706
+          },
+          "seconds": {
+            "n": 26,
+            "mean": 2.2466287653846497,
+            "median": 1.5480233500002214,
+            "p95": 6.630457574999127,
+            "maximum": 7.322374100000161,
+            "minimum": 0.15916269999797805
+          },
+          "native_statuses": {
+            "None": 26
+          },
+          "native_gap_relative": {
+            "n": 0,
+            "mean": null,
+            "median": null,
+            "p95": null,
+            "maximum": null,
+            "minimum": null
+          },
+          "delivered_sources": {
+            "None": 26
+          },
+          "native_absolute_gap_variance": {
+            "n": 0,
+            "mean": null,
+            "median": null,
+            "p95": null,
+            "maximum": null,
+            "minimum": null
+          },
+          "native_gap_above_target_cases": [],
+          "engines": {
+            "None": 26
+          },
+          "fallback_reasons": {
+            "None": 26
+          }
+        },
+        "MIQP": {
+          "expected": 26,
+          "attempted": 26,
+          "audited": 26,
+          "te_bp": {
+            "n": 26,
+            "mean": 166.47306377513297,
+            "median": 141.15283941481803,
+            "p95": 442.67690737265355,
+            "maximum": 610.4617564988616,
+            "minimum": 84.76428997311727
+          },
+          "end_to_end_seconds": {
+            "n": 26,
+            "mean": 0.2011127076923283,
+            "median": 0.14000244999988354,
+            "p95": 0.6145520000000033,
+            "maximum": 0.7613802999985637,
+            "minimum": 0.02381490000334452
+          },
+          "seconds": {
+            "n": 26,
+            "mean": 0.2010196653841726,
+            "median": 0.13989834999847517,
+            "p95": 0.614468675000353,
+            "maximum": 0.761289800000668,
+            "minimum": 0.023745800001051975
+          },
+          "native_statuses": {
+            "solsta.integer_optimal": 26
+          },
+          "native_gap_relative": {
+            "n": 26,
+            "mean": 1.836927305383032e-06,
+            "median": 0.0,
+            "p95": 1.4509965800011325e-06,
+            "maximum": 4.5825447833290656e-05,
+            "minimum": 0.0
+          },
+          "delivered_sources": {
+            "native_callback": 21,
+            "common_prepared_incumbent": 5
+          },
+          "native_absolute_gap_variance": {
+            "n": 26,
+            "mean": 3.8274281156858313e-10,
+            "median": 0.0,
+            "p95": 3.631862477589381e-10,
+            "maximum": 9.46706477043791e-09,
+            "minimum": 0.0
+          },
+          "native_gap_above_target_cases": [],
+          "engines": {
+            "None": 26
+          },
+          "fallback_reasons": {
+            "None": 26
+          }
+        },
+        "Policy": {
+          "expected": 26,
+          "attempted": 26,
+          "audited": 26,
+          "te_bp": {
+            "n": 26,
+            "mean": 166.47306377513297,
+            "median": 141.15283941481803,
+            "p95": 442.67690737265355,
+            "maximum": 610.4617564988616,
+            "minimum": 84.76428997311727
+          },
+          "end_to_end_seconds": {
+            "n": 26,
+            "mean": 0.21770295769252138,
+            "median": 0.1405744000003324,
+            "p95": 0.6534562749975521,
+            "maximum": 0.7692901999944297,
+            "minimum": 0.02462720000403351
+          },
+          "seconds": {
+            "n": 26,
+            "mean": 0.2176099153843657,
+            "median": 0.14048150000053283,
+            "p95": 0.6533724999981132,
+            "maximum": 0.769199699996534,
+            "minimum": 0.024558100001740968
+          },
+          "native_statuses": {
+            "solsta.integer_optimal": 26
+          },
+          "native_gap_relative": {
+            "n": 26,
+            "mean": 1.836927305383032e-06,
+            "median": 0.0,
+            "p95": 1.4509965800011325e-06,
+            "maximum": 4.5825447833290656e-05,
+            "minimum": 0.0
+          },
+          "delivered_sources": {
+            "native_callback": 21,
+            "common_prepared_incumbent": 5
+          },
+          "native_absolute_gap_variance": {
+            "n": 26,
+            "mean": 3.8274281156858313e-10,
+            "median": 0.0,
+            "p95": 3.631862477589381e-10,
+            "maximum": 9.46706477043791e-09,
+            "minimum": 0.0
+          },
+          "native_gap_above_target_cases": [],
+          "engines": {
+            "matched_miqp": 26
+          },
+          "fallback_reasons": {
+            "None": 26
+          }
+        },
+        "MIQPStartV2": {
+          "expected": 26,
+          "attempted": 26,
+          "audited": 26,
+          "te_bp": {
+            "n": 26,
+            "mean": 166.47306377271994,
+            "median": 141.15283941149994,
+            "p95": 442.6769073701789,
+            "maximum": 610.4617564988616,
+            "minimum": 84.76428997320158
+          },
+          "end_to_end_seconds": {
+            "n": 26,
+            "mean": 2.441642492307857,
+            "median": 1.7174580999944737,
+            "p95": 7.003124224997009,
+            "maximum": 7.823442000000796,
+            "minimum": 0.1810719999994035
+          },
+          "seconds": {
+            "n": 26,
+            "mean": 0.19492068461505158,
+            "median": 0.13515329999972892,
+            "p95": 0.5487796749985137,
+            "maximum": 0.681857100000343,
+            "minimum": 0.021840199999132892
+          },
+          "native_statuses": {
+            "solsta.integer_optimal": 26
+          },
+          "native_gap_relative": {
+            "n": 26,
+            "mean": 1.8369148832859742e-06,
+            "median": 0.0,
+            "p95": 1.4508381610995162e-06,
+            "maximum": 4.582533608396931e-05,
+            "minimum": 0.0
+          },
+          "delivered_sources": {
+            "requested_mip_start": 13,
+            "native_callback": 8,
+            "common_prepared_incumbent": 5
+          },
+          "native_absolute_gap_variance": {
+            "n": 26,
+            "mean": 3.827398901347468e-10,
+            "median": 0.0,
+            "p95": 3.6314659527354135e-10,
+            "maximum": 9.467041683138694e-09,
+            "minimum": 0.0
+          },
+          "native_gap_above_target_cases": [],
+          "engines": {
+            "None": 26
+          },
+          "fallback_reasons": {
+            "None": 26
+          }
+        },
+        "MIQP60": {
+          "expected": 26,
+          "attempted": 26,
+          "audited": 26,
+          "te_bp": {
+            "n": 26,
+            "mean": 166.47306377513297,
+            "median": 141.15283941481803,
+            "p95": 442.67690737265355,
+            "maximum": 610.4617564988616,
+            "minimum": 84.76428997311727
+          },
+          "end_to_end_seconds": {
+            "n": 26,
+            "mean": 0.202004476923181,
+            "median": 0.13831019999997807,
+            "p95": 0.5774247749968708,
+            "maximum": 0.8011170999998285,
+            "minimum": 0.024895600003219442
+          },
+          "seconds": {
+            "n": 26,
+            "mean": 0.20191143461502528,
+            "median": 0.1382006999992882,
+            "p95": 0.5773409999974319,
+            "maximum": 0.8010266000019328,
+            "minimum": 0.0248265000009269
+          },
+          "native_statuses": {
+            "solsta.integer_optimal": 26
+          },
+          "native_gap_relative": {
+            "n": 26,
+            "mean": 1.836927305383032e-06,
+            "median": 0.0,
+            "p95": 1.4509965800011325e-06,
+            "maximum": 4.5825447833290656e-05,
+            "minimum": 0.0
+          },
+          "delivered_sources": {
+            "native_callback": 21,
+            "common_prepared_incumbent": 5
+          },
+          "native_absolute_gap_variance": {
+            "n": 26,
+            "mean": 3.8274281156858313e-10,
+            "median": 0.0,
+            "p95": 3.631862477589381e-10,
+            "maximum": 9.46706477043791e-09,
+            "minimum": 0.0
+          },
+          "native_gap_above_target_cases": [],
+          "engines": {
+            "None": 26
+          },
+          "fallback_reasons": {
+            "None": 26
+          }
+        },
+        "MIQPStartV260": {
+          "expected": 26,
+          "attempted": 26,
+          "audited": 26,
+          "te_bp": {
+            "n": 26,
+            "mean": 166.47306377271994,
+            "median": 141.15283941149994,
+            "p95": 442.6769073701789,
+            "maximum": 610.4617564988616,
+            "minimum": 84.76428997320158
+          },
+          "end_to_end_seconds": {
+            "n": 26,
+            "mean": 2.448319107693001,
+            "median": 1.7745942999972613,
+            "p95": 7.030595824998272,
+            "maximum": 7.915344399996684,
+            "minimum": 0.18124769999849377
+          },
+          "seconds": {
+            "n": 26,
+            "mean": 0.2015973000001955,
+            "median": 0.13953975000003993,
+            "p95": 0.591716599998108,
+            "maximum": 0.7412141999993764,
+            "minimum": 0.022015899998223176
+          },
+          "native_statuses": {
+            "solsta.integer_optimal": 26
+          },
+          "native_gap_relative": {
+            "n": 26,
+            "mean": 1.8369148832859742e-06,
+            "median": 0.0,
+            "p95": 1.4508381610995162e-06,
+            "maximum": 4.582533608396931e-05,
+            "minimum": 0.0
+          },
+          "delivered_sources": {
+            "requested_mip_start": 13,
+            "native_callback": 8,
+            "common_prepared_incumbent": 5
+          },
+          "native_absolute_gap_variance": {
+            "n": 26,
+            "mean": 3.827398901347468e-10,
+            "median": 0.0,
+            "p95": 3.6314659527354135e-10,
+            "maximum": 9.467041683138694e-09,
+            "minimum": 0.0
+          },
+          "native_gap_above_target_cases": [],
+          "engines": {
+            "None": 26
+          },
+          "fallback_reasons": {
+            "None": 26
+          }
+        },
+        "MIQP600": {
+          "expected": 26,
+          "attempted": 26,
+          "audited": 26,
+          "te_bp": {
+            "n": 26,
+            "mean": 166.47306377513297,
+            "median": 141.15283941481803,
+            "p95": 442.67690737265355,
+            "maximum": 610.4617564988616,
+            "minimum": 84.76428997311727
+          },
+          "end_to_end_seconds": {
+            "n": 26,
+            "mean": 0.21368244615447252,
+            "median": 0.14284634999967238,
+            "p95": 0.6174547249993338,
+            "maximum": 0.7721676000001025,
+            "minimum": 0.02347620000364259
+          },
+          "seconds": {
+            "n": 26,
+            "mean": 0.2135894038463168,
+            "median": 0.1427368499989825,
+            "p95": 0.617370949999895,
+            "maximum": 0.7720771000022069,
+            "minimum": 0.023407100001350045
+          },
+          "native_statuses": {
+            "solsta.integer_optimal": 26
+          },
+          "native_gap_relative": {
+            "n": 26,
+            "mean": 1.836927305383032e-06,
+            "median": 0.0,
+            "p95": 1.4509965800011325e-06,
+            "maximum": 4.5825447833290656e-05,
+            "minimum": 0.0
+          },
+          "delivered_sources": {
+            "native_callback": 21,
+            "common_prepared_incumbent": 5
+          },
+          "native_absolute_gap_variance": {
+            "n": 26,
+            "mean": 3.8274281156858313e-10,
+            "median": 0.0,
+            "p95": 3.631862477589381e-10,
+            "maximum": 9.46706477043791e-09,
+            "minimum": 0.0
+          },
+          "native_gap_above_target_cases": [],
+          "engines": {
+            "None": 26
+          },
+          "fallback_reasons": {
+            "None": 26
+          }
+        },
+        "MIQPStartV2600": {
+          "expected": 26,
+          "attempted": 26,
+          "audited": 26,
+          "te_bp": {
+            "n": 26,
+            "mean": 166.47306377271994,
+            "median": 141.15283941149994,
+            "p95": 442.6769073701789,
+            "maximum": 610.4617564988616,
+            "minimum": 84.76428997320158
+          },
+          "end_to_end_seconds": {
+            "n": 26,
+            "mean": 2.432924042308234,
+            "median": 1.7135947999977361,
+            "p95": 6.998403249999683,
+            "maximum": 7.810683899999276,
+            "minimum": 0.18612380000195117
+          },
+          "seconds": {
+            "n": 26,
+            "mean": 0.1862022346154285,
+            "median": 0.13068870000097377,
+            "p95": 0.5418287500006045,
+            "maximum": 0.6142462999996496,
+            "minimum": 0.02689200000168057
+          },
+          "native_statuses": {
+            "solsta.integer_optimal": 26
+          },
+          "native_gap_relative": {
+            "n": 26,
+            "mean": 1.8369148832859742e-06,
+            "median": 0.0,
+            "p95": 1.4508381610995162e-06,
+            "maximum": 4.582533608396931e-05,
+            "minimum": 0.0
+          },
+          "delivered_sources": {
+            "requested_mip_start": 13,
+            "native_callback": 8,
+            "common_prepared_incumbent": 5
+          },
+          "native_absolute_gap_variance": {
+            "n": 26,
+            "mean": 3.827398901347468e-10,
+            "median": 0.0,
+            "p95": 3.6314659527354135e-10,
+            "maximum": 9.467041683138694e-09,
+            "minimum": 0.0
+          },
+          "native_gap_above_target_cases": [],
+          "engines": {
+            "None": 26
+          },
+          "fallback_reasons": {
+            "None": 26
+          }
+        }
+      },
+      "paired": {
+        "V2_minus_MIQP": {
+          "n": 26,
+          "left_worse": 0,
+          "ties": 26,
+          "left_better": 0,
+          "gap_bp": {
+            "n": 26,
+            "mean": -2.3633389262683453e-09,
+            "median": -4.9674042656988604e-11,
+            "p95": 5.900417932025448e-10,
+            "maximum": 1.1608562999754213e-09,
+            "minimum": -2.914690355737548e-08
+          },
+          "max_weight_difference": {
+            "n": 26,
+            "mean": 5.470412968097693e-12,
+            "median": 7.627422998757183e-13,
+            "p95": 1.316683708677685e-11,
+            "maximum": 7.518738409650894e-11,
+            "minimum": 0.0
+          },
+          "cases": []
+        },
+        "V2_minus_Policy": {
+          "n": 26,
+          "left_worse": 0,
+          "ties": 26,
+          "left_better": 0,
+          "gap_bp": {
+            "n": 26,
+            "mean": -2.3633389262683453e-09,
+            "median": -4.9674042656988604e-11,
+            "p95": 5.900417932025448e-10,
+            "maximum": 1.1608562999754213e-09,
+            "minimum": -2.914690355737548e-08
+          },
+          "max_weight_difference": {
+            "n": 26,
+            "mean": 5.470412968097693e-12,
+            "median": 7.627422998757183e-13,
+            "p95": 1.316683708677685e-11,
+            "maximum": 7.518738409650894e-11,
+            "minimum": 0.0
+          },
+          "cases": []
+        },
+        "MIQP_minus_Policy": {
+          "n": 26,
+          "left_worse": 0,
+          "ties": 26,
+          "left_better": 0,
+          "gap_bp": {
+            "n": 26,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "maximum": 0.0,
+            "minimum": 0.0
+          },
+          "max_weight_difference": {
+            "n": 26,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "maximum": 0.0,
+            "minimum": 0.0
+          },
+          "cases": []
+        },
+        "V2_minus_MIQPStartV2": {
+          "n": 26,
+          "left_worse": 0,
+          "ties": 26,
+          "left_better": 0,
+          "gap_bp": {
+            "n": 26,
+            "mean": 4.971284922178781e-11,
+            "median": 0.0,
+            "p95": 2.0473578388191527e-10,
+            "maximum": 9.683276402938645e-10,
+            "minimum": 0.0
+          },
+          "max_weight_difference": {
+            "n": 26,
+            "mean": 5.92490800011857e-14,
+            "median": 0.0,
+            "p95": 5.447309270323331e-13,
+            "maximum": 7.361854181819893e-13,
+            "minimum": 0.0
+          },
+          "cases": []
+        }
+      },
+      "bound_contradictions": [],
+      "failed_cases": [],
+      "enumerations": [
+        {
+          "id": "legacy_024",
+          "complete": true,
+          "unresolved": 0,
+          "supports": 37,
+          "gaps_bp": {
+            "V2": 4.099547368241474e-10,
+            "MIQP": 3.5490756999934092e-09,
+            "Policy": 3.5490756999934092e-09,
+            "MIQPStartV2": 4.099547368241474e-10,
+            "MIQP600": 3.5490756999934092e-09,
+            "MIQPStartV2600": 4.099547368241474e-10,
+            "MIQP60": 3.5490756999934092e-09,
+            "MIQPStartV260": 4.099547368241474e-10
+          }
+        },
+        {
+          "id": "legacy_025",
+          "complete": true,
+          "unresolved": 0,
+          "supports": 37,
+          "gaps_bp": {
+            "MIQP": 3.1890294849290513e-09,
+            "Policy": 3.1890294849290513e-09,
+            "V2": 3.1890294849290513e-09,
+            "MIQPStartV2": 3.1890294849290513e-09,
+            "MIQP60": 3.1890294849290513e-09,
+            "MIQPStartV260": 3.1890294849290513e-09,
+            "MIQP600": 3.1890294849290513e-09,
+            "MIQPStartV2600": 3.1890294849290513e-09
+          }
+        }
+      ]
+    },
+    "Holdout": {
+      "expected": 68,
+      "broad": 64,
+      "tiny": 4,
+      "prepared": 68,
+      "optional_candidates": {
+        "n": 64,
+        "mean": 60.0,
+        "median": 57.0,
+        "p95": 104.0,
+        "maximum": 104.0,
+        "minimum": 22.0
+      },
+      "preparation_seconds": {
+        "n": 68,
+        "mean": 9.574411759625517e-05,
+        "median": 8.85499994183192e-05,
+        "p95": 0.00013587499979621497,
+        "maximum": 0.00023549999968963675,
+        "minimum": 7.630000254721381e-05
+      },
+      "methods": {
+        "V2": {
+          "expected": 68,
+          "attempted": 68,
+          "audited": 68,
+          "te_bp": {
+            "n": 68,
+            "mean": 193.1652287623198,
+            "median": 178.98046866231266,
+            "p95": 358.61731411564097,
+            "maximum": 438.4131781689351,
+            "minimum": 106.99034327822989
+          },
+          "end_to_end_seconds": {
+            "n": 68,
+            "mean": 8.256702254411827,
+            "median": 4.5911379999997735,
+            "p95": 25.60928734000099,
+            "maximum": 35.02380990000165,
+            "minimum": 0.15013160000307835
+          },
+          "seconds": {
+            "n": 68,
+            "mean": 8.256606510294231,
+            "median": 4.590971499999796,
+            "p95": 25.609196010001323,
+            "maximum": 35.023699500001385,
+            "minimum": 0.15005530000053113
+          },
+          "native_statuses": {
+            "None": 68
+          },
+          "native_gap_relative": {
+            "n": 0,
+            "mean": null,
+            "median": null,
+            "p95": null,
+            "maximum": null,
+            "minimum": null
+          },
+          "delivered_sources": {
+            "None": 68
+          },
+          "native_absolute_gap_variance": {
+            "n": 0,
+            "mean": null,
+            "median": null,
+            "p95": null,
+            "maximum": null,
+            "minimum": null
+          },
+          "native_gap_above_target_cases": [],
+          "engines": {
+            "None": 68
+          },
+          "fallback_reasons": {
+            "None": 68
+          }
+        },
+        "MIQP": {
+          "expected": 68,
+          "attempted": 68,
+          "audited": 68,
+          "te_bp": {
+            "n": 68,
+            "mean": 193.08906995266727,
+            "median": 178.98046866211743,
+            "p95": 358.1350660946679,
+            "maximum": 438.41317816908554,
+            "minimum": 106.99034327846816
+          },
+          "end_to_end_seconds": {
+            "n": 68,
+            "mean": 0.7151371014702711,
+            "median": 0.615883649999887,
+            "p95": 1.9352048749999082,
+            "maximum": 2.929406499999459,
+            "minimum": 0.024523399995814543
+          },
+          "seconds": {
+            "n": 68,
+            "mean": 0.7150413573526748,
+            "median": 0.6157981999986077,
+            "p95": 1.9351195050010572,
+            "maximum": 2.929247899999609,
+            "minimum": 0.02444199999808916
+          },
+          "native_statuses": {
+            "solsta.integer_optimal": 68
+          },
+          "native_gap_relative": {
+            "n": 68,
+            "mean": 6.423558976221407e-07,
+            "median": 0.0,
+            "p95": 3.659655669536774e-10,
+            "maximum": 3.999082459898066e-05,
+            "minimum": 0.0
+          },
+          "delivered_sources": {
+            "native_callback": 57,
+            "boundary_refinement": 2,
+            "common_prepared_incumbent": 9
+          },
+          "native_absolute_gap_variance": {
+            "n": 68,
+            "mean": 3.4656263677285525e-10,
+            "median": 0.0,
+            "p95": 5.720488102309283e-14,
+            "maximum": 1.901006594089323e-08,
+            "minimum": 0.0
+          },
+          "native_gap_above_target_cases": [],
+          "engines": {
+            "None": 68
+          },
+          "fallback_reasons": {
+            "None": 68
+          }
+        },
+        "Policy": {
+          "expected": 68,
+          "attempted": 68,
+          "audited": 68,
+          "te_bp": {
+            "n": 68,
+            "mean": 193.08906995266727,
+            "median": 178.98046866211743,
+            "p95": 358.1350660946679,
+            "maximum": 438.41317816908554,
+            "minimum": 106.99034327846816
+          },
+          "end_to_end_seconds": {
+            "n": 68,
+            "mean": 0.7172578676470627,
+            "median": 0.650990100002673,
+            "p95": 1.8979718000002321,
+            "maximum": 2.814768500000355,
+            "minimum": 0.02321470000242698
+          },
+          "seconds": {
+            "n": 68,
+            "mean": 0.7171621235294665,
+            "median": 0.6509022500013089,
+            "p95": 1.897874040001261,
+            "maximum": 2.814609900000505,
+            "minimum": 0.023124500003177673
+          },
+          "native_statuses": {
+            "solsta.integer_optimal": 68
+          },
+          "native_gap_relative": {
+            "n": 68,
+            "mean": 6.423558976221407e-07,
+            "median": 0.0,
+            "p95": 3.659655669536774e-10,
+            "maximum": 3.999082459898066e-05,
+            "minimum": 0.0
+          },
+          "delivered_sources": {
+            "native_callback": 57,
+            "boundary_refinement": 2,
+            "common_prepared_incumbent": 9
+          },
+          "native_absolute_gap_variance": {
+            "n": 68,
+            "mean": 3.4656263677285525e-10,
+            "median": 0.0,
+            "p95": 5.720488102309283e-14,
+            "maximum": 1.901006594089323e-08,
+            "minimum": 0.0
+          },
+          "native_gap_above_target_cases": [],
+          "engines": {
+            "matched_miqp": 68
+          },
+          "fallback_reasons": {
+            "None": 68
+          }
+        },
+        "MIQPStartV2": {
+          "expected": 68,
+          "attempted": 68,
+          "audited": 68,
+          "te_bp": {
+            "n": 68,
+            "mean": 193.08906995189693,
+            "median": 178.9804686623126,
+            "p95": 358.13506609422217,
+            "maximum": 438.4131781689351,
+            "minimum": 106.99034327822989
+          },
+          "end_to_end_seconds": {
+            "n": 68,
+            "mean": 8.912168302941609,
+            "median": 5.319414049998159,
+            "p95": 26.310985515003992,
+            "maximum": 36.00417550000202,
+            "minimum": 0.17858970000452246
+          },
+          "seconds": {
+            "n": 68,
+            "mean": 0.6554660485297812,
+            "median": 0.5741142499991838,
+            "p95": 1.78085425499994,
+            "maximum": 4.258239599999797,
+            "minimum": 0.021166400001675356
+          },
+          "native_statuses": {
+            "solsta.integer_optimal": 68
+          },
+          "native_gap_relative": {
+            "n": 68,
+            "mean": 3.855739681125548e-06,
+            "median": 0.0,
+            "p95": 1.8748942001209342e-06,
+            "maximum": 9.824180792669389e-05,
+            "minimum": 0.0
+          },
+          "delivered_sources": {
+            "native_callback": 20,
+            "requested_mip_start": 39,
+            "common_prepared_incumbent": 9
+          },
+          "native_absolute_gap_variance": {
+            "n": 68,
+            "mean": 1.7855401729906334e-09,
+            "median": 0.0,
+            "p95": 2.3157082069610866e-09,
+            "maximum": 4.8333444611112046e-08,
+            "minimum": 0.0
+          },
+          "native_gap_above_target_cases": [],
+          "engines": {
+            "None": 68
+          },
+          "fallback_reasons": {
+            "None": 68
+          }
+        }
+      },
+      "paired": {
+        "V2_minus_MIQP": {
+          "n": 68,
+          "left_worse": 4,
+          "ties": 64,
+          "left_better": 0,
+          "gap_bp": {
+            "n": 68,
+            "mean": 0.07615880965252649,
+            "median": -9.93267690319044e-11,
+            "p95": 0.1877141832410938,
+            "maximum": 2.457877874497626,
+            "minimum": -1.9426494191066013e-08
+          },
+          "max_weight_difference": {
+            "n": 68,
+            "mean": 0.0008619764461584597,
+            "median": 7.053481063112876e-13,
+            "p95": 0.007288905491364767,
+            "maximum": 0.018233843449948054,
+            "minimum": 0.0
+          },
+          "cases": [
+            {
+              "id": "holdout_024",
+              "gap_bp": 0.28879104324522586
+            },
+            {
+              "id": "holdout_025",
+              "gap_bp": 1.9263274946252977
+            },
+            {
+              "id": "holdout_027",
+              "gap_bp": 2.457877874497626
+            },
+            {
+              "id": "holdout_059",
+              "gap_bp": 0.5058026945187635
+            }
+          ]
+        },
+        "V2_minus_Policy": {
+          "n": 68,
+          "left_worse": 4,
+          "ties": 64,
+          "left_better": 0,
+          "gap_bp": {
+            "n": 68,
+            "mean": 0.07615880965252649,
+            "median": -9.93267690319044e-11,
+            "p95": 0.1877141832410938,
+            "maximum": 2.457877874497626,
+            "minimum": -1.9426494191066013e-08
+          },
+          "max_weight_difference": {
+            "n": 68,
+            "mean": 0.0008619764461584597,
+            "median": 7.053481063112876e-13,
+            "p95": 0.007288905491364767,
+            "maximum": 0.018233843449948054,
+            "minimum": 0.0
+          },
+          "cases": [
+            {
+              "id": "holdout_024",
+              "gap_bp": 0.28879104324522586
+            },
+            {
+              "id": "holdout_025",
+              "gap_bp": 1.9263274946252977
+            },
+            {
+              "id": "holdout_027",
+              "gap_bp": 2.457877874497626
+            },
+            {
+              "id": "holdout_059",
+              "gap_bp": 0.5058026945187635
+            }
+          ]
+        },
+        "MIQP_minus_Policy": {
+          "n": 68,
+          "left_worse": 0,
+          "ties": 68,
+          "left_better": 0,
+          "gap_bp": {
+            "n": 68,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "maximum": 0.0,
+            "minimum": 0.0
+          },
+          "max_weight_difference": {
+            "n": 68,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "maximum": 0.0,
+            "minimum": 0.0
+          },
+          "cases": []
+        },
+        "V2_minus_MIQPStartV2": {
+          "n": 68,
+          "left_worse": 4,
+          "ties": 64,
+          "left_better": 0,
+          "gap_bp": {
+            "n": 68,
+            "mean": 0.0761588104228894,
+            "median": 0.0,
+            "p95": 0.18771417827733033,
+            "maximum": 2.45787787379237,
+            "minimum": 0.0
+          },
+          "max_weight_difference": {
+            "n": 68,
+            "mean": 0.0008619761762028171,
+            "median": 0.0,
+            "p95": 0.007288899147923426,
+            "maximum": 0.018233843449948054,
+            "minimum": 0.0
+          },
+          "cases": [
+            {
+              "id": "holdout_024",
+              "gap_bp": 0.2887910431131502
+            },
+            {
+              "id": "holdout_025",
+              "gap_bp": 1.9263274974981641
+            },
+            {
+              "id": "holdout_027",
+              "gap_bp": 2.45787787379237
+            },
+            {
+              "id": "holdout_059",
+              "gap_bp": 0.5058026925135835
+            }
+          ]
+        }
+      },
+      "bound_contradictions": [],
+      "failed_cases": [],
+      "enumerations": [
+        {
+          "id": "holdout_064",
+          "complete": true,
+          "unresolved": 0,
+          "supports": 29,
+          "gaps_bp": {
+            "V2": -1.6842705008457415e-10,
+            "MIQP": 2.67186806013342e-09,
+            "Policy": 2.67186806013342e-09,
+            "MIQPStartV2": -1.6842705008457415e-10
+          }
+        },
+        {
+          "id": "holdout_065",
+          "complete": true,
+          "unresolved": 0,
+          "supports": 37,
+          "gaps_bp": {
+            "MIQP": -3.063860276597552e-11,
+            "Policy": -3.063860276597552e-11,
+            "V2": 2.7199575924896635e-11,
+            "MIQPStartV2": 2.7199575924896635e-11
+          }
+        },
+        {
+          "id": "holdout_066",
+          "complete": true,
+          "unresolved": 0,
+          "supports": 29,
+          "gaps_bp": {
+            "Policy": 4.746425474877469e-11,
+            "V2": -1.0300027497578412e-10,
+            "MIQP": 4.746425474877469e-11,
+            "MIQPStartV2": -1.0300027497578412e-10
+          }
+        },
+        {
+          "id": "holdout_067",
+          "complete": true,
+          "unresolved": 0,
+          "supports": 37,
+          "gaps_bp": {
+            "V2": 3.339835075166775e-10,
+            "MIQP": 3.339835075166775e-10,
+            "Policy": 3.339835075166775e-10,
+            "MIQPStartV2": 3.339835075166775e-10
+          }
+        }
+      ]
+    }
+  },
+  "injected_controls": {
+    "expected": 9,
+    "audited": 9,
+    "engines": {
+      "v2_audited_fallback": 9
+    },
+    "reasons": {
+      "primary_exception": 3,
+      "primary_independent_audit_failed": 3,
+      "native_bound_inconsistent": 3
+    }
+  }
+}

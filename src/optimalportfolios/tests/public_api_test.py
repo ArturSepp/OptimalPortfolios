@@ -123,7 +123,11 @@ def test_rolling_and_wrapper_entry_points_pair_up() -> None:
     reports it.
     """
     rolling = {n[len('rolling_'):] for n in dir(op) if n.startswith('rolling_')}
+    # Execution consumes one prepared decision; the consumer owns its holdings loop.
+    execution_only = {'exact_execution', 'ranked_execution', 'execution_policy'}
+    assert all(callable(getattr(op, 'wrapper_' + name)) for name in execution_only)
     wrapper = {n[len('wrapper_'):] for n in dir(op) if n.startswith('wrapper_')}
+    wrapper -= execution_only
     assert len(rolling) >= 9, f"only {len(rolling)} rolling_* entry points found"
     assert rolling == wrapper, (
         f"rolling_* without a wrapper_*: {sorted(rolling - wrapper)}; "
