@@ -117,6 +117,34 @@ def test_alpha_and_portfolio_prefix_invariance(prepared, completed):
             completed.navs.loc[terminal, label] + portfolio.realized_costs.loc[terminal].sum())
 
 
+
+@pytest.mark.parametrize('span', [12, 24])
+def test_terminal_weekend_month_uses_the_observed_close(prepared, span):
+    """Calendar sampling agrees with manual month groups without future observations."""
+    inputs, risk, _ = prepared
+    settings = BacktestConfig(solver='CLARABEL', momentum_span=span)
+    assert risk.schedule.index[-1] == pd.Timestamp('2020-02-29')
+    final_close = risk.schedule.observation_date.iloc[-1]
+    assert final_close == pd.Timestamp('2020-02-28')
+    prices = inputs.prices.loc[:final_close]
+    raw, scores = build_alpha_scores(prices, risk, settings)
+    assert raw.index.equals(pd.DatetimeIndex(risk.schedule.observation_date))
+    assert len(raw) == len(risk.schedule) and np.isfinite(raw).all().all()
+    assert np.isfinite(scores).all().all()
+    # Independent aggregation selects each month's final observed close, then labels it.
+    monthly = prices.groupby(prices.index.to_period('M')).last()
+    monthly.index = monthly.index.to_timestamp('M')
+    relative = monthly.div(monthly.BIL, axis=0).drop(columns='BIL')
+    _, expected = op.compute_momentum_alpha(
+        relative, returns_freq='ME', long_span=span, short_span=None, vol_span=13,
+        mean_adj_type=qis.MeanAdjType.NONE)
+    np.testing.assert_allclose(raw.drop(columns='BIL'), expected.loc[risk.schedule.index],
+                               atol=1e-10)
+    # Adding March prices cannot change any signal for the completed February schedule.
+    with_future, _ = build_alpha_scores(inputs.prices, risk, settings)
+    pd.testing.assert_frame_equal(raw, with_future)
+
+
 def test_24_month_signal_uses_complete_causal_prehistory(prepared):
     """Check 24-month readiness, a direct price-ratio reference, and future-price invariance."""
     inputs, risk, _ = prepared

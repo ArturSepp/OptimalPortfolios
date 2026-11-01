@@ -16,6 +16,7 @@ import qis
 from examples.oss_portfolio_pipeline.config import PipelineConfig
 from examples.oss_portfolio_pipeline.covariance import RollingCovariances
 from examples.oss_portfolio_pipeline.data import external_directory, validate_prices
+from examples.oss_portfolio_pipeline.factors import month_end_dates
 from examples.oss_portfolio_pipeline.pipeline import PipelineInputs
 
 
@@ -80,9 +81,12 @@ def build_alpha_scores(prices: pd.DataFrame, risk: RollingCovariances,
     the shorter factor-estimation panel. Completed calendar MEs use observed closes.
     """
     prices = validate_prices(prices, tuple(risk.asset_excess_returns.columns))
-    relative_prices = prices.div(prices['BIL'], axis=0).drop(columns='BIL')
-    returns = qis.to_returns(relative_prices, freq='ME', is_log_returns=True,
-                             include_start_date=False, include_end_date=False)
+    # Match the completed calendar periods already used by the risk model.
+    end = (risk.schedule.index[-1] + pd.Timedelta(days=1)).date().isoformat()
+    monthly = prices.loc[month_end_dates(prices.index, end)].copy()
+    monthly.index = pd.date_range(prices.index[0], risk.schedule.index[-1], freq='ME')
+    relative_prices = monthly.div(monthly['BIL'], axis=0).drop(columns='BIL')
+    returns = qis.to_returns(relative_prices, is_log_returns=True, ffill_nans=False)
     if not np.isfinite(returns.iloc[1:]).all().all():
         raise ValueError('Alpha inputs need complete monthly excess returns after the anchor')
     navs = qis.returns_to_nav(returns, is_log_returns=True, init_period=0)
