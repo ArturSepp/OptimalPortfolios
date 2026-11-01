@@ -170,13 +170,18 @@ def run_one(path: Path, timeout: int) -> Tuple[Path, bool, float, str]:
     # The examples call plt.show(); Agg makes that a no-op rather than a block on a headless
     # runner. conftest.py does this for the suite, but nothing imports conftest here.
     env.setdefault("MPLBACKEND", "Agg")
+    module = _module_name(path)
+    command = [sys.executable, "-m", module]
+    if module == "examples.oss_portfolio_pipeline.__main__":
+        # The unattended workflow explicitly selects the public CLARABEL backend.
+        command.extend(["--solver", "CLARABEL"])
     try:
         # `errors="replace"` matters on Windows and is not cosmetic. `text=True` decodes the
         # child's output as UTF-8, but a child writing to a pipe there encodes with the locale
         # codec, so an em-dash arrives as the single byte 0x97 -- invalid UTF-8. Without this the
         # *runner* dies with a UnicodeDecodeError while the example it was reporting on had
         # succeeded, turning a green example into an unreadable harness traceback.
-        proc = subprocess.run([sys.executable, "-m", _module_name(path)], cwd=REPO_ROOT, env=env,
+        proc = subprocess.run(command, cwd=REPO_ROOT, env=env,
                               capture_output=True, text=True, errors="replace", timeout=timeout)
         ok = proc.returncode == 0
         detail = "" if ok else _last_error_line(proc.stdout + proc.stderr)
