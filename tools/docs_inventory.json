@@ -1039,18 +1039,6 @@
     }
   },
   "papers": {
-    "ranked_execution": {
-      "title": "Execution-Constrained Portfolio Rebalancing: Policy Domains, Search and Numerical Reliability",
-      "authors": "Sepp, A.",
-      "status": "Public-facing draft intended for Computers & Operations Research; no submission or acceptance claimed",
-      "citation": "Sepp, A. (2026). Execution-Constrained Portfolio Rebalancing: Policy Domains, Search and Numerical Reliability. Working draft.",
-      "repository": "papers/ranked_execution_2026",
-      "public_readme": "papers/ranked_execution_2026/README.md",
-      "public_scope": "Exact manuscript, portable replication code and frozen summaries. De-identified numerical inputs prepared for separate deposit; internal research, mappings and vendor histories excluded.",
-      "retired_titles": [
-        "Sparse Portfolio Rebalancing under Execution Constraints: Mixed-Integer Optimisation and Audited Search"
-      ]
-    },
     "smart_diversification": {
       "title": "The Convexity Premium of Portfolio Overlays",
       "authors": "Sepp, A. and Kastenholz, M.",

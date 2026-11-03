@@ -11,51 +11,13 @@ import zipfile
 
 
 PUBLIC_WORKSPACES = {"crypto_allocation_risk_2023", "robust_optimisation_jpm_2026",
-                     "smart_diversification_joim_2026", "ranked_execution_2026"}
+                     "smart_diversification_joim_2026"}
 
 # These workspaces expose only their individually approved public files.
 LIMITED_PUBLIC_FILES = {
     "smart_diversification_joim_2026": {
         ".gitignore", "README.md", "run_overlay_example.py",
         "replication/tests/overlay_example_test.py",
-    },
-    "ranked_execution_2026": {
-        ".gitignore", "README.md", "paper/main.tex", "paper/results.tex", "paper/main.pdf",
-        "paper/supplement.tex", "paper/supplement.pdf",
-        "replication/benchmark.py", "replication/run_benchmark.py", "replication/summarize.py",
-        "replication/tests/benchmark_test.py", "replication/protocol.json",
-        "replication/expected_summary.json",
-        "paper/robustness.tex", "paper/figures/sensitivity.pdf",
-        "replication/robustness.py", "replication/summarize_robustness.py",
-        "replication/robustness_protocol.json", "replication/robustness_run_protocol.json",
-        "replication/robustness_expected_summary.json", "replication/tests/robustness_test.py",
-        "replication/holdout_protocol.json", "replication/holdout_run_protocol.json",
-        "replication/holdout_expected_summary.json",
-        "paper/breadth.tex", "replication/breadth.py", "replication/summarize_breadth.py",
-        "replication/breadth_protocol.json", "replication/breadth_run_protocol.json",
-        "replication/breadth_expected_summary.json", "replication/tests/breadth_test.py",
-        "replication/breadth_holdout_protocol.json", "replication/breadth_holdout_run_protocol.json",
-        "replication/breadth_holdout_expected_summary.json", "replication/summarize_combinations.py",
-        "paper/joint_results.tex", "paper/figures/joint_comparison.pdf",
-        "replication/joint.py", "replication/summarize_joint.py",
-        "replication/joint_protocol.json", "replication/joint_run_protocol.json",
-        "replication/joint_expected_summary.json", "replication/tests/joint_test.py",
-        "replication/matched.py", "replication/summarize_matched.py",
-        "replication/matched_protocol.json", "replication/matched_run_protocol.json",
-        "replication/matched_expected_summary.json", "replication/tests/matched_test.py",
-        "replication/study_design.py", "replication/tests/study_design_test.py",
-        "replication/study_run.py", "replication/tests/study_run_test.py",
-        "replication/study_kernel.py", "replication/tests/study_kernel_test.py",
-        "replication/study_inputs.py", "replication/tests/study_inputs_test.py",
-        "replication/study_protocol.py", "replication/study_protocol.json",
-        "replication/tests/study_protocol_test.py",
-        "replication/summarize_study.py", "replication/tests/summarize_study_test.py",
-        "replication/study_numerics.py", "replication/tests/study_numerics_test.py",
-        "paper/study_results.tex", "paper/study_controls.tex", "paper/historical_results.tex",
-        "paper/numerical_results.tex",
-        "paper/figures/difficulty_comparison.pdf", "paper/build_manifest.json",
-        "replication/study_run_protocol.json", "replication/study_expected_summary.json",
-        "replication/numerical_mechanisms_summary.json",
     },
 }
 
@@ -69,6 +31,12 @@ PROBES = (
     "papers/policy_probe/presentations/event/slides.pdf",
     "papers/policy_probe/replication/data/local/input.csv",
     "papers/policy_probe/replication/outputs/run.csv",
+    "papers/execution_portfolio_2026/README.md",
+    "papers/execution_portfolio_2026/paper/main.tex",
+    "papers/execution_portfolio_2026/replication/benchmark.py",
+    "papers/ranked_execution_2026/README.md",
+    "papers/ranked_execution_2026/paper/main.pdf",
+    "papers/ranked_execution_2026/replication/benchmark.py",
     "papers/cma_data/loaders.py",
     "papers/cma_data/snapshots/current/assets.csv",
     "agents/ROADMAP.md",

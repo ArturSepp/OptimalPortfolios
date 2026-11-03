@@ -27,8 +27,10 @@ The public engines use descriptive names and the same declared execution domain:
 Shared lifecycle, preparation, domain, sizing and audit modules sit outside either
 engine. Native solver imports remain optional. Preparation can itself need a
 mixed-integer backend, so fallback does not protect against every backend outage.
-The [scientific article and replication](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/ranked_execution_2026)
-compare declared methods and retain the exact software identity of their experiments.
+The scientific article and replication are maintained in the entirely local
+`papers/execution_portfolio_2026/` workspace. They compare declared methods and
+retain the exact software identity of their experiments; they are not included
+in a public checkout.
 The [prepared-input reference](execution_v2.md) gives the numerical contract.
 
 <a id="documentation-and-method-ownership"></a>
@@ -210,4 +212,4 @@ hard bounds, residuals and fallback acceptance, separately from metadata names.
 [QIS](https://github.com/ArturSepp/QuantInvestStrats) owns the surrounding backtest
 and risk-reporting calculations. See [constraints](constraints.md),
 [prepared execution](execution_v2.md) and the
-[public manuscript](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/ranked_execution_2026).
+[research-workspace status](research_papers.md#ranked-execution).

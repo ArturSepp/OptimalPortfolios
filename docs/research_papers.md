@@ -40,8 +40,10 @@ Sepp, A. (2026). *Execution-Constrained Portfolio Rebalancing:
 Policy Domains, Search and Numerical Reliability*. Working draft intended for
 Computers & Operations Research.
 
-The [separate manuscript and replication guide](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/ranked_execution_2026)
-describe the method in [prepared execution optimisation](execution_v2.md).
+The manuscript and replication guide are retained in the entirely local
+`papers/execution_portfolio_2026/` workspace. The earlier separate public-facing
+folder has been consolidated into it and is no longer tracked. The reusable
+method remains documented in [prepared execution optimisation](execution_v2.md).
 The study compares Exact Execution, Ranked Execution and a documented Kernel
 Search adaptation. It retains the 313-case ETF/synthetic cohort and adds 23
 prospective difficulty and public-risk cases, including all missing deliveries
@@ -138,7 +140,7 @@ requirements. The table summarises what a public checkout can run.
 
 | Paper | Folder | What a public checkout reproduces |
 |---|---|---|
-| Ranked Execution | [`ranked_execution_2026`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/ranked_execution_2026) | The public-facing manuscript, portable runner, audit tests and frozen reference summaries. Numerical decision inputs require the separate archive; its permanent deposit remains pending. |
+| Execution research | Local `execution_portfolio_2026` workspace | Manuscript, replication and frozen reference summaries are not included in a public checkout. Separate reviewed archives retain their original provenance; a permanent deposit remains pending. |
 | ROSAA | [`robust_optimisation_jpm_2026`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/robust_optimisation_jpm_2026) | A methodological example of the HCGL covariance and risk-budgeted strategic allocation. It downloads its ETF panel with `yfinance`, carries no frozen inputs and records no environment, so it is not an exact rebuild of the published exhibits. |
 | Cryptocurrencies | [`crypto_allocation_risk_2023`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/crypto_allocation_risk_2023) | The manuscript source, the analysis code and historical price files; no CI workflow runs this folder's tests. The [cryptocurrency case study](app_crypto_allocation.md) runs the four methods offline on the tracked price panel. The full update route needs licensed Bloomberg data, so the headline numbers are not promised to reproduce exactly. |
 | Capital market assumptions | Local shared data and replication workspaces | The MATF-CMA and FAJ snapshots, configuration tables, licensed histories and replication code are not redistributed. |

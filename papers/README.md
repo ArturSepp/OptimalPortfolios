@@ -13,10 +13,16 @@ public checkout can run and records package versions only where the repository p
 
 | Subdirectory | Paper | What a public checkout reproduces | Recorded package versions |
 |---|---|---|---|
-| [`ranked_execution_2026/`](ranked_execution_2026/) | Sepp, *Execution-Constrained Portfolio Rebalancing: Policy Domains, Search and Numerical Reliability*, draft intended for COR | Exact, Ranked and Kernel comparisons; retained 313-case cohort plus 23 prospective difficulty/public-risk cases. All failures and open gaps retained. Reviewed de-identified/synthetic numerical archives await permanent deposit. Conditional execution, not realised strategy performance. | Published OP 9.2.0 artifact and frozen numerical source/input hashes |
 | [`crypto_allocation_risk_2023/`](crypto_allocation_risk_2023/) | Sepp (2023), *Optimal Allocation to Cryptocurrencies in Diversified Portfolios*, *Risk* | Historical CSV files are committed, but the scripts also use live `yfinance` data, one report imports the optional `pybloqs` backend, and no frozen environment is recorded. The repository therefore does not promise exact headline-number reproduction. | Not recorded |
 | [`robust_optimisation_jpm_2026/`](robust_optimisation_jpm_2026/) | Sepp, Ossa and Kastenholz (2026), *Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios*, *The Journal of Portfolio Management* 52(4), 86–120 | The folder demonstrates the published HCGL and risk-budgeting workflow, but downloads its ETF panel from `yfinance` and carries neither frozen inputs nor an environment pin. It is a methodological example, not an exact exhibit rebuild. | Not recorded |
 | [`smart_diversification_joim_2026/`](smart_diversification_joim_2026/) | Sepp and Kastenholz (2026), *The Convexity Premium of Portfolio Overlays*, *Journal of Investment Management*, forthcoming | A public introduction and an offline synthetic 60/40 overlay example using OP optimization and qis illustrations. The manuscript, empirical replication and licensed data remain local. | Not recorded; the README states the minimum and last-tested optimalportfolios and qis versions |
+
+`execution_portfolio_2026/` is the single, entirely local execution-paper workspace.
+It contains the current COR manuscript, archived drafts, replication and internal
+research under the standard six-section layout. The former `ranked_execution_2026/`
+workspace has been consolidated into it. None of this workspace is included in a
+public checkout; separately prepared frozen submission/deposit archives retain
+independent provenance and do not grant publication permission for private inputs.
 
 The entirely local shared CMA data layer and both MATF-CMA and FAJ workspaces
 now reside under `FactorModels/papers/`. Their YAML `CMA_DATA_PATH` selects the

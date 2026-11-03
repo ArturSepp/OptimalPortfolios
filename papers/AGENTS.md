@@ -37,16 +37,18 @@ and do not copy the shared inputs into individual papers.
 
 - New paper workspaces are entirely ignored by default. The approved public roots
   are `crypto_allocation_risk_2023/`, `robust_optimisation_jpm_2026/`,
-  and the limited JOIM and Ranked Execution bundles described below.
+  and the limited JOIM bundle described below.
   Adding another requires an explicit publication decision, an exact root exception
   in `.gitignore`, and an update to `PUBLIC_WORKSPACES` in the policy checker.
 - Preserve existing full-workspace exclusions, including MATF-CMA.
   Moving folders does not authorise release of any manuscript or replication code.
-- `ranked_execution_2026/` permits only the exact manuscript, portable replication
-  and reference-summary files in `LIMITED_PUBLIC_FILES`. Its numerical input archive
-  is prepared for a separate deposit; private extraction code, identity mappings,
-  vendor prices and internal execution research remain excluded. The existing
-  `execution_portfolio_2026/` workspace stays entirely local and is preserved.
+- `execution_portfolio_2026/` is the single, entirely local execution-paper workspace.
+  It consolidates the latest COR manuscript, replication and internal development
+  research. The former `ranked_execution_2026/` name is retired and also denied by
+  publication policy. Neither workspace has any tracked-file exceptions, including
+  manuscript, replication code, summaries or inputs. Keep the current manuscript in
+  `paper/` and previous internal/public variants in `drafts/`; never mix private fund
+  inputs into a future public deposit. Existing released archives remain unchanged.
 - `smart_diversification_joim_2026/` permits only its README, .gitignore,
   `run_overlay_example.py` and
   `replication/tests/overlay_example_test.py`. These introduce the paper and run a

@@ -15,11 +15,12 @@ Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios
 
 ## Purpose
 
-The [scientific manuscript and portable benchmark](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/ranked_execution_2026)
-examine execution modelling, corridor-policy costs, search and numerical reliability
-using retained ETF decisions and frozen synthetic/external-risk studies. The manuscript is a public-facing draft; the input
-archive's persistent deposit remains pending. Production policy qualification
-and internal research records remain separate.
+The scientific manuscript and portable benchmark are maintained in the entirely
+local `papers/execution_portfolio_2026/` workspace, outside the public checkout.
+They examine execution modelling, corridor-policy costs, search and numerical
+reliability using retained ETF decisions and frozen synthetic/external-risk studies.
+The manuscript's intended public submission and input deposit remain separate
+from internal fund research and production qualification.
 
 The namespace `optimalportfolios.execution` consumes a final prepared
 portfolio decision. `wrapper_ranked_execution` selects actual executable states

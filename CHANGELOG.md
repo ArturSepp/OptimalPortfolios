@@ -1,5 +1,18 @@
 # Changelog
 
+## [10.0.1] - 2026-11-03
+
+- Add an experimental supplied-CMA allocation helper with explicit tracking-error,
+  name-cap and group-allocation constraints, independently checked risk diagnostics,
+  and rejection of inaccurate or fallback solutions. Existing optimiser defaults
+  and public dispatchers remain unchanged.
+- Retire the execution-paper bundle from the public checkout and enforce the
+  consolidated workspace's entirely local publication boundary in policy checks,
+  documentation and the paper inventory. Historical released archives remain unchanged.
+- Align unattended examples with completed calendar month-end momentum observations
+  and an explicitly selected CLARABEL solver; harden workflow network retries and
+  automate verified dependency-update merges and failure alerts.
+
 
 ## [10.0.0] - 2026-10-30
 
