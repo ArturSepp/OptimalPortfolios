@@ -35,7 +35,7 @@ jobs:
           echo "NUMBA_CACHE_DIR=$RUNNER_TEMP/documentation/cache/numba" >> "$GITHUB_ENV"
           echo "MPLCONFIGDIR=$RUNNER_TEMP/documentation/cache/matplotlib" >> "$GITHUB_ENV"
       - name: Install uv and Python
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           python-version: "3.12"
           enable-cache: false
@@ -77,7 +77,7 @@ jobs:
 
       - name: Retain external-link health evidence
         if: always() && (inputs.online || github.event_name == 'workflow_dispatch')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: external-link-health
           path: ${{ runner.temp }}/documentation/linkcheck/*.json
