@@ -1400,17 +1400,17 @@ wheels = [
 
 [[package]]
 name = "mosek"
-version = "11.2.3"
+version = "11.2.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/47/b2/4913c988207cde092b0611b8c08c8110caf81c25139efa2a5a9e7de8088c/mosek-11.2.3-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:504843653b56cbaf71b167730f6df619f8a3d2dc5892d2b0a8e2221222aa0344", size = 8794426, upload-time = "2026-08-19T02:35:35.453Z" },
-    { url = "https://files.pythonhosted.org/packages/ee/22/a1d0924ca17cc28f7296a907bfaaedf2b6543dc800379c938e8c3ca768c0/mosek-11.2.3-cp39-abi3-manylinux2014_x86_64.whl", hash = "sha256:3da44d2065f8be155ac41bcc921a60e837972694505f4c890e92a756c417fb4d", size = 15362248, upload-time = "2026-08-19T02:35:38.837Z" },
-    { url = "https://files.pythonhosted.org/packages/92/b9/5d830de8d78c79e1faeb9304b0076418c7454c9a64b5ded0332a7d976e0c/mosek-11.2.3-cp39-abi3-manylinux_2_27_aarch64.whl", hash = "sha256:b7418e6d2ae42307436b46fe4f73c3bec2ce3c6c4f2d2a2762280aef4f976180", size = 9908768, upload-time = "2026-08-19T02:35:41.569Z" },
-    { url = "https://files.pythonhosted.org/packages/55/dc/50e1042ca54781a6c73cc1019dd8c741fcc4016851240578528286e767b4/mosek-11.2.3-cp39-abi3-win_amd64.whl", hash = "sha256:7dc1a77a867f4e06993e89d807bab4c6128fae2f11fae7e6f3088e3a4c3b7ad4", size = 11200075, upload-time = "2026-08-19T02:35:43.997Z" },
+    { url = "https://files.pythonhosted.org/packages/c1/73/dbefb6dd0dbdcfd2819de6126b1b3cbe1d4be4cdd4e3ee3c369460113fb1/mosek-11.2.8-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:9ec31d8e4db695709c832b19df46062371e9457a625b53451aba325ebc800ada", size = 8793619, upload-time = "2026-11-05T11:03:06.236Z" },
+    { url = "https://files.pythonhosted.org/packages/20/15/41571576fd100614ba33971d11788cd74b23e2be0907eac3e99cb2a001d5/mosek-11.2.8-cp39-abi3-manylinux2014_x86_64.whl", hash = "sha256:3496e7d75722a6e7785092539d9de31fca67ae41c2867b17b72963157a2bca26", size = 15364852, upload-time = "2026-11-05T11:03:09.971Z" },
+    { url = "https://files.pythonhosted.org/packages/74/eb/5ccd4372a24813dc5b5eb8b27ba2a4aabb7616c5cd2c8a0b571194d86c17/mosek-11.2.8-cp39-abi3-manylinux_2_27_aarch64.whl", hash = "sha256:98424be7716331a89b4c453b585d9eee75fc6d8e40f30040050352c32ad75bb2", size = 9911227, upload-time = "2026-11-05T11:03:13.627Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/c8/7246ec8a0b22026c98730d867c96a359c9d8e6cb1be8b62a4f05076806b9/mosek-11.2.8-cp39-abi3-win_amd64.whl", hash = "sha256:6f0c672dd8c19db87fb8a9e1a1e51484bc25d1aa6ae8844a42baa189c012a949", size = 11207745, upload-time = "2026-11-05T11:03:16.659Z" },
 ]
 
 [[package]]
@@ -1768,7 +1768,7 @@ requires-dist = [
     { name = "cvxpy", specifier = ">=1.5.2" },
     { name = "furo", marker = "extra == 'docs'", specifier = ">=2024.1.29" },
     { name = "matplotlib", specifier = ">=3.8.0" },
-    { name = "mosek", marker = "extra == 'exact'", specifier = "==11.2.3" },
+    { name = "mosek", marker = "extra == 'exact'", specifier = "==11.2.8" },
     { name = "myst-parser", marker = "extra == 'docs'", specifier = ">=2.0" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "openpyxl", specifier = ">=3.1.0" },
