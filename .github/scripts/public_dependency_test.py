@@ -96,6 +96,17 @@ class PublicDependencyWorkflowTests(unittest.TestCase):
 class PublicExampleSolverTests(unittest.TestCase):
     """The unattended portfolio example explicitly selects an available public solver."""
 
+    def test_exact_extra_uses_updater_normalized_distribution_name(self):
+        """Pinned solver names must match Dependabot's normalized update target."""
+        import tomllib
+
+        project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        requirement, = project["project"]["optional-dependencies"]["exact"]
+        name, operator, version = requirement.partition("==")
+        self.assertEqual(name, "mosek")
+        self.assertEqual(operator, "==")
+        self.assertTrue(version)
+
     def test_pipeline_command_selects_clarabel_without_changing_its_default(self):
         path = ROOT / "examples/oss_portfolio_pipeline/__main__.py"
         completed = subprocess.CompletedProcess([], 0, stdout="", stderr="")

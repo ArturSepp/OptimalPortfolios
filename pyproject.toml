@@ -59,7 +59,7 @@ dependencies = [
 
 [project.optional-dependencies]
 exact = [
-    "Mosek==11.2.3",
+    "mosek==11.2.3",
 ]
 
 riskbudget = [
