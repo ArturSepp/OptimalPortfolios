@@ -9,6 +9,7 @@ updates:
       github-actions:
         applies-to: version-updates
         patterns: ["*"]
+  # Exact pins in pyproject.toml use normalized names for Dependabot replacement.
   - package-ecosystem: uv
     directory: "/"
     schedule:
