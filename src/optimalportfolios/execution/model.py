@@ -10,6 +10,33 @@ from .domain import compile_states, domain_bounds
 from .types import check_psd
 
 SCALE = 1e4
+# Native group rows are in basis points. Reserve 1,000 times the native MIP
+# feasibility tolerance (1e-9), capped by the caller's original audit allowance.
+_GROUP_MARGIN_BP = 1e-6
+
+
+def group_envelope(problem, reference):
+    """Inset audit endpoints without excluding a tolerance-admitted reference row.
+
+    The prepared book is an economic witness. A fixed-state graph can also have a
+    different funded reference once positions are pinned. Preserve both witnesses
+    row by row when they satisfy the independent original-unit residual test.
+    """
+    lower, upper = problem.group_lower, problem.group_upper
+    tolerance = problem.rules.audit_tolerance
+    slack = max(0., tolerance - _GROUP_MARGIN_BP / SCALE)
+    lo = np.nextafter(lower - slack, lower)
+    hi = np.nextafter(upper + slack, upper)
+    for weights in (problem.base, reference):
+        exposure = problem.groups @ weights
+        # Retain the original interval if the witness uses the reserved strip.
+        # Pinning the row to the witness creates an artificial active face and
+        # can make a valid mixed-integer start infeasible in native presolve.
+        keep_lo = (exposure < lo) & (lower - exposure <= tolerance)
+        keep_hi = (exposure > hi) & (exposure - upper <= tolerance)
+        lo = np.where(keep_lo, np.minimum(np.nextafter(lower - tolerance, lower), exposure), lo)
+        hi = np.where(keep_hi, np.maximum(np.nextafter(upper + tolerance, upper), exposure), hi)
+    return lo, hi
 
 
 def diagonal_split(matrix):
@@ -87,7 +114,8 @@ def _interval_rows(values, directions, constant, lower, upper, reduce_fixed):
 
 
 def build_model(
-    problem, formulation="CORRIDOR", perspective=False, continuous=False, fixed_states=None
+    problem, formulation="CORRIDOR", perspective=False, continuous=False, fixed_states=None,
+    *, group_row_units=1.0,
 ):
     """Build a state hull or fixed-state QP using the declared group audit envelope.
 
@@ -125,19 +153,17 @@ def build_model(
         wbp, u, SCALE * r, SCALE * lo, SCALE * hi, fixed_states is not None
     )
     if len(problem.group_lower):
-        # Compile the same per-row residual envelope for fixed QPs, integer
-        # models and continuous relaxations. Inward rounding avoids exceeding
-        # the declared allowance merely through endpoint subtraction/addition.
-        group_lo = np.nextafter(
-            problem.group_lower - problem.rules.audit_tolerance, problem.group_lower
-        )
-        group_hi = np.nextafter(
-            problem.group_upper + problem.rules.audit_tolerance, problem.group_upper
-        )
-        rows += _interval_rows(
+        group_lo, group_hi = group_envelope(problem, r)
+        group_rows = _interval_rows(
             problem.groups @ wbp, problem.groups @ u, problem.groups @ (SCALE * r),
             SCALE * group_lo, SCALE * group_hi, fixed_states is not None
         )
+        if group_row_units != 1.0:
+            if not np.isfinite(group_row_units) or group_row_units <= 0:
+                raise ValueError("Group row units must be finite and positive")
+            group_rows = [group_row_units * row.args[0] <= group_row_units * row.args[1]
+                          for row in group_rows]
+        rows.extend(group_rows)
     selectors, contributions, occupancy = {}, {}, {}
     tickets, optional = [], []
     for i, row in enumerate(states):

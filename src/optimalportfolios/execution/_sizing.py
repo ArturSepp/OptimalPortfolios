@@ -5,7 +5,7 @@ from collections import OrderedDict
 import numpy as np
 import scipy.sparse as sp
 
-from .model import SCALE
+from .model import SCALE, group_envelope
 
 _LAYOUT_LIMIT = 64
 
@@ -115,10 +115,7 @@ class _FixedStateSizer:
 
         interval_rows(direction, SCALE * reference, SCALE * lower, SCALE * upper)
         if len(problem.group_lower):
-            lo = np.nextafter(problem.group_lower - problem.rules.audit_tolerance,
-                              problem.group_lower)
-            hi = np.nextafter(problem.group_upper + problem.rules.audit_tolerance,
-                              problem.group_upper)
+            lo, hi = group_envelope(problem, reference)
             interval_rows(
                 problem.groups @ direction, problem.groups @ (SCALE * reference),
                 SCALE * lo, SCALE * hi, sp.csc_array(problem.groups) @ (SCALE * reference))

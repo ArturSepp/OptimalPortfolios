@@ -200,6 +200,7 @@ and every number on the methodology pages is asserted by a script that CI runs.
 
 | Subpackage | What it holds | Articles |
 | --- | --- | --- |
+| `execution` | Exact and Ranked execution, common preparation and independent portfolio audit | [execution policy](docs/execution.md) |
 | `covar_estimation` | EWMA covariance estimation; factor models are prepared upstream in FM | [covariance estimators](https://optimalportfolios.readthedocs.io/en/latest/covariance_estimators.html), [supplied risk inputs](docs/supplied_risk_inputs.md) |
 | `alphas` | Momentum, low-beta, carry, residual and managers' alpha signals, `AlphasData`, profiling and diagnostics | [alpha signals](https://optimalportfolios.readthedocs.io/en/latest/alphas_module_readme.html), [signal diagnostics](https://optimalportfolios.readthedocs.io/en/latest/signal_diagnostics_and_profiling.html) |
 | `optimization` | The rolling dispatcher, the general, risk-allocation, SAA and TAA solvers, `Constraints`, `OptimiserConfig` and solver diagnostics | [choosing an objective](https://optimalportfolios.readthedocs.io/en/latest/optimization_module_readme.html), [constraints](https://optimalportfolios.readthedocs.io/en/latest/constraints.html), [solver outcomes](https://optimalportfolios.readthedocs.io/en/latest/solver_numerics_and_outcomes.html), [risk budgeting](https://optimalportfolios.readthedocs.io/en/latest/risk_budgeting.html), [HRP and cluster budgets](https://optimalportfolios.readthedocs.io/en/latest/hierarchical_risk_parity_and_cluster_budgets.html), [rolling backtests](https://optimalportfolios.readthedocs.io/en/latest/rolling_backtests.html) |
@@ -461,7 +462,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
   year={2026},
-  version={10.0.1},
+  version={10.0.2},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

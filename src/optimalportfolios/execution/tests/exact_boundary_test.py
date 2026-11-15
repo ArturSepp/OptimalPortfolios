@@ -91,8 +91,8 @@ def test_other_violations_do_not_trigger_refinement(monkeypatch):
     assert not result.diagnostics["boundary_refinement"]["requested"]
 
 
-def test_deadline_exhausted_by_integer_solve_prevents_refinement(monkeypatch):
-    """Do not give a failed integer solve an additional refinement time budget."""
+def test_repair_has_separate_budget_after_integer_solve(monkeypatch):
+    """Account for an exhausted primary budget and independently audit the repair."""
     p, raw = boundary_case("upper")
     clock = [0.]
     monkeypatch.setattr(exact, "perf_counter", lambda: clock[0])
@@ -107,9 +107,25 @@ def test_deadline_exhausted_by_integer_solve_prevents_refinement(monkeypatch):
 
     monkeypatch.setattr(exact, "native_mosek", consume)
     result = exact.wrapper_exact_execution(p, "CORRIDOR", time_limit_s=10)
-    assert np.array_equal(result.weights, p.base)
-    assert result.diagnostics["boundary_refinement"]["status"] == "deadline"
-    assert not result.diagnostics["boundary_refinement"]["attempted"]
+    assert audit_execution(p, result.weights)["passed"]
+    assert result.diagnostics["delivered_source"] == "boundary_refinement"
+    assert result.diagnostics["method_seconds"] == 11.
+    assert result.diagnostics["repair_seconds"] == 0.
+    assert 0 < result.diagnostics["boundary_refinement"]["native_time_limit_s"] <= 2.
+    rejected = next(e for e in result.diagnostics["incumbent_events"]
+                    if e["source"] == "native_return")
+    assert not rejected["audit"]["passed"]
+    assert rejected["variance"] == result.diagnostics["best_native_candidate_variance"]
+    assert rejected["variance"] == variance(p, raw)
+    assert all(e["variance"] is not None for e in result.diagnostics["incumbent_events"])
+
+
+def test_expired_repair_budget_does_not_start_a_graph(monkeypatch):
+    """The repair's independent clock is authoritative even before compilation."""
+    p, raw = boundary_case("upper")
+    monkeypatch.setattr(exact, "perf_counter", lambda: 2.)
+    weights, detail = exact._refine_group_candidate(p, raw, "CORRIDOR", 2.)
+    assert weights is None and not detail["attempted"] and detail["status"] == "deadline"
 
 
 def test_refinement_graph_construction_is_charged(monkeypatch):
