@@ -1,5 +1,11 @@
 # Changelog
 
+## [10.0.2] - 2026-11-15
+
+- Reserve numerical headroom on execution group rows while retaining admitted
+  reference exposures. Exact records each incumbent's tracking variance and
+  accounts separately for the time spent on fixed-state group repair.
+
 ## [10.0.1] - 2026-11-03
 
 - Add an experimental supplied-CMA allocation helper with explicit tracking-error,

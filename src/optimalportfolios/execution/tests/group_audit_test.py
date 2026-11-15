@@ -33,7 +33,7 @@ def pinned_group(side, gap, tolerance=1e-7):
 
 @pytest.mark.parametrize("side", ["lower", "upper"])
 @pytest.mark.parametrize("formulation", ["CORRIDOR", "FULL"])
-@pytest.mark.parametrize("fraction", [0.00583172087, 0.99])
+@pytest.mark.parametrize("fraction", [0.00583172087, 0.99, 0.9999])
 def test_audit_admitted_group_conflict_sizes_same_trade(side, formulation, fraction):
     """Tiny literal contradictions must not suppress an otherwise admissible trade."""
     p = pinned_group(side, fraction * 1e-7)
@@ -102,3 +102,27 @@ def test_configured_tolerance_and_return_gate_remain_authoritative(monkeypatch):
     result = wrapper_ranked_execution(p)
     assert np.array_equal(result.weights, p.base)
     assert all(not t["audit"]["passed"] for t in result.diagnostics["trials"])
+
+
+def test_group_margin_is_in_scaled_units_and_preserves_an_admitted_witness():
+    """Leave headroom on a free row while retaining a pinned tolerance-only book."""
+    from optimalportfolios.execution.model import SCALE, group_envelope
+
+    p = pinned_group("upper", .9999e-7)
+    lo, hi = group_envelope(p, p.base)
+    assert hi[0] == np.nextafter(p.group_upper[0] + p.rules.audit_tolerance,
+                                     p.group_upper[0])
+    assert hi[0] > (p.groups @ p.base)[0]
+    assert (lo[0] - (p.group_lower[0] - p.rules.audit_tolerance)) * SCALE > 100e-9
+
+
+def test_backend_row_units_preserve_the_group_inequalities():
+    """Rescaling both sides changes residual units while preserving their signs."""
+    p = pinned_group("upper", 2e-7)
+    for units in (1., 1000.):
+        graph = build_model(p, group_row_units=units)
+        graph.displacement_bp.value = np.zeros(len(graph.indices))
+        residual = np.max(graph.linear_constraints[3].violation()) / units
+        assert residual == pytest.approx(1e4 * (1e-7 + 1e-10), abs=1e-11)
+    with pytest.raises(ValueError, match="positive"):
+        build_model(p, group_row_units=0.)
