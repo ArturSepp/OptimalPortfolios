@@ -120,6 +120,14 @@ def test_repair_has_separate_budget_after_integer_solve(monkeypatch):
     assert all(e["variance"] is not None for e in result.diagnostics["incumbent_events"])
 
 
+def test_expired_repair_budget_does_not_start_a_graph(monkeypatch):
+    """The repair's independent clock is authoritative even before compilation."""
+    p, raw = boundary_case("upper")
+    monkeypatch.setattr(exact, "perf_counter", lambda: 2.)
+    weights, detail = exact._refine_group_candidate(p, raw, "CORRIDOR", 2.)
+    assert weights is None and not detail["attempted"] and detail["status"] == "deadline"
+
+
 def test_refinement_graph_construction_is_charged(monkeypatch):
     """A graph that exhausts the shared deadline must not start a native QP."""
     p, raw = boundary_case("upper")
