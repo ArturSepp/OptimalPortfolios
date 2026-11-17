@@ -1,5 +1,17 @@
 # Changelog
 
+## [10.0.3] - 2026-11-17
+
+- Add optional signed weight scores and proportional costs to the matched Exact
+  and Ranked execution objective, including cached sizing, conditional trade
+  priorities, relaxations and native incumbent retention. Defaults retain pure
+  tracking variance. Costs remain relative to original holdings, including on
+  trade reversals and replacements; risk diagnostics remain separately reported.
+- Add an optional Ranked elapsed-time allowance with best-audited-incumbent
+  retention across restarts. In-flight work can overrun the allowance. Preserve
+  existing search defaults, preparation, constraint semantics and audit tolerances.
+- Report native absolute gaps alongside relative gaps in original objective units.
+
 ## [10.0.2] - 2026-11-15
 
 - Reserve numerical headroom on execution group rows while retaining admitted

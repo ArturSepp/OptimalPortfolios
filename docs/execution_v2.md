@@ -333,6 +333,13 @@ the optional candidate count does not exceed the allowance.
 `diagnostics`. Diagnostics record audits, unique mandatory/discretionary tickets,
 exemption identity, cap convention, gross noncash turnover, objective variance,
 annual tracking error in basis points, candidate count and all solve counts.
+Optional `weight_score` and `trade_cost` add signed linear reward and proportional
+cost relative to original holdings. Both matched engines then compare the full
+scored objective, retaining pure variance and TE diagnostics separately; see the
+[score units and deadline contract](execution.md#optional-execution-scores-and-search-deadline).
+The optional `RankedConfig.time_limit_s` returns the best audited incumbent on
+expiry, including progress within a restart. Checkpoints cover search generation
+and native solves; in-flight work can finish after the allowance.
 An unaudited vector is never delivered and native output is never silently repaired.
 
 ## Exact starts and certificates
@@ -405,7 +412,9 @@ The split is verified on the declared funded domain without modifying covariance
 same CORRIDOR model. It reports primal values separately from lower bounds. A
 supporting-plane LP dual includes an explicit bounded-variable residual correction
 and floating-point guard. If unavailable, the certificate is explicitly limited
-to nonnegative variance. Native integer bounds remain diagnostics until their
+to nonnegative variance and cost plus the box lower bound of any signed score.
+The quadratic perspective split leaves those affine state terms unchanged.
+Native integer bounds remain diagnostics until their
 certificate contract is validated. No conic primal value is labelled a lower bound.
 
 ## Qualification and limits
@@ -443,7 +452,7 @@ MIQP retain their separate interfaces and acceptance behavior.
 
 The controls `primary_time_limit_s`, `primary_threads` and `primary_gap_rel`
 default to 10 seconds, one thread and 1e-4 respectively. The relative gap is
-measured in original tracking variance, including the canonical objective
+measured in the original objective (tracking variance by default), including the canonical objective
 constant. A time limit does not by itself reject a valid audited native
 incumbent or certify optimality. Missing native witnesses, solver and callback
 errors, inconsistent bounds and independently invalid weights trigger fallback.

@@ -1,4 +1,4 @@
-"""Cash-funded marginal ranking with audited joint sizing and bounded search."""
+"""Rank and size F = (w-m)'Sigma(w-m) - 2 s'(w-c) + 2 t'|w-c|."""
 
 from __future__ import annotations
 
@@ -9,10 +9,11 @@ from time import perf_counter
 import cvxpy as cp
 import numpy as np
 
-from .domain import audit_execution, compile_states, result, variance
+from .domain import audit_execution, compile_states, objective, result, score_terms, state_side
 from .model import build_model, solve_qp
 from .types import ExecutionProblem, ExecutionResult, RankedConfig
 from ._sizing import _FixedStateSizer
+from ._deadline import _DeadlineReached, _SearchDeadline, checkpoint, retain_audited
 
 
 def cash_geometry(problem):
@@ -37,6 +38,19 @@ def state_gain(gradient, curvature, lower, upper):
     return -(2 * gradient * step + curvature * step * step), step
 
 
+def _state_adjustment(problem, point, i, state):
+    """Return the scored slope and cost constant for a destination state."""
+    slope, constant = 0.0, 0.0
+    if problem.weight_score is not None:
+        slope -= problem.weight_score[i] - problem.weight_score[problem.cash]
+    if problem.trade_cost is not None and problem.trade_cost[i] > 0:
+        side = state_side(state, problem.current[i])
+        movement = point[i] - problem.current[i]
+        slope += problem.trade_cost[i] * side
+        constant = 2 * problem.trade_cost[i] * (side * movement - abs(movement))
+    return slope, constant
+
+
 def _pair_gain(g1, g2, h1, h2, cross, lo1, hi1, lo2, hi2):
     """Minimise a PSD funded quadratic on a box by its edges and stationary point.
 
@@ -45,9 +59,11 @@ def _pair_gain(g1, g2, h1, h2, cross, lo1, hi1, lo2, hi2):
     """
     points = []
     for x in (lo1, hi1):
+        checkpoint('_pair_gain')
         _, y = state_gain(g2 + cross * x, h2, lo2, hi2)
         points.append((x, y))
     for y in (lo2, hi2):
+        checkpoint('_pair_gain')
         _, x = state_gain(g1 + cross * y, h1, lo1, hi1)
         points.append((x, y))
     determinant = h1 * h2 - cross * cross
@@ -78,12 +94,15 @@ def _constrained_pair_gain(problem, point, i, k, gradient, curvature, cross, bou
     for row, lower, upper, value in zip(
         problem.groups, problem.group_lower, problem.group_upper, exposure
     ):
+        checkpoint('_constrained_pair_gain')
         a, b = row[i] - row[cash], row[k] - row[cash]
         rows.extend(((a, b, upper + problem.rules.audit_tolerance - value),
                      (-a, -b, value - lower + problem.rules.audit_tolerance)))
     for a, b, bound in rows:
+        checkpoint('_constrained_pair_gain')
         clipped = []
         for left, right in zip(polygon, polygon[1:] + polygon[:1]):
+            checkpoint('_constrained_pair_gain')
             fl = a * left[0] + b * left[1] - bound
             fr = a * right[0] + b * right[1] - bound
             if fl <= 0:
@@ -99,6 +118,7 @@ def _constrained_pair_gain(problem, point, i, k, gradient, curvature, cross, bou
     h1, h2 = curvature
     points = list(polygon)
     for (x, y), (next_x, next_y) in zip(polygon, polygon[1:] + polygon[:1]):
+        checkpoint('_constrained_pair_gain')
         dx, dy = next_x - x, next_y - y
         slope = (g1 + h1 * x + cross * y) * dx + (g2 + cross * x + h2 * y) * dy
         curve = h1 * dx * dx + 2 * cross * dx * dy + h2 * dy * dy
@@ -138,6 +158,7 @@ def _coordinated_supports(problem, states, support, point, limit, visited, expan
         """Construct a capacity-valid, previously unvisited support and tie key."""
         candidate = dict(support)
         for i, j in edits:
+            checkpoint('proposal')
             if states[i][j].ticket:
                 candidate[i] = j
             else:
@@ -149,16 +170,19 @@ def _coordinated_supports(problem, states, support, point, limit, visited, expan
         return tie, key
 
     for i, j in changes:
+        checkpoint('_coordinated_supports')
         candidate = proposal(((i, j),))
         if candidate is not None:
             state = states[i][j]
+            slope, constant = _state_adjustment(problem, point, i, state)
             gain = _constrained_pair_gain(
-                problem, point, i, i, (gradient[i], 0.), (curvature[i], 0.), 0.,
+                problem, point, i, i, (gradient[i] + slope, 0.), (curvature[i], 0.), 0.,
                 (state.lower - point[i], state.upper - point[i], 0., 0.),
-            ) if expanded else state_gain(gradient[i], curvature[i],
+            ) if expanded else state_gain(gradient[i] + slope, curvature[i],
                                            state.lower - point[i], state.upper - point[i])[0]
-            yield (-gain, *candidate)
+            yield (-gain + constant, *candidate)
     for (i, j), (k, ell) in combinations(changes, 2):
+        checkpoint('_coordinated_supports')
         if i == k:
             continue
         candidate = proposal(((i, j), (k, ell)))
@@ -166,16 +190,19 @@ def _coordinated_supports(problem, states, support, point, limit, visited, expan
             continue
         cross = _funded_cross(problem, i, k)
         first, second = states[i][j], states[k][ell]
+        slope1, constant1 = _state_adjustment(problem, point, i, first)
+        slope2, constant2 = _state_adjustment(problem, point, k, second)
         gain = _constrained_pair_gain(
-            problem, point, i, k, (gradient[i], gradient[k]), (curvature[i], curvature[k]),
+            problem, point, i, k, (gradient[i] + slope1, gradient[k] + slope2),
+            (curvature[i], curvature[k]),
             cross, (first.lower - point[i], first.upper - point[i],
                     second.lower - point[k], second.upper - point[k]),
         ) if expanded else _pair_gain(
-            gradient[i], gradient[k], curvature[i], curvature[k], cross,
+            gradient[i] + slope1, gradient[k] + slope2, curvature[i], curvature[k], cross,
             first.lower - point[i], first.upper - point[i],
             second.lower - point[k], second.upper - point[k],
         )
-        yield (-gain, *candidate)
+        yield (-gain + constant1 + constant2, *candidate)
 
     if not expanded:
         return
@@ -185,14 +212,22 @@ def _coordinated_supports(problem, states, support, point, limit, visited, expan
     removable = [(i, next(j for j, state in enumerate(states[i]) if not state.ticket))
                  for i in support if any(not state.ticket for state in states[i])]
     for count in (1, 2):
+        checkpoint('_coordinated_supports')
         for removals in combinations(removable, count):
+            checkpoint('_coordinated_supports')
             delta = np.zeros(len(point))
             for old, _ in removals:
+                checkpoint('_coordinated_supports')
                 delta[old] = problem.base[old] - point[old]
             delta[problem.cash] = -delta.sum()
             shifted = problem.matvec(delta)
             cost = 2 * float(active @ delta) + float(delta @ shifted)
+            if problem.weight_score is not None or problem.trade_cost is not None:
+                old_score, old_cost = score_terms(problem, point)
+                new_score, new_cost = score_terms(problem, point + delta)
+                cost += 2 * (new_cost - old_cost - new_score + old_score)
             for first, second in combinations(admissions, 2):
+                checkpoint('_coordinated_supports')
                 i, j = first
                 k, ell = second
                 if i == k:
@@ -202,14 +237,16 @@ def _coordinated_supports(problem, states, support, point, limit, visited, expan
                     continue
                 cross = _funded_cross(problem, i, k)
                 left, right = states[i][j], states[k][ell]
+                slope1, constant1 = _state_adjustment(problem, point + delta, i, left)
+                slope2, constant2 = _state_adjustment(problem, point + delta, k, right)
                 gain = _constrained_pair_gain(
                     problem, point + delta, i, k,
-                    (gradient[i] + shifted[i] - shifted[problem.cash],
-                     gradient[k] + shifted[k] - shifted[problem.cash]),
+                    (gradient[i] + shifted[i] - shifted[problem.cash] + slope1,
+                     gradient[k] + shifted[k] - shifted[problem.cash] + slope2),
                     (curvature[i], curvature[k]), cross,
                     (left.lower - point[i], left.upper - point[i],
                      right.lower - point[k], right.upper - point[k]),
-                ) - cost
+                ) - cost - constant1 - constant2
                 yield (-gain, *candidate)
 
 
@@ -228,9 +265,11 @@ def _support_possible(problem, states, support):
         problem.lower[problem.cash], problem.upper[problem.cash]
     )
     for i, row in enumerate(states):
+        checkpoint('_support_possible')
         if problem.mandatory[i]:
             lower[i], upper[i] = min(s.lower for s in row), max(s.upper for s in row)
     for i, j in support.items():
+        checkpoint('_support_possible')
         lower[i], upper[i] = states[i][j].lower, states[i][j].upper
     tolerance = problem.rules.audit_tolerance
     lower = np.nextafter(lower - tolerance, -np.inf)
@@ -269,15 +308,19 @@ def ranked_selection(problem, states, limit):
     }
     selected, trace = {}, []
     while remaining and len(selected) < limit:
+        checkpoint('ranked_selection')
         options = []
         for i in remaining:
+            checkpoint('ranked_selection')
             g = sigma_active[i] - sigma_active[problem.cash]
             for j, state in enumerate(states[i]):
+                checkpoint('ranked_selection')
                 if state.ticket:
+                    slope, constant = _state_adjustment(problem, work, i, state)
                     gain, step = state_gain(
-                        g, curvature[i], state.lower - work[i], state.upper - work[i]
+                        g + slope, curvature[i], state.lower - work[i], state.upper - work[i]
                     )
-                    options.append((-gain, problem.names[i], j, i, step))
+                    options.append((-gain + constant, problem.names[i], j, i, step))
         negative_gain, _, j, i, step = min(options)
         if negative_gain >= 0:
             break
@@ -318,6 +361,7 @@ def _guided_support(problem, states, limit, solver, decision=None):
         return None, str(model.optimisation.status)
     candidates = []
     for i, occupancy in model.occupancy.items():
+        checkpoint('_guided_support')
         if problem.mandatory[i]:
             continue
         tickets = [j for j, state in enumerate(states[i]) if state.ticket
@@ -339,7 +383,7 @@ def _guided_support(problem, states, limit, solver, decision=None):
     return {i: j for _, _, i, j in sorted(candidates)[:limit]}, str(model.optimisation.status)
 
 
-def wrapper_ranked_execution(
+def _search_ranked(
     problem: ExecutionProblem, config: RankedConfig = RankedConfig()
 ) -> ExecutionResult:
     """Return the best audited incumbent after bounded ranking, sizing and search.
@@ -351,7 +395,7 @@ def wrapper_ranked_execution(
     states = compile_states(problem)
     base_audit = audit_execution(problem, problem.base)
     best = problem.base.copy() if base_audit["passed"] else None
-    best_value = variance(problem, best) if best is not None else np.inf
+    best_value = objective(problem, best) if best is not None else np.inf
     diagnostics = dict(
         config=asdict(config),
         qp_counts=dict(sizing=0, rescue=0, drop=0, exchange=0, state=0, coordinated=0,
@@ -379,6 +423,8 @@ def wrapper_ranked_execution(
         times=dict(selection=0.0, sizing=0.0, rescue=0.0, search=0.0, bound=0.0),
     )
     cap = problem.rules.ticket_cap
+    retain_audited(best, best_value, {}, diagnostics)
+    checkpoint("initialisation")
     limit = len(problem.names) if cap is None else max(0, cap - problem.mandatory_count)
     if problem.rules.discretionary_allowance is not None:
         limit = min(limit, problem.rules.discretionary_allowance)
@@ -423,10 +469,12 @@ def wrapper_ranked_execution(
         sizing_cache[key] = None
         accepted = False
         for branch in mandatory_branches:
+            checkpoint('size')
             fixed = dict(zip(mandatory, branch))
             fixed.update(support)
             valid = True
             for i, row in enumerate(states):
+                checkpoint('size')
                 if i == problem.cash or i in fixed:
                     continue
                 zero = [j for j, state in enumerate(row) if not state.ticket]
@@ -457,12 +505,13 @@ def wrapper_ranked_execution(
             )
             if audit is not None and audit["passed"]:
                 accepted = True
-                objective = variance(problem, weights)
+                value = objective(problem, weights)
+                retain_audited(weights, value, support)
                 cached = sizing_cache[key]
-                if cached is None or objective < cached[0]:
-                    sizing_cache[key] = objective, weights.copy()
-                if objective < best_value - config.objective_tolerance:
-                    best, best_value, best_support = weights.copy(), objective, dict(support)
+                if cached is None or value < cached[0]:
+                    sizing_cache[key] = value, weights.copy()
+                if value < best_value - config.objective_tolerance:
+                    best, best_value, best_support = weights.copy(), value, dict(support)
         return accepted
 
     selected, working, trace, elapsed = ranked_selection(problem, states, limit)
@@ -486,17 +535,21 @@ def wrapper_ranked_execution(
         directions = pressure @ problem.groups if len(pressure) else np.zeros(len(working))
         candidates = []
         for i, row in enumerate(states):
+            checkpoint('_search_ranked')
             if i == problem.cash or problem.mandatory[i]:
                 continue
             for j, state in enumerate(row):
+                checkpoint('_search_ranked')
                 if state.ticket:
                     movement = (state.lower + state.upper) / 2 - working[i]
                     benefit = (directions[i] - directions[problem.cash]) * movement
                     candidates.append((-benefit, problem.names[i], i, j))
         trials = []
         for i in sorted(selected, key=lambda x: problem.names[x]):
+            checkpoint('_search_ranked')
             trials.append({k: v for k, v in selected.items() if k != i})
         for _, _, i, j in sorted(candidates):
+            checkpoint('_search_ranked')
             if i in selected:
                 proposal = dict(selected)
                 proposal[i] = j
@@ -505,35 +558,50 @@ def wrapper_ranked_execution(
                 trials.append(selected | {i: j})
             else:
                 for old in sorted(selected, key=lambda x: problem.names[x]):
+                    checkpoint('_search_ranked')
                     trials.append({k: v for k, v in selected.items() if k != old} | {i: j})
         for support in trials[: config.rescue_trials]:
+            checkpoint('_search_ranked')
             size(support, "rescue")
     def single_passes():
         """Try the existing drop and exchange passes from the current accepted support."""
         initial = sorted(best_support, key=lambda i: problem.names[i])
         if config.drop:
             for old in initial:
+                checkpoint('single_passes')
                 size({i: j for i, j in best_support.items() if i != old}, "drop")
         if not config.exchange:
             return
         for old in initial:
+            checkpoint('single_passes')
             support = {i: j for i, j in best_support.items() if i != old}
             point = best if best is not None else problem.base
             active = problem.matvec(point - problem.target)
             curvature = cash_geometry(problem)
             candidates = []
             for i, row in enumerate(states):
+                checkpoint('single_passes')
                 if i == problem.cash or problem.mandatory[i] or i in support:
                     continue
                 for j, state in enumerate(row):
+                    checkpoint('single_passes')
                     if state.ticket and (i, j) != (old, best_support.get(old)):
+                        origin, funded_gradient, removal_gain = point, active, 0.
+                        if i != old and (problem.weight_score is not None
+                                         or problem.trade_cost is not None):
+                            origin = point.copy()
+                            origin[problem.cash] += origin[old] - problem.base[old]
+                            origin[old] = problem.base[old]
+                            funded_gradient = problem.matvec(origin - problem.target)
+                            removal_gain = objective(problem, point) - objective(problem, origin)
+                        slope, constant = _state_adjustment(problem, origin, i, state)
                         gain, _ = state_gain(
-                            active[i] - active[problem.cash],
+                            funded_gradient[i] - funded_gradient[problem.cash] + slope,
                             curvature[i],
-                            state.lower - point[i],
-                            state.upper - point[i],
+                            state.lower - origin[i],
+                            state.upper - origin[i],
                         )
-                        candidates.append((-gain, problem.names[i], i, j))
+                        candidates.append((-gain - removal_gain + constant, problem.names[i], i, j))
             if candidates:
                 _, _, i, j = min(candidates)
                 size(support | {i: j}, "state" if i == old else "exchange")
@@ -541,6 +609,7 @@ def wrapper_ranked_execution(
     def improve(expanded, remaining_trials, records, screen=False):
         """Run bounded support passes, preserving the earlier incumbent and its search path."""
         for pass_index in range(config.improvement_passes):
+            checkpoint('improve')
             if not remaining_trials:
                 break
             tick = perf_counter()
@@ -552,10 +621,13 @@ def wrapper_ranked_execution(
                 # that recourse is essential, so screen every one-for-one swap.
                 anchor = dict(best_support)
                 for old in sorted(anchor, key=lambda i: problem.names[i]):
+                    checkpoint('improve')
                     for i in sorted(range(len(states)), key=lambda i: problem.names[i]):
+                        checkpoint('improve')
                         if i == problem.cash or problem.mandatory[i] or i in anchor:
                             continue
                         for j, state in enumerate(states[i]):
+                            checkpoint('improve')
                             if state.ticket:
                                 size({k: v for k, v in anchor.items() if k != old} | {i: j},
                                      "exchange_sweep")
@@ -567,6 +639,7 @@ def wrapper_ranked_execution(
                     problem, states, best_support,
                     best if best is not None else problem.base, limit, visited, expanded
                 ):
+                    checkpoint('priorities')
                     if screen and not _support_possible(problem, states, dict(candidate[2])):
                         diagnostics["completion_screened"] += 1
                         continue
@@ -581,6 +654,7 @@ def wrapper_ranked_execution(
             records.append(pass_record)
             diagnostics["times"]["search"] += perf_counter() - tick
             for _, _, key in shortlist:
+                checkpoint('improve')
                 size(dict(key), "coordinated")
                 pass_record["trials"] += 1
                 remaining_trials -= 1
@@ -640,14 +714,18 @@ def wrapper_ranked_execution(
             record = dict(label=label, guidance_status=native, seed=sorted(seed.items()), passes=[])
             (diagnostics["restarts"] if records is None else records).append(record)
             for _ in range(config.improvement_passes):
+                checkpoint('restart')
                 before = best_value
                 support = dict(best_support) if best is not None else dict(seed)
                 record["passes"].append(sorted(support.items()))
                 for old in sorted(support, key=lambda i: problem.names[i]):
+                    checkpoint('restart')
                     for i in sorted(range(len(states)), key=lambda i: problem.names[i]):
+                        checkpoint('restart')
                         if i == problem.cash or problem.mandatory[i] or i in support:
                             continue
                         for j, state in enumerate(states[i]):
+                            checkpoint('restart')
                             if state.ticket:
                                 size({k: v for k, v in support.items() if k != old} | {i: j},
                                      "restart")
@@ -666,6 +744,7 @@ def wrapper_ranked_execution(
             seeds.add(tuple(sorted(guided.items())))
             restart(guided, "unrestricted_guidance", diagnostics["guidance_status"])
         for i in sorted(anchor, key=lambda i: problem.names[i])[:config.rescue_trials]:
+            checkpoint('_search_ranked')
             zero = next((state for state in states[i] if not state.ticket), None)
             if zero is None:
                 continue
@@ -698,6 +777,7 @@ def wrapper_ranked_execution(
         decisions = ((i, j, enabled) for i, j in proposals if len(states[i]) > 1
                      for enabled in (True, False))
         for decision in islice(decisions, config.rescue_trials):
+            checkpoint('_search_ranked')
             i, j, enabled = decision
             tick = perf_counter()
             diagnostics["qp_counts"]["conditional_guidance"] += 1
@@ -737,6 +817,7 @@ def wrapper_ranked_execution(
             and key != tuple(sorted(best_support.items()))
         ))
         for seed_value, _, key in alternatives:
+            checkpoint('_search_ranked')
             incumbent_value = best_value
             restart(dict(key), "cached_alternative", records=diagnostics["bridge_restarts"])
             record = diagnostics["bridge_restarts"][-1]
@@ -760,3 +841,27 @@ def wrapper_ranked_execution(
     diagnostics["visited_supports"] = len(sizing_cache)
     status = "audited_incumbent" if best is not None else "bounded_abstention"
     return result(problem, best, status, diagnostics)
+
+
+def wrapper_ranked_execution(
+    problem: ExecutionProblem, config: RankedConfig = RankedConfig()
+) -> ExecutionResult:
+    """Return an audited scored incumbent, with optional wall-clock search truncation.
+
+    Checkpoints cover enumeration and each native solve, including numerical retries.
+    An in-flight operation may finish after the deadline. The unlimited search keeps
+    its original phase order and budgets when ``time_limit_s`` is ``None``.
+    """
+    if config.time_limit_s is None:
+        return _search_ranked(problem, config)
+    with _SearchDeadline(config.time_limit_s, config.objective_tolerance) as budget:
+        try:
+            solved = _search_ranked(problem, config)
+            checkpoint("completion")
+            return solved
+        except _DeadlineReached:
+            diagnostics = budget.diagnostics
+            diagnostics.update(time_limit_reached=True, truncated_phase=budget.phase,
+                               support={problem.names[i]: j for i, j in budget.support.items()})
+            diagnostics.setdefault("times", {})["total"] = perf_counter() - budget.started
+            return result(problem, budget.best, "time_limit", diagnostics)

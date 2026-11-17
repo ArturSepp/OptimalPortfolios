@@ -65,8 +65,22 @@ def compile_states(
             branches.extend(
                 TradeState(a, b, True) for a, b in floor_intervals(left, right, floor[i])
             )
+        if problem.trade_cost is not None and problem.trade_cost[i] > 0:
+            branches = _cost_states(branches, current)
         states.append(tuple(sorted(set(branches))))
     return tuple(states)
+
+
+def _cost_states(branches, current):
+    """Split crossing intervals without changing endpoints or instrument ticket labels."""
+    split = []
+    for state in branches:
+        if state.lower < current < state.upper:
+            split.extend((TradeState(state.lower, current, state.ticket),
+                          TradeState(current, state.upper, state.ticket)))
+        else:
+            split.append(state)
+    return split
 
 
 def audit_execution(
@@ -128,9 +142,37 @@ def audit_execution(
 # QIS RiskModel supplies reporting analytics, but cannot define the solver's
 # conditional quadratic objective or the independent original-space return gate.
 def variance(problem, weights):
-    """Evaluate the optimisation objective in unchanged annual covariance units."""
+    """Evaluate pure tracking variance in unchanged annual covariance units."""
     active = np.asarray(weights) - problem.target
     return float(active @ problem.matvec(active))
+
+
+def score_terms(problem, weights):
+    """Return the signed weight contribution and proportional cost at original holdings."""
+    movement = np.asarray(weights) - problem.current
+    score = 0.0 if problem.weight_score is None else float(problem.weight_score @ movement)
+    cost = 0.0 if problem.trade_cost is None else float(problem.trade_cost @ np.abs(movement))
+    return score, cost
+
+
+def objective(problem, weights):
+    """Evaluate F = tracking variance - 2 score + 2 proportional cost."""
+    value = variance(problem, weights)
+    if problem.weight_score is None and problem.trade_cost is None:
+        return value
+    score, cost = score_terms(problem, weights)
+    return value - 2 * score + 2 * cost
+
+
+def state_side(state, current):
+    """Return the side of a sign-consistent interval relative to original holdings."""
+    if state.lower == state.upper == current:
+        return 0.0
+    if state.lower >= current:
+        return 1.0
+    if state.upper <= current:
+        return -1.0
+    raise ValueError("A cost-bearing state crosses original holdings")
 
 
 def result(problem, weights, status, diagnostics, formulation="CORRIDOR"):
@@ -139,6 +181,7 @@ def result(problem, weights, status, diagnostics, formulation="CORRIDOR"):
     if audit is not None and not audit["passed"]:
         raise ValueError("Refusing an unaudited execution result")
     value = None if weights is None else variance(problem, weights)
+    score, cost = (None, None) if weights is None else score_terms(problem, weights)
     states = compile_states(problem, formulation)
     candidates = sum(
         any(s.ticket for s in row)
@@ -149,6 +192,9 @@ def result(problem, weights, status, diagnostics, formulation="CORRIDOR"):
         diagnostics,
         audit=audit,
         variance=value,
+        weight_score_value=score,
+        trade_cost_value=cost,
+        scored_objective=None if value is None else value - 2 * score + 2 * cost,
         annual_te_bp=None if value is None else 1e4 * np.sqrt(max(0.0, value)),
         M=problem.mandatory_count,
         K=problem.rules.ticket_cap,

@@ -60,7 +60,9 @@
           "investment",
           "annualisation",
           "provenance",
-          "preparation_seconds"
+          "preparation_seconds",
+          "weight_score",
+          "trade_cost"
         ],
         "ExecutionRules": [
           "minimum_ticket",
@@ -80,7 +82,8 @@
           "mandatory_state_trials",
           "objective_tolerance",
           "qp_solver",
-          "improvement_passes"
+          "improvement_passes",
+          "time_limit_s"
         ],
         "ExecutionResult": [
           "weights",
@@ -899,7 +902,9 @@
         "investment",
         "annualisation",
         "provenance",
-        "preparation_seconds"
+        "preparation_seconds",
+        "weight_score",
+        "trade_cost"
       ]
     },
     "ExecutionRules": {
@@ -923,7 +928,8 @@
         "mandatory_state_trials",
         "objective_tolerance",
         "qp_solver",
-        "improvement_passes"
+        "improvement_passes",
+        "time_limit_s"
       ]
     },
     "ExecutionResult": {

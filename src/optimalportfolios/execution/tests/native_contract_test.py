@@ -158,7 +158,7 @@ def native(monkeypatch):
         solsta=SimpleNamespace(optimal="optimal", prim_feas="feasible"),
         callbackcode=SimpleNamespace(new_int_mio="new_integer"),
         dinfitem=SimpleNamespace(mio_obj_int="objective", mio_obj_bound="bound",
-                                mio_obj_rel_gap="gap"),
+                                mio_obj_rel_gap="gap", mio_obj_abs_gap="absolute_gap"),
         iinfitem=SimpleNamespace(mio_num_branch="nodes", mio_num_int_solutions="solutions",
                                 mio_initial_feasible_solution="start_received",
                                 mio_obj_bound_defined="bound_defined"),
@@ -192,8 +192,22 @@ def test_native_stopping_objective_restores_exact_canonical_offset(native, monke
     assert solved.diagnostics['native_bound'] == 29./SCALE
     assert solved.diagnostics['native_bound_canonical'] == 12./SCALE
     assert solved.diagnostics['native_incumbent'] == 40./SCALE
+    assert solved.diagnostics['native_gap_absolute'] == .01/SCALE
     assert native.options['mosek_params']['MSK_DPAR_MIO_TOL_REL_GAP'] == 1e-4
     assert native.options['mosek_params']['MSK_DPAR_MIO_TOL_ABS_GAP'] == 1e-8
+
+
+def test_native_retention_compares_costs_separately_from_tracking_variance(native, monkeypatch):
+    """A lower-risk but expensive native trade cannot replace the cheaper prepared book."""
+    from optimalportfolios.execution.domain import objective, variance
+
+    p = replace(native.problem, trade_cost=np.array([1., 0., 0., 0., 0.]))
+    monkeypatch.setattr(exact, 'build_model', lambda *args: native.model)
+    solved = wrapper_exact_execution(p, 'CORRIDOR')
+    np.testing.assert_array_equal(solved.weights, p.base)
+    assert solved.diagnostics['native_objective_origin'] == 'scored_objective'
+    assert solved.diagnostics['best_native_candidate_variance'] < variance(p, p.base)
+    assert solved.diagnostics['best_native_candidate_objective'] > objective(p, p.base)
 
 
 @pytest.mark.parametrize("receipt", [True, False])
@@ -257,7 +271,8 @@ def test_native_version_and_charged_deadline_guards_without_licence(native, monk
     assert result.diagnostics["native_status"] == "solver_error"
     monkeypatch.setattr(native.api.Env, "getversion", lambda: (11, 2, 3))
     assert exact.lift_start(None, None, None, None, -1)["supplied"] is False
-    record = exact.native_mosek(None, native.model, None, -1, 1, .001, lambda *args: None)
+    record = exact.native_mosek(native.problem, native.model, None, -1, 1, .001,
+                               lambda *args: None)
     assert record["native_status"] == "preparation_deadline" and not native.tasks
     native.lift_exhausts_budget = True
     result = wrapper_exact_execution(native.problem, "CORRIDOR", time_limit_s=10)

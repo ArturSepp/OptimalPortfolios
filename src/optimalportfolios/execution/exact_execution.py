@@ -7,7 +7,7 @@ from time import perf_counter
 import cvxpy as cp
 import numpy as np
 
-from .domain import audit_execution, compile_states, result, variance
+from .domain import audit_execution, compile_states, objective, result, variance
 from .model import SCALE, _GROUP_MARGIN_BP, build_model, group_envelope
 from .types import ExecutionProblem, ExecutionResult, RankedConfig
 
@@ -77,7 +77,8 @@ def native_mosek(problem, model, initial, deadline, threads, gap_rel, retain):
     data, chain, inverse = model.optimisation.get_problem_data("MOSEK")
     # CVXPY omits this constant from the native task and adds it on inversion.
     # Restore it before solving so the relative stopping gap uses the original
-    # variance. The copied inverse map must then avoid adding it a second time.
+    # objective, including signed scores. The copied inverse map must then avoid
+    # adding it a second time.
     offset = float(inverse[-1][cp.settings.OBJ_OFFSET])
     native_last = copy(inverse[-1])
     native_last.inverse_data = {**inverse[-1].inverse_data, cp.settings.OBJ_OFFSET: 0.}
@@ -88,7 +89,8 @@ def native_mosek(problem, model, initial, deadline, threads, gap_rel, retain):
         canonicalisation_seconds=perf_counter() - tick,
         native_bound=None,
         native_objective_offset=offset / SCALE,
-        native_objective_origin="original_variance",
+        native_objective_origin=("original_variance" if problem.weight_score is None
+                                 and problem.trade_cost is None else "scored_objective"),
         native_mip_feasibility_tolerance=_NATIVE_FEASIBILITY_TOLERANCE,
         bound=None,
         bound_reason="Native global bound retained as diagnostic, certificate not validated",
@@ -163,6 +165,7 @@ def native_mosek(problem, model, initial, deadline, threads, gap_rel, retain):
             record["native_bound"] = bound / SCALE
             record["native_incumbent"] = task.getdouinf(mosek.dinfitem.mio_obj_int) / SCALE
             record["native_gap_relative"] = task.getdouinf(mosek.dinfitem.mio_obj_rel_gap)
+            record["native_gap_absolute"] = task.getdouinf(mosek.dinfitem.mio_obj_abs_gap) / SCALE
         solution = chain.invert({"task": task, "solver_options": options}, native_inverse)
         record["canonical_status"] = solution.status
         if solution.primal_vars and model.displacement_bp.id in solution.primal_vars:
@@ -265,13 +268,22 @@ def wrapper_exact_execution(
         """Retain only audited incumbents, including externally supplied witnesses."""
         nonlocal best, best_value, best_source, rejected_group
         audit = audit_execution(problem, weights, formulation)
-        value = None if audit["violations"] == ["invalid_weights"] else variance(problem, weights)
+        risk = None if audit["violations"] == ["invalid_weights"] else variance(problem, weights)
+        value = risk
+        if risk is not None and (
+            problem.weight_score is not None or problem.trade_cost is not None
+        ):
+            value = objective(problem, weights)
         if source.startswith("native") and value is not None:
             previous = diagnostics["best_native_candidate_variance"]
-            if previous is None or value < previous:
-                diagnostics["best_native_candidate_variance"] = value
+            if previous is None or risk < previous:
+                diagnostics["best_native_candidate_variance"] = risk
+            previous_score = diagnostics.get("best_native_candidate_objective")
+            if previous_score is None or value < previous_score:
+                diagnostics["best_native_candidate_objective"] = value
         diagnostics["incumbent_events"].append(
-            dict(source=source, audit=audit, variance=value, seconds=perf_counter() - started)
+            dict(source=source, audit=audit, variance=risk, scored_objective=value,
+                 seconds=perf_counter() - started)
         )
         if audit["passed"]:
             if (
@@ -344,7 +356,8 @@ def wrapper_exact_execution(
     if rejected_group is not None:
         value, weights, source, audit = rejected_group
         detail = dict(requested=True, attempted=False, status="incumbent_dominates",
-                      source=source, input_variance=value, input_audit=audit)
+                      source=source, input_variance=variance(problem, weights),
+                      input_scored_objective=value, input_audit=audit)
         if value < best_value:
             tick = perf_counter()
             refined, refinement = _refine_group_candidate(
