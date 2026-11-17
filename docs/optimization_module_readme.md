@@ -675,9 +675,9 @@ examples.
 - Sepp, A., Ossa, I. and Kastenholz, M. (2026).
   [Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios](https://www.pm-research.com/content/iijpormgmt/52/4/86).
   *The Journal of Portfolio Management*, 52(4), 86–120.
-- Sepp, A., Hansen, E. and Kastenholz, M. (2026).
+- Sepp, A., Hansen, E. H. and Kastenholz, M. (2027).
   [Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors](https://ssrn.com/abstract=6785958).
-  Working paper.
+  *The Journal of Portfolio Management*, forthcoming (2027); link to the SSRN manuscript.
 - Sepp, A. (2023).
   [Optimal Allocation to Cryptocurrencies in Diversified Portfolios](https://www.risk.net/cutting-edge/7957914/optimal-allocation-to-cryptocurrencies-in-diversified-portfolios).
   *Risk Magazine*, October, 1–6.

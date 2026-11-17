@@ -39,11 +39,12 @@ remain inspectable; there is no new universal serialisation schema.
 ## FactorModels availability
 
 The [FactorModels distribution](https://pypi.org/project/factormodels/) is published
-separately as `factormodels`. The current development examples and integration tests
-require the **unreleased FM 0.3.0 candidate**, installed from its reviewed wheel;
-an older indexed release does not provide their completed-result contract. Its source repository
-and method guides retain their existing access requirements. The base OP installation
-and EWMA quickstart do not require FM or FactorLasso.
+separately as `factormodels`. Install it for workflows that construct or estimate factor
+models. Its [source](https://github.com/ArturSepp/FactorModels),
+[handbook](https://factormodels.readthedocs.io/en/latest/) and
+[software citation](https://github.com/ArturSepp/FactorModels/blob/main/CITATION.cff)
+are public. The composed CI lanes pin the reviewed released FM version; the base OP
+installation and EWMA quickstart require neither FM nor FactorLasso.
 
 FM consumes price or level histories with explicit return transformations. It owns
 factor definitions, NAV construction and completed fitted loadings and
@@ -56,11 +57,9 @@ QIS RiskModel context; it does not acquire factor data, fit loadings or infer pr
 The OP boundary ends at target weights, solver status and feasibility diagnostics.
 
 The local [HCGL](factor_covariance_hcgl.md), [GLS](gls_factor_premia.md),
-[CMA](cma_diagnostics.md) and [CSV bundle](rolling_factor_covar_from_csv.md) pages
-identify owners and handoff contracts. They are not copies of the private method
-guides. Paths labelled as FM sources or documentation below refer to an authorised
-FM checkout, not to publicly accessible web pages. That checkout retains the
-upstream authorship, source history and software citation in `CITATION.cff`.
+[CMA](cma_diagnostics.md) and [CSV workflow](rolling_factor_covar_from_csv.md) pages
+identify owners and handoff contracts and link to the corresponding public FM methods.
+The FM handbook retains the upstream authorship, source history and software citation.
 
 ## Factor-model composition
 
@@ -72,7 +71,7 @@ portfolio variance and tracking error. For correlated residuals, a requested
 `diagonal_reference=True` view labels approximate component rows with `reference`;
 those components need not sum to total risk.
 
-`factormodels.analytics.FactorOpportunityModel.optimisation_inputs()` returns
+`factormodels.FactorOpportunityModel.optimisation_inputs()` returns
 labelled arrays for `optimalportfolios.optimization.opportunity.OpportunityModel`. Constrained solving
 stays in OP. GLS decomposition, uncertainty estimation and universe diagnostics
 stay in FM/FL; any projected alpha covariance is prepared before optimisation.
@@ -83,11 +82,12 @@ Cluster mappings and optional pooled signal panels are likewise prepared upstrea
 OP 8 removes the FactorLasso dependency, root aliases, `risk_labelling` shim,
 factor-estimator modules and statistical MATF modules. There is no factor extra or
 legacy `covar_data` result constructor. Import statistical objects from their owning
-package and supply completed inputs. The FM migration guide at `docs/migration.md`
-in an authorised FM checkout lists canonical owners. Existing research snapshots
+package and supply completed inputs. The public
+[FM migration guide](https://factormodels.readthedocs.io/en/latest/migration.html)
+lists canonical owners. Existing research snapshots
 retain their original environment.
 
-The development version moves `OpportunityModel`, `OpportunitySolution`,
+The completed migration moved `OpportunityModel`, `OpportunitySolution`,
 `solve_opportunity` and `portfolio_opportunity_metrics` from
 `optimalportfolios.matf.opportunity` to `optimalportfolios.optimization.opportunity`.
 Update imports directly; the `matf` package is removed without forwarding modules.
@@ -97,7 +97,8 @@ environments retain the original import path for their recorded runs.
 ## Verification
 
 The base CI lane imports and tests an installed OP wheel with neither FM nor FL
-installed. A separate composed lane installs both candidate OP and FM wheels and
+installed. A separate composed lane installs the candidate OP wheel and the reviewed
+published FM wheel, then
 runs the shipped `optimalportfolios.tests.factor_integration_test` suite without
 skips. Repository examples are classified from their imports into base offline,
 composed offline and network lanes. The [EWMA quickstart](quickstart.md) remains a

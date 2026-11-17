@@ -90,12 +90,13 @@ and runs the four methods offline on the tracked price panel.
 
 ### Capital market assumptions from multi-asset tradable factors
 
-Sepp, A., Hansen, E. and Kastenholz, M. (2026). *Capital Market Assumptions and Strategic Asset
-Allocation Using Multi-Asset Tradable Factors*. Working paper,
+Sepp, A., Hansen, E. H. and Kastenholz, M. (2027). *Capital Market Assumptions and Strategic Asset
+Allocation Using Multi-Asset Tradable Factors*. *The Journal of Portfolio Management*, forthcoming; manuscript:
 [SSRN 6785958](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6785958).
 
 The paper derives capital market assumptions from multi-asset tradable factors and uses them for
-strategic asset allocation. On this site it is cited only in its public SSRN version. The
+strategic asset allocation. It is accepted and forthcoming in *The Journal of Portfolio Management*
+(2027); the link above provides the SSRN manuscript. The
 [MATF-CMA case study](app_cma_strategic_allocation.md) builds the workflow from CMAs to a strategic allocation
 with the package on synthetic inputs; it reproduces none of the paper's results.
 

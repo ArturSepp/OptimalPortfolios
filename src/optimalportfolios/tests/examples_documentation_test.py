@@ -121,11 +121,16 @@ def test_csv_construction_has_one_upstream_owner(root, guide):
     """OP keeps a handoff, not a second loader with an implicit fetching default."""
     assert not (root / 'examples/covar_estimation/rolling_factor_covar_from_csv.py').exists()
     assert not (root / 'examples/docs/rolling_factor_covar_from_csv.py').exists()
-    assert '[FM bundle ownership and handoff](rolling_factor_covar_from_csv.md)' in guide[1]
+    assert '[FM CSV workflow and handoff](rolling_factor_covar_from_csv.md)' in guide[1]
     handoff = (root / 'docs/rolling_factor_covar_from_csv.md').read_text(encoding='utf-8')
-    assert 'belong to the installed FactorModels API' in handoff
+    assert 'FactorModels estimator' in handoff
+    assert 'current API has no six-file bundle loader' in handoff
     assert 'supplied_risk_inputs.md#factormodels-availability' in handoff
-    assert 'FM is private and unreleased' in handoff
+    assert (
+        'https://factormodels.readthedocs.io/en/latest/rolling_factor_covar_from_csv.html'
+        in handoff
+    )
+    assert 'FM is private and unreleased' not in handoff
 
 
 def test_preview_writers_are_identified_in_output_guidance(root, guide):

@@ -153,8 +153,8 @@ actual fields, units, dates, mutability and explicit persistence boundary.
   point-in-time inputs.
 - [Factor covariance with HCGL](factor_covariance_hcgl.md): FM owns sparse loadings,
   selected residual covariance, cadence penalties and the point-in-time model contract.
-- [Rolling factor risk model from CSV](rolling_factor_covar_from_csv.md): FM's installed
-  six-file bundle loader and explicit fit; completed covariance is handed to OP or QIS.
+- [Rolling factor risk model from CSV](rolling_factor_covar_from_csv.md): load supplied histories
+  with pandas and fit with FM's estimator; completed covariance is handed to OP or QIS.
 - [Ex-ante risk contributions, betas and the qis risk model](portfolio_risk_analytics.md):
   Euler risk contributions, benchmark betas and the hand-off to `qis.RiskModel`.
 
@@ -273,8 +273,8 @@ reproduce each one.
 - Sepp, A. (2023). *Optimal Allocation to Cryptocurrencies in Diversified Portfolios*.
   [Risk, October 2023](https://www.risk.net/cutting-edge/7957914/optimal-allocation-to-cryptocurrencies-in-diversified-portfolios);
   [SSRN 4217841](https://ssrn.com/abstract=4217841).
-- Sepp, A., Hansen, E. and Kastenholz, M. (2026). *Capital Market Assumptions and Strategic
-  Asset Allocation Using Multi-Asset Tradable Factors*. Working paper,
+- Sepp, A., Hansen, E. H. and Kastenholz, M. (2027). *Capital Market Assumptions and Strategic
+  Asset Allocation Using Multi-Asset Tradable Factors*. *The Journal of Portfolio Management*, forthcoming; manuscript:
   [SSRN 6785958](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6785958).
 
 Cite a paper for its method, and the software records for the packages an implementation uses:

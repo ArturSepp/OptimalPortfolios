@@ -103,8 +103,8 @@ The result's convenience risk methods delegate to QIS.
 
 For upstream factor inputs, start with the
 [FM availability and supplied-risk integration guide](supplied_risk_inputs.md#factormodels-availability).
-The full completed-model guide is `docs/completed_model.md` in an authorised FM
-checkout. FM can supply dated covariance and expected-return arrays; OP does not
+The public [FM completed-model guide](https://factormodels.readthedocs.io/en/latest/completed_model.html)
+describes the dated covariance and expected-return arrays FM can supply. OP does not
 import FM or FL.
 EWMA and signal utilities remain explicit optional preparation steps in OP.
 
