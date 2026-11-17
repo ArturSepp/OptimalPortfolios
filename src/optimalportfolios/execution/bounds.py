@@ -10,6 +10,17 @@ from scipy.optimize import linprog
 from .domain import domain_bounds
 from .model import SCALE, build_model
 from .types import ExecutionProblem
+from ._deadline import _DeadlineReached, checkpoint
+
+
+def _objective_floor(problem):
+    """Bound the signed linear score on the box, using nonnegative risk and costs."""
+    if problem.weight_score is None:
+        return 0.0
+    lo, hi = domain_bounds(problem)
+    score = problem.weight_score
+    return float(np.minimum(-2 * score * (lo - problem.current),
+                            -2 * score * (hi - problem.current)).sum())
 
 
 def supporting_certificate(problem, model):
@@ -20,7 +31,10 @@ def supporting_certificate(problem, model):
     only at the tangent point, not in the original problem or its constraints.
     """
     if model.displacement_bp is None:
-        return max(0.0, model.constant - 1e-12), "constant objective with 1e-12 guard"
+        value = model.constant
+        if model.score_expression is not None:
+            value += float(model.score_expression.value) / SCALE
+        return max(_objective_floor(problem), value - 1e-12), "constant objective with 1e-12 guard"
     x = np.asarray(model.displacement_bp.value) / SCALE
     remainder = model.funded_covariance - np.diag(model.split)
     z = np.array(
@@ -39,6 +53,8 @@ def supporting_certificate(problem, model):
     gz = -model.split * x * x / (z * z)
     offset = float(value - gx @ x - gz @ z)
     tangent = offset + gx @ model.displacement_bp / SCALE
+    if model.score_expression is not None:
+        tangent += model.score_expression / SCALE
     for j, i in enumerate(model.indices):
         tangent += gz[j] * (1.0 if problem.mandatory[i] else model.occupancy[i])
     lp_graph = cp.Problem(cp.Minimize(tangent), model.linear_constraints)
@@ -64,6 +80,7 @@ def supporting_certificate(problem, model):
         ]
     if not np.isfinite(bounds).all():
         raise ValueError("Unmapped canonical variable in bound certificate")
+    checkpoint("bound_lp")
     lp = linprog(
         data["c"],
         A_ub=data["G"],
@@ -93,7 +110,7 @@ def supporting_certificate(problem, model):
         + np.sum(np.abs(data["b"] * dual_eq))
     )
     return max(
-        0.0, float(corrected - guard)
+        _objective_floor(problem), float(corrected - guard)
     ), "supporting-plane LP dual, box correction, scaled 1e-12 guard"
 
 
@@ -101,20 +118,22 @@ def compute_perspective_lower_bound(problem: ExecutionProblem) -> dict:
     """Return plain and perspective primal diagnostics and conservative dual bounds.
 
     Both relax the identical CORRIDOR state problem. Unavailable certificates
-    explicitly fall back to the nonnegative-variance bound of zero.
+    fall back to a box bound for the signed score and nonnegative risk and costs.
     """
     results = {}
     for perspective in (False, True):
         started = perf_counter()
         record = dict(
             primal=None,
-            lower_bound=0.0,
+            lower_bound=_objective_floor(problem),
             status="not_run",
-            certificate="nonnegative variance only",
+            certificate=("nonnegative variance only" if problem.weight_score is None else
+                         "box score bound with nonnegative variance and cost"),
             residual=None,
         )
         try:
             model = build_model(problem, perspective=perspective, continuous=True)
+            checkpoint("bound_solve")
             model.optimisation.solve(
                 solver="CLARABEL", tol_gap_abs=1e-10, tol_gap_rel=1e-10, tol_feas=1e-10
             )
@@ -127,6 +146,8 @@ def compute_perspective_lower_bound(problem: ExecutionProblem) -> dict:
                 )
                 bound, reason = supporting_certificate(problem, model)
                 record.update(lower_bound=bound, certificate=reason, split=model.split.tolist())
+        except _DeadlineReached:
+            raise
         except Exception as error:
             record["certificate_error"] = repr(error)
         record["seconds"] = perf_counter() - started

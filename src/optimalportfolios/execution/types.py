@@ -82,6 +82,9 @@ class ExecutionProblem:
     Supply either dense covariance or an exact factor covariance and diagonal
     residual. Both inputs, when present, must agree. ``full_lower/upper`` are the
     eligible hard domain after retaining all mandatory and preparation pins.
+    Optional ``weight_score`` and ``trade_cost`` are annual variance per unit of
+    weight, aligned to names. Costs are nonnegative with zero cash cost; scores
+    are signed. Both default to the unchanged pure tracking-variance objective.
     """
 
     names: tuple[str, ...]
@@ -109,6 +112,8 @@ class ExecutionProblem:
     annualisation: str = "annual"
     provenance: Mapping = field(default_factory=dict)
     preparation_seconds: float = 0.0
+    weight_score: np.ndarray | None = None
+    trade_cost: np.ndarray | None = None
 
     def __post_init__(self):
         """Validate inputs without clipping weights, bounds or covariance."""
@@ -125,6 +130,13 @@ class ExecutionProblem:
             raise ValueError("Invalid instrument identities or cash coordinate")
         object.__setattr__(self, "names", names)
         object.__setattr__(self, "categories", tuple(self.categories))
+        for name in ("weight_score", "trade_cost"):
+            value = getattr(self, name)
+            if value is not None:
+                value = frozen_array(value, (n,))
+                if name == "trade_cost" and (np.any(value < 0) or value[self.cash] != 0):
+                    raise ValueError("Trade costs must be nonnegative with zero cash cost")
+                object.__setattr__(self, name, value if np.any(value) else None)
         for name in ("current", "base", "target", "lower", "upper", "full_lower", "full_upper"):
             object.__setattr__(self, name, frozen_array(getattr(self, name), (n,)))
         for name in ("mandatory", "eligible", "frozen"):
@@ -284,6 +296,9 @@ class RankedConfig:
     completion phase with the same squared trial budget, then search stops. An
     inferior intermediate seed may connect otherwise missed combinations; failed
     branches cannot displace the incumbent. No Exact support is supplied.
+    ``time_limit_s=None`` preserves this phase schedule. A finite positive
+    allowance checks elapsed time during search and before solves, returning
+    the best audited incumbent on expiry; an in-flight operation may overrun.
     """
 
     drop: bool = True
@@ -294,9 +309,15 @@ class RankedConfig:
     objective_tolerance: float = 1e-12
     qp_solver: str = "CLARABEL"
     improvement_passes: int = 3
+    time_limit_s: float | None = None
 
     def __post_init__(self):
         """Reject unbounded or invalid numerical search controls."""
+        if self.time_limit_s is not None and (
+            isinstance(self.time_limit_s, bool) or not np.isfinite(self.time_limit_s)
+            or self.time_limit_s <= 0
+        ):
+            raise ValueError("Ranked time limit must be finite and positive")
         for x in (self.rescue_trials, self.mandatory_state_trials, self.improvement_passes):
             if checked_cap(x) is None:
                 raise ValueError("State search must be bounded")

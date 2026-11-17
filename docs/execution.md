@@ -100,6 +100,38 @@ provides relaxation guidance. `ExecutionResult` carries weights, status and diag
 for resolved numerical tables plus separately supplied, qualified preparation.
 They do not reconstruct lifecycle history or silently repair the inputs.
 
+### Optional execution scores and search deadline
+
+The prepared problem accepts `weight_score` and `trade_cost`, both aligned to
+`names` and expressed in annual variance per unit of portfolio weight. The former
+is signed; the latter is nonnegative and must be zero for cash. Given original
+holdings `c`, target `m`, annual covariance `Sigma`, weight score `s` and cost `t`,
+both matched engines minimise `F = (w-m)'Sigma(w-m) - 2s'(w-c) + 2t'abs(w-c)`.
+`None` and all-zero vectors retain the pure tracking-variance objective. Preparation
+is score-independent; the caller supplies any economic conversion into these units.
+
+Costs are affine within each compiled state relative to original holdings. A
+crossing interval is split at that holding, preserving its endpoints and ticket
+classification. This can add states and selectors without changing the feasible
+portfolio set. Current compulsory-input guards already exclude the original
+holding from mandatory intervals. Selection and joint sizing compare the complete
+objective, including cost changes on removals and reversals. Perspective relaxations
+change only the quadratic component. Signed weight scores can make `F` negative;
+native stopping criteria retain the objective constant and their existing tolerances.
+
+Result diagnostics keep `variance` and annual tracking error as pure risk measures.
+`weight_score_value`, `trade_cost_value` and `scored_objective` separately report
+`s'(w-c)`, `t'abs(w-c)` and `F`. Native integer solves report both relative and
+absolute gaps, with absolute gaps in objective units.
+
+`RankedConfig(time_limit_s=60.)` limits search elapsed time; its default `None`
+keeps the unlimited phase schedule. Checkpoints cover candidate generation,
+branches, restarts, sizing, guidance and numerical retries. On expiry the method
+returns its best independently audited incumbent, including progress from an
+unfinished restart, with `status="time_limit"`, `time_limit_reached=True` and
+`truncated_phase` diagnostics. An in-flight solve or compilation may overrun the
+allowance. If no audited incumbent exists, returned weights remain absent.
+
 <a id="acceptance-and-operational-use"></a>
 
 ## Production policy and failures
@@ -167,11 +199,11 @@ numerical controls retain their existing units and defaults. Shared legacy scori
 fields remain for lifecycle and diagnostic compatibility; the modern policy rejects
 controls that would change its full-covariance objective or state search.
 
-`ExecutionProblem`: `names`, `cash`, `current`, `base`, `target`, `lower`, `upper`, `full_lower`, `full_upper`, `groups`, `group_lower`, `group_upper`, `mandatory`, `categories`, `eligible`, `frozen`, `rules`, `covariance`, `factor_loadings`, `factor_covariance`, `residual_variance`, `investment`, `annualisation`, `provenance`, `preparation_seconds`.
+`ExecutionProblem`: `names`, `cash`, `current`, `base`, `target`, `lower`, `upper`, `full_lower`, `full_upper`, `groups`, `group_lower`, `group_upper`, `mandatory`, `categories`, `eligible`, `frozen`, `rules`, `covariance`, `factor_loadings`, `factor_covariance`, `residual_variance`, `investment`, `annualisation`, `provenance`, `preparation_seconds`, `weight_score`, `trade_cost`.
 
 `ExecutionRules`: `minimum_ticket`, `holding_floor`, `ticket_cap`, `mandatory_count_in_cap`, `exemption_mask`, `discretionary_allowance`, `zero_tolerance`, `audit_tolerance`.
 
-`RankedConfig`: `drop`, `exchange`, `compute_bound`, `rescue_trials`, `mandatory_state_trials`, `objective_tolerance`, `qp_solver`, `improvement_passes`.
+`RankedConfig`: `drop`, `exchange`, `compute_bound`, `rescue_trials`, `mandatory_state_trials`, `objective_tolerance`, `qp_solver`, `improvement_passes`, `time_limit_s`.
 
 `ExecutionResult`: `weights`, `status`, `diagnostics`.
 

@@ -6,6 +6,7 @@ import numpy as np
 import scipy.sparse as sp
 
 from .model import SCALE, group_envelope
+from .domain import state_side
 
 _LAYOUT_LIMIT = 64
 
@@ -129,6 +130,15 @@ class _FixedStateSizer:
                 endpoints.append(np.array([float(cap - count)]))
         active = reference - problem.target
         gradient = direction.T @ problem.matvec(active)
+        if problem.weight_score is not None:
+            gradient -= direction.T @ problem.weight_score
+        if problem.trade_cost is not None:
+            costs = np.zeros(len(reference))
+            for i, j in fixed_states.items():
+                if problem.trade_cost[i] > 0:
+                    costs[i] = problem.trade_cost[i] * state_side(
+                        self.states[i][j], problem.current[i])
+            gradient += direction.T @ costs
         if problem.covariance is not None:
             funded = direction.T @ problem.covariance @ direction
         else:

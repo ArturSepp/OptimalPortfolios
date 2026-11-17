@@ -1,4 +1,4 @@
-"""State hulls and exact quadratic/perspective objectives in funded coordinates."""
+"""State hulls for F = (w-m)'Sigma(w-m) - 2 s'(w-c) + 2 t'|w-c|."""
 
 from __future__ import annotations
 
@@ -6,8 +6,9 @@ from dataclasses import dataclass, field
 import cvxpy as cp
 import numpy as np
 
-from .domain import compile_states, domain_bounds
+from .domain import compile_states, domain_bounds, state_side
 from .types import check_psd
+from ._deadline import checkpoint
 
 SCALE = 1e4
 # Native group rows are in basis points. Reserve 1,000 times the native MIP
@@ -72,6 +73,7 @@ class ConicModel:
     constant: float
     gradient: np.ndarray
     direction: np.ndarray
+    score_expression: cp.Expression | None = None
     qp_diagnostics: dict = field(default_factory=dict, init=False)
 
     def initial_values(self, weights):
@@ -231,6 +233,24 @@ def build_model(
                 # in percentage-point units. The objective remains identical.
                 rows.append(cp.SOC(epigraph[j] + z, cp.hstack([2 * x[j] / 100.0, epigraph[j] - z])))
             objective += split @ epigraph
+    score_expression = None
+    if problem.weight_score is not None or problem.trade_cost is not None:
+        score_expression = cp.Constant(0.0)
+        if problem.weight_score is not None:
+            score_expression -= 2 * problem.weight_score @ (wbp - SCALE * problem.current)
+        if problem.trade_cost is not None:
+            for i, cost in enumerate(problem.trade_cost):
+                if cost == 0 or not states[i]:
+                    continue
+                if i in selectors:
+                    sides = np.array([state_side(s, problem.current[i]) for s in states[i]])
+                    movement = contributions[i] - SCALE * problem.current[i] * selectors[i]
+                    score_expression += 2 * cost * (sides @ movement)
+                else:
+                    j = fixed_states[i] if fixed_states is not None else 0
+                    side = state_side(states[i][j], problem.current[i])
+                    score_expression += 2 * cost * side * (wbp[i] - SCALE * problem.current[i])
+        objective += score_expression
     return ConicModel(
         cp.Problem(cp.Minimize(objective), rows),
         w,
@@ -247,6 +267,7 @@ def build_model(
         constant,
         gradient,
         u,
+        score_expression,
     )
 
 
@@ -264,6 +285,7 @@ def solve_qp(model, solver="CLARABEL"):
     model.qp_diagnostics.clear()
     model.qp_diagnostics.update(attempts=1, equilibration_retry=False)
     try:
+        checkpoint("qp_solve")
         model.optimisation.solve(solver=solver, **kwargs)
     except cp.SolverError as error:
         model.qp_diagnostics["initial_error"] = str(error)
@@ -272,6 +294,7 @@ def solve_qp(model, solver="CLARABEL"):
         model.qp_diagnostics.update(attempts=2, equilibration_retry=True)
         # A fresh native instance is required: equilibration is an immutable
         # CLARABEL setting on a cached solver. No graph coefficient is changed.
+        checkpoint("qp_retry")
         model.optimisation.solve(
             solver=solver, warm_start=False, equilibrate_enable=False, **kwargs
         )
