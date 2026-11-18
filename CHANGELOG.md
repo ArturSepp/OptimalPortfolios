@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.0.4] - 2026-11-18
+
+- Add Kernel Execution as a separate public engine with charged perspective
+  guidance, one pass of restricted mixed-integer subproblems, and independent
+  original-domain and restricted-domain audits. Incumbent comparisons and stage
+  cutoffs use the full scored objective, including proportional costs.
+- Export `KernelConfig` and `wrapper_kernel_execution`. Native subproblems require
+  MOSEK. Their bounds apply to restricted subproblems, not the global problem.
+  Existing Exact and Ranked implementations, the Exact-primary policy, hard
+  constraints and audit tolerances are unchanged.
+
 ## [10.0.3] - 2026-11-17
 
 - Add optional signed weight scores and proportional costs to the matched Exact

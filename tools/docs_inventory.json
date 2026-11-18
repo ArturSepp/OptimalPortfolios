@@ -32,7 +32,9 @@
         "resolve_effective_max_trades",
         "ExecutionRankingConfig",
         "ResolvedExecutionProblem",
-        "compute_group_bound_bridges"
+        "compute_group_bound_bridges",
+        "KernelConfig",
+        "wrapper_kernel_execution"
       ],
       "parameters": {
         "ExecutionProblem": [
@@ -211,6 +213,11 @@
           "allow_corridor_relaxation",
           "preserve_model_directions",
           "context"
+        ],
+        "KernelConfig": [
+          "time_limit_s",
+          "minimum_kernel",
+          "kernel_per_ticket"
         ]
       }
     },
@@ -567,7 +574,9 @@
       "solve_ranked_execution_portfolio",
       "wrapper_exact_execution",
       "wrapper_execution_policy",
-      "wrapper_ranked_execution"
+      "wrapper_ranked_execution",
+      "KernelConfig",
+      "wrapper_kernel_execution"
     ],
     "docs/universe_data_and_unsmoothing.md": [
       "UniverseData",
@@ -1041,6 +1050,13 @@
         "hard_buy_min",
         "hard_max",
         "hard_target"
+      ]
+    },
+    "KernelConfig": {
+      "docs/execution.md": [
+        "time_limit_s",
+        "minimum_kernel",
+        "kernel_per_ticket"
       ]
     }
   },
