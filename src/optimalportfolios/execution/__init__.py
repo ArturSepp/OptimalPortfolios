@@ -5,6 +5,7 @@ from optimalportfolios.execution.types import (
 from optimalportfolios.execution.domain import audit_execution, compile_states
 from optimalportfolios.execution.ranked_execution import wrapper_ranked_execution
 from optimalportfolios.execution.exact_execution import wrapper_exact_execution
+from optimalportfolios.execution.kernel_execution import KernelConfig, wrapper_kernel_execution
 from optimalportfolios.execution.bounds import compute_perspective_lower_bound
 from optimalportfolios.execution.adapter import from_resolved_problem
 from optimalportfolios.execution.preparation import prepare_common_execution
@@ -21,6 +22,8 @@ from optimalportfolios.execution.lifecycle import (
 from optimalportfolios.execution.instrument_bounds import (
     ExecutionOptimizationResult, ExecutionSolverInfeasibility,
 )
-from optimalportfolios.execution.diagnostics import score_execution_trades, resolve_effective_max_trades
+from optimalportfolios.execution.diagnostics import (
+    score_execution_trades, resolve_effective_max_trades,
+)
 from optimalportfolios.execution.resolved import ExecutionRankingConfig, ResolvedExecutionProblem
 from optimalportfolios.execution.feasibility import compute_group_bound_bridges

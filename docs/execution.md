@@ -21,6 +21,7 @@ The public engines use descriptive names and the same declared execution domain:
 |---|---|
 | `optimalportfolios.execution.ranked_execution` | Ranked Execution: bounded support search with joint sizing. |
 | `optimalportfolios.execution.exact_execution` | Exact Execution: the matched mixed-integer formulation; a time-limited result need not be optimal. |
+| `optimalportfolios.execution.kernel_execution` | Kernel Execution: one pass of restricted mixed-integer problems guided by fractional ticket occupancy. |
 | `optimalportfolios.execution.policy` | Exact primary with independently audited Ranked fallback. |
 | `optimalportfolios.execution.legacy_miqp` | Older operational solver with its separate alpha, position and repair policy. |
 
@@ -99,6 +100,36 @@ provides relaxation guidance. `ExecutionResult` carries weights, status and diag
 `ResolvedExecutionProblem` and `from_resolved_problem` provide an explicit adapter
 for resolved numerical tables plus separately supplied, qualified preparation.
 They do not reconstruct lifecycle history or silently repair the inputs.
+
+### Kernel Execution
+
+`wrapper_kernel_execution(problem, KernelConfig())` accepts the same prepared
+`ExecutionProblem` and returns an audited `ExecutionResult`. It requires the
+optional MOSEK backend and its licence. The production policy remains Exact
+primary with independently audited Ranked fallback. Kernel is an explicit,
+separate engine and is not selected by that policy.
+
+`KernelConfig.time_limit_s` defaults to 60 seconds and includes the Clarabel
+perspective relaxation and model construction. `minimum_kernel` defaults to 24
+and `kernel_per_ticket` to 2. With discretionary budget `B`, the initial kernel
+has `min(candidates, max(minimum_kernel, kernel_per_ticket * B))` names. Fractional
+trade occupancy determines their order, with name ties. Failed guidance falls
+back to name order. The remaining names form equally sized buckets, visited
+once. Excluded optional names are pinned to their prepared base weights.
+
+Each bucket stage requires at least one bucket trade. Stages share the remaining
+allowance equally, use one native thread and a relative gap target of 1e-4, and
+retain candidates only after original-domain and restricted-domain audits.
+Incumbents and stage cutoffs use the full scored objective `F`, including costs,
+with the cutoff `F <= F(incumbent) + 1e-12`. The best audited trades of each stage
+expand the kernel. An in-flight call can overrun the allowance. Diagnostics record
+all stages and identify bounds as applying to restricted subproblems only.
+
+This is a convex-quadratic adaptation of the Kernel Search framework of
+[Guastaroba and Speranza (2012)](https://doi.org/10.1016/j.ejor.2011.09.004) and
+their [general scheme (2014)](https://doi.org/10.1016/j.ejor.2014.04.007).
+It uses fractional ticket occupancy rather than LP reduced costs and does not
+claim to implement their published index-tracking MILP.
 
 ### Optional execution scores and search deadline
 
