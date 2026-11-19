@@ -13,7 +13,7 @@ myst:
 Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
-The [`examples/execution/`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/examples/execution) subpackage turns supplied
+The [`examples/execution/`](https://github.com/ArturSepp/OptimalPortfolios/tree/3f38f8a31b495b334d3991256250c89626340cb8/examples/execution) subpackage turns supplied
 holdings and model targets into audited execution portfolios. Start with the production-policy
 example, inspect why two trades may need to be selected together, then compare the three
 search methods on exactly the same prepared inputs. All inputs are deterministic synthetic

@@ -36,7 +36,7 @@ The [prepared-input reference](execution_v2.md) gives the numerical contract.
 ## Run the execution examples
 
 Start with the [execution examples guide](execution_examples.md) and the
-[`examples/execution/`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/examples/execution) subpackage. It provides an
+[`examples/execution/`](https://github.com/ArturSepp/OptimalPortfolios/tree/3f38f8a31b495b334d3991256250c89626340cb8/examples/execution) subpackage. It provides an
 Exact-primary/Ranked-fallback example, a coordinated sale/purchase example and a
 matched comparison of Exact, Ranked and Kernel with explicit cost and ticket settings.
 All inputs are synthetic. Core examples need no native solver licence; the full
