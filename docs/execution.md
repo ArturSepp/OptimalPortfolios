@@ -2,8 +2,8 @@
 myst:
   html_meta:
     description: >-
-      Exact Execution, Ranked Execution and audited execution policy: shared lifecycle
-      inputs, hard trade rules, production integration and migration from numbered APIs.
+      Exact, Ranked and Kernel Execution: runnable synthetic examples, shared lifecycle
+      inputs, hard trade rules and the audited Exact-primary production policy.
 ---
 
 # Execution integration
@@ -28,11 +28,19 @@ The public engines use descriptive names and the same declared execution domain:
 Shared lifecycle, preparation, domain, sizing and audit modules sit outside either
 engine. Native solver imports remain optional. Preparation can itself need a
 mixed-integer backend, so fallback does not protect against every backend outage.
-The scientific article and replication are maintained in the entirely local
-`papers/execution_portfolio_2026/` workspace. They compare declared methods and
-retain the exact software identity of their experiments; they are not included
-in a public checkout.
+The [public manuscript and replication](https://doi.org/10.5281/zenodo.24354159)
+compare declared methods and retain the exact software identity of their experiments.
+The local paper workspace is excluded from the repository.
 The [prepared-input reference](execution_v2.md) gives the numerical contract.
+
+## Run the execution examples
+
+Start with the [execution examples guide](execution_examples.md) and the
+[`examples/execution/`](https://github.com/ArturSepp/OptimalPortfolios/tree/3f38f8a31b495b334d3991256250c89626340cb8/examples/execution) subpackage. It provides an
+Exact-primary/Ranked-fallback example, a coordinated sale/purchase example and a
+matched comparison of Exact, Ranked and Kernel with explicit cost and ticket settings.
+All inputs are synthetic. Core examples need no native solver licence; the full
+comparison explicitly requires MOSEK and reports native failures separately from audits.
 
 <a id="documentation-and-method-ownership"></a>
 <a id="resolved-inputs"></a>

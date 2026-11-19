@@ -541,6 +541,12 @@
       "form": "utility",
       "status": "adopted",
       "review": "Stage 6: completed supplied-input allocation and separate outcome, independently checked KKT solution and Cholesky risk, explicit optional table export. Verification is recorded in agents/EXECUTION_STAGE_6_ASTRA.md; GitHub and VS Code viewer review pending."
+    },
+    "docs/execution_examples.md": {
+      "form": "utility",
+      "status": "adopted",
+      "title": "Execution examples: Exact, Ranked and Kernel",
+      "review": "Synthetic examples and matched comparison; numerical package paths unchanged. Source, example and rendered-doc checks recorded in agents/EXECUTION_EXAMPLES_20261119.md."
     }
   },
   "planned": {},
