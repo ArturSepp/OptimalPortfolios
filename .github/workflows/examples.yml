@@ -62,13 +62,16 @@ jobs:
         python-version: "3.12"
 
     - name: Sync the offline examples and risk-budgeting backend
-      run: uv sync --locked --extra riskbudget
+      run: uv sync --locked --extra riskbudget --group test
 
     - name: Check the Colab notebook mirror
       # The notebook carries one cell tagged `d6-source`; this standard-library check compares it
       # byte-for-byte with the authoritative Python quickstart and rejects saved execution output.
       # It also preserves the released-package install, runtime version, and required links.
       run: uv run --no-sync python .github/scripts/check_quickstart_notebook.py
+
+    - name: Check execution example domains and native fallback reporting
+      run: uv run --no-sync python -m pytest examples/execution/tests
 
     - name: Run the offline examples
       # The lane is derived, not listed. `run_examples.py` walks each example's intra-`examples`

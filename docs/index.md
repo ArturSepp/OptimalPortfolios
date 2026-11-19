@@ -37,13 +37,14 @@ version. Latest can describe unreleased work. Channel links lead to the home pag
 an individual page may not exist in both versions.
 
 The public examples in this documentation use **`optimalportfolios>=7.21.0`** as their minimum
-supported released version unless explicitly labelled development-only. This is a verified
+supported released version unless a guide states a higher requirement or labels work development-only. This is a verified
 support floor for these examples, not a claim about when each API first appeared. Obtain
 repository-only scripts from the matching release or the source revision cited by a guide.
 
 | Capability | Minimum supported release for these examples |
 |---|---|
 | Offline constrained allocation and rolling backtests | `optimalportfolios>=7.21.0` |
+| [Exact, Ranked, Kernel and audited fallback examples](execution_examples.md) | `optimalportfolios>=10.0.4`; matching source checkout |
 | Completed supplied-input result and separate solver outcome | **OP 8 development branch; no released-version guarantee** |
 | Factor construction, GLS premia inference and CMA diagnostics | **Owned by FactorModels in the development stack** |
 
@@ -68,6 +69,10 @@ See the [OP 8 supplied-input migration](supplied_risk_inputs.md) for this develo
 branch. Historical release claims below apply to their matching releases.
 
 ## Start here
+
+For the step from model weights to implementable trades, see the new
+[execution examples](execution_examples.md): audited Exact-primary policy, coordinated
+trades and matched Exact/Ranked/Kernel comparisons on synthetic inputs.
 
 The [completed optimisation output](completed_output.md) is the OP 8 entry point:
 supplied alphas, covariance and constraints produce weights plus an inspectable solver
@@ -358,6 +363,7 @@ strategic_allocation_targets
 cara_gaussian_mixture
 minimum_tracking_error
 execution
+execution_examples
 execution_v2
 alpha_over_tracking_error
 overlay_tail_floor

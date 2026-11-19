@@ -41,6 +41,7 @@ For a first run, start with the
 
 | Task | Article | Canonical script | Standalone examples |
 |---|---|---|---|
+| Turn model targets into audited trades; compare Exact, Ranked and Kernel | [Execution examples](execution_examples.md) | See the standalone scripts | [`execution/policy.py`](../examples/execution/policy.py), [`execution/coordinated_trades.py`](../examples/execution/coordinated_trades.py), [`execution/compare_methods.py`](../examples/execution/compare_methods.py) (Offline defaults; native comparison needs MOSEK and a licence) |
 | Complete and inspect an allocation from supplied alphas and covariance | [Completed optimisation output](completed_output.md) | [`completed_output.py`](../examples/docs/completed_output.py) (Offline) | Explicit optional CSV/JSON table export; no factor packages required. |
 | Build a universe with group loadings; unsmooth appraisal-based prices | [Universe data and unsmoothing](universe_data_and_unsmoothing.md) | [`universe_data_and_unsmoothing.py`](../examples/docs/universe_data_and_unsmoothing.py) (Offline) | [`data/universe.py`](../examples/data/universe.py) (Network), [`data/sp500_universe_local.py`](../examples/data/sp500_universe_local.py) (Local) |
 | Combine assets observed at different frequencies | [Mixed-frequency data](mixed_frequency_data.md) | [`mixed_frequency_data.py`](../examples/docs/mixed_frequency_data.py) (Composed) | [`covar_estimation/demo_covar_different_estimation_freqs.py`](../examples/covar_estimation/demo_covar_different_estimation_freqs.py) (Composed) |
@@ -119,7 +120,7 @@ scenario; it does not execute every branch of a `Locals` enum.
 ### Unattended execution lanes
 
 The [classifier and runner](../.github/scripts/run_examples.py) derives lanes from Python imports.
-Its current inventory is **29 offline, 11 composed, 29 network, 69 unattended examples**. The **5 local-data workflows** ending in
+Its current inventory is **32 offline, 11 composed, 29 network, 72 unattended examples**. The **5 local-data workflows** ending in
 `*_local.py` are excluded; this manual category also includes the optional skfolio bridge
 using the packaged fixture. Each catalogue row below states the classification.
 
@@ -153,6 +154,7 @@ examples/
   getting_started/   canonical offline quickstart and its notebook mirror
   data/              shared Yahoo loaders and local universe builders
   solvers/           objective-specific examples
+  execution/         Exact, Ranked, Kernel and audited fallback on synthetic inputs
   backtests/         complete rolling workflows
   comparisons/       comparisons of methods or configurations
   covar_estimation/  covariance and factor-model examples
@@ -212,6 +214,17 @@ from these example entry points. They are excluded from distributions.
 | [pipeline.py](../examples/oss_portfolio_pipeline/pipeline.py) | Network | Input preparation and orchestration of the public study. |
 | [reporting.py](../examples/oss_portfolio_pipeline/reporting.py) | Network | Aligned portfolio, turnover, cost and tracking-error tables. |
 | [stress.py](../examples/oss_portfolio_pipeline/stress.py) | Network | Scenario analysis from supplied fitted risk and portfolio results. |
+
+## `execution/` — audited portfolio execution
+
+The [execution examples guide](execution_examples.md) explains the shared prepared domain,
+cost units and native-solver requirements. Defaults are offline and need no licence.
+
+| Source | Lane | Purpose and prerequisites |
+|---|---|---|
+| [Exact-primary policy](../examples/execution/policy.py) | Offline | Synthetic prepared inputs; prints the selected engine, audited trades and fallback reason. Exact is attempted when available, otherwise Ranked is audited. |
+| [Coordinated trades](../examples/execution/coordinated_trades.py) | Offline | A tight-cash switch needs two tickets; asserts the independent funding argument and resulting allocations. |
+| [Matched method comparison](../examples/execution/compare_methods.py) | Offline | Runs Ranked by default. Optional `--native` requires licensed MOSEK for Exact and Kernel; compares identical inputs and reports native evidence separately from feasibility. |
 
 ## `integrations/` — optional portfolio bridges
 

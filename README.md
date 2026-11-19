@@ -329,6 +329,28 @@ roll-forward estimation (no hindsight bias) and drift-aware turnover accounting.
 
 ## Examples
 
+### Execution portfolios: Exact, Ranked and Kernel
+
+The [`examples/execution/`](examples/execution/README.md) subpackage demonstrates
+Exact primary with audited Ranked fallback, coordinated sale/purchase pairs and a
+matched comparison of all three execution methods. It uses synthetic supplied inputs,
+prints trades and risk/cost diagnostics, and writes no files. The
+[execution examples guide](docs/execution_examples.md) explains ticket constraints,
+native solver requirements and the difference between feasibility and optimality.
+
+```console
+python -m examples.execution.policy
+python -m examples.execution.coordinated_trades
+python -m examples.execution.compare_methods
+```
+
+Use `compare_methods --native` (via the same module command) with the `exact` extra and
+a valid MOSEK licence to include Exact and Kernel. Default comparisons explicitly mark
+them as not run. The [public manuscript and replication](https://doi.org/10.5281/zenodo.24354159)
+contain the frozen research study; these short examples are teaching demonstrations.
+
+### Browse by task
+
 The `examples/` folder is organised by purpose. The
 [examples and recipes guide](https://optimalportfolios.readthedocs.io/en/latest/examples_readme.html) maps every task to its article, canonical
 script and standalone examples, with each example's offline, network or local-data lane:
@@ -338,6 +360,7 @@ examples/
 ├── getting_started/       Canonical offline quickstart and its notebook mirror
 ├── data/                  Shared Yahoo loaders and local universe builders
 ├── solvers/               Objective-specific examples
+├── execution/             Exact, Ranked, Kernel and audited fallback
 ├── backtests/             Complete rolling workflows
 ├── comparisons/           Comparisons of methods or configurations, including the drift policy
 ├── covar_estimation/      Covariance and factor-model examples
@@ -410,6 +433,7 @@ on one known-factor simulation, which does not establish an estimator ranking.
 
 | Method | Documentation page | Canonical script |
 |---|---|---|
+| Execution-constrained rebalancing with trading costs and coordinated trades | [execution examples](docs/execution_examples.md) | [`examples/execution/`](examples/execution/README.md) |
 | ROSAA: risk-budgeted SAA and tracking-error-constrained TAA on one roll-forward state | [ROSAA case study](https://optimalportfolios.readthedocs.io/en/latest/app_rosaa_multi_asset_allocation.html) | [`examples/docs/app_rosaa_multi_asset_allocation.py`](examples/docs/app_rosaa_multi_asset_allocation.py) |
 | Optimal allocation to cryptocurrencies: the four methods of the paper | [cryptocurrency case study](https://optimalportfolios.readthedocs.io/en/latest/app_crypto_allocation.html) | [`examples/docs/app_crypto_allocation.py`](examples/docs/app_crypto_allocation.py) |
 | CMA-based strategic allocation on a supplied factor-model covariance | [CMA strategic allocation](docs/app_cma_strategic_allocation.md) | [`examples/docs/app_cma_strategic_allocation.py`](examples/docs/app_cma_strategic_allocation.py) |
