@@ -119,7 +119,7 @@ jobs:
     - name: Verify public dependency workflow contracts
       run: python -m unittest discover -s .github/scripts -p public_dependency_test.py
     - name: Install released FM for the composed network examples
-      run: uv pip install --python .venv/bin/python "factormodels==0.5.1"
+      run: uv pip install --python .venv/bin/python "factormodels==0.6.0"
 
     - name: Run the network examples
       # `--jobs 4` rather than the default: these are all hitting one host, and Yahoo rate-limits.

@@ -43,7 +43,7 @@ class PublicDependencyWorkflowTests(unittest.TestCase):
         for filename, job in CONSUMERS:
             with self.subTest(filename=filename):
                 block = job_text(filename, job)
-                self.assertIn('"factormodels==0.5.1"', block)
+                self.assertIn('"factormodels==0.6.0"', block)
                 self.assertNotIn("repository: ArturSepp/FactorModels", block)
                 self.assertNotIn("git+", block)
                 self.assertNotIn(".integration/", block)
@@ -54,7 +54,7 @@ class PublicDependencyWorkflowTests(unittest.TestCase):
         block = job_text("ci.yml", "factor-integration")
         self.assertIn('uv venv "$RUNNER_TEMP/composed-source"', block)
         self.assertIn('uv venv "$RUNNER_TEMP/composed-wheel"', block)
-        self.assertEqual(block.count('"factormodels==0.5.1"'), 2)
+        self.assertEqual(block.count('"factormodels==0.6.0"'), 2)
         self.assertIn('".[riskbudget,data]"', block)
         self.assertEqual(block.count('"qis>=5.44.5"'), 2)
         self.assertIn('cd "$RUNNER_TEMP"', block)
@@ -74,8 +74,8 @@ class PublicDependencyWorkflowTests(unittest.TestCase):
         """Publishing FM does not add a factor dependency to the OP base wheel."""
         block = job_text("ci.yml", "wheel")
         self.assertIn("'factorlasso', 'factormodels', 'tradablefactors'", block)
-        self.assertNotIn('"factormodels==0.5.1"', block)
-        self.assertNotIn('"factormodels==0.5.1"', job_text("examples.yml", "offline"))
+        self.assertNotIn('"factormodels==0.6.0"', block)
+        self.assertNotIn('"factormodels==0.6.0"', job_text("examples.yml", "offline"))
 
     def test_public_diagnostics_and_link_evidence_are_visible(self):
         """Dependency failures retain their actual public diagnostics."""
