@@ -11,11 +11,13 @@ myst:
 
 # Cryptocurrencies in diversified portfolios
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-27](https://github.com/ArturSepp/OptimalPortfolios/commit/9c0b53fe93d9d1b8d7b198abddd058531dd0bebf)*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 A case study of a paper whose four allocation methods
 [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios) implements.
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 ## Overview
 

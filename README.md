@@ -37,8 +37,8 @@ reporting to QIS. OP retains explicit EWMA and signal utilities and rolling orch
 **Papers:** Sepp, A. (2023), *Optimal Allocation to Cryptocurrencies in Diversified Portfolios*,
 Risk Magazine · Sepp, A., Ossa, I. and Kastenholz, M. (2026), *Robust Optimization of Strategic
 and Tactical Asset Allocation for Multi-Asset Portfolios*, The Journal of Portfolio Management
-52(4) · Sepp, A., Hansen, E. and Kastenholz, M. (2026), *Capital Market Assumptions and Strategic
-Asset Allocation Using Multi-Asset Tradable Factors* · Sepp, A. and Kastenholz, M. (2026), *The
+52(4) · Sepp, A., Hansen, E. H. and Kastenholz, M. (2027), *Capital Market Assumptions and Strategic
+Asset Allocation Using Multi-Asset Tradable Factors*, The Journal of Portfolio Management, forthcoming · Sepp, A. and Kastenholz, M. (2026), *The
 Convexity Premium of Portfolio Overlays*, Journal of Investment Management. See
 [Statement of need](#statement-of-need) for what each paper contributes and [Citation](#citation)
 for the BibTeX entries.
@@ -177,7 +177,7 @@ and every number on the methodology pages is asserted by a script that CI runs.
 |---|---|---|
 | Sepp, A. (2023), *Optimal Allocation to Cryptocurrencies in Diversified Portfolios*, Risk Magazine, October 2023, 1–6, [SSRN 4217841](https://ssrn.com/abstract=4217841) | The four allocation methods of the paper, run offline on the replication design | [`papers/crypto_allocation_risk_2023`](papers/crypto_allocation_risk_2023/README.md), [cryptocurrency case study](https://optimalportfolios.readthedocs.io/en/latest/app_crypto_allocation.html) |
 | Sepp, A., Ossa, I. and Kastenholz, M. (2026), *Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios*, [The Journal of Portfolio Management, 52(4), 86–120](https://www.pm-research.com/content/iijpormgmt/52/4/86) | The ROSAA framework: factor-model covariance, risk-budgeted strategic allocation, alpha signals, tracking-error-constrained tactical allocation and the rolling backtest on one dated roll-forward state | [`papers/robust_optimisation_jpm_2026`](papers/robust_optimisation_jpm_2026/README.md), [ROSAA case study](https://optimalportfolios.readthedocs.io/en/latest/app_rosaa_multi_asset_allocation.html) |
-| Sepp, A., Hansen, E. and Kastenholz, M. (2026), *Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors*, [SSRN 6785958](https://ssrn.com/abstract=6785958) | Strategic allocation from capital market assumptions on a supplied factor-model covariance; the factor model itself is prepared upstream in FactorModels | [CMA strategic allocation](docs/app_cma_strategic_allocation.md), [supplied risk inputs](docs/supplied_risk_inputs.md) |
+| Sepp, A., Hansen, E. H. and Kastenholz, M. (2027), *Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors*, forthcoming in The Journal of Portfolio Management; [SSRN manuscript 6785958](https://ssrn.com/abstract=6785958) | Strategic allocation from capital market assumptions on a supplied factor-model covariance; the factor model itself is prepared upstream in FactorModels | [CMA strategic allocation](docs/app_cma_strategic_allocation.md), [supplied risk inputs](docs/supplied_risk_inputs.md) |
 | Sepp, A. and Kastenholz, M. (2026), *The Convexity Premium of Portfolio Overlays*, Journal of Investment Management, forthcoming | The Section II coverage-floor allocation: fixed-core maximum Sharpe ratio with a named linear row | [`papers/smart_diversification_joim_2026`](papers/smart_diversification_joim_2026/README.md), [overlay page](https://optimalportfolios.readthedocs.io/en/latest/overlay_tail_floor.html), [smart diversification case study](https://optimalportfolios.readthedocs.io/en/latest/app_smart_diversification_overlays.html) |
 
 ## Overview
@@ -200,6 +200,7 @@ and every number on the methodology pages is asserted by a script that CI runs.
 
 | Subpackage | What it holds | Articles |
 | --- | --- | --- |
+| `execution` | Exact and Ranked execution, common preparation and independent portfolio audit | [execution policy](docs/execution.md) |
 | `covar_estimation` | EWMA covariance estimation; factor models are prepared upstream in FM | [covariance estimators](https://optimalportfolios.readthedocs.io/en/latest/covariance_estimators.html), [supplied risk inputs](docs/supplied_risk_inputs.md) |
 | `alphas` | Momentum, low-beta, carry, residual and managers' alpha signals, `AlphasData`, profiling and diagnostics | [alpha signals](https://optimalportfolios.readthedocs.io/en/latest/alphas_module_readme.html), [signal diagnostics](https://optimalportfolios.readthedocs.io/en/latest/signal_diagnostics_and_profiling.html) |
 | `optimization` | The rolling dispatcher, the general, risk-allocation, SAA and TAA solvers, `Constraints`, `OptimiserConfig` and solver diagnostics | [choosing an objective](https://optimalportfolios.readthedocs.io/en/latest/optimization_module_readme.html), [constraints](https://optimalportfolios.readthedocs.io/en/latest/constraints.html), [solver outcomes](https://optimalportfolios.readthedocs.io/en/latest/solver_numerics_and_outcomes.html), [risk budgeting](https://optimalportfolios.readthedocs.io/en/latest/risk_budgeting.html), [HRP and cluster budgets](https://optimalportfolios.readthedocs.io/en/latest/hierarchical_risk_parity_and_cluster_budgets.html), [rolling backtests](https://optimalportfolios.readthedocs.io/en/latest/rolling_backtests.html) |
@@ -328,6 +329,28 @@ roll-forward estimation (no hindsight bias) and drift-aware turnover accounting.
 
 ## Examples
 
+### Execution portfolios: Exact, Ranked and Kernel
+
+The [`examples/execution/`](examples/execution/README.md) subpackage demonstrates
+Exact primary with audited Ranked fallback, coordinated sale/purchase pairs and a
+matched comparison of all three execution methods. It uses synthetic supplied inputs,
+prints trades and risk/cost diagnostics, and writes no files. The
+[execution examples guide](docs/execution_examples.md) explains ticket constraints,
+native solver requirements and the difference between feasibility and optimality.
+
+```console
+python -m examples.execution.policy
+python -m examples.execution.coordinated_trades
+python -m examples.execution.compare_methods
+```
+
+Use `compare_methods --native` (via the same module command) with the `exact` extra and
+a valid MOSEK licence to include Exact and Kernel. Default comparisons explicitly mark
+them as not run. The [public manuscript and replication](https://doi.org/10.5281/zenodo.24354159)
+contain the frozen research study; these short examples are teaching demonstrations.
+
+### Browse by task
+
 The `examples/` folder is organised by purpose. The
 [examples and recipes guide](https://optimalportfolios.readthedocs.io/en/latest/examples_readme.html) maps every task to its article, canonical
 script and standalone examples, with each example's offline, network or local-data lane:
@@ -337,6 +360,7 @@ examples/
 ├── getting_started/       Canonical offline quickstart and its notebook mirror
 ├── data/                  Shared Yahoo loaders and local universe builders
 ├── solvers/               Objective-specific examples
+├── execution/             Exact, Ranked, Kernel and audited fallback
 ├── backtests/             Complete rolling workflows
 ├── comparisons/           Comparisons of methods or configurations, including the drift policy
 ├── covar_estimation/      Covariance and factor-model examples
@@ -409,6 +433,7 @@ on one known-factor simulation, which does not establish an estimator ranking.
 
 | Method | Documentation page | Canonical script |
 |---|---|---|
+| Execution-constrained rebalancing with trading costs and coordinated trades | [execution examples](docs/execution_examples.md) | [`examples/execution/`](examples/execution/README.md) |
 | ROSAA: risk-budgeted SAA and tracking-error-constrained TAA on one roll-forward state | [ROSAA case study](https://optimalportfolios.readthedocs.io/en/latest/app_rosaa_multi_asset_allocation.html) | [`examples/docs/app_rosaa_multi_asset_allocation.py`](examples/docs/app_rosaa_multi_asset_allocation.py) |
 | Optimal allocation to cryptocurrencies: the four methods of the paper | [cryptocurrency case study](https://optimalportfolios.readthedocs.io/en/latest/app_crypto_allocation.html) | [`examples/docs/app_crypto_allocation.py`](examples/docs/app_crypto_allocation.py) |
 | CMA-based strategic allocation on a supplied factor-model covariance | [CMA strategic allocation](docs/app_cma_strategic_allocation.md) | [`examples/docs/app_cma_strategic_allocation.py`](examples/docs/app_cma_strategic_allocation.py) |
@@ -461,7 +486,7 @@ If you use optimalportfolios in your research, please cite it as:
   author={Sepp, Artur},
   title={optimalportfolios: point-in-time multi-asset portfolio construction and rolling backtesting in Python},
   year={2026},
-  version={9.1.1},
+  version={10.0.4},
   url={https://github.com/ArturSepp/OptimalPortfolios}
 }
 ```

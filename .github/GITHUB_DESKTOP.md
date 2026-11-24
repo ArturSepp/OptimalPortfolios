@@ -1,8 +1,8 @@
 # Committing with GitHub Desktop
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-21](https://github.com/ArturSepp/OptimalPortfolios/commit/7903701a5c4ffe252be8710522e5f3f7cb528309)*
 
-Project: [optimalportfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 Create a working branch, select the intended changes, and commit normally. The installed

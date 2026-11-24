@@ -10,18 +10,20 @@ myst:
 
 # From capital market assumptions to strategic allocation (MATF-CMA)
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-27](https://github.com/ArturSepp/OptimalPortfolios/commit/9c0b53fe93d9d1b8d7b198abddd058531dd0bebf)*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 A case study of a workflow that
 [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios) implements.
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 ## Overview
 
-Sepp, Hansen and Kastenholz (2026) derive capital market assumptions (CMAs) from multi-asset
-tradable factors and use them for strategic asset allocation (SAA). The paper is a working paper.
-This site cites it only in its public SSRN version, and this page quotes none of its equations,
-exhibits or numbers.
+Sepp, Hansen and Kastenholz (2027) derive capital market assumptions (CMAs) from multi-asset
+tradable factors and use them for strategic asset allocation (SAA). The paper is accepted and forthcoming in
+*The Journal of Portfolio Management* (2027); the public manuscript is available on SSRN.
+This case study uses synthetic inputs rather than the paper's empirical exhibits.
 
 The page is a case study of that workflow, built from pieces of the package that other pages
 document and run on fixed synthetic inputs:
@@ -109,7 +111,7 @@ variance of an asset earns nothing unless its adjustment pays for it.
 
 In FactorModels, `FactorCovarEstimator` estimates the loadings with FactorLasso and
 assembles the covariance in this form. The [HCGL ownership handoff](factor_covariance_hcgl.md)
-identifies the full method's location in an authorised FM checkout.
+identifies the full method's location in the public FM repository.
 FactorLasso's article
 [from loadings to portfolio risk and capital market assumptions](https://factorlasso.readthedocs.io/en/latest/app_portfolio_risk_models.html)
 starts from fitted loadings and explains their portfolio use. This page takes given
@@ -320,8 +322,8 @@ factor-history data.
 
 ## References
 
-- Sepp, A., Hansen, E. and Kastenholz, M. (2026). *Capital Market Assumptions and Strategic Asset
-  Allocation Using Multi-Asset Tradable Factors*. Working paper,
+- Sepp, A., Hansen, E. H. and Kastenholz, M. (2027). *Capital Market Assumptions and Strategic Asset
+  Allocation Using Multi-Asset Tradable Factors*. *The Journal of Portfolio Management*, forthcoming; manuscript:
   [SSRN 6785958](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6785958).
 - [OptimalPortfolios software citation](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 - [FactorLasso software citation](https://github.com/ArturSepp/FactorLasso/blob/main/CITATION.cff).

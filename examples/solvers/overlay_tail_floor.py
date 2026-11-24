@@ -80,26 +80,26 @@ def create_synthetic_inputs() -> tuple:
     return means, covar, bear_contributions
 
 
-class UnitTests(Enum):
-    """Unit-test scenarios ``run_unit_test`` can run."""
+class Locals(Enum):
+    """Local diagnostic scenarios ``run_local`` can run."""
     NO_FLOOR = 1
     ZERO_FLOOR = 2
 
 
-def run_unit_test(unit_test: UnitTests) -> None:
+def run_local(local: Locals) -> None:
     """Solve the synthetic overlay problem for one scenario and print the weights."""
     means, covar, bear_contributions = create_synthetic_inputs()
-    if unit_test == UnitTests.NO_FLOOR:
+    if local == Locals.NO_FLOOR:
         w = solve_overlay_tail_floor(means=means, covar=covar,
                                      bear_contributions=bear_contributions, floor_b0=None)
-    elif unit_test == UnitTests.ZERO_FLOOR:
+    elif local == Locals.ZERO_FLOOR:
         w = solve_overlay_tail_floor(means=means, covar=covar,
                                      bear_contributions=bear_contributions, floor_b0=0.0)
-    print(f"{unit_test.name}: weights\n{w.round(3).to_string()}")
+    print(f"{local.name}: weights\n{w.round(3).to_string()}")
     print(f"bear contribution a'w = {bear_contributions @ w:+.4f}, "
           f"model sharpe = {means @ w / np.sqrt(w @ covar.to_numpy() @ w):.2f}")
 
 
 if __name__ == '__main__':
-    run_unit_test(unit_test=UnitTests.NO_FLOOR)
-    run_unit_test(unit_test=UnitTests.ZERO_FLOOR)
+    run_local(local=Locals.NO_FLOOR)
+    run_local(local=Locals.ZERO_FLOOR)

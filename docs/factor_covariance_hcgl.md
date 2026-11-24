@@ -6,24 +6,23 @@ myst:
 
 # Factor covariance with HCGL
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-27](https://github.com/ArturSepp/OptimalPortfolios/commit/93d3cf3af014880afeb50a6ca8a57abe0fb23099)*
+
+Documented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 Implemented upstream in [FactorModels](supplied_risk_inputs.md#factormodels-availability),
 consumed by [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
-Upstream citation: `CITATION.cff` in an authorised FactorModels checkout.
+Upstream citation: [CITATION.cff](https://github.com/ArturSepp/FactorModels/blob/main/CITATION.cff).
 
 Factor covariance construction, loadings, annualisation, residual policy and completed factor models belong to FactorModels. OP consumes the selected dated covariance and supplied expected returns.
 
 ## Canonical method and runnable workflow
 
-The full methodology and implementation guide has moved to FactorModels with
-its original authorship and source history. FM is private and unreleased; see the
-[availability prerequisite](supplied_risk_inputs.md#factormodels-availability).
-In an authorised FM checkout, `docs/factor_covariance_hcgl.md`
-contains the estimator, units, date cutoffs, diagnostics and runnable examples.
-This local page records the owner and OP handoff, not the full private methodology.
-The old OP estimator and inference exports are removed in OP 8; there are no forwarding APIs.
+The public [FactorModels method guide](https://factormodels.readthedocs.io/en/latest/factor_covariance_hcgl.html)
+explains the inputs, units, date cutoffs, diagnostics and runnable examples.
+See the [installation and handoff](supplied_risk_inputs.md#factormodels-availability)
+for composing FM with OP. This page retains the OP handoff and earlier section links.
 
 OP is complete once it produces the allocation and its solver outcome. See the
 [completed optimisation output](completed_output.md), [supplied risk inputs](supplied_risk_inputs.md)
@@ -33,7 +32,7 @@ and [solver outcomes](solver_numerics_and_outcomes.md). The retained
 ## Earlier links
 
 The former section anchors are retained below so links from existing OP guides
-arrive at this ownership handoff. The authorised FM guide contains the corresponding method.
+arrive at this ownership handoff. The linked FM guide contains the corresponding method.
 
 <a id="overview"></a>
 <a id="inputs-notation-and-assumptions"></a>

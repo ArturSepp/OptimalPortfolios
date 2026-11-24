@@ -10,7 +10,7 @@ myst:
 
 *Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-03-15](https://github.com/ArturSepp/OptimalPortfolios/commit/ce4d4c3469216d807079af2c52f5a85775d9c572)*
 
-Contributor documentation for [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 The alpha layer constructs score panels, evaluates ranked portfolios and connects signal

@@ -57,9 +57,6 @@ RATIO_DEFAULT_FALSE = [
     'rolling_max_return_target_vol', 'wrapper_max_return_target_vol',
     'rolling_maximise_alpha_over_tre', 'wrapper_maximise_alpha_over_tre',
 ]
-RATIO_DEFAULT_EXECUTION = [
-    'solve_selected_execution_portfolio', 'solve_feasible_execution_portfolio',
-]
 
 
 @contextmanager
@@ -337,14 +334,11 @@ def main() -> None:
         if inspect.isfunction(member) and "optimiser_config" in defaults(member):
             public[name] = config_default_of(member).apply_total_to_good_ratio
     assert sorted(public) == sorted(
-        RATIO_DEFAULT_TRUE + RATIO_DEFAULT_FALSE + RATIO_DEFAULT_EXECUTION)
+        RATIO_DEFAULT_TRUE + RATIO_DEFAULT_FALSE)
     assert all(public[name] is True for name in RATIO_DEFAULT_TRUE)
     assert all(public[name] is False for name in RATIO_DEFAULT_FALSE)
     assert all(config_default_of(getattr(opt, name)) == opt.OptimiserConfig()
                for name in RATIO_DEFAULT_FALSE)
-    assert all(public[name] is False for name in RATIO_DEFAULT_EXECUTION)
-    assert all(config_default_of(getattr(opt, name)) == opt.OptimiserConfig(solver='MOSEK')
-               for name in RATIO_DEFAULT_EXECUTION)
     # Only that field differs: every True default is the dataclass with the ratio switched on.
     assert all(config_default_of(getattr(opt, name))
                == opt.OptimiserConfig(apply_total_to_good_ratio=True)

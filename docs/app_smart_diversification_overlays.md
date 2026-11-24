@@ -10,11 +10,13 @@ myst:
 
 # Smart diversification with portfolio overlays
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-10-01](https://github.com/ArturSepp/OptimalPortfolios/commit/1a84606b62a2c9882791de5f49c5a2327949c98a)*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 A case study of a workflow that
 [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios) implements.
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 ## Overview
 

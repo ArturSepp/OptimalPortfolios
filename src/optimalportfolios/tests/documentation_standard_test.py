@@ -509,7 +509,7 @@ def test_repository_ownership_is_complete(repository_inventory):
 def test_research_namespace_ownership_detects_omissions(repository_inventory, field):
     """A separately exported research namespace still owns every symbol and field."""
     inventory = json.loads(json.dumps(repository_inventory))
-    entry = inventory['namespace_api']['optimalportfolios.execution.v2']
+    entry = inventory['namespace_api']['optimalportfolios.execution']
     if field == 'symbols':
         entry['symbols'].remove('ExecutionRules')
     elif field == 'parameters':

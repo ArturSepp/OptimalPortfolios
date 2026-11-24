@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "kind": "documentation_teaching_exhibits",
-  "generated_at_utc": "2026-10-26T05:01:35+00:00",
+  "generated_at_utc": "2026-10-29T20:40:42+00:00",
   "platform": "Windows-11-10.0.26300-SP0",
   "versions": {
-    "python": "3.12.7",
-    "optimalportfolios": "9.1.1",
-    "qis": "5.44.3",
+    "python": "3.12.14",
+    "optimalportfolios": "9.2.0",
+    "qis": "5.44.5",
     "factormodels": "0.3.0",
     "factorlasso": "1.0.5",
     "numpy": "2.5.2",
@@ -21,7 +21,7 @@
       "script": "examples/docs/maximum_diversification.py",
       "script_sha256": "028602bc6939cf40fcddaaa63ad7f7a6d15733e73db22e15eb649b7ae56c8282",
       "image_sha256": "4c4ce1196c4f1f65ba2be117fe635247f70a0240a7a5fe1dc55cbd62fb1aef45",
-      "table_sha256": "96880e5056eb9659b653b37fda6bccfd300e874084bacd5db1bd299e10327a8d",
+      "table_sha256": "3031281898616f021871e7192367edef3663fe35e64aa036936873f88664661c",
       "parameters": {
         "TICKERS": [
           "Govt",
@@ -898,7 +898,7 @@
       "script": "examples/docs/portfolio_risk_analytics.py",
       "script_sha256": "10e912990761bbda130799f85bb4ea50e0ed1ab4bf9beb936b07bd4a89f5223b",
       "image_sha256": "233eccb48e1271703a2d5b2b94edd098453dd13e76af3b8160d0a6b7241c4336",
-      "table_sha256": "cb853812a4ba7d99a92b1e16fcac0ddad729d6d430acb572806c2a1bb0f6c827",
+      "table_sha256": "4825d3c35d5ca40286e4208c3309cc08802928a9c98b3de8742068338830b836",
       "parameters": {
         "TICKERS": [
           "Govt",
@@ -1242,9 +1242,9 @@
     "unsmoothing_autocorrelation": {
       "path": "docs/images/unsmoothing_autocorrelation.png",
       "script": "examples/docs/universe_data_and_unsmoothing.py",
-      "script_sha256": "7323c0ea848f206ec6e41a326e0ecb38f8e922339ddb2e166c8cebe2d7160f9b",
-      "image_sha256": "955240ceb333ddb6219e1868743fb4c431dbd85acbfac1ba884eeb68e56e0e34",
-      "table_sha256": "fc373a88153ca43f54545cc961b3a86e15afe187b8d1a591c652d24be6a6a61d",
+      "script_sha256": "a36314b6ec847f7fa0f5de5ec4f3ee7e0a8dc4bec8f4d7d42660ee6c5f7982ad",
+      "image_sha256": "355bf69e7e7d4cebb5859cab4d586f37491ac7a845ee66136d52446a92d68c0b",
+      "table_sha256": "7c7588db2d6d4e1a1307e6ccfbcb18976d097c8605f72249608a9cc09fe52c80",
       "parameters": {
         "TICKERS": [
           "Govt",
@@ -1591,7 +1591,7 @@
       "script": "examples/docs/cara_gaussian_mixture.py",
       "script_sha256": "552ad072d99487ad54c66a52fdd247727f027c6e35999e9606dbdf2c9f892458",
       "image_sha256": "46dd3d45488ce43e53a944fc66050facbd1028f1fe99a42b88c8f83c32cc0c0e",
-      "table_sha256": "68fd4f61dde800154a610b838af54ddd699854f716aeb26d0d4a8ec366d7ded2",
+      "table_sha256": "4eac5805db32fd3a79c6328b94b9d90fd67d0c10e858920b06f7e9a3518f833e",
       "parameters": {
         "TICKERS": [
           "Bonds",
@@ -1862,7 +1862,7 @@
       "script": "examples/docs/app_crypto_allocation.py",
       "script_sha256": "62a3267d6fc6fad55784963d27a1e357d9a9de61ad742dd38db01d3789862f25",
       "image_sha256": "27ca33468b16b31f7b252d3f92986a10ad32fdb479a91208c1bfa300b097b539",
-      "table_sha256": "c71dfd645e479ce08df4603adc6e7b89aabbabec8e00484349993cca595cfe93",
+      "table_sha256": "63b9b9b67b706715f72e43c8f430b46930c95a60b956f0b88707169214a76723",
       "parameters": {
         "METHODS": {
           "ERC": "EQUAL_RISK_CONTRIBUTION",
@@ -2158,7 +2158,7 @@
     }
   },
   "review": {
-    "note": "Regenerated all 26 registered exhibits after FM 0.3.0 API and formatting updates. All numerical checks pass and every PNG is byte-identical to its previously visually reviewed committed image; that existing visual review is retained. Verified complete image and current script hashes on 2026-10-26.",
-    "published_at_utc": "2026-10-26T05:02:30+00:00"
+    "note": "Codex inspected the changed unsmoothing exhibit at its native 1500x660 resolution: labels, axes, paths, and table values agree with the updated AR(1) article and independent statistics. The other 25 images are byte-identical to the previously reviewed bundle. Simulation parameters and production algorithms are unchanged.",
+    "published_at_utc": "2026-10-29T20:42:08+00:00"
   }
 }

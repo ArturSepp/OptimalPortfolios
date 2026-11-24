@@ -1,11 +1,193 @@
 # Changelog
 
+## [10.0.4] - 2026-11-18
+
+- Add Kernel Execution as a separate public engine with charged perspective
+  guidance, one pass of restricted mixed-integer subproblems, and independent
+  original-domain and restricted-domain audits. Incumbent comparisons and stage
+  cutoffs use the full scored objective, including proportional costs.
+- Export `KernelConfig` and `wrapper_kernel_execution`. Native subproblems require
+  MOSEK. Their bounds apply to restricted subproblems, not the global problem.
+  Existing Exact and Ranked implementations, the Exact-primary policy, hard
+  constraints and audit tolerances are unchanged.
+
+## [10.0.3] - 2026-11-17
+
+- Add optional signed weight scores and proportional costs to the matched Exact
+  and Ranked execution objective, including cached sizing, conditional trade
+  priorities, relaxations and native incumbent retention. Defaults retain pure
+  tracking variance. Costs remain relative to original holdings, including on
+  trade reversals and replacements; risk diagnostics remain separately reported.
+- Add an optional Ranked elapsed-time allowance with best-audited-incumbent
+  retention across restarts. In-flight work can overrun the allowance. Preserve
+  existing search defaults, preparation, constraint semantics and audit tolerances.
+- Report native absolute gaps alongside relative gaps in original objective units.
+
+## [10.0.2] - 2026-11-15
+
+- Reserve numerical headroom on execution group rows while retaining admitted
+  reference exposures. Exact records each incumbent's tracking variance and
+  accounts separately for the time spent on fixed-state group repair.
+
+## [10.0.1] - 2026-11-03
+
+- Add an experimental supplied-CMA allocation helper with explicit tracking-error,
+  name-cap and group-allocation constraints, independently checked risk diagnostics,
+  and rejection of inaccurate or fallback solutions. Existing optimiser defaults
+  and public dispatchers remain unchanged.
+- Retire the execution-paper bundle from the public checkout and enforce the
+  consolidated workspace's entirely local publication boundary in policy checks,
+  documentation and the paper inventory. Historical released archives remain unchanged.
+- Align unattended examples with completed calendar month-end momentum observations
+  and an explicitly selected CLARABEL solver; harden workflow network retries and
+  automate verified dependency-update merges and failure alerts.
+
+
+## [10.0.0] - 2026-10-30
+
+- Breaking execution API naming: `execution.ranked_execution`,
+  `execution.exact_execution`, and `execution.policy` replace the V2 namespace.
+  Exact and Ranked retain the released objective, domain and audit tolerances.
+- Retire the V1 ranked projection and its optional fallback. Ranked abstention
+  remains a failure; Exact primary retains independently audited Ranked fallback.
+- Keep the older operational model separate as `execution.legacy_miqp`.
+  Historical 9.2.0 replication remains pinned to its original package and names.
+
 All notable changes to optimalportfolios are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+- Repair the universe/unsmoothing example for the current QIS AR(1) default while
+  retaining explicit regression checks for the supported earlier AR(2) profile.
+  Refresh the article and registered teaching exhibit together; OP transformation
+  defaults, algorithms and simulation inputs remain unchanged.
+- Keep the licence-free native-adapter test double independent of newer CVXPY
+  internal classes, so the same protocol checks execute at the declared dependency
+  floor. The production native-version guard remains unchanged.
+
+## [9.2.0] - 2026-10-29
+
+- Add an explicit matched CORRIDOR MIQP primary policy with lazy, independently
+  audited V2 fallback on the same prepared domain. Default native controls are
+  10 seconds, one thread and a 1e-4 original-variance relative gap. Native errors,
+  absent audited native witnesses, invalid deliveries and inconsistent bounds
+  trigger fallback; valid time-limited audited incumbents remain eligible.
+  Preserve all portfolio constraints and audit tolerances. This opt-in policy
+  does not change existing V2/V1 fallback or operational MIQP selections.
+
+- Restore the matched Exact native objective constant before optimisation so its
+  relative stopping gap is measured against original tracking variance. Avoid
+  adding that constant again during inversion, and report native incumbents and
+  bounds in original units. Preserve the objective, constraints, all tolerance
+  values, operational MIQP and Rosaa production; qualify the corrected matched
+  MIQP primary with audited V2 fallback on six independently rolling portfolios.
+- Preserve supplied discretionary trade intervals when common V2/Exact preparation
+  anchors a holding inside its corridor within the existing zero tolerance.
+  Retain exact positive numerical-zero holds inside their original bounds instead
+  of imposing a spurious holding-floor purchase during preparation.
+  Continue to pin and count genuine compulsory repairs, and retain explicitly
+  declared fixed corridor exceptions. Preserve objectives, constraints, audit
+  tolerances and Rosaa production; qualify matched MIQP with audited V2 fallback
+  on independently rolling holdings.
+- Tighten the matched V2 Exact adapter's native integer feasibility setting from
+  1e-4 to 1e-9 and balance its quadratic cone without changing the quadratic,
+  correcting false optimal termination on public overlapping-group cases.
+  Preserve fixed-state QP and continuous relaxation graphs. Retain raw native bounds and flag contradictions with
+  delivered incumbents at the existing objective comparison scale. Preserve the
+  objective, compiled constraints, audit tolerances, V2 heuristic, operational
+  MIQP and Rosaa production; rerun matched public comparisons.
+- Reuse verified CVXPY layouts for V2 conditional sizing, avoiding repeated graph
+  compilation while retaining every search trial, fresh native solves, numerical
+  retry rules and independent audits. Fall back to the original compiler for
+  incompatible layouts or other solvers; preserve V1, Exact and MIQP.
+- Restore complete documentation coverage for the redirect-target checker by
+  documenting its HTML anchor parser; preserve executable behavior.
+- Recover a V2 three-position replacement missed by improving-only search using
+  bounded restarts from cached audited alternatives. Stop at the first improving
+  branch and complete its pair neighbourhood under the existing trial controls.
+  Preserve earlier incumbents, the objective, executable constraints, acceptance
+  tolerances, V1, MIQP and Rosaa production; report fresh-holdout outcomes and cost.
+- Complete V2's scarce-ticket search with a final interval-screened pair phase,
+  bounded by the square of the existing rescue allowance across the existing
+  anchor limit. Retain joint resizing of selected trades and all earlier audited
+  incumbents. Preserve the objective, sizing constraints, audit tolerances, public
+  defaults, V1, MIQP and Rosaa production; report the additional search cost.
+- Extend V2 combination search with bounded include/exclude guidance around both
+  the completed incumbent and tentative relaxed support, including empty optional
+  incumbents. Audit every proposed combination through unchanged original-domain
+  sizing, retain earlier incumbents, and finish with a replacement sweep. Preserve
+  numerical tolerances, public configuration defaults, V1, MIQP and Rosaa production.
+- Diversify V2 scarce-ticket search with bounded continuous guidance that
+  temporarily excludes incumbent names, replacement rescue around infeasible
+  rounded seeds, and final replacement sweeps. Cache original-domain audited
+  sizing results across branches and retain the completed incumbent. Recover
+  the five public development counterexamples without changing the objective,
+  constraints, audit tolerances, Rosaa production or its installed packages.
+- Extend V2 scarce-ticket search with an independently sized perspective-guided
+  support, complete single-replacement sweeps and capacity-neutral pair replacements.
+  Retain the completed original search whenever the extension fails to improve it.
+  Preserve the objective, prepared domains, acceptance tolerances and public defaults;
+  record the additional bounded search cost. No Rosaa runtime or lock is changed.
+- Require QIS 5.44.5 or later for composed source/wheel qualification and the
+  public pipeline's attribution study. Its deterministic zero-effect HAC fix
+  resolves the QIS 5.44.4 limitation recorded below; keep base installs unchanged.
+- Cover MIQP frozen and forced-zero coordinates and the independent audit after
+  numerical-dust cleanup with portable regressions; retain the 100% coverage gate.
+
+## [9.1.5] - 2026-10-26
+
+### Changed
+
+- Consolidate the public Ranked Execution manuscript and portable 302-ETF
+  benchmark runner, with anonymised identifiers and separately distributed
+  numerical inputs. Retain the full internal research workspace locally.
+- Unify execution-method references and practical integration documentation,
+  and include the supplied-input portfolio pipeline examples.
+- Preserve all runtime package code from 9.1.2: V2 production execution,
+  independently audited V1 fallback and operational MIQP are unchanged.
+
+### Fixed
+
+- Register the OSS pipeline modules in the example catalogue and place their
+  numerical pytest suites in a dedicated tests directory, excluded from example
+  execution and exercised by composed source CI. Preserve every numerical test
+  body. Use the matching published FactorModels 0.3.0 in composed workflows
+  and install the documented data extra for the pipeline provenance tests.
+- Link the repository-only pipeline guide through its public source URL so
+  strict Sphinx builds do not treat it as an absent documentation source.
+
+### Known issues
+
+- The repository-only pipeline's optional feature-attribution study can fail
+  with published QIS 5.44.4 when a feature has an exactly zero effect and its
+  HAC alpha p-value is undefined. Six attribution fixture checks expose this
+  in a clean environment. A locally modified QIS installation is not a portable
+  workaround; production execution and the shipped OP package tests are unaffected.
+
+## [9.1.4] - 2026-10-26
+
+- Not published: strict documentation validation found a repository-only guide
+  linked as a Sphinx source. Publication was stopped before upload; the original
+  tag is retained unchanged.
+
+## [9.1.3] - 2026-10-26
+
+- Not published: the source release gate rejected the new example catalogue and
+  test-layout omissions before upload. The original tag is retained unchanged.
+
+## [9.1.2] - 2026-10-26
+
+### Fixed
+
+- Recover a V2 preparation tie-break that becomes infeasible after fixing a
+  near-integral native repair prefix. Re-prove discrete repair selection with
+  independent HiGHS precision and presolve disabled, retaining the original
+  excursion and turnover caps, hard domain, shared deadline and return audit.
+  Genuine breaches and unproved retries remain failures. V1 and operational
+  MIQP are unchanged.
 
 ## [9.1.1] - 2026-10-26
 

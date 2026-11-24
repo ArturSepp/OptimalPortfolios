@@ -40,6 +40,25 @@ class PaperPolicyTests(unittest.TestCase):
         """Exact approved manuscript files and replication code are publishable."""
         self.assertEqual(check_repository(self.root), [])
 
+    def test_execution_workspace_stays_entirely_local(self) -> None:
+        """Both the consolidated workspace and retired name reject all publication."""
+        blocked = [f"papers/{workspace}/{suffix}"
+                   for workspace in ("execution_portfolio_2026", "ranked_execution_2026")
+                   for suffix in ("README.md", "paper/main.tex", "paper/main.pdf",
+                                  "replication/benchmark.py", "replication/protocol.json",
+                                  "replication/tests/benchmark_test.py",
+                                  "replication/data/inputs.npz", "agents/record.md")]
+        for name in blocked:
+            self.write(name, "fixture\n")
+        git(self.root, "add", ".")
+        indexed = set(git(self.root, "ls-files", "-z").decode().split("\0"))
+        self.assertFalse(indexed.intersection(blocked))
+        self.assertEqual(check_repository(self.root), [])
+        for name in blocked:
+            git(self.root, "add", "-f", name)
+        self.assertTrue(all(any(name in error for error in check_repository(self.root))
+                            for name in blocked))
+
     def test_cma_data_remains_local(self) -> None:
         """Normal staging ignores shared CMA inputs; force-adding them fails policy."""
         name = "papers/cma_data/snapshots/current/assets.csv"

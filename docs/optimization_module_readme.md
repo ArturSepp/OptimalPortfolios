@@ -250,11 +250,10 @@ points that take `optimiser_config` split as follows:
 |---|---|
 | `OptimiserConfig(apply_total_to_good_ratio=True)` | `compute_rolling_optimal_weights` and `backtest_rolling_optimal_portfolio`; the rolling and single-date functions of quadratic optimisation, maximum Sharpe, maximum diversification, CARA mixture, risk budgeting and alpha with target return (`rolling_maximise_alpha_with_target_return`, `wrapper_maximise_alpha_with_target_return`) |
 | `OptimiserConfig()`, so `False` | The rolling and single-date functions of minimum tracking error, the two SAA solvers and alpha over tracking error (`rolling_maximise_alpha_over_tre`, `wrapper_maximise_alpha_over_tre`) |
-| `OptimiserConfig(solver="MOSEK")`, so `False` | The lower-level execution functions `solve_selected_execution_portfolio` and `solve_feasible_execution_portfolio` |
 
-The typed execution entry point takes a resolved problem whose default configuration uses
-CLARABEL. See [ranked execution integration](execution.md) for the lower-level legacy defaults
-and portable explicit configuration.
+The current execution engines take their own explicit execution configurations and prepared
+inputs. Their signatures do not inherit `optimiser_config`. See
+[execution integration](execution.md) for the shared preparation, audit and migration contract.
 
 Pass an explicit config when comparing calls. CARA rolling currently computes its universe ratio
 directly; the config flag does not disable that calculation.
@@ -676,9 +675,9 @@ examples.
 - Sepp, A., Ossa, I. and Kastenholz, M. (2026).
   [Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios](https://www.pm-research.com/content/iijpormgmt/52/4/86).
   *The Journal of Portfolio Management*, 52(4), 86–120.
-- Sepp, A., Hansen, E. and Kastenholz, M. (2026).
+- Sepp, A., Hansen, E. H. and Kastenholz, M. (2027).
   [Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors](https://ssrn.com/abstract=6785958).
-  Working paper.
+  *The Journal of Portfolio Management*, forthcoming (2027); link to the SSRN manuscript.
 - Sepp, A. (2023).
   [Optimal Allocation to Cryptocurrencies in Diversified Portfolios](https://www.risk.net/cutting-edge/7957914/optimal-allocation-to-cryptocurrencies-in-diversified-portfolios).
   *Risk Magazine*, October, 1–6.

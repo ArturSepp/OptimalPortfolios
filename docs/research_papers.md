@@ -10,7 +10,10 @@ myst:
 
 # Research papers and replication
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-27](https://github.com/ArturSepp/OptimalPortfolios/commit/f752bcefa99dc0afd4188f9d6d714f925ad12110)*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 The methods of [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios) are described
 in the papers below. This page lists each paper once, with the citation used everywhere on the
@@ -18,7 +21,6 @@ site, what it contributes to the package, and what the repository's
 [paper folders](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers) let a public
 checkout reproduce.
 
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 ## How the papers are used
 
@@ -31,6 +33,26 @@ represented only by specifically approved public introductions and synthetic exa
 results are not quoted before publication.
 
 ## Papers
+
+### Ranked execution
+
+Sepp, A. (2026). *Execution-Constrained Portfolio Rebalancing:
+Policy Domains, Search and Numerical Reliability*. Working draft intended for
+Computers & Operations Research.
+
+The manuscript and replication guide are retained in the entirely local
+`papers/execution_portfolio_2026/` workspace. The earlier separate public-facing
+folder has been consolidated into it and is no longer tracked. The reusable
+method remains documented in [prepared execution optimisation](execution_v2.md).
+The study compares Exact Execution, Ranked Execution and a documented Kernel
+Search adaptation. It retains the 313-case ETF/synthetic cohort and adds 23
+prospective difficulty and public-risk cases, including all missing deliveries
+and unresolved gaps. The separate Exact-first policy with audited Ranked fallback
+is evaluated in the retained cohort. Conditional quality, computation, policy
+costs and numerical reliability are reported. The evidence does not establish
+realised performance, independent external validation or universal dominance.
+The de-identified numerical archive is prepared locally for a separate public
+deposit. No acceptance, submission or completed deposit is claimed.
 
 ### Robust optimization of strategic and tactical asset allocation
 
@@ -68,12 +90,13 @@ and runs the four methods offline on the tracked price panel.
 
 ### Capital market assumptions from multi-asset tradable factors
 
-Sepp, A., Hansen, E. and Kastenholz, M. (2026). *Capital Market Assumptions and Strategic Asset
-Allocation Using Multi-Asset Tradable Factors*. Working paper,
+Sepp, A., Hansen, E. H. and Kastenholz, M. (2027). *Capital Market Assumptions and Strategic Asset
+Allocation Using Multi-Asset Tradable Factors*. *The Journal of Portfolio Management*, forthcoming; manuscript:
 [SSRN 6785958](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6785958).
 
 The paper derives capital market assumptions from multi-asset tradable factors and uses them for
-strategic asset allocation. On this site it is cited only in its public SSRN version. The
+strategic asset allocation. It is accepted and forthcoming in *The Journal of Portfolio Management*
+(2027); the link above provides the SSRN manuscript. The
 [MATF-CMA case study](app_cma_strategic_allocation.md) builds the workflow from CMAs to a strategic allocation
 with the package on synthetic inputs; it reproduces none of the paper's results.
 
@@ -118,6 +141,7 @@ requirements. The table summarises what a public checkout can run.
 
 | Paper | Folder | What a public checkout reproduces |
 |---|---|---|
+| Execution research | Local `execution_portfolio_2026` workspace | Manuscript, replication and frozen reference summaries are not included in a public checkout. Separate reviewed archives retain their original provenance; a permanent deposit remains pending. |
 | ROSAA | [`robust_optimisation_jpm_2026`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/robust_optimisation_jpm_2026) | A methodological example of the HCGL covariance and risk-budgeted strategic allocation. It downloads its ETF panel with `yfinance`, carries no frozen inputs and records no environment, so it is not an exact rebuild of the published exhibits. |
 | Cryptocurrencies | [`crypto_allocation_risk_2023`](https://github.com/ArturSepp/OptimalPortfolios/tree/main/papers/crypto_allocation_risk_2023) | The manuscript source, the analysis code and historical price files; no CI workflow runs this folder's tests. The [cryptocurrency case study](app_crypto_allocation.md) runs the four methods offline on the tracked price panel. The full update route needs licensed Bloomberg data, so the headline numbers are not promised to reproduce exactly. |
 | Capital market assumptions | Local shared data and replication workspaces | The MATF-CMA and FAJ snapshots, configuration tables, licensed histories and replication code are not redistributed. |

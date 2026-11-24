@@ -469,7 +469,7 @@ bound rescaling; the example disables it explicitly with `apply_total_to_good_ra
 Source owners: [constraint compilation](../src/optimalportfolios/optimization/constraints/backends.py),
 [residual evaluation](../src/optimalportfolios/optimization/constraints/analytics.py),
 [solver outcomes](../src/optimalportfolios/optimization/solver_diagnostics.py), and the
-FM risk-model adapter at `src/factormodels/risk.py` in an authorised FM checkout
+FM risk-model adapter at `src/factormodels/analytics/risk.py` in the public FM repository
 ([availability](supplied_risk_inputs.md#factormodels-availability)).
 
 The [canonical script](../examples/docs/overlay_tail_floor.py) runs the eight blocks with

@@ -14,6 +14,9 @@ myst:
 
 *Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-08-09](https://github.com/ArturSepp/OptimalPortfolios/commit/254505981ed43e0dbc12a19c98c034d351b8d059)*
 
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
+
 [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios) is a Python library for
 multi-asset portfolio construction and rolling backtesting. At each rebalancing date it turns
 dated risk estimates, expected returns and constraints into target weights under a chosen
@@ -24,7 +27,6 @@ transaction costs and reporting belong to
 [FactorModels](supplied_risk_inputs.md#factormodels-availability), using FactorLasso upstream; optimalportfolios is the reference
 implementation of the ROSAA framework of Sepp, Ossa and Kastenholz (2026).
 
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 ## Versions and compatibility
 
@@ -35,13 +37,14 @@ version. Latest can describe unreleased work. Channel links lead to the home pag
 an individual page may not exist in both versions.
 
 The public examples in this documentation use **`optimalportfolios>=7.21.0`** as their minimum
-supported released version unless explicitly labelled development-only. This is a verified
+supported released version unless a guide states a higher requirement or labels work development-only. This is a verified
 support floor for these examples, not a claim about when each API first appeared. Obtain
 repository-only scripts from the matching release or the source revision cited by a guide.
 
 | Capability | Minimum supported release for these examples |
 |---|---|
 | Offline constrained allocation and rolling backtests | `optimalportfolios>=7.21.0` |
+| [Exact, Ranked, Kernel and audited fallback examples](execution_examples.md) | `optimalportfolios>=10.0.4`; matching source checkout |
 | Completed supplied-input result and separate solver outcome | **OP 8 development branch; no released-version guarantee** |
 | Factor construction, GLS premia inference and CMA diagnostics | **Owned by FactorModels in the development stack** |
 
@@ -66,6 +69,10 @@ See the [OP 8 supplied-input migration](supplied_risk_inputs.md) for this develo
 branch. Historical release claims below apply to their matching releases.
 
 ## Start here
+
+For the step from model weights to implementable trades, see the new
+[execution examples](execution_examples.md): audited Exact-primary policy, coordinated
+trades and matched Exact/Ranked/Kernel comparisons on synthetic inputs.
 
 The [completed optimisation output](completed_output.md) is the OP 8 entry point:
 supplied alphas, covariance and constraints produce weights plus an inspectable solver
@@ -151,8 +158,8 @@ actual fields, units, dates, mutability and explicit persistence boundary.
   point-in-time inputs.
 - [Factor covariance with HCGL](factor_covariance_hcgl.md): FM owns sparse loadings,
   selected residual covariance, cadence penalties and the point-in-time model contract.
-- [Rolling factor risk model from CSV](rolling_factor_covar_from_csv.md): FM's installed
-  six-file bundle loader and explicit fit; completed covariance is handed to OP or QIS.
+- [Rolling factor risk model from CSV](rolling_factor_covar_from_csv.md): load supplied histories
+  with pandas and fit with FM's estimator; completed covariance is handed to OP or QIS.
 - [Ex-ante risk contributions, betas and the qis risk model](portfolio_risk_analytics.md):
   Euler risk contributions, benchmark betas and the hand-off to `qis.RiskModel`.
 
@@ -271,8 +278,8 @@ reproduce each one.
 - Sepp, A. (2023). *Optimal Allocation to Cryptocurrencies in Diversified Portfolios*.
   [Risk, October 2023](https://www.risk.net/cutting-edge/7957914/optimal-allocation-to-cryptocurrencies-in-diversified-portfolios);
   [SSRN 4217841](https://ssrn.com/abstract=4217841).
-- Sepp, A., Hansen, E. and Kastenholz, M. (2026). *Capital Market Assumptions and Strategic
-  Asset Allocation Using Multi-Asset Tradable Factors*. Working paper,
+- Sepp, A., Hansen, E. H. and Kastenholz, M. (2027). *Capital Market Assumptions and Strategic
+  Asset Allocation Using Multi-Asset Tradable Factors*. *The Journal of Portfolio Management*, forthcoming; manuscript:
   [SSRN 6785958](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6785958).
 
 Cite a paper for its method, and the software records for the packages an implementation uses:
@@ -356,6 +363,7 @@ strategic_allocation_targets
 cara_gaussian_mixture
 minimum_tracking_error
 execution
+execution_examples
 execution_v2
 alpha_over_tracking_error
 overlay_tail_floor

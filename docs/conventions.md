@@ -9,7 +9,10 @@ myst:
 
 # Conventions, notation and glossary
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-27](https://github.com/ArturSepp/OptimalPortfolios/commit/f752bcefa99dc0afd4188f9d6d714f925ad12110)*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 This page defines, once, the conventions that every page of the
 [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios) documentation relies on.
@@ -17,7 +20,6 @@ Articles link here instead of restating them, and each methodology article summa
 it uses in a convention card at the start of its inputs section. The conventions of the qis
 analytics and of FactorLasso estimation are linked, not repeated.
 
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 ## Notation
 
