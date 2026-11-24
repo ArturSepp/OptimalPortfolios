@@ -4,6 +4,9 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+      day: "monday"
+      time: "03:47"
+      timezone: "Etc/UTC"
     open-pull-requests-limit: 5
     groups:
       github-actions:
@@ -14,6 +17,9 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+      day: "monday"
+      time: "03:17"
+      timezone: "Etc/UTC"
     open-pull-requests-limit: 5
     groups:
       python-dependencies:
