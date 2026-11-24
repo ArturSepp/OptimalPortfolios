@@ -8,7 +8,7 @@ myst:
 
 # Factor diagnostics and attribution uncertainty
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-10-18](https://github.com/ArturSepp/OptimalPortfolios/commit/4b851495f5371b7b4dbefaab272a4f6e80220a79)*
 
 Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
@@ -18,7 +18,7 @@ reporting use [qis](https://github.com/ArturSepp/QuantInvestStrats)
 ([citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff)).
 Factor-model geometry and uncertainty propagation use
 [FactorModels](supplied_risk_inputs.md#factormodels-availability)
-(upstream citation: `CITATION.cff` in an authorised FM checkout).
+(upstream citation: [CITATION.cff](https://github.com/ArturSepp/FactorModels/blob/main/CITATION.cff)).
 This is a composed workflow: OP supplies the executed-state decision integration;
 the factor methods finish in their owning packages before that handoff.
 
@@ -76,13 +76,14 @@ separately; a failed diagnostic remains visible and is not silently repaired.
 | Accounting residual | Active NAV return less realised factor/residual contributions and the canonical QIS trade-cost effect. | Alpha or evidence of skill. A nonzero gap calls for accounting/convention investigation. |
 
 `FactorOpportunityModel`, `portfolio_opportunity_metrics` and `fixed_portfolio_alpha_interval` are
-imports from `factormodels.analytics`. OP's `OpportunityModel` is a distinct
+imports from `factormodels.gls_diagnostic` in the released FM package. OP's `OpportunityModel` is a distinct
 solver-input object; the extracted statistical imports are removed from OP.
 The FM risk-model adapter, MATF opportunity diagnostics and MATF uncertainty
-propagation retain numerical ownership. Their source paths in an authorised FM
-checkout are, respectively, `src/factormodels/risk.py`,
-`src/factormodels/analytics/opportunity.py` and
-`src/factormodels/analytics/uncertainty.py`.
+propagation retain numerical ownership. Their source paths in the public FM
+repository are, respectively, `src/factormodels/analytics/risk.py`,
+`src/factormodels/gls_diagnostic/opportunity.py` and
+`src/factormodels/gls_diagnostic/alpha_uncertainty.py`. The example explicitly prepares
+moments with `snapshot_from_moments` before constructing the opportunity model.
 
 ## Intervals, dependence and calibration
 

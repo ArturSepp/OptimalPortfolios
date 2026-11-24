@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optimalportfolios"
-version = "9.1.1"
+version = "10.0.4"
 description = "Production multi-asset portfolio construction and rolling backtesting in Python"
 readme = "README.md"
 license = "MIT"
@@ -59,7 +59,7 @@ dependencies = [
 
 [project.optional-dependencies]
 exact = [
-    "Mosek==11.2.3",
+    "mosek==11.2.8",
 ]
 
 riskbudget = [
@@ -110,7 +110,7 @@ test = [
 # deptry is a gate of the same kind: it reads the imports under src/ against the declarations
 # above, and its configuration is [tool.deptry] below.
 lint = [
-    "ruff==0.16.9",
+    "ruff==0.17.4",
     "interrogate==1.7.0",
     "deptry==0.25.1",
 ]

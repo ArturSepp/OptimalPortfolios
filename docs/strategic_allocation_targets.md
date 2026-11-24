@@ -11,11 +11,13 @@ myst:
 
 # Strategic allocation: target return and target volatility
 
-*Author: [Artur Sepp](https://github.com/ArturSepp)*
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-27](https://github.com/ArturSepp/OptimalPortfolios/commit/1ac315ed7c208fccbb2f6a74bdaada6b84b57c6f)*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 The strategic allocation solvers are implemented in
 [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
-Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 ## Overview
 

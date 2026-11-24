@@ -13,7 +13,7 @@ import zipfile
 PUBLIC_WORKSPACES = {"crypto_allocation_risk_2023", "robust_optimisation_jpm_2026",
                      "smart_diversification_joim_2026"}
 
-# This workspace's public scope is the companion, never the empirical replication tree.
+# These workspaces expose only their individually approved public files.
 LIMITED_PUBLIC_FILES = {
     "smart_diversification_joim_2026": {
         ".gitignore", "README.md", "run_overlay_example.py",
@@ -31,6 +31,12 @@ PROBES = (
     "papers/policy_probe/presentations/event/slides.pdf",
     "papers/policy_probe/replication/data/local/input.csv",
     "papers/policy_probe/replication/outputs/run.csv",
+    "papers/execution_portfolio_2026/README.md",
+    "papers/execution_portfolio_2026/paper/main.tex",
+    "papers/execution_portfolio_2026/replication/benchmark.py",
+    "papers/ranked_execution_2026/README.md",
+    "papers/ranked_execution_2026/paper/main.pdf",
+    "papers/ranked_execution_2026/replication/benchmark.py",
     "papers/cma_data/loaders.py",
     "papers/cma_data/snapshots/current/assets.csv",
     "agents/ROADMAP.md",

@@ -49,7 +49,23 @@ COPY_DEFAULTS = {'freq': 'QE', 'unsmooth_span': 40, 'warmup_period': 8,
 RETURNS_DEFAULTS = {'returns_freq': 'ME', 'demean': True, 'drop_first': True,
                     'is_first_zero': False, 'is_log_returns': True, 'span': 52,
                     'factor_return_types': None}
-QIS_DEFAULTS = {'ar_order': 2, 'min_value_for_beta': -0.25}
+# Qualified upstream default profiles. OP deliberately forwards these defaults.
+QIS_PROFILES = {
+    (2, -0.25, True): {
+        'leading_quarters': 17, 'nav_start': '1994-03-31', 'return_start': '1994-06-30',
+        'return_count': 123, 'autocorrelations': [0.61, 0.08],
+        'volatilities': [0.102, 0.167], 'true_volatility': 0.204,
+        'true_autocorrelation': -0.02, 'volatility_ratio': 0.50,
+        'beta_range': [0.03, 0.66], 'seed3_volatility': 0.164, 'seed3_true_volatility': 0.195,
+    },
+    (1, 0.0, False): {
+        'leading_quarters': 10, 'nav_start': '1992-06-30', 'return_start': '1992-09-30',
+        'return_count': 130, 'autocorrelations': [0.61, -0.02],
+        'volatilities': [0.101, 0.203], 'true_volatility': 0.200,
+        'true_autocorrelation': -0.01, 'volatility_ratio': 0.51,
+        'beta_range': [0.31, 0.75], 'seed3_volatility': 0.207, 'seed3_true_volatility': 0.195,
+    },
+}
 RETURNS_IN_ESTIMATOR = ('optimalportfolios.covar_estimation.ewma_covar_estimator.'
                         'compute_returns_from_prices')
 
@@ -276,12 +292,19 @@ def main() -> None:
     assert unsmoothed.group_loadings_level1 is level1
     assert unsmoothed.group_loadings_level2 is level2
     assert unsmoothed.metadata_fields is op.MetadataField and unsmoothed.pe_asset_id == 'PE'
-    # The replaced column is the qis NAV: missing for 17 quarters, 1.0 at 1994-03-31, then
-    # compounded from the first unsmoothed return at 1994-06-30.
+    # QIS owns the lag order, clipping floor and second coefficient smoother. Check both
+    # supported upstream profiles explicitly instead of assuming its old AR(2) default.
+    qis_defaults = defaults(qis.compute_ar_unsmoothed_prices)
+    profile_key = tuple(qis_defaults[name] for name in (
+        'ar_order', 'min_value_for_beta', 'apply_ewma_mean_smoother'))
+    assert profile_key in QIS_PROFILES, f'Unqualified QIS defaults: {profile_key}'
+    profile = QIS_PROFILES[profile_key]
+    leading = profile['leading_quarters']
     pe = unsmoothed.prices['PE']
-    assert pe.iloc[:17].isna().all() and pe.first_valid_index() == pd.Timestamp('1994-03-31')
-    assert pe.loc['1994-03-31'] == 1.0 and pe.iloc[17:].notna().all()
-    # The Pitfall: the wrapper does not pass ar_order, so qis applies its default AR(2).
+    assert pe.iloc[:leading].isna().all()
+    assert pe.first_valid_index() == pd.Timestamp(profile['nav_start'])
+    assert pe.loc[profile['nav_start']] == 1.0 and pe.iloc[leading:].notna().all()
+    # The wrapper must match the installed default order and differ from the alternative.
     ar2, _, _, _ = qis.compute_ar_unsmoothed_prices(
         prices=prices[['PE']], ar_order=2, freq='QE', span=40,
         mean_adj_type=qis.MeanAdjType.EWMA, warmup_period=8, max_value_for_beta=0.75,
@@ -290,16 +313,15 @@ def main() -> None:
         prices=prices[['PE']], ar_order=1, freq='QE', span=40,
         mean_adj_type=qis.MeanAdjType.EWMA, warmup_period=8, max_value_for_beta=0.75,
         is_log_returns=True)
-    assert pe.equals(ar2['PE'].reindex(prices.index).ffill())
-    assert not pe.equals(ar1['PE'].reindex(prices.index).ffill())
-    common = pe.index[pe.notna() & ar1['PE'].reindex(prices.index).notna()]
-    assert np.abs(np.log(pe[common] / ar1['PE'][common])).max() > 0.01
+    matching, alternative = (ar2, ar1) if profile_key[0] == 2 else (ar1, ar2)
+    assert pe.equals(matching['PE'].reindex(prices.index).ffill())
+    assert not pe.equals(alternative['PE'].reindex(prices.index).ffill())
+    common = pe.index[pe.notna() & alternative['PE'].reindex(prices.index).notna()]
+    assert np.abs(np.log(pe[common] / alternative['PE'][common])).max() > 0.01
     # The wrapper's defaults, the qis defaults it leaves in place, and pe_asset_id unread.
     copy_defaults = defaults(op.copy_universe_data_with_unsmoothed_prices)
     assert {name: copy_defaults[name] for name in COPY_DEFAULTS} == COPY_DEFAULTS
     assert copy_defaults['mean_adj_type'] == qis.MeanAdjType.EWMA
-    qis_defaults = defaults(qis.compute_ar_unsmoothed_prices)
-    assert {name: qis_defaults[name] for name in QIS_DEFAULTS} == QIS_DEFAULTS
     unnamed = op.UniverseData(prices=prices, metadata=metadata)
     assert unnamed.pe_asset_id is None
     assert op.copy_universe_data_with_unsmoothed_prices(unnamed, flag).prices.equals(
@@ -369,7 +391,8 @@ def main() -> None:
         'annualised volatility': [before.loc[window, 'PE'].std() * 2.0,
                                   after.loc[window, 'PE'].std() * 2.0]},
         index=['smoothed', 'unsmoothed'])
-    assert len(window) == 123 and window[0] == pd.Timestamp('1994-06-30')
+    assert len(window) == profile['return_count']
+    assert window[0] == pd.Timestamp(profile['return_start'])
     assert before[others].equals(after[others])
     # Reference: numpy log differences of the price arrays, from the same first price.
     rows = slice(prices.index.get_loc(window[0]) - 1, None)
@@ -383,23 +406,26 @@ def main() -> None:
         'annualised volatility': [annualised_vol(x_before), annualised_vol(x_after)]},
         index=['smoothed', 'unsmoothed'])
     assert np.allclose(stats.to_numpy(), reference.to_numpy(), atol=1e-12)
-    assert stats.round(2)['lag-1 autocorrelation'].tolist() == [0.61, 0.08]
-    assert stats.round(3)['annualised volatility'].tolist() == [0.102, 0.167]
-    assert round(annualised_vol(x_true), 3) == 0.204
-    assert round(lag1_autocorrelation(x_true), 2) == -0.02
+    assert stats.round(2)['lag-1 autocorrelation'].tolist() == profile['autocorrelations']
+    assert stats.round(3)['annualised volatility'].tolist() == profile['volatilities']
+    assert round(annualised_vol(x_true), 3) == profile['true_volatility']
+    assert round(lag1_autocorrelation(x_true), 2) == profile['true_autocorrelation']
     # The Insight: reported volatility is half the true one in the sample, as for phi = 0.6,
     # so the reported variance is about a quarter of the true one.
-    assert round(annualised_vol(x_before) / annualised_vol(x_true), 2) == 0.50
+    assert round(annualised_vol(x_before) / annualised_vol(x_true), 2) == \
+        profile['volatility_ratio']
     assert round((annualised_vol(x_true) / annualised_vol(x_before)) ** 2) == 4
     # The coefficient sum that qis estimates stays inside its clipping bounds.
     _, _, theta_sum, _ = qis.compute_ar_unsmoothed_prices(prices=prices[['PE']])
-    assert round(theta_sum['PE'].min(), 2) == 0.03 and round(theta_sum['PE'].max(), 2) == 0.66
-    # Another seed also leaves unsmoothed volatility below the true one.
+    assert [round(theta_sum['PE'].min(), 2), round(theta_sum['PE'].max(), 2)] == \
+        profile['beta_range']
+    # A second seed shows estimation error; the current AR(1) profile can overshoot true vol.
     _, other_unsmoothed, other_true = example_universes(seed=3)
     other_after = op.compute_returns_from_prices(other_unsmoothed.prices, returns_freq='QE',
                                                  demean=False)['PE'].dropna()
-    assert round(annualised_vol(other_after.to_numpy()), 3) == 0.164
-    assert round(annualised_vol(other_true.loc[other_after.index, 'PE'].to_numpy()), 3) == 0.195
+    assert round(annualised_vol(other_after.to_numpy()), 3) == profile['seed3_volatility']
+    assert round(annualised_vol(other_true.loc[other_after.index, 'PE'].to_numpy()), 3) == \
+        profile['seed3_true_volatility']
 
     # compute_returns_from_prices with its EWMA demeaning: lambda times the deviation from
     # the previous mean, the first zero row dropped.

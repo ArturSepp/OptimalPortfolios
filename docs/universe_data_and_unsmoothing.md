@@ -204,8 +204,11 @@ passes six of its arguments to qis:
 | `max_value_for_beta` | `0.75` | `max_value_for_beta`, the upper bound of the coefficient sum |
 | `is_log_returns` | `True` | `is_log_returns` |
 
-Every other qis argument keeps its qis default, among them `ar_order=2` and
-`min_value_for_beta=-0.25`.
+Every other qis argument keeps its installed qis default. The current profile uses
+`ar_order=1`, `min_value_for_beta=0.0` and no second coefficient smoother. Earlier
+supported QIS installations use AR(2), a -0.25 clipping floor and coefficient smoothing.
+The canonical script checks both profiles against explicit-order QIS calls and independent
+return statistics; the wrapper does not select or override either profile.
 
 - **Flagged columns.** Each is replaced by the NAV that qis returns: missing until the first
   identified coefficient, 1.0 on the last date before the first unsmoothed return, then compounded
@@ -307,16 +310,17 @@ unsmoothed = op.copy_universe_data_with_unsmoothed_prices(universe_data=universe
 ```
 
 The government-bond, credit and equity prices of the copy equal the originals bit for bit, and
-the copy holds the same metadata and loading objects. The private-equity column is missing for the
-first 17 quarters, equals 1.0 on 31 March 1994 and compounds the unsmoothed returns from
-30 June 1994. Over the sample, the coefficient sum that qis estimates stays between 0.03 and
-0.66, inside its bounds. The rolling means and coefficient filters start from zero;
-warmup estimates are excluded before coefficient smoothing.
+the copy holds the same metadata and loading objects. With the current AR(1) profile, the
+private-equity column is missing for the first 10 quarters, equals 1.0 on 30 June 1992 and
+compounds the unsmoothed returns from 30 September 1992. The estimated coefficient stays
+between 0.31 and 0.75, inside its bounds. The EWMA mean starts from zero and warmup
+coefficients remain unavailable. The earlier AR(2) profile starts its NAV on 31 March 1994
+and its returns on 30 June 1994; the simulation seed and OP transformation defaults are identical.
 
-Over the 123 quarters from June 1994, the reported series has a lag-1 autocorrelation of 0.61
-and a volatility of 10.2%. The unsmoothed series has an autocorrelation of 0.08 and a volatility
-of 16.7%, compared with −0.02 and 20.4% for the simulated true returns. The correction reduces
-serial dependence and recovers part of the suppressed volatility:
+Over the 130 quarters from September 1992, the reported series has a lag-1 autocorrelation of 0.61
+and a volatility of 10.1%. The current AR(1) unsmoothed series has an autocorrelation of -0.02
+and a volatility of 20.3%, compared with -0.01 and 20.0% for the simulated true returns.
+The correction reduces serial dependence and slightly overshoots the latent volatility:
 
 ```python
 before = op.compute_returns_from_prices(universe.prices, returns_freq='QE', demean=False)
@@ -330,10 +334,10 @@ stats = pd.DataFrame({
     index=['smoothed', 'unsmoothed'])
 ```
 
-![Left: the cumulative log returns of private equity from March 1994; the reported path is visibly
+![Left: the cumulative log returns of private equity from June 1992; the reported path is visibly
 smoother than the unsmoothed path. Middle: the lag-1
-autocorrelation falls from 0.61 reported to 0.08 unsmoothed, against -0.02 for the true returns.
-Right: the annualised volatility rises from 10.2% to 16.7%, against 20.4% for the true
+autocorrelation falls from 0.61 reported to -0.02 unsmoothed, against -0.01 for the true returns.
+Right: the annualised volatility rises from 10.1% to 20.3%, against 20.0% for the true
 returns.](images/unsmoothing_autocorrelation.png)
 
 *Figure: the reported, unsmoothed and simulated true returns of the private-equity column of the
@@ -342,14 +346,14 @@ example, as cumulative paths and as lag-1 autocorrelation and annualised volatil
 its provenance.*
 
 > **Insight.** With $\phi = 0.6$, the volatility factor $\sqrt{(1 - \phi)/(1 + \phi)}$ of
-> Proposition 1 is exactly one half, and the sample agrees: 10.2% reported against 20.4% true. A
+> Proposition 1 is exactly one half, and the sample is close: 10.1% reported against 20.0% true. A
 > covariance estimated on the reported returns understates the variance of the private asset about
 > fourfold, although smoothing leaves its expected return unchanged.
 
 The loadings then feed an allocation. The level-1 loadings give two asset classes of two assets
 each, so equal group budgets give every asset a quarter of the risk. The level-2 loadings cap the
 illiquid group at 15% of capital. The same risk-budgeting problem is solved on the EWMA
-covariance of each universe, estimated over the common sample from March 1994:
+covariance of each universe, estimated over the common sample from June 1992:
 
 ```python
 budgets = op.compute_group_risk_budgets(groups=universe.group_loadings_level1.idxmax(axis=1))
@@ -394,10 +398,11 @@ The four objects are exported at the package root:
   construction of the EWMA covariance estimators.
 
 > **Pitfall.** The docstring of `copy_universe_data_with_unsmoothed_prices` promises AR(1)
-> unsmoothing, but the function does not pass `ar_order`, and `qis.compute_ar_unsmoothed_prices`
-> defaults to `ar_order=2`: the copy is unsmoothed with a rolling AR(2) filter. The example checks
-> that its column equals the qis AR(2) result and differs from the AR(1) result. For AR(1), call
-> `qis.compute_ar_unsmoothed_prices` with `ar_order=1` and build the universe from its NAVs.
+> unsmoothing, but the function does not pass `ar_order`. It inherits the installed default of
+> `qis.compute_ar_unsmoothed_prices`: currently AR(1), previously AR(2). The example verifies
+> agreement with that explicit order and disagreement with the alternative. To fix a study's
+> lag order, call `qis.compute_ar_unsmoothed_prices` with an explicit `ar_order` and build the
+> universe from its NAVs.
 
 ## Interpretation and limitations
 
@@ -408,10 +413,10 @@ The four objects are exported at the package root:
   seasonal reappraisal. qis estimates the smoothing from the autocorrelation of the reported
   series, so all serial correlation is treated as smoothing, including any in the true returns.
 - **Estimation noise and initialization.** The coefficients come from a rolling EWMA regression
-  with a span of 40 quarters and zero-seeded coefficient smoothing after warmup. The estimated
-  correction does not recover the latent series exactly: with seed 19 its volatility is 16.7%
-  against a true 20.4%; with seed 3 it is 16.4% against a true 19.5%.
-- **Shorter history.** The unsmoothed column is missing for the first 17 quarters of the example,
+  with a span of 40 quarters. The current AR(1) profile does not apply a second coefficient
+  smoother. The correction does not recover the latent series exactly: with seed 19 its volatility
+  is 20.3% against a true 20.0%; with seed 3 it is 20.7% against a true 19.5%.
+- **Shorter history.** The unsmoothed column is missing for the first 10 quarters of this profile,
   and the example's covariance starts after them. Its level starts at 1.0, so only its returns are
   comparable with the original.
 - **Finer grids.** On a monthly panel with the default `freq='QE'`, the unsmoothed column changes

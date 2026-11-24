@@ -29,6 +29,10 @@ on:
   workflow_dispatch:
 
 env:
+  UV_HTTP_RETRIES: "5"
+  UV_HTTP_TIMEOUT: "60"
+  PIP_RETRIES: "5"
+  PIP_TIMEOUT: "60"
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   MPLBACKEND: Agg
 
@@ -53,18 +57,21 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Install uv and Python
-      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
       with:
         python-version: "3.12"
 
     - name: Sync the offline examples and risk-budgeting backend
-      run: uv sync --locked --extra riskbudget
+      run: uv sync --locked --extra riskbudget --group test
 
     - name: Check the Colab notebook mirror
       # The notebook carries one cell tagged `d6-source`; this standard-library check compares it
       # byte-for-byte with the authoritative Python quickstart and rejects saved execution output.
       # It also preserves the released-package install, runtime version, and required links.
       run: uv run --no-sync python .github/scripts/check_quickstart_notebook.py
+
+    - name: Check execution example domains and native fallback reporting
+      run: uv run --no-sync python -m pytest examples/execution/tests
 
     - name: Run the offline examples
       # The lane is derived, not listed. `run_examples.py` walks each example's intra-`examples`
@@ -98,7 +105,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Install uv and Python
-      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
       with:
         python-version: "3.12"
         enable-cache: false
@@ -112,7 +119,7 @@ jobs:
     - name: Verify public dependency workflow contracts
       run: python -m unittest discover -s .github/scripts -p public_dependency_test.py
     - name: Install released FM for the composed network examples
-      run: uv pip install --python .venv/bin/python "factormodels==0.1.0"
+      run: uv pip install --python .venv/bin/python "factormodels==0.6.0"
 
     - name: Run the network examples
       # `--jobs 4` rather than the default: these are all hitting one host, and Yahoo rate-limits.

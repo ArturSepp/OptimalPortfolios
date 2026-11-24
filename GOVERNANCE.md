@@ -1,5 +1,10 @@
 # Governance, maintenance, and support
 
+*Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-08-21](https://github.com/ArturSepp/OptimalPortfolios/commit/b82d1998d42c3962ead19bc5c40f6b470c106f88)*
+
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
+
 `optimalportfolios` is an open-source research-software project for portfolio construction and
 rolling backtesting. This document states how decisions are made, how the project is maintained,
 and what contributors and users can expect.

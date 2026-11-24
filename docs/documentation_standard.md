@@ -11,7 +11,7 @@ myst:
 
 *Author: [Artur Sepp](https://github.com/ArturSepp) / First recorded: [2026-09-14](https://github.com/ArturSepp/OptimalPortfolios/commit/bdcbc350a2699eb6cf8769f9af7c15aba38c545a)*
 
-This standard applies to [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
+Implemented in [OptimalPortfolios](https://github.com/ArturSepp/OptimalPortfolios).
 Software citation: [CITATION.cff](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).
 
 This is the OP supplement to the
@@ -34,6 +34,11 @@ with the H2 `Implementation in optimalportfolios`. Three page forms exist, each 
   on a synthetic panel and assert the qualitative mechanism, never the paper's numbers.
 - A **utility page** (home, installation, conventions, gallery, guides and reference pages) has a
   byline, the software-citation line and a metadata description, and no empty sections.
+
+Use the linked Artur Sepp byline and the OP repository/software-citation block shown at the top
+of this page on every human-authored page, including packaged contributor guides. Each page's
+First recorded date links to its own verified source history. Upstream handoff pages use
+`Documented in OptimalPortfolios` and retain their explicit upstream implementation credits.
 
 The inventory also lists **planned** pages with their form and title; they have no file until
 they are written, and `check_docs.py --all` fails while any remains.

@@ -34,6 +34,10 @@ on:
   workflow_dispatch:
 
 env:
+  UV_HTTP_RETRIES: "5"
+  UV_HTTP_TIMEOUT: "60"
+  PIP_RETRIES: "5"
+  PIP_TIMEOUT: "60"
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   MPLBACKEND: Agg
 
@@ -48,7 +52,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Install uv
-      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
       with:
         # Environment markers make the resolved set version-dependent, so this is pinned rather
         # than left to uv's default. `.python-version` is gitignored, so there is no in-repo file

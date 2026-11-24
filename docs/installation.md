@@ -75,12 +75,13 @@ These are alternatives; choose the integrations needed by the workflow. Installi
 adds the Python backend, not a guarantee that every external PDF-rendering prerequisite is
 available on the machine.
 
-The prepared [execution research API](execution_v2.md) is explicitly imported as
-`optimalportfolios.execution.v2`. Its ranked solver uses the ordinary numerical
-dependencies. The `exact` extra adds the optional native integer solver, whose
-start adapter checks its qualified canonicalisation versions. It does not switch
-the existing production execution interface to v2. The paper's frozen software
-bundle retains its own research identity independently of this development checkout.
+The prepared [execution API](execution_v2.md) is imported from
+`optimalportfolios.execution`. Ranked Execution uses the ordinary numerical
+dependencies. The `exact` extra adds the optional native integer solver used by
+Exact Execution. Common preparation can also require this backend, so the
+Ranked fallback does not guarantee operation through a complete backend outage.
+The [migration guide](execution.md#migration-from-numbered-interfaces) records the breaking name changes;
+the paper's frozen software bundle retains its original research identity.
 
 OP's own source licence is MIT. Dependencies keep their own licences: installing
 `riskbudget` adds the GPLv2+ quadprog backend. The reviewed Windows/Python 3.12 base

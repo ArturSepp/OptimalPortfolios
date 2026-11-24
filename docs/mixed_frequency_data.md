@@ -417,7 +417,7 @@ historical input cutoffs. The test suite runs it, and so does the offline exampl
   The factor residual diagonal omits cross-asset residual covariance.
 - **Timing and configuration limits:** regression demeaning belongs on the `LassoModel`.
   The [HCGL ownership handoff](factor_covariance_hcgl.md) identifies the full method's
-  location in an authorised FM checkout. FM's current fit requires an explicit
+  location in the public FM repository. FM's current fit requires an explicit
   `cutoff` and truncates every input history; supplied dates must reflect actual availability.
 
 ## See also

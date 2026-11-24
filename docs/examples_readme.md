@@ -41,13 +41,14 @@ For a first run, start with the
 
 | Task | Article | Canonical script | Standalone examples |
 |---|---|---|---|
+| Turn model targets into audited trades; compare Exact, Ranked and Kernel | [Execution examples](execution_examples.md) | See the standalone scripts | [`execution/policy.py`](../examples/execution/policy.py), [`execution/coordinated_trades.py`](../examples/execution/coordinated_trades.py), [`execution/compare_methods.py`](../examples/execution/compare_methods.py) (Offline defaults; native comparison needs MOSEK and a licence) |
 | Complete and inspect an allocation from supplied alphas and covariance | [Completed optimisation output](completed_output.md) | [`completed_output.py`](../examples/docs/completed_output.py) (Offline) | Explicit optional CSV/JSON table export; no factor packages required. |
 | Build a universe with group loadings; unsmooth appraisal-based prices | [Universe data and unsmoothing](universe_data_and_unsmoothing.md) | [`universe_data_and_unsmoothing.py`](../examples/docs/universe_data_and_unsmoothing.py) (Offline) | [`data/universe.py`](../examples/data/universe.py) (Network), [`data/sp500_universe_local.py`](../examples/data/sp500_universe_local.py) (Local) |
 | Combine assets observed at different frequencies | [Mixed-frequency data](mixed_frequency_data.md) | [`mixed_frequency_data.py`](../examples/docs/mixed_frequency_data.py) (Composed) | [`covar_estimation/demo_covar_different_estimation_freqs.py`](../examples/covar_estimation/demo_covar_different_estimation_freqs.py) (Composed) |
 | Handle late starts, missing prices, index membership and frozen positions | [Incomplete histories](incomplete_histories.md) | [`incomplete_histories.py`](../examples/docs/incomplete_histories.py) (Offline) | [`comparisons/sp500_minvar_spans_local.py`](../examples/comparisons/sp500_minvar_spans_local.py) (Local) |
 | Estimate an EWMA covariance and choose its span | [Covariance estimators](covariance_estimators.md) | [`covariance_estimators.py`](../examples/docs/covariance_estimators.py) (Offline) | [`comparisons/parameter_sensitivity.py`](../examples/comparisons/parameter_sensitivity.py) (Network), [`comparisons/sp500_minvar_spans_local.py`](../examples/comparisons/sp500_minvar_spans_local.py) (Local) |
 | Estimate a sparse factor covariance | [Factor covariance with HCGL](factor_covariance_hcgl.md) | [`factor_covariance_hcgl.py`](../examples/docs/factor_covariance_hcgl.py) (Composed) | [`covar_estimation/simulate_factor_returns.py`](../examples/covar_estimation/simulate_factor_returns.py) (Offline), [`covar_estimation/lasso_covar_estimation.py`](../examples/covar_estimation/lasso_covar_estimation.py) (Network), [`comparisons/covar_estimators.py`](../examples/comparisons/covar_estimators.py) (Network) |
-| Load, inspect and fit a supplied factor bundle | [FM bundle ownership and handoff](rolling_factor_covar_from_csv.md) | FM installed API and reference example require an authorised candidate | Removed OP CSV scripts; no implicit acquisition. |
+| Load supplied CSV histories and fit a factor model | [FM CSV workflow and handoff](rolling_factor_covar_from_csv.md) | Released FM estimator and public reference example | Load with pandas; fit and export explicitly. No implicit acquisition. |
 | Compute risk contributions and benchmark betas | [Ex-ante risk contributions and betas](portfolio_risk_analytics.md) | [`portfolio_risk_analytics.py`](../examples/docs/portfolio_risk_analytics.py) (Composed) | — |
 | Infer factor premia from provider forecasts after historical estimation | [GLS factor-premia inference](gls_factor_premia.md) and [CMA reporting](cma_diagnostics.md) | [`gls_factor_premia.py`](../examples/docs/gls_factor_premia.py) (Composed; synthetic prices, FactorLasso fit, FM GLS and weighted-QR checks) | Exact consensus/JPM workflows require local licensed inputs and are not distributed as public examples. |
 | Connect factor diagnostics, alpha uncertainty and forward attribution | [Factor diagnostics workflow](factor_diagnostics_workflow.md) | [`factor_diagnostics_workflow.py`](../examples/docs/factor_diagnostics_workflow.py) (Composed) | Conditional fixed-model inference; no forecast or post-selection coverage guarantee. |
@@ -119,7 +120,7 @@ scenario; it does not execute every branch of a `Locals` enum.
 ### Unattended execution lanes
 
 The [classifier and runner](../.github/scripts/run_examples.py) derives lanes from Python imports.
-Its current inventory is **28 offline, 11 composed, 18 network, 57 unattended examples**. The **5 local-data workflows** ending in
+Its current inventory is **32 offline, 11 composed, 29 network, 72 unattended examples**. The **5 local-data workflows** ending in
 `*_local.py` are excluded; this manual category also includes the optional skfolio bridge
 using the packaged fixture. Each catalogue row below states the classification.
 
@@ -153,6 +154,7 @@ examples/
   getting_started/   canonical offline quickstart and its notebook mirror
   data/              shared Yahoo loaders and local universe builders
   solvers/           objective-specific examples
+  execution/         Exact, Ranked, Kernel and audited fallback on synthetic inputs
   backtests/         complete rolling workflows
   comparisons/       comparisons of methods or configurations
   covar_estimation/  covariance and factor-model examples
@@ -188,6 +190,41 @@ of local data or optional tooling.
 | Source | Lane | Purpose |
 |---|---|---|
 | [Production quickstart](../examples/getting_started/production_quickstart.py) | Offline | Six assets from the packaged monthly fixture; EWMA covariance, constrained minimum variance and a QIS backtest. Prints weights, NAV and runtime. See the [calculation and execution conventions](quickstart.md). |
+
+## `oss_portfolio_pipeline/` — composed public ETF study
+
+The [pipeline guide](https://github.com/ArturSepp/OptimalPortfolios/blob/main/examples/oss_portfolio_pipeline/README.md) documents the
+complete study, explicit dates, solver choice and external output paths. The
+Network label follows reachable acquisition imports; supplied-input helper calls
+do not themselves download data. Its synthetic pytest suites live under
+`examples/oss_portfolio_pipeline/tests/` and run in composed source CI, separately
+from these example entry points. They are excluded from distributions.
+
+| Source | Lane | Purpose |
+|---|---|---|
+| [__main__.py](../examples/oss_portfolio_pipeline/__main__.py) | Network | Command-line entry point; choose an explicit study end and solver. |
+| [attribution.py](../examples/oss_portfolio_pipeline/attribution.py) | Network | Model-layer portfolio attribution from supplied pipeline outputs. |
+| [backtest.py](../examples/oss_portfolio_pipeline/backtest.py) | Network | Active portfolio optimisation and QIS holdings accounting. |
+| [config.py](../examples/oss_portfolio_pipeline/config.py) | Offline | Public ETF universe, fixed benchmark and study configuration. |
+| [covariance.py](../examples/oss_portfolio_pipeline/covariance.py) | Network | Monthly factor covariance estimation through FM and FL. |
+| [data.py](../examples/oss_portfolio_pipeline/data.py) | Network | Validated Yahoo price acquisition and external cache provenance. |
+| [diagnostics.py](../examples/oss_portfolio_pipeline/diagnostics.py) | Network | Factor, alpha and portfolio diagnostics for a completed run. |
+| [factors.py](../examples/oss_portfolio_pipeline/factors.py) | Network | Financed factor portfolios and their causal volatility targets. |
+| [factsheets.py](../examples/oss_portfolio_pipeline/factsheets.py) | Network | QIS portfolio factsheets from completed pipeline results. |
+| [pipeline.py](../examples/oss_portfolio_pipeline/pipeline.py) | Network | Input preparation and orchestration of the public study. |
+| [reporting.py](../examples/oss_portfolio_pipeline/reporting.py) | Network | Aligned portfolio, turnover, cost and tracking-error tables. |
+| [stress.py](../examples/oss_portfolio_pipeline/stress.py) | Network | Scenario analysis from supplied fitted risk and portfolio results. |
+
+## `execution/` — audited portfolio execution
+
+The [execution examples guide](execution_examples.md) explains the shared prepared domain,
+cost units and native-solver requirements. Defaults are offline and need no licence.
+
+| Source | Lane | Purpose and prerequisites |
+|---|---|---|
+| [Exact-primary policy](../examples/execution/policy.py) | Offline | Synthetic prepared inputs; prints the selected engine, audited trades and fallback reason. Exact is attempted when available, otherwise Ranked is audited. |
+| [Coordinated trades](../examples/execution/coordinated_trades.py) | Offline | A tight-cash switch needs two tickets; asserts the independent funding argument and resulting allocations. |
+| [Matched method comparison](../examples/execution/compare_methods.py) | Offline | Runs Ranked by default. Optional `--native` requires licensed MOSEK for Exact and Kernel; compares identical inputs and reports native evidence separately from feasibility. |
 
 ## `integrations/` — optional portfolio bridges
 

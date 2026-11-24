@@ -151,7 +151,7 @@ selects scheduled observations, so its keys are return-grid dates.
 
 FM's `fit_current` requires an explicit `cutoff` and truncates every historical input
 through that date. Its `fit_rolling` repeats completed fits on a calendar schedule.
-The full point-in-time contract is in the authorised FM guide identified by the
+The full point-in-time contract is in the public FM guide identified by the
 [HCGL handoff](factor_covariance_hcgl.md). Consequently,
 the two wrappers need not produce identical keys for the same frequency string. Neither output
 date independently guarantees that the upstream observations were actually available then.
@@ -169,7 +169,7 @@ python -m examples.docs.covariance_estimators
 ```
 
 The small EWMA example gives an exact arithmetic reference. The factor example is in the
-authorised FM guide identified by the [HCGL ownership handoff](factor_covariance_hcgl.md).
+public FM guide identified by the [HCGL ownership handoff](factor_covariance_hcgl.md).
 
 ### Create weekly total-return prices
 
@@ -231,12 +231,12 @@ demeaning off to expose the recursion; it does not change the class default.
 ### Construct factor prices and asset returns
 
 The factor example builds four factors and eight assets on a monthly and a quarterly grid.
-It lives in the authorised FM guide identified by the [HCGL handoff](factor_covariance_hcgl.md).
+It lives in the public FM guide identified by the [HCGL handoff](factor_covariance_hcgl.md).
 
 ### Fit HCGL at an explicit cutoff
 
 The HCGL fit at an explicit cutoff, with each component checked against an independent reference,
-lives in the authorised FM guide identified by the [HCGL handoff](factor_covariance_hcgl.md).
+lives in the public FM guide identified by the [HCGL handoff](factor_covariance_hcgl.md).
 
 ### Obtain rolling matrices
 
@@ -249,7 +249,7 @@ rolling_covars = estimator.fit_rolling_covars(prices=prices, time_period=ewma_pe
 
 In this fixture, the EWMA keys are **6 April, 6 July and 5 October 2022**, on the weekly
 observation grid. Rolling factor matrices are keyed by calendar quarter ends instead.
-The full rolling-fit contract is in the authorised FM guide identified by the
+The full rolling-fit contract is in the public FM guide identified by the
 [HCGL ownership handoff](factor_covariance_hcgl.md).
 
 > **Pitfall.** Rolling EWMA keys are return-grid dates, not calendar quarter ends. With weekly
@@ -268,7 +268,7 @@ FM's `FactorCovarEstimator.fit_current` returns a completed `FactorModelSnapshot
 `fit_rolling` returns a `RollingFactorModel`. These differ from OP's matrix-returning
 EWMA methods; OP consumes the selected covariance from the completed upstream model.
 The [HCGL ownership handoff](factor_covariance_hcgl.md) identifies the implementation
-guide in an authorised FM checkout. OP's direct EWMA class has no separate
+guide in the public FM repository. OP's direct EWMA class has no separate
 shrinkage-to-identity parameter. The legacy exported `estimate_rolling_ewma_covar`
 function is a QIS re-export; do not assume its defaults and date semantics are identical to this
 class.
@@ -299,7 +299,7 @@ look-ahead is absent.
 The factor estimator has its own limitations, among them zero-filled assets that look riskless
 and the selected residual weight. Regression demeaning is configured through
 `LassoModel.demean`; FM's public estimator has no top-level `demean` field. The
-[HCGL ownership handoff](factor_covariance_hcgl.md) identifies the authorised FM guide
+[HCGL ownership handoff](factor_covariance_hcgl.md) identifies the public FM guide
 for the full interpretation and limitations.
 
 ## See also

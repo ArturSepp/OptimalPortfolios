@@ -793,9 +793,9 @@ specified dataset and disclose the resulting design choices.
 - Sepp, A., Ossa, I. and Kastenholz, M. (2026).
   [Robust Optimization of Strategic and Tactical Asset Allocation for Multi-Asset Portfolios](https://www.pm-research.com/content/iijpormgmt/52/4/86).
   *The Journal of Portfolio Management*, 52(4), 86–120.
-- Sepp, A., Hansen, E. and Kastenholz, M. (2026).
+- Sepp, A., Hansen, E. H. and Kastenholz, M. (2027).
   [Capital Market Assumptions and Strategic Asset Allocation Using Multi-Asset Tradable Factors](https://ssrn.com/abstract=6785958).
-  Working paper.
+  *The Journal of Portfolio Management*, forthcoming (2027); link to the SSRN manuscript.
 - [QIS software citation](https://github.com/ArturSepp/QuantInvestStrats/blob/main/CITATION.cff).
 - [FactorLasso software citation](https://github.com/ArturSepp/FactorLasso/blob/main/CITATION.cff).
 - [OptimalPortfolios software citation](https://github.com/ArturSepp/OptimalPortfolios/blob/main/CITATION.cff).

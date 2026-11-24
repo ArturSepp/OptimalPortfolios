@@ -34,6 +34,10 @@ on:
         default: false
 
 env:
+  UV_HTTP_RETRIES: "5"
+  UV_HTTP_TIMEOUT: "60"
+  PIP_RETRIES: "5"
+  PIP_TIMEOUT: "60"
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   MPLBACKEND: Agg
   UPGRADE_DEPENDENCIES: ${{ github.event_name == 'schedule' || inputs.upgrade_dependencies }}
@@ -66,7 +70,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Install uv and Python ${{ matrix.python-version }}
-      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
       with:
         # uv supplies the interpreter as well as the installer, so there is no separate
         # setup-python step. The version has to be passed explicitly: `.python-version` is
@@ -202,7 +206,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Install uv and Python
-      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
       with:
         python-version: "3.12"
 
@@ -323,7 +327,7 @@ jobs:
       OP_REQUIRE_RISKBUDGET: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           python-version: "3.12"
       - name: Install the explicit backend and test tooling
@@ -347,7 +351,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Verify public dependency workflow contracts
         run: python -m unittest discover -s .github/scripts -p public_dependency_test.py
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           python-version: "3.12"
           enable-cache: false
@@ -357,14 +361,15 @@ jobs:
         run: |
           uv build --out-dir "$RUNNER_TEMP/op-dist"
           uv venv "$RUNNER_TEMP/composed-source"
-          uv pip install --python "$RUNNER_TEMP/composed-source/bin/python" -e ".[riskbudget]" \
-            "factormodels==0.1.0" pytest
+          uv pip install --python "$RUNNER_TEMP/composed-source/bin/python" -e ".[riskbudget,data]" \
+            "factormodels==0.6.0" "qis>=5.44.5" pytest
 
       - name: Run composed source contracts
         env:
           OP_REQUIRE_FACTOR_INTEGRATION: "1"
         run: |
           "$RUNNER_TEMP/composed-source/bin/python" -m pytest -m factor_integration \
+            src/optimalportfolios examples/oss_portfolio_pipeline/tests \
             --junitxml="$RUNNER_TEMP/source-handoff.xml"
           "$RUNNER_TEMP/composed-source/bin/python" -c "import os, xml.etree.ElementTree as E; s=E.parse(os.path.join(os.environ['RUNNER_TEMP'], 'source-handoff.xml')).getroot(); cases=list(s.iter('testcase')); assert cases; assert not list(s.iter('skipped')); assert not list(s.iter('failure')); assert not list(s.iter('error'))"
           "$RUNNER_TEMP/composed-source/bin/python" .github/scripts/run_examples.py --lane composed
@@ -373,7 +378,7 @@ jobs:
         run: |
           uv venv "$RUNNER_TEMP/composed-wheel"
           uv pip install --python "$RUNNER_TEMP/composed-wheel/bin/python" \
-            "$(ls "$RUNNER_TEMP"/op-dist/*.whl)[riskbudget]" "factormodels==0.1.0" pytest
+            "$(ls "$RUNNER_TEMP"/op-dist/*.whl)[riskbudget]" "factormodels==0.6.0" "qis>=5.44.5" pytest
 
       - name: Enforce nonempty installed handoff tests without skips
         env:
@@ -390,7 +395,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           python-version: "3.12"
           enable-cache: false
@@ -407,7 +412,7 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           python-version: "3.11"
       - name: Keep the test environment outside the checkout
