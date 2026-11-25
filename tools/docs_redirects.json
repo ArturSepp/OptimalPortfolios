@@ -659,6 +659,150 @@
       "http_status": 301,
       "force": false,
       "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.ExecutionBranchConfig.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/execution.html#migration-from-numbered-interfaces",
+      "description": "Retired V1 execution API (ExecutionBranchConfig); see the execution migration guide.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.ExecutionBranchSearchResult.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/execution.html#migration-from-numbered-interfaces",
+      "description": "Retired V1 execution API (ExecutionBranchSearchResult); see the execution migration guide.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.ExecutionCorridorDiagnostic.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/execution.html#migration-from-numbered-interfaces",
+      "description": "Retired V1 execution API (ExecutionCorridorDiagnostic); see the execution migration guide.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.ExecutionGuardConfig.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/execution.html#migration-from-numbered-interfaces",
+      "description": "Retired V1 execution API (ExecutionGuardConfig); see the execution migration guide.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.ExecutionScoreMethod.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/execution.html#migration-from-numbered-interfaces",
+      "description": "Retired V1 execution API (ExecutionScoreMethod); see the execution migration guide.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.ExecutionSearchConfig.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/execution.html#migration-from-numbered-interfaces",
+      "description": "Retired V1 execution API (ExecutionSearchConfig); see the execution migration guide.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.ExecutionSearchResult.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/execution.html#migration-from-numbered-interfaces",
+      "description": "Retired V1 execution API (ExecutionSearchResult); see the execution migration guide.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.build_selected_execution_constraints.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/execution.html#migration-from-numbered-interfaces",
+      "description": "Retired V1 execution API (build_selected_execution_constraints); see the execution migration guide.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.diagnose_execution_corridors.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/execution.html#migration-from-numbered-interfaces",
+      "description": "Retired V1 execution API (diagnose_execution_corridors); see the execution migration guide.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.improve_ranked_execution.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/execution.html#migration-from-numbered-interfaces",
+      "description": "Retired V1 execution API (improve_ranked_execution); see the execution migration guide.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.score_execution_candidates.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/execution.html#migration-from-numbered-interfaces",
+      "description": "Retired V1 execution API (score_execution_candidates); see the execution migration guide.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.solve_branched_execution.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/execution.html#migration-from-numbered-interfaces",
+      "description": "Retired V1 execution API (solve_branched_execution); see the execution migration guide.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.solve_feasible_execution_portfolio.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/execution.html#migration-from-numbered-interfaces",
+      "description": "Retired V1 execution API (solve_feasible_execution_portfolio); see the execution migration guide.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.solve_guarded_execution.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/execution.html#migration-from-numbered-interfaces",
+      "description": "Retired V1 execution API (solve_guarded_execution); see the execution migration guide.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.solve_ranked_execution.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/execution.html#migration-from-numbered-interfaces",
+      "description": "Retired V1 execution API (solve_ranked_execution); see the execution migration guide.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
+    },
+    {
+      "from_url": "/generated/optimalportfolios.solve_selected_execution_portfolio.html",
+      "to_url": "https://optimalportfolios.readthedocs.io/en/latest/execution.html#migration-from-numbered-interfaces",
+      "description": "Retired V1 execution API (solve_selected_execution_portfolio); see the execution migration guide.",
+      "redirect_type": "page",
+      "http_status": 301,
+      "force": false,
+      "enabled": true
     }
   ]
 }
