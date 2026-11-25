@@ -47,6 +47,22 @@ def test_omitted_reference_reports_absolute_saved_book_risk():
     np.testing.assert_array_equal(exposures.exposure, exposures.active_exposure)
 
 
+def test_tracking_error_recovers_from_nonfinite_result_at_a_psd_null(monkeypatch):
+    """Exact risk cancellation survives a nonfinite report from the covariance path."""
+    assets = pd.Index(['a', 'b'])
+    covariance = pd.DataFrame(0.0625, index=assets, columns=assets)
+    m = op.OpportunityModel(covariance, pd.Series(0., index=assets))
+    reference = pd.Series([0.5, 0.5], index=assets)
+    weights = pd.Series([0.75, 0.25], index=assets)
+    monkeypatch.setattr(m.risk_model, 'compute_tre_at_date', lambda *_: np.nan)
+
+    rows, _, _ = op.portfolio_opportunity_metrics(m, weights, reference)
+
+    # With a common factor, variance is 0.0625 times squared net exposure.
+    assert rows['total_te'] == pytest.approx(0., abs=1e-12)
+    assert rows['portfolio_vol'] == pytest.approx(0.25)
+
+
 @pytest.mark.parametrize('tolerance', [0., -.001, np.nan, np.inf])
 def test_frontier_tolerance_must_be_finite_and_positive(tolerance):
     """Invalid audit tolerances cannot turn a frontier into an accepted portfolio."""
