@@ -77,6 +77,22 @@ def test_manifest_keeps_all_confirmed_historical_404_urls():
         "summarize_gls_loading_stability",
         "tangency_access_split",
         "without_admitted_alpha",
+        "ExecutionBranchConfig",
+        "ExecutionBranchSearchResult",
+        "ExecutionCorridorDiagnostic",
+        "ExecutionGuardConfig",
+        "ExecutionScoreMethod",
+        "ExecutionSearchConfig",
+        "ExecutionSearchResult",
+        "build_selected_execution_constraints",
+        "diagnose_execution_corridors",
+        "improve_ranked_execution",
+        "score_execution_candidates",
+        "solve_branched_execution",
+        "solve_feasible_execution_portfolio",
+        "solve_guarded_execution",
+        "solve_ranked_execution",
+        "solve_selected_execution_portfolio",
     }
     assert sources == {f"/{name}.html" for name in guides} | {
         f"/generated/optimalportfolios.{name}.html" for name in names
