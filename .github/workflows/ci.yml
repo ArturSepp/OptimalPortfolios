@@ -34,6 +34,8 @@ on:
         default: false
 
 env:
+  # FontTools 4.69.0 shipped only a few CPython 3.11 wheels and no source archive.
+  LIVE_UPGRADE_ARGS: --upgrade --upgrade-package fonttools!=4.69.0
   UV_HTTP_RETRIES: "5"
   UV_HTTP_TIMEOUT: "60"
   PIP_RETRIES: "5"
@@ -107,11 +109,11 @@ jobs:
       shell: bash
       run: |
         if [ "$UPGRADE_DEPENDENCIES" = "true" ]; then
-          dependency_mode=--upgrade
+          dependency_mode=(${{ env.LIVE_UPGRADE_ARGS }})
         else
-          dependency_mode=--locked
+          dependency_mode=(--locked)
         fi
-        sync_cmd=(uv sync --group test "$dependency_mode")
+        sync_cmd=(uv sync --group test "${dependency_mode[@]}")
         for attempt in 1 2 3; do
           if "${sync_cmd[@]}"; then
             exit 0
@@ -175,7 +177,7 @@ jobs:
       shell: bash
       run: |
         if [ "$UPGRADE_DEPENDENCIES" = "true" ]; then
-          uv sync --group test --extra riskbudget --upgrade
+          uv sync --group test --extra riskbudget ${{ env.LIVE_UPGRADE_ARGS }}
         else
           uv sync --group test --extra riskbudget --locked
         fi
@@ -334,7 +336,7 @@ jobs:
         shell: bash
         run: |
           if [ "$UPGRADE_DEPENDENCIES" = "true" ]; then
-            uv sync --group test --extra riskbudget --upgrade
+            uv sync --group test --extra riskbudget ${{ env.LIVE_UPGRADE_ARGS }}
           else
             uv sync --group test --extra riskbudget --locked
           fi
@@ -419,7 +421,7 @@ jobs:
         run: echo "UV_PROJECT_ENVIRONMENT=$RUNNER_TEMP/lowest-dependencies" >> "$GITHUB_ENV"
       - name: Resolve a fresh lowest-direct test environment
         # Upgrade ignores lockfile preference; this job never commits its experimental lock.
-        run: uv sync --python 3.11 --resolution lowest-direct --upgrade --group test
+        run: uv sync --python 3.11 --resolution lowest-direct ${{ env.LIVE_UPGRADE_ARGS }} --group test
       - name: Record installed versions
         run: uv pip freeze --python "$UV_PROJECT_ENVIRONMENT/bin/python"
       - name: Check optional dependencies stay outside package-root import
